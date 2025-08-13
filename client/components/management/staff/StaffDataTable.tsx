@@ -85,26 +85,30 @@ export function StaffDataTable({
     const checkboxColumn: ColumnDef<StaffData> = {
       id: "select",
       header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => {
-            table.toggleAllPageRowsSelected(!!value);
-            onSelectAll(!!value);
-          }}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
+        <div className="pr-2">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => {
+              table.toggleAllPageRowsSelected(!!value);
+              onSelectAll(!!value);
+            }}
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <Checkbox
-          checked={selectedStaffIds.includes(row.original.id)}
-          onCheckedChange={(value) => onStaffSelect(row.original.id, !!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
+        <div className="pr-2">
+          <Checkbox
+            checked={selectedStaffIds.includes(row.original.id)}
+            onCheckedChange={(value) => onStaffSelect(row.original.id, !!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        </div>
       ),
       enableSorting: false,
       enableHiding: false,
@@ -215,8 +219,10 @@ export function StaffDataTable({
                       key={header.id}
                       colSpan={header.colSpan}
                       className={`border-r py-2 text-xs text-center ${
+                        header.id === "select" ? "w-12" : ""
+                      } ${
                         header.column.getCanSort()
-                          ? "cursor-pointer select-none"
+                          ? "cursor-pointer select-none pl-4"
                           : ""
                       }`}
                     >

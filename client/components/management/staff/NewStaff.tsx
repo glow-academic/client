@@ -41,6 +41,7 @@ import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { Separator } from "@/components/ui/separator";
 
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
@@ -259,7 +260,7 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
         firstName: "Jane",
         lastName: "Smith",
         alias: "jsmith",
-        role: "instructor",
+        role: "instructional",
         cohortName: "Fall 2025 Training",
       },
       {
@@ -292,12 +293,6 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
           const csvText = event.target?.result as string;
           const csvData = parseCSV(csvText) as unknown as CSVRow[];
           const newProfiles: NewProfile[] = [];
-          const profilesToCreate: {
-            firstName: string;
-            lastName: string;
-            alias: string;
-            role: ProfileRole;
-          }[] = [];
 
           for (let index = 0; index < csvData.length; index++) {
             const row = csvData[index];
@@ -348,16 +343,7 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
               continue;
             }
 
-            // Prepare profile for creation
-            const profileToCreate = {
-              firstName: row.firstName.trim(),
-              lastName: row.lastName.trim(),
-              alias: row.alias.trim(),
-              role: row.role,
-            };
-            profilesToCreate.push(profileToCreate);
-
-            // Add to new profiles list with temporary ID
+            // Add to new profiles list (preview only; don't create yet)
             newProfiles.push({
               id: `new-${Date.now()}-${index}`,
               firstName: row.firstName.trim(),
@@ -369,27 +355,7 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
             });
           }
 
-          // Create new profiles in database if any
-          if (profilesToCreate.length > 0) {
-            try {
-              const createdProfiles = await createProfiles(profilesToCreate);
-              // Update the temporary IDs with real IDs
-              newProfiles.forEach((profile, index) => {
-                if (profile.id.startsWith("new-") && createdProfiles[index]) {
-                  profile.id = createdProfiles[index].id;
-                }
-              });
-            } catch (error) {
-              toast.error(
-                "Failed to create some profiles in the database. Please check your data and try again."
-              );
-              log.error("staff.bulk_create.failed", {
-                message: "Error creating profiles",
-                error,
-                context: { component: "NewStaff", function: "handleCsvUpload" },
-              });
-            }
-          }
+          // Do not create yet; wait for submit
 
           if (newProfiles.length > 0) {
             setCsvPreview(newProfiles);
@@ -501,6 +467,23 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
 
     setIsSubmitting(true);
     try {
+      // Create in DB
+      const createdProfiles = await createProfiles(
+        csvPreview.map((p) => ({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          alias: p.alias,
+          role: p.role,
+        }))
+      );
+
+      // Replace preview ids with real ids
+      const idMap = new Map<string, string>();
+      csvPreview.forEach((p, idx) => {
+        const created = createdProfiles[idx];
+        if (p.id.startsWith("new-") && created) idMap.set(p.id, created.id);
+      });
+
       // Group profiles by cohort name
       const profilesByCohort = new Map<string, NewProfile[]>();
 
@@ -509,7 +492,9 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
         if (!profilesByCohort.has(cohortName)) {
           profilesByCohort.set(cohortName, []);
         }
-        profilesByCohort.get(cohortName)!.push(profile);
+        // Replace temp id with real id for cohort linking
+        const realId = idMap.get(profile.id) || profile.id;
+        profilesByCohort.get(cohortName)!.push({ ...profile, id: realId });
       });
 
       // Add profiles to cohorts if specified
@@ -676,14 +661,26 @@ export default function NewStaff({ onDone }: NewStaffProps) {
 
             <div className="flex items-center justify-between">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={downloadTemplate}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 border border-blue-500 text-blue-700 hover:bg-blue-50 hover:border-blue-600"
+                style={{
+                  boxShadow: "0 0 0 2px #a5b4fc33", // subtle blue/purple glow
+                }}
               >
-                <Download className="h-4 w-4" />
-                Download Template
+                <Download className="h-4 w-4 text-indigo-500" />
+                <span className="font-semibold text-indigo-700">
+                  Download Template
+                </span>
               </Button>
               <div className="flex items-center gap-2">
+                {!(csvPreview.length > 0) && <Button
+                  variant="outline"
+                  onClick={() => onDone && onDone()}
+                  aria-label="Cancel"
+                >
+                  Back
+                </Button>}
                 <Button
                   onClick={handleCsvClick}
                   className="flex items-center gap-2"
@@ -691,22 +688,21 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                   <Upload className="h-4 w-4" />
                   Choose CSV File
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => onDone && onDone()}
-                  aria-label="Cancel"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
             </div>
 
+            {csvPreview.length > 0 && <Separator />}
+
             {csvPreview.length > 0 && (
               <div className="space-y-4">
-                <div>
+                <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">
                     Preview ({csvPreview.length} users)
                   </h3>
+
+                  <Button variant="destructive" onClick={clearCsvPreview}>
+                    Clear All
+                  </Button>
                 </div>
 
                 <div className="rounded-md border max-h-96 overflow-auto">
@@ -805,27 +801,19 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center gap-2">
+                <div className="flex justify-end items-center gap-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-medium">
-                      Preview ({csvPreview.length} users)
-                    </h3>
-                    <Button variant="outline" onClick={clearCsvPreview}>
-                      Clear All
+                    <Button
+                      variant="outline"
+                      onClick={() => onDone && onDone()}
+                      aria-label="Cancel"
+                    >
+                     Back
                     </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
                       {isSubmitting
                         ? "Creating..."
                         : `Create ${csvPreview.length} Staff Members`}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => onDone && onDone()}
-                      aria-label="Cancel"
-                    >
-                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -927,11 +915,11 @@ export default function NewStaff({ onDone }: NewStaffProps) {
 
             <div className="flex items-center justify-end gap-2">
               <Button
-                variant="ghost"
+                variant="outline"
                 onClick={() => onDone && onDone()}
                 aria-label="Cancel"
               >
-                <X className="h-4 w-4" />
+                Back
               </Button>
               <Button
                 onClick={addManualProfile}

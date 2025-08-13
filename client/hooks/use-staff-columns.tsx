@@ -214,7 +214,7 @@ export function useStaffColumns({
   // Define columns
   const columns = useMemo(() => {
     const staffColumns: ColumnDef<StaffData>[] = [
-      // Staff Member column
+      // Staff Member column (merged: name, email, status dot)
       {
         accessorKey: "firstName",
         header: ({ column }) => (
@@ -223,18 +223,29 @@ export function useStaffColumns({
         cell: ({ row }) => {
           const staff = row.original;
           return (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
+                  style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                >
+                  {getInitials(staff.firstName + " " + staff.lastName)}
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-sm">
+                    {staff.firstName} {staff.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {staff.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                  </p>
+                </div>
+              </div>
               <div
-                className="h-8 w-8 rounded-full outline outline-muted-foreground flex items-center justify-center text-xs font-medium"
-                style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-              >
-                {getInitials(staff.firstName + " " + staff.lastName)}
-              </div>
-              <div>
-                <p className="font-medium text-sm">
-                  {staff.firstName} {staff.lastName}
-                </p>
-              </div>
+                className={`w-2 h-2 rounded-full ${
+                  staff.active ? "bg-green-500" : "bg-gray-400"
+                }`}
+                title={staff.active ? "Active" : "Inactive"}
+              />
             </div>
           );
         },
@@ -277,56 +288,7 @@ export function useStaffColumns({
         },
       },
 
-      // Email column
-      {
-        accessorKey: "email",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Email" />
-        ),
-        cell: ({ row }) => {
-          const staff = row.original;
-          return (
-            <span className="text-sm text-muted-foreground">
-              {staff.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
-            </span>
-          );
-        },
-        enableSorting: true,
-      },
-
-      // Status column
-      {
-        accessorKey: "active",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Status" />
-        ),
-        cell: ({ row }) => {
-          const staff = row.original;
-          return (
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  staff.active ? "bg-green-500" : "bg-gray-400"
-                }`}
-              ></div>
-              <span
-                className={`text-sm font-medium ${
-                  staff.active ? "text-green-700" : "text-gray-600"
-                }`}
-              >
-                {staff.active ? "Active" : "Inactive"}
-              </span>
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableColumnFilter: true,
-        filterFn: (row, _, value) => {
-          const staff = row.original;
-          if (!value || value.length === 0) return true;
-          return value.includes(staff.active.toString());
-        },
-      },
+      // (Email and Status merged into Staff Member)
 
       // Last Active column
       {
@@ -426,6 +388,15 @@ export function useStaffColumns({
         ),
         cell: ({ row }) => {
           const staff = row.original;
+          if (staff.role === "admin" || staff.role === "superadmin") {
+            return (
+              <div className="flex flex-wrap gap-1">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  All Cohorts
+                </span>
+              </div>
+            );
+          }
           return (
             <div className="flex flex-wrap gap-1">
               {staff.cohortNames.length > 0 ? (
@@ -457,25 +428,34 @@ export function useStaffColumns({
         },
       },
 
-      // Requests column (x/y)
+      // Requests column (x/∞ with "used" sublabel) - sortable
       {
         id: "requests",
+        accessorFn: (row) => {
+          const used = row.requestsInLastDay ?? 0;
+          const limit = row.reqPerDay ?? Infinity;
+          const ratio = used / (limit === 0 ? 1 : limit);
+          return Number.isFinite(ratio) ? ratio : 0;
+        },
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Requests" />
+          <DataTableColumnHeader column={column} title="Requests / day" />
         ),
         cell: ({ row }) => {
           const staff = row.original;
           const used = staff.requestsInLastDay ?? 0;
           const limit = staff.reqPerDay ?? null;
+          const limitText =
+            limit === null || limit === undefined ? "\u221E" : String(limit);
           return (
-            <span className="text-sm font-medium">
-              {limit === null || limit === undefined
-                ? `${used}`
-                : `${used}/${limit}`}
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-medium">
+                {used}/{limitText}
+              </span>
+              <span className="text-xs text-muted-foreground">used</span>
+            </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
         enableColumnFilter: false,
       },
 
