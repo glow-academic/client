@@ -685,20 +685,24 @@ export default function CohortAddStaff({
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button
+                {!(selectedProfiles.length > 0) && (
+                  <Button
                   variant="outline"
                   onClick={() => setIsOpen(false)}
                   aria-label="Back"
-                >
-                  Back
-                </Button>
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
                   onClick={addManualProfile}
                   disabled={isValidatingAlias}
                   className="flex items-center gap-2"
                 >
                   <UserPlus className="h-4 w-4" />
-                  {isValidatingAlias ? "Validating..." : "Add Teaching Assistant"}
+                  {isValidatingAlias
+                    ? "Validating..."
+                    : "Add Teaching Assistant"}
                 </Button>
               </div>
             </TabsContent>
@@ -706,8 +710,8 @@ export default function CohortAddStaff({
 
           {/* Selected Profiles */}
           {selectedProfiles.length > 0 && (
-            <div className="space-y-4">
-              <Separator />
+            <div className="space-y-4 mt-6">
+              <Separator className="my-6" />
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">
@@ -725,7 +729,7 @@ export default function CohortAddStaff({
                 </Button>
               </div>
 
-              <div className="max-h-40 overflow-y-auto space-y-2">
+              <div className="max-h-60 overflow-y-auto space-y-2">
                 {selectedProfiles.map((profile) => (
                   <Card key={profile.id} className="p-3">
                     <CardContent className="p-0">
