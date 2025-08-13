@@ -43,7 +43,6 @@ import { getModelRunsByProfiles } from "@/utils/queries/model_runs/get-model-run
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import NewStaff from "./NewStaff";
@@ -58,7 +57,6 @@ export default function Staff() {
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
     StaffData[]
   >([]);
-  const _router = useRouter();
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
 
@@ -442,13 +440,53 @@ export default function Staff() {
         canDelete={(profileId) => {
           const row = staffData.find((s) => s.id === profileId);
           if (!row) return false;
-          return !row.defaultProfile && row.id !== effectiveProfile?.id;
+          // Admin cannot delete self, other admins, or superadmins
+          if (effectiveProfile?.role === "admin") {
+            if (row.id === effectiveProfile.id) return false;
+            if (row.role === "admin" || row.role === "superadmin") return false;
+          }
+          // Superadmin cannot delete self
+          if (
+            effectiveProfile?.role === "superadmin" &&
+            row.id === effectiveProfile.id
+          ) {
+            return false;
+          }
+          return !row.defaultProfile;
         }}
         deletableCount={
           selectedStaffIds.filter((id) => {
             const row = staffData.find((s) => s.id === id);
             if (!row) return false;
-            return !row.defaultProfile && row.id !== effectiveProfile?.id;
+            if (effectiveProfile?.role === "admin") {
+              if (row.id === effectiveProfile.id) return false;
+              if (row.role === "admin" || row.role === "superadmin")
+                return false;
+            }
+            if (
+              effectiveProfile?.role === "superadmin" &&
+              row.id === effectiveProfile.id
+            ) {
+              return false;
+            }
+            return !row.defaultProfile;
+          }).length
+        }
+        editableCount={
+          selectedStaffIds.filter((id) => {
+            const row = staffData.find((s) => s.id === id);
+            if (!row) return false;
+            if (effectiveProfile?.role === "superadmin") return true;
+            if (row.defaultProfile) return false;
+            if (effectiveProfile?.role === "admin") {
+              if (
+                (row.role === "admin" || row.role === "superadmin") &&
+                row.id !== effectiveProfile.id
+              ) {
+                return false;
+              }
+            }
+            return true;
           }).length
         }
         canEdit={(profileId) => {

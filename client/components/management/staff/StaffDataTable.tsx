@@ -52,6 +52,7 @@ export interface StaffDataTableProps {
   canDelete: (profileId: string) => boolean;
   deletableCount: number;
   canEdit: (profileId: string) => boolean;
+  editableCount: number;
 }
 
 export function StaffDataTable({
@@ -75,6 +76,7 @@ export function StaffDataTable({
   canDelete,
   deletableCount,
   canEdit,
+  editableCount,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -220,6 +222,7 @@ export function StaffDataTable({
         onBulkEdit={onBulkEdit}
         onCreate={onCreate}
         deletableCount={deletableCount}
+        editableCount={editableCount}
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>
