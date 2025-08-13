@@ -198,10 +198,25 @@ export function DocumentsDataTable({
     },
     initialState: {
       pagination: {
-        pageSize: 10, // Show 10 items per page for grid view
+        pageSize: 10, // Default list view page size
       },
     },
   });
+
+  // Switch page size based on view mode
+  React.useEffect(() => {
+    if (viewMode === "grid") {
+      if (table.getState().pagination.pageSize !== 12) {
+        table.setPageSize(12);
+        table.setPageIndex(0);
+      }
+    } else {
+      if (table.getState().pagination.pageSize !== 10) {
+        table.setPageSize(10);
+        table.setPageIndex(0);
+      }
+    }
+  }, [viewMode, table]);
 
   // Get filtered and paginated data for both views
   const filteredDocuments = table.getRowModel().rows.map((row) => row.original);
@@ -287,7 +302,7 @@ export function DocumentsDataTable({
               </div>
             )}
           </div>
-          <DataTablePagination table={table} />
+          <DataTablePagination table={table} card={true} />
         </div>
       )}
     </div>

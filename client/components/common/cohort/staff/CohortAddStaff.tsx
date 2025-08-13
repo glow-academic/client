@@ -504,7 +504,7 @@ export default function CohortAddStaff({
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Staff to Cohort</DialogTitle>
-          <DialogDescription>
+          <DialogDescription hidden>
             Choose how you want to add staff members to this cohort. You can
             upload a CSV file, search for existing profiles, or manually add new
             profiles.
@@ -516,7 +516,7 @@ export default function CohortAddStaff({
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="csv" className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
-                Upload CSV
+                CSV Import
               </TabsTrigger>
               <TabsTrigger value="search" className="flex items-center gap-2">
                 <Search className="h-4 w-4" />

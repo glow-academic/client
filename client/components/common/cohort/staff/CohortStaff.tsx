@@ -6,7 +6,7 @@
  */
 
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
@@ -177,10 +177,25 @@ export default function CohortStaff({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 10, // Show 10 items per page for grid view
+        pageSize: 10, // Default list view page size
       },
     },
   });
+
+  // Adjust page size based on view mode (grid uses 12 per page)
+  useEffect(() => {
+    if (viewMode === "grid") {
+      if (table.getState().pagination.pageSize !== 12) {
+        table.setPageSize(12);
+        table.setPageIndex(0);
+      }
+    } else {
+      if (table.getState().pagination.pageSize !== 10) {
+        table.setPageSize(10);
+        table.setPageIndex(0);
+      }
+    }
+  }, [viewMode, table]);
 
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -236,21 +251,21 @@ export default function CohortStaff({
           <div className="flex border rounded-md">
             <Button
               type="button"
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="rounded-r-none"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
               variant={viewMode === "list" ? "default" : "ghost"}
               size="sm"
               onClick={() => setViewMode("list")}
-              className="rounded-l-none border-l"
+              className="rounded-r-none"
             >
               <List className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className="rounded-l-none border-l"
+            >
+              <Grid3X3 className="h-4 w-4" />
             </Button>
           </div>
 
@@ -439,7 +454,9 @@ export default function CohortStaff({
       )}
 
       {/* Pagination Footer */}
-      {filteredProfiles.length > 0 && <DataTablePagination table={table} />}
+      {filteredProfiles.length > 0 && (
+        <DataTablePagination table={table} card={viewMode === "grid"} />
+      )}
     </div>
   );
 }

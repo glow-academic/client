@@ -640,13 +640,17 @@ export default function NewStaff({ onDone }: NewStaffProps) {
 
   return (
     <div className="space-y-6 py-4 px-4">
-      <Tabs defaultValue="csv" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="csv">CSV Import</TabsTrigger>
-            <TabsTrigger value="manual">Manual Add</TabsTrigger>
-          </TabsList>
-        </div>
+      <Tabs defaultValue="csv" className="space-y-4 w-full">
+        <TabsList className="grid grid-cols-2 w-full mb-4">
+          <TabsTrigger value="csv" className="w-full flex items-center justify-center gap-2">
+            <Upload className="h-4 w-4" />
+            CSV Import
+          </TabsTrigger>
+          <TabsTrigger value="manual" className="w-full flex items-center justify-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            Manual Add
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="csv">
           <div className="space-y-4">

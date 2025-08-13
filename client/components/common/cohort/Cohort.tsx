@@ -87,6 +87,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     profileIds: [],
     simulationIds: [],
     active: true,
+    defaultCohort: false,
   };
 
   const [formData, setFormData] =
@@ -254,6 +255,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           profileIds: cohortToEdit.profileIds || [],
           simulationIds: cohortToEdit.simulationIds || [],
           active: cohortToEdit.active ?? true,
+          defaultCohort: cohortToEdit.defaultCohort ?? false,
         };
 
         // Only update if the data has actually changed to prevent infinite loops
@@ -265,7 +267,8 @@ export default function Cohort({ cohortId }: CohortProps) {
               JSON.stringify(cohortData.profileIds) ||
             JSON.stringify(prev.simulationIds) !==
               JSON.stringify(cohortData.simulationIds) ||
-            prev.active !== cohortData.active;
+            prev.active !== cohortData.active ||
+            prev.defaultCohort !== cohortData.defaultCohort;
 
           return hasChanged ? cohortData : prev;
         });
@@ -278,7 +281,8 @@ export default function Cohort({ cohortId }: CohortProps) {
               JSON.stringify(cohortData.profileIds) ||
             JSON.stringify(prev.simulationIds) !==
               JSON.stringify(cohortData.simulationIds) ||
-            prev.active !== cohortData.active;
+            prev.active !== cohortData.active ||
+            prev.defaultCohort !== cohortData.defaultCohort;
 
           return hasChanged ? cohortData : prev;
         });
@@ -342,6 +346,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       current.title !== original.title ||
       current.description !== original.description ||
       current.active !== original.active ||
+      current.defaultCohort !== original.defaultCohort ||
       JSON.stringify(current.simulationIds?.sort()) !==
         JSON.stringify(original.simulationIds?.sort()) ||
       staffProfiles.length !== (original.profileIds?.length || 0) ||
@@ -458,6 +463,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           profileIds,
           simulationIds: formData.simulationIds || [],
           active: formData.active || true,
+          defaultCohort: formData.defaultCohort ?? false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -599,16 +605,32 @@ export default function Cohort({ cohortId }: CohortProps) {
           )}
         </div>
 
+        {/* Default Cohort Switch - Only for superadmin */}
+        {effectiveProfile?.role === "superadmin" && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="defaultCohort" className="text-sm">
+              Default Cohort
+            </Label>
+            {formData.defaultCohort !== undefined && !isLoading ? (
+              <Switch
+                id="defaultCohort"
+                checked={formData.defaultCohort ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("defaultCohort", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+        )}
+
         {/* Simulations */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
               <Label htmlFor="simulations">Simulations</Label>
-              {!isLoading && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Select simulations to assign to this cohort
-                </p>
-              )}
             </div>
             {!isReadonly && (
               <div className="flex gap-2">
