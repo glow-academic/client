@@ -12,7 +12,16 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
+import StaffManager from "@/components/common/staff/StaffManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,8 +39,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Eye, Grid3X3, List, Trash2, UploadCloud } from "lucide-react";
-import CohortAddStaff from "./CohortAddStaff";
+import { Eye, Grid3X3, List, Plus, Trash2, UploadCloud } from "lucide-react";
 
 // A new type to represent a profile that is either saved or new
 type EditableProfile =
@@ -269,12 +277,32 @@ export default function CohortStaff({
             </Button>
           </div>
 
-          {/* Add Staff Button */}
+          {/* Add Staff Button (opens dialog) */}
           {!isReadonly && (
-            <CohortAddStaff
-              onAddProfiles={handleAddProfiles}
-              existingProfileIds={profiles.map((p) => p.id)}
-            />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button type="button" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Staff
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Staff to Cohort</DialogTitle>
+                  <DialogDescription hidden>
+                    Upload via CSV, search existing profiles, or add one
+                    manually.
+                  </DialogDescription>
+                </DialogHeader>
+                <StaffManager
+                  cohortId={"cohort"}
+                  onAddProfiles={(newProfiles) =>
+                    handleAddProfiles(newProfiles)
+                  }
+                  existingProfileIds={profiles.map((p) => p.id)}
+                />
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>

@@ -319,8 +319,11 @@ export function Simulations() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0 flex-grow flex flex-col">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <CardContent className="pt-0 flex-grow flex flex-col justify-end">
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {simulation.description || "No description available"}
+        </p>
+        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
           {simulation.scenarioIds?.length || 0} scenarios
         </div>

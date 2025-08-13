@@ -405,13 +405,15 @@ export function DocumentPicker({
                               {filterTags.length} selected
                             </div>
                             <div className="flex gap-2">
-                              <Button
+                              {filterTags.length > 0 && (
+                                <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setFilterTags([])}
-                              >
-                                Clear
-                              </Button>
+                                >
+                                  Clear
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 onClick={() => setFilterPopoverOpen(false)}

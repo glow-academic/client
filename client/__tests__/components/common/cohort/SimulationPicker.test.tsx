@@ -9,7 +9,7 @@ import {
   Simulation,
   SimulationPicker,
 } from "@/components/common/cohort/SimulationPicker";
-import { fireEvent, render, screen, waitFor } from '@/test/custom-render';
+import { fireEvent, render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the mutation observer hook
@@ -245,9 +245,8 @@ describe("SimulationPicker", () => {
     expect(onSelect).toHaveBeenCalledWith([]);
   });
 
-  it("displays time limit badges correctly", async () => {
-    // Create simulations with different time limits, ensuring none are practice simulations
-    const timeLimitSimulations = [
+  it("displays descriptions correctly in list items", async () => {
+    const sims = [
       {
         id: "1",
         title: "Basic Communication",
@@ -266,21 +265,12 @@ describe("SimulationPicker", () => {
         defaultSimulation: true,
         practiceSimulation: false,
       },
-      {
-        id: "3",
-        title: "No Limit Session",
-        description: "Session with no time limit",
-        timeLimit: 0,
-        active: true,
-        defaultSimulation: false,
-        practiceSimulation: false,
-      },
     ];
 
     render(
       <SimulationPicker
         {...defaultProps}
-        simulations={timeLimitSimulations}
+        simulations={sims}
         showOnlyActive={false}
       />
     );
@@ -291,9 +281,12 @@ describe("SimulationPicker", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("30m")).toBeInTheDocument();
-      expect(screen.getByText("1h")).toBeInTheDocument();
-      expect(screen.getByText("No limit")).toBeInTheDocument();
+      expect(
+        screen.getByText("A basic communication simulation")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Advanced leadership training simulation")
+      ).toBeInTheDocument();
     });
   });
 

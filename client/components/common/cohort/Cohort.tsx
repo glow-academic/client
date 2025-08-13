@@ -36,10 +36,11 @@ import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   SimulationPicker,
@@ -144,6 +145,11 @@ export default function Cohort({ cohortId }: CohortProps) {
       queryFn: () => getAllParameterItems(),
     });
 
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
+
   const isLoading =
     isLoadingProfiles ||
     isLoadingSimulations ||
@@ -211,6 +217,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       defaultSimulation: sim.defaultSimulation,
       practiceSimulation: sim.practiceSimulation,
       scenarioIds: sim.scenarioIds || [],
+      updatedAt: sim.updatedAt,
     }));
   }, [simulations]);
 
@@ -640,6 +647,10 @@ export default function Cohort({ cohortId }: CohortProps) {
                     scenarios={scenarios}
                     parameters={parameters}
                     parameterItems={parameterItems}
+                    personas={personas?.map((p) => ({
+                      id: p.id,
+                      name: p.name,
+                    }))}
                     selectedSimulations={selectedSimulations}
                     onSelect={handleSimulationSelection}
                     placeholder="Add simulation"
@@ -717,6 +728,9 @@ export default function Cohort({ cohortId }: CohortProps) {
                             {simulation.title || "Unnamed Simulation"}
                           </h4>
                           <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              Time: {simulation.timeLimit || "No limit"} min
+                            </Badge>
                             {!isReadonly && (
                               <>
                                 <Button
@@ -739,51 +753,48 @@ export default function Cohort({ cohortId }: CohortProps) {
                                 </Button>
                               </>
                             )}
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
 
                         <div className="space-y-2 mt-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">
-                              Time: {simulation.timeLimit || "No limit"} min
-                            </Badge>
-                          </div>
-
-                          {/* Scenario Names */}
-                          {simulation.scenarioIds &&
-                            simulation.scenarioIds.length > 0 && (
-                              <div className="mt-2">
-                                <p className="text-xs font-medium text-muted-foreground mb-1">
-                                  Scenarios ({simulation.scenarioIds.length}):
-                                </p>
-                                <div className="space-y-1">
-                                  {simulation.scenarioIds
-                                    .slice(0, 3)
-                                    .map((scenarioId) => {
-                                      const scenario = scenarios.find(
-                                        (s) => s.id === scenarioId
-                                      );
-                                      return (
-                                        <div
-                                          key={scenarioId}
-                                          className="text-xs text-muted-foreground truncate"
-                                        >
-                                          •{" "}
-                                          {scenario?.name || "Unknown Scenario"}
-                                        </div>
-                                      );
-                                    })}
-                                  {simulation.scenarioIds.length > 3 && (
-                                    <div className="text-xs text-muted-foreground">
-                                      +{simulation.scenarioIds.length - 3}{" "}
-                                      more...
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                          <p className="text-xs text-muted-foreground line-clamp-3">
+                            {simulation.description ||
+                              "No description provided"}
+                          </p>
                         </div>
                       </div>
+                      {simulation.scenarioIds &&
+                        simulation.scenarioIds.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              Scenarios ({simulation.scenarioIds.length}):
+                            </p>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {simulation.scenarioIds
+                                .slice(0, 4)
+                                .map((scenarioId) => {
+                                  const scenario = scenarios.find(
+                                    (s) => s.id === scenarioId
+                                  );
+                                  return (
+                                    <Badge
+                                      key={scenarioId}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {scenario?.name || "Unknown Scenario"}
+                                    </Badge>
+                                  );
+                                })}
+                              {simulation.scenarioIds.length > 4 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{simulation.scenarioIds.length - 4}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
                     </div>
                   </Card>
                 );

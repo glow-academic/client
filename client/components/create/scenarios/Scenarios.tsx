@@ -306,9 +306,6 @@ export function Scenarios() {
                   )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {scenario.description || "No description available"}
-            </p>
           </div>
           <div className="flex gap-2 items-center ml-4">
             {scenario.generated ? (
@@ -398,9 +395,12 @@ export function Scenarios() {
           </div>
         </div>
       </CardHeader>
-      {!isChild && (
-        <CardContent className="pt-0 flex-grow flex flex-col">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <CardContent className="pt-0 flex-grow flex flex-col justify-end">
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {scenario.description || "No description available"}
+        </p>
+        {!isChild && (
+          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
             {
               simulations.filter((s) => s.scenarioIds?.includes(scenario.id))
@@ -408,8 +408,8 @@ export function Scenarios() {
             }{" "}
             simulations
           </div>
-        </CardContent>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 

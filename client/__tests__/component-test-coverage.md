@@ -1,8 +1,8 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 297
-- **Tests Created**: 0
+- **Total Components**: 298
+- **Tests Created**: 1
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 297
 
@@ -117,6 +117,7 @@
 | Simulation | components/common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | SimulationCard | components/common/simulation/SimulationCard.tsx | SimulationCard.test.tsx | ✅ Implemented |
 | SimulationScenarioPicker | components/common/simulation/SimulationScenarioPicker.tsx | SimulationScenarioPicker.test.tsx | ✅ Implemented |
+| StaffManager | components/common/staff/StaffManager.tsx | StaffManager.test.tsx | ✅ Implemented |
 | TagSelector | components/common/tags/TagSelector.tsx | TagSelector.test.tsx | ✅ Implemented |
 | CodeViewer | components/common/viewers/CodeViewer.tsx | CodeViewer.test.tsx | ✅ Implemented |
 | HtmlViewer | components/common/viewers/HtmlViewer.tsx | HtmlViewer.test.tsx | ✅ Implemented |
@@ -446,6 +447,8 @@ __tests__/
 │   │   │   ├── Simulation.test.tsx
 │   │   │   ├── SimulationCard.test.tsx
 │   │   │   ├── SimulationScenarioPicker.test.tsx
+│   │   ├── staff/
+│   │   │   ├── StaffManager.test.tsx
 │   │   ├── tags/
 │   │   │   ├── TagSelector.test.tsx
 │   │   ├── viewers/
