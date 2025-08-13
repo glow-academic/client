@@ -439,6 +439,18 @@ export default function Staff() {
         }}
         onBulkEdit={() => setShowBulkEditModal(true)}
         onBulkDelete={() => setShowBulkDeleteDialog(true)}
+        canDelete={(profileId) => {
+          const row = staffData.find((s) => s.id === profileId);
+          if (!row) return false;
+          return !row.defaultProfile && row.id !== effectiveProfile?.id;
+        }}
+        deletableCount={
+          selectedStaffIds.filter((id) => {
+            const row = staffData.find((s) => s.id === id);
+            if (!row) return false;
+            return !row.defaultProfile && row.id !== effectiveProfile?.id;
+          }).length
+        }
       />
 
       {/* Staff Filter Dialog */}
@@ -520,6 +532,15 @@ export default function Staff() {
             </div>
             <div className="flex flex-col gap-2">
               <Label>Requests per day</Label>
+
+              <Input
+                type="number"
+                placeholder="Leave blank to keep existing"
+                value={bulkReqPerDay}
+                onChange={(e) => setBulkReqPerDay(e.target.value)}
+                min={1}
+                disabled={bulkUnlimited}
+              />
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="bulk-unlimited"
@@ -534,14 +555,6 @@ export default function Staff() {
                   Unlimited
                 </Label>
               </div>
-              <Input
-                type="number"
-                placeholder="Leave blank to keep existing"
-                value={bulkReqPerDay}
-                onChange={(e) => setBulkReqPerDay(e.target.value)}
-                min={1}
-                disabled={bulkUnlimited}
-              />
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -600,9 +613,89 @@ export default function Staff() {
               {selectedStaffIds.length !== 1 ? "s" : ""}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone.
+              This will permanently delete the selected accounts. Default
+              profiles and your own account will not be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {(() => {
+            const selected = staffData.filter((s) =>
+              selectedStaffIds.includes(s.id)
+            );
+            const nonDeletable = selected.filter(
+              (s) => s.defaultProfile || s.id === effectiveProfile?.id
+            );
+            const deletable = selected.filter(
+              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id
+            );
+            const impactedCohorts = deletable.map((s) => ({
+              staff: s,
+              cohorts: allCohorts.filter((c) => c.profileIds.includes(s.id)),
+            }));
+            return (
+              <div className="space-y-3">
+                {deletable.length > 0 && (
+                  <div>
+                    <p className="font-medium text-red-700 dark:text-red-400">
+                      The following accounts and their cohort memberships will
+                      be removed:
+                    </p>
+                    <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                      <ul className="text-sm space-y-2">
+                        {impactedCohorts.map(({ staff, cohorts }) => (
+                          <li
+                            key={staff.id}
+                            className="text-red-600 dark:text-red-300"
+                          >
+                            • {staff.firstName} {staff.lastName} ({staff.alias}){" "}
+                            {cohorts.length > 0 ? (
+                              <span className="text-xs text-muted-foreground">
+                                – affects {cohorts.length} cohort
+                                {cohorts.length > 1 ? "s" : ""}:{" "}
+                                {cohorts
+                                  .slice(0, 3)
+                                  .map((c) => c.title)
+                                  .join(", ")}
+                                {cohorts.length > 3
+                                  ? `, +${cohorts.length - 3} more`
+                                  : ""}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                – no cohort memberships
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                {nonDeletable.length > 0 && (
+                  <div>
+                    <p className="font-medium text-yellow-700 dark:text-yellow-400">
+                      The following accounts cannot be deleted and will be
+                      skipped:
+                    </p>
+                    <div className="mt-1 ml-4 max-h-24 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                      <ul className="text-sm space-y-1">
+                        {nonDeletable.map((s) => (
+                          <li
+                            key={s.id}
+                            className="text-yellow-700 dark:text-yellow-300"
+                          >
+                            • {s.firstName} {s.lastName} ({s.alias})
+                            {s.id === effectiveProfile?.id
+                              ? " – your account"
+                              : " – default profile"}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction

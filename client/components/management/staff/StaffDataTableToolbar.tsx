@@ -21,6 +21,7 @@ export interface StaffDataTableToolbarProps {
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   onCreate: () => void;
+  deletableCount?: number;
 }
 
 export function StaffDataTableToolbar({
@@ -35,6 +36,7 @@ export function StaffDataTableToolbar({
   onBulkEdit,
   onBulkDelete,
   onCreate,
+  deletableCount = 0,
 }: StaffDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -128,7 +130,7 @@ export function StaffDataTableToolbar({
               onClick={onBulkDelete}
               className="h-8"
             >
-              Delete ({selectedCount})
+              Delete {deletableCount} of {selectedCount}
             </Button>
           </div>
         )}

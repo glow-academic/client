@@ -428,15 +428,10 @@ export function useStaffColumns({
         },
       },
 
-      // Requests column (x/∞ with "used" sublabel) - sortable
+      // Requests column (x/∞ with "used" sublabel) - sortable by used only
       {
         id: "requests",
-        accessorFn: (row) => {
-          const used = row.requestsInLastDay ?? 0;
-          const limit = row.reqPerDay ?? Infinity;
-          const ratio = used / (limit === 0 ? 1 : limit);
-          return Number.isFinite(ratio) ? ratio : 0;
-        },
+        accessorFn: (row) => row.requestsInLastDay ?? 0,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Requests / day" />
         ),

@@ -49,6 +49,8 @@ export interface StaffDataTableProps {
   onDelete: (staff: StaffData) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
+  canDelete: (profileId: string) => boolean;
+  deletableCount: number;
 }
 
 export function StaffDataTable({
@@ -69,6 +71,8 @@ export function StaffDataTable({
   onDelete,
   onBulkEdit,
   onBulkDelete,
+  canDelete,
+  deletableCount,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -141,16 +145,18 @@ export function StaffDataTable({
             >
               <Edit className="h-3 w-3" />
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-              onClick={() => onDelete(staff)}
-              title="Delete Staff"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            {canDelete(staff.id) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                onClick={() => onDelete(staff)}
+                title="Delete Staff"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         );
       },
@@ -170,6 +176,7 @@ export function StaffDataTable({
     onPreview,
     onEdit,
     onDelete,
+    canDelete,
   ]);
 
   const table = useReactTable({
@@ -207,6 +214,7 @@ export function StaffDataTable({
         onBulkDelete={onBulkDelete}
         onBulkEdit={onBulkEdit}
         onCreate={onCreate}
+        deletableCount={deletableCount}
       />
       <div className="rounded-md border overflow-x-auto">
         <Table>

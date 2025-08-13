@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -41,7 +42,6 @@ import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { Separator } from "@/components/ui/separator";
 
 type ProfileRole = (typeof profileRole.enumValues)[number];
 
@@ -119,6 +119,8 @@ const getRoleIcon = (role: string) => {
       return User;
     case "ta":
       return User;
+    case "guest":
+      return User;
     default:
       return User;
   }
@@ -136,6 +138,8 @@ const getRoleDisplayName = (role: string) => {
       return "Instructor";
     case "ta":
       return "Teaching Assistant";
+    case "guest":
+      return "Guest";
     default:
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
@@ -152,6 +156,8 @@ const getRoleBadgeVariant = (role: string) => {
     case "instructor":
       return "secondary";
     case "ta":
+      return "outline";
+    case "guest":
       return "outline";
     default:
       return "outline";
@@ -205,6 +211,7 @@ const useNewStaffBusinessLogic = (onDone?: () => void) => {
         icon: User,
       },
       { value: "ta" as ProfileRole, label: "Teaching Assistant", icon: User },
+      { value: "guest" as ProfileRole, label: "Guest", icon: User },
     ];
 
     if (isCurrentUserAdmin) {
@@ -588,6 +595,12 @@ export interface NewStaffProps {
 export default function NewStaff({ onDone }: NewStaffProps) {
   const csvInputRef = useRef<HTMLInputElement>(null);
 
+  const resetFileInput = React.useCallback(() => {
+    if (csvInputRef.current) {
+      csvInputRef.current.value = "";
+    }
+  }, []);
+
   const {
     // State
     csvPreview,
@@ -674,13 +687,18 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                 </span>
               </Button>
               <div className="flex items-center gap-2">
-                {!(csvPreview.length > 0) && <Button
-                  variant="outline"
-                  onClick={() => onDone && onDone()}
-                  aria-label="Cancel"
-                >
-                  Back
-                </Button>}
+                {!(csvPreview.length > 0) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      resetFileInput();
+                      if (onDone) onDone();
+                    }}
+                    aria-label="Back"
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
                   onClick={handleCsvClick}
                   className="flex items-center gap-2"
@@ -700,7 +718,13 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                     Preview ({csvPreview.length} users)
                   </h3>
 
-                  <Button variant="destructive" onClick={clearCsvPreview}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      clearCsvPreview();
+                      resetFileInput();
+                    }}
+                  >
                     Clear All
                   </Button>
                 </div>
@@ -805,10 +829,14 @@ export default function NewStaff({ onDone }: NewStaffProps) {
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => onDone && onDone()}
-                      aria-label="Cancel"
+                      onClick={() => {
+                        clearCsvPreview();
+                        resetFileInput();
+                        if (onDone) onDone();
+                      }}
+                      aria-label="Back"
                     >
-                     Back
+                      Back
                     </Button>
                     <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
                       {isSubmitting
