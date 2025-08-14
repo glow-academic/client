@@ -190,32 +190,26 @@ export default function StaffManager({
   }, [isCohortMode, existingProfileIds, allCohorts, cohortId]);
 
   // Role availability (used in non-cohort mode manual add + CSV role validation)
-  const isCurrentUserAdmin = effectiveProfile?.role === "admin";
   const isCurrentUserSuperAdmin = effectiveProfile?.role === "superadmin";
 
   const availableRoles = useMemo(() => {
     const base: Array<{ value: RoleValue; label: string; icon: typeof User }> =
       [
-        { value: "instructional", label: "Instructional Staff", icon: Shield },
-        // The schema does not include "instructor"; keep UI parity by casting
-        {
-          value: "instructor" as unknown as RoleValue,
-          label: "Instructor",
-          icon: User,
-        },
+        { value: "instructional", label: "Instructional", icon: Shield },
         { value: "ta", label: "Teaching Assistant", icon: User },
         { value: "guest", label: "Guest", icon: User },
       ];
-    if (isCurrentUserAdmin)
+    // Only superadmin can assign admin and superadmin roles
+    if (isCurrentUserSuperAdmin) {
       base.unshift({ value: "admin", label: "Administrator", icon: Shield });
-    if (isCurrentUserSuperAdmin)
       base.unshift({
         value: "superadmin",
         label: "Super Administrator",
         icon: Shield,
       });
+    }
     return base;
-  }, [isCurrentUserAdmin, isCurrentUserSuperAdmin]);
+  }, [isCurrentUserSuperAdmin]);
 
   // Alias validation
   const [isValidatingAlias, setIsValidatingAlias] = useState(false);
@@ -589,7 +583,7 @@ export default function StaffManager({
       errors.alias = "Alias must be at least 2 characters";
     } else if (!/^[a-zA-Z0-9._-]+$/.test(manualProfileCohort.alias.trim())) {
       errors.alias =
-        "Alias can only contain letters, numbers, dots, underscores, and hyphens";
+        "Alias can only contain letters, numbers, dots, underscores, and hyphens. For example, if the email is redacted@purdue.edu, enter pete";
     }
 
     setCohortFormErrors(errors);
@@ -622,7 +616,7 @@ export default function StaffManager({
       errors.alias = "Alias must be at least 2 characters";
     } else if (!/^[a-zA-Z0-9._-]+$/.test(manualProfileGlobal.alias.trim())) {
       errors.alias =
-        "Alias can only contain letters, numbers, dots, underscores, and hyphens";
+        "Alias can only contain letters, numbers, dots, underscores, and hyphens. For example, if the email is redacted@purdue.edu, enter pete";
     }
 
     if (!manualProfileGlobal.role) {
@@ -1355,7 +1349,7 @@ export default function StaffManager({
                       </p>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full">
                     <Label htmlFor="manualRole">Role *</Label>
                     <Select
                       value={manualProfileGlobal.role}
@@ -1364,9 +1358,7 @@ export default function StaffManager({
                       }
                     >
                       <SelectTrigger
-                        className={
-                          globalFormErrors.role ? "border-red-500" : ""
-                        }
+                        className={`w-full ${globalFormErrors.role ? "border-red-500" : ""}`}
                       >
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
@@ -1406,24 +1398,30 @@ export default function StaffManager({
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
+                      {manualProfileGlobal.role === "superadmin" &&
+                        "Will have full access and user management permissions, plus system-wide settings."}
                       {manualProfileGlobal.role === "admin" &&
-                        "Will have full system access and user management permissions."}
+                        "Will have full access and user management permissions."}
                       {manualProfileGlobal.role === "instructional" &&
-                        "Will have permissions to manage instructors and teaching assistants."}
+                        "Will have permissions to manage teaching assistants."}
                       {manualProfileGlobal.role === "ta" &&
-                        "Will have permissions to assist with assigned cohorts."}
+                        "Will have permissions to take simulations and see their history."}
+                      {manualProfileGlobal.role === "guest" &&
+                        "Will only have access to practice simulations."}
                     </p>
                   </div>
                 )}
 
                 <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => onDone && onDone()}
-                    aria-label="Close"
-                  >
-                    Close
-                  </Button>
+                  {csvPreview.length === 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => onDone && onDone()}
+                      aria-label="Close"
+                    >
+                      Close
+                    </Button>
+                  )}
                   <Button
                     onClick={addManualProfileGlobal}
                     disabled={
