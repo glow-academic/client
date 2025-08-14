@@ -532,93 +532,98 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="timeLimit">Minutes Allowed</Label>
-          {formData?.timeLimit !== undefined && !isLoading ? (
-            <Input
-              id="timeLimit"
-              type="number"
-              min="1"
-              max="120"
-              value={formData.timeLimit || ""}
-              onChange={(e) =>
-                handleInputChange("timeLimit", parseInt(e.target.value) || null)
-              }
-              className={errors.timeLimit ? "border-destructive" : ""}
-              placeholder="Leave empty for no time limit"
-              disabled={isReadonly}
-            />
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
-          {errors.timeLimit && (
-            <p className="text-sm text-destructive">{errors.timeLimit}</p>
-          )}
-        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="timeLimit">Minutes Allowed</Label>
+            {formData?.timeLimit !== undefined && !isLoading ? (
+              <Input
+                id="timeLimit"
+                type="number"
+                min="1"
+                max="120"
+                value={formData.timeLimit || ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "timeLimit",
+                    parseInt(e.target.value) || null
+                  )
+                }
+                className={errors.timeLimit ? "border-destructive" : ""}
+                placeholder="Leave empty for no time limit"
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+            {errors.timeLimit && (
+              <p className="text-sm text-destructive">{errors.timeLimit}</p>
+            )}
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="rubricId">Rubric</Label>
-          {formData?.rubricId !== undefined && !isLoading ? (
-            isReadonly ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className={`${errors.rubricId ? "border-destructive" : ""} w-full justify-between`}
-                disabled
-              >
-                <span className="truncate text-left">
-                  {(() => {
+          <div className="space-y-2">
+            <Label htmlFor="rubricId">Rubric</Label>
+            {formData?.rubricId !== undefined && !isLoading ? (
+              isReadonly ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`${errors.rubricId ? "border-destructive" : ""} w-full justify-between`}
+                  disabled
+                >
+                  <span className="truncate text-left">
+                    {(() => {
+                      const selected = rubrics.find(
+                        (r: Rubric) => r.id === formData.rubricId
+                      );
+                      return selected ? selected.name : "No rubric selected";
+                    })()}
+                  </span>
+                </Button>
+              ) : (
+                <RubricPicker
+                  rubrics={rubrics
+                    .filter((rubric: Rubric) => rubric.active)
+                    .map(
+                      (r: Rubric) =>
+                        ({
+                          id: r.id,
+                          name: r.name,
+                          description: r.description,
+                          points: r.points,
+                          active: r.active,
+                        }) as RubricPickerItem
+                    )}
+                  placeholder="Select a rubric..."
+                  onSelect={(selected) =>
+                    handleInputChange("rubricId", selected[0]?.id || "")
+                  }
+                  selectedRubrics={(() => {
                     const selected = rubrics.find(
                       (r: Rubric) => r.id === formData.rubricId
                     );
-                    return selected ? selected.name : "No rubric selected";
+                    return selected
+                      ? [
+                          {
+                            id: selected.id,
+                            name: selected.name,
+                            description: selected.description,
+                            points: selected.points,
+                            active: selected.active,
+                          } as RubricPickerItem,
+                        ]
+                      : [];
                   })()}
-                </span>
-              </Button>
+                  hideSelectedChips={true}
+                  buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
+                />
+              )
             ) : (
-              <RubricPicker
-                rubrics={rubrics
-                  .filter((rubric: Rubric) => rubric.active)
-                  .map(
-                    (r: Rubric) =>
-                      ({
-                        id: r.id,
-                        name: r.name,
-                        description: r.description,
-                        points: r.points,
-                        active: r.active,
-                      }) as RubricPickerItem
-                  )}
-                placeholder="Select a rubric..."
-                onSelect={(selected) =>
-                  handleInputChange("rubricId", selected[0]?.id || "")
-                }
-                selectedRubrics={(() => {
-                  const selected = rubrics.find(
-                    (r: Rubric) => r.id === formData.rubricId
-                  );
-                  return selected
-                    ? [
-                        {
-                          id: selected.id,
-                          name: selected.name,
-                          description: selected.description,
-                          points: selected.points,
-                          active: selected.active,
-                        } as RubricPickerItem,
-                      ]
-                    : [];
-                })()}
-                hideSelectedChips={true}
-                buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
-              />
-            )
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
-          {errors.rubricId && (
-            <p className="text-sm text-destructive">{errors.rubricId}</p>
-          )}
+              <Skeleton className="h-10 w-full" />
+            )}
+            {errors.rubricId && (
+              <p className="text-sm text-destructive">{errors.rubricId}</p>
+            )}
+          </div>
         </div>
 
         {/* Active/Inactive, Default Simulation, and Practice Simulation Switches */}
