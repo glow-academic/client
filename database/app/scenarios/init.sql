@@ -40,6 +40,5 @@ CREATE TABLE scenarios (
   practice_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   parent_id UUID        NULL DEFAULT NULL,
-  active BOOLEAN     NOT NULL DEFAULT TRUE,
-  checkpoints TEXT[] NULL DEFAULT NULL
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );

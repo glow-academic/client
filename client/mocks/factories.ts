@@ -291,7 +291,6 @@ export function createMockScenario(overrides: Partial<Scenario> = {}): Scenario 
     generated: faker.datatype.boolean(),
     parentId: faker.string.uuid(),
     active: faker.datatype.boolean(),
-    checkpoints: [],
   };
 
   return { ...defaults, ...overrides } as Scenario;
@@ -346,7 +345,6 @@ export function createMockSimulationChatGrade(overrides: Partial<SimulationChatG
     timeTaken: faker.number.int({ min: 1, max: 1000 }),
     rubricId: faker.string.uuid(),
     simulationChatId: faker.string.uuid(),
-    checkpointsReached: [],
   };
 
   return { ...defaults, ...overrides } as SimulationChatGrade;

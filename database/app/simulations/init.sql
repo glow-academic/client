@@ -60,8 +60,7 @@ CREATE TABLE simulation_chat_grades (
     score      INTEGER     NOT NULL,
     time_taken INTEGER     NOT NULL, -- in seconds
     rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
-    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
-    checkpoints_reached BOOLEAN[] NOT NULL DEFAULT ARRAY[]::BOOLEAN[]
+    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE
   );
 
   CREATE TABLE simulation_chat_feedbacks (

@@ -69,7 +69,7 @@ export const profiles = pgTable("profiles", {
 	role: profileRole().default('guest').notNull(),
 	defaultProfile: boolean("default_profile").default(false).notNull(),
 	active: boolean().default(false).notNull(),
-	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }),
 	reqPerDay: integer("req_per_day"),
 }, (table) => [
 	foreignKey({
@@ -132,15 +132,15 @@ export const standardGroups = pgTable("standard_groups", {
 
 export const appLogs = pgTable("app_logs", {
 	id: serial().primaryKey().notNull(),
-	event: text().notNull(),
-	level: text().notNull(),
-	message: text(),
-	correlationId: text("correlation_id"),
-	actor: jsonb(),
-	subject: jsonb(),
-	metrics: jsonb(),
-	context: jsonb(),
-	error: jsonb(),
+	event: text().default('default.event').notNull(),
+	level: text().default('info').notNull(),
+	message: text().default('Default Message'),
+	correlationId: text("correlation_id").default('default.correlation'),
+	actor: jsonb().default({"userId":null,"profileId":null}),
+	subject: jsonb().default({"entityId":null,"entityType":null}),
+	metrics: jsonb().default({"size":null,"count":null,"durationMs":null}),
+	context: jsonb().default({"route":null,"function":null,"component":null}),
+	error: jsonb().default({"code":null,"name":null,"stack":null,"message":null}),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
@@ -326,7 +326,6 @@ export const scenarios = pgTable("scenarios", {
 	generated: boolean().default(false).notNull(),
 	parentId: uuid("parent_id"),
 	active: boolean().default(true).notNull(),
-	checkpoints: text().array(),
 }, (table) => [
 	foreignKey({
 			columns: [table.personaId],
@@ -451,7 +450,6 @@ export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	timeTaken: integer("time_taken").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
 	simulationChatId: uuid("simulation_chat_id").notNull(),
-	checkpointsReached: boolean("checkpoints_reached").array().default([false]).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.rubricId],

@@ -8,13 +8,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  GripVertical,
   Loader2,
-  PlusCircle,
   RotateCcw,
   Settings,
   Shuffle,
-  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -40,7 +37,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,7 +99,6 @@ export default function Scenario({
     description: "",
     defaultScenario: false,
     practiceScenario: false,
-    checkpoints: [],
   };
 
   const [formData, setFormData] =
@@ -118,9 +113,6 @@ export default function Scenario({
   const [originalFormData, setOriginalFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
-  const [draggedCheckpointIndex, setDraggedCheckpointIndex] = useState<
-    number | null
-  >(null);
 
   // Data fetching
   const { data: documents = [] } = useQuery({
@@ -167,7 +159,6 @@ export default function Scenario({
         description: scenario.description || "",
         defaultScenario: scenario.defaultScenario ?? false,
         practiceScenario: scenario.practiceScenario ?? false,
-        checkpoints: scenario.checkpoints || [],
       };
       setFormData(scenarioData);
       setOriginalFormData(scenarioData); // Set original data for comparison
@@ -190,9 +181,7 @@ export default function Scenario({
       JSON.stringify(current.documentIds?.sort()) !==
         JSON.stringify(original.documentIds?.sort()) ||
       JSON.stringify(current.parameterItemIds?.sort()) !==
-        JSON.stringify(original.parameterItemIds?.sort()) ||
-      JSON.stringify(current.checkpoints || []) !==
-        JSON.stringify(original.checkpoints || [])
+        JSON.stringify(original.parameterItemIds?.sort())
     );
   }, [formData, originalFormData, isEditMode]);
 
@@ -283,58 +272,6 @@ export default function Scenario({
     value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Checkpoint handlers
-  const addCheckpoint = () => {
-    setFormData((prev) => ({
-      ...prev,
-      checkpoints: [...(prev.checkpoints || []), ""],
-    }));
-  };
-
-  const removeCheckpoint = (index: number) => {
-    setFormData((prev) => {
-      const next = [...(prev.checkpoints || [])];
-      next.splice(index, 1);
-      return { ...prev, checkpoints: next };
-    });
-  };
-
-  const updateCheckpoint = (index: number, value: string) => {
-    setFormData((prev) => {
-      const next = [...(prev.checkpoints || [])];
-      next[index] = value;
-      return { ...prev, checkpoints: next };
-    });
-  };
-
-  const handleDragStartCheckpoint = (
-    e: React.DragEvent<HTMLDivElement>,
-    index: number
-  ) => {
-    setDraggedCheckpointIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDropCheckpoint = (
-    e: React.DragEvent<HTMLDivElement>,
-    targetIndex: number
-  ) => {
-    e.preventDefault();
-    if (draggedCheckpointIndex === null) return;
-    setFormData((prev) => {
-      const next = [...(prev.checkpoints || [])];
-      const [removed] = next.splice(draggedCheckpointIndex, 1);
-      next.splice(targetIndex, 0, removed || "");
-      return { ...prev, checkpoints: next };
-    });
-    setDraggedCheckpointIndex(null);
   };
 
   const handleRandomizeParameters = async () => {
@@ -471,7 +408,7 @@ export default function Scenario({
 
   const handleResetContent = () => {
     try {
-      setFormData((prev) => ({ ...prev, description: "", checkpoints: [] }));
+      setFormData((prev) => ({ ...prev, description: "" }));
       toast.success("Scenario content reset");
     } catch (error) {
       log.error("scenario.content.reset.failed", {
@@ -492,9 +429,6 @@ export default function Scenario({
         documentIds: formData.documentIds || [],
         parameterItemIds: formData.parameterItemIds || [],
         profileId: effectiveProfile?.id || null,
-        checkpoints: (formData.checkpoints || [])
-          .map((c) => (c ?? "").trim())
-          .filter((c) => c.length > 0),
       });
 
       if (!result.success) {
@@ -506,7 +440,6 @@ export default function Scenario({
           ...prev,
           name: result.title || prev.name || "",
           description: result.description || prev.description || "",
-          checkpoints: result.checkpoints || prev.checkpoints || [],
         }));
         toast.success("Scenario generated successfully!");
       } else {
@@ -538,9 +471,6 @@ export default function Scenario({
         parameterItemIds: formData.parameterItemIds,
         defaultScenario: formData.defaultScenario || false,
         practiceScenario: formData.practiceScenario || false,
-        checkpoints: (formData.checkpoints || [])
-          .map((c) => (c ?? "").trim())
-          .filter((c) => c.length > 0),
       };
 
       if (isEditMode) {
@@ -1047,63 +977,6 @@ export default function Scenario({
                 disabled={isReadonly}
               />
             </div>
-
-            {/* Checkpoints Section */}
-            {
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Add checkpoints for the scenario. You can think of these as
-                  general steps the TA should reach.
-                </p>
-
-                <div className="space-y-2">
-                  {(formData.checkpoints || []).map((checkpoint, index) => (
-                    <div
-                      key={`checkpoint-${index}`}
-                      className={`flex items-center gap-2 rounded-md p-2 bg-white ${
-                        draggedCheckpointIndex === index ? "opacity-50" : ""
-                      }`}
-                      draggable={!isReadonly}
-                      onDragStart={(e) => handleDragStartCheckpoint(e, index)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDropCheckpoint(e, index)}
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <Input
-                        value={checkpoint || ""}
-                        onChange={(e) =>
-                          updateCheckpoint(index, e.target.value)
-                        }
-                        placeholder={`Checkpoint ${index + 1}`}
-                        className="flex-1"
-                        disabled={isReadonly}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => removeCheckpoint(index)}
-                        className="h-8 w-8"
-                        disabled={isReadonly}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addCheckpoint}
-                    disabled={isReadonly}
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add checkpoint
-                  </Button>
-                </div>
-              </div>
-            }
           </CardContent>
         </Card>
       </div>

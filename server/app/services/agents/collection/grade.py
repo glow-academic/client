@@ -18,7 +18,6 @@ from app.utils.debug_info import DebugContext
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
 from app.utils.rubric import get_dynamic_rubric
-from app.utils.scenario import get_checkpoints_info
 from fastapi import Depends
 from pydantic import BaseModel, Field, create_model
 from sqlmodel import Session, select
@@ -75,7 +74,6 @@ def create_dynamic_rubric_model(
 
     # Add overall fields
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
-    fields["checkpoints"] = (list[bool], Field(description="List of checkpoints passed"))
 
     # Optional internal debug field (never shown to end users)
     fields["debug_info"] = (Optional[str], Field(default=None, description="Optional internal debug info"))
@@ -131,10 +129,6 @@ async def run_grade_agent(
 
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
-
-        if scenario.checkpoints:
-            checkpoint_info = get_checkpoints_info(scenario.checkpoints)
-            input_items.append(checkpoint_info)
 
         # Get the simulation attempt to find the simulation
         attempt = session.exec(
@@ -281,29 +275,6 @@ async def run_grade_agent(
             f"Time calculation: current={current_time}, created={chat_created_at}, taken={time_taken}s"
         )
 
-        # Extract overall grading data
-        checkpoints = getattr(grading_result, "checkpoints", [])
-
-        # Normalize checkpoints length to match scenario.checkpoints
-        try:
-            expected_len = len(scenario.checkpoints or [])
-            # Ensure list[bool]
-            checkpoints_list: list[bool] = [bool(x) for x in list(checkpoints or [])]
-            if expected_len != len(checkpoints_list):
-                logger.warning(
-                    f"Model returned {len(checkpoints_list)} checkpoints; expected {expected_len}. Normalizing."
-                )
-            # pad with False then truncate to expected length
-            if expected_len > 0:
-                checkpoints_list = (checkpoints_list + [False] * expected_len)[:expected_len]
-            else:
-                checkpoints_list = []
-            checkpoints = checkpoints_list
-        except Exception:
-            # Fallback defensively
-            logger.exception("Failed to normalize checkpoints; defaulting to empty list")
-            checkpoints = []
-
         # calculate overall score, sum over only the numeric score fields
         overall_score = 0
         for score_field in expected_score_fields:
@@ -326,7 +297,6 @@ async def run_grade_agent(
             time_taken=time_taken,
             rubric_id=rubric_id,
             simulation_chat_id=simulation_chat_id,
-            checkpoints_reached=checkpoints,
         )
 
         session.add(simulation_chat_grade)

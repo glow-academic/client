@@ -154,18 +154,16 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Generate scenario description if empty
             if not scenario.description or scenario.description == "":
-                name, description, checkpoints, trace_id = await run_scenario_agent(
+                name, description, trace_id = await run_scenario_agent(
                     persona_id=scenario.persona_id,
                     document_ids=scenario.document_ids,
                     parameter_item_ids=scenario.parameter_item_ids,
-                    checkpoints=scenario.checkpoints,
                     group_id=new_attempt.id,
                     session=db_session,
                     profile_id=new_attempt.profile_id,
                 )
                 scenario.name = name
                 scenario.description = description
-                scenario.checkpoints = checkpoints
                 chat_title = scenario.name
             else:
                 chat_title = scenario.name
@@ -337,18 +335,16 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             ) -> Tuple[Scenarios, str, str]:
                 scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
                 if not scenario.description or scenario.description == "":
-                    name, description, checkpoints, trace_id = await run_scenario_agent(
+                    name, description, trace_id = await run_scenario_agent(
                         persona_id=scenario.persona_id,
                         document_ids=scenario.document_ids,
                         parameter_item_ids=scenario.parameter_item_ids,
-                        checkpoints=scenario.checkpoints,
                         group_id=attempt_id,
                         session=db_session,
                         profile_id=simulation_attempt.profile_id if simulation_attempt else None,
                     )
                     scenario.name = name
                     scenario.description = description
-                    scenario.checkpoints = checkpoints
                     chat_title = scenario.name
                 else:
                     chat_title = scenario.name

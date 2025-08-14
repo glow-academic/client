@@ -50,16 +50,6 @@ def _read_document_content_for_similarity(file_path: str) -> str:
 
 logger = logging.getLogger(__name__)
 
-
-def get_checkpoints_info(checkpoints: List[str]) -> TResponseInputItem:
-    """
-    Get the checkpoint information for a given checkpoints.
-    """
-    return {
-        "role": "user",
-        "content": "The following is the checkpoint information:\n" + "\n".join(checkpoints),
-    }
-
 def get_parameter_item_info(
     parameter_item_ids: List[uuid.UUID], session: Session
 ) -> TResponseInputItem:

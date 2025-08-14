@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 298
+- **Total Components**: 297
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 298
+- **Tests Skipped** (already implemented): 297
 
 ## Component Coverage
 
@@ -101,7 +101,6 @@
 | ProfileSelector | components/common/profile/ProfileSelector.tsx | ProfileSelector.test.tsx | ✅ Implemented |
 | RolePicker | components/common/profile/RolePicker.tsx | RolePicker.test.tsx | ✅ Implemented |
 | Provider | components/common/provider/Provider.tsx | Provider.test.tsx | ✅ Implemented |
-| CheckpointsReached | components/common/rubric/CheckpointsReached.tsx | CheckpointsReached.test.tsx | ✅ Implemented |
 | Rubric | components/common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | RubricDetails | components/common/rubric/RubricDetails.tsx | RubricDetails.test.tsx | ✅ Implemented |
 | RubricPicker | components/common/rubric/RubricPicker.tsx | RubricPicker.test.tsx | ✅ Implemented |
@@ -429,7 +428,6 @@ __tests__/
 │   │   ├── provider/
 │   │   │   ├── Provider.test.tsx
 │   │   ├── rubric/
-│   │   │   ├── CheckpointsReached.test.tsx
 │   │   │   ├── Rubric.test.tsx
 │   │   │   ├── RubricDetails.test.tsx
 │   │   │   ├── RubricPicker.test.tsx

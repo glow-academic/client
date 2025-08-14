@@ -37,15 +37,15 @@ class AppLogs(_Base, table=True):
     )
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    event: str = Field(sa_column=Column('event', Text))
-    level: str = Field(sa_column=Column('level', Text))
-    message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
-    correlation_id: Optional[str] = Field(default=None, sa_column=Column('correlation_id', Text))
-    actor: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('actor', JSONB))
-    subject: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('subject', JSONB))
-    metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('metrics', JSONB))
-    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
-    error: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('error', JSONB))
+    event: str = Field(sa_column=Column('event', Text, server_default=text("'default.event'::text")))
+    level: str = Field(sa_column=Column('level', Text, default=r'info'))
+    message: Optional[str] = Field(default=None, sa_column=Column('message', Text, default=r'Default Message'))
+    correlation_id: Optional[str] = Field(default=None, sa_column=Column('correlation_id', Text, server_default=text("'default.correlation'::text")))
+    actor: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('actor', JSONB, server_default=text('\'{"userId": null, "profileId": null}\'::jsonb')))
+    subject: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('subject', JSONB, server_default=text('\'{"entityId": null, "entityType": null}\'::jsonb')))
+    metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('metrics', JSONB, server_default=text('\'{"size": null, "count": null, "durationMs": null}\'::jsonb')))
+    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB, server_default=text('\'{"route": null, "function": null, "component": null}\'::jsonb')))
+    error: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('error', JSONB, server_default=text('\'{"code": null, "name": null, "stack": null, "message": null}\'::jsonb')))
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
@@ -274,8 +274,8 @@ class Profiles(_Base, table=True):
     role: str = Field(sa_column=Column('role', Enum('superadmin', 'admin', 'instructional', 'ta', 'guest', name='profile_role'), default=r'guest'))
     default_profile: bool = Field(sa_column=Column('default_profile', Boolean, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, default=False))
-    last_active: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_active', DateTime(True)))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
+    last_active: Optional[datetime] = Field(default=None, sa_column=Column('last_active', DateTime(True)))
     req_per_day: Optional[int] = Field(default=None, sa_column=Column('req_per_day', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
@@ -410,7 +410,6 @@ class Scenarios(_Base, table=True):
     parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
-    checkpoints: Optional[List[str]] = Field(default=None, sa_column=Column('checkpoints', ARRAY(Text())))
 
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
@@ -548,7 +547,6 @@ class SimulationChatGrades(_Base, table=True):
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     simulation_chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_id', Uuid(as_uuid=True)))
-    checkpoints_reached: List[bool] = Field(sa_column=Column('checkpoints_reached', ARRAY(Boolean(_create_events=False)), server_default=text('ARRAY[]::boolean[]')))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulation_chat_grades')
     simulation_chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_chat_grades')

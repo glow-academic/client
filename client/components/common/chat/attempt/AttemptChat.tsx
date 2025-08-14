@@ -462,9 +462,6 @@ export default function AttemptChat() {
                           <TableRubric
                             rubricId={simulationContext?.simulation?.rubricId}
                             simulationChatId={selectedChatId || ""}
-                            checkpointLabels={
-                              selectedScenario?.checkpoints || []
-                            }
                           />
                         </div>
                       ) : selectedChat ? (

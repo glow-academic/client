@@ -1072,7 +1072,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         }
                       }
 
-                      // 2) Ask server to generate scenario title/description/checkpoints
+                      // 2) Ask server to generate scenario title/description
                       const generated = await generateScenario({
                         personaId: selectedPersona.id,
                         parameterItemIds: finalParamItemIds,
@@ -1100,7 +1100,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         personaId: selectedPersona.id,
                         parameterItemIds: finalParamItemIds,
                         documentIds: randomizedDocumentIds,
-                        checkpoints: generated.checkpoints,
                         practiceScenario: true,
                         defaultScenario: false,
                         generated: true,

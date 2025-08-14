@@ -13,7 +13,6 @@ export interface NewScenarioParams {
   documentIds?: string[];
   parameterItemIds?: string[];
   profileId?: string | null;
-  checkpoints?: string[];
 }
 
 export interface NewScenarioResponse {
@@ -22,7 +21,6 @@ export interface NewScenarioResponse {
   status?: "success" | "error";
   title?: string;
   description?: string;
-  checkpoints?: string[];
 }
 
 export async function newScenario(
@@ -52,14 +50,7 @@ export async function newScenario(
     if (params.profileId) {
       formData.append("profile_id", params.profileId);
     }
-    if (params.checkpoints && params.checkpoints.length > 0) {
-      params.checkpoints.forEach((cp) => {
-        const value = (cp ?? "").trim();
-        if (value.length > 0) {
-          formData.append("checkpoints", value);
-        }
-      });
-    }
+
     const response = await fetch(`${getApiBase()}/scenarios/new`, {
       method: "POST",
       credentials: "include",
@@ -89,8 +80,7 @@ export async function newScenario(
       message: result.message || "Scenario generated successfully",
       status: result.status || "success",
       title: result.title,
-      description: result.description,
-      checkpoints: result.checkpoints,
+      description: result.description
     };
   } catch (error) {
     const errorMessage = `Error generating new scenario: ${error instanceof Error ? error.message : "Unknown error"}`;
