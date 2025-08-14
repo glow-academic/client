@@ -1424,17 +1424,11 @@ export default function StaffManager({
                   )}
                   <Button
                     onClick={addManualProfileGlobal}
-                    disabled={
-                      isValidatingAlias ||
-                      !manualProfileGlobal.firstName ||
-                      !manualProfileGlobal.lastName ||
-                      !manualProfileGlobal.alias ||
-                      !manualProfileGlobal.role
-                    }
+                    disabled={isValidatingAlias}
                     className="flex items-center gap-2"
                   >
                     <UserPlus className="h-4 w-4" />
-                    {isValidatingAlias ? "Validating..." : "Add to Preview"}
+                    {isValidatingAlias ? "Validating..." : "Add Staff"}
                   </Button>
                 </div>
               </div>
