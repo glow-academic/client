@@ -185,14 +185,14 @@ async def randomly_fill_scenario_attributes(
             tag_scores.sort(key=lambda x: x[1], reverse=True)
             chosen_tag = tag_scores[0][0] if tag_scores else "__untagged__"
             candidates = tag_to_docs.get(chosen_tag, [])
-            # Sort candidates by score and take up to 3, but sample randomly among top N
+            # Sort candidates by score and take 1, but sample randomly among top N
             cand_scored = [(d, _score(d)) for d in candidates]
             cand_scored.sort(key=lambda x: x[1], reverse=True)
             top_n = cand_scored[: min(6, len(cand_scored))]
-            k = min(3, len(top_n))
+            k = min(1, len(top_n))
             selected_docs = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
             logger.info(
-                f"Selected documents with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
+                f"Selected document with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
             )
 
             scenario_documents = [doc.id for doc in selected_docs]
@@ -483,10 +483,10 @@ def suggest_randomized_sections(
             # Pick a tag by weighted probability (less deterministic)
             chosen_tag = _weighted_choice(tag_scores) or (tag_scores[0][0] if tag_scores else "__untagged__")
             candidates = tag_to_docs.get(chosen_tag, [])
-            # Score candidates and sample up to 3 without replacement by weight
+            # Score candidates and sample 1 without replacement by weight
             cand_docs = candidates
             cand_scores = [score_doc(d) for d in cand_docs]
-            selected = _weighted_sample_without_replacement(cand_docs, cand_scores, 3)
+            selected = _weighted_sample_without_replacement(cand_docs, cand_scores, 1)
             suggested_document_ids = [d.id for d in selected]
 
     # Suggest parameters --------------------------------------------------
