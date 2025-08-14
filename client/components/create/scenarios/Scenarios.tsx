@@ -339,7 +339,7 @@ export function Scenarios() {
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
                 {scenario.practiceScenario && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="default" className="text-xs">
                     Practice
                   </Badge>
                 )}

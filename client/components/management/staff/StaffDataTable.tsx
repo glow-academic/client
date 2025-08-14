@@ -26,6 +26,12 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { StaffData } from "@/hooks/use-staff-columns";
 import { Edit, FileText, Trash2 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
@@ -42,7 +48,7 @@ export interface StaffDataTableProps {
   // New props for actions & selection
   selectedStaffIds: string[];
   onStaffSelect: (profileId: string, checked: boolean) => void;
-  onSelectAll: (checked: boolean) => void;
+  onSelectAll: (checked: boolean, visibleRowIds?: string[]) => void;
   onCreate: () => void;
   onPreview: (staff: StaffData) => void;
   onEdit: (staff: StaffData) => void;
@@ -101,7 +107,11 @@ export function StaffDataTable({
             }
             onCheckedChange={(value) => {
               table.toggleAllPageRowsSelected(!!value);
-              onSelectAll(!!value);
+              // Get the IDs of currently visible rows
+              const visibleRowIds = table
+                .getFilteredRowModel()
+                .rows.map((row) => row.original.id);
+              onSelectAll(!!value, visibleRowIds);
             }}
             aria-label="Select all"
             className="translate-y-[2px]"
@@ -129,39 +139,57 @@ export function StaffDataTable({
         const staff = row.original;
         return (
           <div className="flex items-center justify-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => onPreview(staff)}
-              title="View Reports"
-            >
-              <FileText className="h-3 w-3" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => onPreview(staff)}
+                >
+                  <FileText className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View Reports</p>
+              </TooltipContent>
+            </Tooltip>
             {canEdit(staff.id) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={() => onEdit(staff)}
-                title="Edit Staff"
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => onEdit(staff)}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit Staff</p>
+                </TooltipContent>
+              </Tooltip>
             )}
             {canDelete(staff.id) && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                onClick={() => onDelete(staff)}
-                title="Delete Staff"
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    onClick={() => onDelete(staff)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Delete Staff</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         );
@@ -208,86 +236,88 @@ export function StaffDataTable({
   });
 
   return (
-    <div className="space-y-2">
-      <StaffDataTableToolbar
-        table={table}
-        roleOptions={roleOptions}
-        cohortOptions={cohortOptions}
-        activityOptions={activityOptions}
-        lastActiveOptions={lastActiveOptions}
-        isRefreshing={isRefreshing}
-        onRefresh={onRefresh}
-        selectedCount={selectedStaffIds.length}
-        onBulkDelete={onBulkDelete}
-        onBulkEdit={onBulkEdit}
-        onCreate={onCreate}
-        deletableCount={deletableCount}
-        editableCount={editableCount}
-      />
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={`border-r py-2 text-xs text-center ${
-                        header.id === "select" ? "w-12" : ""
-                      } ${
-                        header.column.getCanSort()
-                          ? "cursor-pointer select-none pl-4"
-                          : ""
-                      }`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/30 transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="border-r px-3 py-2 text-center"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+    <TooltipProvider>
+      <div className="space-y-2">
+        <StaffDataTableToolbar
+          table={table}
+          roleOptions={roleOptions}
+          cohortOptions={cohortOptions}
+          activityOptions={activityOptions}
+          lastActiveOptions={lastActiveOptions}
+          isRefreshing={isRefreshing}
+          onRefresh={onRefresh}
+          selectedCount={selectedStaffIds.length}
+          onBulkDelete={onBulkDelete}
+          onBulkEdit={onBulkEdit}
+          onCreate={onCreate}
+          deletableCount={deletableCount}
+          editableCount={editableCount}
+        />
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        colSpan={header.colSpan}
+                        className={`border-r py-2 text-xs text-center ${
+                          header.id === "select" ? "w-12" : ""
+                        } ${
+                          header.column.getCanSort()
+                            ? "cursor-pointer select-none pl-4"
+                            : ""
+                        }`}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columnsWithActions.length}
-                  className="h-24 text-center px-6"
-                >
-                  No staff members found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="border-r px-3 py-2 text-center"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columnsWithActions.length}
+                    className="h-24 text-center px-6"
+                  >
+                    No staff members found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

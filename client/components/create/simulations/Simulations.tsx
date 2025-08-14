@@ -253,6 +253,11 @@ export function Simulations() {
                     ? `${simulation.timeLimit} minutes`
                     : "No time limit"}
                 </Badge>
+                {simulation.practiceSimulation && (
+                  <Badge variant="default" className="text-xs">
+                    Practice
+                  </Badge>
+                )}
               </div>
               {!simulation.active && (
                 <div className="flex items-center gap-2">

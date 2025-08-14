@@ -201,9 +201,7 @@ export default function Rubrics() {
                   <FileCheck className="h-4 w-4" />
                   Pass: {rubric.passPoints} pts ({passPercentage}%)
                 </div>
-                <Badge variant={rubric.active ? "default" : "secondary"}>
-                  {rubric.active ? "Active" : "Inactive"}
-                </Badge>
+                {!rubric.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
               {rubric.description && (
                 <p className="text-sm text-muted-foreground max-w-2xl">

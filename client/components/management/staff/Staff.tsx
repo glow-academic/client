@@ -404,9 +404,25 @@ export default function Staff() {
             checked ? [...prev, id] : prev.filter((x) => x !== id)
           )
         }
-        onSelectAll={(checked) =>
-          setSelectedStaffIds(checked ? staffData.map((s) => s.id) : [])
-        }
+        onSelectAll={(checked, visibleRowIds) => {
+          if (checked && visibleRowIds) {
+            // Select all visible rows
+            setSelectedStaffIds((prev) => {
+              const newSelection = [...prev];
+              visibleRowIds.forEach((id) => {
+                if (!newSelection.includes(id)) {
+                  newSelection.push(id);
+                }
+              });
+              return newSelection;
+            });
+          } else {
+            // Deselect all visible rows
+            setSelectedStaffIds((prev) =>
+              prev.filter((id) => !visibleRowIds?.includes(id))
+            );
+          }
+        }}
         onCreate={() => setShowCreateModal(true)}
         onPreview={(staff) => {
           window.open(
