@@ -15,11 +15,14 @@ from app.extensions import UPLOAD_FOLDER
 from app.models import Documents
 from app.services.agents.collection.classify import run_classify_agent
 from app.utils.mime_utils import get_content_type
+from dotenv import load_dotenv
 from fastapi import (APIRouter, Depends, File, HTTPException, Request,
                      Response, UploadFile)
 from fastapi.responses import FileResponse, JSONResponse
 from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
 from sqlmodel import Session, select
+
+load_dotenv()
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -228,7 +231,12 @@ async def tus_creation(request: Request) -> Response:
         f.write(f"length:{upload_length}\noffset:0")
 
     # Use the Next.js proxy endpoint for TUS uploads
-    location = f"/api/upload/{upload_id}"
+    # Include app prefix if it exists
+    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+    if app_prefix:
+        location = f"/{app_prefix}/api/upload/{upload_id}"
+    else:
+        location = f"/api/upload/{upload_id}"
 
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":
