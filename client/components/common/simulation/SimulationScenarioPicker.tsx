@@ -110,21 +110,35 @@ export function SimulationScenarioPicker({
     }
   }, [selectedScenarios, isPracticeSimulation]);
 
-  // Filter scenarios based on practice simulation toggle and other criteria
-  const baseScenarios = (
-    showOnlyActive ? scenarios.filter((scenario) => scenario.active) : scenarios
-  ).filter((scenario) => {
-    // Only show parent scenarios (parentId is null)
-    if (scenario.parentId !== null) return false;
+  // Filter scenarios based on practice simulation toggle and other criteria, then sort by updatedAt
+  const baseScenarios = React.useMemo(() => {
+    const filtered = (
+      showOnlyActive
+        ? scenarios.filter((scenario) => scenario.active)
+        : scenarios
+    ).filter((scenario) => {
+      // Only show parent scenarios (parentId is null)
+      if (scenario.parentId !== null) return false;
 
-    // If practice simulation is enabled, only show practice scenarios
-    if (isPracticeSimulation) {
-      return scenario.practiceScenario === true;
-    }
+      // If practice simulation is enabled, only show practice scenarios
+      if (isPracticeSimulation) {
+        return scenario.practiceScenario === true;
+      }
 
-    // If practice simulation is disabled, exclude practice scenarios
-    return scenario.practiceScenario !== true;
-  });
+      // If practice simulation is disabled, exclude practice scenarios
+      return scenario.practiceScenario !== true;
+    });
+
+    // Sort by updatedAt desc, then title
+    return filtered.sort((a, b) => {
+      const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      if (bd !== ad) return bd - ad;
+      const at = typeof a.title === "string" ? a.title : "";
+      const bt = typeof b.title === "string" ? b.title : "";
+      return at.localeCompare(bt);
+    });
+  }, [scenarios, showOnlyActive, isPracticeSimulation]);
 
   // Create a map of parameter items by ID for quick lookup
   const parameterItemsMap = React.useMemo(() => {
@@ -168,7 +182,7 @@ export function SimulationScenarioPicker({
     return rows;
   }, [baseScenarios, parameterItemsMap, parametersMap]);
 
-  // Apply parameter item filters (all-of)
+  // Apply parameter item filters (all-of) - baseScenarios is already sorted
   const filteredScenarios = React.useMemo(() => {
     if (filterParameterItemIds.length === 0) return baseScenarios;
     return baseScenarios.filter((sc) => {
@@ -176,18 +190,6 @@ export function SimulationScenarioPicker({
       return filterParameterItemIds.every((id) => ids.has(id));
     });
   }, [baseScenarios, filterParameterItemIds]);
-
-  // Sort by updatedAt desc, then title
-  const sortedFilteredScenarios = React.useMemo(() => {
-    return [...filteredScenarios].sort((a, b) => {
-      const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      if (bd !== ad) return bd - ad;
-      const at = typeof a.title === "string" ? a.title : "";
-      const bt = typeof b.title === "string" ? b.title : "";
-      return at.localeCompare(bt);
-    });
-  }, [filteredScenarios]);
 
   const handleSelect = (scenario: SimulationScenario) => {
     const isSelected = selectedScenarios.some((s) => s.id === scenario.id);
@@ -508,7 +510,7 @@ export function SimulationScenarioPicker({
                   </CommandGroup>
                 )}
                 <CommandGroup heading="Scenarios">
-                  {sortedFilteredScenarios.map((scenario) => {
+                  {filteredScenarios.map((scenario) => {
                     const isSelected = selectedScenarios.some(
                       (s) => s.id === scenario.id
                     );

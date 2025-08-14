@@ -131,7 +131,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Cohort filtering - empty array means all cohorts
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
-  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
   // Include practice data in analytics (legacy)
   const [includePractice, setIncludePractice] = useState<boolean>(false);
   // New dual flags for practice/assigned filtering

@@ -43,19 +43,19 @@ class GenericAgent:
         self.mcp_servers = mcp_servers or []
         self.output_guardrails: list[Any] = output_guardrails or []
         self.base_url = base_url
-        self.extra_body = None
+        self.extra_body =  None
+        self.reasoning: Reasoning | None = None
+
         # convert reasoning to the correct type
-        if reasoning == "low":
+        if reasoning == "minimal":
+            self.reasoning = Reasoning(effort="minimal")
+        elif reasoning == "low":
             self.reasoning = Reasoning(effort="low")
         elif reasoning == "medium":
             self.reasoning = Reasoning(effort="medium")
         elif reasoning == "high":
             self.reasoning = Reasoning(effort="high")
         else:
-            if reasoning == "minimal":
-                self.extra_body = {
-                    "reasoning_effort": "minimal",
-                }
             self.reasoning = Reasoning(effort=None)
 
         # decrypt the api key

@@ -199,28 +199,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
     }
   }, [simulation, isEditMode, initialFormData]);
 
-  // Check if form has changes
-  const hasChanges = useMemo(() => {
-    if (!isEditMode || !formData || !originalFormData) return false;
-
-    const current = formData;
-    const original = originalFormData;
-
-    const currentScenarioIds = current.scenarioIds || [];
-    const originalScenarioIds = original.scenarioIds || [];
-
-    return (
-      current.title !== original.title ||
-      current.description !== original.description ||
-      current.timeLimit !== original.timeLimit ||
-      current.rubricId !== original.rubricId ||
-      current.active !== original.active ||
-      current.defaultSimulation !== original.defaultSimulation ||
-      current.practiceSimulation !== original.practiceSimulation ||
-      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds)
-    );
-  }, [formData, originalFormData, isEditMode]);
-
   const handleInputChange = (
     field: keyof FormData,
     value: string | number | boolean | string[] | null
@@ -396,6 +374,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       practiceScenario: scenario.practiceScenario,
       parameterItemIds: scenario.parameterItemIds || [],
       parentId: scenario.parentId,
+      updatedAt: scenario.updatedAt,
     }));
   }, [scenarios]);
 
@@ -456,6 +435,36 @@ export default function Simulation({ simulationId }: SimulationProps) {
     practiceScenarioIds,
     regularScenarioIds,
     transformedScenarios,
+  ]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!isEditMode || !formData || !originalFormData) return false;
+
+    const current = formData;
+    const original = originalFormData;
+
+    // Get current scenario IDs from the separate state
+    const currentScenarioIds = [...regularScenarioIds, ...practiceScenarioIds];
+    const originalScenarioIds = original.scenarioIds || [];
+
+    return (
+      current.title !== original.title ||
+      current.description !== original.description ||
+      current.timeLimit !== original.timeLimit ||
+      current.rubricId !== original.rubricId ||
+      current.active !== original.active ||
+      current.defaultSimulation !== original.defaultSimulation ||
+      current.practiceSimulation !== original.practiceSimulation ||
+      JSON.stringify(currentScenarioIds.sort()) !==
+        JSON.stringify(originalScenarioIds.sort())
+    );
+  }, [
+    formData,
+    originalFormData,
+    isEditMode,
+    regularScenarioIds,
+    practiceScenarioIds,
   ]);
 
   // Get parameter badges for a scenario
