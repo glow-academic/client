@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -49,8 +49,22 @@ export function TagSelector({
   const [query, setQuery] = React.useState("");
 
   const suggestions = React.useMemo(() => {
-    return searchTags(query, knownTags).filter((t) => !value.includes(t));
-  }, [query, knownTags, value]);
+    return searchTags(query, knownTags);
+  }, [query, knownTags]);
+
+  const toggleTag = (tag: string) => {
+    const normalized = tag.trim();
+    if (!normalized) return;
+
+    if (value.includes(normalized)) {
+      // Remove tag if already selected
+      onChange(value.filter((t) => t !== normalized));
+    } else {
+      // Add tag if not selected
+      onChange([...value, normalized]);
+    }
+    setQuery("");
+  };
 
   const addTag = (tag: string) => {
     const normalized = tag.trim();
@@ -143,8 +157,11 @@ export function TagSelector({
               <CommandEmpty>No tags found</CommandEmpty>
               <CommandGroup heading="Suggestions">
                 {suggestions.map((tag) => (
-                  <CommandItem key={tag} onSelect={() => addTag(tag)}>
-                    {tag}
+                  <CommandItem key={tag} onSelect={() => toggleTag(tag)}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{tag}</span>
+                      {value.includes(tag) && <Check className="h-4 w-4" />}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -52,6 +52,7 @@ export interface SimulationScenario {
   defaultScenario?: boolean;
   practiceScenario?: boolean;
   parameterItemIds?: string[];
+  parentId?: string | null;
   updatedAt?: string;
 }
 
@@ -68,6 +69,7 @@ export interface SimulationScenarioPickerProps extends PopoverProps {
   showOnlyActive?: boolean;
   showLabel?: boolean;
   buttonClassName?: string;
+  isPracticeSimulation?: boolean;
 }
 
 export function SimulationScenarioPicker({
@@ -83,6 +85,7 @@ export function SimulationScenarioPicker({
   showOnlyActive = true,
   showLabel = true,
   buttonClassName,
+  isPracticeSimulation = false,
   ...props
 }: SimulationScenarioPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -94,10 +97,34 @@ export function SimulationScenarioPicker({
     string[]
   >([]);
 
-  // Filter scenarios to show only active ones if requested, and exclude practice scenarios
+  // Get current selection based on practice simulation mode
+  const currentSelection = React.useMemo(() => {
+    if (isPracticeSimulation) {
+      return selectedScenarios.filter(
+        (scenario) => scenario.practiceScenario === true
+      );
+    } else {
+      return selectedScenarios.filter(
+        (scenario) => scenario.practiceScenario !== true
+      );
+    }
+  }, [selectedScenarios, isPracticeSimulation]);
+
+  // Filter scenarios based on practice simulation toggle and other criteria
   const baseScenarios = (
     showOnlyActive ? scenarios.filter((scenario) => scenario.active) : scenarios
-  ).filter((scenario) => !scenario.practiceScenario);
+  ).filter((scenario) => {
+    // Only show parent scenarios (parentId is null)
+    if (scenario.parentId !== null) return false;
+
+    // If practice simulation is enabled, only show practice scenarios
+    if (isPracticeSimulation) {
+      return scenario.practiceScenario === true;
+    }
+
+    // If practice simulation is disabled, exclude practice scenarios
+    return scenario.practiceScenario !== true;
+  });
 
   // Create a map of parameter items by ID for quick lookup
   const parameterItemsMap = React.useMemo(() => {
@@ -199,14 +226,14 @@ export function SimulationScenarioPicker({
   };
 
   const getButtonText = () => {
-    if (selectedScenarios.length === 0) {
+    if (currentSelection.length === 0) {
       return placeholder;
     }
-    if (selectedScenarios.length === 1) {
-      const title = selectedScenarios[0]!.title;
+    if (currentSelection.length === 1) {
+      const title = currentSelection[0]!.title;
       return typeof title === "string" ? title : "Scenario selected";
     }
-    return `${selectedScenarios.length} scenarios selected`;
+    return `${currentSelection.length} scenarios selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -257,9 +284,9 @@ export function SimulationScenarioPicker({
       )}
 
       {/* Show selected items */}
-      {selectedScenarios.length > 0 && !hideSelectedChips && (
+      {currentSelection.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {selectedScenarios.map((scenario) => (
+          {currentSelection.map((scenario) => (
             <div
               key={scenario.id}
               className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
@@ -470,7 +497,7 @@ export function SimulationScenarioPicker({
                 />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedScenarios.length > 0 && (
+                {currentSelection.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
@@ -481,17 +508,21 @@ export function SimulationScenarioPicker({
                   </CommandGroup>
                 )}
                 <CommandGroup heading="Scenarios">
-                  {sortedFilteredScenarios.map((scenario) => (
-                    <ScenarioItem
-                      key={scenario.id}
-                      scenario={scenario}
-                      isSelected={selectedScenarios.some(
-                        (s) => s.id === scenario.id
-                      )}
-                      onPeek={(scenario) => setPeekedScenario(scenario)}
-                      onSelect={() => handleSelect(scenario)}
-                    />
-                  ))}
+                  {sortedFilteredScenarios.map((scenario) => {
+                    const isSelected = selectedScenarios.some(
+                      (s) => s.id === scenario.id
+                    );
+
+                    return (
+                      <ScenarioItem
+                        key={scenario.id}
+                        scenario={scenario}
+                        isSelected={isSelected}
+                        onPeek={(scenario) => setPeekedScenario(scenario)}
+                        onSelect={() => handleSelect(scenario)}
+                      />
+                    );
+                  })}
                 </CommandGroup>
               </CommandList>
             </Command>

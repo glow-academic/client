@@ -177,46 +177,50 @@ export function UploadClassificationDialog({
 
         {/* ZIP-specific panel removed; apply-to-all controls below cover ZIP behavior */}
 
-        {/* Apply to all controls above the file list */}
-        <div className="rounded-md border p-3 bg-muted/40 mb-4">
-          <div className="text-sm font-medium mb-3">
-            Apply to all files below
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <Select onValueChange={(v) => applyTypeToAll(v as DocumentType)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Apply to all controls above the file list - only show when multiple files */}
+        {files.length > 1 && (
+          <div className="rounded-md border p-3 bg-muted/40 mb-4">
+            <div className="text-sm font-medium mb-3">
+              Apply to all files below
             </div>
-            <div>
-              <TagSelector
-                value={applyAllTempTags}
-                onChange={(next) => {
-                  setApplyAllTempTags((prev) => {
-                    const added = next.filter((t) => !prev.includes(t));
-                    const removed = prev.filter((t) => !next.includes(t));
-                    if (added.length) applyTagsToAll(added);
-                    if (removed.length) removeTagsFromAll(removed);
-                    return next;
-                  });
-                }}
-                knownTags={knownTags}
-                placeholder="Add tags for all files..."
-                badgesPosition="below"
-                showClearAll
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Select
+                  onValueChange={(v) => applyTypeToAll(v as DocumentType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <TagSelector
+                  value={applyAllTempTags}
+                  onChange={(next) => {
+                    setApplyAllTempTags((prev) => {
+                      const added = next.filter((t) => !prev.includes(t));
+                      const removed = prev.filter((t) => !next.includes(t));
+                      if (added.length) applyTagsToAll(added);
+                      if (removed.length) removeTagsFromAll(removed);
+                      return next;
+                    });
+                  }}
+                  knownTags={knownTags}
+                  placeholder="Add tags for all files..."
+                  badgesPosition="below"
+                  showClearAll
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-4 max-h-[50vh] overflow-auto pr-1">
           {files.map((file) => {
@@ -353,58 +357,58 @@ export function UploadClassificationDialog({
           })}
         </div>
 
-        {/* Add documents inside modal */}
-        <div className="mt-4">
-          <input
-            type="file"
-            multiple
-            onChange={(e) => {
-              const list = e.target.files;
-              if (list && list.length > 0) {
-                const next = Array.from(list);
-                onAddFiles?.(next);
-                // reset input so same file can be selected again later
-                e.currentTarget.value = "";
-              }
-            }}
-            accept={[
-              "application/pdf",
-              "image/*",
-              "application/msword",
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-              "text/plain",
-              "application/zip",
-              "text/html",
-              ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
-            ].join(",")}
-            className="hidden"
-            id="upload-dialog-file-input"
-          />
-          <Button
-            type="button"
-            className="w-full"
-            onClick={() => {
-              const el = document.getElementById(
-                "upload-dialog-file-input"
-              ) as HTMLInputElement | null;
-              el?.click();
-            }}
-          >
-            Add Documents
-          </Button>
-        </div>
-
         <DialogFooter className="mt-4">
-          <div className="flex items-center justify-end gap-2 w-full">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => onConfirm(perFile, zipDefaults)}
-            >
-              Start Upload
-            </Button>
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  const list = e.target.files;
+                  if (list && list.length > 0) {
+                    const next = Array.from(list);
+                    onAddFiles?.(next);
+                    // reset input so same file can be selected again later
+                    e.currentTarget.value = "";
+                  }
+                }}
+                accept={[
+                  "application/pdf",
+                  "image/*",
+                  "application/msword",
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "text/plain",
+                  "application/zip",
+                  "text/html",
+                  ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
+                ].join(",")}
+                className="hidden"
+                id="upload-dialog-file-input"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  const el = document.getElementById(
+                    "upload-dialog-file-input"
+                  ) as HTMLInputElement | null;
+                  el?.click();
+                }}
+              >
+                Add More Documents
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => onConfirm(perFile, zipDefaults)}
+              >
+                Start Upload
+              </Button>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

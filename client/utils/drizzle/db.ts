@@ -9,8 +9,22 @@ const db_host = process.env["DB_HOST"];
 
 export const db_url = `postgresql://${db_user}:${db_password}@${db_host}:${db_port}/${db_name}`;
 
-// Create the postgres client
-const client = postgres(db_url);
+// Global declaration for TypeScript
+declare global {
+  // eslint-disable-next-line no-var
+  var postgresClient: postgres.Sql | undefined;
+}
 
-// Create the Drizzle database instance
+// In development, use a global variable to preserve the client across hot reloads.
+// In production, this is not necessary but doesn't hurt.
+const client = globalThis.postgresClient || postgres(db_url);
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.postgresClient = client;
+}
+
+// Export the shared client for direct use
+export const sql = client;
+
+// Create the Drizzle database instance using the shared client
 export const db = drizzle(client);

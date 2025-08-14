@@ -1,3 +1,4 @@
+import { sql } from "@/utils/drizzle/db";
 import { NextResponse } from "next/server";
 
 type LogEntryPayload = {
@@ -32,11 +33,7 @@ function ensureJson(value: unknown): JSONValue | null {
 
 // We import server transport lazily to keep client bundle clean
 async function logToDatabase(entry: LogEntryPayload) {
-  const { db_url } = await import("@/utils/drizzle/db");
-  const postgres = (await import("postgres")).default;
-  const sql = db_url ? postgres(db_url) : null;
-  if (!sql) throw new Error("PostgreSQL connection not available");
-
+  // ✅ Use the imported, shared 'sql' instance directly instead of creating a new connection
   const {
     event,
     level,
@@ -49,17 +46,24 @@ async function logToDatabase(entry: LogEntryPayload) {
     error,
   } = entry ?? {};
 
+  // Pre-compute JSON values to avoid issues with IIFEs in SQL template
+  const actorJson = ensureJson(actor);
+  const subjectJson = ensureJson(subject);
+  const metricsJson = ensureJson(metrics);
+  const contextJson = ensureJson(context);
+  const errorJson = ensureJson(error);
+
   await sql`
     INSERT INTO app_logs (
       event, level, message, correlation_id, actor, subject, metrics, context, error, created_at
     ) VALUES (
       ${event ?? "legacy.message"}, ${level ?? "info"}, ${message ?? null}, ${correlation?.correlationId ?? null},
-      ${actor ? sql.json(ensureJson(actor)) : null},
-      ${subject ? sql.json(ensureJson(subject)) : null},
-      ${metrics ? sql.json(ensureJson(metrics)) : null},
-      ${context ? sql.json(ensureJson(context)) : null},
-      ${error ? sql.json(ensureJson(error)) : null},
-      ${new Date()}
+      ${actorJson ? JSON.stringify(actorJson) : null},
+      ${subjectJson ? JSON.stringify(subjectJson) : null},
+      ${metricsJson ? JSON.stringify(metricsJson) : null},
+      ${contextJson ? JSON.stringify(contextJson) : null},
+      ${errorJson ? JSON.stringify(errorJson) : null},
+      ${new Date().toISOString()}
     )
   `;
 }

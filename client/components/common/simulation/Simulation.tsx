@@ -303,8 +303,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
       let result;
       const targetSimulationId = simulationId || editingSimulationId;
       if (targetSimulationId) {
+        // Save only the scenarios that correspond to the current practiceSimulation state
+        const scenarioIdsToSave = formData?.practiceSimulation
+          ? practiceScenarioIds
+          : regularScenarioIds;
+
         result = await updateSimulation(targetSimulationId, {
           ...formData,
+          scenarioIds: scenarioIdsToSave,
           description: formData?.description ?? "",
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
@@ -312,11 +318,16 @@ export default function Simulation({ simulationId }: SimulationProps) {
         });
         toast.success("Simulation updated successfully!");
       } else {
+        // Save only the scenarios that correspond to the current practiceSimulation state
+        const scenarioIdsToSave = formData?.practiceSimulation
+          ? practiceScenarioIds
+          : regularScenarioIds;
+
         result = await createSimulation({
           title: formData?.title || "",
           description: formData?.description ?? "",
           rubricId: formData?.rubricId || "",
-          scenarioIds: formData?.scenarioIds || [],
+          scenarioIds: scenarioIdsToSave,
           timeLimit: formData?.timeLimit || null,
           active: formData?.active || true,
           defaultSimulation: formData?.defaultSimulation || false,
@@ -384,28 +395,68 @@ export default function Simulation({ simulationId }: SimulationProps) {
       defaultScenario: scenario.defaultScenario,
       practiceScenario: scenario.practiceScenario,
       parameterItemIds: scenario.parameterItemIds || [],
+      parentId: scenario.parentId,
     }));
   }, [scenarios]);
 
-  // Compute selected scenarios from formData
-  const selectedScenarios = useMemo(() => {
-    if (!formData?.scenarioIds || transformedScenarios.length === 0) {
-      return [];
+  // Maintain separate state for regular and practice scenarios
+  const [regularScenarioIds, setRegularScenarioIds] = React.useState<string[]>(
+    []
+  );
+  const [practiceScenarioIds, setPracticeScenarioIds] = React.useState<
+    string[]
+  >([]);
+
+  // Initialize separate state from formData.scenarioIds
+  React.useEffect(() => {
+    if (!formData?.scenarioIds || formData.scenarioIds.length === 0) {
+      setRegularScenarioIds([]);
+      setPracticeScenarioIds([]);
+      return;
     }
-    // Preserve the order as specified in formData.scenarioIds
-    return formData.scenarioIds
-      ?.map((id) => transformedScenarios.find((s) => s.id === id))
-      .filter(Boolean) as SimulationScenario[];
-  }, [formData?.scenarioIds, transformedScenarios]);
+
+    const regularIds: string[] = [];
+    const practiceIds: string[] = [];
+
+    formData.scenarioIds.forEach((scenarioId) => {
+      const scenario = scenarios.find((s) => s.id === scenarioId);
+      if (scenario?.practiceScenario) {
+        practiceIds.push(scenarioId);
+      } else {
+        regularIds.push(scenarioId);
+      }
+    });
+
+    setRegularScenarioIds(regularIds);
+    setPracticeScenarioIds(practiceIds);
+  }, [formData?.scenarioIds, scenarios]);
 
   // Handle scenario selection from picker
-  const handleScenarioSelection = (selectedScenarios: SimulationScenario[]) => {
-    const scenarioIds = selectedScenarios.map((scenario) => scenario.id);
-    setFormData((prev) => ({
-      ...prev,
-      scenarioIds,
-    }));
+  const handleScenarioSelection = (scenarios: SimulationScenario[]) => {
+    const scenarioIds = scenarios.map((scenario) => scenario.id);
+
+    // Update the appropriate state based on current mode
+    if (formData?.practiceSimulation) {
+      setPracticeScenarioIds(scenarioIds);
+    } else {
+      setRegularScenarioIds(scenarioIds);
+    }
   };
+
+  // Combine scenarios based on current mode for display
+  const selectedScenarios = React.useMemo(() => {
+    const currentIds = formData?.practiceSimulation
+      ? practiceScenarioIds
+      : regularScenarioIds;
+    return currentIds
+      ?.map((id) => transformedScenarios.find((s) => s.id === id))
+      .filter(Boolean) as SimulationScenario[];
+  }, [
+    formData?.practiceSimulation,
+    practiceScenarioIds,
+    regularScenarioIds,
+    transformedScenarios,
+  ]);
 
   // Get parameter badges for a scenario
   const getScenarioParameterBadges = (scenario: Scenario) => {
@@ -654,6 +705,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 hideSelectedChips={true}
                 showOnlyActive={true}
                 showLabel={false}
+                isPracticeSimulation={formData?.practiceSimulation ?? false}
               />
             )}
           </div>

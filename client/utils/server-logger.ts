@@ -1,5 +1,6 @@
 // Server-only structured logger that writes directly to Postgres.
 // Safe to import from server route handlers and server actions.
+import { sql } from "@/utils/drizzle/db";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 type LogEventName = string;
@@ -64,11 +65,7 @@ function generateCorrelationId(): string {
 }
 
 async function insertStructuredLogToDatabase(entry: LogEntry): Promise<void> {
-  const { db_url } = await import("@/utils/drizzle/db");
-  const postgres = (await import("postgres")).default;
-  const sql = db_url ? postgres(db_url) : null;
-  if (!sql) throw new Error("PostgreSQL connection not available");
-
+  // ✅ Use the imported, shared 'sql' instance directly instead of creating a new connection
   const {
     event,
     level,
@@ -81,31 +78,36 @@ async function insertStructuredLogToDatabase(entry: LogEntry): Promise<void> {
     error,
   } = entry;
 
+  // Pre-compute JSON values to avoid issues with IIFEs in SQL template
+  const actorJson = ensureJson(actor);
+  const subjectJson = ensureJson(subject);
+  const metricsJson = ensureJson(metrics);
+  const contextJson = ensureJson(context);
+
+  let errorJson = null;
+  if (error) {
+    const errorData =
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : error;
+    errorJson = ensureJson(errorData);
+  }
+
   await sql`
     INSERT INTO app_logs (
       event, level, message, correlation_id, actor, subject, metrics, context, error, created_at
     ) VALUES (
       ${event}, ${level}, ${message ?? null}, ${correlation?.correlationId ?? null},
-      ${actor ? sql.json(ensureJson(actor)) : null},
-      ${subject ? sql.json(ensureJson(subject)) : null},
-      ${metrics ? sql.json(ensureJson(metrics)) : null},
-      ${context ? sql.json(ensureJson(context)) : null},
-      ${
-        error
-          ? sql.json(
-              ensureJson(
-                error instanceof Error
-                  ? {
-                      name: error.name,
-                      message: error.message,
-                      stack: error.stack,
-                    }
-                  : (error as unknown)
-              )
-            )
-          : null
-      },
-      ${new Date()}
+      ${actorJson ? JSON.stringify(actorJson) : null},
+      ${subjectJson ? JSON.stringify(subjectJson) : null},
+      ${metricsJson ? JSON.stringify(metricsJson) : null},
+      ${contextJson ? JSON.stringify(contextJson) : null},
+      ${errorJson ? JSON.stringify(errorJson) : null},
+      ${new Date().toISOString()}
     )
   `;
 }
