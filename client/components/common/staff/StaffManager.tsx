@@ -750,6 +750,7 @@ export default function StaffManager({
       toast.success(
         `Successfully created ${csvPreview.length} staff member(s)!`
       );
+      // Always close the dialog after creating staff members
       if (onDone) onDone();
       else router.push("/management/staff");
     } catch (error) {
@@ -831,6 +832,7 @@ export default function StaffManager({
     toast.success(
       `Successfully added ${selectedProfiles.length} profile(s) to the cohort.`
     );
+    // Always close the dialog after adding profiles
     if (onDone) onDone();
   }, [selectedProfiles, onAddProfiles, onDone]);
 
@@ -889,13 +891,15 @@ export default function StaffManager({
                   </span>
                 </Button>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => onDone && onDone()}
-                    aria-label="Back"
-                  >
-                    Back
-                  </Button>
+                  {selectedProfiles.length === 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => onDone && onDone()}
+                      aria-label="Close"
+                    >
+                      Close
+                    </Button>
+                  )}
                   <Button
                     onClick={handleCsvClick}
                     className="flex items-center gap-2"
@@ -958,9 +962,11 @@ export default function StaffManager({
                 )}
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setActiveTab("csv")}>
-                  Back
-                </Button>
+                {selectedProfiles.length === 0 && (
+                  <Button variant="outline" onClick={() => onDone && onDone()}>
+                    Close
+                  </Button>
+                )}
               </div>
             </TabsContent>
 
@@ -1010,22 +1016,22 @@ export default function StaffManager({
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => onDone && onDone()}
-                  aria-label="Back"
-                >
-                  Back
-                </Button>
+                {selectedProfiles.length === 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => onDone && onDone()}
+                    aria-label="Close"
+                  >
+                    Close
+                  </Button>
+                )}
                 <Button
                   onClick={addManualProfileCohort}
                   disabled={isValidatingAlias}
                   className="flex items-center gap-2"
                 >
                   <UserPlus className="h-4 w-4" />
-                  {isValidatingAlias
-                    ? "Validating..."
-                    : "Add Teaching Assistant"}
+                  {isValidatingAlias ? "Validating..." : "Create GTA"}
                 </Button>
               </div>
             </TabsContent>
@@ -1087,9 +1093,9 @@ export default function StaffManager({
                 <Button
                   variant="outline"
                   onClick={() => onDone && onDone()}
-                  aria-label="Back"
+                  aria-label="Close"
                 >
-                  Back
+                  Close
                 </Button>
                 <Button
                   onClick={confirmAndAddToCohort}
@@ -1155,9 +1161,9 @@ export default function StaffManager({
                       <Button
                         variant="outline"
                         onClick={() => onDone && onDone()}
-                        aria-label="Back"
+                        aria-label="Close"
                       >
-                        Back
+                        Close
                       </Button>
                     )}
                     <Button
@@ -1275,9 +1281,9 @@ export default function StaffManager({
                   <Button
                     variant="outline"
                     onClick={() => onDone && onDone()}
-                    aria-label="Cancel"
+                    aria-label="Close"
                   >
-                    Back
+                    Close
                   </Button>
                   <Button
                     onClick={addManualProfileGlobal}
@@ -1427,9 +1433,9 @@ export default function StaffManager({
                   <Button
                     variant="outline"
                     onClick={() => onDone && onDone()}
-                    aria-label="Back"
+                    aria-label="Close"
                   >
-                    Back
+                    Close
                   </Button>
                   <Button onClick={handleCreateSubmit} disabled={isSubmitting}>
                     {isSubmitting

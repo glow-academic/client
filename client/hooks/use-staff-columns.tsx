@@ -46,10 +46,6 @@ export function useStaffColumns({
   const roleOptions = useMemo(() => {
     const baseOptions = [
       {
-        value: "admin",
-        label: "Administrator",
-      },
-      {
         value: "instructional",
         label: "Instructional Staff",
       },
@@ -62,6 +58,14 @@ export function useStaffColumns({
         label: "Guest",
       },
     ];
+
+    // Add admin option if current user is admin or superadmin
+    if (currentUserRole === "admin" || currentUserRole === "superadmin") {
+      baseOptions.unshift({
+        value: "admin",
+        label: "Administrator",
+      });
+    }
 
     // Add superadmin option if current user is superadmin
     if (currentUserRole === "superadmin") {

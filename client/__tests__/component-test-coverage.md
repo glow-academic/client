@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 297
+- **Total Components**: 296
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 297
+- **Tests Skipped** (already implemented): 296
 
 ## Component Coverage
 
@@ -67,7 +67,6 @@
 | LeaderboardTable | components/common/cohort/LeaderboardTable.tsx | LeaderboardTable.test.tsx | ✅ Implemented |
 | SimulationPicker | components/common/cohort/SimulationPicker.tsx | SimulationPicker.test.tsx | ✅ Implemented |
 | SimulationProgress | components/common/cohort/SimulationProgress.tsx | SimulationProgress.test.tsx | ✅ Implemented |
-| CohortAddStaff | components/common/cohort/staff/CohortAddStaff.tsx | CohortAddStaff.test.tsx | ✅ Implemented |
 | CohortStaff | components/common/cohort/staff/CohortStaff.tsx | CohortStaff.test.tsx | ✅ Implemented |
 | CohortStaffDataTable | components/common/cohort/staff/CohortStaffDataTable.tsx | CohortStaffDataTable.test.tsx | ✅ Implemented |
 | CohortStaffDataTableToolbar | components/common/cohort/staff/CohortStaffDataTableToolbar.tsx | CohortStaffDataTableToolbar.test.tsx | ✅ Implemented |
@@ -384,7 +383,6 @@ __tests__/
 │   │   │   ├── SimulationPicker.test.tsx
 │   │   │   ├── SimulationProgress.test.tsx
 │   │   │   ├── staff/
-│   │   │   │   ├── CohortAddStaff.test.tsx
 │   │   │   │   ├── CohortStaff.test.tsx
 │   │   │   │   ├── CohortStaffDataTable.test.tsx
 │   │   │   │   ├── CohortStaffDataTableToolbar.test.tsx

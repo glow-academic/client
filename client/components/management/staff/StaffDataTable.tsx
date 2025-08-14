@@ -152,7 +152,7 @@ export function StaffDataTable({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>View Reports</p>
+                <p>View Report</p>
               </TooltipContent>
             </Tooltip>
             {canEdit(staff.id) && (

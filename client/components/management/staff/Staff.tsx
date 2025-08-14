@@ -78,6 +78,12 @@ export default function Staff() {
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
 
+  // Single delete dialog
+  const [showSingleDeleteDialog, setShowSingleDeleteDialog] =
+    React.useState(false);
+  const [deleteStaffMember, setDeleteStaffMember] =
+    React.useState<StaffData | null>(null);
+
   // Fetch all users and cohorts
   const { data: allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
@@ -432,26 +438,9 @@ export default function Staff() {
           );
         }}
         onEdit={(staff) => setEditProfileId(staff.id)}
-        onDelete={async (staff) => {
-          if (staff.defaultProfile || staff.id === effectiveProfile?.id) {
-            toast.error(
-              staff.id === effectiveProfile?.id
-                ? "You cannot delete your own account."
-                : "Default profiles cannot be deleted."
-            );
-            return;
-          }
-          const confirmed = window.confirm(
-            `Delete "${staff.firstName} ${staff.lastName}" (${staff.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]})? This action cannot be undone.`
-          );
-          if (!confirmed) return;
-          try {
-            await deleteProfiles([staff.id]);
-            toast.success("User deleted successfully");
-            queryClient.invalidateQueries({ queryKey: ["profiles"] });
-          } catch {
-            toast.error("Failed to delete user");
-          }
+        onDelete={(staff) => {
+          setDeleteStaffMember(staff);
+          setShowSingleDeleteDialog(true);
         }}
         onBulkEdit={() => setShowBulkEditModal(true)}
         onBulkDelete={() => setShowBulkDeleteDialog(true)}
@@ -793,6 +782,124 @@ export default function Staff() {
                   queryClient.invalidateQueries({ queryKey: ["profiles"] });
                 } catch {
                   toast.error("Failed to delete selected staff");
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single Delete Confirmation */}
+      <AlertDialog
+        open={showSingleDeleteDialog}
+        onOpenChange={setShowSingleDeleteDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {deleteStaffMember?.firstName}{" "}
+              {deleteStaffMember?.lastName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the account. Default profiles and
+              your own account cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteStaffMember &&
+            (() => {
+              const staff = deleteStaffMember;
+              const canDelete =
+                !staff.defaultProfile && staff.id !== effectiveProfile?.id;
+              const cohorts = allCohorts.filter((c) =>
+                c.profileIds.includes(staff.id)
+              );
+
+              if (!canDelete) {
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-medium text-yellow-700 dark:text-yellow-400">
+                        This account cannot be deleted:
+                      </p>
+                      <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                          • {staff.firstName} {staff.lastName} ({staff.alias})
+                          {staff.id === effectiveProfile?.id
+                            ? " – your account"
+                            : " – default profile"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-medium text-red-700 dark:text-red-400">
+                      The following account and its cohort memberships will be
+                      removed:
+                    </p>
+                    <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                      <ul className="text-sm space-y-2">
+                        <li className="text-red-600 dark:text-red-300">
+                          • {staff.firstName} {staff.lastName} ({staff.alias}){" "}
+                          {cohorts.length > 0 ? (
+                            <span className="text-xs text-muted-foreground">
+                              – affects {cohorts.length} cohort
+                              {cohorts.length > 1 ? "s" : ""}:{" "}
+                              {cohorts
+                                .slice(0, 3)
+                                .map((c) => c.title)
+                                .join(", ")}
+                              {cohorts.length > 3
+                                ? `, +${cohorts.length - 3} more`
+                                : ""}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              – no cohort memberships
+                            </span>
+                          )}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={async () => {
+                if (!deleteStaffMember) return;
+
+                if (
+                  deleteStaffMember.defaultProfile ||
+                  deleteStaffMember.id === effectiveProfile?.id
+                ) {
+                  toast.error(
+                    deleteStaffMember.id === effectiveProfile?.id
+                      ? "You cannot delete your own account."
+                      : "Default profiles cannot be deleted."
+                  );
+                  setShowSingleDeleteDialog(false);
+                  setDeleteStaffMember(null);
+                  return;
+                }
+
+                try {
+                  await deleteProfiles([deleteStaffMember.id]);
+                  toast.success("User deleted successfully");
+                  setShowSingleDeleteDialog(false);
+                  setDeleteStaffMember(null);
+                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                } catch {
+                  toast.error("Failed to delete user");
                 }
               }}
             >

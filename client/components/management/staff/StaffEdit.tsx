@@ -77,7 +77,9 @@ const useStaffEditBusinessLogic = (
     enabled: !!profileId,
   });
 
-  const isCurrentUserAdmin = effectiveProfile?.role === "admin";
+  const isCurrentUserAdmin =
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "superadmin";
   const isLoading = isProfileLoading;
 
   const handleInputChange = useCallback((_field: string, _value: string) => {

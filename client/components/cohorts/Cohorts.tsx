@@ -413,14 +413,9 @@ export default function Cohorts() {
                   {cohort.profileIds?.length || 0} members
                 </Badge>
               </div>
-              {(cohort.defaultCohort || !cohort.active) && (
+              {!cohort.active && (
                 <div className="flex items-center gap-2">
-                  {cohort.defaultCohort && (
-                    <Badge variant="default">Default</Badge>
-                  )}
-                  {!cohort.active && (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
+                  <Badge variant="secondary">Inactive</Badge>
                 </div>
               )}
             </div>
