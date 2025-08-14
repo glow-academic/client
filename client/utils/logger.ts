@@ -90,7 +90,12 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
   } catch (_) {
     // fallthrough to fetch
   }
-  await fetch(logUrl, {
+
+  // Use absolute URL for fetch to avoid URL parsing issues
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const absoluteLogUrl = `${baseUrl}${logUrl}`;
+
+  await fetch(absoluteLogUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
