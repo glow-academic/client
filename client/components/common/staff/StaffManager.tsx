@@ -49,6 +49,13 @@ import {
   X,
 } from "lucide-react";
 
+// Helper function to extract alias from email
+const extractAliasFromEmail = (email: string): string => {
+  if (!email || !email.includes("@")) return email;
+  const parts = email.split("@");
+  return parts[0]?.trim() || email;
+};
+
 // Simple CSV helpers
 const parseCSV = (csvText: string): Record<string, string>[] => {
   const lines = csvText.split("\n");
@@ -60,7 +67,12 @@ const parseCSV = (csvText: string): Record<string, string>[] => {
       const values = lines[i]?.split(",").map((v) => v.trim()) || [];
       const row: Record<string, string> = {};
       headers.forEach((header, index) => {
-        row[header] = values[index] || "";
+        let value = values[index] || "";
+        // If the header is "alias" and the value looks like an email, extract the alias
+        if (header.toLowerCase() === "alias" && value.includes("@")) {
+          value = extractAliasFromEmail(value);
+        }
+        row[header] = value;
       });
       data.push(row);
     }
@@ -250,6 +262,19 @@ export default function StaffManager({
     lastName: string;
     alias: string;
   }>({ firstName: "", lastName: "", alias: "" });
+
+  // Form validation state
+  const [cohortFormErrors, setCohortFormErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    alias?: string;
+  }>({});
+  const [globalFormErrors, setGlobalFormErrors] = useState<{
+    firstName?: string;
+    lastName?: string;
+    alias?: string;
+    role?: string;
+  }>({});
 
   // Download templates
   const downloadTemplate = useCallback(() => {
@@ -541,17 +566,77 @@ export default function StaffManager({
     [handleCsvUpload]
   );
 
+  // Validation functions
+  const validateCohortForm = useCallback(() => {
+    const errors: { firstName?: string; lastName?: string; alias?: string } =
+      {};
+
+    if (!manualProfileCohort.firstName.trim()) {
+      errors.firstName = "First name is required";
+    } else if (manualProfileCohort.firstName.trim().length < 2) {
+      errors.firstName = "First name must be at least 2 characters";
+    }
+
+    if (!manualProfileCohort.lastName.trim()) {
+      errors.lastName = "Last name is required";
+    } else if (manualProfileCohort.lastName.trim().length < 2) {
+      errors.lastName = "Last name must be at least 2 characters";
+    }
+
+    if (!manualProfileCohort.alias.trim()) {
+      errors.alias = "Alias is required";
+    } else if (manualProfileCohort.alias.trim().length < 2) {
+      errors.alias = "Alias must be at least 2 characters";
+    } else if (!/^[a-zA-Z0-9._-]+$/.test(manualProfileCohort.alias.trim())) {
+      errors.alias =
+        "Alias can only contain letters, numbers, dots, underscores, and hyphens";
+    }
+
+    setCohortFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [manualProfileCohort]);
+
+  const validateGlobalForm = useCallback(() => {
+    const errors: {
+      firstName?: string;
+      lastName?: string;
+      alias?: string;
+      role?: string;
+    } = {};
+
+    if (!manualProfileGlobal.firstName.trim()) {
+      errors.firstName = "First name is required";
+    } else if (manualProfileGlobal.firstName.trim().length < 2) {
+      errors.firstName = "First name must be at least 2 characters";
+    }
+
+    if (!manualProfileGlobal.lastName.trim()) {
+      errors.lastName = "Last name is required";
+    } else if (manualProfileGlobal.lastName.trim().length < 2) {
+      errors.lastName = "Last name must be at least 2 characters";
+    }
+
+    if (!manualProfileGlobal.alias.trim()) {
+      errors.alias = "Alias is required";
+    } else if (manualProfileGlobal.alias.trim().length < 2) {
+      errors.alias = "Alias must be at least 2 characters";
+    } else if (!/^[a-zA-Z0-9._-]+$/.test(manualProfileGlobal.alias.trim())) {
+      errors.alias =
+        "Alias can only contain letters, numbers, dots, underscores, and hyphens";
+    }
+
+    if (!manualProfileGlobal.role) {
+      errors.role = "Role is required";
+    }
+
+    setGlobalFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [manualProfileGlobal]);
+
   // Global/manual add
   const addManualProfileGlobal = useCallback(async () => {
-    if (
-      !manualProfileGlobal.firstName ||
-      !manualProfileGlobal.lastName ||
-      !manualProfileGlobal.alias ||
-      !manualProfileGlobal.role
-    ) {
-      toast.error(
-        "Please fill in all required fields: First Name, Last Name, Alias, and Role are all required."
-      );
+    if (!validateGlobalForm()) {
+      toast.error("Please fix the form errors before submitting.");
       return;
     }
     const existsLocal = allProfiles.find(
@@ -602,18 +687,18 @@ export default function StaffManager({
       alias: "",
       role: "",
     });
-  }, [manualProfileGlobal, allProfiles, csvPreview, validateAlias]);
+  }, [
+    manualProfileGlobal,
+    allProfiles,
+    csvPreview,
+    validateAlias,
+    validateGlobalForm,
+  ]);
 
   // Cohort/manual add (create immediately with TA role)
   const addManualProfileCohort = useCallback(async () => {
-    if (
-      !manualProfileCohort.firstName ||
-      !manualProfileCohort.lastName ||
-      !manualProfileCohort.alias
-    ) {
-      toast.error(
-        "Please fill in all required fields: First Name, Last Name, and Alias are all required."
-      );
+    if (!validateCohortForm()) {
+      toast.error("Please fix the form errors before submitting.");
       return;
     }
     const existing = allProfiles.find(
@@ -698,6 +783,7 @@ export default function StaffManager({
     cohortExistingIds,
     selectedProfiles,
     validateAlias,
+    validateCohortForm,
   ]);
 
   // Non-cohort submit
@@ -984,7 +1070,15 @@ export default function StaffManager({
                       }))
                     }
                     placeholder="First name"
+                    className={
+                      cohortFormErrors.firstName ? "border-red-500" : ""
+                    }
                   />
+                  {cohortFormErrors.firstName && (
+                    <p className="text-sm text-red-500">
+                      {cohortFormErrors.firstName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name *</Label>
@@ -998,7 +1092,15 @@ export default function StaffManager({
                       }))
                     }
                     placeholder="Last name"
+                    className={
+                      cohortFormErrors.lastName ? "border-red-500" : ""
+                    }
                   />
+                  {cohortFormErrors.lastName && (
+                    <p className="text-sm text-red-500">
+                      {cohortFormErrors.lastName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="alias">Alias *</Label>
@@ -1012,7 +1114,13 @@ export default function StaffManager({
                       }))
                     }
                     placeholder="Alias"
+                    className={cohortFormErrors.alias ? "border-red-500" : ""}
                   />
+                  {cohortFormErrors.alias && (
+                    <p className="text-sm text-red-500">
+                      {cohortFormErrors.alias}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end gap-2">
@@ -1193,7 +1301,15 @@ export default function StaffManager({
                         }))
                       }
                       placeholder="First name"
+                      className={
+                        globalFormErrors.firstName ? "border-red-500" : ""
+                      }
                     />
+                    {globalFormErrors.firstName && (
+                      <p className="text-sm text-red-500">
+                        {globalFormErrors.firstName}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="manualLastName">Last Name *</Label>
@@ -1207,7 +1323,15 @@ export default function StaffManager({
                         }))
                       }
                       placeholder="Last name"
+                      className={
+                        globalFormErrors.lastName ? "border-red-500" : ""
+                      }
                     />
+                    {globalFormErrors.lastName && (
+                      <p className="text-sm text-red-500">
+                        {globalFormErrors.lastName}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1223,7 +1347,13 @@ export default function StaffManager({
                         }))
                       }
                       placeholder="Alias"
+                      className={globalFormErrors.alias ? "border-red-500" : ""}
                     />
+                    {globalFormErrors.alias && (
+                      <p className="text-sm text-red-500">
+                        {globalFormErrors.alias}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="manualRole">Role *</Label>
@@ -1233,7 +1363,11 @@ export default function StaffManager({
                         setManualProfileGlobal((p) => ({ ...p, role: value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger
+                        className={
+                          globalFormErrors.role ? "border-red-500" : ""
+                        }
+                      >
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1250,6 +1384,11 @@ export default function StaffManager({
                         })}
                       </SelectContent>
                     </Select>
+                    {globalFormErrors.role && (
+                      <p className="text-sm text-red-500">
+                        {globalFormErrors.role}
+                      </p>
+                    )}
                   </div>
                 </div>
 
