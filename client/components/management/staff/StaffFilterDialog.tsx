@@ -74,11 +74,13 @@ export function StaffFilterDialog({
     }
   };
 
-  const formatLastActive = (timestamp: string) => {
+  const formatLastActive = (timestamp: string | null) => {
+    if (!timestamp) return "Never";
+
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60),
+      (now.getTime() - date.getTime()) / (1000 * 60)
     );
 
     if (diffInMinutes < 1) return "Just now";
@@ -96,9 +98,7 @@ export function StaffFilterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col"
-      >
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogDescription hidden>
           This dialog shows the staff members and allows you to edit them.
         </DialogDescription>
@@ -140,7 +140,7 @@ export function StaffFilterDialog({
                             }}
                           >
                             {getInitials(
-                              staff.firstName + " " + staff.lastName,
+                              staff.firstName + " " + staff.lastName
                             )}
                           </div>
                           <div>

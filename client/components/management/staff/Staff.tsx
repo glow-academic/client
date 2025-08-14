@@ -267,7 +267,9 @@ export default function Staff() {
   });
 
   // Helper functions
-  function formatLastActive(timestamp: string) {
+  function formatLastActive(timestamp: string | null) {
+    if (!timestamp) return "Never";
+
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(

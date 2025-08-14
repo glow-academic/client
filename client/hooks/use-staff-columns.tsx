@@ -15,7 +15,7 @@ export interface StaffData {
   alias: string;
   role: string;
   active: boolean;
-  lastActive: string;
+  lastActive: string | null;
   email: string;
   // Additional fields for filtering
   cohortIds: string[];
@@ -98,6 +98,10 @@ export function useStaffColumns({
 
   const lastActiveOptions = useMemo(
     () => [
+      {
+        value: "never",
+        label: "Never",
+      },
       {
         value: "last_hour",
         label: "Last Hour",
@@ -191,7 +195,9 @@ export function useStaffColumns({
     }
   };
 
-  const formatLastActive = (timestamp: string) => {
+  const formatLastActive = (timestamp: string | null) => {
+    if (!timestamp) return "Never";
+
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
@@ -313,11 +319,18 @@ export function useStaffColumns({
           const staff = row.original;
           if (!value || value.length === 0) return true;
 
+          // Handle null lastActive
+          if (!staff.lastActive) {
+            return value.some((filterValue: string) => filterValue === "never");
+          }
+
           const lastActiveDate = new Date(staff.lastActive);
           const now = new Date();
 
           return value.some((filterValue: string) => {
             switch (filterValue) {
+              case "never":
+                return false; // Already handled above
               case "last_hour":
                 const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
                 return lastActiveDate >= hourAgo;
