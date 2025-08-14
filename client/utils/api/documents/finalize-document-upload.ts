@@ -73,13 +73,37 @@ export async function finalizeDocumentUpload(
       ...(test !== undefined && { test }),
     };
 
-    const response = await fetch(`${getApiBase()}/documents/tus/finalize`, {
+    const apiBase = getApiBase();
+    const finalizeUrl = `${apiBase}/documents/tus/finalize`;
+
+    log.info("documents.finalize.start", {
+      message: "Starting document finalization",
+      context: {
+        function: "finalizeDocumentUpload",
+        fileId,
+        apiBase,
+        finalizeUrl,
+        payload,
+      },
+    });
+
+    const response = await fetch(finalizeUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
       body: JSON.stringify(payload),
+    });
+
+    log.info("documents.finalize.response", {
+      message: `Finalization response: ${response.status} ${response.statusText}`,
+      context: {
+        function: "finalizeDocumentUpload",
+        fileId,
+        responseStatus: response.status,
+        responseStatusText: response.statusText,
+      },
     });
 
     if (!response.ok) {
@@ -99,6 +123,15 @@ export async function finalizeDocumentUpload(
     }
 
     const result = await response.json();
+
+    log.info("documents.finalize.success", {
+      message: "Document finalization successful",
+      context: {
+        function: "finalizeDocumentUpload",
+        fileId,
+        result,
+      },
+    });
     return {
       success: true,
       message: result.message || "Document upload finalized successfully",

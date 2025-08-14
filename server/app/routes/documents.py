@@ -379,6 +379,9 @@ async def finalize_upload(
         is_csv = body.get("csv", False)
         test = body.get("test", False)
         profile_id = body.get("profile_id")
+        
+        logger.info(f"TUS finalize called: file_id={file_id}, is_csv={is_csv}, test={test}, profile_id={profile_id}")
+        logger.info(f"TUS finalize body: {body}")
 
         if not file_id:
             return JSONResponse(
@@ -706,6 +709,8 @@ async def finalize_upload(
 
         session.add(document)
         session.commit()
+
+        logger.info(f"TUS finalize success: document_id={document_id}, filename={filename}, file_path={final_file_path}")
 
         # Clean up the TUS upload directory
         try:
