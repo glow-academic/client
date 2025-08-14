@@ -16,12 +16,12 @@ interface GetAppLogsResponse {
     event: string;
     level: string;
     message: string | null;
-    correlationId?: string | null;
-    actor?: Record<string, unknown> | null;
-    subject?: Record<string, unknown> | null;
-    metrics?: Record<string, unknown> | null;
-    context: Record<string, unknown> | null;
-    error?: unknown | null;
+    correlationId: string | null;
+    actor: unknown;
+    subject: unknown;
+    metrics: unknown;
+    context: unknown;
+    error: unknown;
     createdAt: string | null;
   }>;
   totalCount: number;

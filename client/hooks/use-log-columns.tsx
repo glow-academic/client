@@ -12,15 +12,12 @@ export interface AppLog {
   event: string;
   level: string;
   message: string | null;
-  correlationId?: string | null;
-  actor?: Record<string, unknown> | null;
-  subject?: Record<string, unknown> | null;
-  metrics?: { durationMs?: number; size?: number; count?: number } | null;
-  context: Record<string, unknown> | null;
-  error?:
-    | { name?: string; message?: string; stack?: string; code?: string }
-    | unknown
-    | null;
+  correlationId: string | null;
+  actor: unknown;
+  subject: unknown;
+  metrics: unknown;
+  context: unknown;
+  error: unknown;
   createdAt: string | null;
 }
 
@@ -214,7 +211,10 @@ export function useLogColumns({
     },
     {
       id: "durationMs",
-      accessorFn: (row) => row.metrics?.durationMs ?? null,
+      accessorFn: (row) => {
+        const metrics = row.metrics as Record<string, unknown> | null;
+        return (metrics?.["durationMs"] as number | undefined) ?? null;
+      },
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Duration (ms)" />
       ),

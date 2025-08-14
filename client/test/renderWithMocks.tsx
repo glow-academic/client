@@ -24,6 +24,7 @@ const mockProfile = {
   lastLogin: new Date().toISOString(),
   lastActive: new Date().toISOString(),
   defaultProfile: false,
+  reqPerDay: 10,
 };
 
 // This helper's only job is to provide the QueryClient.

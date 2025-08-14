@@ -247,8 +247,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     try {
       // Create TUS upload
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const upload = new tus.Upload(file, {
-        endpoint: "/api/upload",
+        endpoint: `${appPrefix}/api/upload`,
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,

@@ -117,6 +117,7 @@ export function PersonaPicker({
       systemPrompt: "",
       modelId: "",
       guardrailActive: false,
+      imageInputActive: false,
     });
     setOpen(false);
   };

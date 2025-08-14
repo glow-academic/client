@@ -119,7 +119,7 @@ export default function Logs() {
     // hasError flags removed
 
     const getContextString = (
-      ctx: AppLog["context"],
+      ctx: unknown,
       key: string
     ): string | undefined => {
       if (!ctx || typeof ctx !== "object") return undefined;

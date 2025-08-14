@@ -145,13 +145,7 @@ export function DocumentsDataTable({
                 variant="outline"
                 size="sm"
                 className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                onClick={() => {
-                  // Add a small confirmation step for single deletion parity with staff
-                  const confirmDelete = window.confirm(
-                    `Delete "${document.name}"? This action cannot be undone.`
-                  );
-                  if (confirmDelete) onDelete(document);
-                }}
+                onClick={() => onDelete(document)}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

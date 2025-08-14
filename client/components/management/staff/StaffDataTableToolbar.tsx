@@ -36,7 +36,6 @@ export function StaffDataTableToolbar({
   selectedCount,
   onBulkEdit,
   onBulkDelete,
-  onCreate,
   deletableCount = 0,
   editableCount = 0,
 }: StaffDataTableToolbarProps) {
