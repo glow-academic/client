@@ -72,6 +72,9 @@ function generateCorrelationId(): string {
 
 // --- Client transport ---
 async function sendClientLog(entry: LogEntry): Promise<void> {
+  const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+  const logUrl = `${appPrefix}/api/log`;
+
   try {
     const body = safeStringify(entry);
     if (
@@ -79,7 +82,7 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
       typeof navigator.sendBeacon === "function"
     ) {
       const ok = navigator.sendBeacon(
-        "/api/log",
+        logUrl,
         new Blob([body], { type: "application/json" })
       );
       if (ok) return;
@@ -87,7 +90,7 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
   } catch (_) {
     // fallthrough to fetch
   }
-  await fetch("/api/log", {
+  await fetch(logUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
