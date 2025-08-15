@@ -72,7 +72,7 @@ class GenericAgent:
         tools_param: list[Tool] = [] if self.output_type is not None else [debug_info]  # type: ignore[assignment]
 
 
-        model = f"{self.model_provider}/{self.model_name}" if self.custom_model else self.model
+        model = f"{self.model_provider}/{self.model}" if self.custom_model else self.model
 
         base_url = self.base_url if self.custom_model else None
 
