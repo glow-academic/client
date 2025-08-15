@@ -84,14 +84,12 @@ export function ProvidersDataTable({
     // Get the filtered models from the table
     const filteredModels = filteredRows.map((row) => row.original);
 
-    return providers
-      .map((provider: Provider) => ({
-        provider,
-        models: filteredModels.filter(
-          (model: Model) => model.providerId === provider.id
-        ),
-      }))
-      .filter((group) => group.models.length > 0);
+    return providers.map((provider: Provider) => ({
+      provider,
+      models: filteredModels.filter(
+        (model: Model) => model.providerId === provider.id
+      ),
+    }));
   }, [providers, filteredRows]);
 
   return (

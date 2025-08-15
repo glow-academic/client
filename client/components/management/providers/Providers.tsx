@@ -105,8 +105,15 @@ export default function Providers() {
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/management/providers/p/${id}/m/${id}`);
+  const handleEdit = (modelId: string) => {
+    // Find the model to get its provider ID
+    const model = models.find((m) => m.id === modelId);
+    if (model) {
+      router.push(`/management/providers/p/${model.providerId}/m/${modelId}`);
+    } else {
+      // Fallback if model not found
+      router.push(`/management/providers/p/${modelId}/m/${modelId}`);
+    }
   };
 
   const renderEmptyState = () => (

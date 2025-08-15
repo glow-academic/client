@@ -90,7 +90,11 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
       case "provider":
         const providerData = await getProvider(id);
-        return providerData?.name || `Provider`;
+        if (providerData?.name) {
+          return providerData.name;
+        }
+        // Better fallback that includes the ID for debugging
+        return `Provider ${id.substring(0, 8)}...`;
 
       case "parameter":
         const parameterData = await getParameter(id);
