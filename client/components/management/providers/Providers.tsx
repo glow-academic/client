@@ -13,7 +13,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { deleteModel } from "@/utils/mutations/models/delete-model";
+import { deleteProvider } from "@/utils/mutations/providers/delete-provider";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 import {
@@ -36,6 +39,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { useProviderColumns } from "@/hooks/use-provider-columns";
 import { Model, Provider } from "@/types";
@@ -55,6 +64,13 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteProviderDialog, setShowDeleteProviderDialog] =
+    useState(false);
+  const [deleteProviderItem, setDeleteProviderItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeletingProvider, setIsDeletingProvider] = useState(false);
 
   // Fetch models and providers data
   const { data: models = [], refetch: refetchModels } = useQuery({
@@ -65,6 +81,16 @@ export default function Providers() {
   const { data: providers = [] } = useQuery({
     queryKey: ["providers"],
     queryFn: () => getAllProviders(),
+  });
+
+  const { data: personas = [] } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
+
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
   });
 
   // Get filter options
@@ -101,8 +127,87 @@ export default function Providers() {
   };
 
   const handleDeleteClick = (id: string, name: string) => {
+    const model = models.find((m) => m.id === id);
+    if (model && !canDeleteModel(model)) {
+      toast.error(
+        "Cannot delete model: It is currently in use by personas or agents"
+      );
+      return;
+    }
     setDeleteItem({ id, name });
     setShowDeleteDialog(true);
+  };
+
+  const handleDeleteProviderClick = (provider: Provider) => {
+    if (!canDeleteProvider(provider)) {
+      toast.error(
+        "Cannot delete provider: Some models are currently in use by personas or agents"
+      );
+      return;
+    }
+    setDeleteProviderItem({ id: provider.id, name: provider.name });
+    setShowDeleteProviderDialog(true);
+  };
+
+  const handleDeleteProvider = async () => {
+    if (!deleteProviderItem) return;
+
+    setIsDeletingProvider(true);
+    try {
+      await deleteProvider(deleteProviderItem.id);
+
+      toast.success("Provider deleted successfully");
+      // Invalidate queries to ensure all components refresh
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      queryClient.invalidateQueries({ queryKey: ["models"] });
+      refetchModels();
+    } catch (error) {
+      log.error("provider.delete.failed", {
+        message: "Error deleting provider",
+        error,
+        context: {
+          component: "Providers",
+          function: "handleDeleteProvider",
+          providerId: deleteProviderItem.id,
+        },
+      });
+      toast.error("Failed to delete provider");
+    } finally {
+      setIsDeletingProvider(false);
+      setShowDeleteProviderDialog(false);
+      setDeleteProviderItem(null);
+    }
+  };
+
+  // Check if a model is being used by any personas or agents
+  const isModelInUse = (modelId: string) => {
+    const usedByPersonas = personas.some(
+      (persona) => persona.modelId === modelId
+    );
+    const usedByAgents = agents.some((agent) => agent.modelId === modelId);
+
+    return usedByPersonas || usedByAgents;
+  };
+
+  const canDeleteModel = (model: Model) => {
+    // Don't allow deletion if model is in use
+    if (isModelInUse(model.id)) return false;
+    return true;
+  };
+
+  const canDeleteProvider = (provider: Provider) => {
+    // Get all models for this provider
+    const providerModels = models.filter(
+      (model) => model.providerId === provider.id
+    );
+
+    // Check if any of the provider's models are in use
+    const hasModelsInUse = providerModels.some((model) =>
+      isModelInUse(model.id)
+    );
+
+    // Can only delete if no models are in use
+    return !hasModelsInUse;
   };
 
   const handleEdit = (modelId: string) => {
@@ -141,15 +246,43 @@ export default function Providers() {
             {providerGroup.provider.description}
           </span>
         </div>
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() =>
-            router.push(`/management/providers/p/${providerGroup.provider.id}`)
-          }
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() =>
+                  router.push(
+                    `/management/providers/p/${providerGroup.provider.id}`
+                  )
+                }
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Provider Settings</p>
+            </TooltipContent>
+          </Tooltip>
+          {canDeleteProvider(providerGroup.provider) &&
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDeleteProviderClick(providerGroup.provider)
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Provider</p>
+              </TooltipContent>
+            </Tooltip>}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
@@ -171,9 +304,7 @@ export default function Providers() {
                       {model.description}
                     </CardDescription>
                   </div>
-                  <Badge variant={model.active ? "default" : "secondary"}>
-                    {model.active ? "Active" : "Inactive"}
-                  </Badge>
+                  {!model.active && <Badge variant="secondary">Inactive</Badge>}
                 </div>
               </CardHeader>
               <CardFooter className="mt-auto flex justify-end gap-2">
@@ -184,13 +315,14 @@ export default function Providers() {
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteClick(model.id, model.name)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {canDeleteModel(model) &&
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteClick(model.id, model.name)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>}
               </CardFooter>
             </Card>
           ))}
@@ -219,43 +351,78 @@ export default function Providers() {
   );
 
   return (
-    <div className="space-y-6">
-      {models.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <ProvidersDataTable
-          columns={columns}
-          data={models}
-          providers={providers}
-          providerOptions={providerOptions}
-          customModelOptions={customModelOptions}
-          statusOptions={statusOptions}
-          renderProviderGroup={renderProviderGroup}
-        />
-      )}
+    <TooltipProvider>
+      <div className="space-y-6">
+        {models.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <ProvidersDataTable
+            columns={columns}
+            data={models}
+            providers={providers}
+            providerOptions={providerOptions}
+            customModelOptions={customModelOptions}
+            statusOptions={statusOptions}
+            renderProviderGroup={renderProviderGroup}
+          />
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the model "{deleteItem?.name}". This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the model "{deleteItem?.name}".
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Provider Confirmation Dialog */}
+        <AlertDialog
+          open={showDeleteProviderDialog}
+          onOpenChange={setShowDeleteProviderDialog}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Provider</AlertDialogTitle>
+              <AlertDialogDescription>
+                <p>
+                  Are you sure you want to delete the provider "
+                  {deleteProviderItem?.name}"? This will also delete all
+                  associated models. This action cannot be undone.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingProvider}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteProvider}
+                disabled={isDeletingProvider}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeletingProvider ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 }
