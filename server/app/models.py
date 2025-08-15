@@ -97,6 +97,7 @@ class Models(_Base, table=True):
     active: bool = Field(sa_column=Column('active', Boolean, default=True))
     input_ppm: float = Field(sa_column=Column('input_ppm', Double(53), default=0.0))
     output_ppm: float = Field(sa_column=Column('output_ppm', Double(53), default=0.0))
+    custom_model: bool = Field(sa_column=Column('custom_model', Boolean, default=False))
 
     agents: List['Agents'] = Relationship(back_populates='model')
     personas: List['Personas'] = Relationship(back_populates='model')

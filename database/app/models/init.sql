@@ -24,5 +24,6 @@ CREATE TABLE models (
   provider_id UUID        NOT NULL,
   active      BOOLEAN     NOT NULL DEFAULT TRUE,
   input_ppm   FLOAT       NOT NULL DEFAULT 0.0, -- price per million input tokens (dollars) (free is 0.0)
-  output_ppm  FLOAT       NOT NULL DEFAULT 0.0 -- price per million output tokens (dollars) (free is 0.0)
+  output_ppm  FLOAT       NOT NULL DEFAULT 0.0, -- price per million output tokens (dollars) (free is 0.0)
+  custom_model BOOLEAN     NOT NULL DEFAULT FALSE
 );

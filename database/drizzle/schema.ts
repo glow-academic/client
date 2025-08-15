@@ -99,6 +99,7 @@ export const models = pgTable("models", {
 	active: boolean().default(true).notNull(),
 	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
 	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
+	customModel: boolean("custom_model").default(false).notNull(),
 });
 
 export const rubrics = pgTable("rubrics", {

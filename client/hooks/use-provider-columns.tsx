@@ -37,14 +37,14 @@ export function useProviderColumns() {
         cell: ({ row }) => {
           const model = row.original;
           const provider = providers.find(
-            (p: Provider) => p.id === model.providerId,
+            (p: Provider) => p.id === model.providerId
           );
           return provider?.name || "Unknown Provider";
         },
         filterFn: (row, _, value) => {
           const model = row.original;
           return value.some(
-            (filterValue: string) => model.providerId === filterValue,
+            (filterValue: string) => model.providerId === filterValue
           );
         },
       },
@@ -52,24 +52,15 @@ export function useProviderColumns() {
         id: "isCustom",
         header: "Custom Model",
         accessorFn: (row) => {
-          const provider = providers.find(
-            (p: Provider) => p.id === row.providerId,
-          );
-          return provider?.baseUrl ? "Custom" : "Standard";
+          return row.customModel ? "Custom" : "Standard";
         },
         cell: ({ row }) => {
           const model = row.original;
-          const provider = providers.find(
-            (p: Provider) => p.id === model.providerId,
-          );
-          return provider?.baseUrl ? "Custom" : "Standard";
+          return model.customModel ? "Custom" : "Standard";
         },
         filterFn: (row, _, value) => {
           const model = row.original;
-          const provider = providers.find(
-            (p: Provider) => p.id === model.providerId,
-          );
-          const isCustom = provider?.baseUrl ? "Custom" : "Standard";
+          const isCustom = model.customModel ? "Custom" : "Standard";
           return value.some((filterValue: string) => isCustom === filterValue);
         },
       },
@@ -92,7 +83,7 @@ export function useProviderColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [providers],
+    [providers]
   );
 
   // Filter options
@@ -102,7 +93,7 @@ export function useProviderColumns() {
         value: provider.id,
         label: provider.name,
       })),
-    [providers],
+    [providers]
   );
 
   const customModelOptions = useMemo(
@@ -110,7 +101,7 @@ export function useProviderColumns() {
       { value: "Custom", label: "Custom Models" },
       { value: "Standard", label: "Standard Models" },
     ],
-    [],
+    []
   );
 
   const statusOptions = useMemo(
@@ -118,7 +109,7 @@ export function useProviderColumns() {
       { value: "Active", label: "Active" },
       { value: "Inactive", label: "Inactive" },
     ],
-    [],
+    []
   );
 
   return {

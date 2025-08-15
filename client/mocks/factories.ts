@@ -167,6 +167,7 @@ export function createMockModel(overrides: Partial<Model> = {}): Model {
     active: faker.datatype.boolean(),
     inputPpm: faker.number.int({ min: 1, max: 1000 }),
     outputPpm: faker.number.int({ min: 1, max: 1000 }),
+    customModel: faker.datatype.boolean(),
   };
 
   return { ...defaults, ...overrides } as Model;

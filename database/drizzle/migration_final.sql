@@ -25,3 +25,5 @@ ALTER TABLE "app_logs" ALTER COLUMN "context" SET DEFAULT '{"route":null,"functi
 -- 4. Drop checkpoints columns (from 0013)
 ALTER TABLE "scenarios" DROP COLUMN IF EXISTS "checkpoints";
 ALTER TABLE "simulation_chat_grades" DROP COLUMN IF EXISTS "checkpoints_reached";
+
+ALTER TABLE "models" ADD COLUMN "custom_model" boolean DEFAULT false NOT NULL;

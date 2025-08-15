@@ -265,7 +265,7 @@ export default function Providers() {
               <p>Provider Settings</p>
             </TooltipContent>
           </Tooltip>
-          {canDeleteProvider(providerGroup.provider) &&
+          {canDeleteProvider(providerGroup.provider) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -281,7 +281,8 @@ export default function Providers() {
               <TooltipContent>
                 <p>Delete Provider</p>
               </TooltipContent>
-            </Tooltip>}
+            </Tooltip>
+          )}
         </div>
       </div>
 
@@ -304,7 +305,14 @@ export default function Providers() {
                       {model.description}
                     </CardDescription>
                   </div>
-                  {!model.active && <Badge variant="secondary">Inactive</Badge>}
+                  <div className="flex gap-1">
+                    {model.customModel && (
+                      <Badge variant="default">Custom</Badge>
+                    )}
+                    {!model.active && (
+                      <Badge variant="secondary">Inactive</Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardFooter className="mt-auto flex justify-end gap-2">
@@ -315,14 +323,15 @@ export default function Providers() {
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
-                {canDeleteModel(model) &&
+                {canDeleteModel(model) && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteClick(model.id, model.name)}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>}
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}

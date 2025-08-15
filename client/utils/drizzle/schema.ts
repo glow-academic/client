@@ -89,7 +89,8 @@ export const models = pgTable("models", {
 	providerId: uuid("provider_id").notNull(),
 	active: boolean().default(true).notNull(),
 	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
-	outputPpm: doublePrecision("output_ppm").default(0).notNull()});
+	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
+	customModel: boolean("custom_model").default(false).notNull()});
 
 export const rubrics = pgTable("rubrics", {
 	id: uuid().defaultRandom().primaryKey().notNull(),

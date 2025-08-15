@@ -1,0 +1,1 @@
+ALTER TABLE "models" ADD COLUMN "custom_model" boolean DEFAULT false NOT NULL;

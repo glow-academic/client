@@ -69,19 +69,14 @@ class GenericAgent:
         # structured JSON outputs (e.g., Vertex/Gemini).
         tools_param: list[Tool] = [] if self.output_type is not None else [debug_info]  # type: ignore[assignment]
 
-        model = LitellmModel(
-            model=f"{self.model_provider}/{self.model}",
-            api_key=self.api_key,
-            base_url=self.base_url,
-        ) if self.base_url else LitellmModel(
-            model=self.model,
-            api_key=self.api_key,
-        )
-
         return Agent[DebugContext](
             name=f"{self.agent_name} Agent",
             instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
-            model=model,
+            model=LitellmModel(
+                model=self.model,
+                api_key=self.api_key,
+                base_url=self.base_url
+            ),
             model_settings=ModelSettings(
                 temperature=self.temperature,
                 include_usage=True,

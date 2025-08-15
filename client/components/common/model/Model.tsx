@@ -13,14 +13,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Model as ModelType } from "@/types";
@@ -38,7 +32,8 @@ interface FormErrors {
 interface FormData {
   name?: string;
   description?: string;
-  active?: string;
+  active?: boolean;
+  customModel?: boolean;
   inputPpm?: string; // USD per 1M input tokens
   outputPpm?: string; // USD per 1M output tokens
 }
@@ -59,7 +54,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
     () => ({
       name: "",
       description: "",
-      active: "true",
+      active: true,
+      customModel: false,
       inputPpm: "0",
       outputPpm: "0",
     }),
@@ -85,7 +81,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
       setFormData({
         name: modelToEdit.name,
         description: modelToEdit.description,
-        active: modelToEdit.active ? "true" : "false",
+        active: modelToEdit.active,
+        customModel: modelToEdit.customModel,
         inputPpm: modelToEdit.inputPpm?.toString?.() ?? "0",
         outputPpm: modelToEdit.outputPpm?.toString?.() ?? "0",
       });
@@ -149,7 +146,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
         result = await updateModel(modelId, {
           name: formData.name,
           description: formData.description,
-          active: formData.active === "true" ? true : false,
+          active: formData.active,
+          customModel: formData.customModel,
           inputPpm: inputPpmNum,
           outputPpm: outputPpmNum,
           updatedAt: new Date().toISOString(),
@@ -159,7 +157,8 @@ export default function Model({ modelId, providerId }: ModelProps) {
           name: formData.name,
           description: formData.description,
           providerId: providerId,
-          active: formData.active === "true" ? true : false,
+          active: formData.active,
+          customModel: formData.customModel,
           inputPpm: inputPpmNum,
           outputPpm: outputPpmNum,
           createdAt: new Date().toISOString(),
@@ -233,24 +232,41 @@ export default function Model({ modelId, providerId }: ModelProps) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="active">Status</Label>
-          {formData.active !== undefined && !isLoading ? (
-            <Select
-              value={formData.active}
-              onValueChange={(value) => handleInputChange("active", value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <Skeleton className="h-10 w-full" />
-          )}
+        {/* Custom Model and Active Switches */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="customModel" className="text-sm">
+              Custom Model
+            </Label>
+            {formData.customModel !== undefined && !isLoading ? (
+              <Switch
+                id="customModel"
+                checked={formData.customModel}
+                onCheckedChange={(checked) =>
+                  handleInputChange("customModel", checked)
+                }
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Model Active
+            </Label>
+            {formData.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
         </div>
 
         {/* Pricing */}
@@ -265,7 +281,10 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 min="0"
                 value={formData.inputPpm}
                 onChange={(e) =>
-                  handleInputChange("inputPpm" as keyof ModelType, e.target.value)
+                  handleInputChange(
+                    "inputPpm" as keyof ModelType,
+                    e.target.value
+                  )
                 }
                 placeholder="e.g. 3.00"
                 className={errors.inputPpm ? "border-destructive" : ""}
