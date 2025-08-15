@@ -92,8 +92,17 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
   }
 
   // Use absolute URL for fetch to avoid URL parsing issues
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const absoluteLogUrl = `${baseUrl}${logUrl}`;
+  let absoluteLogUrl: string;
+  if (typeof window !== "undefined") {
+    // Client-side: use window.location.origin
+    const baseUrl = window.location.origin;
+    absoluteLogUrl = `${baseUrl}${logUrl}`;
+  } else {
+    // Server-side: construct URL from environment
+    // For server-side, we need to construct a proper absolute URL
+    const origin = process.env["ORIGIN"] || "http://localhost:3000";
+    absoluteLogUrl = `${origin}${logUrl}`;
+  }
 
   await fetch(absoluteLogUrl, {
     method: "POST",

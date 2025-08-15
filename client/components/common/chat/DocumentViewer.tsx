@@ -95,13 +95,15 @@ export default function DocumentViewer({
         // Get current document for name-based MIME inference
         const currentDoc = documentsToUse.find((d) => d.id === docId);
 
+        const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+
         // Call the API route directly or use blob URL for form documents
         let response;
         if (isFormDocument && document?.filePath?.startsWith("blob:")) {
           // For form documents with blob URLs, fetch the blob directly
           response = await fetch(document.filePath);
         } else {
-          response = await fetch(`/api/download/document/${docId}`, {
+          response = await fetch(`${appPrefix}/api/download/document/${docId}`, {
             method: "GET",
             credentials: "include",
           });
