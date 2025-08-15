@@ -52,6 +52,7 @@ async def run_title_agent(
         base_url=provider.base_url,
         reasoning=agent.reasoning,
         api_key=provider.api_key,
+        custom_model=model.custom_model,
     )
 
     default_guest_profile = find_default_guest_profile(session)

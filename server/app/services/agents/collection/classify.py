@@ -101,6 +101,7 @@ async def run_classify_agent(
         api_key=provider.api_key,
         reasoning=agent.reasoning,
         output_type=Classify,
+        custom_model=model.custom_model,
     )
 
     try:

@@ -100,6 +100,7 @@ async def run_scenario_agent(
         api_key=provider.api_key,
         reasoning=scenario_agent.reasoning,
         output_type=Scenario,
+        custom_model=model.custom_model,
     )
 
     agent_instance = scenario_agent_generic.agent()

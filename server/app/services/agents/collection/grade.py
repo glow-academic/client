@@ -212,6 +212,7 @@ async def run_grade_agent(
             api_key=provider.api_key,
             reasoning=agent.reasoning,
             output_type=DynamicRubric,
+            custom_model=model.custom_model,
         )
 
         agent_instance = grading_agent.agent()

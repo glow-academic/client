@@ -29,6 +29,7 @@ class GenericAgent:
         model_name: str,
         model_provider: str,
         api_key: str,
+        custom_model: bool,
         base_url: str | None,
         reasoning: str | None,
         output_type: type[BaseModel] | None = None,
@@ -38,9 +39,10 @@ class GenericAgent:
         self.agent_name = agent_name
         self.system_prompt = system_prompt
         self.temperature = temperature
+        self.custom_model = custom_model
         self.model_provider = model_provider
         self.model_name = model_name
-        self.model = model_provider + "/" + model_name
+        self.model = f"{model_provider}/{model_name}"
         self.output_type = output_type
         self.mcp_servers = mcp_servers or []
         self.output_guardrails: list[Any] = output_guardrails or []
@@ -69,13 +71,18 @@ class GenericAgent:
         # structured JSON outputs (e.g., Vertex/Gemini).
         tools_param: list[Tool] = [] if self.output_type is not None else [debug_info]  # type: ignore[assignment]
 
+
+        model = f"{self.model_provider}/{self.model_name}" if self.custom_model else self.model
+
+        base_url = self.base_url if self.custom_model else None
+
         return Agent[DebugContext](
             name=f"{self.agent_name} Agent",
             instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
             model=LitellmModel(
-                model=self.model,
+                model=model,
                 api_key=self.api_key,
-                base_url=self.base_url
+                base_url=base_url
             ),
             model_settings=ModelSettings(
                 temperature=self.temperature,

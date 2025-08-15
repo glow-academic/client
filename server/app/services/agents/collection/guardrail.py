@@ -50,6 +50,7 @@ def _build_guardrail_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, u
         api_key=provider.api_key,
         reasoning=agent_row.reasoning,
         output_type=GuardStudentResponse,
+        custom_model=model.custom_model,
     ), agent_row.id, model.id
 
 

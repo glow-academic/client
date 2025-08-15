@@ -150,6 +150,7 @@ async def _handle_simulation_chat(
         reasoning=persona.reasoning,
         api_key=provider.api_key,
         output_guardrails=output_guards,
+        custom_model=model.custom_model,
     )
 
     default_guest_profile = find_default_guest_profile(session)

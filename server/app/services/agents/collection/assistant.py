@@ -172,6 +172,7 @@ async def _handle_assistant_chat(
         api_key=provider.api_key,
         reasoning=agent.reasoning,
         mcp_servers=mcp_servers,
+        custom_model=model.custom_model,
     )
 
     final_profile_id = chat.profile_id
