@@ -1,18 +1,20 @@
 import type { SimulationFilter } from "@/contexts/analytics-context";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { ProfileRole } from "@/types";
+import type { ProfileRole, Rubric, SimulationMessage } from "@/types";
 import {
   filterAnalyticsData,
   type FilteredData,
 } from "@/utils/analytics/filtering";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -143,6 +145,30 @@ export function useFilteredAnalyticsData(
     effectiveProfile,
   ]);
 
+  // Fetch auxiliary datasets for computations that need them (messages, rubrics)
+  const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery<
+    Rubric[]
+  >({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  const chatIdsForMessages = useMemo(
+    () => (filteredData?.chats ?? []).map((c) => c.id),
+    [filteredData?.chats]
+  );
+
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery<
+    SimulationMessage[]
+  >({
+    queryKey: ["simulationMessages", chatIdsForMessages],
+    queryFn: () =>
+      chatIdsForMessages.length > 0
+        ? getSimulationMessagesByChats(chatIdsForMessages)
+        : Promise.resolve([]),
+    enabled: chatIdsForMessages.length > 0,
+  });
+
   const isLoading =
     isLoadingProfiles ||
     isLoadingCohorts ||
@@ -152,11 +178,15 @@ export function useFilteredAnalyticsData(
     isLoadingChats ||
     isLoadingGrades ||
     isLoadingFeedbacks ||
+    isLoadingRubrics ||
+    isLoadingMessages ||
     !effectiveProfile;
 
   return {
     data: filteredData,
     isLoading,
+    rubrics,
+    messages,
     // Raw data for components that need it
     rawData: {
       allProfiles,

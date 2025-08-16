@@ -29,7 +29,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { useAnalytics } from "@/contexts/analytics-context";
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
 import { buildFilteredViewForTa } from "@/utils/analytics/report/filtering";
 import {
@@ -44,14 +44,6 @@ import {
   computeTimeStats,
   computeTopScores,
 } from "@/utils/analytics/report/stats";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { useQuery } from "@tanstack/react-query";
 import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 
 export interface ReportsDataTableProps {
@@ -75,7 +67,12 @@ export function ReportsDataTable({
   showExport = true,
   onViewReport,
 }: ReportsDataTableProps) {
-  const analytics = useAnalytics();
+  const {
+    data: filteredData,
+    rubrics,
+    messages,
+    filters,
+  } = useFilteredAnalyticsData();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
@@ -114,48 +111,27 @@ export function ReportsDataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Fetch datasets once here to support hover stats. Scope by visible rows' profile ids to minimize payloads.
-  const visibleProfileIds = React.useMemo(
-    () => table.getRowModel().rows.map((r) => r.original.id),
-    [table]
+  // Use pre-computed filtered datasets for hover stats
+  const attempts = React.useMemo(
+    () => filteredData?.attempts ?? [],
+    [filteredData?.attempts]
   );
-
-  const { data: rubrics = [] } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: sims = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: scens = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: attempts = [] } = useQuery({
-    queryKey: ["simulationAttempts", visibleProfileIds],
-    queryFn: () => getSimulationAttemptsByProfiles(visibleProfileIds),
-    enabled: visibleProfileIds.length > 0,
-  });
-  const { data: chats = [] } = useQuery({
-    queryKey: ["simulationChats", attempts.map((a) => a.id)],
-    queryFn: () => getSimulationChatsByAttempts(attempts.map((a) => a.id)),
-    enabled: attempts.length > 0,
-  });
-  const { data: grades = [] } = useQuery({
-    queryKey: ["simulationGrades", chats.map((c) => c.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats.map((c) => c.id)),
-    enabled: chats.length > 0,
-  });
-  const { data: messages = [] } = useQuery({
-    queryKey: ["simulationMessages", chats.map((c) => c.id)],
-    queryFn: () => getSimulationMessagesByChats(chats.map((c) => c.id)),
-    enabled: chats.length > 0,
-  });
+  const chats = React.useMemo(
+    () => filteredData?.chats ?? [],
+    [filteredData?.chats]
+  );
+  const grades = React.useMemo(
+    () => filteredData?.grades ?? [],
+    [filteredData?.grades]
+  );
+  const sims = React.useMemo(
+    () => filteredData?.simulations ?? [],
+    [filteredData?.simulations]
+  );
+  const scens = React.useMemo(
+    () => filteredData?.scenarios ?? [],
+    [filteredData?.scenarios]
+  );
 
   // Toolbar filter selections from the table state
   const personaFilter = React.useMemo(
@@ -181,19 +157,19 @@ export function ReportsDataTable({
           attempts,
           chats,
           grades,
-          messages,
+          messages: messages ?? [],
           simulations: sims,
           scenarios: scens,
-          rubrics,
+          rubrics: rubrics ?? [],
         },
         {
-          startDate: analytics.startDate,
-          endDate: analytics.endDate,
-          effectiveCohortIds: analytics.effectiveCohortIds,
-          selectedRoles: analytics.selectedRoles,
-          showPractice: analytics.showPractice,
-          showGeneral: analytics.showGeneral,
-          cohorts: analytics.cohorts,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          effectiveCohortIds: filters.cohortIds,
+          selectedRoles: filters.roles,
+          showPractice: filters.simulationFilters.includes("practice"),
+          showGeneral: filters.simulationFilters.includes("general"),
+          cohorts: filteredData?.cohorts ?? [],
         },
         {
           personaIds: personaFilter,
@@ -209,13 +185,12 @@ export function ReportsDataTable({
       sims,
       scens,
       rubrics,
-      analytics.startDate,
-      analytics.endDate,
-      analytics.effectiveCohortIds,
-      analytics.selectedRoles,
-      analytics.showPractice,
-      analytics.showGeneral,
-      analytics.cohorts,
+      filters.startDate,
+      filters.endDate,
+      filters.cohortIds,
+      filters.roles,
+      filters.simulationFilters,
+      filteredData?.cohorts,
       personaFilter,
       scenarioFilter,
       simulationFilter,

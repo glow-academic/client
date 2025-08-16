@@ -1,17 +1,13 @@
 "use client";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 // Enhanced types for the TA performance data with the 10 metrics
 export interface TAPerformanceData {
@@ -92,48 +88,26 @@ export function useReportColumns({
   showExport = true,
   onViewReport,
 }: UseReportColumnsProps) {
-  const {  simulationFilters } = useAnalytics();
-  // Fetch data for filter options
-  const { data: _profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const { data: filteredData, filters } = useFilteredAnalyticsData();
 
   const { data: personas } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
   });
 
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  // Intentionally no local aliases of datasets; use filteredData within memos
 
   // Create filter options
   // Role filter is removed; role filtering is handled at a higher level
   const roleOptions: { value: string; label: string }[] = [];
 
   const cohortOptions = useMemo(() => {
-    if (!cohorts) return [];
-    return cohorts.map((cohort) => ({
-      value: cohort.id,
-      label: cohort.title,
-    }));
-  }, [cohorts]);
+    const source = filteredData?.cohorts ?? [];
+    return source.map((cohort) => ({ value: cohort.id, label: cohort.title }));
+  }, [filteredData?.cohorts]);
 
   const personaOptions = useMemo(() => {
-    if (!personas) return [];
-    return personas
+    return (personas ?? [])
       .filter((persona) => persona.defaultPersona === true)
       .map((persona) => ({
         value: persona.id,
@@ -142,26 +116,28 @@ export function useReportColumns({
   }, [personas]);
 
   const scenarioOptions = useMemo(() => {
-    if (!scenarios) return [];
-    const filtered = scenarios.filter((scenario) =>
-      simulationFilters.includes("practice") ? true : !scenario.practiceScenario
+    const hasPractice = filters.simulationFilters.includes("practice");
+    const source = filteredData?.scenarios ?? [];
+    const filtered = source.filter((scenario) =>
+      hasPractice ? true : !scenario.practiceScenario
     );
     return filtered.map((scenario) => ({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [scenarios, simulationFilters]);
+  }, [filteredData?.scenarios, filters.simulationFilters]);
 
   const simulationOptions = useMemo(() => {
-    if (!simulations) return [];
-    const filtered = simulations.filter((simulation) =>
-      simulationFilters.includes("practice") ? true : !simulation.practiceSimulation
+    const hasPractice = filters.simulationFilters.includes("practice");
+    const source = filteredData?.simulations ?? [];
+    const filtered = source.filter((simulation) =>
+      hasPractice ? true : !simulation.practiceSimulation
     );
     return filtered.map((simulation) => ({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [simulations, simulationFilters]);
+  }, [filteredData?.simulations, filters.simulationFilters]);
 
   // Define columns
   const columns = useMemo(() => {
