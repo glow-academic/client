@@ -14,16 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateHighestScore } from "@/utils/analytics/header";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -38,17 +32,12 @@ import {
 } from "recharts";
 
 export interface HighestScoreProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -81,53 +70,21 @@ const COLOR_CONFIGS = {
 };
 
 export default function HighestScore({
-  dateStart,
-  dateEnd,
-  profileId,
+  filteredData,
   thresholds,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: HighestScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
+  // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -135,46 +92,33 @@ export default function HighestScore({
 
   // Calculate highest score using utility function
   const highestScoreResult = useMemo(() => {
-    if (
-      !grades ||
-      !attempts ||
-      !chats ||
-      !simulations ||
-      !rubrics ||
-      !cohorts
-    ) {
+    if (!filteredData || !rubrics) {
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
     return calculateHighestScore(
-      grades,
-      chats,
-      attempts,
-      simulations,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
       rubrics,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts,
-      cohortIds,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      profiles?.map((p) => ({ id: p.id, role: p.role }))
+      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
-    grades,
-    attempts,
-    chats,
-    simulations,
+    filteredData,
     rubrics,
-    cohorts,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedRoles,
     simulationFilters,
-    profiles,
   ]);
 
   const {
@@ -231,11 +175,12 @@ export default function HighestScore({
 
   // Check if cohort filtering resulted in no data
   const hasNoCohortData =
-    cohortIds &&
-    cohortIds.length > 0 &&
-    cohorts &&
-    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
-      .length === 0;
+    selectedCohortIds &&
+    selectedCohortIds.length > 0 &&
+    filteredData?.cohorts &&
+    filteredData.cohorts.filter(
+      (cohort) => selectedCohortIds.includes(cohort.id) && cohort.active
+    ).length === 0;
 
   return (
     <>
@@ -291,7 +236,7 @@ export default function HighestScore({
               <div className="flex items-center justify-center h-full text-gray-500">
                 {hasNoCohortData
                   ? "No data available for the selected cohorts"
-                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
+                  : "No data available for the selected date range"}
               </div>
             )}
           </div>

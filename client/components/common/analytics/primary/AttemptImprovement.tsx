@@ -17,16 +17,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateAttemptImprovement } from "@/utils/analytics/primary";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, isBefore } from "date-fns";
 import { TrendingUp } from "lucide-react";
@@ -44,69 +38,32 @@ import {
 } from "recharts";
 
 export interface AttemptImprovementProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 export default function AttemptImprovement({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
+  filteredData,
   thresholds,
-  selectedRoles,
-  simulationFilters,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
+  // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -114,48 +71,48 @@ export default function AttemptImprovement({
 
   // Helper function to check if a profile is in any of the specified cohorts
   const isProfileInCohorts = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return () => true;
-    if (!cohorts) return () => false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
+    if (!filteredData?.cohorts) return () => false;
 
     return (profileId: string) => {
-      return cohorts.some(
+      return filteredData.cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) && selectedCohortIds.includes(cohort.id)
       );
     };
-  }, [cohortIds, cohorts]);
+  }, [selectedCohortIds, filteredData?.cohorts]);
 
   // Helper function to check if a simulation is in any of the specified cohorts
   const isSimulationInCohorts = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return () => true;
-    if (!cohorts) return () => false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
+    if (!filteredData?.cohorts) return () => false;
 
     return (simulationId: string) => {
-      return cohorts.some(
+      return filteredData.cohorts.some(
         (cohort) =>
           cohort.simulationIds.includes(simulationId) &&
-          cohortIds.includes(cohort.id)
+          selectedCohortIds.includes(cohort.id)
       );
     };
-  }, [cohortIds, cohorts]);
+  }, [selectedCohortIds, filteredData?.cohorts]);
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
-    if (!simulations || !grades || !chats || !attempts) return [];
+    if (!filteredData?.simulations || !filteredData?.grades || !filteredData?.chats || !filteredData?.attempts) return [];
 
     // Get all simulation IDs that have grades in the date range
     const simulationIdsWithData = new Set<string>();
 
-    grades.forEach((grade) => {
+    filteredData.grades.forEach((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const chat = filteredData.chats.find((c) => c.id === grade.simulationChatId);
+      const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
 
       if (!attempt) return;
 
       // Check date range
       const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
+        isAfter(gradeDate, startDate) && isBefore(gradeDate, endDate);
 
       if (inDateRange) {
         simulationIdsWithData.add(attempt.simulationId);
@@ -163,65 +120,54 @@ export default function AttemptImprovement({
     });
 
     // Filter by cohorts
-    let filtered = simulations.filter((s) => simulationIdsWithData.has(s.id));
-    if (cohortIds && cohortIds.length > 0) {
+    let filtered = filteredData.simulations.filter((s) => simulationIdsWithData.has(s.id));
+    if (selectedCohortIds && selectedCohortIds.length > 0) {
       filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
     }
 
     return filtered;
   }, [
-    simulations,
-    grades,
-    chats,
-    attempts,
-    dateStart,
-    dateEnd,
-    cohortIds,
+    filteredData?.simulations,
+    filteredData?.grades,
+    filteredData?.chats,
+    filteredData?.attempts,
+    startDate,
+    endDate,
+    selectedCohortIds,
     isSimulationInCohorts,
   ]);
 
   // Calculate attempt improvement data
   const improvementData = useMemo(() => {
     if (
-      !profiles ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !simulations ||
-      !rubrics ||
-      !cohorts
+      !filteredData ||
+      !rubrics
     ) {
       return [];
     }
 
     return calculateAttemptImprovement(
-      grades,
-      chats,
-      attempts,
-      simulations,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
       rubrics,
-      profiles,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts,
-      cohortIds,
+      filteredData.profiles,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedSimulations.map((s) => s.id),
       selectedRoles,
       simulationFilters
     );
   }, [
-    profiles,
-    chats,
-    grades,
-    attempts,
-    simulations,
+    filteredData,
     rubrics,
-    cohorts,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedSimulations,
     selectedRoles,
     simulationFilters,
@@ -280,12 +226,12 @@ export default function AttemptImprovement({
 
   // Check if we have any data after cohort filtering
   const hasDataAfterCohortFilter = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return true;
-    if (!profiles || !cohorts) return false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return true;
+    if (!filteredData?.profiles || !filteredData?.cohorts) return false;
 
     // Check if any profile is in the specified cohorts
-    return profiles.some((profile) => isProfileInCohorts(profile.id));
-  }, [cohortIds, profiles, cohorts, isProfileInCohorts]);
+    return filteredData.profiles.some((profile) => isProfileInCohorts(profile.id));
+  }, [selectedCohortIds, filteredData?.profiles, filteredData?.cohorts, isProfileInCohorts]);
 
   if (!hasDataAfterCohortFilter) {
     return (

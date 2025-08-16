@@ -25,21 +25,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -56,43 +49,32 @@ import {
 } from "recharts";
 
 export interface PersonaPerformanceProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 export default function PersonaPerformance({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
+  filteredData,
   thresholds,
-  selectedRoles,
-  simulationFilters,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
+  // Fetch additional data (not part of FilteredData)
   const { data: personas } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
@@ -101,32 +83,6 @@ export default function PersonaPerformance({
   const { data: scenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
   });
 
   const { data: rubrics } = useQuery({
@@ -149,93 +105,84 @@ export default function PersonaPerformance({
 
   // Helper function to check if a profile is in any of the specified cohorts
   const isProfileInCohorts = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return () => true;
-    if (!cohorts) return () => false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
+    if (!filteredData?.cohorts) return () => false;
 
     return (profileId: string) => {
-      return cohorts.some(
+      return filteredData.cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) && selectedCohortIds.includes(cohort.id)
       );
     };
-  }, [cohortIds, cohorts]);
+  }, [selectedCohortIds, filteredData?.cohorts]);
 
   // Helper function to check if a simulation is in any of the specified cohorts
   const isSimulationInCohorts = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return () => true;
-    if (!cohorts) return () => false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
+    if (!filteredData?.cohorts) return () => false;
 
     return (simulationId: string) => {
-      return cohorts.some(
+      return filteredData.cohorts.some(
         (cohort) =>
           cohort.simulationIds.includes(simulationId) &&
-          cohortIds.includes(cohort.id)
+          selectedCohortIds.includes(cohort.id)
       );
     };
-  }, [cohortIds, cohorts]);
+  }, [selectedCohortIds, filteredData?.cohorts]);
 
   // Get simulations that have data (simplified logic)
   const simulationsWithData = useMemo(() => {
-    if (!simulations) return [];
+    if (!filteredData?.simulations) return [];
 
     // Filter by cohorts first
-    let filtered = simulations.filter((s) => !s.practiceSimulation);
-    if (cohortIds && cohortIds.length > 0) {
+    let filtered = filteredData.simulations.filter((s) => !s.practiceSimulation);
+    if (selectedCohortIds && selectedCohortIds.length > 0) {
       filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
     }
 
     return filtered;
-  }, [simulations, cohortIds, isSimulationInCohorts]);
+  }, [filteredData?.simulations, selectedCohortIds, isSimulationInCohorts]);
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
     if (
+      !filteredData ||
       !personas ||
       !scenarios ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !simulations ||
       !rubrics
     ) {
       return [];
     }
 
     return calculatePersonaPerformance(
-      grades || [],
-      chats || [],
-      attempts || [],
-      simulations || [],
-      rubrics || [],
-      profiles || [],
-      personas || [],
-      scenarios || [],
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
+      rubrics,
+      filteredData.profiles || [],
+      personas,
+      scenarios,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedSimulations.map((s) => s.id),
       selectedRoles,
       simulationFilters
     );
   }, [
+    filteredData,
     personas,
     scenarios,
-    chats,
-    grades,
-    attempts,
-    simulations,
     rubrics,
-    profiles,
-    dateStart,
-    dateEnd,
-    profileId,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedSimulations,
     selectedRoles,
     simulationFilters,
-    cohorts,
-    cohortIds,
   ]);
 
   // Calculate threshold status based on persona performance data
@@ -289,12 +236,12 @@ export default function PersonaPerformance({
 
   // Check if we have any data after cohort filtering
   const hasDataAfterCohortFilter = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return true;
-    if (!profiles || !cohorts) return false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return true;
+    if (!filteredData?.profiles) return false;
 
     // Check if any profile is in the specified cohorts
-    return profiles.some((profile) => isProfileInCohorts(profile.id));
-  }, [cohortIds, profiles, cohorts, isProfileInCohorts]);
+    return filteredData.profiles.some((profile) => isProfileInCohorts(profile.id));
+  }, [selectedCohortIds, filteredData?.profiles, isProfileInCohorts]);
 
   if (!hasDataAfterCohortFilter) {
     return (
@@ -384,11 +331,11 @@ export default function PersonaPerformance({
               Performance analysis by student persona type
             </CardDescription>
           </div>
-          {simulations && simulations.length > 0 && (
+          {filteredData?.simulations && filteredData.simulations.length > 0 && (
             <SimulationPicker
               simulations={(simulationsWithData.length > 0
                 ? simulationsWithData
-                : simulations
+                : filteredData.simulations
               ).map((s) => ({
                 id: s.id,
                 title: s.title,

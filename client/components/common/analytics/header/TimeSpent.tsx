@@ -14,15 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateTimeSpent } from "@/utils/analytics/header";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { useQuery } from "@tanstack/react-query";
 import { Timer } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -36,17 +30,12 @@ import {
 } from "recharts";
 
 export interface TimeSpentProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -79,77 +68,46 @@ const COLOR_CONFIGS = {
 };
 
 export default function TimeSpent({
-  dateStart,
-  dateEnd,
-  profileId,
+  filteredData,
   thresholds,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   // Calculate time spent using utility function
   const timeSpentResult = useMemo(() => {
-    if (!chats || !attempts || !simulations || !cohorts) {
+    if (!filteredData) {
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
     return calculateTimeSpent(
-      chats,
-      attempts,
-      simulations,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts,
-      cohortIds,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      profiles?.map((p) => ({ id: p.id, role: p.role }))
+      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
-    chats,
-    attempts,
-    simulations,
-    cohorts,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
+    filteredData,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedRoles,
     simulationFilters,
-    profiles,
   ]);
 
   const {
@@ -206,11 +164,12 @@ export default function TimeSpent({
 
   // Check if cohort filtering resulted in no data
   const hasNoCohortData =
-    cohortIds &&
-    cohortIds.length > 0 &&
-    cohorts &&
-    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
-      .length === 0;
+    selectedCohortIds &&
+    selectedCohortIds.length > 0 &&
+    filteredData?.cohorts &&
+    filteredData.cohorts.filter(
+      (cohort) => selectedCohortIds.includes(cohort.id) && cohort.active
+    ).length === 0;
 
   // Format time for display
   const formatTime = (seconds: number) => {
@@ -285,7 +244,7 @@ export default function TimeSpent({
               <div className="flex items-center justify-center h-full text-gray-500">
                 {hasNoCohortData
                   ? "No data available for the selected cohorts"
-                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
+                  : "No data available for the selected date range"}
               </div>
             )}
           </div>

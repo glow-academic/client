@@ -16,6 +16,7 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 // import { Label } from "@/components/ui/label";
 import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
+import type { ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -144,7 +145,7 @@ export function AnalyticsFilters({
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
-  const handleRoleSelect = (roles: profileRole[]) => {
+  const handleRoleSelect = (roles: ProfileRole[]) => {
     setSelectedRoles(roles);
   };
 

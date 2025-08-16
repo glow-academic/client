@@ -14,14 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateTotalAttempts } from "@/utils/analytics/header";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { useQuery } from "@tanstack/react-query";
 import { Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -35,17 +30,12 @@ import {
 } from "recharts";
 
 export interface TotalAttemptsProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -78,68 +68,45 @@ const COLOR_CONFIGS = {
 };
 
 export default function TotalAttempts({
-  dateStart,
-  dateEnd,
-  profileId,
+  filteredData,
   thresholds,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: TotalAttemptsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   // Calculate total attempts using utility function
   const totalAttemptsResult = useMemo(() => {
-    if (!attempts || !simulations || !cohorts) {
+    if (!filteredData) {
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
     return calculateTotalAttempts(
-      attempts,
-      simulations,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts,
-      cohortIds,
+      filteredData.attempts,
+      filteredData.simulations,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      profiles?.map((p) => ({ id: p.id, role: p.role }))
+      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
-    attempts,
-    simulations,
-    cohorts,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
+    filteredData,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedRoles,
     simulationFilters,
-    profiles,
   ]);
 
   const {
@@ -196,11 +163,12 @@ export default function TotalAttempts({
 
   // Check if cohort filtering resulted in no data
   const hasNoCohortData =
-    cohortIds &&
-    cohortIds.length > 0 &&
-    cohorts &&
-    cohorts.filter((cohort) => cohortIds.includes(cohort.id) && cohort.active)
-      .length === 0;
+    selectedCohortIds &&
+    selectedCohortIds.length > 0 &&
+    filteredData?.cohorts &&
+    filteredData.cohorts.filter(
+      (cohort) => selectedCohortIds.includes(cohort.id) && cohort.active
+    ).length === 0;
 
   return (
     <>
@@ -217,7 +185,7 @@ export default function TotalAttempts({
             {hasNoCohortData
               ? "No cohort data"
               : hasDataAvailable
-                ? totalAttempts
+                ? `${totalAttempts}`
                 : "No data"}
           </div>
         </CardContent>
@@ -240,7 +208,7 @@ export default function TotalAttempts({
                   <YAxis />
                   <Tooltip
                     formatter={(value: number, name: string) => [
-                      value,
+                      name === "value" ? value : value,
                       name === "value" ? "Attempts" : "Sessions",
                     ]}
                   />
@@ -256,7 +224,7 @@ export default function TotalAttempts({
               <div className="flex items-center justify-center h-full text-gray-500">
                 {hasNoCohortData
                   ? "No data available for the selected cohorts"
-                  : `No data available for the selected date range${profileId ? " and profile" : ""}`}
+                  : "No data available for the selected date range"}
               </div>
             )}
           </div>

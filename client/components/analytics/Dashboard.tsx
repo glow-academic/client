@@ -9,12 +9,8 @@
 
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useProfile } from "@/contexts/profile-context";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
-import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
-import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
-import { useQuery } from "@tanstack/react-query";
+
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -53,6 +49,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
     simulationFilters,
   } = useAnalytics();
 
+  // Use centralized filtering hook
+  const { data: filteredData, isLoading } = useFilteredAnalyticsData({
+    ...(profileId && { profileId }),
+  });
+
   // Threshold data
   const thresholds = {
     danger: 60,
@@ -74,130 +75,56 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
-  // Data queries
-  const { effectiveProfile: _effectiveProfile } = useProfile();
-
-  // Background data loading (for component functionality)
-  const { isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["attempts"],
-    queryFn: () => getAllSimulationAttempts(),
-  });
-
-  const { isLoading: isLoadingChats } = useQuery({
-    queryKey: ["chats"],
-    queryFn: () => getAllSimulationChats(),
-  });
-
-  const { isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["grades"],
-    queryFn: () => getAllSimulationChatGrades(),
-  });
-
   const headerComponents = [
     <AverageScore
       key="average-score"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <CompletionPercentage
       key="completion-percentage"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <HighestScore
       key="highest-score"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <MessagesPerSession
       key="messages-per-session"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <SessionEfficiency
       key="session-efficiency"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <StagnationRate
       key="stagnation-rate"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <TimeSpent
       key="time-spent"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <TotalAttempts
       key="total-attempts"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -387,12 +314,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   // Loading state
-  if (
-    isLoadingProfiles ||
-    isLoadingAttempts ||
-    isLoadingChats ||
-    isLoadingGrades
-  ) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
