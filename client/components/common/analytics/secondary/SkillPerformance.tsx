@@ -156,61 +156,6 @@ export default function SkillPerformance({
     );
   }
 
-  // Show no access message if user doesn't have access to any cohorts
-  if (!skillPerformanceResult || !skillPerformanceResult.hasData) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Skill Performance
-              </CardTitle>
-              <CardDescription>
-                Performance across key teaching competencies
-              </CardDescription>
-            </div>
-            {rubrics && rubrics.length > 0 && (
-              <RubricPicker
-                rubrics={rubrics.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  description: r.description,
-                  points: r.points,
-                  active: r.active,
-                }))}
-                placeholder="Filter by rubric..."
-                onSelect={setSelectedRubrics}
-                selectedRubrics={defaultRubrics}
-                buttonClassName="w-48"
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center text-muted-foreground">
-            <p>No skill data available for the selected time period</p>
-            <p className="text-sm">
-              Complete some training sessions to see your progress
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
@@ -255,7 +200,7 @@ export default function SkillPerformance({
       <CardContent className="flex-1 overflow-hidden">
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={skillPerformanceResult.radarData}>
+            <RadarChart data={skillPerformanceResult?.radarData ?? []}>
               <PolarAngleAxis dataKey="metric" />
               <PolarGrid />
               <Tooltip

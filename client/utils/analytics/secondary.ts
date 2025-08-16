@@ -308,7 +308,9 @@ export const calculateCohortPerformance = (
     cohortData,
     dailyData,
     insights,
-    hasData: cohortData.length > 0,
+    hasData:
+      cohortData.length > 0 &&
+      cohortData.some((cohort) => cohort.totalStudents > 0),
   };
 };
 
@@ -417,7 +419,7 @@ export const calculateSkillPerformance = (
 
   return {
     radarData,
-    hasData: radarData.length > 0,
+    hasData: radarData.length > 0 && radarData.some((skill) => skill.value > 0),
   };
 };
 

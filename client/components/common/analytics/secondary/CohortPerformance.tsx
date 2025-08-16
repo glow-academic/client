@@ -128,60 +128,6 @@ export default function CohortPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
-  // Show no access message if user doesn't have access to any cohorts
-  if (!cohortPerformanceResult?.hasData) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BarChart3 className="h-4 w-4" />
-                Cohort Performance
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Pass rates by cohort
-              </CardDescription>
-            </div>
-            {simulationsWithData && simulationsWithData.length > 0 && (
-              <SimulationPicker
-                simulations={simulationsWithData.map((s) => ({
-                  id: s.id,
-                  title: s.title,
-                  timeLimit: s.timeLimit || undefined,
-                  active: s.active,
-                  defaultSimulation: s.defaultSimulation,
-                  practiceSimulation: s.practiceSimulation,
-                }))}
-                placeholder="Filter by simulation..."
-                onSelect={setSelectedSimulations}
-                selectedSimulations={selectedSimulations}
-                hideSelectedChips={true}
-                showLabel={false}
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1 p-3">
-          <p className="text-muted-foreground text-sm">
-            No cohort data available for the selected time period.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
@@ -228,7 +174,7 @@ export default function CohortPerformance({
       <CardContent className="flex-1 overflow-hidden p-3">
         <div className="space-y-4">
           {/* Cohort Details Dialog */}
-          {cohortPerformanceResult.cohortData.map((cohort) => {
+          {cohortPerformanceResult?.cohortData.map((cohort) => {
             // Calculate pass rate percentage
             const passRatePercentage =
               (cohort.passedStudents / cohort.totalStudents) * 100;
@@ -293,7 +239,7 @@ export default function CohortPerformance({
                   </DialogHeader>
                   <div className="space-y-6">
                     {/* Daily Performance Line Chart */}
-                    {cohortPerformanceResult.dailyData.length > 0 && (
+                    {cohortPerformanceResult?.dailyData.length > 0 && (
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={cohortPerformanceResult.dailyData}>
@@ -327,7 +273,7 @@ export default function CohortPerformance({
                     )}
 
                     {/* Actionable Insights */}
-                    {cohortPerformanceResult.insights && (
+                    {cohortPerformanceResult?.insights && (
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
                           {cohortPerformanceResult.insights}
