@@ -32,12 +32,6 @@ import {
 } from "@/components/ui/table";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { useQuery } from "@tanstack/react-query";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
@@ -65,42 +59,16 @@ export default function SimulationComposition({
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
 
-  // Fetch additional data (not part of FilteredData)
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  const { data: agents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
-  });
-
-  const { data: parameters } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems } = useQuery({
-    queryKey: ["parameterItems"],
-    queryFn: () => getAllParameterItems(),
-  });
+  // Use centralized datasets from filteredData
+  const scenarios = filteredData?.scenarios;
+  const personas = filteredData?.personas;
+  const agents = filteredData?.agents;
+  const parameters = filteredData?.parameters;
+  const parameterItems = filteredData?.parameterItems;
 
   // Calculate simulation composition data using utility function
   const simulationComposition = useMemo(() => {
-    if (
-      !filteredData ||
-      !scenarios ||
-      !personas ||
-      !agents ||
-      !parameters ||
-      !parameterItems
-    ) {
+    if (!filteredData || !scenarios || !personas || !agents || !parameters || !parameterItems) {
       return {
         highPerforming: [],
         lowPerforming: [],

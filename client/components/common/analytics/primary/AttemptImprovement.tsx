@@ -20,8 +20,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateAttemptImprovement } from "@/utils/analytics/primary";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -54,11 +52,7 @@ export default function AttemptImprovement({
     []
   );
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const rubrics = filteredData?.rubrics;
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {

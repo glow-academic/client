@@ -28,8 +28,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -59,11 +57,7 @@ export default function CohortPerformance({
     []
   );
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const rubrics = filteredData?.rubrics;
 
   // Use the utility function to calculate cohort performance
   const cohortPerformanceResult = useMemo(() => {

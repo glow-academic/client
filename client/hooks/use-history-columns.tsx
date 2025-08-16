@@ -4,8 +4,6 @@ import { DataTableRowActions } from "@/components/common/history/DataTableRowAct
 import { Badge } from "@/components/ui/badge";
 import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
@@ -26,16 +24,9 @@ export function useHistoryColumns({
   filteredData: FilteredData | null;
   showExport: boolean;
 }) {
-  // Fetch additional data needed for display
-  const { data: personas, isLoading: isLoadingPersonas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  // Use centralized datasets from filteredData
+  const personas = filteredData?.personas;
+  const rubrics = filteredData?.rubrics;
 
   // Map persona name -> hex color
   const personaColorMap = useMemo(() => {
@@ -677,6 +668,6 @@ export function useHistoryColumns({
     profileOptions,
     simulationOptions,
     scenarioOptions,
-    isLoading: isLoadingPersonas || isLoadingRubrics,
+    isLoading: false,
   };
 }

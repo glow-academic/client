@@ -438,11 +438,7 @@ export default function Practice() {
         {/* History Section for non-guests */}
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
-            <SimulationHistory
-              profileId={effectiveProfile.id}
-              showExport={false}
-              simulationFilters={["practice"]}
-            />
+            <SimulationHistory filteredData={null} showExport={false} />
           </div>
         )}
       </div>

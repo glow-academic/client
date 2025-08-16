@@ -19,10 +19,6 @@ import {
 } from "@/components/ui/card";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateSkillPerformance } from "@/utils/analytics/secondary";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useQuery } from "@tanstack/react-query";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -49,11 +45,8 @@ export default function SkillPerformance({
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
-  // Fetch additional data (not part of FilteredData)
-  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  // Use centralized datasets from filteredData
+  const rubrics = filteredData?.rubrics;
 
   // Set default selection to first rubric when rubrics are loaded
   const defaultRubrics = useMemo(() => {
@@ -70,19 +63,8 @@ export default function SkillPerformance({
     return rubrics.filter((r) => defaultRubrics.some((sr) => sr.id === r.id));
   }, [rubrics, defaultRubrics]);
 
-  const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
-    queryKey: ["standardGroups", filteredRubrics?.map((r) => r.id) || []],
-    queryFn: () =>
-      getStandardGroupsByRubrics(filteredRubrics?.map((r) => r.id) || []),
-    enabled: !!filteredRubrics && filteredRubrics.length > 0,
-  });
-
-  const { data: standards, isLoading: standardsLoading } = useQuery({
-    queryKey: ["standards", standardGroups?.map((sg) => sg.id) || []],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups?.map((sg) => sg.id) || []),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
+  const standardGroups = filteredData?.standardGroups;
+  const standards = filteredData?.standards;
 
   // Calculate skill performance using utility function
   const skillPerformanceResult = useMemo(() => {
@@ -119,7 +101,7 @@ export default function SkillPerformance({
   const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
-  const isLoading = rubricsLoading || standardGroupsLoading || standardsLoading;
+  const isLoading = !rubrics || !standardGroups || !standards;
 
   // Show loading state
   if (isLoading) {

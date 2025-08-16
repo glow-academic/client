@@ -17,8 +17,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateStagnationRate } from "@/utils/analytics/header";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 import { TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -75,11 +73,7 @@ export default function StagnationRate({
 }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const rubrics = filteredData?.rubrics;
 
   // Calculate stagnation rate using utility function
   const stagnationRateResult = useMemo(() => {

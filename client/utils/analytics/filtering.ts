@@ -3,12 +3,16 @@ import type {
   Cohort,
   Profile,
   ProfileRole,
+  Rubric,
   Scenario,
   Simulation,
   SimulationAttempt,
   SimulationChat,
   SimulationChatFeedback,
   SimulationChatGrade,
+  SimulationMessage,
+  Standard,
+  StandardGroup,
 } from "@/types";
 import { isAfter, isBefore } from "date-fns";
 
@@ -18,12 +22,16 @@ export interface FilteredData {
   chats: SimulationChat[];
   grades: SimulationChatGrade[];
   feedbacks: SimulationChatFeedback[];
+  messages: SimulationMessage[];
 
   // Derived data for convenience
   simulations: Simulation[];
   scenarios: Scenario[];
   profiles: Profile[];
   cohorts: Cohort[];
+  rubrics: Rubric[];
+  standardGroups: StandardGroup[];
+  standards: Standard[];
 }
 
 export interface FilteringOptions {
@@ -52,6 +60,11 @@ export interface FilteringOptions {
   allScenarios: Scenario[];
   allProfiles: Profile[];
   allCohorts: Cohort[];
+  // Optional universal datasets (if available)
+  allMessages?: SimulationMessage[];
+  allRubrics?: Rubric[];
+  allStandardGroups?: StandardGroup[];
+  allStandards?: Standard[];
 }
 
 /**
@@ -82,6 +95,10 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     allScenarios,
     allProfiles,
     allCohorts,
+    allMessages = [],
+    allRubrics = [],
+    allStandardGroups = [],
+    allStandards = [],
   } = options;
 
   // Step 1: Determine filtering approach based on cohortIds
@@ -148,15 +165,38 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     filteredSimulations
   );
 
+  // Step 7: Derive messages from filtered chats (if provided)
+  const filteredMessages =
+    Array.isArray(allMessages) && allMessages.length > 0
+      ? allMessages.filter((m) => filteredChats.some((c) => c.id === m.chatId))
+      : [];
+
+  // Step 8: Derive rubrics and standards from filtered simulations (if provided)
+  const rubricIds = new Set<string>(
+    filteredSimulations.map((s) => s.rubricId).filter(Boolean) as string[]
+  );
+  const filteredRubrics = allRubrics.filter((r) => rubricIds.has(r.id));
+  const filteredStandardGroups = allStandardGroups.filter((g) =>
+    rubricIds.has(g.rubricId)
+  );
+  const stdGroupIds = new Set<string>(filteredStandardGroups.map((g) => g.id));
+  const filteredStandards = allStandards.filter((s) =>
+    stdGroupIds.has(s.standardGroupId)
+  );
+
   return {
     attempts: filteredAttempts,
     chats: filteredChats,
     grades: filteredGrades,
     feedbacks: filteredFeedbacks,
+    messages: filteredMessages,
     simulations: filteredSimulations,
     scenarios: filteredScenarios,
     profiles: filteredProfiles,
     cohorts: filteredCohorts,
+    rubrics: filteredRubrics,
+    standardGroups: filteredStandardGroups,
+    standards: filteredStandards,
   };
 }
 

@@ -16,6 +16,8 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -107,8 +109,33 @@ export function useFilteredAnalyticsData(
     enabled: allGrades.length > 0,
   });
 
-  // Apply centralized filtering
-  const filteredData = useMemo((): FilteredData | null => {
+  // Fetch auxiliary datasets first (rubrics, standards)
+  const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery<
+    Rubric[]
+  >({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  // Standards taxonomy for skills/heatmaps
+  const { data: standardGroups = [], isLoading: isLoadingStandardGroups } =
+    useQuery({
+      queryKey: ["standardGroups", rubrics.map((r) => r.id)],
+      queryFn: () => getStandardGroupsByRubrics(rubrics.map((r) => r.id)),
+      enabled: rubrics.length > 0,
+      staleTime: 5 * 60 * 1000,
+    });
+
+  const { data: standards = [], isLoading: isLoadingStandards } = useQuery({
+    queryKey: ["standards", standardGroups.map((g) => g.id)],
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups.map((g) => g.id)),
+    enabled: standardGroups.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Apply centralized filtering (include rubrics/standards)
+  const filteredDataBase = useMemo((): FilteredData | null => {
     if (!effectiveProfile) return null;
 
     return filterAnalyticsData({
@@ -126,6 +153,9 @@ export function useFilteredAnalyticsData(
       allScenarios,
       allProfiles,
       allCohorts,
+      allRubrics: rubrics,
+      allStandardGroups: standardGroups,
+      allStandards: standards,
     });
   }, [
     startDate,
@@ -142,20 +172,15 @@ export function useFilteredAnalyticsData(
     allScenarios,
     allProfiles,
     allCohorts,
+    rubrics,
+    standardGroups,
+    standards,
     effectiveProfile,
   ]);
 
-  // Fetch auxiliary datasets for computations that need them (messages, rubrics)
-  const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery<
-    Rubric[]
-  >({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
   const chatIdsForMessages = useMemo(
-    () => (filteredData?.chats ?? []).map((c) => c.id),
-    [filteredData?.chats]
+    () => (filteredDataBase?.chats ?? []).map((c) => c.id),
+    [filteredDataBase?.chats]
   );
 
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery<
@@ -169,6 +194,15 @@ export function useFilteredAnalyticsData(
     enabled: chatIdsForMessages.length > 0,
   });
 
+  // Final filtered data including messages
+  const filteredData = useMemo((): FilteredData | null => {
+    if (!filteredDataBase) return null;
+    return {
+      ...filteredDataBase,
+      messages,
+    };
+  }, [filteredDataBase, messages]);
+
   const isLoading =
     isLoadingProfiles ||
     isLoadingCohorts ||
@@ -180,13 +214,18 @@ export function useFilteredAnalyticsData(
     isLoadingFeedbacks ||
     isLoadingRubrics ||
     isLoadingMessages ||
+    isLoadingStandardGroups ||
+    isLoadingStandards ||
     !effectiveProfile;
 
   return {
     data: filteredData,
     isLoading,
+    // Legacy fields (prefer using data.* in components)
     rubrics,
     messages,
+    standardGroups,
+    standards,
     // Raw data for components that need it
     rawData: {
       allProfiles,

@@ -30,9 +30,6 @@ import { cn } from "@/lib/utils";
 import { Simulation } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateScenarioPerformanceWithinSimulation } from "@/utils/analytics/footer";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -62,16 +59,8 @@ export default function SimulationPerformance({
     useState<Simulation | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Fetch additional data (not part of FilteredData)
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const scenarios = filteredData?.scenarios;
+  const rubrics = filteredData?.rubrics;
 
   // Filter simulations to exclude practice simulations and those without data
   const availableSimulations = useMemo(() => {

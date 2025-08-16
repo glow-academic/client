@@ -38,10 +38,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateScenarioAttributeBreakdown } from "@/utils/analytics/footer";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -79,21 +75,10 @@ export default function ScenarioPerformance({
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Fetch additional data needed for calculations
-  const { data: parameters } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems } = useQuery({
-    queryKey: ["parameterItems"],
-    queryFn: () => getAllParameterItems(),
-  });
-
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  // Use centralized datasets from filteredData
+  const parameters = filteredData?.parameters;
+  const parameterItems = filteredData?.parameterItems;
+  const rubrics = filteredData?.rubrics;
 
   // Get non-numerical parameters only
   const nonNumericalParameters = useMemo(() => {

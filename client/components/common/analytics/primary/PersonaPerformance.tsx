@@ -30,8 +30,6 @@ import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -65,20 +63,13 @@ export default function PersonaPerformance({
     []
   );
 
-  // Fetch additional data (not part of FilteredData)
+  // Use datasets sourced from filtered data where available
+  const rubrics = filteredData?.rubrics;
+  const scenarios = filteredData?.scenarios;
+  // Personas are not included in filtered data yet; fetch minimally
   const { data: personas } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
-  });
-
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
   });
 
   // Map persona name -> hex color from personas table
@@ -104,7 +95,7 @@ export default function PersonaPerformance({
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
-    if (!filteredData || !personas || !scenarios || !rubrics) {
+    if (!filteredData || !scenarios || !rubrics || !personas) {
       return [];
     }
 

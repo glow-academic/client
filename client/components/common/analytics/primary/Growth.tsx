@@ -16,8 +16,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePlatformGrowth } from "@/utils/analytics/primary";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -46,11 +44,8 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
     "averageScore",
   ]);
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  // Use rubrics from filtered data
+  const rubrics = filteredData?.rubrics;
 
   // Define all available metrics (expandable to all 10 header metrics)
   const availableMetrics: GrowthMetric[] = useMemo(

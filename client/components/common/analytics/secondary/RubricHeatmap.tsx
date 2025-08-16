@@ -34,10 +34,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useQuery } from "@tanstack/react-query";
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import {
   useCallback,
@@ -68,11 +64,7 @@ export default function RubricHeatmap({
     col: number | null;
   }>({ row: null, col: null });
 
-  // Fetch additional data (not part of FilteredData)
-  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const rubrics = filteredData?.rubrics;
 
   // Set default selection to first rubric when rubrics are loaded
   const defaultRubrics = useMemo(() => {
@@ -89,19 +81,9 @@ export default function RubricHeatmap({
     return rubrics.filter((r) => defaultRubrics.some((sr) => sr.id === r.id));
   }, [rubrics, defaultRubrics]);
 
-  const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
-    queryKey: ["standardGroups", filteredRubrics?.map((r) => r.id) || []],
-    queryFn: () =>
-      getStandardGroupsByRubrics(filteredRubrics?.map((r) => r.id) || []),
-    enabled: !!filteredRubrics && filteredRubrics.length > 0,
-  });
+  const standardGroups = filteredData?.standardGroups;
 
-  const { data: standards, isLoading: standardsLoading } = useQuery({
-    queryKey: ["standards", standardGroups?.map((sg) => sg.id) || []],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups?.map((sg) => sg.id) || []),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
+  const standards = filteredData?.standards;
 
   // Use the utility function to calculate rubric heatmap
   const rubricHeatmapResult = useMemo(() => {
@@ -175,7 +157,7 @@ export default function RubricHeatmap({
   const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
-  const isLoading = rubricsLoading || standardGroupsLoading || standardsLoading;
+  const isLoading = !rubrics || !standardGroups || !standards;
 
   // Show loading state
   if (isLoading) {

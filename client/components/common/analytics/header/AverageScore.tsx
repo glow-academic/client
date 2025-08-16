@@ -17,8 +17,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateAverageScore } from "@/utils/analytics/header";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -75,11 +73,8 @@ export default function AverageScore({
 }: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  // Use rubrics from filtered data
+  const rubrics = filteredData?.rubrics;
 
   // Calculate average score using utility function
   const averageScoreResult = useMemo(() => {

@@ -17,8 +17,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePersonaResponseTimes } from "@/utils/analytics/header";
-import { getAllSimulationMessages } from "@/utils/queries/simulation_messages/get-all-simulation-messages";
-import { useQuery } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -75,11 +73,7 @@ export default function PersonaResponseTimes({
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch messages (still needed for calculations)
-  const { data: allMessages } = useQuery({
-    queryKey: ["simulationMessages"],
-    queryFn: () => getAllSimulationMessages(),
-  });
+  const allMessages = filteredData?.messages;
 
   // Calculate average response time using utility function
   const responseTimeResult = useMemo(() => {

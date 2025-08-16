@@ -34,6 +34,8 @@ export default function Reports() {
     isLoading,
     rubrics,
     messages,
+    standardGroups,
+    standards,
   } = useFilteredAnalyticsData();
 
   const handleViewReport = (profileId: string) => {
@@ -275,25 +277,56 @@ export default function Reports() {
       ).length;
       const totalSessions = userChats.length;
 
-      // Skill breakdown omitted in refactor scope (requires standards/feedbacks not in filteredData)
-      const skillBreakdown: Array<{
-        skill: string;
-        score: number;
-        feedbackCount: number;
-      }> = [];
-      const weakestSkill = skillBreakdown[0] || {
-        skill: "Unknown",
-        score: 100,
-        feedbackCount: 0,
-      };
-      const strongestSkill = skillBreakdown[0] || {
-        skill: "Unknown",
-        score: 0,
-        feedbackCount: 0,
-      };
+      // Skill breakdown using feedbacks + standards taxonomy
+      const userFeedbacks = filteredData.feedbacks.filter((f) =>
+        filteredForUser.grades.some((g) => g.id === f.simulationChatGradeId)
+      );
 
-      // Find weakest and strongest skills
+      const validRubrics = rubrics.filter((r) =>
+        simulations.some((s) => s.rubricId === r.id)
+      );
+      const validGroupStandards = standardGroups.filter((g) =>
+        validRubrics.some((r) => r.id === g.rubricId)
+      );
+      const validStandards = standards.filter((s) =>
+        validGroupStandards.some((g) => g.id === s.standardGroupId)
+      );
 
+      const skillBreakdown = validGroupStandards.map((group) => {
+        const groupStandards = validStandards.filter(
+          (s) => s.standardGroupId === group.id
+        );
+        const groupFeedbacks = userFeedbacks.filter((f) =>
+          groupStandards.some((s) => s.id === f.standardId)
+        );
+
+        const avgSkillScore =
+          groupFeedbacks.length > 0
+            ? Math.round(
+                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                  groupFeedbacks.length /
+                  (rubrics.find((r) => r.id === group.rubricId)?.points ||
+                    100)) *
+                  100
+              )
+            : 0;
+
+        return {
+          skill: group.shortName,
+          score: avgSkillScore,
+          feedbackCount: groupFeedbacks.length,
+        };
+      });
+
+      const weakestSkill = skillBreakdown.reduce(
+        (min, skill) => (skill.score < min.score ? skill : min),
+        skillBreakdown[0] || { skill: "Unknown", score: 100, feedbackCount: 0 }
+      );
+
+      const strongestSkill = skillBreakdown.reduce(
+        (max, skill) => (skill.score > max.score ? skill : max),
+        skillBreakdown[0] || { skill: "Unknown", score: 0, feedbackCount: 0 }
+      );
       // Calculate average time taken
       const avgTimeMinutes =
         userGrades.length > 0
@@ -529,7 +562,7 @@ export default function Reports() {
     });
 
     return taPerformance;
-  }, [filteredData, rubrics, messages]);
+  }, [filteredData, rubrics, messages, standardGroups, standards]);
 
   // Loading state
   if (isLoading) {

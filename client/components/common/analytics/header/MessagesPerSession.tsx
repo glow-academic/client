@@ -17,8 +17,6 @@ import {
 
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateMessagesPerSession } from "@/utils/analytics/header";
-import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
-import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -75,20 +73,7 @@ export default function MessagesPerSession({
 }: MessagesPerSessionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch messages (still needed for calculations)
-  const { data: messages } = useQuery({
-    queryKey: [
-      "simulationMessages",
-      filteredData?.chats?.map((chat) => chat.id) || [],
-    ],
-    queryFn: () => {
-      if (!filteredData?.chats || filteredData.chats.length === 0) return [];
-      return getSimulationMessagesByChats(
-        filteredData.chats.map((chat) => chat.id)
-      );
-    },
-    enabled: !!filteredData?.chats && filteredData.chats.length > 0,
-  });
+  const messages = filteredData?.messages;
 
   // Calculate messages per session using utility function
   const messagesPerSessionResult = useMemo(() => {
