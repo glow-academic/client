@@ -8,8 +8,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAnalytics } from "@/contexts/analytics-context";
-
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -40,15 +38,6 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ profileId }: DashboardProps) {
-  // Use analytics context for date range and cohort filtering
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-
   // Use centralized filtering hook
   const { data: filteredData, isLoading } = useFilteredAnalyticsData({
     ...(profileId && { profileId }),
@@ -616,13 +605,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-        profileId={profileId || null}
-        cohortIds={selectedCohortIds}
+        filteredData={filteredData}
         showExport={false}
-        simulationFilters={["general"]}
-        allowedRoles={selectedRoles}
-        startDate={startDate}
-        endDate={endDate}
       />
     </div>
   );

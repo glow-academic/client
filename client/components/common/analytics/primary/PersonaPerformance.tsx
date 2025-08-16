@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useAnalytics } from "@/contexts/analytics-context";
+
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
@@ -65,9 +65,6 @@ export default function PersonaPerformance({
     []
   );
 
-  // Get date range from analytics context
-  const { selectedCohortIds } = useAnalytics();
-
   // Fetch additional data (not part of FilteredData)
   const { data: personas } = useQuery({
     queryKey: ["personas"],
@@ -97,48 +94,13 @@ export default function PersonaPerformance({
     return map;
   }, [personas]);
 
-  // Helper function to check if a profile is in any of the specified cohorts
-  const isProfileInCohorts = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
-    if (!filteredData?.cohorts) return () => false;
-
-    return (profileId: string) => {
-      return filteredData.cohorts.some(
-        (cohort) =>
-          cohort.profileIds.includes(profileId) &&
-          selectedCohortIds.includes(cohort.id)
-      );
-    };
-  }, [selectedCohortIds, filteredData?.cohorts]);
-
-  // Helper function to check if a simulation is in any of the specified cohorts
-  const isSimulationInCohorts = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
-    if (!filteredData?.cohorts) return () => false;
-
-    return (simulationId: string) => {
-      return filteredData.cohorts.some(
-        (cohort) =>
-          cohort.simulationIds.includes(simulationId) &&
-          selectedCohortIds.includes(cohort.id)
-      );
-    };
-  }, [selectedCohortIds, filteredData?.cohorts]);
-
   // Get simulations that have data (simplified logic)
   const simulationsWithData = useMemo(() => {
     if (!filteredData?.simulations) return [];
 
-    // Filter by cohorts first
-    let filtered = filteredData.simulations.filter(
-      (s) => !s.practiceSimulation
-    );
-    if (selectedCohortIds && selectedCohortIds.length > 0) {
-      filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
-    }
-
-    return filtered;
-  }, [filteredData?.simulations, selectedCohortIds, isSimulationInCohorts]);
+    // Filter out practice simulations (data is already filtered by date and cohorts)
+    return filteredData.simulations.filter((s) => !s.practiceSimulation);
+  }, [filteredData?.simulations]);
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
@@ -202,49 +164,6 @@ export default function PersonaPerformance({
 
     return null;
   };
-
-  // Check if we have any data after cohort filtering
-  const hasDataAfterCohortFilter = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) return true;
-    if (!filteredData?.profiles) return false;
-
-    // Check if any profile is in the specified cohorts
-    return filteredData.profiles.some((profile) =>
-      isProfileInCohorts(profile.id)
-    );
-  }, [selectedCohortIds, filteredData?.profiles, isProfileInCohorts]);
-
-  if (!hasDataAfterCohortFilter) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Persona Performance
-          </CardTitle>
-          <CardDescription>
-            Performance analysis by student persona type
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No data available for the selected cohorts
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!performanceData.length) {
     return (

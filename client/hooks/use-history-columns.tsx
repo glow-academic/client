@@ -2,23 +2,10 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
-import { SimulationFilter } from "@/contexts/analytics-context";
-import {
-  Profile,
-  ProfileRole,
-  SimulationAttempt,
-  SimulationChat,
-} from "@/types";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-// Removed time-based timeout logic per requirements
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
@@ -31,29 +18,15 @@ interface EnhancedAttempt extends SimulationAttempt {
   interactionIds: string[];
 }
 
-// Component to use the columns with data from queries
+// Component to use the columns with filtered data
 export function useHistoryColumns({
-  profileId = null,
+  filteredData,
   showExport: _showExport = true,
-  cohortIds = undefined,
-  simulationFilters = ["general"],
-  startDate,
-  endDate,
-  allowedRoles,
 }: {
-  profileId?: string | null;
-  showExport?: boolean;
-  cohortIds: string[] | undefined;
-  simulationFilters: SimulationFilter[];
-  startDate?: Date;
-  endDate?: Date;
-  allowedRoles?: ProfileRole[] | undefined;
+  filteredData: FilteredData | null;
+  showExport: boolean;
 }) {
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
+  // Fetch additional data needed for display
   const { data: personas, isLoading: isLoadingPersonas } = useQuery({
     queryKey: ["personas"],
     queryFn: () => getAllPersonas(),
@@ -62,60 +35,6 @@ export function useHistoryColumns({
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
-  });
-
-  const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const filteredAttempts = useMemo(() => {
-    if (!attempts) return [];
-    return attempts.filter((attempt) => {
-      if (startDate && endDate) {
-        return (
-          new Date(attempt.createdAt) >= startDate &&
-          new Date(attempt.createdAt) <= endDate
-        );
-      }
-      return true;
-    });
-  }, [attempts, startDate, endDate]);
-
-  const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: [
-      "simulationChats",
-      filteredAttempts?.map((attempt) => attempt.id),
-    ],
-    queryFn: () =>
-      getSimulationChatsByAttempts(
-        filteredAttempts!.map((attempt) => attempt.id)
-      ),
-    enabled: !!filteredAttempts && filteredAttempts.length > 0,
-  });
-
-  const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
   });
 
   // Map persona name -> hex color
@@ -131,8 +50,7 @@ export function useHistoryColumns({
     return map;
   }, [personas]);
 
-  // (color utilities are computed inline inside getBadgeColors)
-
+  // Color utilities
   const getBadgeColors = useCallback(
     (
       inputHex?: string
@@ -192,81 +110,83 @@ export function useHistoryColumns({
     []
   );
 
-  // Create user options for GTA names
+  // Create user options for profile names
   const profileOptions = useMemo(() => {
-    if (!profiles) return [];
-    return profiles.map((profile: Profile) => ({
+    if (!filteredData?.profiles) return [];
+    return filteredData.profiles.map((profile: Profile) => ({
       value: profile.id,
       label: profile.firstName + " " + profile.lastName,
       icon: null,
     }));
-  }, [profiles]);
+  }, [filteredData?.profiles]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
-    if (!rubrics || !simulations) return [];
-    return rubrics.filter((r) => simulations.some((s) => s.rubricId === r.id));
-  }, [rubrics, simulations]);
+    if (!rubrics || !filteredData?.simulations) return [];
+    return rubrics.filter((r) =>
+      filteredData.simulations.some((s) => s.rubricId === r.id)
+    );
+  }, [rubrics, filteredData?.simulations]);
 
-  // Create enhanced attempts data
+  // Create enhanced attempts data from filtered data
   const enhancedAttempts = useMemo(() => {
-    if (!attempts || !chats || !personas || !simulations || !scenarios)
-      return [];
+    if (!filteredData || !personas) return [];
 
-    return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
-      const attemptChats = (chats || []).filter(
-        (chat) => chat.attemptId === attempt.id
-      );
+    return filteredData.attempts.map(
+      (attempt: SimulationAttempt): EnhancedAttempt => {
+        const attemptChats = filteredData.chats.filter(
+          (chat) => chat.attemptId === attempt.id
+        );
 
-      // Get agents from all scenarios in the chats
-      const personasTested = [
-        ...new Set(
-          attemptChats.map((chat) => {
-            // find the scenario for this chat
-            const scenario = scenarios.find((s) => s.id === chat.scenarioId);
-            if (scenario) {
-              // Find agent by the agentId in the scenario
-              const scenarioAgent = personas.find(
-                (a) => a.id === scenario.personaId
+        // Get personas from all scenarios in the chats
+        const personasTested = [
+          ...new Set(
+            attemptChats.map((chat) => {
+              const scenario = filteredData.scenarios.find(
+                (s) => s.id === chat.scenarioId
               );
-              return scenarioAgent?.name || "Unknown Persona";
-            }
+              if (scenario) {
+                const scenarioAgent = personas.find(
+                  (a) => a.id === scenario.personaId
+                );
+                return scenarioAgent?.name || "Unknown Persona";
+              }
+              return "Unknown Persona";
+            })
+          ),
+        ].filter((name) => name !== "Unknown Persona");
 
-            return "Unknown Persona";
-          })
-        ),
-      ].filter((name) => name !== "Unknown Persona"); // Filter out unknown personas
+        const simulation = filteredData.simulations.find(
+          (s) => s.id === attempt.simulationId
+        );
 
-      const simulation = simulations?.find(
-        (s) => s.id === attempt.simulationId
-      );
-
-      return {
-        ...attempt,
-        scenarios: attemptChats,
-        personasTested,
-        interactionIds: simulation?.scenarioIds || [],
-      };
-    });
-  }, [attempts, chats, personas, simulations, scenarios]);
+        return {
+          ...attempt,
+          scenarios: attemptChats,
+          personasTested,
+          interactionIds: simulation?.scenarioIds || [],
+        };
+      }
+    );
+  }, [filteredData, personas]);
 
   // Create scenario options for filtering
   const scenarioOptions = useMemo(() => {
-    if (!scenarios) return [];
-    return scenarios.map((scenario) => ({
+    if (!filteredData?.scenarios) return [];
+    return filteredData.scenarios.map((scenario) => ({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [scenarios]);
+  }, [filteredData?.scenarios]);
 
   // Create simulation options for filtering
   const simulationOptions = useMemo(() => {
-    if (!simulations) return [];
-    return simulations.map((simulation) => ({
+    if (!filteredData?.simulations) return [];
+    return filteredData.simulations.map((simulation) => ({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [simulations]);
+  }, [filteredData?.simulations]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -303,8 +223,8 @@ export function useHistoryColumns({
         enableSorting: true,
         sortDescFirst: true, // Default to descending order
       },
-      // User Name column - only show if profileId is null (showing all data)
-      ...(profileId === null
+      // User Name column - only show if multiple profiles in filtered data
+      ...(filteredData?.profiles && filteredData.profiles.length > 1
         ? [
             {
               accessorKey: "profileId",
@@ -348,7 +268,7 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
-          const simulation = simulations?.find(
+          const simulation = filteredData?.simulations?.find(
             (s) => s.id === row.getValue("simulationId")
           );
           const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
@@ -369,7 +289,9 @@ export function useHistoryColumns({
 
           const searchTerm = value.toLowerCase();
           const simulationId = row.getValue(id) as string;
-          const simulation = simulations?.find((s) => s.id === simulationId);
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === simulationId
+          );
           const simulationTitle = simulation?.title?.toLowerCase() || "";
 
           // Search in simulation title
@@ -387,7 +309,9 @@ export function useHistoryColumns({
           const chats = row.getValue("scenarios") as SimulationChat[];
           const scenarioIds = chats.map((chat) => chat.scenarioId);
           const scenarioNames = scenarioIds.map((scenarioId) => {
-            const scenario = scenarios?.find((s) => s.id === scenarioId);
+            const scenario = filteredData?.scenarios?.find(
+              (s) => s.id === scenarioId
+            );
             return scenario?.name?.toLowerCase() || "";
           });
           if (scenarioNames.some((name) => name.includes(searchTerm)))
@@ -412,7 +336,9 @@ export function useHistoryColumns({
           // Count only chats that are completed AND have a corresponding rubric/grade
           const completedWithRubricCount = chatsArray.filter((chat) => {
             if (!chat.completed) return false;
-            const grade = grades?.find((g) => g.simulationChatId === chat.id);
+            const grade = filteredData?.grades?.find(
+              (g) => g.simulationChatId === chat.id
+            );
             return Boolean(grade);
           }).length;
           const totalChats = interactionIds?.length || chatsArray.length || 0;
@@ -442,7 +368,9 @@ export function useHistoryColumns({
           // Only count chats that are completed AND have a corresponding rubric/grade
           const completedWithRubricCount = chatsArray.filter((chat) => {
             if (!chat.completed) return false;
-            const grade = grades?.find((g) => g.simulationChatId === chat.id);
+            const grade = filteredData?.grades?.find(
+              (g) => g.simulationChatId === chat.id
+            );
             return Boolean(grade);
           }).length;
           const totalChats = interactionIds?.length || chatsArray.length || 0;
@@ -529,7 +457,9 @@ export function useHistoryColumns({
           const gradedCompletedChatGrades = chatsArray
             .filter((chat) => chat.completed)
             .map((chat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === chat.id
+              )
             )
             .filter(Boolean);
 
@@ -554,7 +484,9 @@ export function useHistoryColumns({
           const completedChats = chatsArray.filter((chat) => chat.completed);
           const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === chat.id
+              )
             )
             .filter(Boolean);
 
@@ -580,7 +512,7 @@ export function useHistoryColumns({
 
           // Calculate percentage based on rubric total points
           // Find the rubric for this simulation
-          const simulation = simulations?.find(
+          const simulation = filteredData?.simulations?.find(
             (s) => s.id === row.original.simulationId
           );
           const rubric = validRubrics.find(
@@ -623,7 +555,9 @@ export function useHistoryColumns({
           const completedChats = chatsArray.filter((chat) => chat.completed);
           const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === chat.id
+              )
             )
             .filter(Boolean);
 
@@ -645,7 +579,7 @@ export function useHistoryColumns({
           const averageScore = totalScore / gradedCompletedChatGrades.length;
 
           // Calculate percentage based on rubric total points
-          const simulation = simulations?.find(
+          const simulation = filteredData?.simulations?.find(
             (s) => s.id === row.original.simulationId
           );
           const rubric = validRubrics.find(
@@ -677,7 +611,9 @@ export function useHistoryColumns({
           const completedChats = chatsArray.filter((chat) => chat.completed);
           const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id)
+              filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === chat.id
+              )
             )
             .filter(Boolean);
 
@@ -688,6 +624,12 @@ export function useHistoryColumns({
           const isIncomplete =
             allChatsCompleted && gradedCompletedChatGrades.length === 0;
 
+          // Determine if this is practice mode based on simulation
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === attempt.simulationId
+          );
+          const isPractice = Boolean(simulation?.practiceSimulation);
+
           return (
             <DataTableRowActions
               id={attempt.id}
@@ -696,7 +638,7 @@ export function useHistoryColumns({
               scenarios={attempt.scenarios}
               interactionIds={attempt.interactionIds}
               isIncomplete={isIncomplete}
-              isPractice={simulationFilters.includes("practice")}
+              isPractice={isPractice}
               infiniteMode={
                 (attempt as EnhancedAttempt & { infiniteMode?: boolean })
                   .infiniteMode || false
@@ -720,127 +662,14 @@ export function useHistoryColumns({
     return attemptColumns;
   }, [
     profileOptions,
-    grades,
-    simulations,
-    scenarios,
+    filteredData,
     validRubrics,
-    profileId,
-    simulationFilters,
     personaColorMap,
     getBadgeColors,
   ]);
 
   // Use enhanced attempts data
-  let data: unknown[] = enhancedAttempts || [];
-
-  // Apply cohort filtering if cohortIds are provided
-  if (cohortIds && cohortIds.length > 0 && cohorts) {
-    // Get cohort filtering data
-    const matchingCohorts = cohorts.filter(
-      (cohort) => cohortIds.includes(cohort.id) && cohort.active
-    );
-
-    if (matchingCohorts.length > 0) {
-      // Collect all profile IDs and simulation IDs from matching cohorts
-      const allowedProfileIds = new Set<string>();
-      const allowedSimulationIds = new Set<string>();
-
-      matchingCohorts.forEach((cohort) => {
-        cohort.profileIds.forEach((profileId: string) =>
-          allowedProfileIds.add(profileId)
-        );
-        cohort.simulationIds.forEach((simulationId: string) =>
-          allowedSimulationIds.add(simulationId)
-        );
-      });
-
-      // Add admins and superadmins to allowed profiles by default
-      // This ensures that admin/superadmin attempts are always visible
-      if (profiles) {
-        profiles.forEach((profile) => {
-          if (profile.role === "admin" || profile.role === "superadmin") {
-            allowedProfileIds.add(profile.id);
-          }
-        });
-      }
-
-      // Filter attempts based on cohort membership and practice/general flags
-      data = data.filter((attempt: unknown) => {
-        const attemptData = attempt as Record<string, unknown>;
-        const attemptProfileId = attemptData["profileId"] as string | undefined;
-        const attemptSimulationId = attemptData["simulationId"] as
-          | string
-          | undefined;
-        if (!attemptProfileId || !attemptSimulationId) return false;
-
-        // Must be in allowed profiles when cohorts are selected
-        const profileOk = allowedProfileIds.has(attemptProfileId);
-        if (!profileOk) return false;
-
-        // Determine if the attempt is practice or general
-        const simulation = simulations?.find(
-          (s) => s.id === attemptSimulationId
-        );
-        const isPractice = Boolean(simulation?.practiceSimulation);
-
-        // Practice attempts bypass cohort simulation restrictions
-        const practiceAllowed = simulationFilters.includes("practice") && isPractice;
-        // General attempts must match allowed cohort simulations when cohorts are selected
-        const generalAllowed =
-          simulationFilters.includes("general") &&
-          !isPractice &&
-          allowedSimulationIds.has(attemptSimulationId);
-
-        return practiceAllowed || generalAllowed;
-      });
-    } else {
-      // No matching cohorts, show empty data
-      data = [];
-    }
-  }
-
-  // Apply practice/general filtering only when no cohort filtering block handled it
-  if (!cohortIds || cohortIds.length === 0) {
-    if (simulationFilters.includes("practice") || simulationFilters.includes("general")) {
-      data = data.filter((attempt: unknown) => {
-        const attemptData = attempt as Record<string, unknown>;
-        const simulation = simulations?.find(
-          (s) => s.id === attemptData["simulationId"]
-        );
-        const isPractice = Boolean(simulation?.practiceSimulation);
-        return (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
-      });
-    } else {
-      // If both are false, show nothing
-      data = [];
-    }
-  }
-
-  // Apply role filtering if allowedRoles provided
-  if (allowedRoles && allowedRoles.length > 0 && profiles) {
-    const allowedSet = new Set<ProfileRole>(allowedRoles);
-    const profileIdToRole = new Map<string, ProfileRole>();
-    profiles.forEach((p) => profileIdToRole.set(p.id, p.role));
-    data = data.filter((attempt: unknown) => {
-      const attemptData = attempt as Record<string, unknown>;
-      const pid = attemptData["profileId"] as string | undefined;
-      if (!pid) return false;
-      const role = profileIdToRole.get(pid);
-      return role ? allowedSet.has(role) : false;
-    });
-  }
-
-  // Apply filtering based on profileId parameter
-  if (profileId !== null) {
-    // If profileId is provided, filter to that specific profile
-    data = data.filter(
-      (attempt: unknown) =>
-        (attempt as Record<string, unknown>)["profileId"] === profileId
-    );
-  } else {
-    // If profileId is null, show all data
-    // Don't filter - show all data
-  }
+  const data: unknown[] = enhancedAttempts || [];
 
   return {
     columns,
@@ -848,15 +677,6 @@ export function useHistoryColumns({
     profileOptions,
     simulationOptions,
     scenarioOptions,
-    isLoading:
-      isLoadingProfiles ||
-      isLoadingAttempts ||
-      isLoadingPersonas ||
-      isLoadingChats ||
-      isLoadingRubrics ||
-      isLoadingGrades ||
-      isLoadingSimulations ||
-      isLoadingScenarios ||
-      isLoadingCohorts,
+    isLoading: isLoadingPersonas || isLoadingRubrics,
   };
 }

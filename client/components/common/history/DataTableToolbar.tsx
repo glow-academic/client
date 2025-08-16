@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { BrightspaceExportButton } from "./BrightspaceExportButton";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 export interface DataTableToolbarProps<TData> {
@@ -18,6 +20,7 @@ export interface DataTableToolbarProps<TData> {
   isAdmin?: boolean;
   showExport?: boolean;
   showAll?: boolean;
+  filteredData?: FilteredData | null;
 }
 
 export function DataTableToolbar<TData>({
@@ -28,6 +31,7 @@ export function DataTableToolbar<TData>({
   isAdmin = false,
   showExport = true,
   showAll = false,
+  filteredData,
 }: DataTableToolbarProps<TData>) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -93,10 +97,16 @@ export function DataTableToolbar<TData>({
         </div>
         <div className="flex items-center space-x-2">
           {showExport && (
-            <SingleProfileCertificateButton
-              table={table}
-              profileOptions={profileOptions}
-            />
+            <>
+              <BrightspaceExportButton
+                table={table}
+                filteredData={filteredData || null}
+              />
+              <SingleProfileCertificateButton
+                table={table}
+                profileOptions={profileOptions}
+              />
+            </>
           )}
 
           <DataTableViewOptions table={table} isAdmin={isAdmin} />

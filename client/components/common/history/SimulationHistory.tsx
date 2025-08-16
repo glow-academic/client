@@ -5,52 +5,26 @@
  * 06/07/2025
  */
 
-import { useProfile } from "@/contexts/profile-context";
 import { useHistoryColumns } from "@/hooks/use-history-columns";
-import type { ProfileRole } from "@/types";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { DataTable } from "./DataTable";
-import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface SimulationHistoryProps {
-  profileId?: string | null;
-  cohortIds?: string[];
-  showExport?: boolean;
-  simulationFilters?: SimulationFilter[];
-  startDate?: Date;
-  endDate?: Date;
-  allowedRoles?: ProfileRole[];
+  // Required: Pre-filtered data from analytics context
+  filteredData: FilteredData | null;
+
+  // Required: Whether to show export functionality
+  showExport: boolean;
 }
 
 export default function SimulationHistory({
-  profileId,
-  showExport = true,
-  cohortIds = undefined,
-  simulationFilters = ["general"],
-  startDate,
-  endDate,
-  allowedRoles,
+  filteredData,
+  showExport,
 }: SimulationHistoryProps) {
-  const { effectiveProfile } = useProfile();
-
-  // Default allowed roles: on home/practice (when viewing a specific profile),
-  // if not provided, default to the effectiveProfile's role
-  const effectiveAllowedRoles: ProfileRole[] | undefined =
-    allowedRoles !== undefined
-      ? allowedRoles
-      : profileId
-        ? effectiveProfile
-          ? [effectiveProfile.role]
-          : undefined
-        : undefined;
   const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
-      profileId: profileId || null,
+      filteredData,
       showExport,
-      cohortIds,
-      simulationFilters,
-      allowedRoles: effectiveAllowedRoles,
-      ...(startDate && { startDate }),
-      ...(endDate && { endDate }),
     });
 
   return (
@@ -61,9 +35,8 @@ export default function SimulationHistory({
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
       showExport={showExport}
-      showAll={!profileId} // showAll is true when profileId is null/undefined
-      startDate={startDate}
-      endDate={endDate}
+      showAll={true} // Always show all since filtering is handled upstream
+      filteredData={filteredData}
     />
   );
 }

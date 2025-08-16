@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 
@@ -38,6 +39,7 @@ export interface DataTableProps<TData, TValue> {
   showAll?: boolean;
   startDate?: Date | undefined;
   endDate?: Date | undefined;
+  filteredData?: FilteredData | null;
 }
 
 export function DataTable<TData, TValue>({
@@ -50,6 +52,7 @@ export function DataTable<TData, TValue>({
   showAll = false,
   startDate: _startDate,
   endDate: _endDate,
+  filteredData,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -94,6 +97,7 @@ export function DataTable<TData, TValue>({
         scenarioOptions={scenarioOptions}
         showExport={showExport}
         showAll={showAll}
+        filteredData={filteredData || null}
       />
       <div className="rounded-md border">
         <Table>

@@ -12,16 +12,13 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnalytics } from "@/contexts/analytics-context";
+
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { log } from "@/utils/logger";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,12 +27,14 @@ import { toast } from "sonner";
 import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
-  const { selectedCohortIds, startDate, endDate } =
-    useAnalytics();
+
+  const { data: filteredData, isLoading: isFilteredDataLoading } =
+    useFilteredAnalyticsData({
+      ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
+    });
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
     null
@@ -52,57 +51,10 @@ export default function Home() {
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
 
-  // Check if user is a TA
-  const isTA = effectiveProfile?.role === "ta";
-
-  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: getAllCohorts,
-  });
-
-  // 1. Fetch all simulations
-  const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: getAllSimulations,
-  });
-
-  // 2. Fetch all profiles
-  const { data: allProfiles, isLoading: loadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: getAllProfiles,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // 3. Fetch all rubrics
-  const { data: allRubrics, isLoading: loadingRubrics } = useQuery({
+  // Fetch rubrics (still needed for calculations)
+  const { data: rubrics, isLoading: loadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: getAllRubrics,
-  });
-
-  // 4. Fetch all attempts
-  const { data: allAttempts, isLoading: loadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts"],
-    queryFn: () => {
-      if (!allProfiles) return [];
-      return getSimulationAttemptsByProfiles(allProfiles.map((p) => p.id));
-    },
-    enabled: !!allProfiles && allProfiles.length > 0,
-  });
-
-  // 5. Fetch all chats
-  const { data: allChats, isLoading: loadingChats } = useQuery({
-    queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
-    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
-    enabled: !!allAttempts && allAttempts.length > 0,
-  });
-
-  // 6. Fetch all grades
-  const { data: allGrades, isLoading: loadingGrades } = useQuery({
-    queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(allChats!.map((c) => c.id)),
-    enabled: !!allChats && allChats.length > 0,
   });
 
   // Removed heavy `cohortsForDisplay` computation; filtering is handled by `filteredCohorts` below.
@@ -110,88 +62,33 @@ export default function Home() {
   // Note: available cohorts should be derived from actual cohort availability, not
   // heavy computed data (attempts/chats/grades). Use `filteredCohorts` downstream.
 
-  // Filter cohorts to only selected ones from analytics context, or show all available cohorts if none selected
+  // Use cohorts from filtered data (already filtered by analytics context)
   const filteredCohorts = useMemo(() => {
-    if (!cohorts) return [];
+    if (!filteredData?.cohorts) return [];
+    return filteredData.cohorts;
+  }, [filteredData?.cohorts]);
 
-    // If specific cohorts are selected in analytics context, filter to those
-    if (
-      selectedCohortIds.length > 0 &&
-      selectedCohortIds.length < cohorts.length
-    ) {
-      return cohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
-    }
-
-    // Otherwise, show all available cohorts for the user
-    return cohorts.filter((cohort) => {
-      // For instructors/admins, show all active cohorts
-      if (shouldShowAll || effectiveProfile?.defaultProfile) {
-        return cohort.active;
-      }
-      // For TAs, show only their assigned active cohorts
-      if (isTA && effectiveProfile?.id) {
-        return (
-          cohort.active && cohort.profileIds?.includes(effectiveProfile.id)
-        );
-      }
-      return false;
-    });
-  }, [
-    cohorts,
-    selectedCohortIds,
-    shouldShowAll,
-    effectiveProfile?.defaultProfile,
-    isTA,
-    effectiveProfile?.id,
-  ]);
-
-  // Filter profiles to only include those in the filtered cohorts
+  // Use profiles from filtered data (already filtered by analytics context)
   const cohortProfiles = useMemo(() => {
-    if (!allProfiles || !filteredCohorts) return [];
+    if (!filteredData?.profiles) return [];
+    return filteredData.profiles;
+  }, [filteredData?.profiles]);
 
-    // Get all profile IDs from all filtered cohorts
-    const allCohortProfileIds = new Set<string>();
-    filteredCohorts.forEach((cohort) => {
-      cohort.profileIds?.forEach((id) => allCohortProfileIds.add(id));
-    });
-
-    // Filter profiles to only include those in the cohort
-    const filteredProfiles = allProfiles.filter((profile) =>
-      allCohortProfileIds.has(profile.id)
-    );
-
-    return filteredProfiles;
-  }, [allProfiles, filteredCohorts]);
-
-  // Filter attempts to only include those from filtered cohorts
+  // Use data from filtered data (already filtered by analytics context)
   const attempts = useMemo(() => {
-    if (!allAttempts || !filteredCohorts) return [];
+    if (!filteredData?.attempts) return [];
+    return filteredData.attempts;
+  }, [filteredData?.attempts]);
 
-    const cohortProfileIds = new Set<string>();
-    filteredCohorts.forEach((cohort) => {
-      cohort.profileIds?.forEach((id) => cohortProfileIds.add(id));
-    });
-
-    return allAttempts.filter(
-      (attempt) => attempt.profileId && cohortProfileIds.has(attempt.profileId)
-    );
-  }, [allAttempts, filteredCohorts]);
-
-  // Filter chats to only include those from filtered cohort attempts
   const chats = useMemo(() => {
-    if (!allChats || !attempts) return [];
+    if (!filteredData?.chats) return [];
+    return filteredData.chats;
+  }, [filteredData?.chats]);
 
-    const attemptIds = new Set(attempts.map((a) => a.id));
-    return allChats.filter((chat) => attemptIds.has(chat.attemptId));
-  }, [allChats, attempts]);
-
-  // Filter grades to only include those from filtered cohort chats
   const grades = useMemo(() => {
-    if (!allGrades || !chats) return [];
-
-    const chatIds = new Set(chats.map((c) => c.id));
-    return allGrades.filter((grade) => chatIds.has(grade.simulationChatId));
-  }, [allGrades, chats]);
+    if (!filteredData?.grades) return [];
+    return filteredData.grades;
+  }, [filteredData?.grades]);
 
   const { isConnected, emitStartSimulation } = useWebSocket();
 
@@ -351,7 +248,7 @@ export default function Home() {
     if (!filteredCohorts) {
       return [];
     }
-    if (!allSimulations) {
+    if (!filteredData?.simulations) {
       return [];
     }
     if (!cohortProfiles) {
@@ -360,7 +257,7 @@ export default function Home() {
 
     return filteredCohorts.map((cohort) => {
       // Get simulations for this specific cohort (and exclude default/practice ones)
-      const cohortSimulations = allSimulations.filter((sim) =>
+      const cohortSimulations = filteredData.simulations.filter((sim) =>
         cohort.simulationIds?.includes(sim.id)
       );
 
@@ -386,16 +283,9 @@ export default function Home() {
           );
 
           // Filter grades by date range if dates are provided
-          let cohortGrades = safeGrades.filter((g) =>
+          const cohortGrades = safeGrades.filter((g) =>
             cohortChats?.some((c) => c.id === g.simulationChatId)
           );
-
-          if (startDate && endDate) {
-            cohortGrades = cohortGrades.filter((grade) => {
-              const gradeDate = new Date(grade.createdAt);
-              return gradeDate >= startDate && gradeDate <= endDate;
-            });
-          }
 
           // Calculate progress based on each user's best attempt for this simulation
           // This prevents counting multiple attempts per user which was causing >100% progress
@@ -438,9 +328,7 @@ export default function Home() {
               attemptData.scores.length;
 
             // Get rubric to determine pass threshold
-            const rubric = allRubrics?.find(
-              (r) => r.id === simulation.rubricId
-            );
+            const rubric = rubrics?.find((r) => r.id === simulation.rubricId);
             const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
             const passed = averageScore >= passThreshold;
 
@@ -521,17 +409,9 @@ export default function Home() {
             const taChats = chats?.filter((c) =>
               taAttemptIds.includes(c.attemptId)
             );
-            let taGrades = safeGrades.filter((g) =>
+            const taGrades = safeGrades.filter((g) =>
               taChats?.some((c) => c.id === g.simulationChatId)
             );
-
-            // Filter grades by date range if dates are provided
-            if (startDate && endDate) {
-              taGrades = taGrades.filter((grade) => {
-                const gradeDate = new Date(grade.createdAt);
-                return gradeDate >= startDate && gradeDate <= endDate;
-              });
-            }
 
             // Calculate average score for each attempt and find best attempt
             const taAttemptScores = new Map<string, { scores: number[] }>();
@@ -565,7 +445,7 @@ export default function Home() {
                 bestAverageScore = averageScore;
 
                 // Get rubric to determine pass threshold
-                const rubric = allRubrics?.find(
+                const rubric = rubrics?.find(
                   (r) => r.id === simulation.rubricId
                 );
                 const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
@@ -604,26 +484,24 @@ export default function Home() {
     });
   }, [
     filteredCohorts,
-    allSimulations,
+    filteredData?.simulations,
     cohortProfiles,
     safeAttempts,
     chats,
     safeGrades,
     effectiveProfile,
     shouldShowAll,
-    startDate,
-    endDate,
-    allRubrics,
+    rubrics,
   ]);
 
   // Enhanced simulation data with completion status and rubric data
   const enhancedSimulations = useMemo(() => {
-    if (!processedCohortData || !allRubrics) return [];
+    if (!processedCohortData || !rubrics) return [];
 
     return processedCohortData.flatMap((data) => {
       return data.simulations.map((simulation) => {
         // Get rubric for this simulation
-        const rubric = allRubrics.find((r) => r.id === simulation.rubricId);
+        const rubric = rubrics.find((r) => r.id === simulation.rubricId);
 
         // Calculate pass rate
         const passRate =
@@ -652,17 +530,9 @@ export default function Home() {
             const userChats = chats?.filter((c) =>
               userAttemptIds.includes(c.attemptId)
             );
-            let userGrades = safeGrades.filter((g) =>
+            const userGrades = safeGrades.filter((g) =>
               userChats?.some((c) => c.id === g.simulationChatId)
             );
-
-            // Filter grades by date range if dates are provided (same as progress calculation)
-            if (startDate && endDate) {
-              userGrades = userGrades.filter((grade) => {
-                const gradeDate = new Date(grade.createdAt);
-                return gradeDate >= startDate && gradeDate <= endDate;
-              });
-            }
 
             if (userGrades.length > 0) {
               // Calculate average score for each attempt and find the best one
@@ -719,17 +589,9 @@ export default function Home() {
             const userChats = chats?.filter((c) =>
               userAttemptIds.includes(c.attemptId)
             );
-            let userGrades = safeGrades.filter((g) =>
+            const userGrades = safeGrades.filter((g) =>
               userChats?.some((c) => c.id === g.simulationChatId)
             );
-
-            // Filter grades by date range if dates are provided (same as progress calculation)
-            if (startDate && endDate) {
-              userGrades = userGrades.filter((grade) => {
-                const gradeDate = new Date(grade.createdAt);
-                return gradeDate >= startDate && gradeDate <= endDate;
-              });
-            }
 
             if (userGrades.length > 0) {
               // Calculate average score for each attempt and find the best one
@@ -806,15 +668,13 @@ export default function Home() {
     });
   }, [
     processedCohortData,
-    allRubrics,
+    rubrics,
     shouldShowAll,
     effectiveProfile?.id,
     effectiveProfile?.role,
     safeAttempts,
     chats,
     safeGrades,
-    startDate,
-    endDate,
   ]);
 
   // Sort simulations by completion status and then by cohort
@@ -881,14 +741,7 @@ export default function Home() {
   const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
 
   // Loading state
-  const isLoading =
-    isLoadingCohorts ||
-    loadingSimulations ||
-    loadingProfiles ||
-    loadingRubrics ||
-    loadingAttempts ||
-    loadingChats ||
-    loadingGrades;
+  const isLoading = loadingRubrics || isFilteredDataLoading;
 
   if (isLoading || !effectiveProfile) {
     return (
@@ -1109,14 +962,7 @@ export default function Home() {
 
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
-        <SimulationHistory
-          profileId={effectiveProfile.id}
-          cohortIds={selectedCohortIds}
-          showExport={true}
-          simulationFilters={["general"]}
-          startDate={startDate}
-          endDate={endDate}
-        />
+        <SimulationHistory filteredData={filteredData} showExport={false} />
       </div>
     </div>
   );

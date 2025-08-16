@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAnalytics } from "@/contexts/analytics-context";
+
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePlatformGrowth } from "@/utils/analytics/primary";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -45,9 +45,6 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
-
-  // Get date range from analytics context
-  const { selectedCohortIds } = useAnalytics();
 
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
@@ -160,20 +157,6 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
     );
   }, [availableMetrics, selectedMetrics]);
 
-  // Helper function to check if a profile is in any of the specified cohorts
-  const isProfileInCohorts = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
-    if (!filteredData?.cohorts) return () => false;
-
-    return (profileId: string) => {
-      return filteredData.cohorts.some(
-        (cohort) =>
-          cohort.profileIds.includes(profileId) &&
-          selectedCohortIds.includes(cohort.id)
-      );
-    };
-  }, [selectedCohortIds, filteredData?.cohorts]);
-
   // Calculate growth data using utility function
   const growthData = useMemo(() => {
     if (!filteredData || !rubrics) {
@@ -250,63 +233,6 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
 
     return null;
   };
-
-  // Check if we have any data after cohort filtering
-  const hasDataAfterCohortFilter = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) return true;
-    if (!filteredData?.profiles || !filteredData?.cohorts) return false;
-
-    // Check if any profile is in the specified cohorts
-    return filteredData.profiles.some((profile) =>
-      isProfileInCohorts(profile.id)
-    );
-  }, [
-    selectedCohortIds,
-    filteredData?.profiles,
-    filteredData?.cohorts,
-    isProfileInCohorts,
-  ]);
-
-  if (!hasDataAfterCohortFilter) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Platform Growth
-              </CardTitle>
-              <CardDescription>
-                Platform-wide performance metrics over time
-              </CardDescription>
-            </div>
-            <GrowthPicker
-              availableMetrics={availableMetrics}
-              selectedMetrics={selectedMetrics}
-              onMetricsChange={setSelectedMetrics}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No data available for the selected cohorts
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!growthData.length) {
     return (

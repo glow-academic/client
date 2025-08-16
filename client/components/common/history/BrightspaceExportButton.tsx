@@ -1,9 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Table } from "@tanstack/react-table";
 import { Download } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { log } from "@/utils/logger";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { toast } from "sonner";
 
 // TAPerformanceData interface for Reports page
@@ -68,57 +66,29 @@ const metricOptions = [
 
 export interface BrightspaceExportButtonProps<TData> {
   table: Table<TData>;
-  simulations: Array<{ id: string; title: string }>;
+  filteredData: FilteredData | null;
 }
 
 export function BrightspaceExportButton<TData>({
   table,
-  simulations,
+  filteredData,
 }: BrightspaceExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
 
-  // Get analytics context for cohort filtering
-  const { selectedCohortIds } = useAnalytics();
-
-  // Fetch cohorts to filter simulations based on effective cohort IDs
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  // Filter simulations based on effective cohort IDs
-  const filteredSimulations = useMemo(() => {
-    if (!selectedCohortIds || selectedCohortIds.length === 0) {
-      return simulations; // If no cohort filtering, return all simulations
-    }
-
-    // Get all simulation IDs from the effective cohorts
-    const cohortSimulationIds = new Set<string>();
-    const selectedCohorts = cohorts.filter((cohort) =>
-      selectedCohortIds.includes(cohort.id)
-    );
-
-    selectedCohorts.forEach((cohort) => {
-      cohort.simulationIds.forEach((simId) => {
-        if (simId !== "RAY") {
-          // Exclude placeholder
-          cohortSimulationIds.add(simId);
-        }
-      });
-    });
-
-    // Filter simulations to only include those in the effective cohorts
-    return simulations.filter((simulation) =>
-      cohortSimulationIds.has(simulation.id)
-    );
-  }, [simulations, selectedCohortIds, cohorts]);
+  // Use filtered simulations from the filtered data
+  const filteredSimulations = filteredData?.simulations || [];
 
   // Function to export to CSV for Brightspace
   const handleBrightspaceExport = () => {
     if (!selectedMetric) {
       toast?.error("Please select a metric to export");
+      return;
+    }
+
+    if (!filteredData) {
+      toast?.error("No data available for export");
       return;
     }
 
@@ -142,8 +112,7 @@ export function BrightspaceExportButton<TData>({
       const headerRow = [
         "Username",
         ...filteredSimulations.map(
-          (sim: { id: string; title: string }) =>
-            `${sim.title} Points Grade <Numeric MaxPoints:100>`
+          (sim) => `${sim.title} Points Grade <Numeric MaxPoints:100>`
         ),
         "End-of-Line Indicator",
       ].join(",");
@@ -154,33 +123,31 @@ export function BrightspaceExportButton<TData>({
         const alias = ta.username;
 
         // For each simulation, check if the user has attempted it
-        const simulationValues = filteredSimulations.map(
-          (simulation: { id: string; title: string }) => {
-            const hasAttempted = ta.simulationIds.includes(simulation.id);
-            if (!hasAttempted) {
-              return ""; // Empty cell if not attempted
-            }
-
-            // Get the metric value
-            const metricValue = ta[selectedMetric];
-            if (metricValue === undefined || metricValue === null) {
-              return "";
-            }
-
-            // Format the value based on the metric type
-            if (ta.hasNoSessions) {
-              return "N/A";
-            }
-
-            if (typeof metricValue === "number") {
-              return metricOption.unit
-                ? `${metricValue}${metricOption.unit}`
-                : `${metricValue}`;
-            }
-
-            return String(metricValue);
+        const simulationValues = filteredSimulations.map((simulation) => {
+          const hasAttempted = ta.simulationIds.includes(simulation.id);
+          if (!hasAttempted) {
+            return ""; // Empty cell if not attempted
           }
-        );
+
+          // Get the metric value
+          const metricValue = ta[selectedMetric];
+          if (metricValue === undefined || metricValue === null) {
+            return "";
+          }
+
+          // Format the value based on the metric type
+          if (ta.hasNoSessions) {
+            return "N/A";
+          }
+
+          if (typeof metricValue === "number") {
+            return metricOption.unit
+              ? `${metricValue}${metricOption.unit}`
+              : `${metricValue}`;
+          }
+
+          return String(metricValue);
+        });
 
         return [alias, ...simulationValues, "#"].join(",");
       });

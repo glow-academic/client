@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useAnalytics } from "@/contexts/analytics-context";
+
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -59,9 +59,6 @@ export default function CohortPerformance({
     []
   );
 
-  // Get date range from analytics context
-  const { startDate, endDate } = useAnalytics();
-
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
     queryKey: ["rubrics"],
@@ -92,11 +89,10 @@ export default function CohortPerformance({
     )
       return [];
 
-    // Get all simulation IDs that have grades in the date range
+    // Get all simulation IDs that have grades (data is already filtered by date)
     const simulationIdsWithData = new Set<string>();
 
     filteredData.grades.forEach((grade) => {
-      const gradeDate = new Date(grade.createdAt);
       const chat = filteredData.chats.find(
         (c) => c.id === grade.simulationChatId
       );
@@ -104,12 +100,7 @@ export default function CohortPerformance({
         (a) => a.id === chat?.attemptId
       );
 
-      if (!attempt) return;
-
-      // Check date range
-      const inDateRange = gradeDate >= startDate && gradeDate <= endDate;
-
-      if (inDateRange) {
+      if (attempt) {
         simulationIdsWithData.add(attempt.simulationId);
       }
     });
@@ -122,8 +113,6 @@ export default function CohortPerformance({
     filteredData?.grades,
     filteredData?.chats,
     filteredData?.attempts,
-    startDate,
-    endDate,
   ]);
 
   // Calculate threshold status based on cohort performance data

@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAnalytics } from "@/contexts/analytics-context";
+
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateTotalAttempts } from "@/utils/analytics/header";
 import { Target } from "lucide-react";
@@ -72,9 +72,6 @@ export default function TotalAttempts({
   thresholds,
 }: TotalAttemptsProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // Get date range from analytics context
-  const { selectedCohortIds } = useAnalytics();
 
   // Calculate total attempts using utility function
   const totalAttemptsResult = useMemo(() => {
@@ -137,15 +134,6 @@ export default function TotalAttempts({
 
   const trendAnalysis = getTrendAnalysis();
 
-  // Check if cohort filtering resulted in no data
-  const hasNoCohortData =
-    selectedCohortIds &&
-    selectedCohortIds.length > 0 &&
-    filteredData?.cohorts &&
-    filteredData.cohorts.filter(
-      (cohort) => selectedCohortIds.includes(cohort.id) && cohort.active
-    ).length === 0;
-
   return (
     <>
       <Card
@@ -158,11 +146,7 @@ export default function TotalAttempts({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasNoCohortData
-              ? "No cohort data"
-              : hasDataAvailable
-                ? `${totalAttempts}`
-                : "No data"}
+            {hasDataAvailable ? `${totalAttempts}` : "No data"}
           </div>
         </CardContent>
       </Card>
@@ -198,9 +182,7 @@ export default function TotalAttempts({
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                {hasNoCohortData
-                  ? "No data available for the selected cohorts"
-                  : "No data available for the selected date range"}
+                No data available for the selected date range
               </div>
             )}
           </div>
