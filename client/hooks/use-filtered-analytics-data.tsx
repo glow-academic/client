@@ -1,12 +1,16 @@
+import type { SimulationFilter } from "@/contexts/analytics-context";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import type { ProfileRole } from "@/types";
 import {
   filterAnalyticsData,
   type FilteredData,
 } from "@/utils/analytics/filtering";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -21,10 +25,10 @@ export interface UseFilteredAnalyticsDataOptions {
   cohortIds?: string[];
 
   // Optional role filtering (overrides context)
-  roles?: string[];
+  roles?: ProfileRole[];
 
   // Optional simulation filters (overrides context)
-  simulationFilters?: string[];
+  simulationFilters?: SimulationFilter[];
 }
 
 export function useFilteredAnalyticsData(
@@ -63,6 +67,11 @@ export function useFilteredAnalyticsData(
       queryFn: () => getAllSimulations(),
     });
 
+  const { data: allScenarios = [], isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
   // Fetch attempts for all profiles
   const { data: allAttempts = [], isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", allProfiles.map((p) => p.id)],
@@ -86,6 +95,16 @@ export function useFilteredAnalyticsData(
     enabled: allChats.length > 0,
   });
 
+  // Fetch feedbacks for all grades
+  const { data: allFeedbacks = [], isLoading: isLoadingFeedbacks } = useQuery({
+    queryKey: ["simulationFeedbacks", allGrades.map((g) => g.id)],
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        allGrades.map((g) => g.id)
+      ),
+    enabled: allGrades.length > 0,
+  });
+
   // Apply centralized filtering
   const filteredData = useMemo((): FilteredData | null => {
     if (!effectiveProfile) return null;
@@ -94,13 +113,15 @@ export function useFilteredAnalyticsData(
       startDate,
       endDate,
       cohortIds: effectiveCohortIds,
-      roles: effectiveRoles as any, // Type assertion needed due to context types
-      simulationFilters: effectiveSimulationFilters as any,
+      roles: effectiveRoles,
+      simulationFilters: effectiveSimulationFilters,
       profileId: effectiveProfileId,
       allAttempts,
       allChats,
       allGrades,
+      allFeedbacks,
       allSimulations,
+      allScenarios,
       allProfiles,
       allCohorts,
     });
@@ -114,7 +135,9 @@ export function useFilteredAnalyticsData(
     allAttempts,
     allChats,
     allGrades,
+    allFeedbacks,
     allSimulations,
+    allScenarios,
     allProfiles,
     allCohorts,
     effectiveProfile,
@@ -124,9 +147,11 @@ export function useFilteredAnalyticsData(
     isLoadingProfiles ||
     isLoadingCohorts ||
     isLoadingSimulations ||
+    isLoadingScenarios ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||
+    isLoadingFeedbacks ||
     !effectiveProfile;
 
   return {
@@ -137,9 +162,11 @@ export function useFilteredAnalyticsData(
       allProfiles,
       allCohorts,
       allSimulations,
+      allScenarios,
       allAttempts,
       allChats,
       allGrades,
+      allFeedbacks,
     },
     // Filter metadata
     filters: {

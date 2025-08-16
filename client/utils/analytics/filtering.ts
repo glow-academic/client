@@ -3,9 +3,11 @@ import type {
   Cohort,
   Profile,
   ProfileRole,
+  Scenario,
   Simulation,
   SimulationAttempt,
   SimulationChat,
+  SimulationChatFeedback,
   SimulationChatGrade,
 } from "@/types";
 import { isAfter, isBefore } from "date-fns";
@@ -15,9 +17,11 @@ export interface FilteredData {
   attempts: SimulationAttempt[];
   chats: SimulationChat[];
   grades: SimulationChatGrade[];
+  feedbacks: SimulationChatFeedback[];
 
   // Derived data for convenience
   simulations: Simulation[];
+  scenarios: Scenario[];
   profiles: Profile[];
   cohorts: Cohort[];
 }
@@ -37,13 +41,15 @@ export interface FilteringOptions {
   simulationFilters?: SimulationFilter[];
 
   // Profile-specific filtering
-  profileId?: string;
+  profileId?: string | undefined;
 
   // Raw data
   allAttempts: SimulationAttempt[];
   allChats: SimulationChat[];
   allGrades: SimulationChatGrade[];
+  allFeedbacks: SimulationChatFeedback[];
   allSimulations: Simulation[];
+  allScenarios: Scenario[];
   allProfiles: Profile[];
   allCohorts: Cohort[];
 }
@@ -58,6 +64,7 @@ export interface FilteringOptions {
  * 4. Practice/General filters apply to simulations (mutually exclusive)
  * 5. Archived filter applies to simulation attempts (archived flag)
  * 6. ProfileId filtering is applied at attempt level only
+ * 7. Only active simulations and scenarios are returned
  */
 export function filterAnalyticsData(options: FilteringOptions): FilteredData {
   const {
@@ -70,7 +77,9 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     allAttempts,
     allChats,
     allGrades,
+    allFeedbacks,
     allSimulations,
+    allScenarios,
     allProfiles,
     allCohorts,
   } = options;
@@ -130,11 +139,22 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
   // Step 4: Filter grades based on filtered chats
   const filteredGrades = filterGrades(allGrades, filteredChats);
 
+  // Step 5: Filter feedbacks based on filtered grades
+  const filteredFeedbacks = filterFeedbacks(allFeedbacks, filteredGrades);
+
+  // Step 6: Derive scenarios from filtered simulations
+  const filteredScenarios = deriveScenariosFromSimulations(
+    allScenarios,
+    filteredSimulations
+  );
+
   return {
     attempts: filteredAttempts,
     chats: filteredChats,
     grades: filteredGrades,
+    feedbacks: filteredFeedbacks,
     simulations: filteredSimulations,
+    scenarios: filteredScenarios,
     profiles: filteredProfiles,
     cohorts: filteredCohorts,
   };
@@ -175,20 +195,27 @@ function filterSimulationsByType(
   simulations: Simulation[],
   simulationFilters: SimulationFilter[]
 ): Simulation[] {
+  // First filter to only active simulations
+  const activeSimulations = simulations.filter(
+    (simulation) => simulation.active
+  );
+
   const hasPractice = simulationFilters.includes("practice");
   const hasGeneral = simulationFilters.includes("general");
 
   if (hasPractice && hasGeneral) {
     // Both selected - no additional filtering needed
-    return simulations;
+    return activeSimulations;
   } else if (hasPractice) {
     // Only practice simulations
-    return simulations.filter((simulation) =>
+    return activeSimulations.filter((simulation) =>
       Boolean(simulation.practiceSimulation)
     );
   } else if (hasGeneral) {
     // Only general simulations
-    return simulations.filter((simulation) => !simulation.practiceSimulation);
+    return activeSimulations.filter(
+      (simulation) => !simulation.practiceSimulation
+    );
   } else {
     // Neither selected - return empty array
     return [];
@@ -311,6 +338,44 @@ function filterGrades(
   const chatIds = new Set(filteredChats.map((c) => c.id));
 
   return allGrades.filter((grade) => chatIds.has(grade.simulationChatId));
+}
+
+/**
+ * Filter feedbacks based on filtered grades
+ */
+function filterFeedbacks(
+  allFeedbacks: SimulationChatFeedback[],
+  filteredGrades: SimulationChatGrade[]
+): SimulationChatFeedback[] {
+  const gradeIds = new Set(filteredGrades.map((g) => g.id));
+
+  return allFeedbacks.filter((feedback) =>
+    gradeIds.has(feedback.simulationChatGradeId)
+  );
+}
+
+/**
+ * Derive scenarios from filtered simulations
+ */
+function deriveScenariosFromSimulations(
+  allScenarios: Scenario[],
+  filteredSimulations: Simulation[]
+): Scenario[] {
+  // Get all scenario IDs from the filtered simulations
+  const simulationScenarioIds = new Set<string>();
+  filteredSimulations.forEach((simulation) => {
+    simulation.scenarioIds?.forEach((scenarioId) => {
+      if (scenarioId !== "RAY") {
+        // Exclude placeholder
+        simulationScenarioIds.add(scenarioId);
+      }
+    });
+  });
+
+  // Filter scenarios to those in the simulations and only active ones
+  return allScenarios.filter(
+    (scenario) => simulationScenarioIds.has(scenario.id) && scenario.active
+  );
 }
 
 /**
