@@ -66,13 +66,7 @@ export default function PersonaPerformance({
   );
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch additional data (not part of FilteredData)
   const { data: personas } = useQuery({
@@ -153,35 +147,12 @@ export default function PersonaPerformance({
     }
 
     return calculatePersonaPerformance(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
+      filteredData,
       rubrics,
-      filteredData.profiles || [],
       personas,
-      scenarios,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedSimulations.map((s) => s.id),
-      selectedRoles,
-      simulationFilters
+      scenarios
     );
-  }, [
-    filteredData,
-    personas,
-    scenarios,
-    rubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedSimulations,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [filteredData, rubrics, personas, scenarios]);
 
   // Calculate threshold status based on persona performance data
   const getThresholdStatus = () => {

@@ -35,7 +35,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateScenarioAttributeBreakdown } from "@/utils/analytics/footer";
@@ -79,15 +78,6 @@ export default function ScenarioPerformance({
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
-
-  // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
   // Fetch additional data needed for calculations
   const { data: parameters } = useQuery({
@@ -138,34 +128,12 @@ export default function ScenarioPerformance({
     }
 
     return calculateScenarioAttributeBreakdown(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
-      filteredData.scenarios,
+      filteredData,
       rubrics,
-      filteredData.profiles,
       parameterItems,
-      selectedParameter,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters
+      selectedParameter
     );
-  }, [
-    filteredData,
-    parameterItems,
-    selectedParameter,
-    rubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [filteredData, parameterItems, selectedParameter, rubrics]);
 
   // Calculate threshold status based on attribute performance
   const getThresholdStatus = () => {

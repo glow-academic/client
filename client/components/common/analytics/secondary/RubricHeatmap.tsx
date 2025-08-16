@@ -31,7 +31,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
@@ -68,15 +67,6 @@ export default function RubricHeatmap({
     row: number | null;
     col: number | null;
   }>({ row: null, col: null });
-
-  // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
   // Fetch additional data (not part of FilteredData)
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
@@ -120,34 +110,18 @@ export default function RubricHeatmap({
     }
 
     return calculateRubricHeatmap(
-      filteredData.grades,
-      filteredData.feedbacks,
+      filteredData,
       standards,
       standardGroups,
       filteredRubrics,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.profiles,
-      filteredData.cohorts,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      selectedCohortIds,
-      defaultRubrics.map((r) => r.id),
-      selectedRoles,
-      simulationFilters
+      defaultRubrics.map((r) => r.id)
     );
   }, [
     filteredData,
     standards,
     standardGroups,
     filteredRubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
     defaultRubrics,
-    selectedRoles,
-    simulationFilters,
   ]);
 
   // Defer heavy result propagation to avoid blocking interactions/scroll

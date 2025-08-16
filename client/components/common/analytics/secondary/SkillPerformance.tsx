@@ -17,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAnalytics } from "@/contexts/analytics-context";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateSkillPerformance } from "@/utils/analytics/secondary";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -49,15 +48,6 @@ export default function SkillPerformance({
   thresholds,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
-
-  // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
   // Fetch additional data (not part of FilteredData)
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
@@ -101,34 +91,13 @@ export default function SkillPerformance({
     }
 
     return calculateSkillPerformance(
-      filteredData.grades,
-      filteredData.feedbacks,
+      filteredData,
       standards,
       standardGroups,
       filteredRubrics,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.profiles,
-      filteredData.cohorts,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      selectedCohortIds,
-      filteredRubrics.map((r) => r.id),
-      selectedRoles,
-      simulationFilters
+      filteredRubrics.map((r) => r.id)
     );
-  }, [
-    filteredData,
-    standards,
-    standardGroups,
-    filteredRubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [filteredData, standards, standardGroups, filteredRubrics]);
 
   // Calculate threshold status based on skill performance data
   const getThresholdStatus = () => {

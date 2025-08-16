@@ -30,7 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAnalytics } from "@/contexts/analytics-context";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -65,15 +64,6 @@ export default function SimulationComposition({
     bottomPercentage: 25,
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
-
-  // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
   // Fetch additional data (not part of FilteredData)
   const { data: scenarios } = useQuery({
@@ -122,22 +112,10 @@ export default function SimulationComposition({
     }
 
     return calculateSimulationComposition(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
-      scenarios,
-      filteredData.profiles,
+      filteredData,
       parameters,
       parameterItems,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      config,
-      selectedRoles,
-      simulationFilters
+      config
     );
   }, [
     filteredData,
@@ -146,12 +124,7 @@ export default function SimulationComposition({
     agents,
     parameters,
     parameterItems,
-    startDate,
-    endDate,
-    selectedCohortIds,
     config,
-    selectedRoles,
-    simulationFilters,
   ]);
 
   // Get method label for dialog titles
@@ -242,38 +215,6 @@ export default function SimulationComposition({
   };
 
   const thresholdStatus = getThresholdStatus();
-
-  // Show no data message if no matching cohorts found
-  if (
-    !filteredData ||
-    selectedCohortIds.length === 0 ||
-    !filteredData.cohorts.some((cohort) =>
-      selectedCohortIds.includes(cohort.id)
-    )
-  ) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Simulation Composition
-          </CardTitle>
-          <CardDescription>High vs low performing simulations</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              No data available for the selected cohorts.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              The selected profile is not a member of any of the specified
-              cohorts.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!hasAnyData) {
     return (

@@ -47,13 +47,7 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
   ]);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
@@ -186,30 +180,8 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
       return [];
     }
 
-    return calculatePlatformGrowth(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
-      rubrics,
-      filteredData.profiles,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters
-    );
-  }, [
-    filteredData,
-    rubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculatePlatformGrowth(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   // Calculate threshold status based on growth data
   const getThresholdStatus = () => {

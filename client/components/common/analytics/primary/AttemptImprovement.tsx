@@ -55,13 +55,7 @@ export default function AttemptImprovement({
   );
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { startDate, endDate, selectedCohortIds } = useAnalytics();
 
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
@@ -157,31 +151,11 @@ export default function AttemptImprovement({
     }
 
     return calculateAttemptImprovement(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
+      filteredData,
       rubrics,
-      filteredData.profiles,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedSimulations.map((s) => s.id),
-      selectedRoles,
-      simulationFilters
+      selectedSimulations.map((s) => s.id)
     );
-  }, [
-    filteredData,
-    rubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedSimulations,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [filteredData, rubrics, selectedSimulations]);
 
   // Get actionable insights
   const getActionableInsights = () => {

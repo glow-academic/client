@@ -26,14 +26,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import { Simulation } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
-import {
-  calculateScenarioPerformanceWithinSimulation,
-  getAvailableSimulations,
-} from "@/utils/analytics/footer";
+import { calculateScenarioPerformanceWithinSimulation } from "@/utils/analytics/footer";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { useQuery } from "@tanstack/react-query";
@@ -66,15 +62,6 @@ export default function SimulationPerformance({
     useState<Simulation | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-
   // Fetch additional data (not part of FilteredData)
   const { data: scenarios } = useQuery({
     queryKey: ["scenarios"],
@@ -88,42 +75,27 @@ export default function SimulationPerformance({
 
   // Filter simulations to exclude practice simulations and those without data
   const availableSimulations = useMemo(() => {
-    if (
-      !filteredData?.simulations ||
-      !filteredData?.chats ||
-      !filteredData?.grades ||
-      !filteredData?.attempts ||
-      !filteredData?.profiles
-    )
-      return [];
+    if (!filteredData?.simulations) return [];
 
-    return getAvailableSimulations(
-      filteredData.simulations,
-      filteredData.chats,
-      filteredData.grades,
-      filteredData.attempts,
-      filteredData.profiles,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters
-    );
-  }, [
-    filteredData?.simulations,
-    filteredData?.chats,
-    filteredData?.grades,
-    filteredData?.attempts,
-    filteredData?.profiles,
-    startDate,
-    endDate,
-    filteredData?.cohorts,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    // Filter to active simulations that have data
+    return filteredData.simulations.filter((simulation) => {
+      // Check if this simulation has any attempts
+      const simulationAttempts = filteredData.attempts.filter(
+        (attempt) => attempt.simulationId === simulation.id
+      );
+
+      if (simulationAttempts.length === 0) {
+        return false;
+      }
+
+      // Check if any of these attempts have chats
+      const simulationChats = filteredData.chats.filter((chat) =>
+        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+      );
+
+      return simulationChats.length > 0;
+    });
+  }, [filteredData?.simulations, filteredData?.attempts, filteredData?.chats]);
 
   // Auto-select simulation if enabled and available
   useMemo(() => {
@@ -156,35 +128,12 @@ export default function SimulationPerformance({
     }
 
     return calculateScenarioPerformanceWithinSimulation(
-      filteredData.grades,
-      filteredData.chats,
-      filteredData.attempts,
-      scenarios,
-      filteredData.profiles,
+      filteredData,
       rubrics,
       selectedSimulation,
-      startDate,
-      endDate,
-      thresholds,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters.includes("practice"),
-      simulationFilters.includes("general")
+      thresholds
     );
-  }, [
-    selectedSimulation,
-    scenarios,
-    filteredData,
-    rubrics,
-    startDate,
-    endDate,
-    thresholds,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [selectedSimulation, filteredData, rubrics, thresholds, scenarios]);
 
   // Calculate insights
   const insights = useMemo(() => {
@@ -247,41 +196,6 @@ export default function SimulationPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
-
-  // Show no data message if no matching cohorts found
-  // Only show this if we have cohortIds but no matching cohorts
-  if (
-    selectedCohortIds.length > 0 &&
-    (!filteredData?.cohorts ||
-      !filteredData.cohorts.some((cohort) =>
-        selectedCohortIds.includes(cohort.id)
-      ))
-  ) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Scenario Performance
-          </CardTitle>
-          <CardDescription className="text-sm">
-            Performance trends for scenarios within simulations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground text-sm">
-              No data available for the selected cohorts.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              The selected profile is not a member of any of the specified
-              cohorts.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!availableSimulations.length) {
     return (

@@ -1,18 +1,13 @@
-import { SimulationFilter } from "@/contexts/analytics-context";
 import type {
-  Cohort,
   Parameter,
   ParameterItem,
-  Profile,
-  ProfileRole,
   Rubric,
-  Scenario,
   Simulation,
-  SimulationAttempt,
   SimulationChat,
   SimulationChatGrade,
 } from "@/types";
-import { format, isAfter, isBefore } from "date-fns";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { format } from "date-fns";
 
 // Common interfaces for analytics data
 
@@ -48,58 +43,6 @@ export interface CorrelationData {
   pValue: number;
 }
 
-// Common filtering function for cohort restrictions
-function getAllowedSimulationIds(
-  cohorts: Cohort[],
-  cohortIds: string[],
-  profileId?: string,
-  profiles?: { id: string; role: ProfileRole }[]
-): string[] | null {
-  if (!cohortIds || cohortIds.length === 0) {
-    return null; // No cohort filtering, allow all simulations
-  }
-
-  // Filter cohorts to only those in cohortIds
-  const filteredCohorts = cohorts.filter((cohort) =>
-    cohortIds.includes(cohort.id)
-  );
-
-  if (filteredCohorts.length === 0) {
-    return []; // No matching cohorts, no data allowed
-  }
-
-  // If profileId is provided, check if profile belongs to any of the filtered cohorts
-  if (profileId) {
-    // Treat admin/superadmin as members of all cohorts
-    const isPrivileged = profiles?.some(
-      (p) =>
-        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
-    );
-    if (!isPrivileged) {
-      const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
-      );
-
-      if (!profileInCohorts) {
-        return []; // Profile not in any of the specified cohorts, no data allowed
-      }
-    }
-  }
-
-  // Get union of all simulation IDs from matching cohorts
-  const simulationIds = new Set<string>();
-  filteredCohorts.forEach((cohort) => {
-    cohort.simulationIds.forEach((simId) => {
-      if (simId !== "RAY") {
-        // Exclude placeholder
-        simulationIds.add(simId);
-      }
-    });
-  });
-
-  return Array.from(simulationIds);
-}
-
 /**
  * Calculate scenario attribute breakdown with performance metrics
  * @param grades - All simulation chat grades
@@ -119,30 +62,11 @@ function getAllowedSimulationIds(
  * @returns Array of ScenarioAttributeElement with performance data
  */
 export const calculateScenarioAttributeBreakdown = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  scenarios: Scenario[],
+  filteredData: FilteredData,
   rubrics: Rubric[],
-  profiles: Profile[],
   parameterItems: ParameterItem[],
-  selectedParameter: Parameter,
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"]
+  selectedParameter: Parameter
 ): ScenarioAttributeElement[] => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
   // Get parameter items for the selected parameter
   const parameterItemsForSelected = parameterItems
     .filter((item) => item.parameterId === selectedParameter.id)
@@ -152,65 +76,22 @@ export const calculateScenarioAttributeBreakdown = (
     return [];
   }
 
-  // Filter grades by date range, include/exclude practice and normal simulations, and filter by roles if provided
-  let filteredGrades = grades.filter((grade) => {
-    const gradeDate = new Date(grade.createdAt);
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
-    const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-    // Check date range
-    const inDateRange =
-      isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-    // Practice/Normal filter
-    const isPractice = Boolean(simulation?.practiceSimulation);
-    const practiceOk =
-      (simulationFilters.includes("practice") && isPractice) ||
-      (simulationFilters.includes("general") && !isPractice);
-
-    // Role filter (default to allow all when not provided)
-    const roleOk =
-      rolesAllowed && rolesAllowed.length > 0
-        ? profile?.role
-          ? rolesAllowed.includes(profile.role)
-          : false
-        : true;
-
-    // Filter by profile if provided
-    const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-    return inDateRange && practiceOk && roleOk && profileMatch;
-  });
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return []; // No data allowed due to cohort restrictions
-    }
-
-    filteredGrades = filteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (filteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return [];
   }
 
   // Get all scenarios that were attempted in the filtered data
   const attemptedScenarioIds = new Set<string>();
-  filteredGrades.forEach((grade) => {
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
+  filteredData.grades.forEach((grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
     if (chat) {
       attemptedScenarioIds.add(chat.scenarioId);
     }
   });
 
-  const attemptedScenarios = scenarios.filter((scenario) =>
+  const attemptedScenarios = filteredData.scenarios.filter((scenario) =>
     attemptedScenarioIds.has(scenario.id)
   );
 
@@ -289,19 +170,25 @@ export const calculateScenarioAttributeBreakdown = (
       });
 
       scenariosWithAttribute.forEach((scenario) => {
-        const scenarioChats = chats.filter(
+        const scenarioChats = filteredData.chats.filter(
           (chat) => chat.scenarioId === scenario.id
         );
-        const scenarioGrades = filteredGrades.filter((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
+        const scenarioGrades = filteredData.grades.filter((grade) => {
+          const chat = filteredData.chats.find(
+            (c) => c.id === grade.simulationChatId
+          );
           return chat?.scenarioId === scenario.id;
         });
 
         scenarioGrades.forEach((grade) => {
           // Convert raw score to percentage using rubric points
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
+          const chat = filteredData.chats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = filteredData.attempts.find(
+            (a) => a.id === chat?.attemptId
+          );
+          const simulation = filteredData.simulations.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
@@ -414,33 +301,14 @@ export const calculateScenarioAttributeBreakdown = (
  * @returns Object with performance data and correlation analysis
  */
 export const calculateScenarioPerformance = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  scenarios: Scenario[],
+  filteredData: FilteredData,
   rubrics: Rubric[],
-  profiles: Profile[],
   parameterItems: ParameterItem[],
-  selectedParameter: Parameter,
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"]
+  selectedParameter: Parameter
 ): {
   performanceData: ScenarioPerformanceData[];
   correlationData: CorrelationData;
 } => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
   // Get parameter items for the selected parameter
   const parameterItemsForSelected = parameterItems
     .filter((item) => item.parameterId === selectedParameter.id)
@@ -453,51 +321,7 @@ export const calculateScenarioPerformance = (
     };
   }
 
-  // Filter data by date range, include/exclude practice and normal simulations, and filter by roles if provided
-  const filteredGrades = grades.filter((grade) => {
-    const gradeDate = new Date(grade.createdAt);
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
-    const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-    // Check date range
-    const inDateRange =
-      isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-    // Practice/Normal filter
-    const isPractice = Boolean(simulation?.practiceSimulation);
-    const practiceOk =
-      (simulationFilters.includes("practice") && isPractice) ||
-      (simulationFilters.includes("general") && !isPractice);
-
-    // Role filter
-    const roleOk =
-      rolesAllowed && rolesAllowed.length > 0
-        ? profile?.role
-          ? rolesAllowed.includes(profile.role)
-          : false
-        : true;
-
-    // Filter by profile if provided
-    const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-    // Apply cohort-based simulation filtering unless practice-only mode
-    const cohortSimulationMatch =
-      allowedSimulationIds && !(simulationFilters.includes("practice") && true)
-        ? simulation && allowedSimulationIds.includes(simulation.id)
-        : true;
-
-    return (
-      inDateRange &&
-      practiceOk &&
-      roleOk &&
-      profileMatch &&
-      cohortSimulationMatch
-    );
-  });
-
-  if (filteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return {
       performanceData: [],
       correlationData: { correlation: 0, pValue: 1 },
@@ -509,11 +333,11 @@ export const calculateScenarioPerformance = (
     [key: string]: { scores: number[]; count: number; rubricPoints: number };
   } = {};
 
-  scenarios.forEach((scenario) => {
-    const scenarioChats = chats.filter(
+  filteredData.scenarios.forEach((scenario) => {
+    const scenarioChats = filteredData.chats.filter(
       (chat) => chat.scenarioId === scenario.id
     );
-    const scenarioGrades = filteredGrades.filter((grade) =>
+    const scenarioGrades = filteredData.grades.filter((grade) =>
       scenarioChats.some((chat) => chat.id === grade.simulationChatId)
     );
 
@@ -647,19 +471,9 @@ export const calculateScenarioPerformance = (
  * @returns Object with simulation composition analysis data
  */
 export const calculateSimulationComposition = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  scenarios: Scenario[],
-  profiles: Profile[],
+  filteredData: FilteredData,
   parameters: Parameter[],
   parameterItems: ParameterItem[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
   config: {
     method: "percentile" | "quartile" | "standard_deviation";
     topPercentage: number;
@@ -668,9 +482,7 @@ export const calculateSimulationComposition = (
     method: "percentile",
     topPercentage: 25,
     bottomPercentage: 25,
-  },
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"]
+  }
 ): {
   highPerforming: Array<{
     name: string;
@@ -721,55 +533,7 @@ export const calculateSimulationComposition = (
     }>;
   }>;
 } => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter grades by date range, optionally include practice simulations, and filter by roles if provided
-  const filteredGrades = grades.filter((grade) => {
-    const gradeDate = new Date(grade.createdAt);
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
-    const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-    // Check date range
-    const inDateRange =
-      isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-    // Practice filter
-    const practiceOk =
-      simulationFilters.includes("practice") && !simulation?.practiceSimulation;
-
-    // Role filter
-    const roleOk =
-      rolesAllowed && rolesAllowed.length > 0
-        ? profile?.role
-          ? rolesAllowed.includes(profile.role)
-          : false
-        : true;
-
-    // Filter by profile if provided
-    const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-    // Apply cohort-based simulation filtering
-    const cohortSimulationMatch = allowedSimulationIds
-      ? simulation && allowedSimulationIds.includes(simulation.id)
-      : true;
-
-    return (
-      inDateRange &&
-      practiceOk &&
-      roleOk &&
-      profileMatch &&
-      cohortSimulationMatch
-    );
-  });
-
-  if (filteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return {
       highPerforming: [],
       lowPerforming: [],
@@ -800,14 +564,18 @@ export const calculateSimulationComposition = (
     }
   >();
 
-  filteredGrades.forEach((grade) => {
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
+  filteredData.grades.forEach((grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
     if (!chat) return;
 
-    const attempt = attempts.find((a) => a.id === chat.attemptId);
+    const attempt = filteredData.attempts.find((a) => a.id === chat.attemptId);
     if (!attempt) return;
 
-    const simulation = simulations.find((s) => s.id === attempt.simulationId);
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === attempt.simulationId
+    );
     if (!simulation) return;
 
     if (!simulationPerformance.has(simulation.id)) {
@@ -840,7 +608,7 @@ export const calculateSimulationComposition = (
     performance.totalAttempts = performance.chats.length;
 
     // Calculate parameter breakdown for this simulation
-    const simScenarios = scenarios.filter((s) =>
+    const simScenarios = filteredData.scenarios.filter((s) =>
       performance.simulation.scenarioIds?.includes(s.id)
     );
 
@@ -1200,26 +968,14 @@ export const calculateSimulationComposition = (
  * @returns Array of scenario performance data
  */
 export const calculateScenarioPerformanceWithinSimulation = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  scenarios: Scenario[],
-  profiles: Profile[],
+  filteredData: FilteredData,
   rubrics: Rubric[],
   selectedSimulation: Simulation | null,
-  dateStart: Date,
-  dateEnd: Date,
   thresholds: {
     danger: number;
     warning: number;
     success: number;
-  },
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  }
 ): Array<{
   scenarioId: string;
   scenarioName: string;
@@ -1232,76 +988,33 @@ export const calculateScenarioPerformanceWithinSimulation = (
 }> => {
   if (!selectedSimulation) return [];
 
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles?.map((p) => ({ id: p.id, role: p.role }))
-  );
-
   // Get rubric for score calculation
   const rubric = rubrics.find((r) => r.id === selectedSimulation.rubricId);
   const rubricTotalPoints = rubric?.points || 100;
 
-  // Filter data by date range, selected simulation, and filter by roles if provided
-  const filteredGrades = grades.filter((grade) => {
-    const gradeDate = new Date(grade.createdAt);
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-    // Check date range
-    const inDateRange =
-      isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-    // Check if it's from the selected simulation
-    const isSelectedSimulation =
-      attempt?.simulationId === selectedSimulation.id;
-
-    // Role filter
-    const roleOk = rolesAllowed
-      ? profile?.role
-        ? rolesAllowed.includes(profile.role)
-        : false
-      : true;
-
-    // Filter by profile if provided
-    const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-    // Apply cohort-based simulation filtering unless practice-only mode
-    const practiceOnly = showPractice && !showGeneral;
-    const cohortSimulationMatch =
-      allowedSimulationIds && !practiceOnly
-        ? selectedSimulation &&
-          allowedSimulationIds.includes(selectedSimulation.id)
-        : true;
-
-    return (
-      inDateRange &&
-      isSelectedSimulation &&
-      roleOk &&
-      profileMatch &&
-      cohortSimulationMatch
+  // Filter grades for the selected simulation
+  const filteredGrades = filteredData.grades.filter((grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
     );
+    const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+    return attempt?.simulationId === selectedSimulation.id;
   });
 
-  // Do not early return on no grades; we can still show scenarios using chat-based data
-
   // Get scenarios for the selected simulation
-  const simulationScenarios = scenarios.filter((scenario) =>
+  const simulationScenarios = filteredData.scenarios.filter((scenario) =>
     selectedSimulation.scenarioIds.includes(scenario.id)
   );
 
   // Calculate performance for each scenario
   const scenarioData = simulationScenarios
     .map((scenario) => {
-      const scenarioChats = chats.filter((chat) => {
-        const attempt = attempts.find((a) => a.id === chat.attemptId);
+      const scenarioChats = filteredData.chats.filter((chat) => {
+        const attempt = filteredData.attempts.find(
+          (a) => a.id === chat.attemptId
+        );
         const inSim = attempt?.simulationId === selectedSimulation.id;
-        const inDate =
-          isAfter(new Date(chat.createdAt), dateStart) &&
-          isBefore(new Date(chat.createdAt), dateEnd);
-        return chat.scenarioId === scenario.id && inSim && inDate;
+        return chat.scenarioId === scenario.id && inSim;
       });
       const scenarioGrades = filteredGrades.filter((grade) =>
         scenarioChats.some((chat) => chat.id === grade.simulationChatId)
@@ -1330,27 +1043,8 @@ export const calculateScenarioPerformanceWithinSimulation = (
             )
           : 0;
 
-      // Calculate performance trend (simple comparison with previous period)
-      const midPoint = new Date((dateStart.getTime() + dateEnd.getTime()) / 2);
-      const recentGrades = scenarioGrades.filter(
-        (grade) => new Date(grade.createdAt) >= midPoint
-      );
-      const olderGrades = scenarioGrades.filter(
-        (grade) => new Date(grade.createdAt) < midPoint
-      );
-
-      let performanceChange = 0;
-      if (recentGrades.length > 0 && olderGrades.length > 0) {
-        const recentAvg =
-          recentGrades.reduce((sum, grade) => sum + grade.score, 0) /
-          recentGrades.length;
-        const olderAvg =
-          olderGrades.reduce((sum, grade) => sum + grade.score, 0) /
-          olderGrades.length;
-        performanceChange = Math.round(
-          ((recentAvg - olderAvg) / rubricTotalPoints) * 100
-        );
-      }
+      // Calculate performance trend (simplified - no date-based comparison)
+      const performanceChange = 0;
 
       return {
         scenarioId: scenario.id,
@@ -1375,153 +1069,6 @@ export const calculateScenarioPerformanceWithinSimulation = (
 };
 
 /**
- * Get available simulations for performance analysis
- * @param simulations - All simulations
- * @param chats - All simulation chats
- * @param grades - All simulation chat grades
- * @param attempts - All simulation attempts
- * @param profiles - All profiles
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
- * @returns Array of available simulations
- */
-export const getAvailableSimulations = (
-  simulations: Simulation[],
-  chats: SimulationChat[],
-  grades: SimulationChatGrade[],
-  attempts: SimulationAttempt[],
-  profiles: Profile[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"]
-): Simulation[] => {
-  const isPrivileged = profileId
-    ? profiles?.some(
-        (p) =>
-          p.id === profileId && (p.role === "admin" || p.role === "superadmin")
-      )
-    : false;
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles?.map((p) => ({ id: p.id, role: p.role }))
-  );
-
-  // First, get all active simulations, optionally including practice
-  const activeSimulations = simulations
-    .filter(
-      (sim) =>
-        sim.active &&
-        (simulationFilters.includes("practice")
-          ? true
-          : !sim.practiceSimulation)
-    )
-    .map((sim) => ({
-      ...sim,
-      id: sim.id,
-      title: sim.title,
-      description: `Simulation with ${sim.scenarioIds?.length || 0} scenarios`,
-      scenarioIds: sim.scenarioIds || [],
-      active: sim.active,
-      practiceSimulation: sim.practiceSimulation,
-      rubricId: sim.rubricId,
-    }));
-
-  // Apply cohort-based simulation filtering, but always keep practice sims when showPractice is true
-  const practiceOnly =
-    simulationFilters.includes("practice") &&
-    !simulationFilters.includes("general");
-  const cohortFilteredSimulations =
-    allowedSimulationIds && !practiceOnly
-      ? activeSimulations.filter((sim) => {
-          if (sim.practiceSimulation && simulationFilters.includes("practice"))
-            return true;
-          if (isPrivileged && simulationFilters.includes("general"))
-            return true; // privileged users can see all general sims
-          return allowedSimulationIds.includes(sim.id);
-        })
-      : activeSimulations;
-
-  // Filter out simulations that don't have data in the selected date range
-  const simulationsWithData = cohortFilteredSimulations.filter((sim) => {
-    // Check if this simulation has any attempts
-    const simulationAttempts = attempts.filter(
-      (attempt) => attempt.simulationId === sim.id
-    );
-
-    if (simulationAttempts.length === 0) {
-      return false;
-    }
-
-    // Check if any of these attempts have chats
-    const simulationChats = chats.filter((chat) =>
-      simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
-    );
-
-    if (simulationChats.length === 0) {
-      return false;
-    }
-
-    // Check if any of these chats are in the date range
-    const chatsInDateRange = simulationChats.some((chat) => {
-      const chatDate = new Date(chat.createdAt);
-      return isAfter(chatDate, dateStart) && isBefore(chatDate, dateEnd);
-    });
-
-    // Check if any of these chats have grades in the date range and match role filters
-    const simulationGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const chat = simulationChats.find((c) => c.id === grade.simulationChatId);
-      if (!chat) return false;
-
-      const attempt = attempts.find((a) => a.id === chat.attemptId);
-      const profile = profiles?.find((p) => p.id === attempt?.profileId);
-
-      // Check date range
-      const inDateRange =
-        isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-      // Role filter
-      const roleOk =
-        rolesAllowed && rolesAllowed.length > 0
-          ? profile?.role
-            ? rolesAllowed.includes(profile.role)
-            : false
-          : true;
-
-      // Filter by profile if provided
-      const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-      // Cohort filtering is already applied via allowedSimulationIds
-      const cohortProfileMatch = true;
-
-      return inDateRange && roleOk && profileMatch && cohortProfileMatch;
-    });
-
-    const isPractice = Boolean(sim.practiceSimulation);
-    // Include practice sims when showPractice is enabled if they have any chats or grades in date range
-    if (isPractice && simulationFilters.includes("practice")) {
-      return chatsInDateRange || simulationGrades.length >= 1;
-    }
-    // For general sims, allow if there are chats in range OR at least one grade (so general sims without grades but with chats still appear)
-    if (simulationFilters.includes("general")) {
-      return chatsInDateRange || simulationGrades.length >= 1;
-    }
-    return false;
-  });
-
-  return simulationsWithData;
-};
-
-/**
  * Calculate simulation performance metrics with trend data
  * @param grades - All simulation chat grades
  * @param chats - All simulation chats
@@ -1536,18 +1083,8 @@ export const getAvailableSimulations = (
  * @returns Object with currentValue, trendData, and hasData properties
  */
 export const calculateSimulationPerformance = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  rubrics: Rubric[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  selectedRoles?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"]
+  filteredData: FilteredData,
+  rubrics: Rubric[]
 ): {
   currentValue: number;
   trendData: Array<{
@@ -1557,50 +1094,7 @@ export const calculateSimulationPerformance = (
   }>;
   hasData: boolean;
 } => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId
-  );
-
-  // Filter grades by date range and exclude practice simulations
-  let filteredGrades = grades.filter((grade) => {
-    const gradeDate = new Date(grade.createdAt);
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
-
-    // Check date range
-    const inDateRange =
-      isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
-
-    // Exclude practice simulations
-    const notPractice = !simulation?.practiceSimulation;
-
-    // Filter by profile if provided
-    const profileMatch = profileId ? attempt?.profileId === profileId : true;
-
-    return inDateRange && notPractice && profileMatch;
-  });
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return {
-        currentValue: 0,
-        trendData: [],
-        hasData: false,
-      };
-    }
-
-    filteredGrades = filteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (filteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return {
       currentValue: 0,
       trendData: [],
@@ -1612,10 +1106,14 @@ export const calculateSimulationPerformance = (
   let totalScore = 0;
   let totalRubricPoints = 0;
 
-  filteredGrades.forEach((grade) => {
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
+  filteredData.grades.forEach((grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
+    const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === attempt?.simulationId
+    );
     const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
 
     const rubricPoints = rubric?.points || 100;
@@ -1634,11 +1132,15 @@ export const calculateSimulationPerformance = (
     { totalScore: number; totalPoints: number; count: number }
   >();
 
-  filteredGrades.forEach((grade) => {
+  filteredData.grades.forEach((grade) => {
     const gradeDate = format(new Date(grade.createdAt), "MMM dd");
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
+    const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === attempt?.simulationId
+    );
     const rubric = rubrics?.find((r) => r.id === simulation?.rubricId);
 
     const rubricPoints = rubric?.points || 100;

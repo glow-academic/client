@@ -60,13 +60,7 @@ export default function CohortPerformance({
   );
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { startDate, endDate } = useAnalytics();
 
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
@@ -81,33 +75,12 @@ export default function CohortPerformance({
     }
 
     return calculateCohortPerformance(
-      filteredData.cohorts,
-      filteredData.profiles,
-      filteredData.chats,
-      filteredData.grades,
-      filteredData.attempts,
-      filteredData.simulations,
+      filteredData,
       rubrics,
-      startDate,
-      endDate,
       thresholds,
-      undefined, // profileId - not needed since data is already filtered
-      selectedCohortIds,
-      selectedSimulations.map((s) => s.id),
-      selectedRoles,
-      simulationFilters
+      selectedSimulations.map((s) => s.id)
     );
-  }, [
-    filteredData,
-    rubrics,
-    startDate,
-    endDate,
-    thresholds,
-    selectedCohortIds,
-    selectedSimulations,
-    selectedRoles,
-    simulationFilters,
-  ]);
+  }, [filteredData, rubrics, thresholds, selectedSimulations]);
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
