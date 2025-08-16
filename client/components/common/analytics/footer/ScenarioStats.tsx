@@ -20,6 +20,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { SimulationFilter } from "@/contexts/analytics-context";
 
 import {
   Popover,
@@ -71,8 +72,7 @@ export interface ScenarioStatsProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 interface MetricOption {
@@ -88,8 +88,7 @@ export default function ScenarioStats({
   cohortIds,
   thresholds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -279,8 +278,7 @@ export default function ScenarioStats({
         cohorts || [],
         cohortIds,
         selectedRoles,
-        showPractice,
-        showGeneral
+        simulationFilters
       );
     }, [
       scenarios,
@@ -300,8 +298,7 @@ export default function ScenarioStats({
       cohorts,
       cohortIds,
       selectedRoles,
-      showPractice,
-      showGeneral,
+      simulationFilters,
     ]);
 
   const { correlation, pValue } = correlationData;

@@ -1,3 +1,4 @@
+import { SimulationFilter } from "@/contexts/analytics-context";
 import type {
   Cohort,
   Profile,
@@ -115,8 +116,7 @@ export const calculateCohortPerformance = (
   cohortIds: string[] = [],
   selectedSimulationIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): CohortPerformanceResult => {
   // Filter cohorts based on cohortIds and profileId
   let filteredCohorts = cohorts;
@@ -175,7 +175,7 @@ export const calculateCohortPerformance = (
     // Practice/General filter (OR semantics)
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceGeneralOk =
-      (showPractice && isPractice) || (showGeneral && !isPractice);
+      (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
 
     // Role filter
     const roleOk = rolesAllowed
@@ -411,7 +411,7 @@ export const calculateSkillPerformance = (
   cohortIds: string[] = [],
   selectedRubricIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  _showPractice: boolean = false
+  _simulationFilters: SimulationFilter[] = ["general"]
 ): SkillPerformanceResult => {
   // Filter cohorts based on cohortIds and profileId
   let filteredCohorts = cohorts;
@@ -618,7 +618,7 @@ export const calculateRubricHeatmap = (
   cohortIds: string[] = [],
   selectedRubricIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  _showPractice: boolean = false
+  _simulationFilters: SimulationFilter[] = ["general"]
 ): RubricHeatmapResult => {
   // Filter cohorts based on cohortIds and profileId
   let filteredCohorts = cohorts;

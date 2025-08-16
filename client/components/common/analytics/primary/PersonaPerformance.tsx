@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
 import { profileRole } from "@/utils/drizzle/schema";
@@ -65,8 +66,7 @@ export interface PersonaPerformanceProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function PersonaPerformance({
@@ -76,7 +76,7 @@ export default function PersonaPerformance({
   cohortIds,
   thresholds,
   selectedRoles,
-  showPractice,
+  simulationFilters,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -217,7 +217,7 @@ export default function PersonaPerformance({
       cohortIds,
       selectedSimulations.map((s) => s.id),
       selectedRoles,
-      showPractice
+      simulationFilters
     );
   }, [
     personas,
@@ -233,7 +233,7 @@ export default function PersonaPerformance({
     profileId,
     selectedSimulations,
     selectedRoles,
-    showPractice,
+    simulationFilters,
     cohorts,
     cohortIds,
   ]);

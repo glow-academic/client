@@ -441,8 +441,7 @@ export default function Practice() {
             <SimulationHistory
               profileId={effectiveProfile.id}
               showExport={false}
-              showPractice={true}
-              showGeneral={false}
+              simulationFilters={["practice"]}
             />
           </div>
         )}

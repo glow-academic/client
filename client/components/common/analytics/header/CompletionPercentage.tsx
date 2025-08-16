@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { calculateCompletionPercentage } from "@/utils/analytics/header";
 import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -46,8 +47,7 @@ export interface CompletionPercentageProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -86,8 +86,7 @@ export default function CompletionPercentage({
   thresholds,
   cohortIds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: CompletionPercentageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -145,9 +144,8 @@ export default function CompletionPercentage({
       cohorts,
       cohortIds,
       selectedRoles,
-      showPractice,
-      profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showGeneral
+      simulationFilters,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     chats,
@@ -160,8 +158,7 @@ export default function CompletionPercentage({
     profileId,
     cohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
     profiles,
   ]);
 

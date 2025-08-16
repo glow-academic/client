@@ -1,3 +1,4 @@
+import { SimulationFilter } from "@/contexts/analytics-context";
 import type {
   Cohort,
   Parameter,
@@ -133,8 +134,7 @@ export const calculateScenarioAttributeBreakdown = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): ScenarioAttributeElement[] => {
   const allowedSimulationIds = getAllowedSimulationIds(
     cohorts,
@@ -167,7 +167,7 @@ export const calculateScenarioAttributeBreakdown = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showGeneral && !isPractice);
+      (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
 
     // Role filter (default to allow all when not provided)
     const roleOk =
@@ -428,8 +428,7 @@ export const calculateScenarioPerformance = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): {
   performanceData: ScenarioPerformanceData[];
   correlationData: CorrelationData;
@@ -468,7 +467,7 @@ export const calculateScenarioPerformance = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showGeneral && !isPractice);
+      (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
 
     // Role filter
     const roleOk =
@@ -483,7 +482,7 @@ export const calculateScenarioPerformance = (
 
     // Apply cohort-based simulation filtering unless practice-only mode
     const cohortSimulationMatch =
-      allowedSimulationIds && !(showPractice && true)
+      allowedSimulationIds && !(simulationFilters.includes("practice") && true)
         ? simulation && allowedSimulationIds.includes(simulation.id)
         : true;
 
@@ -669,7 +668,7 @@ export const calculateSimulationComposition = (
     bottomPercentage: 25,
   },
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  simulationFilters: SimulationFilter[] = ["general"]
 ): {
   highPerforming: Array<{
     name: string;
@@ -740,7 +739,7 @@ export const calculateSimulationComposition = (
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
     // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    const practiceOk = simulationFilters.includes("practice") && !simulation?.practiceSimulation;
 
     // Role filter
     const roleOk =
@@ -1398,8 +1397,7 @@ export const getAvailableSimulations = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): Simulation[] => {
   const isPrivileged = profileId
     ? profiles?.some(
@@ -1417,7 +1415,7 @@ export const getAvailableSimulations = (
   // First, get all active simulations, optionally including practice
   const activeSimulations = simulations
     .filter(
-      (sim) => sim.active && (showPractice ? true : !sim.practiceSimulation)
+      (sim) => sim.active && (simulationFilters.includes("practice") ? true : !sim.practiceSimulation)
     )
     .map((sim) => ({
       ...sim,
@@ -1431,12 +1429,12 @@ export const getAvailableSimulations = (
     }));
 
   // Apply cohort-based simulation filtering, but always keep practice sims when showPractice is true
-  const practiceOnly = showPractice && !showGeneral;
+  const practiceOnly = simulationFilters.includes("practice") && !simulationFilters.includes("general");
   const cohortFilteredSimulations =
     allowedSimulationIds && !practiceOnly
       ? activeSimulations.filter((sim) => {
-          if (sim.practiceSimulation && showPractice) return true;
-          if (isPrivileged && showGeneral) return true; // privileged users can see all general sims
+          if (sim.practiceSimulation && simulationFilters.includes("practice")) return true;
+          if (isPrivileged && simulationFilters.includes("general")) return true; // privileged users can see all general sims
           return allowedSimulationIds.includes(sim.id);
         })
       : activeSimulations;
@@ -1498,11 +1496,11 @@ export const getAvailableSimulations = (
 
     const isPractice = Boolean(sim.practiceSimulation);
     // Include practice sims when showPractice is enabled if they have any chats or grades in date range
-    if (isPractice && showPractice) {
+    if (isPractice && simulationFilters.includes("practice")) {
       return chatsInDateRange || simulationGrades.length >= 1;
     }
     // For general sims, allow if there are chats in range OR at least one grade (so general sims without grades but with chats still appear)
-    if (showGeneral) {
+    if (simulationFilters.includes("general")) {
       return chatsInDateRange || simulationGrades.length >= 1;
     }
     return false;
@@ -1535,7 +1533,9 @@ export const calculateSimulationPerformance = (
   dateEnd: Date,
   profileId?: string,
   cohorts: Cohort[] = [],
-  cohortIds: string[] = []
+  cohortIds: string[] = [],
+    _rolesAllowed?: ProfileRole[],
+  _simulationFilters: SimulationFilter[] = ["general"]
 ): {
   currentValue: number;
   trendData: Array<{

@@ -305,6 +305,7 @@ export function createMockSimulationAttempt(overrides: Partial<SimulationAttempt
     simulationId: faker.string.uuid(),
     infiniteMode: faker.datatype.boolean(),
     infiniteModeTimeLimit: faker.number.int({ min: 1, max: 1000 }),
+    archived: faker.datatype.boolean(),
   };
 
   return { ...defaults, ...overrides } as SimulationAttempt;

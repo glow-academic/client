@@ -30,10 +30,11 @@ import { toast } from "sonner";
 import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
-  const { effectiveCohortIds, cohorts, isLoadingCohorts, startDate, endDate } =
+  const { selectedCohortIds, startDate, endDate } =
     useAnalytics();
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
@@ -53,6 +54,11 @@ export default function Home() {
 
   // Check if user is a TA
   const isTA = effectiveProfile?.role === "ta";
+
+  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: getAllCohorts,
+  });
 
   // 1. Fetch all simulations
   const { data: allSimulations, isLoading: loadingSimulations } = useQuery({
@@ -110,10 +116,10 @@ export default function Home() {
 
     // If specific cohorts are selected in analytics context, filter to those
     if (
-      effectiveCohortIds.length > 0 &&
-      effectiveCohortIds.length < cohorts.length
+      selectedCohortIds.length > 0 &&
+      selectedCohortIds.length < cohorts.length
     ) {
-      return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
+      return cohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
     }
 
     // Otherwise, show all available cohorts for the user
@@ -132,7 +138,7 @@ export default function Home() {
     });
   }, [
     cohorts,
-    effectiveCohortIds,
+    selectedCohortIds,
     shouldShowAll,
     effectiveProfile?.defaultProfile,
     isTA,
@@ -1105,10 +1111,9 @@ export default function Home() {
       <div className="mt-12">
         <SimulationHistory
           profileId={effectiveProfile.id}
-          cohortIds={effectiveCohortIds}
+          cohortIds={selectedCohortIds}
           showExport={true}
-          showPractice={false}
-          showGeneral={true}
+          simulationFilters={["general"]}
           startDate={startDate}
           endDate={endDate}
         />

@@ -370,6 +370,7 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 	simulationId: uuid("simulation_id").notNull(),
 	infiniteMode: boolean("infinite_mode").default(false).notNull(),
 	infiniteModeTimeLimit: integer("infinite_mode_time_limit"),
+	archived: boolean().default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.profileId],

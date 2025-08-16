@@ -1,0 +1,1 @@
+ALTER TABLE "simulation_attempts" ADD COLUMN "archived" boolean DEFAULT false NOT NULL;

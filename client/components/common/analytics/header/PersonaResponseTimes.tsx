@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { calculatePersonaResponseTimes } from "@/utils/analytics/header";
 import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -46,8 +47,7 @@ export interface PersonaResponseTimesProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -86,8 +86,7 @@ export default function PersonaResponseTimes({
   thresholds,
   cohortIds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -144,9 +143,8 @@ export default function PersonaResponseTimes({
       cohorts,
       cohortIds,
       selectedRoles,
-      showPractice,
-      profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showGeneral
+      simulationFilters,
+      profiles?.map((p) => ({ id: p.id, role: p.role }))
     );
   }, [
     messages,
@@ -159,8 +157,7 @@ export default function PersonaResponseTimes({
     profileId,
     cohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
     profiles,
   ]);
 

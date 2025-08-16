@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 
 export interface LeaderboardProps {
   cohortId?: string;
@@ -30,13 +31,16 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const {
     startDate,
     endDate,
-    effectiveCohortIds,
-    cohorts,
+    selectedCohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   } = useAnalytics();
   const router = useRouter();
+
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
 
   const handleViewReport = (profileId: string) => {
     // Disable navigation for TAs when viewing a specific cohort
@@ -158,7 +162,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }
 
     // If no cohorts are selected, show all available cohorts for the user
-    if (effectiveCohortIds.length === 0) {
+    if (selectedCohortIds.length === 0) {
       return cohorts.filter((cohort) => {
         // For instructors/admins, show all active cohorts
         if (shouldShowAll || effectiveProfile?.defaultProfile) {
@@ -175,11 +179,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     }
 
     // Otherwise, filter to only selected cohorts
-    return cohorts.filter((cohort) => effectiveCohortIds.includes(cohort.id));
+    return cohorts.filter((cohort) => selectedCohortIds.includes(cohort.id));
   }, [
     cohorts,
     cohortId,
-    effectiveCohortIds,
+    selectedCohortIds,
     shouldShowAll,
     effectiveProfile?.defaultProfile,
     isTA,
@@ -249,7 +253,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       filteredAttempts = filteredAttempts.filter((attempt) => {
         const sim = simById.get(attempt.simulationId);
         const isPractice = Boolean(sim?.practiceSimulation);
-        return (showPractice && isPractice) || (showGeneral && !isPractice);
+        return (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
       });
     }
 
@@ -260,8 +264,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     startDate,
     endDate,
     allSimulations,
-    showPractice,
-    showGeneral,
+    simulationFilters,
     allProfiles,
   ]);
 

@@ -1,3 +1,4 @@
+import { SimulationFilter } from "@/contexts/analytics-context";
 import type {
   Cohort,
   Persona,
@@ -80,8 +81,7 @@ export const calculateAttemptImprovement = (
   cohortIds: string[] = [],
   selectedSimulations: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): AttemptImprovementDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -111,7 +111,7 @@ export const calculateAttemptImprovement = (
     if (!cohorts) return false;
     // When showing practice-only, bypass cohort simulation restriction entirely
     // (practice simulations may not belong to any cohort)
-    if (showPractice && !showGeneral) return true;
+    if (simulationFilters.includes("practice") && !simulationFilters.includes("general")) return true;
 
     return cohorts.some(
       (cohort) =>
@@ -154,7 +154,7 @@ export const calculateAttemptImprovement = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showGeneral && !isPractice);
+      (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
 
     // Role filter
     const roleOk =
@@ -169,7 +169,7 @@ export const calculateAttemptImprovement = (
 
     // Filter by cohorts (bypass if practice-only)
     const cohortMatch =
-      showPractice && !showGeneral
+      simulationFilters.includes("practice") && !simulationFilters.includes("general")
         ? true
         : profile
           ? isProfileInCohorts(profile.id)
@@ -346,8 +346,7 @@ export const calculatePlatformGrowth = (
   cohorts: Cohort[] = [],
   cohortIds: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false,
-  showGeneral: boolean = true
+  simulationFilters: SimulationFilter[] = ["general"]
 ): GrowthDataPoint[] => {
   if (!profiles || !chats || !grades || !attempts || !simulations || !rubrics) {
     return [];
@@ -386,7 +385,7 @@ export const calculatePlatformGrowth = (
     // Practice/Normal filter
     const isPractice = Boolean(simulation?.practiceSimulation);
     const practiceOk =
-      (showPractice && isPractice) || (showGeneral && !isPractice);
+      (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
 
     // Role filter
     const roleOk =
@@ -657,7 +656,7 @@ export const calculatePersonaPerformance = (
   cohortIds: string[] = [],
   selectedSimulations: string[] = [],
   rolesAllowed?: ProfileRole[],
-  showPractice: boolean = false
+  simulationFilters: SimulationFilter[] = ["general"]
 ): PersonaPerformanceDataPoint[] => {
   if (
     !personas ||
@@ -726,7 +725,7 @@ export const calculatePersonaPerformance = (
       isAfter(gradeDate, dateStart) && isBefore(gradeDate, dateEnd);
 
     // Practice filter
-    const practiceOk = showPractice ? true : !simulation?.practiceSimulation;
+    const practiceOk = simulationFilters.includes("practice") && !simulation?.practiceSimulation;
 
     // Filter by profile if provided
     const profileMatch = profileId ? attempt?.profileId === profileId : true;

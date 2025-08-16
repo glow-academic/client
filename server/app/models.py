@@ -428,6 +428,7 @@ class SimulationAttempts(_Base, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
     infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, default=False))
+    archived: bool = Field(sa_column=Column('archived', Boolean, default=False))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     infinite_mode_time_limit: Optional[int] = Field(default=None, sa_column=Column('infinite_mode_time_limit', Integer))
 

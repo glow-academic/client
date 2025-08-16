@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { calculateAverageScore } from "@/utils/analytics/header";
 import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -47,8 +48,7 @@ export interface AverageScoreProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 const COLOR_CONFIGS = {
@@ -87,8 +87,7 @@ export default function AverageScore({
   thresholds,
   cohortIds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -159,9 +158,8 @@ export default function AverageScore({
       cohorts,
       cohortIds,
       selectedRoles,
-      showPractice,
+      simulationFilters,
       profiles?.map((p) => ({ id: p.id, role: p.role })),
-      showGeneral
     );
   }, [
     grades,
@@ -175,8 +173,7 @@ export default function AverageScore({
     profileId,
     cohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
     profiles,
   ]);
 

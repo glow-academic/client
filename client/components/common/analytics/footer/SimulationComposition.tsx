@@ -49,6 +49,7 @@ import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
+import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface SimulationCompositionProps {
   dateStart: Date;
@@ -61,8 +62,7 @@ export interface SimulationCompositionProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function SimulationComposition({
@@ -72,7 +72,7 @@ export default function SimulationComposition({
   cohortIds,
   thresholds,
   selectedRoles,
-  showPractice,
+  simulationFilters,
 }: SimulationCompositionProps) {
   // Configuration state
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -184,7 +184,7 @@ export default function SimulationComposition({
       cohortIds,
       config,
       selectedRoles,
-      showPractice
+      simulationFilters
     );
   }, [
     scenarios,
@@ -204,7 +204,7 @@ export default function SimulationComposition({
     cohortIds,
     config,
     selectedRoles,
-    showPractice,
+    simulationFilters,
   ]);
 
   // Get method label for dialog titles

@@ -22,6 +22,8 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { profileRole } from "@/utils/drizzle/schema";
 import { useEffect, useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { useQuery } from "@tanstack/react-query";
 export interface AnalyticsFiltersProps {
   homePage?: boolean; // this means we shouldn't show the first 2 components
   reportPage?: boolean; // this means we shouldn't show the role picker
@@ -33,25 +35,23 @@ export function AnalyticsFilters({ homePage = false, reportPage = false }: Analy
     setDateRange,
     selectedCohortIds,
     setSelectedCohortIds,
-    cohorts,
     selectedRoles,
     setSelectedRoles,
-    // legacy include flag (kept for compatibility)
-    // includePractice,
-    // setIncludePractice,
-    // new dual flags
-    showPractice,
-    setShowPractice,
-    showGeneral,
-    setshowGeneral,
+    simulationFilters,
+    setSimulationFilters,
   } = useAnalytics();
+
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
 
   // Local UI state to distinguish between "empty (all)" and "both selected"
   const [practiceSelected, setPracticeSelected] = useState<PracticeOption[]>(
     () => {
       const vals: PracticeOption[] = [];
-      if (showGeneral) vals.push("general");
-      if (showPractice) vals.push("practice");
+      if (simulationFilters.includes("general")) vals.push("general");
+      if (simulationFilters.includes("practice")) vals.push("practice");
       // When both are enabled functionally, start with empty to indicate "All simulations"
       return vals.length === 2 ? [] : vals;
     }
@@ -59,23 +59,23 @@ export function AnalyticsFilters({ homePage = false, reportPage = false }: Analy
 
   // Keep local selection in sync when context flags change externally
   useEffect(() => {
-    if (showGeneral && !showPractice) {
+    if (simulationFilters.includes("general") && !simulationFilters.includes("practice")) {
       if (
         !(practiceSelected.length === 1 && practiceSelected[0] === "general")
       ) {
         setPracticeSelected(["general"]);
       }
-    } else if (!showGeneral && showPractice) {
+    } else if (!simulationFilters.includes("general") && simulationFilters.includes("practice")) {
       if (
         !(practiceSelected.length === 1 && practiceSelected[0] === "practice")
       ) {
         setPracticeSelected(["practice"]);
       }
-    } else if (showGeneral && showPractice) {
+    } else if (simulationFilters.includes("general") && simulationFilters.includes("practice")) {
       // Do not force a specific UI when both are functionally enabled.
       // Preserve whether the user has chosen "All" (empty) or "General + Practice" (both selected).
     }
-  }, [showGeneral, showPractice, practiceSelected]);
+  }, [simulationFilters, practiceSelected]);
 
   // Convert to DateRange for the date picker component
   const dateRange: DateRange = {
@@ -166,14 +166,10 @@ export function AnalyticsFilters({ homePage = false, reportPage = false }: Analy
             setPracticeSelected(vals);
             // Empty selection means all simulations (both modes on)
             if (vals.length === 0) {
-              setshowGeneral(true);
-              setShowPractice(true);
+              setSimulationFilters(["general", "practice"]);
               return;
             }
-            const hasGeneral = vals.includes("general");
-            const hasPractice = vals.includes("practice");
-            setshowGeneral(hasGeneral);
-            setShowPractice(hasPractice);
+            setSimulationFilters(vals);
           }}
           placeholder="All simulations"
         />

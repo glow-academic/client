@@ -28,6 +28,7 @@ import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_cha
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { useQuery } from "@tanstack/react-query";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -51,8 +52,7 @@ export interface SkillPerformanceProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function SkillPerformance({
@@ -62,6 +62,7 @@ export default function SkillPerformance({
   profileId,
   cohortIds,
   selectedRoles,
+  simulationFilters,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -173,7 +174,8 @@ export default function SkillPerformance({
       profileId,
       cohortIds,
       filteredRubrics.map((r) => r.id),
-      selectedRoles
+      selectedRoles,
+      simulationFilters
     );
   }, [
     grades,
@@ -190,6 +192,7 @@ export default function SkillPerformance({
     profileId,
     cohortIds,
     selectedRoles,
+    simulationFilters,
   ]);
 
   // Calculate threshold status based on skill performance data

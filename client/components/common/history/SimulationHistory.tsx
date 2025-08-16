@@ -9,13 +9,13 @@ import { useProfile } from "@/contexts/profile-context";
 import { useHistoryColumns } from "@/hooks/use-history-columns";
 import type { ProfileRole } from "@/types";
 import { DataTable } from "./DataTable";
+import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface SimulationHistoryProps {
   profileId?: string | null;
   cohortIds?: string[];
   showExport?: boolean;
-  showPractice?: boolean;
-  showGeneral?: boolean;
+  simulationFilters?: SimulationFilter[];
   startDate?: Date;
   endDate?: Date;
   allowedRoles?: ProfileRole[];
@@ -25,8 +25,7 @@ export default function SimulationHistory({
   profileId,
   showExport = true,
   cohortIds = undefined,
-  showPractice = false,
-  showGeneral = true,
+  simulationFilters = ["general"],
   startDate,
   endDate,
   allowedRoles,
@@ -48,8 +47,7 @@ export default function SimulationHistory({
       profileId: profileId || null,
       showExport,
       cohortIds,
-      showPractice,
-      showGeneral,
+      simulationFilters,
       allowedRoles: effectiveAllowedRoles,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),

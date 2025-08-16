@@ -92,7 +92,7 @@ export function useReportColumns({
   showExport = true,
   onViewReport,
 }: UseReportColumnsProps) {
-  const { includePractice } = useAnalytics();
+  const {  simulationFilters } = useAnalytics();
   // Fetch data for filter options
   const { data: _profiles } = useQuery({
     queryKey: ["profiles"],
@@ -144,24 +144,24 @@ export function useReportColumns({
   const scenarioOptions = useMemo(() => {
     if (!scenarios) return [];
     const filtered = scenarios.filter((scenario) =>
-      includePractice ? true : !scenario.practiceScenario
+      simulationFilters.includes("practice") ? true : !scenario.practiceScenario
     );
     return filtered.map((scenario) => ({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [scenarios, includePractice]);
+  }, [scenarios, simulationFilters]);
 
   const simulationOptions = useMemo(() => {
     if (!simulations) return [];
     const filtered = simulations.filter((simulation) =>
-      includePractice ? true : !simulation.practiceSimulation
+      simulationFilters.includes("practice") ? true : !simulation.practiceSimulation
     );
     return filtered.map((simulation) => ({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [simulations, includePractice]);
+  }, [simulations, simulationFilters]);
 
   // Define columns
   const columns = useMemo(() => {

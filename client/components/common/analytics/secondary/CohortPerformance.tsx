@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
 import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -58,8 +59,7 @@ export interface CohortPerformanceProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function CohortPerformance({
@@ -69,8 +69,7 @@ export default function CohortPerformance({
   thresholds,
   cohortIds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
@@ -147,8 +146,7 @@ export default function CohortPerformance({
       cohortIds,
       selectedSimulations.map((s) => s.id),
       selectedRoles,
-      showPractice,
-      showGeneral
+      simulationFilters
     );
   }, [
     allCohorts,
@@ -165,8 +163,7 @@ export default function CohortPerformance({
     selectedSimulations,
     thresholds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   ]);
 
   // Get simulations that have data available

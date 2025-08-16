@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { calculatePlatformGrowth } from "@/utils/analytics/primary";
 import { profileRole } from "@/utils/drizzle/schema";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -48,8 +49,7 @@ export interface GrowthProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function Growth({
@@ -59,8 +59,7 @@ export default function Growth({
   cohortIds,
   thresholds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
@@ -241,8 +240,7 @@ export default function Growth({
       cohorts || [],
       cohortIds,
       selectedRoles,
-      showPractice,
-      showGeneral
+      simulationFilters
     );
   }, [
     grades,
@@ -257,8 +255,7 @@ export default function Growth({
     cohorts,
     cohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   ]);
 
   // Calculate threshold status based on growth data

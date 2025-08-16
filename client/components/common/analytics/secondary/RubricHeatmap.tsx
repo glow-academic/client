@@ -31,6 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
 import { profileRole } from "@/utils/drizzle/schema";
@@ -64,8 +65,7 @@ export interface RubricHeatmapProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 export default function RubricHeatmap({
@@ -74,6 +74,8 @@ export default function RubricHeatmap({
   thresholds,
   profileId,
   cohortIds,
+  selectedRoles,
+  simulationFilters,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -190,7 +192,9 @@ export default function RubricHeatmap({
       dateEnd,
       profileId,
       cohortIds,
-      defaultRubrics.map((r) => r.id)
+      defaultRubrics.map((r) => r.id),
+      selectedRoles,
+      simulationFilters
     );
   }, [
     grades,
@@ -207,6 +211,8 @@ export default function RubricHeatmap({
     profileId,
     cohortIds,
     defaultRubrics,
+    selectedRoles,
+    simulationFilters,
   ]);
 
   // Defer heavy result propagation to avoid blocking interactions/scroll

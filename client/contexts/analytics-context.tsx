@@ -7,12 +7,14 @@
 
 "use client";
 
-import { Cohort, ProfileRole } from "@/types";
+import { ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useProfile } from "./profile-context";
+
+export type SimulationFilter = "practice" | "general" | "archived";
 
 export interface AnalyticsContextType {
   // Date range state
@@ -28,20 +30,9 @@ export interface AnalyticsContextType {
   selectedRoles: ProfileRole[];
   setSelectedRoles: (roles: ProfileRole[]) => void;
 
-  // Practice/Assigned filters
-  includePractice: boolean; // legacy flag (kept for backwards compatibility)
-  setIncludePractice: (include: boolean) => void; // legacy setter
-  showPractice: boolean;
-  setShowPractice: (show: boolean) => void;
-  showGeneral: boolean;
-  setshowGeneral: (show: boolean) => void;
-
-  // Available cohorts data
-  cohorts: Cohort[];
-  isLoadingCohorts: boolean;
-
-  // Effective cohort IDs for filtering (computed from selectedCohortIds and available cohorts)
-  effectiveCohortIds: string[];
+  // Practice/Assigned/Archived filters
+  simulationFilters: SimulationFilter[];
+  setSimulationFilters: (filters: SimulationFilter[]) => void;
 
   // Utility functions
   clearFilters: () => void;
@@ -61,7 +52,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const { effectiveProfile } = useProfile();
 
   // Fetch available cohorts
-  const { data: allCohorts = [], isLoading: isLoadingCohorts } = useQuery({
+  const { data: allCohorts = [] } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -132,22 +123,10 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   const [selectedCohortIds, setSelectedCohortIds] = useState<string[]>([]);
   // Role filtering - empty array means all roles
   const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
-  // Include practice data in analytics (legacy)
-  const [includePractice, setIncludePractice] = useState<boolean>(false);
   // New dual flags for practice/assigned filtering
-  const [showPractice, setShowPractice] = useState<boolean>(false);
-  const [showGeneral, setshowGeneral] = useState<boolean>(true);
-
-  // Compute effective cohort IDs for filtering
-  const effectiveCohortIds = useMemo(() => {
-    // If specific cohorts are selected, use those
-    if (selectedCohortIds.length > 0) {
-      return selectedCohortIds;
-    }
-
-    // If no cohorts are selected (All cohorts), use all available cohorts for the user
-    return cohorts.map((cohort) => cohort.id);
-  }, [selectedCohortIds, cohorts]);
+  const [simulationFilters, setSimulationFilters] = useState<SimulationFilter[]>(
+    ["general"]
+  );
 
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
@@ -160,9 +139,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setEndDate(new Date());
     setSelectedCohortIds([]);
     setSelectedRoles([]);
-    setIncludePractice(false);
-    setShowPractice(false);
-    setshowGeneral(true);
+    setSimulationFilters(["general"]);
     setHasUserSetDateRange(false); // Reset user-set date range
   };
 
@@ -176,15 +153,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSelectedCohortIds,
     selectedRoles,
     setSelectedRoles,
-    includePractice,
-    setIncludePractice,
-    showPractice,
-    setShowPractice,
-    showGeneral,
-    setshowGeneral,
-    cohorts,
-    isLoadingCohorts,
-    effectiveCohortIds,
+    simulationFilters,
+    setSimulationFilters,
     clearFilters,
     hasActiveFilters,
   };

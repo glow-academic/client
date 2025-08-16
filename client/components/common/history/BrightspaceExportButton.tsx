@@ -80,7 +80,7 @@ export function BrightspaceExportButton<TData>({
   const [selectedMetric, setSelectedMetric] = useState<string>("");
 
   // Get analytics context for cohort filtering
-  const { effectiveCohortIds } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch cohorts to filter simulations based on effective cohort IDs
   const { data: cohorts = [] } = useQuery({
@@ -90,14 +90,14 @@ export function BrightspaceExportButton<TData>({
 
   // Filter simulations based on effective cohort IDs
   const filteredSimulations = useMemo(() => {
-    if (!effectiveCohortIds || effectiveCohortIds.length === 0) {
+    if (!selectedCohortIds || selectedCohortIds.length === 0) {
       return simulations; // If no cohort filtering, return all simulations
     }
 
     // Get all simulation IDs from the effective cohorts
     const cohortSimulationIds = new Set<string>();
     const selectedCohorts = cohorts.filter((cohort) =>
-      effectiveCohortIds.includes(cohort.id)
+      selectedCohortIds.includes(cohort.id)
     );
 
     selectedCohorts.forEach((cohort) => {
@@ -113,7 +113,7 @@ export function BrightspaceExportButton<TData>({
     return simulations.filter((simulation) =>
       cohortSimulationIds.has(simulation.id)
     );
-  }, [simulations, effectiveCohortIds, cohorts]);
+  }, [simulations, selectedCohortIds, cohorts]);
 
   // Function to export to CSV for Brightspace
   const handleBrightspaceExport = () => {

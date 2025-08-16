@@ -63,6 +63,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface ScenarioPerformanceProps {
   dateStart: Date;
@@ -75,8 +76,7 @@ export interface ScenarioPerformanceProps {
   profileId: string | undefined;
   cohortIds: string[];
   selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
+  simulationFilters: SimulationFilter[];
 }
 
 interface ParameterOption {
@@ -92,8 +92,7 @@ export default function ScenarioPerformance({
   thresholds,
   cohortIds,
   selectedRoles,
-  showPractice,
-  showGeneral,
+  simulationFilters,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -213,8 +212,7 @@ export default function ScenarioPerformance({
       cohorts || [],
       cohortIds,
       selectedRoles,
-      showPractice,
-      showGeneral
+      simulationFilters
     );
   }, [
     scenarios,
@@ -232,8 +230,7 @@ export default function ScenarioPerformance({
     cohorts,
     cohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   ]);
 
   // Calculate threshold status based on attribute performance

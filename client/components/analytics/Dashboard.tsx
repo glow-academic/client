@@ -48,10 +48,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const {
     startDate,
     endDate,
-    effectiveCohortIds,
+    selectedCohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   } = useAnalytics();
 
   // Threshold data
@@ -106,10 +105,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <CompletionPercentage
       key="completion-percentage"
@@ -117,10 +115,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
@@ -128,10 +125,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <HighestScore
       key="highest-score"
@@ -139,10 +135,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <MessagesPerSession
       key="messages-per-session"
@@ -150,10 +145,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
@@ -161,10 +155,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <SessionEfficiency
       key="session-efficiency"
@@ -172,10 +165,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <StagnationRate
       key="stagnation-rate"
@@ -183,10 +175,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <TimeSpent
       key="time-spent"
@@ -194,10 +185,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <TotalAttempts
       key="total-attempts"
@@ -205,10 +195,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -219,10 +208,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <PersonaPerformance
       key="persona-performance"
@@ -230,10 +218,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
@@ -241,10 +228,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -255,10 +241,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <AttemptImprovement
       key="attempt-improvement"
@@ -266,10 +251,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <SkillPerformance
       key="skill-performance"
@@ -277,10 +261,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -291,10 +274,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <ScenarioStats
       key="scenario-stats"
@@ -302,10 +284,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -316,10 +297,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
     <SimulationComposition
       key="simulation-composition"
@@ -327,10 +307,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dateEnd={endDate}
       thresholds={thresholds}
       profileId={profileId}
-      cohortIds={effectiveCohortIds}
+      cohortIds={selectedCohortIds}
       selectedRoles={selectedRoles}
-      showPractice={showPractice}
-      showGeneral={showGeneral}
+      simulationFilters={simulationFilters}
     />,
   ];
 
@@ -770,10 +749,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
       <SimulationHistory
         profileId={profileId || null}
-        cohortIds={effectiveCohortIds}
+        cohortIds={selectedCohortIds}
         showExport={false}
-        showPractice={showPractice}
-        showGeneral={showGeneral}
+        simulationFilters={["general"]}
         allowedRoles={selectedRoles}
         startDate={startDate}
         endDate={endDate}

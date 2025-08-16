@@ -2,6 +2,7 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import {
   Profile,
   ProfileRole,
@@ -35,8 +36,7 @@ export function useHistoryColumns({
   profileId = null,
   showExport: _showExport = true,
   cohortIds = undefined,
-  showPractice = false,
-  showGeneral = true,
+  simulationFilters = ["general"],
   startDate,
   endDate,
   allowedRoles,
@@ -44,8 +44,7 @@ export function useHistoryColumns({
   profileId?: string | null;
   showExport?: boolean;
   cohortIds: string[] | undefined;
-  showPractice?: boolean;
-  showGeneral?: boolean;
+  simulationFilters: SimulationFilter[];
   startDate?: Date;
   endDate?: Date;
   allowedRoles?: ProfileRole[] | undefined;
@@ -697,7 +696,7 @@ export function useHistoryColumns({
               scenarios={attempt.scenarios}
               interactionIds={attempt.interactionIds}
               isIncomplete={isIncomplete}
-              isPractice={showPractice}
+              isPractice={simulationFilters.includes("practice")}
               infiniteMode={
                 (attempt as EnhancedAttempt & { infiniteMode?: boolean })
                   .infiniteMode || false
@@ -726,7 +725,7 @@ export function useHistoryColumns({
     scenarios,
     validRubrics,
     profileId,
-    showPractice,
+    simulationFilters,
     personaColorMap,
     getBadgeColors,
   ]);
@@ -785,10 +784,10 @@ export function useHistoryColumns({
         const isPractice = Boolean(simulation?.practiceSimulation);
 
         // Practice attempts bypass cohort simulation restrictions
-        const practiceAllowed = showPractice && isPractice;
+        const practiceAllowed = simulationFilters.includes("practice") && isPractice;
         // General attempts must match allowed cohort simulations when cohorts are selected
         const generalAllowed =
-          showGeneral &&
+          simulationFilters.includes("general") &&
           !isPractice &&
           allowedSimulationIds.has(attemptSimulationId);
 
@@ -802,14 +801,14 @@ export function useHistoryColumns({
 
   // Apply practice/general filtering only when no cohort filtering block handled it
   if (!cohortIds || cohortIds.length === 0) {
-    if (showPractice || showGeneral) {
+    if (simulationFilters.includes("practice") || simulationFilters.includes("general")) {
       data = data.filter((attempt: unknown) => {
         const attemptData = attempt as Record<string, unknown>;
         const simulation = simulations?.find(
           (s) => s.id === attemptData["simulationId"]
         );
         const isPractice = Boolean(simulation?.practiceSimulation);
-        return (showPractice && isPractice) || (showGeneral && !isPractice);
+        return (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
       });
     } else {
       // If both are false, show nothing
