@@ -149,7 +149,7 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
       simulationFilters
     );
 
-    // No cohort filtering when using profile-based approach
+    // No explicit cohort filter provided; we'll derive cohorts after attempts are computed
     filteredCohorts = [];
   }
 
@@ -163,6 +163,18 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     simulationFilters,
     profileId
   );
+
+  // Derive cohorts when none explicitly provided: attempts -> simulations -> cohorts
+  if (!hasCohortFilter) {
+    const attemptSimulationIds = new Set<string>(
+      filteredAttempts.map((a) => a.simulationId)
+    );
+    filteredCohorts = allCohorts.filter(
+      (cohort) =>
+        cohort.active &&
+        cohort.simulationIds.some((simId) => attemptSimulationIds.has(simId))
+    );
+  }
 
   // Step 3: Filter chats based on filtered attempts
   const filteredChats = filterChats(allChats, filteredAttempts);

@@ -107,7 +107,7 @@ export function RolePicker({
             role="combobox"
             aria-expanded={open}
             aria-label="Select roles"
-            className={cn("justify-between min-w-[140px]", className)}
+            className={cn("justify-between min-w-[100px]", className)}
             size="sm"
           >
             {getButtonText()}

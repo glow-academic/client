@@ -202,7 +202,7 @@ export function AnalyticsFilters({
         cohorts={cohortOptions}
         selectedCohorts={selectedCohorts}
         onSelect={handleCohortSelect}
-        placeholder="All cohorts"
+        placeholder="Cohorts"
         hideSelectedChips={true}
       />
 
