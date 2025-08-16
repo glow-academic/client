@@ -141,6 +141,20 @@ export function AnalyticsFilters({
     }
   }, [selectedCohortsEarliestDate, startDate, endDate, setDateRange]);
 
+  // Automatically filter available roles and remove invalid selections when cohorts are selected
+  useEffect(() => {
+    if (selectedCohortIds.length > 0) {
+      // When cohorts are selected, only allow "ta" and "instructional" roles
+      // Remove any existing selections that aren't "ta" or "instructional"
+      const validRoles = selectedRoles.filter(
+        (role) => role === "ta" || role === "instructional"
+      );
+      if (validRoles.length !== selectedRoles.length) {
+        setSelectedRoles(validRoles);
+      }
+    }
+  }, [selectedCohortIds, selectedRoles, setSelectedRoles]);
+
   const handleCohortSelect = (cohorts: CohortPickerCohort[]) => {
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
@@ -172,7 +186,11 @@ export function AnalyticsFilters({
       {/* Role Picker */}
       {!homePage && !reportPage && (
         <RolePicker
-          roles={["superadmin", "admin", "instructional", "ta", "guest"]}
+          roles={
+            selectedCohortIds.length > 0
+              ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
+              : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
+          }
           selectedRoles={selectedRoles}
           onChange={handleRoleSelect}
           placeholder="All roles"

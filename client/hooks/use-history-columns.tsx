@@ -4,7 +4,7 @@ import { DataTableRowActions } from "@/components/common/history/DataTableRowAct
 import { Badge } from "@/components/ui/badge";
 import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
-import { useQuery } from "@tanstack/react-query";
+// No queries; all data comes from filteredData
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
 import { useCallback, useMemo } from "react";

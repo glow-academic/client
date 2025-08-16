@@ -1,6 +1,10 @@
 import { SimulationFilter } from "@/contexts/analytics-context";
 import type {
+  Agent,
   Cohort,
+  Parameter,
+  ParameterItem,
+  Persona,
   Profile,
   ProfileRole,
   Rubric,
@@ -32,6 +36,12 @@ export interface FilteredData {
   rubrics: Rubric[];
   standardGroups: StandardGroup[];
   standards: Standard[];
+  // Scenario taxonomy and entities used for analytics
+  parameters: Parameter[];
+  parameterItems: ParameterItem[];
+  personas: Persona[];
+  // Optional for future consumers
+  agents?: Agent[];
 }
 
 export interface FilteringOptions {
@@ -65,6 +75,10 @@ export interface FilteringOptions {
   allRubrics?: Rubric[];
   allStandardGroups?: StandardGroup[];
   allStandards?: Standard[];
+  allParameters?: Parameter[];
+  allParameterItems?: ParameterItem[];
+  allPersonas?: Persona[];
+  allAgents?: Agent[];
 }
 
 /**
@@ -184,6 +198,32 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     stdGroupIds.has(s.standardGroupId)
   );
 
+  // Step 9: Derive parameters/parameterItems/personas used by filtered scenarios (if provided)
+  const allParamItems: ParameterItem[] = options.allParameterItems ?? [];
+  const allParams: Parameter[] = options.allParameters ?? [];
+  const allPeople: Persona[] = options.allPersonas ?? [];
+
+  const usedParameterItemIds = new Set<string>();
+  filteredScenarios.forEach((scenario) => {
+    scenario.parameterItemIds?.forEach((id) => usedParameterItemIds.add(id));
+  });
+  const filteredParameterItems = allParamItems.filter((pi: ParameterItem) =>
+    usedParameterItemIds.has(pi.id)
+  );
+  const usedParameterIds = new Set<string>(
+    filteredParameterItems.map((pi: ParameterItem) => pi.parameterId)
+  );
+  const filteredParameters = allParams.filter((p: Parameter) =>
+    usedParameterIds.has(p.id)
+  );
+
+  const usedPersonaIds = new Set<string>(
+    filteredScenarios.map((s) => s.personaId).filter(Boolean) as string[]
+  );
+  const filteredPersonas = allPeople.filter((person: Persona) =>
+    usedPersonaIds.has(person.id)
+  );
+
   return {
     attempts: filteredAttempts,
     chats: filteredChats,
@@ -197,6 +237,9 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     rubrics: filteredRubrics,
     standardGroups: filteredStandardGroups,
     standards: filteredStandards,
+    parameters: filteredParameters,
+    parameterItems: filteredParameterItems,
+    personas: filteredPersonas,
   };
 }
 

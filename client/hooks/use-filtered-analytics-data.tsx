@@ -1,12 +1,24 @@
 import type { SimulationFilter } from "@/contexts/analytics-context";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { ProfileRole, Rubric, SimulationMessage } from "@/types";
+import type {
+  Agent,
+  Parameter,
+  ParameterItem,
+  Persona,
+  ProfileRole,
+  Rubric,
+  SimulationMessage,
+} from "@/types";
 import {
   filterAnalyticsData,
   type FilteredData,
 } from "@/utils/analytics/filtering";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
+import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -74,6 +86,35 @@ export function useFilteredAnalyticsData(
   const { data: allScenarios = [], isLoading: isLoadingScenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
+  });
+
+  // Fetch parameters and parameter items for footer analytics
+  const { data: allParameters = [], isLoading: isLoadingParameters } = useQuery<
+    Parameter[]
+  >({
+    queryKey: ["parameters"],
+    queryFn: () => getAllParameters(),
+  });
+
+  const { data: allParameterItems = [], isLoading: isLoadingParameterItems } =
+    useQuery<ParameterItem[]>({
+      queryKey: ["parameterItems"],
+      queryFn: () => getAllParameterItems(),
+    });
+
+  // Personas and agents for history/analytics labelling
+  const { data: allPersonas = [], isLoading: isLoadingPersonas } = useQuery<
+    Persona[]
+  >({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
+
+  const { data: allAgents = [], isLoading: isLoadingAgents } = useQuery<
+    Agent[]
+  >({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
   });
 
   // Fetch attempts for all profiles
@@ -153,6 +194,10 @@ export function useFilteredAnalyticsData(
       allScenarios,
       allProfiles,
       allCohorts,
+      allParameters,
+      allParameterItems,
+      allPersonas,
+      allAgents,
       allRubrics: rubrics,
       allStandardGroups: standardGroups,
       allStandards: standards,
@@ -172,6 +217,10 @@ export function useFilteredAnalyticsData(
     allScenarios,
     allProfiles,
     allCohorts,
+    allParameters,
+    allParameterItems,
+    allPersonas,
+    allAgents,
     rubrics,
     standardGroups,
     standards,
@@ -213,6 +262,10 @@ export function useFilteredAnalyticsData(
     isLoadingGrades ||
     isLoadingFeedbacks ||
     isLoadingRubrics ||
+    isLoadingParameters ||
+    isLoadingParameterItems ||
+    isLoadingPersonas ||
+    isLoadingAgents ||
     isLoadingMessages ||
     isLoadingStandardGroups ||
     isLoadingStandards ||

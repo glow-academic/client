@@ -68,7 +68,14 @@ export default function SimulationComposition({
 
   // Calculate simulation composition data using utility function
   const simulationComposition = useMemo(() => {
-    if (!filteredData || !scenarios || !personas || !agents || !parameters || !parameterItems) {
+    if (
+      !filteredData ||
+      !scenarios ||
+      !personas ||
+      !agents ||
+      !parameters ||
+      !parameterItems
+    ) {
       return {
         highPerforming: [],
         lowPerforming: [],
