@@ -39,6 +39,14 @@ export interface TotalAttemptsProps {
 }
 
 const COLOR_CONFIGS = {
+  neutral: {
+    gradient: "from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900",
+    border: "border-gray-200",
+    text: "text-gray-700",
+    icon: "text-gray-600",
+    accent: "text-gray-600",
+    primary: "#6b7280",
+  },
   danger: {
     gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
     border: "border-red-200",
@@ -90,6 +98,7 @@ export default function TotalAttempts({
 
   // Determine color based on total attempts and thresholds (more attempts is better)
   const getColorConfig = (attempts: number) => {
+    if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (attempts < thresholds.danger) return COLOR_CONFIGS.danger;
     if (attempts < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
@@ -146,7 +155,7 @@ export default function TotalAttempts({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasDataAvailable ? `${totalAttempts}` : "No data"}
+            {hasDataAvailable ? `${totalAttempts}` : "0"}
           </div>
         </CardContent>
       </Card>

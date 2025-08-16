@@ -645,6 +645,22 @@ export function WebSocketProvider({
           setIsStartingSimulation(false);
           if (data.success) {
             toast.success(data.message);
+
+            // Invalidate queries to ensure fresh data when navigating back
+            // Invalidate all simulation attempts queries (including profile-specific ones)
+            queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
+            queryClient.invalidateQueries({ queryKey: ["simulations"] });
+
+            // Also invalidate related queries that depend on attempts
+            queryClient.invalidateQueries({ queryKey: ["simulationChats"] });
+            queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationFeedbacks"],
+            });
+
+            // Invalidate profiles query since simulation attempts depend on it
+            queryClient.invalidateQueries({ queryKey: ["profiles"] });
+
             // Trigger navigation by emitting a custom event
             window.dispatchEvent(
               new CustomEvent("simulationStarted", {

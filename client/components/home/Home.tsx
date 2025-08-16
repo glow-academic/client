@@ -18,8 +18,7 @@ import { useWebSocket } from "@/contexts/websocket-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { log } from "@/utils/logger";
 
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { useQuery } from "@tanstack/react-query";
+import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -51,11 +50,8 @@ export default function Home() {
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
 
-  // Fetch rubrics (still needed for calculations)
-  const { data: rubrics, isLoading: loadingRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: getAllRubrics,
-  });
+  // Use rubrics from filtered data
+  const rubrics = filteredData?.rubrics;
 
   // Removed heavy `cohortsForDisplay` computation; filtering is handled by `filteredCohorts` below.
 
@@ -498,150 +494,26 @@ export default function Home() {
   const enhancedSimulations = useMemo(() => {
     if (!processedCohortData || !rubrics) return [];
 
+    const perfBySim = effectiveProfile?.id
+      ? calculateUserPerformanceBySimulation(
+          filteredData!,
+          rubrics,
+          effectiveProfile.id
+        )
+      : {};
+
     return processedCohortData.flatMap((data) => {
       return data.simulations.map((simulation) => {
-        // Get rubric for this simulation
         const rubric = rubrics.find((r) => r.id === simulation.rubricId);
-
-        // Calculate pass rate
         const passRate =
           rubric && rubric.points > 0
             ? Math.round((rubric.passPoints / rubric.points) * 100)
             : 0;
 
-        // Check if user has passed this simulation
-        let hasPassed = false;
-        let highestScore = 0;
-
-        // For TA view, use the progress data that was already calculated
-        if (!shouldShowAll && effectiveProfile?.id) {
-          // Use the progress data from processedCohortData
-          hasPassed = simulation.progress.passedCount > 0;
-
-          // Calculate highest score for display
-          const userAttempts = safeAttempts.filter(
-            (att) =>
-              att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id
-          );
-
-          if (userAttempts.length > 0) {
-            const userAttemptIds = userAttempts.map((att) => att.id);
-            const userChats = chats?.filter((c) =>
-              userAttemptIds.includes(c.attemptId)
-            );
-            const userGrades = safeGrades.filter((g) =>
-              userChats?.some((c) => c.id === g.simulationChatId)
-            );
-
-            if (userGrades.length > 0) {
-              // Calculate average score for each attempt and find the best one
-              const attemptScores = new Map<string, { scores: number[] }>();
-
-              userGrades.forEach((grade) => {
-                const chat = userChats?.find(
-                  (c) => c.id === grade.simulationChatId
-                );
-                const attempt = userAttempts.find(
-                  (a) => a.id === chat?.attemptId
-                );
-
-                if (attempt?.id) {
-                  const existing = attemptScores.get(attempt.id);
-                  if (existing) {
-                    existing.scores.push(grade.score);
-                  } else {
-                    attemptScores.set(attempt.id, { scores: [grade.score] });
-                  }
-                }
-              });
-
-              // Find the best attempt based on average score
-              let bestAverageScore = 0;
-
-              attemptScores.forEach((attemptData) => {
-                const averageScore =
-                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
-                  attemptData.scores.length;
-
-                if (averageScore > bestAverageScore) {
-                  bestAverageScore = averageScore;
-                }
-              });
-
-              // Calculate highest score as percentage
-              const rubricTotalPoints = rubric?.points || 100;
-              highestScore = Math.round(
-                (bestAverageScore / rubricTotalPoints) * 100
-              );
-            }
-          }
-        } else if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
-          // For instructor view or other roles, calculate individual performance
-          const userAttempts = safeAttempts.filter(
-            (att) =>
-              att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id
-          );
-
-          if (userAttempts.length > 0) {
-            const userAttemptIds = userAttempts.map((att) => att.id);
-            const userChats = chats?.filter((c) =>
-              userAttemptIds.includes(c.attemptId)
-            );
-            const userGrades = safeGrades.filter((g) =>
-              userChats?.some((c) => c.id === g.simulationChatId)
-            );
-
-            if (userGrades.length > 0) {
-              // Calculate average score for each attempt and find the best one
-              const attemptScores = new Map<string, { scores: number[] }>();
-
-              userGrades.forEach((grade) => {
-                const chat = userChats?.find(
-                  (c) => c.id === grade.simulationChatId
-                );
-                const attempt = userAttempts.find(
-                  (a) => a.id === chat?.attemptId
-                );
-
-                if (attempt?.id) {
-                  const existing = attemptScores.get(attempt.id);
-                  if (existing) {
-                    existing.scores.push(grade.score);
-                  } else {
-                    attemptScores.set(attempt.id, { scores: [grade.score] });
-                  }
-                }
-              });
-
-              // Find the best attempt based on average score
-              let bestAverageScore = 0;
-              let hasPassedBestAttempt = false;
-
-              attemptScores.forEach((attemptData) => {
-                const averageScore =
-                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
-                  attemptData.scores.length;
-
-                if (averageScore > bestAverageScore) {
-                  bestAverageScore = averageScore;
-
-                  // Get rubric to determine pass threshold
-                  const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
-                  hasPassedBestAttempt = averageScore >= passThreshold;
-                }
-              });
-
-              // Calculate highest score as percentage
-              const rubricTotalPoints = rubric?.points || 100;
-              highestScore = Math.round(
-                (bestAverageScore / rubricTotalPoints) * 100
-              );
-              hasPassed = hasPassedBestAttempt;
-            }
-          }
-        }
+        // Default to user's performance
+        const perf = perfBySim[simulation.id];
+        let hasPassed = perf?.passed ?? false;
+        const highestScore = perf?.highestScorePercent ?? 0;
 
         // For instructor view, check if ALL members have passed
         if (shouldShowAll) {
@@ -650,7 +522,6 @@ export default function Home() {
           hasPassed =
             passedMembers.length > 0 && passedMembers.length >= totalMembers;
         }
-        // For TA view, hasPassed is already set correctly above using progress data
 
         return {
           ...simulation,
@@ -660,7 +531,7 @@ export default function Home() {
           hasPassed,
           highestScore,
           rubricData: {
-            attempts: [], // We don't need detailed attempt data for the card
+            attempts: [],
             highestScore,
           },
         };
@@ -671,10 +542,7 @@ export default function Home() {
     rubrics,
     shouldShowAll,
     effectiveProfile?.id,
-    effectiveProfile?.role,
-    safeAttempts,
-    chats,
-    safeGrades,
+    filteredData,
   ]);
 
   // Sort simulations by completion status and then by cohort
@@ -741,7 +609,7 @@ export default function Home() {
   const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
 
   // Loading state
-  const isLoading = loadingRubrics || isFilteredDataLoading;
+  const isLoading = isFilteredDataLoading;
 
   if (isLoading || !effectiveProfile) {
     return (

@@ -11,6 +11,7 @@ import { ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
+import { usePathname } from "next/navigation";
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { useProfile } from "./profile-context";
 
@@ -37,11 +38,6 @@ export interface AnalyticsContextType {
   // Utility functions
   clearFilters: () => void;
   hasActiveFilters: boolean;
-
-  // Computed properties for backward compatibility
-  effectiveCohortIds: string[];
-  showPractice: boolean;
-  showGeneral: boolean;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
@@ -55,6 +51,7 @@ interface AnalyticsProviderProps {
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
   const { effectiveProfile } = useProfile();
+  const pathname = usePathname();
 
   // Fetch available cohorts
   const { data: allCohorts = [] } = useQuery({
@@ -133,6 +130,30 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     SimulationFilter[]
   >(["general"]);
 
+  // Route-aware flags
+  const isPracticePage = useMemo(
+    () => pathname?.startsWith("/practice") === true,
+    [pathname]
+  );
+  const isHomePage = useMemo(() => pathname === "/home", [pathname]);
+  const isTALeaderboardPage = useMemo(
+    () => pathname?.startsWith("/cohorts/c/") === true,
+    [pathname]
+  );
+
+  // Resolve effective roles: force TA-only for TA users
+  const effectiveRoles = useMemo<ProfileRole[]>(() => {
+    if (effectiveProfile?.role === "ta") return ["ta"] as ProfileRole[];
+    return selectedRoles;
+  }, [effectiveProfile?.role, selectedRoles]);
+
+  // Resolve effective simulation filters: route-aware overrides
+  const effectiveSimulationFilters = useMemo<SimulationFilter[]>(() => {
+    if (isPracticePage) return ["practice"];
+    if (isHomePage || isTALeaderboardPage) return ["general"];
+    return simulationFilters;
+  }, [isPracticePage, isHomePage, isTALeaderboardPage, simulationFilters]);
+
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
@@ -150,26 +171,22 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   const hasActiveFilters = selectedCohortIds.length > 0;
 
-  // Computed properties for backward compatibility
-  const effectiveCohortIds = selectedCohortIds;
-  const showPractice = simulationFilters.includes("practice");
-  const showGeneral = simulationFilters.includes("general");
-
   const value: AnalyticsContextType = {
     startDate,
     endDate,
     setDateRange,
     selectedCohortIds,
     setSelectedCohortIds,
-    selectedRoles,
+    selectedRoles:
+      selectedRoles === effectiveRoles ? selectedRoles : effectiveRoles,
     setSelectedRoles,
-    simulationFilters,
+    simulationFilters:
+      simulationFilters === effectiveSimulationFilters
+        ? simulationFilters
+        : effectiveSimulationFilters,
     setSimulationFilters,
     clearFilters,
     hasActiveFilters,
-    effectiveCohortIds,
-    showPractice,
-    showGeneral,
   };
 
   return (

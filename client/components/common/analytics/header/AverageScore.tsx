@@ -39,6 +39,14 @@ export interface AverageScoreProps {
 }
 
 const COLOR_CONFIGS = {
+  neutral: {
+    gradient: "from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900",
+    border: "border-gray-200",
+    text: "text-gray-700",
+    icon: "text-gray-600",
+    accent: "text-gray-600",
+    primary: "#6b7280",
+  },
   danger: {
     gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
     border: "border-red-200",
@@ -93,6 +101,7 @@ export default function AverageScore({
 
   // Determine color based on score and thresholds
   const getColorConfig = (score: number) => {
+    if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (score < thresholds.danger) return COLOR_CONFIGS.danger;
     if (score < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
@@ -149,7 +158,7 @@ export default function AverageScore({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasDataAvailable ? `${averageScore}%` : "No data"}
+            {hasDataAvailable ? `${averageScore}%` : "0%"}
           </div>
         </CardContent>
       </Card>

@@ -154,60 +154,6 @@ export default function AttemptImprovement({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (!improvementData.length) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Attempt Improvement
-              </CardTitle>
-              <CardDescription>
-                Performance improvement across multiple attempts
-              </CardDescription>
-            </div>
-            {simulationsWithData && simulationsWithData.length > 0 && (
-              <SimulationPicker
-                simulations={simulationsWithData.map((s) => ({
-                  id: s.id,
-                  title: s.title,
-                  timeLimit: s.timeLimit || undefined,
-                  active: s.active,
-                  defaultSimulation: s.defaultSimulation,
-                  practiceSimulation: s.practiceSimulation,
-                }))}
-                placeholder="Filter by simulation..."
-                onSelect={setSelectedSimulations}
-                selectedSimulations={selectedSimulations}
-                hideSelectedChips={true}
-                showLabel={false}
-                buttonClassName="w-48"
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No improvement data available. Multiple attempts required.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
@@ -232,24 +178,22 @@ export default function AttemptImprovement({
               Performance improvement across multiple attempts
             </CardDescription>
           </div>
-          {simulationsWithData && simulationsWithData.length > 0 && (
-            <SimulationPicker
-              simulations={simulationsWithData.map((s) => ({
-                id: s.id,
-                title: s.title,
-                timeLimit: s.timeLimit || undefined,
-                active: s.active,
-                defaultSimulation: s.defaultSimulation,
-                practiceSimulation: s.practiceSimulation,
-              }))}
-              placeholder="Filter by simulation..."
-              onSelect={setSelectedSimulations}
-              selectedSimulations={selectedSimulations}
-              hideSelectedChips={true}
-              showLabel={false}
-              buttonClassName="w-48"
-            />
-          )}
+          <SimulationPicker
+            simulations={simulationsWithData.map((s) => ({
+              id: s.id,
+              title: s.title,
+              timeLimit: s.timeLimit || undefined,
+              active: s.active,
+              defaultSimulation: s.defaultSimulation,
+              practiceSimulation: s.practiceSimulation,
+            }))}
+            placeholder="Filter by simulation..."
+            onSelect={setSelectedSimulations}
+            selectedSimulations={selectedSimulations}
+            hideSelectedChips={true}
+            showLabel={false}
+            buttonClassName="w-48"
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">

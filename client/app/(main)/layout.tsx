@@ -827,12 +827,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
-              <div className="px-4">
                 <AnalyticsFilters
                   homePage={isHomePage}
                   reportPage={isReportPage}
                 />
-              </div>
             )}
 
             {actionButton && <div className="px-4">{actionButton}</div>}

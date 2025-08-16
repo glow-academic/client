@@ -6,7 +6,6 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -21,14 +20,8 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
+import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
@@ -51,151 +44,32 @@ export default function Practice() {
     isLoading: isProfileLoading,
   } = useProfile();
 
-  const { data: simulations, isLoading: simulationsLoading } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  const { data: filteredData, isLoading: isFilteredDataLoading } =
+    useFilteredAnalyticsData({
+      ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
+    });
+  const enhancedPracticeSimulations = useMemo(() => {
+    const sims = filteredData?.simulations ?? [];
+    const rubrics = filteredData?.rubrics ?? [];
+    if (!effectiveProfile?.id) return sims.filter((s) => s.practiceSimulation);
 
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+    const perfBySim = calculateUserPerformanceBySimulation(
+      filteredData!,
+      rubrics,
+      effectiveProfile.id
+    );
 
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  // Fetch data needed for highest score calculation
-  const { data: allProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: allAttempts } = useQuery({
-    queryKey: ["simulationAttempts"],
-    queryFn: () => {
-      if (!allProfiles) return [];
-      return getSimulationAttemptsByProfiles(allProfiles.map((p) => p.id));
-    },
-    enabled: !!allProfiles && allProfiles.length > 0,
-  });
-
-  const { data: allChats } = useQuery({
-    queryKey: ["simulationChats", allAttempts?.map((a) => a.id)?.sort() || []],
-    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((a) => a.id)),
-    enabled: !!allAttempts && allAttempts.length > 0,
-  });
-
-  const { data: allGrades } = useQuery({
-    queryKey: ["simulationGrades", allChats?.map((c) => c.id)?.sort() || []],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(allChats!.map((c) => c.id)),
-    enabled: !!allChats && allChats.length > 0,
-  });
-
-  const { data: allRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const practiceSimulations = useMemo(() => {
-    if (!simulations || !allRubrics) return [];
-
-    // Filter for practice simulations and add highest score calculation
-    return simulations
-      .filter((sim) => sim.practiceSimulation)
+    return sims
+      .filter((s) => s.practiceSimulation)
       .map((simulation) => {
-        // Get rubric for this simulation
-        const rubric = allRubrics.find((r) => r.id === simulation.rubricId);
-
-        // Calculate individual user's highest score for any profile with an ID (except guests)
-        let highestScore = 0;
-        let hasPassed = false;
-
-        if (effectiveProfile?.id && effectiveProfile?.role !== "guest") {
-          const userAttempts =
-            allAttempts?.filter(
-              (att) =>
-                att.profileId === effectiveProfile.id! &&
-                att.simulationId === simulation.id
-            ) || [];
-
-          if (userAttempts.length > 0) {
-            const userAttemptIds = userAttempts.map((att) => att.id);
-            const userChats =
-              allChats?.filter((c) => userAttemptIds.includes(c.attemptId)) ||
-              [];
-            const userGrades =
-              allGrades?.filter((g) =>
-                userChats?.some((c) => c.id === g.simulationChatId)
-              ) || [];
-
-            if (userGrades.length > 0) {
-              // Calculate average score for each attempt and find the best one
-              const attemptScores = new Map<string, { scores: number[] }>();
-
-              userGrades.forEach((grade) => {
-                const chat = userChats?.find(
-                  (c) => c.id === grade.simulationChatId
-                );
-                const attempt = userAttempts.find(
-                  (a) => a.id === chat?.attemptId
-                );
-
-                if (attempt?.id) {
-                  const existing = attemptScores.get(attempt.id);
-                  if (existing) {
-                    existing.scores.push(grade.score);
-                  } else {
-                    attemptScores.set(attempt.id, { scores: [grade.score] });
-                  }
-                }
-              });
-
-              // Find the best attempt based on average score
-              let bestAverageScore = 0;
-              let hasPassedBestAttempt = false;
-
-              attemptScores.forEach((attemptData) => {
-                const averageScore =
-                  attemptData.scores.reduce((sum, score) => sum + score, 0) /
-                  attemptData.scores.length;
-
-                if (averageScore > bestAverageScore) {
-                  bestAverageScore = averageScore;
-
-                  // Get rubric to determine pass threshold
-                  const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
-                  hasPassedBestAttempt = averageScore >= passThreshold;
-                }
-              });
-
-              // Calculate highest score as percentage
-              const rubricTotalPoints = rubric?.points || 100;
-              highestScore = Math.round(
-                (bestAverageScore / rubricTotalPoints) * 100
-              );
-              hasPassed = hasPassedBestAttempt;
-            }
-          }
-        }
-
+        const perf = perfBySim[simulation.id];
         return {
           ...simulation,
-          highestScore,
-          hasPassed,
+          highestScore: perf?.highestScorePercent ?? 0,
+          hasPassed: perf?.passed ?? false,
         };
       });
-  }, [
-    simulations,
-    allRubrics,
-    effectiveProfile?.id,
-    effectiveProfile?.role,
-    allAttempts,
-    allChats,
-    allGrades,
-  ]);
+  }, [filteredData, effectiveProfile?.id]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -347,7 +221,7 @@ export default function Practice() {
   );
 
   // Loading state
-  if (simulationsLoading || isProfileLoading || !effectiveProfile) {
+  if (isProfileLoading || !effectiveProfile || isFilteredDataLoading) {
     return (
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         {/* Header skeleton */}
@@ -428,17 +302,17 @@ export default function Practice() {
     <TooltipProvider>
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         <PracticeZone
-          simulations={practiceSimulations}
+          simulations={enhancedPracticeSimulations}
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}
-          scenarios={scenarios ?? []}
-          personas={personas ?? []}
+          scenarios={filteredData?.scenarios ?? []}
+          personas={filteredData?.personas ?? []}
         />
         {/* History Section for non-guests */}
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
-            <SimulationHistory filteredData={null} showExport={false} />
+            <SimulationHistory filteredData={filteredData} showExport={false} />
           </div>
         )}
       </div>

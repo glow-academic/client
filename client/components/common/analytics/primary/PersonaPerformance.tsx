@@ -156,38 +156,6 @@ export default function PersonaPerformance({
     return null;
   };
 
-  if (!performanceData.length) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Persona Performance
-          </CardTitle>
-          <CardDescription>
-            Performance analysis by student persona type
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No performance data found for the selected date range
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div

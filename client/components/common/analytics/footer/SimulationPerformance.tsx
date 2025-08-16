@@ -186,39 +186,6 @@ export default function SimulationPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (!availableSimulations.length) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Scenario Performance
-          </CardTitle>
-          <CardDescription className="text-sm">
-            Performance trends for scenarios within simulations
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground text-sm">
-              No simulations with data available for the selected time period.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              This could be due to:
-            </p>
-            <ul className="text-xs text-muted-foreground text-left list-disc list-inside space-y-1">
-              <li>No TA role profiles in the selected date range</li>
-              <li>No completed simulation attempts</li>
-              <li>No simulations with sufficient data (≥1 grade)</li>
-              <li>Date range too restrictive</li>
-              <li>No matching simulations in selected cohorts</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div

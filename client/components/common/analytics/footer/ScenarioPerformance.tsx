@@ -223,14 +223,6 @@ export default function ScenarioPerformance({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {attributeElements.length === 0 ? (
-          <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground">
-              No scenario data available for the selected time period.
-            </p>
-          </div>
-        ) : (
-          <>
             {/* Pie Chart */}
             <div className="flex-1 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -379,8 +371,6 @@ export default function ScenarioPerformance({
                 </PieChart>
               </ResponsiveContainer>
             </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );

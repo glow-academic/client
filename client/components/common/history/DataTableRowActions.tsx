@@ -72,14 +72,9 @@ export function DataTableRowActions({
       ? "Continue"
       : "View";
 
-  const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id
+  const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
   const buttonEl = (
-    <Button
-      variant="outline"
-      size="sm"
-      className="h-8"
-      disabled={disabledForEmulation}
-    >
+    <Button variant="outline" size="sm" className="h-8">
       {buttonText}
     </Button>
   );
@@ -88,70 +83,69 @@ export function DataTableRowActions({
 
   return (
     <div className="flex items-center gap-2">
-      {disabledForEmulation ? (
+      <Link href={linkHref}>{buttonEl}</Link>
+      {/* Retry icon appears only when it would otherwise say View (completed) */}
+      {buttonText === "View" && isPractice && (simulationId ?? "") !== "" && (
         <Tooltip>
-          <TooltipTrigger asChild>{buttonEl}</TooltipTrigger>
+          <TooltipTrigger>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Retry"
+              className={`h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground ${
+                disabledForEmulation ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isRetrying || disabledForEmulation}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (disabledForEmulation) {
+                  return;
+                }
+                if (!isConnected) {
+                  return;
+                }
+                setIsRetrying(true);
+                try {
+                  const profileIdForEmit =
+                    effectiveProfile?.role === "guest"
+                      ? ""
+                      : String(effectiveProfile?.id || "");
+                  emitStartSimulation({
+                    simulation_id: String(simulationId),
+                    profile_id: profileIdForEmit,
+                    scenario_id:
+                      scenariosArray.length > 0
+                        ? String(
+                            (
+                              scenariosArray[0] as unknown as {
+                                scenarioId?: string;
+                              }
+                            ).scenarioId || ""
+                          )
+                        : null,
+                  });
+                } finally {
+                  // Leave loading state; navigation will occur via global event listener
+                  setTimeout(() => setIsRetrying(false), 2000);
+                }
+              }}
+            >
+              <RotateCcw
+                className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </TooltipTrigger>
           <TooltipContent>
-            <p>You cannot open simulations on behalf of another user.</p>
+            {disabledForEmulation ? (
+              <p>You can't start a simulation on behalf of another user.</p>
+            ) : (
+              <p>Retry</p>
+            )}
           </TooltipContent>
         </Tooltip>
-      ) : (
-        <Link href={linkHref}>{buttonEl}</Link>
       )}
-      {/* Retry icon appears only when it would otherwise say View (completed) */}
-      {buttonText === "View" &&
-        !disabledForEmulation &&
-        isPractice &&
-        (simulationId ?? "") !== "" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label="Retry"
-                className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                disabled={isRetrying}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!isConnected) {
-                    return;
-                  }
-                  setIsRetrying(true);
-                  try {
-                    const profileIdForEmit =
-                      effectiveProfile?.role === "guest"
-                        ? ""
-                        : String(effectiveProfile?.id || "");
-                    emitStartSimulation({
-                      simulation_id: String(simulationId),
-                      profile_id: profileIdForEmit,
-                      scenario_id:
-                        scenariosArray.length > 0
-                          ? String(
-                              (
-                                scenariosArray[0] as unknown as {
-                                  scenarioId?: string;
-                                }
-                              ).scenarioId || ""
-                            )
-                          : null,
-                    });
-                  } finally {
-                    // Leave loading state; navigation will occur via global event listener
-                    setTimeout(() => setIsRetrying(false), 2000);
-                  }
-                }}
-              >
-                <RotateCcw
-                  className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
-                />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Retry</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
     </div>
   );
 }

@@ -348,6 +348,93 @@ export const calculateHighestScore = (
 };
 
 /**
+ * Calculate a single user's highest attempt average and pass status for a given simulation
+ * Returns percentage score for UI and boolean passed using rubric passPoints.
+ */
+export function calculateUserSimulationPerformance(
+  filteredData: FilteredData,
+  rubrics: Rubric[],
+  profileId: string,
+  simulationId: string
+): { highestScorePercent: number; passed: boolean } {
+  if (!profileId) return { highestScorePercent: 0, passed: false };
+
+  const rubric = (() => {
+    const sim = filteredData.simulations.find((s) => s.id === simulationId);
+    return rubrics.find((r) => r.id === sim?.rubricId);
+  })();
+
+  const profileAttempts = filteredData.attempts.filter(
+    (attempt) =>
+      attempt.profileId === profileId && attempt.simulationId === simulationId
+  );
+  if (profileAttempts.length === 0) {
+    return { highestScorePercent: 0, passed: false };
+  }
+
+  // Average raw points per attempt across its graded chats
+  const attemptAverages: number[] = profileAttempts.map((attempt) => {
+    const attemptChats = filteredData.chats.filter(
+      (chat) => chat.attemptId === attempt.id
+    );
+    const chatGrades = attemptChats
+      .map((chat) =>
+        filteredData.grades.find((g) => g.simulationChatId === chat.id)
+      )
+      .filter(Boolean) as SimulationChatGrade[];
+    if (chatGrades.length === 0) return 0;
+    const totalScore = chatGrades.reduce((sum, g) => sum + g.score, 0);
+    return totalScore / chatGrades.length; // raw points average
+  });
+
+  const highestRawAverage = Math.max(...attemptAverages);
+  const rubricPoints = rubric?.points || 100;
+  const passPoints = rubric?.passPoints ?? 70; // fallback if missing
+  const highestScorePercent = Math.round(
+    (highestRawAverage / rubricPoints) * 100
+  );
+  const passed = highestRawAverage >= passPoints;
+
+  return { highestScorePercent, passed };
+}
+
+/**
+ * Bulk compute a single user's performance for all simulations in the filtered set.
+ * Returns a map of simulationId -> { highestScorePercent, passed }.
+ */
+export function calculateUserPerformanceBySimulation(
+  filteredData: FilteredData,
+  rubrics: Rubric[],
+  profileId: string
+): Record<string, { highestScorePercent: number; passed: boolean }> {
+  const result: Record<
+    string,
+    { highestScorePercent: number; passed: boolean }
+  > = {};
+  if (!profileId) return result;
+
+  // Group attempts by simulation for this profile
+  const attemptsBySimulation = new Map<string, SimulationAttempt[]>();
+  filteredData.attempts.forEach((attempt) => {
+    if (attempt.profileId !== profileId) return;
+    const arr = attemptsBySimulation.get(attempt.simulationId) ?? [];
+    arr.push(attempt);
+    attemptsBySimulation.set(attempt.simulationId, arr);
+  });
+
+  attemptsBySimulation.forEach((_attempts, simulationId) => {
+    result[simulationId] = calculateUserSimulationPerformance(
+      filteredData,
+      rubrics,
+      profileId,
+      simulationId
+    );
+  });
+
+  return result;
+}
+
+/**
  * Calculate average messages per session
  * @param messages - All simulation messages
  * @param filteredData - Pre-filtered analytics data

@@ -193,43 +193,6 @@ export default function RubricHeatmap({
     );
   }
 
-  // Show no access message if user doesn't have access to any cohorts
-  if (!deferredResult?.hasData) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <TrendingUp className="h-4 w-4" />
-            Skill Area Correlation Matrix
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Statistical correlation between skill areas (standard groups)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1 p-3">
-          <div className="text-center text-muted-foreground text-sm">
-            <p>No correlation data available for the selected time period</p>
-            <p className="text-xs mt-1">
-              Need more training sessions with multiple skill areas to calculate
-              correlations
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative gap-0">
       <div

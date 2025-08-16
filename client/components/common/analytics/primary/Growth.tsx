@@ -229,47 +229,6 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
     return null;
   };
 
-  if (!growthData.length) {
-    return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Platform Growth
-              </CardTitle>
-              <CardDescription>
-                Platform-wide performance metrics over time
-              </CardDescription>
-            </div>
-            <GrowthPicker
-              availableMetrics={availableMetrics}
-              selectedMetrics={selectedMetrics}
-              onMetricsChange={setSelectedMetrics}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No growth data found for the selected date range
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div

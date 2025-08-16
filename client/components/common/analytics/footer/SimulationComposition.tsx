@@ -191,31 +191,6 @@ export default function SimulationComposition({
 
   const thresholdStatus = getThresholdStatus();
 
-  if (!hasAnyData) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Simulation Composition
-          </CardTitle>
-          <CardDescription>High vs low performing simulations</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              No simulation data available for the selected time period.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Try expanding the date range or check if simulations have been
-              completed.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div

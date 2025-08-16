@@ -141,7 +141,18 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
   } else {
     // Approach 2: Profile-based filtering
     // Filter profiles based on roles
-    filteredProfiles = filterProfilesByRoles(allProfiles, roles);
+    const roleScopedProfiles = filterProfilesByRoles(allProfiles, roles);
+    // Ensure the explicit profileId (if provided) is included even if role filter would exclude it
+    if (profileId) {
+      const explicitProfile = allProfiles.find((p) => p.id === profileId);
+      if (
+        explicitProfile &&
+        !roleScopedProfiles.some((p) => p.id === explicitProfile.id)
+      ) {
+        roleScopedProfiles.push(explicitProfile);
+      }
+    }
+    filteredProfiles = roleScopedProfiles;
 
     // Filter simulations based on practice/general filters (no cohort restriction)
     filteredSimulations = filterSimulationsByType(
@@ -164,16 +175,23 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
     profileId
   );
 
-  // Derive cohorts when none explicitly provided: attempts -> simulations -> cohorts
+  // Derive cohorts when none explicitly provided: resolve by profile membership or all active
   if (!hasCohortFilter) {
-    const attemptSimulationIds = new Set<string>(
-      filteredAttempts.map((a) => a.simulationId)
-    );
-    filteredCohorts = allCohorts.filter(
-      (cohort) =>
-        cohort.active &&
-        cohort.simulationIds.some((simId) => attemptSimulationIds.has(simId))
-    );
+    const profile = profileId
+      ? allProfiles.find((p) => p.id === profileId)
+      : undefined;
+    const isAdminOrSuperadmin =
+      profile?.role === "admin" || profile?.role === "superadmin";
+
+    if (profileId && !isAdminOrSuperadmin) {
+      // Non-admin user: include only active cohorts the profile belongs to
+      filteredCohorts = allCohorts.filter(
+        (cohort) => cohort.active && cohort.profileIds.includes(profileId)
+      );
+    } else {
+      // Admin/superadmin or no profile context: include all active cohorts
+      filteredCohorts = allCohorts.filter((cohort) => cohort.active);
+    }
   }
 
   // Step 3: Filter chats based on filtered attempts

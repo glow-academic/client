@@ -39,6 +39,14 @@ export interface StagnationRateProps {
 }
 
 const COLOR_CONFIGS = {
+  neutral: {
+    gradient: "from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900",
+    border: "border-gray-200",
+    text: "text-gray-700",
+    icon: "text-gray-600",
+    accent: "text-gray-600",
+    primary: "#6b7280",
+  },
   danger: {
     gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
     border: "border-red-200",
@@ -92,6 +100,7 @@ export default function StagnationRate({
 
   // Determine color based on stagnation rate and thresholds (lower is better)
   const getColorConfig = (stagnationRate: number) => {
+    if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (stagnationRate > thresholds.danger) return COLOR_CONFIGS.danger;
     if (stagnationRate > thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
@@ -148,7 +157,7 @@ export default function StagnationRate({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasDataAvailable ? `${stagnationRate}%` : "No data"}
+            {hasDataAvailable ? `${stagnationRate}%` : "0%"}
           </div>
         </CardContent>
       </Card>

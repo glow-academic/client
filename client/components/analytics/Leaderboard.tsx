@@ -29,7 +29,14 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     isLoading: isFilteredDataLoading,
     rubrics,
     messages,
-  } = useFilteredAnalyticsData(cohortId ? { cohortIds: [cohortId] } : {});
+  } = useFilteredAnalyticsData(
+    cohortId
+      ? {
+          cohortIds: [cohortId],
+          ...(effectiveProfile?.id ? { profileId: effectiveProfile.id } : {}),
+        }
+      : undefined
+  );
 
   const handleViewReport = (profileId: string) => {
     // Disable navigation for TAs when viewing a specific cohort

@@ -23,8 +23,8 @@ import { useEffect, useMemo, useState } from "react";
 import { DateRange } from "react-day-picker";
 
 export interface AnalyticsFiltersProps {
-  homePage?: boolean; // this means we shouldn't show the first 2 components
-  reportPage?: boolean; // this means we shouldn't show the role picker
+  homePage?: boolean;
+  reportPage?: boolean;
 }
 
 export function AnalyticsFilters({
@@ -164,54 +164,56 @@ export function AnalyticsFilters({
   };
 
   return (
-    <div className="flex items-center gap-2">
-      {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
-      {!homePage && (
-        <PracticePicker
-          selected={practiceSelected}
-          onChange={(vals) => {
-            // Update UI state first
-            setPracticeSelected(vals);
-            // Empty selection means all simulations (all three modes on)
-            if (vals.length === 0) {
-              setSimulationFilters(["general", "practice", "archived"]);
-              return;
+    <div className="px-4">
+      <div className="flex items-center gap-2">
+        {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
+        {!homePage && (
+          <PracticePicker
+            selected={practiceSelected}
+            onChange={(vals) => {
+              // Update UI state first
+              setPracticeSelected(vals);
+              // Empty selection means all simulations (all three modes on)
+              if (vals.length === 0) {
+                setSimulationFilters(["general", "practice", "archived"]);
+                return;
+              }
+              setSimulationFilters(vals);
+            }}
+            placeholder="All simulations"
+          />
+        )}
+
+        {/* Role Picker */}
+        {!homePage && !reportPage && (
+          <RolePicker
+            roles={
+              selectedCohortIds.length > 0
+                ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
+                : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
             }
-            setSimulationFilters(vals);
-          }}
-          placeholder="All simulations"
+            selectedRoles={selectedRoles}
+            onChange={handleRoleSelect}
+            placeholder="All roles"
+          />
+        )}
+
+        {/* Cohort Picker */}
+        <CohortPicker
+          cohorts={cohortOptions}
+          selectedCohorts={selectedCohorts}
+          onSelect={handleCohortSelect}
+          placeholder="Cohorts"
+          hideSelectedChips={true}
         />
-      )}
 
-      {/* Role Picker */}
-      {!homePage && !reportPage && (
-        <RolePicker
-          roles={
-            selectedCohortIds.length > 0
-              ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
-              : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
-          }
-          selectedRoles={selectedRoles}
-          onChange={handleRoleSelect}
-          placeholder="All roles"
+        {/* Date Range Picker */}
+        <DatePickerWithRange
+          dateRange={dateRange}
+          setDateRange={handleDateRangeChange}
+          className="w-auto"
         />
-      )}
-
-      {/* Cohort Picker */}
-      <CohortPicker
-        cohorts={cohortOptions}
-        selectedCohorts={selectedCohorts}
-        onSelect={handleCohortSelect}
-        placeholder="Cohorts"
-        hideSelectedChips={true}
-      />
-
-      {/* Date Range Picker */}
-      <DatePickerWithRange
-        dateRange={dateRange}
-        setDateRange={handleDateRangeChange}
-        className="w-auto"
-      />
+      </div>
     </div>
   );
 }
