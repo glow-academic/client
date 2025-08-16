@@ -37,6 +37,11 @@ export interface AnalyticsContextType {
   // Utility functions
   clearFilters: () => void;
   hasActiveFilters: boolean;
+
+  // Computed properties for backward compatibility
+  effectiveCohortIds: string[];
+  showPractice: boolean;
+  showGeneral: boolean;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
@@ -124,9 +129,9 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Role filtering - empty array means all roles
   const [selectedRoles, setSelectedRoles] = useState<ProfileRole[]>(["ta"]);
   // New dual flags for practice/assigned filtering
-  const [simulationFilters, setSimulationFilters] = useState<SimulationFilter[]>(
-    ["general"]
-  );
+  const [simulationFilters, setSimulationFilters] = useState<
+    SimulationFilter[]
+  >(["general"]);
 
   const setDateRange = (start: Date, end: Date) => {
     setStartDate(start);
@@ -145,6 +150,11 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   const hasActiveFilters = selectedCohortIds.length > 0;
 
+  // Computed properties for backward compatibility
+  const effectiveCohortIds = selectedCohortIds;
+  const showPractice = simulationFilters.includes("practice");
+  const showGeneral = simulationFilters.includes("general");
+
   const value: AnalyticsContextType = {
     startDate,
     endDate,
@@ -157,6 +167,9 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     setSimulationFilters,
     clearFilters,
     hasActiveFilters,
+    effectiveCohortIds,
+    showPractice,
+    showGeneral,
   };
 
   return (

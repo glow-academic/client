@@ -1,6 +1,6 @@
 /**
  * PracticePicker.tsx
- * Multi-select picker for general/practice content selection
+ * Multi-select picker for general/practice/archived content selection
  */
 "use client";
 
@@ -21,26 +21,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SimulationFilter } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 
-export type PracticeOption = "general" | "practice";
-
 export interface PracticePickerProps {
-  options?: PracticeOption[]; // defaults to ["general", "practice"]
-  selected?: PracticeOption[]; // any subset of options
-  onChange?: (selected: PracticeOption[]) => void;
+  options?: SimulationFilter[]; // defaults to ["general", "practice", "archived"]
+  selected?: SimulationFilter[]; // any subset of options
+  onChange?: (selected: SimulationFilter[]) => void;
   placeholder?: string;
   className?: string;
   hideSelectedChips?: boolean;
 }
 
-const LABEL: Record<PracticeOption, string> = {
+const LABEL: Record<SimulationFilter, string> = {
   general: "General",
   practice: "Practice",
+  archived: "Archived",
 };
 
 export function PracticePicker({
-  options = ["general", "practice"],
+  options = ["general", "practice", "archived"],
   selected = [],
   onChange,
   placeholder = "All simulations",
@@ -49,7 +49,7 @@ export function PracticePicker({
 }: PracticePickerProps) {
   const [open, setOpen] = React.useState(false);
 
-  const handleSelect = (value: PracticeOption) => {
+  const handleSelect = (value: SimulationFilter) => {
     const isSelected = selected.includes(value);
     const updated = isSelected
       ? selected.filter((v) => v !== value)
@@ -65,7 +65,11 @@ export function PracticePicker({
   const getButtonText = () => {
     if (selected.length === 0) return placeholder;
     if (selected.length === 1) return LABEL[selected[0]!];
-    if (selected.length === 2) return "General + Practice";
+    if (selected.length === 2) {
+      const labels = selected.map((s) => LABEL[s]).join(" + ");
+      return labels;
+    }
+    if (selected.length === 3) return "All simulations";
     return `${selected.length} selected`;
   };
 

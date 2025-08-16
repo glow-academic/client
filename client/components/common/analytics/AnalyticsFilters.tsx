@@ -14,21 +14,22 @@ import {
 import { RolePicker } from "@/components/common/profile/RolePicker";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 // import { Label } from "@/components/ui/label";
-import {
-  PracticeOption,
-  PracticePicker,
-} from "@/components/common/analytics/PracticePicker";
-import { useAnalytics } from "@/contexts/analytics-context";
-import { profileRole } from "@/utils/drizzle/schema";
-import { useEffect, useMemo, useState } from "react";
-import { DateRange } from "react-day-picker";
+import { PracticePicker } from "@/components/common/analytics/PracticePicker";
+import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { DateRange } from "react-day-picker";
+
 export interface AnalyticsFiltersProps {
   homePage?: boolean; // this means we shouldn't show the first 2 components
   reportPage?: boolean; // this means we shouldn't show the role picker
 }
-export function AnalyticsFilters({ homePage = false, reportPage = false }: AnalyticsFiltersProps) {
+
+export function AnalyticsFilters({
+  homePage = false,
+  reportPage = false,
+}: AnalyticsFiltersProps) {
   const {
     startDate,
     endDate,
@@ -46,34 +47,31 @@ export function AnalyticsFilters({ homePage = false, reportPage = false }: Analy
     queryFn: () => getAllCohorts(),
   });
 
-  // Local UI state to distinguish between "empty (all)" and "both selected"
-  const [practiceSelected, setPracticeSelected] = useState<PracticeOption[]>(
+  // Local UI state to distinguish between "empty (all)" and "specific selections"
+  const [practiceSelected, setPracticeSelected] = useState<SimulationFilter[]>(
     () => {
-      const vals: PracticeOption[] = [];
+      const vals: SimulationFilter[] = [];
       if (simulationFilters.includes("general")) vals.push("general");
       if (simulationFilters.includes("practice")) vals.push("practice");
-      // When both are enabled functionally, start with empty to indicate "All simulations"
-      return vals.length === 2 ? [] : vals;
+      if (simulationFilters.includes("archived")) vals.push("archived");
+      // When all three are enabled functionally, start with empty to indicate "All simulations"
+      return vals.length === 3 ? [] : vals;
     }
   );
 
   // Keep local selection in sync when context flags change externally
   useEffect(() => {
-    if (simulationFilters.includes("general") && !simulationFilters.includes("practice")) {
-      if (
-        !(practiceSelected.length === 1 && practiceSelected[0] === "general")
-      ) {
-        setPracticeSelected(["general"]);
-      }
-    } else if (!simulationFilters.includes("general") && simulationFilters.includes("practice")) {
-      if (
-        !(practiceSelected.length === 1 && practiceSelected[0] === "practice")
-      ) {
-        setPracticeSelected(["practice"]);
-      }
-    } else if (simulationFilters.includes("general") && simulationFilters.includes("practice")) {
-      // Do not force a specific UI when both are functionally enabled.
-      // Preserve whether the user has chosen "All" (empty) or "General + Practice" (both selected).
+    const currentFilters: SimulationFilter[] = [];
+    if (simulationFilters.includes("general")) currentFilters.push("general");
+    if (simulationFilters.includes("practice")) currentFilters.push("practice");
+    if (simulationFilters.includes("archived")) currentFilters.push("archived");
+
+    // Update local state if it doesn't match the context
+    if (
+      currentFilters.length !== practiceSelected.length ||
+      !currentFilters.every((filter) => practiceSelected.includes(filter))
+    ) {
+      setPracticeSelected(currentFilters);
     }
   }, [simulationFilters, practiceSelected]);
 
@@ -142,31 +140,26 @@ export function AnalyticsFilters({ homePage = false, reportPage = false }: Analy
     }
   }, [selectedCohortsEarliestDate, startDate, endDate, setDateRange]);
 
-  const handleCohortSelect = (selectedCohorts: CohortPickerCohort[]) => {
-    setSelectedCohortIds(selectedCohorts.map((cohort) => cohort.id));
+  const handleCohortSelect = (cohorts: CohortPickerCohort[]) => {
+    setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
-  const handleRoleSelect = (
-    roles: (typeof profileRole.enumValues)[number][]
-  ) => {
-    // Narrow to ProfileRole
-    const validRoles = profileRole.enumValues as readonly string[];
-    const filtered = roles.filter((r) => validRoles.includes(r));
-    setSelectedRoles(filtered as (typeof profileRole.enumValues)[number][]);
+  const handleRoleSelect = (roles: profileRole[]) => {
+    setSelectedRoles(roles);
   };
 
   return (
     <div className="flex items-center gap-2">
-      {/* General/Practice Selector (multi-select, matches RolePicker) */}
+      {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
       {!homePage && (
         <PracticePicker
           selected={practiceSelected}
           onChange={(vals) => {
             // Update UI state first
             setPracticeSelected(vals);
-            // Empty selection means all simulations (both modes on)
+            // Empty selection means all simulations (all three modes on)
             if (vals.length === 0) {
-              setSimulationFilters(["general", "practice"]);
+              setSimulationFilters(["general", "practice", "archived"]);
               return;
             }
             setSimulationFilters(vals);
