@@ -20,8 +20,6 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { SimulationFilter } from "@/contexts/analytics-context";
-
 import {
   Popover,
   PopoverContent,
@@ -33,21 +31,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateScenarioPerformance } from "@/utils/analytics/footer";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -62,17 +52,12 @@ import {
 } from "recharts";
 
 export interface ScenarioStatsProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 interface MetricOption {
@@ -82,98 +67,36 @@ interface MetricOption {
 }
 
 export default function ScenarioStats({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
+  filteredData,
   thresholds,
-  selectedRoles,
-  simulationFilters,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Fetch data
-  const { data: scenarios, isLoading: scenariosLoading } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: personas, isLoading: personasLoading } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  const { data: documents, isLoading: documentsLoading } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
-  });
-
-  const { data: profiles, isLoading: profilesLoading } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: cohorts, isLoading: cohortsLoading } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: simulations, isLoading: simulationsLoading } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: parameters, isLoading: parametersLoading } = useQuery({
+  // Fetch additional data needed for calculations
+  const { data: parameters } = useQuery({
     queryKey: ["parameters"],
     queryFn: () => getAllParameters(),
   });
 
-  const { data: parameterItems, isLoading: parameterItemsLoading } = useQuery({
+  const { data: parameterItems } = useQuery({
     queryKey: ["parameterItems"],
     queryFn: () => getAllParameterItems(),
   });
 
-  const { data: attempts, isLoading: attemptsLoading } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
   });
-
-  const { data: chats, isLoading: chatsLoading } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades, isLoading: gradesLoading } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  // Check if any data is still loading
-  const isLoading =
-    scenariosLoading ||
-    personasLoading ||
-    documentsLoading ||
-    profilesLoading ||
-    cohortsLoading ||
-    simulationsLoading ||
-    rubricsLoading ||
-    parametersLoading ||
-    parameterItemsLoading ||
-    attemptsLoading ||
-    chatsLoading ||
-    gradesLoading;
 
   // Get numerical parameters only
   const numericalParameters = useMemo(() => {
@@ -201,61 +124,10 @@ export default function ScenarioStats({
     }));
   }, [numericalParameters]);
 
-  // Calculate cohort-based filters
-  const cohortFilters = useMemo(() => {
-    if (!cohorts || !cohortIds || cohortIds.length === 0) {
-      return {
-        allowedProfileIds: null,
-        allowedSimulationIds: null,
-        hasMatchingCohorts: true, // Show all data if no cohort filtering
-      };
-    }
-
-    // Filter cohorts based on provided cohortIds
-    const matchingCohorts = cohorts.filter((cohort) =>
-      cohortIds.includes(cohort.id)
-    );
-
-    if (matchingCohorts.length === 0) {
-      return {
-        allowedProfileIds: null,
-        allowedSimulationIds: null,
-        hasMatchingCohorts: false,
-      };
-    }
-
-    // Extract all profileIds and simulationIds from matching cohorts
-    const allProfileIds = new Set<string>();
-    const allSimulationIds = new Set<string>();
-
-    matchingCohorts.forEach((cohort) => {
-      cohort.profileIds?.forEach((id) => allProfileIds.add(id));
-      cohort.simulationIds?.forEach((id) => allSimulationIds.add(id));
-    });
-
-    return {
-      allowedProfileIds: Array.from(allProfileIds),
-      allowedSimulationIds: Array.from(allSimulationIds),
-      hasMatchingCohorts: true,
-    };
-  }, [cohorts, cohortIds]);
-
   // Calculate performance data using utility function
   const { performanceData: aggregatedPerformanceData, correlationData } =
     useMemo(() => {
-      if (
-        !scenarios ||
-        !personas ||
-        !documents ||
-        !attempts ||
-        !chats ||
-        !grades ||
-        !simulations ||
-        !profiles ||
-        !rubrics ||
-        !parameterItems ||
-        !selectedParameter
-      ) {
+      if (!filteredData || !parameterItems || !selectedParameter || !rubrics) {
         return {
           performanceData: [],
           correlationData: { correlation: 0, pValue: 1 },
@@ -263,40 +135,31 @@ export default function ScenarioStats({
       }
 
       return calculateScenarioPerformance(
-        grades,
-        chats,
-        attempts,
-        simulations,
-        scenarios,
+        filteredData.grades,
+        filteredData.chats,
+        filteredData.attempts,
+        filteredData.simulations,
+        filteredData.scenarios,
         rubrics,
-        profiles,
+        filteredData.profiles,
         parameterItems,
         selectedParameter,
-        dateStart,
-        dateEnd,
-        profileId,
-        cohorts || [],
-        cohortIds,
+        startDate,
+        endDate,
+        undefined, // profileId - not needed since data is already filtered
+        filteredData.cohorts,
+        selectedCohortIds,
         selectedRoles,
         simulationFilters
       );
     }, [
-      scenarios,
-      personas,
-      documents,
-      attempts,
-      chats,
-      grades,
-      simulations,
-      profiles,
-      rubrics,
+      filteredData,
       parameterItems,
       selectedParameter,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts,
-      cohortIds,
+      rubrics,
+      startDate,
+      endDate,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters,
     ]);
@@ -339,53 +202,6 @@ export default function ScenarioStats({
   };
 
   const thresholdStatus = getThresholdStatus();
-
-  // Show no data message if no matching cohorts found
-  if (!cohortFilters.hasMatchingCohorts) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Scenario Performance Analysis
-          </CardTitle>
-          <CardDescription>
-            Performance correlation with scenario characteristics
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              No data available for the selected cohorts.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              The selected profile is not a member of any of the specified
-              cohorts.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Scenario Performance Analysis
-          </CardTitle>
-          <CardDescription>
-            Performance correlation with scenario characteristics
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">Loading scenario data...</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Show message if no numerical parameters available
   if (numericalParameters.length === 0) {

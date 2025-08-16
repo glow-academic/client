@@ -25,16 +25,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -49,69 +43,32 @@ import {
 } from "recharts";
 
 export interface CohortPerformanceProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 export default function CohortPerformance({
-  dateStart,
-  dateEnd,
-  profileId,
+  filteredData,
   thresholds,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
 
-  // Fetch data
-  const { data: allCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
+  // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -119,77 +76,82 @@ export default function CohortPerformance({
 
   // Use the utility function to calculate cohort performance
   const cohortPerformanceResult = useMemo(() => {
-    if (
-      !allCohorts ||
-      !profiles ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !simulations ||
-      !rubrics
-    ) {
+    if (!filteredData || !rubrics) {
       return null;
     }
 
     return calculateCohortPerformance(
-      allCohorts,
-      profiles,
-      chats,
-      grades,
-      attempts,
-      simulations,
+      filteredData.cohorts,
+      filteredData.profiles,
+      filteredData.chats,
+      filteredData.grades,
+      filteredData.attempts,
+      filteredData.simulations,
       rubrics,
-      dateStart,
-      dateEnd,
+      startDate,
+      endDate,
       thresholds,
-      profileId,
-      cohortIds,
+      undefined, // profileId - not needed since data is already filtered
+      selectedCohortIds,
       selectedSimulations.map((s) => s.id),
       selectedRoles,
       simulationFilters
     );
   }, [
-    allCohorts,
-    profiles,
-    chats,
-    grades,
-    attempts,
-    simulations,
+    filteredData,
     rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
-    selectedSimulations,
+    startDate,
+    endDate,
     thresholds,
+    selectedCohortIds,
+    selectedSimulations,
     selectedRoles,
     simulationFilters,
   ]);
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
-    if (!simulations || !grades || !chats || !attempts) return [];
+    if (
+      !filteredData?.simulations ||
+      !filteredData?.grades ||
+      !filteredData?.chats ||
+      !filteredData?.attempts
+    )
+      return [];
 
     // Get all simulation IDs that have grades in the date range
     const simulationIdsWithData = new Set<string>();
 
-    grades.forEach((grade) => {
+    filteredData.grades.forEach((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
+      const chat = filteredData.chats.find(
+        (c) => c.id === grade.simulationChatId
+      );
+      const attempt = filteredData.attempts.find(
+        (a) => a.id === chat?.attemptId
+      );
 
       if (!attempt) return;
 
       // Check date range
-      const inDateRange = gradeDate >= dateStart && gradeDate <= dateEnd;
+      const inDateRange = gradeDate >= startDate && gradeDate <= endDate;
 
       if (inDateRange) {
         simulationIdsWithData.add(attempt.simulationId);
       }
     });
 
-    return simulations.filter((s) => simulationIdsWithData.has(s.id));
-  }, [simulations, grades, chats, attempts, dateStart, dateEnd]);
+    return filteredData.simulations.filter((s) =>
+      simulationIdsWithData.has(s.id)
+    );
+  }, [
+    filteredData?.simulations,
+    filteredData?.grades,
+    filteredData?.chats,
+    filteredData?.attempts,
+    startDate,
+    endDate,
+  ]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {

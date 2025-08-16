@@ -129,114 +129,60 @@ export default function Dashboard({ profileId }: DashboardProps) {
   ];
 
   const primaryComponents = [
-    <Growth
-      key="growth"
-      dateStart={startDate}
-      dateEnd={endDate}
-      thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
-    />,
+    <Growth key="growth" filteredData={filteredData} thresholds={thresholds} />,
     <PersonaPerformance
       key="persona-performance"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
   ];
 
   const secondaryComponents = [
     <CohortPerformance
       key="cohort-performance"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <AttemptImprovement
       key="attempt-improvement"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <SkillPerformance
       key="skill-performance"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
   ];
 
   const leftFooterComponents = [
     <ScenarioPerformance
       key="scenario-performance"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <ScenarioStats
       key="scenario-stats"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
   ];
 
   const rightFooterComponents = [
     <SimulationPerformance
       key="simulation-performance"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
     <SimulationComposition
       key="simulation-composition"
-      dateStart={startDate}
-      dateEnd={endDate}
+      filteredData={filteredData}
       thresholds={thresholds}
-      profileId={profileId}
-      cohortIds={selectedCohortIds}
-      selectedRoles={selectedRoles}
-      simulationFilters={simulationFilters}
     />,
   ];
 

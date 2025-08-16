@@ -111,7 +111,8 @@ export default function PersonaPerformance({
     return (profileId: string) => {
       return filteredData.cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && selectedCohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          selectedCohortIds.includes(cohort.id)
       );
     };
   }, [selectedCohortIds, filteredData?.cohorts]);
@@ -135,7 +136,9 @@ export default function PersonaPerformance({
     if (!filteredData?.simulations) return [];
 
     // Filter by cohorts first
-    let filtered = filteredData.simulations.filter((s) => !s.practiceSimulation);
+    let filtered = filteredData.simulations.filter(
+      (s) => !s.practiceSimulation
+    );
     if (selectedCohortIds && selectedCohortIds.length > 0) {
       filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
     }
@@ -145,12 +148,7 @@ export default function PersonaPerformance({
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
-    if (
-      !filteredData ||
-      !personas ||
-      !scenarios ||
-      !rubrics
-    ) {
+    if (!filteredData || !personas || !scenarios || !rubrics) {
       return [];
     }
 
@@ -240,7 +238,9 @@ export default function PersonaPerformance({
     if (!filteredData?.profiles) return false;
 
     // Check if any profile is in the specified cohorts
-    return filteredData.profiles.some((profile) => isProfileInCohorts(profile.id));
+    return filteredData.profiles.some((profile) =>
+      isProfileInCohorts(profile.id)
+    );
   }, [selectedCohortIds, filteredData?.profiles, isProfileInCohorts]);
 
   if (!hasDataAfterCohortFilter) {

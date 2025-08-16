@@ -31,17 +31,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
@@ -55,27 +49,17 @@ import {
 } from "react";
 
 export interface RubricHeatmapProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 export default function RubricHeatmap({
-  dateStart,
-  dateEnd,
+  filteredData,
   thresholds,
-  profileId,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
@@ -85,7 +69,16 @@ export default function RubricHeatmap({
     col: number | null;
   }>({ row: null, col: null });
 
-  // Fetch data
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+
+  // Fetch additional data (not part of FilteredData)
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -120,96 +113,38 @@ export default function RubricHeatmap({
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
-  const { data: grades, isLoading: gradesLoading } = useQuery({
-    queryKey: ["grades", filteredRubrics?.map((r) => r.id) || []],
-    queryFn: () =>
-      getSimulationChatGradesByRubrics(filteredRubrics?.map((r) => r.id) || []),
-    enabled: !!filteredRubrics && filteredRubrics.length > 0,
-  });
-
-  const { data: feedbacks, isLoading: feedbacksLoading } = useQuery({
-    queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades?.map((g) => g.id) || []
-      ),
-    enabled: !!grades && grades.length > 0,
-  });
-
-  // Fetch cohorts for filtering
-  const { data: allCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  // Fetch chats and attempts for profile filtering
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
   // Use the utility function to calculate rubric heatmap
   const rubricHeatmapResult = useMemo(() => {
-    if (
-      !grades ||
-      !feedbacks ||
-      !standards ||
-      !standardGroups ||
-      !filteredRubrics ||
-      !allCohorts ||
-      !profiles ||
-      !attempts ||
-      !chats
-    ) {
+    if (!filteredData || !standards || !standardGroups || !filteredRubrics) {
       return null;
     }
 
     return calculateRubricHeatmap(
-      grades,
-      feedbacks,
+      filteredData.grades,
+      filteredData.feedbacks,
       standards,
       standardGroups,
       filteredRubrics,
-      chats,
-      attempts,
-      profiles,
-      allCohorts,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohortIds,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.profiles,
+      filteredData.cohorts,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      selectedCohortIds,
       defaultRubrics.map((r) => r.id),
       selectedRoles,
       simulationFilters
     );
   }, [
-    grades,
-    feedbacks,
+    filteredData,
     standards,
     standardGroups,
     filteredRubrics,
-    allCohorts,
-    profiles,
-    attempts,
-    chats,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohortIds,
+    startDate,
+    endDate,
+    selectedCohortIds,
     defaultRubrics,
     selectedRoles,
     simulationFilters,
@@ -266,12 +201,7 @@ export default function RubricHeatmap({
   const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
-  const isLoading =
-    rubricsLoading ||
-    standardGroupsLoading ||
-    standardsLoading ||
-    gradesLoading ||
-    feedbacksLoading;
+  const isLoading = rubricsLoading || standardGroupsLoading || standardsLoading;
 
   // Show loading state
   if (isLoading) {

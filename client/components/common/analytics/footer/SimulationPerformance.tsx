@@ -26,21 +26,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 import { Simulation } from "@/types";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import {
   calculateScenarioPerformanceWithinSimulation,
   getAvailableSimulations,
 } from "@/utils/analytics/footer";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -55,50 +50,32 @@ import {
 } from "recharts";
 
 export interface SimulationPerformanceProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  showPractice: boolean;
-  showGeneral: boolean;
 }
 
 export default function SimulationPerformance({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
+  filteredData,
   thresholds,
-  selectedRoles,
-  showPractice,
-  showGeneral,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
+  // Fetch additional data (not part of FilteredData)
   const { data: scenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
@@ -109,60 +86,43 @@ export default function SimulationPerformance({
     queryFn: () => getAllRubrics(),
   });
 
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
   // Filter simulations to exclude practice simulations and those without data
   const availableSimulations = useMemo(() => {
-    if (!simulations || !chats || !grades || !attempts || !profiles) return [];
+    if (
+      !filteredData?.simulations ||
+      !filteredData?.chats ||
+      !filteredData?.grades ||
+      !filteredData?.attempts ||
+      !filteredData?.profiles
+    )
+      return [];
 
     return getAvailableSimulations(
-      simulations,
-      chats,
-      grades,
-      attempts,
-      profiles,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      filteredData.simulations,
+      filteredData.chats,
+      filteredData.grades,
+      filteredData.attempts,
+      filteredData.profiles,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
-      showPractice,
-      showGeneral
+      simulationFilters
     );
   }, [
-    simulations,
-    chats,
-    grades,
-    attempts,
-    profiles,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohorts,
-    cohortIds,
+    filteredData?.simulations,
+    filteredData?.chats,
+    filteredData?.grades,
+    filteredData?.attempts,
+    filteredData?.profiles,
+    startDate,
+    endDate,
+    filteredData?.cohorts,
+    selectedCohortIds,
     selectedRoles,
-    showPractice,
-    showGeneral,
+    simulationFilters,
   ]);
 
   // Auto-select simulation if enabled and available
@@ -191,53 +151,39 @@ export default function SimulationPerformance({
 
   // Calculate scenario performance data for selected simulation using utility function
   const scenarioPerformanceData = useMemo(() => {
-    if (
-      !selectedSimulation ||
-      !scenarios ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !profiles ||
-      !rubrics
-    ) {
+    if (!selectedSimulation || !scenarios || !filteredData || !rubrics) {
       return [];
     }
 
     return calculateScenarioPerformanceWithinSimulation(
-      grades,
-      chats,
-      attempts,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
       scenarios,
-      profiles,
+      filteredData.profiles,
       rubrics,
       selectedSimulation,
-      dateStart,
-      dateEnd,
+      startDate,
+      endDate,
       thresholds,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
-      showPractice,
-      showGeneral
+      simulationFilters.includes("practice"),
+      simulationFilters.includes("general")
     );
   }, [
     selectedSimulation,
     scenarios,
-    chats,
-    grades,
-    attempts,
-    profiles,
+    filteredData,
     rubrics,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohorts,
-    cohortIds,
-    selectedRoles,
-    showPractice,
-    showGeneral,
+    startDate,
+    endDate,
     thresholds,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
   ]);
 
   // Calculate insights
@@ -305,8 +251,11 @@ export default function SimulationPerformance({
   // Show no data message if no matching cohorts found
   // Only show this if we have cohortIds but no matching cohorts
   if (
-    cohortIds.length > 0 &&
-    (!cohorts || !cohorts.some((cohort) => cohortIds.includes(cohort.id)))
+    selectedCohortIds.length > 0 &&
+    (!filteredData?.cohorts ||
+      !filteredData.cohorts.some((cohort) =>
+        selectedCohortIds.includes(cohort.id)
+      ))
   ) {
     return (
       <Card className="w-full h-full flex flex-col">

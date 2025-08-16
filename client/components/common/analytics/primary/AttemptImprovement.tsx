@@ -77,7 +77,8 @@ export default function AttemptImprovement({
     return (profileId: string) => {
       return filteredData.cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && selectedCohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          selectedCohortIds.includes(cohort.id)
       );
     };
   }, [selectedCohortIds, filteredData?.cohorts]);
@@ -98,15 +99,25 @@ export default function AttemptImprovement({
 
   // Get simulations that have data available
   const simulationsWithData = useMemo(() => {
-    if (!filteredData?.simulations || !filteredData?.grades || !filteredData?.chats || !filteredData?.attempts) return [];
+    if (
+      !filteredData?.simulations ||
+      !filteredData?.grades ||
+      !filteredData?.chats ||
+      !filteredData?.attempts
+    )
+      return [];
 
     // Get all simulation IDs that have grades in the date range
     const simulationIdsWithData = new Set<string>();
 
     filteredData.grades.forEach((grade) => {
       const gradeDate = new Date(grade.createdAt);
-      const chat = filteredData.chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+      const chat = filteredData.chats.find(
+        (c) => c.id === grade.simulationChatId
+      );
+      const attempt = filteredData.attempts.find(
+        (a) => a.id === chat?.attemptId
+      );
 
       if (!attempt) return;
 
@@ -120,7 +131,9 @@ export default function AttemptImprovement({
     });
 
     // Filter by cohorts
-    let filtered = filteredData.simulations.filter((s) => simulationIdsWithData.has(s.id));
+    let filtered = filteredData.simulations.filter((s) =>
+      simulationIdsWithData.has(s.id)
+    );
     if (selectedCohortIds && selectedCohortIds.length > 0) {
       filtered = filtered.filter((s) => isSimulationInCohorts(s.id));
     }
@@ -139,10 +152,7 @@ export default function AttemptImprovement({
 
   // Calculate attempt improvement data
   const improvementData = useMemo(() => {
-    if (
-      !filteredData ||
-      !rubrics
-    ) {
+    if (!filteredData || !rubrics) {
       return [];
     }
 
@@ -230,8 +240,15 @@ export default function AttemptImprovement({
     if (!filteredData?.profiles || !filteredData?.cohorts) return false;
 
     // Check if any profile is in the specified cohorts
-    return filteredData.profiles.some((profile) => isProfileInCohorts(profile.id));
-  }, [selectedCohortIds, filteredData?.profiles, filteredData?.cohorts, isProfileInCohorts]);
+    return filteredData.profiles.some((profile) =>
+      isProfileInCohorts(profile.id)
+    );
+  }, [
+    selectedCohortIds,
+    filteredData?.profiles,
+    filteredData?.cohorts,
+    isProfileInCohorts,
+  ]);
 
   if (!hasDataAfterCohortFilter) {
     return (

@@ -13,16 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePlatformGrowth } from "@/utils/analytics/primary";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -39,31 +33,33 @@ import {
 import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
 
 export interface GrowthProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
-export default function Growth({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
-  thresholds,
-  selectedRoles,
-  simulationFilters,
-}: GrowthProps) {
+export default function Growth({ filteredData, thresholds }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
+
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+
+  // Fetch rubrics (still needed for calculations)
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
 
   // Define all available metrics (expandable to all 10 header metrics)
   const availableMetrics: GrowthMetric[] = useMemo(
@@ -170,90 +166,47 @@ export default function Growth({
     );
   }, [availableMetrics, selectedMetrics]);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
   // Helper function to check if a profile is in any of the specified cohorts
   const isProfileInCohorts = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return () => true;
-    if (!cohorts) return () => false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return () => true;
+    if (!filteredData?.cohorts) return () => false;
 
     return (profileId: string) => {
-      return cohorts.some(
+      return filteredData.cohorts.some(
         (cohort) =>
-          cohort.profileIds.includes(profileId) && cohortIds.includes(cohort.id)
+          cohort.profileIds.includes(profileId) &&
+          selectedCohortIds.includes(cohort.id)
       );
     };
-  }, [cohortIds, cohorts]);
+  }, [selectedCohortIds, filteredData?.cohorts]);
 
   // Calculate growth data using utility function
   const growthData = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return [];
+    }
+
     return calculatePlatformGrowth(
-      grades || [],
-      chats || [],
-      attempts || [],
-      simulations || [],
-      rubrics || [],
-      profiles || [],
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
+      rubrics,
+      filteredData.profiles,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters
     );
   }, [
-    grades,
-    chats,
-    attempts,
-    simulations,
+    filteredData,
     rubrics,
-    profiles,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohorts,
-    cohortIds,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedRoles,
     simulationFilters,
   ]);
@@ -328,12 +281,19 @@ export default function Growth({
 
   // Check if we have any data after cohort filtering
   const hasDataAfterCohortFilter = useMemo(() => {
-    if (!cohortIds || cohortIds.length === 0) return true;
-    if (!profiles || !cohorts) return false;
+    if (!selectedCohortIds || selectedCohortIds.length === 0) return true;
+    if (!filteredData?.profiles || !filteredData?.cohorts) return false;
 
     // Check if any profile is in the specified cohorts
-    return profiles.some((profile) => isProfileInCohorts(profile.id));
-  }, [cohortIds, profiles, cohorts, isProfileInCohorts]);
+    return filteredData.profiles.some((profile) =>
+      isProfileInCohorts(profile.id)
+    );
+  }, [
+    selectedCohortIds,
+    filteredData?.profiles,
+    filteredData?.cohorts,
+    isProfileInCohorts,
+  ]);
 
   if (!hasDataAfterCohortFilter) {
     return (

@@ -35,19 +35,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateScenarioAttributeBreakdown } from "@/utils/analytics/footer";
-import { profileRole } from "@/utils/drizzle/schema";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -63,20 +57,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface ScenarioPerformanceProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 interface ParameterOption {
@@ -86,38 +74,22 @@ interface ParameterOption {
 }
 
 export default function ScenarioPerformance({
-  dateStart,
-  dateEnd,
-  profileId,
+  filteredData,
   thresholds,
-  cohortIds,
-  selectedRoles,
-  simulationFilters,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Fetch data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
+  // Fetch additional data needed for calculations
   const { data: parameters } = useQuery({
     queryKey: ["parameters"],
     queryFn: () => getAllParameters(),
@@ -131,27 +103,6 @@ export default function ScenarioPerformance({
   const { data: rubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
-  });
-
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
   });
 
   // Get non-numerical parameters only
@@ -182,53 +133,36 @@ export default function ScenarioPerformance({
 
   // Calculate attribute breakdown using utility function
   const attributeElements = useMemo(() => {
-    if (
-      !scenarios ||
-      !simulations ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !profiles ||
-      !parameterItems ||
-      !selectedParameter ||
-      !rubrics
-    ) {
+    if (!filteredData || !parameterItems || !selectedParameter || !rubrics) {
       return [];
     }
 
     return calculateScenarioAttributeBreakdown(
-      grades,
-      chats,
-      attempts,
-      simulations,
-      scenarios,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
+      filteredData.scenarios,
       rubrics,
-      profiles,
+      filteredData.profiles,
       parameterItems,
       selectedParameter,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       selectedRoles,
       simulationFilters
     );
   }, [
-    scenarios,
-    simulations,
-    chats,
-    grades,
-    attempts,
-    profiles,
-    rubrics,
+    filteredData,
     parameterItems,
     selectedParameter,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohorts,
-    cohortIds,
+    rubrics,
+    startDate,
+    endDate,
+    selectedCohortIds,
     selectedRoles,
     simulationFilters,
   ]);

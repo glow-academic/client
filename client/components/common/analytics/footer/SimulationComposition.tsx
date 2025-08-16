@@ -30,49 +30,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAnalytics } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
-import { profileRole } from "@/utils/drizzle/schema";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
 import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
-import { SimulationFilter } from "@/contexts/analytics-context";
 
 export interface SimulationCompositionProps {
-  dateStart: Date;
-  dateEnd: Date;
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
     success: number;
   };
-  profileId: string | undefined;
-  cohortIds: string[];
-  selectedRoles: (typeof profileRole.enumValues)[number][];
-  simulationFilters: SimulationFilter[];
 }
 
 export default function SimulationComposition({
-  dateStart,
-  dateEnd,
-  profileId,
-  cohortIds,
+  filteredData,
   thresholds,
-  selectedRoles,
-  simulationFilters,
 }: SimulationCompositionProps) {
   // Configuration state
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -82,25 +66,19 @@ export default function SimulationComposition({
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
 
-  // Fetch comprehensive data
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  // Get date range from analytics context
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
+  // Fetch additional data (not part of FilteredData)
   const { data: scenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
-  });
-
-  const { data: simulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
   });
 
   const { data: personas } = useQuery({
@@ -123,36 +101,11 @@ export default function SimulationComposition({
     queryFn: () => getAllParameterItems(),
   });
 
-  const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
   // Calculate simulation composition data using utility function
   const simulationComposition = useMemo(() => {
     if (
+      !filteredData ||
       !scenarios ||
-      !simulations ||
-      !chats ||
-      !grades ||
-      !attempts ||
-      !profiles ||
       !personas ||
       !agents ||
       !parameters ||
@@ -169,39 +122,33 @@ export default function SimulationComposition({
     }
 
     return calculateSimulationComposition(
-      grades,
-      chats,
-      attempts,
-      simulations,
+      filteredData.grades,
+      filteredData.chats,
+      filteredData.attempts,
+      filteredData.simulations,
       scenarios,
-      profiles,
+      filteredData.profiles,
       parameters,
       parameterItems,
-      dateStart,
-      dateEnd,
-      profileId,
-      cohorts || [],
-      cohortIds,
+      startDate,
+      endDate,
+      undefined, // profileId - not needed since data is already filtered
+      filteredData.cohorts,
+      selectedCohortIds,
       config,
       selectedRoles,
       simulationFilters
     );
   }, [
+    filteredData,
     scenarios,
-    simulations,
-    chats,
-    grades,
-    attempts,
-    profiles,
     personas,
     agents,
     parameters,
     parameterItems,
-    dateStart,
-    dateEnd,
-    profileId,
-    cohorts,
-    cohortIds,
+    startDate,
+    endDate,
+    selectedCohortIds,
     config,
     selectedRoles,
     simulationFilters,
@@ -298,9 +245,11 @@ export default function SimulationComposition({
 
   // Show no data message if no matching cohorts found
   if (
-    !cohorts ||
-    cohortIds.length === 0 ||
-    !cohorts.some((cohort) => cohortIds.includes(cohort.id))
+    !filteredData ||
+    selectedCohortIds.length === 0 ||
+    !filteredData.cohorts.some((cohort) =>
+      selectedCohortIds.includes(cohort.id)
+    )
   ) {
     return (
       <Card className="w-full h-full flex flex-col">
