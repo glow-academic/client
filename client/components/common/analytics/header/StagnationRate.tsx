@@ -76,13 +76,7 @@ export default function StagnationRate({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch rubrics (still needed for calculations)
   const { data: rubrics } = useQuery({
@@ -96,30 +90,8 @@ export default function StagnationRate({
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    return calculateStagnationRate(
-      filteredData.attempts,
-      filteredData.chats,
-      filteredData.grades,
-      filteredData.simulations,
-      rubrics,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
-    );
-  }, [
-    filteredData,
-    rubrics,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculateStagnationRate(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   const {
     currentValue: stagnationRate,

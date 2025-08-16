@@ -76,13 +76,7 @@ export default function PersonaResponseTimes({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch messages (still needed for calculations)
   const { data: allMessages } = useQuery({
@@ -96,29 +90,8 @@ export default function PersonaResponseTimes({
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    return calculatePersonaResponseTimes(
-      allMessages,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
-    );
-  }, [
-    filteredData,
-    allMessages,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculatePersonaResponseTimes(allMessages, filteredData);
+  }, [filteredData, allMessages]);
 
   const {
     currentValue: averageResponseTime,

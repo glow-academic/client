@@ -1,15 +1,12 @@
 import type {
-  Cohort,
-  ProfileRole,
   Rubric,
-  Simulation,
   SimulationAttempt,
   SimulationChat,
   SimulationChatGrade,
   SimulationMessage,
 } from "@/types";
-import { eachDayOfInterval, format } from "date-fns";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { format } from "date-fns";
 
 // Common interfaces for analytics data
 export interface AnalyticsDataPoint {
@@ -24,209 +21,58 @@ export interface AnalyticsResult {
   hasData: boolean;
 }
 
-// Common filtering function for cohort restrictions
-function getAllowedSimulationIds(
-  cohorts: Cohort[],
-  cohortIds: string[],
-  profileId?: string,
-  profiles?: { id: string; role: ProfileRole }[]
-): string[] | null {
-  if (!cohortIds || cohortIds.length === 0) {
-    return null; // No cohort filtering, allow all simulations
-  }
-
-  // Filter cohorts to only those in cohortIds
-  const filteredCohorts = cohorts.filter((cohort) =>
-    cohortIds.includes(cohort.id)
-  );
-
-  if (filteredCohorts.length === 0) {
-    return []; // No matching cohorts, no data allowed
-  }
-
-  // If profileId is provided, check if profile belongs to any of the filtered cohorts
-  if (profileId) {
-    // Treat admin/superadmin as members of all cohorts
-    const isPrivileged = profiles?.some(
-      (p) =>
-        p.id === profileId && (p.role === "admin" || p.role === "superadmin")
-    );
-    if (isPrivileged) {
-      // Skip profile membership check for privileged roles
-    } else {
-      const profileInCohorts = filteredCohorts.some((cohort) =>
-        cohort.profileIds.includes(profileId)
-      );
-
-      if (!profileInCohorts) {
-        return []; // Profile not in any of the specified cohorts, no data allowed
-      }
-    }
-  }
-
-  // Get union of all simulation IDs from matching cohorts
-  const simulationIds = new Set<string>();
-  filteredCohorts.forEach((cohort) => {
-    cohort.simulationIds.forEach((simId) => {
-      if (simId !== "RAY") {
-        // Exclude placeholder
-        simulationIds.add(simId);
-      }
-    });
-  });
-
-  return Array.from(simulationIds);
-}
-
-// Common filtering function for date range and profile
-function filterDataByDateAndProfile<T extends { createdAt: string }>(
-  data: T[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  getProfileId?: (item: T) => string
-): T[] {
-  return data.filter((item) => {
-    const itemDate = new Date(item.createdAt);
-    const inDateRange = itemDate >= dateStart && itemDate <= dateEnd;
-
-    if (!inDateRange) return false;
-
-    if (profileId && getProfileId) {
-      return getProfileId(item) === profileId;
-    }
-
-    return true;
-  });
-}
-
-// Helper to include simulations based on practice vs normal flags
-function isIncludedByPractice(
-  simulation: { practiceSimulation?: boolean } | undefined,
-  simulationFilters: SimulationFilter[]
-): boolean {
-  if (!simulation) return false;
-  const isPractice = Boolean(simulation.practiceSimulation);
-  return (simulationFilters.includes("practice") && isPractice) || (simulationFilters.includes("general") && !isPractice);
-}
-
 /**
  * Calculate average score across all simulation attempts
- * @param grades - All simulation chat grades
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param rubrics - All rubrics
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
+ * @param rubrics - All rubrics for score calculation
  * @returns AnalyticsResult with average score and trend data
  */
 export const calculateAverageScore = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  rubrics: Rubric[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData,
+  rubrics: Rubric[]
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter grades by date range
-  const filteredGrades = filterDataByDateAndProfile(grades, dateStart, dateEnd);
-
-  // Filter by profileId if provided and optionally include practice simulations
-  let profileFilteredGrades = profileId
-    ? filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return (
-          attempt?.profileId === profileId &&
-          isIncludedByPractice(simulation, simulationFilters)
-        );
-      })
-    : filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return isIncludedByPractice(simulation, simulationFilters);
-      });
-
-  // Apply role filtering if provided and profiles are available
-  if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const profile = profiles.find((p) => p.id === attempt?.profileId);
-      return profile ? rolesAllowed.includes(profile.role) : false;
-    });
-  }
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (profileFilteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate average score using rubric points
-  const scoreSum = profileFilteredGrades.reduce((sum, grade) => {
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
+  const scoreSum = filteredData.grades.reduce((sum, grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
+    const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === attempt?.simulationId
+    );
     const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
     const rubricTotalPoints = rubric?.points || 100;
     const scorePercent = Math.round((grade.score / rubricTotalPoints) * 100);
     return sum + scorePercent;
   }, 0);
 
-  const currentValue = Math.round(scoreSum / profileFilteredGrades.length);
+  const currentValue = Math.round(scoreSum / filteredData.grades.length);
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping grades by date
+  const gradesByDate = new Map<string, SimulationChatGrade[]>();
 
-    const dayGrades = profileFilteredGrades.filter((grade) => {
-      const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-      return gradeDate === dateStr;
-    });
+  filteredData.grades.forEach((grade) => {
+    const dateStr = format(new Date(grade.createdAt), "yyyy-MM-dd");
+    if (!gradesByDate.has(dateStr)) {
+      gradesByDate.set(dateStr, []);
+    }
+    gradesByDate.get(dateStr)!.push(grade);
+  });
 
-    let avgScore = 0;
-    if (dayGrades.length > 0) {
+  const trendData: AnalyticsDataPoint[] = Array.from(gradesByDate.entries())
+    .map(([dateStr, dayGrades]) => {
       const dayScoreSum = dayGrades.reduce((sum, grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
+        const chat = filteredData.chats.find(
+          (c) => c.id === grade.simulationChatId
+        );
+        const attempt = filteredData.attempts.find(
+          (a) => a.id === chat?.attemptId
+        );
+        const simulation = filteredData.simulations.find(
           (s) => s.id === attempt?.simulationId
         );
         const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -236,15 +82,16 @@ export const calculateAverageScore = (
         );
         return sum + scorePercent;
       }, 0);
-      avgScore = Math.round(dayScoreSum / dayGrades.length);
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: avgScore,
-      count: dayGrades.length,
-    };
-  });
+      const avgScore = Math.round(dayScoreSum / dayGrades.length);
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: avgScore,
+        count: dayGrades.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -255,122 +102,59 @@ export const calculateAverageScore = (
 
 /**
  * Calculate completion percentage (percentage of chats that passed)
- * @param chats - All simulation chats
- * @param grades - All simulation chat grades
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with completion percentage and trend data
  */
 export const calculateCompletionPercentage = (
-  chats: SimulationChat[],
-  grades: SimulationChatGrade[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter chats by date range
-  const filteredChats = filterDataByDateAndProfile(chats, dateStart, dateEnd);
-
-  // Filter by profileId if provided and exclude practice simulations
-  const profileFilteredChats = profileId
-    ? filteredChats.filter((chat) => {
-        const attempt = attempts?.find((a) => a.id === chat.attemptId);
-        return attempt?.profileId === profileId;
-      })
-    : filteredChats;
-
-  // Filter out practice simulations unless showPractice is true
-  let nonPracticeChats = profileFilteredChats.filter((chat) => {
-    const attempt = attempts?.find((a) => a.id === chat.attemptId);
-    const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    return isIncludedByPractice(simulation, simulationFilters);
-  });
-
-  // Role filtering
-  if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-    nonPracticeChats = nonPracticeChats.filter((chat) => {
-      const attempt = attempts?.find((a) => a.id === chat.attemptId);
-      const prof = profiles.find((p) => p.id === attempt?.profileId);
-      return prof ? rolesAllowed.includes(prof.role) : false;
-    });
-  }
-
-  // Apply cohort filtering if simulation IDs are restricted (unless showing practice only)
-  if (allowedSimulationIds !== null && !(simulationFilters.includes("practice") && !simulationFilters.includes("general"))) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    nonPracticeChats = nonPracticeChats.filter((chat) => {
-      const attempt = attempts?.find((a) => a.id === chat.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (nonPracticeChats.length === 0) {
+  if (filteredData.chats.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Count chats with passing grades
-  const passingChats = nonPracticeChats.filter((chat) => {
-    const chatGrade = grades.find(
+  const passingChats = filteredData.chats.filter((chat) => {
+    const chatGrade = filteredData.grades.find(
       (grade) => grade.simulationChatId === chat.id
     );
     return chatGrade?.passed === true;
   });
 
   const currentValue = Math.round(
-    (passingChats.length / nonPracticeChats.length) * 100
+    (passingChats.length / filteredData.chats.length) * 100
   );
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping chats by date
+  const chatsByDate = new Map<string, SimulationChat[]>();
 
-    const dayChats = nonPracticeChats.filter((chat) => {
-      const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-      return chatDate === dateStr;
-    });
+  filteredData.chats.forEach((chat) => {
+    const dateStr = format(new Date(chat.createdAt), "yyyy-MM-dd");
+    if (!chatsByDate.has(dateStr)) {
+      chatsByDate.set(dateStr, []);
+    }
+    chatsByDate.get(dateStr)!.push(chat);
+  });
 
-    let completionRate = 0;
-    if (dayChats.length > 0) {
+  const trendData: AnalyticsDataPoint[] = Array.from(chatsByDate.entries())
+    .map(([dateStr, dayChats]) => {
       const passingDayChats = dayChats.filter((chat) => {
-        const chatGrade = grades.find(
+        const chatGrade = filteredData.grades.find(
           (grade) => grade.simulationChatId === chat.id
         );
         return chatGrade?.passed === true;
       });
-      completionRate = Math.round(
+
+      const completionRate = Math.round(
         (passingDayChats.length / dayChats.length) * 100
       );
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: completionRate,
-      count: dayChats.length,
-    };
-  });
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: completionRate,
+        count: dayChats.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -381,74 +165,18 @@ export const calculateCompletionPercentage = (
 
 /**
  * Calculate first attempt pass rate (percentage of first attempts that passed)
- * @param attempts - All simulation attempts
- * @param chats - All simulation chats
- * @param grades - All simulation chat grades
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with first attempt pass rate and trend data
  */
 export const calculateFirstAttemptPassRate = (
-  attempts: SimulationAttempt[],
-  chats: SimulationChat[],
-  grades: SimulationChatGrade[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter attempts by date range and optionally include practice simulations
-  const filteredAttempts = attempts.filter((attempt) => {
-    const attemptDate = new Date(attempt.createdAt);
-    const simulation = simulations.find((s) => s.id === attempt.simulationId);
-    if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Filter by profileId if provided
-  let profileFilteredAttempts = profileId
-    ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
-    : filteredAttempts;
-
-  // Apply cohort filtering if simulation IDs are restricted (unless showing practice only)
-  if (allowedSimulationIds !== null && !(simulationFilters.includes("practice") && !simulationFilters.includes("general"))) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
-      allowedSimulationIds.includes(attempt.simulationId)
-    );
-  }
-
-  if (profileFilteredAttempts.length === 0) {
+  if (filteredData.attempts.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Group attempts by profileId + simulationId to find first attempts
-  const firstAttempts = profileFilteredAttempts.reduce(
+  const firstAttempts = filteredData.attempts.reduce(
     (acc, attempt) => {
       const key = `${attempt.profileId}-${attempt.simulationId}`;
       if (
@@ -466,9 +194,11 @@ export const calculateFirstAttemptPassRate = (
 
   // Count first attempts that passed (have at least one chat with passed grade)
   const passedFirstAttempts = firstAttemptsList.filter((attempt) => {
-    const attemptChats = chats.filter((chat) => chat.attemptId === attempt.id);
+    const attemptChats = filteredData.chats.filter(
+      (chat) => chat.attemptId === attempt.id
+    );
     return attemptChats.some((chat) => {
-      const chatGrade = grades.find(
+      const chatGrade = filteredData.grades.find(
         (grade) => grade.simulationChatId === chat.id
       );
       return chatGrade?.passed === true;
@@ -479,57 +209,59 @@ export const calculateFirstAttemptPassRate = (
     (passedFirstAttempts.length / firstAttemptsList.length) * 100
   );
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping attempts by date
+  const attemptsByDate = new Map<string, SimulationAttempt[]>();
 
-    const dayAttempts = profileFilteredAttempts.filter((attempt) => {
-      const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-      return attemptDate === dateStr;
-    });
+  filteredData.attempts.forEach((attempt) => {
+    const dateStr = format(new Date(attempt.createdAt), "yyyy-MM-dd");
+    if (!attemptsByDate.has(dateStr)) {
+      attemptsByDate.set(dateStr, []);
+    }
+    attemptsByDate.get(dateStr)!.push(attempt);
+  });
 
-    // Group attempts by profileId + simulationId to find first attempts for this day
-    const dayFirstAttempts = dayAttempts.reduce(
-      (acc, attempt) => {
-        const key = `${attempt.profileId}-${attempt.simulationId}`;
-        if (
-          !acc[key] ||
-          new Date(attempt.createdAt) < new Date(acc[key].createdAt)
-        ) {
-          acc[key] = attempt;
-        }
-        return acc;
-      },
-      {} as Record<string, SimulationAttempt>
-    );
+  const trendData: AnalyticsDataPoint[] = Array.from(attemptsByDate.entries())
+    .map(([dateStr, dayAttempts]) => {
+      // Group attempts by profileId + simulationId to find first attempts for this day
+      const dayFirstAttempts = dayAttempts.reduce(
+        (acc, attempt) => {
+          const key = `${attempt.profileId}-${attempt.simulationId}`;
+          if (
+            !acc[key] ||
+            new Date(attempt.createdAt) < new Date(acc[key].createdAt)
+          ) {
+            acc[key] = attempt;
+          }
+          return acc;
+        },
+        {} as Record<string, SimulationAttempt>
+      );
 
-    const dayFirstAttemptsList = Object.values(dayFirstAttempts);
+      const dayFirstAttemptsList = Object.values(dayFirstAttempts);
 
-    let passRate = 0;
-    if (dayFirstAttemptsList.length > 0) {
       const passedDayFirstAttempts = dayFirstAttemptsList.filter((attempt) => {
-        const attemptChats = chats.filter(
+        const attemptChats = filteredData.chats.filter(
           (chat) => chat.attemptId === attempt.id
         );
         return attemptChats.some((chat) => {
-          const chatGrade = grades.find(
+          const chatGrade = filteredData.grades.find(
             (grade) => grade.simulationChatId === chat.id
           );
           return chatGrade?.passed === true;
         });
       });
-      passRate = Math.round(
+
+      const passRate = Math.round(
         (passedDayFirstAttempts.length / dayFirstAttemptsList.length) * 100
       );
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: passRate,
-      count: dayFirstAttemptsList.length,
-    };
-  });
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: passRate,
+        count: dayFirstAttemptsList.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -540,98 +272,28 @@ export const calculateFirstAttemptPassRate = (
 
 /**
  * Calculate highest score achieved
- * @param grades - All simulation chat grades
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param rubrics - All rubrics
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
+ * @param rubrics - All rubrics for score calculation
  * @returns AnalyticsResult with highest score and trend data
  */
 export const calculateHighestScore = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  rubrics: Rubric[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData,
+  rubrics: Rubric[]
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter grades by date range
-  const filteredGrades = filterDataByDateAndProfile(grades, dateStart, dateEnd);
-
-  // Filter by profileId if provided and optionally include practice simulations
-  let profileFilteredGrades = profileId
-    ? filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return (
-          attempt?.profileId === profileId &&
-          isIncludedByPractice(simulation, simulationFilters)
-        );
-      })
-    : filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return isIncludedByPractice(simulation, simulationFilters);
-      });
-
-  // Apply role filtering if provided and profiles are available
-  if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const profile = profiles.find((p) => p.id === attempt?.profileId);
-      return profile ? rolesAllowed.includes(profile.role) : false;
-    });
-  }
-
-  // Apply cohort filtering if simulation IDs are restricted (unless showing practice only)
-  if (allowedSimulationIds !== null && !(simulationFilters.includes("practice") && !simulationFilters.includes("general"))) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (profileFilteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate highest score using rubric points
   const highestScore = Math.max(
-    ...profileFilteredGrades.map((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const simulation = simulations.find(
+    ...filteredData.grades.map((grade) => {
+      const chat = filteredData.chats.find(
+        (c) => c.id === grade.simulationChatId
+      );
+      const attempt = filteredData.attempts.find(
+        (a) => a.id === chat?.attemptId
+      );
+      const simulation = filteredData.simulations.find(
         (s) => s.id === attempt?.simulationId
       );
       const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -640,23 +302,28 @@ export const calculateHighestScore = (
     })
   );
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping grades by date
+  const gradesByDate = new Map<string, SimulationChatGrade[]>();
 
-    const dayGrades = profileFilteredGrades.filter((grade) => {
-      const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-      return gradeDate === dateStr;
-    });
+  filteredData.grades.forEach((grade) => {
+    const dateStr = format(new Date(grade.createdAt), "yyyy-MM-dd");
+    if (!gradesByDate.has(dateStr)) {
+      gradesByDate.set(dateStr, []);
+    }
+    gradesByDate.get(dateStr)!.push(grade);
+  });
 
-    let dayHighestScore = 0;
-    if (dayGrades.length > 0) {
-      dayHighestScore = Math.max(
+  const trendData: AnalyticsDataPoint[] = Array.from(gradesByDate.entries())
+    .map(([dateStr, dayGrades]) => {
+      const dayHighestScore = Math.max(
         ...dayGrades.map((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
+          const chat = filteredData.chats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = filteredData.attempts.find(
+            (a) => a.id === chat?.attemptId
+          );
+          const simulation = filteredData.simulations.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -664,14 +331,14 @@ export const calculateHighestScore = (
           return Math.round((grade.score / rubricTotalPoints) * 100);
         })
       );
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: dayHighestScore,
-      count: dayGrades.length,
-    };
-  });
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayHighestScore,
+        count: dayGrades.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue: highestScore,
@@ -683,110 +350,52 @@ export const calculateHighestScore = (
 /**
  * Calculate average messages per session
  * @param messages - All simulation messages
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with average messages per session and trend data
  */
 export const calculateMessagesPerSession = (
   messages: SimulationMessage[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter chats by date range
-  const filteredChats = filterDataByDateAndProfile(chats, dateStart, dateEnd);
-
-  // Filter by profileId if provided and exclude practice simulations
-  const profileFilteredChats = profileId
-    ? filteredChats.filter((chat) => {
-        const attempt = attempts?.find((a) => a.id === chat.attemptId);
-        return attempt?.profileId === profileId;
-      })
-    : filteredChats;
-
-  // Filter out practice simulations unless showPractice is true
-  let nonPracticeChats = profileFilteredChats.filter((chat) => {
-    const attempt = attempts?.find((a) => a.id === chat.attemptId);
-    const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt?.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    nonPracticeChats = nonPracticeChats.filter((chat) => {
-      const attempt = attempts?.find((a) => a.id === chat.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (nonPracticeChats.length === 0) {
+  if (filteredData.chats.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate messages per session
-  const totalMessages = nonPracticeChats.reduce((sum, chat) => {
+  const totalMessages = filteredData.chats.reduce((sum, chat) => {
     const chatMessages = messages.filter((msg) => msg.chatId === chat.id);
     return sum + chatMessages.length;
   }, 0);
 
-  const currentValue = Math.round(totalMessages / nonPracticeChats.length);
+  const currentValue = Math.round(totalMessages / filteredData.chats.length);
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping chats by date
+  const chatsByDate = new Map<string, SimulationChat[]>();
 
-    const dayChats = nonPracticeChats.filter((chat) => {
-      const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-      return chatDate === dateStr;
-    });
+  filteredData.chats.forEach((chat) => {
+    const dateStr = format(new Date(chat.createdAt), "yyyy-MM-dd");
+    if (!chatsByDate.has(dateStr)) {
+      chatsByDate.set(dateStr, []);
+    }
+    chatsByDate.get(dateStr)!.push(chat);
+  });
 
-    let avgMessages = 0;
-    if (dayChats.length > 0) {
+  const trendData: AnalyticsDataPoint[] = Array.from(chatsByDate.entries())
+    .map(([dateStr, dayChats]) => {
       const dayTotalMessages = dayChats.reduce((sum, chat) => {
         const chatMessages = messages.filter((msg) => msg.chatId === chat.id);
         return sum + chatMessages.length;
       }, 0);
-      avgMessages = Math.round(dayTotalMessages / dayChats.length);
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: avgMessages,
-      count: dayChats.length,
-    };
-  });
+      const avgMessages = Math.round(dayTotalMessages / dayChats.length);
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: avgMessages,
+        count: dayChats.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -798,82 +407,20 @@ export const calculateMessagesPerSession = (
 /**
  * Calculate average persona response times
  * @param messages - All simulation messages
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with average response time and trend data
  */
 export const calculatePersonaResponseTimes = (
   messages: SimulationMessage[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter chats by date range
-  const filteredChats = filterDataByDateAndProfile(chats, dateStart, dateEnd);
-
-  // Filter by profileId if provided and exclude practice simulations
-  const profileFilteredChats = profileId
-    ? filteredChats.filter((chat) => {
-        const attempt = attempts?.find((a) => a.id === chat.attemptId);
-        return attempt?.profileId === profileId;
-      })
-    : filteredChats;
-
-  // Filter out practice simulations unless showPractice is true
-  let nonPracticeChats = profileFilteredChats.filter((chat) => {
-    const attempt = attempts?.find((a) => a.id === chat.attemptId);
-    const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt?.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Role filter already applied above when profiles are provided
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    nonPracticeChats = nonPracticeChats.filter((chat) => {
-      const attempt = attempts?.find((a) => a.id === chat.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (nonPracticeChats.length === 0) {
+  if (filteredData.chats.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate response times
   const responseTimes: number[] = [];
-  nonPracticeChats.forEach((chat) => {
+  filteredData.chats.forEach((chat) => {
     const chatMessages = messages
       .filter((msg) => msg.chatId === chat.id)
       .sort(
@@ -907,57 +454,61 @@ export const calculatePersonaResponseTimes = (
         )
       : 0;
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping chats by date
+  const chatsByDate = new Map<string, SimulationChat[]>();
 
-    const dayChats = nonPracticeChats.filter((chat) => {
-      const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-      return chatDate === dateStr;
-    });
-
-    const dayResponseTimes: number[] = [];
-    dayChats.forEach((chat) => {
-      const chatMessages = messages
-        .filter((msg) => msg.chatId === chat.id)
-        .sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-
-      for (let i = 1; i < chatMessages.length; i++) {
-        const currentMessage = chatMessages[i];
-        const previousMessage = chatMessages[i - 1];
-
-        if (
-          currentMessage &&
-          previousMessage &&
-          currentMessage.type === "response" &&
-          previousMessage.type === "query"
-        ) {
-          const responseTime =
-            new Date(currentMessage.createdAt).getTime() -
-            new Date(previousMessage.createdAt).getTime();
-          dayResponseTimes.push(responseTime / 1000);
-        }
-      }
-    });
-
-    const avgResponseTime =
-      dayResponseTimes.length > 0
-        ? Math.round(
-            dayResponseTimes.reduce((sum, time) => sum + time, 0) /
-              dayResponseTimes.length
-          )
-        : 0;
-
-    return {
-      date: format(date, "MM/dd"),
-      value: avgResponseTime,
-      count: dayChats.length,
-    };
+  filteredData.chats.forEach((chat) => {
+    const dateStr = format(new Date(chat.createdAt), "yyyy-MM-dd");
+    if (!chatsByDate.has(dateStr)) {
+      chatsByDate.set(dateStr, []);
+    }
+    chatsByDate.get(dateStr)!.push(chat);
   });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(chatsByDate.entries())
+    .map(([dateStr, dayChats]) => {
+      const dayResponseTimes: number[] = [];
+      dayChats.forEach((chat) => {
+        const chatMessages = messages
+          .filter((msg) => msg.chatId === chat.id)
+          .sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+
+        for (let i = 1; i < chatMessages.length; i++) {
+          const currentMessage = chatMessages[i];
+          const previousMessage = chatMessages[i - 1];
+
+          if (
+            currentMessage &&
+            previousMessage &&
+            currentMessage.type === "response" &&
+            previousMessage.type === "query"
+          ) {
+            const responseTime =
+              new Date(currentMessage.createdAt).getTime() -
+              new Date(previousMessage.createdAt).getTime();
+            dayResponseTimes.push(responseTime / 1000);
+          }
+        }
+      });
+
+      const avgResponseTime =
+        dayResponseTimes.length > 0
+          ? Math.round(
+              dayResponseTimes.reduce((sum, time) => sum + time, 0) /
+                dayResponseTimes.length
+            )
+          : 0;
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: avgResponseTime,
+        count: dayChats.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -968,97 +519,27 @@ export const calculatePersonaResponseTimes = (
 
 /**
  * Calculate session efficiency (average score / average time per session)
- * @param grades - All simulation chat grades
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param rubrics - All rubrics
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
+ * @param rubrics - All rubrics for score calculation
  * @returns AnalyticsResult with session efficiency and trend data
  */
 export const calculateSessionEfficiency = (
-  grades: SimulationChatGrade[],
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  rubrics: Rubric[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData,
+  rubrics: Rubric[]
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter grades by date range
-  const filteredGrades = filterDataByDateAndProfile(grades, dateStart, dateEnd);
-
-  // Filter by profileId if provided and optionally include practice simulations
-  let profileFilteredGrades = profileId
-    ? filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return (
-          attempt?.profileId === profileId &&
-          isIncludedByPractice(simulation, simulationFilters)
-        );
-      })
-    : filteredGrades.filter((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
-          (s) => s.id === attempt?.simulationId
-        );
-        return isIncludedByPractice(simulation, simulationFilters);
-      });
-
-  // Apply role filtering if provided and profiles are available
-  if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      const profile = profiles.find((p) => p.id === attempt?.profileId);
-      return profile ? rolesAllowed.includes(profile.role) : false;
-    });
-  }
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredGrades = profileFilteredGrades.filter((grade) => {
-      const chat = chats.find((c) => c.id === grade.simulationChatId);
-      const attempt = attempts.find((a) => a.id === chat?.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (profileFilteredGrades.length === 0) {
+  if (filteredData.grades.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate average score percentage
-  const scores = profileFilteredGrades.map((grade) => {
-    const chat = chats.find((c) => c.id === grade.simulationChatId);
-    const attempt = attempts.find((a) => a.id === chat?.attemptId);
-    const simulation = simulations.find((s) => s.id === attempt?.simulationId);
+  const scores = filteredData.grades.map((grade) => {
+    const chat = filteredData.chats.find(
+      (c) => c.id === grade.simulationChatId
+    );
+    const attempt = filteredData.attempts.find((a) => a.id === chat?.attemptId);
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === attempt?.simulationId
+    );
     const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
     const rubricTotalPoints = rubric?.points || 100;
     return Math.round((grade.score / rubricTotalPoints) * 100);
@@ -1068,7 +549,7 @@ export const calculateSessionEfficiency = (
     scores.reduce((sum, score) => sum + score, 0) / scores.length;
 
   // Calculate average time per session in minutes
-  const timesInMinutes = profileFilteredGrades.map((grade) => {
+  const timesInMinutes = filteredData.grades.map((grade) => {
     return grade.timeTaken / 60; // Convert seconds to minutes
   });
 
@@ -1084,23 +565,28 @@ export const calculateSessionEfficiency = (
   const currentValue =
     Math.round((averageScore / averageTimeInMinutes) * 10) / 10;
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping grades by date
+  const gradesByDate = new Map<string, SimulationChatGrade[]>();
 
-    const dayGrades = profileFilteredGrades.filter((grade) => {
-      const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-      return gradeDate === dateStr;
-    });
+  filteredData.grades.forEach((grade) => {
+    const dateStr = format(new Date(grade.createdAt), "yyyy-MM-dd");
+    if (!gradesByDate.has(dateStr)) {
+      gradesByDate.set(dateStr, []);
+    }
+    gradesByDate.get(dateStr)!.push(grade);
+  });
 
-    let dayEfficiency = 0;
-    if (dayGrades.length > 0) {
+  const trendData: AnalyticsDataPoint[] = Array.from(gradesByDate.entries())
+    .map(([dateStr, dayGrades]) => {
       // Calculate average score percentage for the day
       const dayScores = dayGrades.map((grade) => {
-        const chat = chats.find((c) => c.id === grade.simulationChatId);
-        const attempt = attempts.find((a) => a.id === chat?.attemptId);
-        const simulation = simulations.find(
+        const chat = filteredData.chats.find(
+          (c) => c.id === grade.simulationChatId
+        );
+        const attempt = filteredData.attempts.find(
+          (a) => a.id === chat?.attemptId
+        );
+        const simulation = filteredData.simulations.find(
           (s) => s.id === attempt?.simulationId
         );
         const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -1121,18 +607,19 @@ export const calculateSessionEfficiency = (
         dayTimesInMinutes.length;
 
       // Avoid division by zero
+      let dayEfficiency = 0;
       if (dayAverageTimeInMinutes > 0) {
         dayEfficiency =
           Math.round((dayAverageScore / dayAverageTimeInMinutes) * 10) / 10;
       }
-    }
 
-    return {
-      date: format(date, "MM/dd"),
-      value: dayEfficiency,
-      count: dayGrades.length,
-    };
-  });
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayEfficiency,
+        count: dayGrades.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -1143,81 +630,22 @@ export const calculateSessionEfficiency = (
 
 /**
  * Calculate stagnation rate (percentage of profiles with minimal improvement)
- * @param attempts - All simulation attempts
- * @param chats - All simulation chats
- * @param grades - All simulation chat grades
- * @param simulations - All simulations
- * @param rubrics - All rubrics
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
+ * @param rubrics - All rubrics for score calculation
  * @returns AnalyticsResult with stagnation rate and trend data
  */
 export const calculateStagnationRate = (
-  attempts: SimulationAttempt[],
-  chats: SimulationChat[],
-  grades: SimulationChatGrade[],
-  simulations: Simulation[],
-  rubrics: Rubric[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData,
+  rubrics: Rubric[]
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter attempts by date range and optionally include practice simulations
-  const filteredAttempts = attempts.filter((attempt) => {
-    const attemptDate = new Date(attempt.createdAt);
-    const simulation = simulations.find((s) => s.id === attempt.simulationId);
-    if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Filter by profileId if provided
-  let profileFilteredAttempts = profileId
-    ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
-    : filteredAttempts;
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
-      allowedSimulationIds.includes(attempt.simulationId)
-    );
-  }
-
-  if (profileFilteredAttempts.length === 0) {
+  if (filteredData.attempts.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Group attempts by profile and simulation
-  const attemptsByProfileAndSimulation = new Map<
-    string,
-    typeof profileFilteredAttempts
-  >();
+  const attemptsByProfileAndSimulation = new Map<string, SimulationAttempt[]>();
 
-  profileFilteredAttempts.forEach((attempt) => {
+  filteredData.attempts.forEach((attempt) => {
     const key = `${attempt.profileId}-${attempt.simulationId}`;
     if (!attemptsByProfileAndSimulation.has(key)) {
       attemptsByProfileAndSimulation.set(key, []);
@@ -1247,26 +675,30 @@ export const calculateStagnationRate = (
       if (!firstAttempt || !lastAttempt) return;
 
       // Find grades for first and last attempts
-      const firstAttemptChats = chats.filter(
+      const firstAttemptChats = filteredData.chats.filter(
         (chat) => chat.attemptId === firstAttempt.id
       );
-      const lastAttemptChats = chats.filter(
+      const lastAttemptChats = filteredData.chats.filter(
         (chat) => chat.attemptId === lastAttempt.id
       );
 
-      const firstAttemptGrades = grades.filter((grade) =>
+      const firstAttemptGrades = filteredData.grades.filter((grade) =>
         firstAttemptChats.some((chat) => chat.id === grade.simulationChatId)
       );
-      const lastAttemptGrades = grades.filter((grade) =>
+      const lastAttemptGrades = filteredData.grades.filter((grade) =>
         lastAttemptChats.some((chat) => chat.id === grade.simulationChatId)
       );
 
       if (firstAttemptGrades.length > 0 && lastAttemptGrades.length > 0) {
         // Calculate average scores for first and last attempts
         const firstAttemptScores = firstAttemptGrades.map((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
+          const chat = filteredData.chats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = filteredData.attempts.find(
+            (a) => a.id === chat?.attemptId
+          );
+          const simulation = filteredData.simulations.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -1275,9 +707,13 @@ export const calculateStagnationRate = (
         });
 
         const lastAttemptScores = lastAttemptGrades.map((grade) => {
-          const chat = chats.find((c) => c.id === grade.simulationChatId);
-          const attempt = attempts.find((a) => a.id === chat?.attemptId);
-          const simulation = simulations.find(
+          const chat = filteredData.chats.find(
+            (c) => c.id === grade.simulationChatId
+          );
+          const attempt = filteredData.attempts.find(
+            (a) => a.id === chat?.attemptId
+          );
+          const simulation = filteredData.simulations.find(
             (s) => s.id === attempt?.simulationId
           );
           const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
@@ -1311,28 +747,32 @@ export const calculateStagnationRate = (
           (stagnantProfiles / totalProfilesWithMultipleAttempts) * 100
         );
 
-  // Calculate trend data (simplified - just count attempts per day)
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping attempts by date
+  const attemptsByDate = new Map<string, SimulationAttempt[]>();
 
-    const dayAttempts = profileFilteredAttempts.filter((attempt) => {
-      const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-      return attemptDate === dateStr;
-    });
-
-    // Simplified stagnation rate for the day (heuristic)
-    const dayStagnationRate =
-      dayAttempts.length > 0
-        ? Math.min(100, Math.round((dayAttempts.length / 10) * 100))
-        : 0;
-
-    return {
-      date: format(date, "MM/dd"),
-      value: dayStagnationRate,
-      count: dayAttempts.length,
-    };
+  filteredData.attempts.forEach((attempt) => {
+    const dateStr = format(new Date(attempt.createdAt), "yyyy-MM-dd");
+    if (!attemptsByDate.has(dateStr)) {
+      attemptsByDate.set(dateStr, []);
+    }
+    attemptsByDate.get(dateStr)!.push(attempt);
   });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(attemptsByDate.entries())
+    .map(([dateStr, dayAttempts]) => {
+      // Simplified stagnation rate for the day (heuristic)
+      const dayStagnationRate =
+        dayAttempts.length > 0
+          ? Math.min(100, Math.round((dayAttempts.length / 10) * 100))
+          : 0;
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayStagnationRate,
+        count: dayAttempts.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -1343,78 +783,18 @@ export const calculateStagnationRate = (
 
 /**
  * Calculate total time spent in sessions
- * @param chats - All simulation chats
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with total time spent and trend data
  */
 export const calculateTimeSpent = (
-  chats: SimulationChat[],
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId,
-    profiles
-  );
-
-  // Filter chats by date range
-  const filteredChats = filterDataByDateAndProfile(chats, dateStart, dateEnd);
-
-  // Filter by profileId if provided and exclude practice simulations
-  const profileFilteredChats = profileId
-    ? filteredChats.filter((chat) => {
-        const attempt = attempts?.find((a) => a.id === chat.attemptId);
-        return attempt?.profileId === profileId;
-      })
-    : filteredChats;
-
-  // Filter out practice simulations unless showPractice is true
-  let nonPracticeChats = profileFilteredChats.filter((chat) => {
-    const attempt = attempts?.find((a) => a.id === chat.attemptId);
-    const simulation = simulations?.find((s) => s.id === attempt?.simulationId);
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt?.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    nonPracticeChats = nonPracticeChats.filter((chat) => {
-      const attempt = attempts?.find((a) => a.id === chat.attemptId);
-      return allowedSimulationIds.includes(attempt?.simulationId || "");
-    });
-  }
-
-  if (nonPracticeChats.length === 0) {
+  if (filteredData.chats.length === 0) {
     return { currentValue: 0, trendData: [], hasData: false };
   }
 
   // Calculate total time spent
-  const totalTimeSpent = nonPracticeChats.reduce((sum, chat) => {
+  const totalTimeSpent = filteredData.chats.reduce((sum, chat) => {
     if (chat.completedAt) {
       const timeSpent =
         (new Date(chat.completedAt).getTime() -
@@ -1427,33 +807,37 @@ export const calculateTimeSpent = (
 
   const currentValue = Math.round(totalTimeSpent);
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping chats by date
+  const chatsByDate = new Map<string, SimulationChat[]>();
 
-    const dayChats = nonPracticeChats.filter((chat) => {
-      const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-      return chatDate === dateStr;
-    });
-
-    const dayTimeSpent = dayChats.reduce((sum, chat) => {
-      if (chat.completedAt) {
-        const timeSpent =
-          (new Date(chat.completedAt).getTime() -
-            new Date(chat.createdAt).getTime()) /
-          1000;
-        return sum + timeSpent;
-      }
-      return sum;
-    }, 0);
-
-    return {
-      date: format(date, "MM/dd"),
-      value: Math.round(dayTimeSpent),
-      count: dayChats.length,
-    };
+  filteredData.chats.forEach((chat) => {
+    const dateStr = format(new Date(chat.createdAt), "yyyy-MM-dd");
+    if (!chatsByDate.has(dateStr)) {
+      chatsByDate.set(dateStr, []);
+    }
+    chatsByDate.get(dateStr)!.push(chat);
   });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(chatsByDate.entries())
+    .map(([dateStr, dayChats]) => {
+      const dayTimeSpent = dayChats.reduce((sum, chat) => {
+        if (chat.completedAt) {
+          const timeSpent =
+            (new Date(chat.completedAt).getTime() -
+              new Date(chat.createdAt).getTime()) /
+            1000;
+          return sum + timeSpent;
+        }
+        return sum;
+      }, 0);
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: Math.round(dayTimeSpent),
+        count: dayChats.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
@@ -1464,81 +848,38 @@ export const calculateTimeSpent = (
 
 /**
  * Calculate total attempts made
- * @param attempts - All simulation attempts
- * @param simulations - All simulations
- * @param dateStart - Start date for filtering
- * @param dateEnd - End date for filtering
- * @param profileId - Optional profile ID to filter by
- * @param cohorts - All cohorts for cohort filtering
- * @param cohortIds - Array of cohort IDs to filter by
+ * @param filteredData - Pre-filtered analytics data
  * @returns AnalyticsResult with total attempts and trend data
  */
 export const calculateTotalAttempts = (
-  attempts: SimulationAttempt[],
-  simulations: Simulation[],
-  dateStart: Date,
-  dateEnd: Date,
-  profileId?: string,
-  cohorts: Cohort[] = [],
-  cohortIds: string[] = [],
-  rolesAllowed?: ProfileRole[],
-  simulationFilters: SimulationFilter[] = ["general"],
-  profiles?: { id: string; role: ProfileRole }[],
+  filteredData: FilteredData
 ): AnalyticsResult => {
-  const allowedSimulationIds = getAllowedSimulationIds(
-    cohorts,
-    cohortIds,
-    profileId
-  );
-
-  // Filter attempts by date range and optionally include practice simulations
-  const filteredAttempts = attempts.filter((attempt) => {
-    const attemptDate = new Date(attempt.createdAt);
-    const simulation = simulations.find((s) => s.id === attempt.simulationId);
-    if (!(attemptDate >= dateStart && attemptDate <= dateEnd)) return false;
-    if (!isIncludedByPractice(simulation, simulationFilters))
-      return false;
-    if (rolesAllowed && rolesAllowed.length > 0 && profiles) {
-      const prof = profiles.find((p) => p.id === attempt.profileId);
-      if (!prof || !rolesAllowed.includes(prof.role)) return false;
-    }
-    return true;
-  });
-
-  // Filter by profileId if provided
-  let profileFilteredAttempts = profileId
-    ? filteredAttempts.filter((attempt) => attempt.profileId === profileId)
-    : filteredAttempts;
-
-  // Apply cohort filtering if simulation IDs are restricted
-  if (allowedSimulationIds !== null) {
-    if (allowedSimulationIds.length === 0) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
-
-    profileFilteredAttempts = profileFilteredAttempts.filter((attempt) =>
-      allowedSimulationIds.includes(attempt.simulationId)
-    );
+  if (filteredData.attempts.length === 0) {
+    return { currentValue: 0, trendData: [], hasData: false };
   }
 
-  const currentValue = profileFilteredAttempts.length;
+  const currentValue = filteredData.attempts.length;
 
-  // Calculate trend data
-  const days = eachDayOfInterval({ start: dateStart, end: dateEnd });
-  const trendData: AnalyticsDataPoint[] = days.map((date) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+  // Calculate trend data by grouping attempts by date
+  const attemptsByDate = new Map<string, SimulationAttempt[]>();
 
-    const dayAttempts = profileFilteredAttempts.filter((attempt) => {
-      const attemptDate = format(new Date(attempt.createdAt), "yyyy-MM-dd");
-      return attemptDate === dateStr;
-    });
-
-    return {
-      date: format(date, "MM/dd"),
-      value: dayAttempts.length,
-      count: dayAttempts.length,
-    };
+  filteredData.attempts.forEach((attempt) => {
+    const dateStr = format(new Date(attempt.createdAt), "yyyy-MM-dd");
+    if (!attemptsByDate.has(dateStr)) {
+      attemptsByDate.set(dateStr, []);
+    }
+    attemptsByDate.get(dateStr)!.push(attempt);
   });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(attemptsByDate.entries())
+    .map(([dateStr, dayAttempts]) => {
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayAttempts.length,
+        count: dayAttempts.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,

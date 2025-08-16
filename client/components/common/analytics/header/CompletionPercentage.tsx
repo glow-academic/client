@@ -74,13 +74,7 @@ export default function CompletionPercentage({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Calculate completion percentage using utility function
   const completionResult = useMemo(() => {
@@ -88,28 +82,8 @@ export default function CompletionPercentage({
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    return calculateCompletionPercentage(
-      filteredData.chats,
-      filteredData.grades,
-      filteredData.attempts,
-      filteredData.simulations,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
-    );
-  }, [
-    filteredData,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculateCompletionPercentage(filteredData);
+  }, [filteredData]);
 
   const {
     currentValue: completionPercentage,

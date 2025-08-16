@@ -76,13 +76,7 @@ export default function MessagesPerSession({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Fetch messages (still needed for calculations)
   const { data: messages } = useQuery({
@@ -105,29 +99,8 @@ export default function MessagesPerSession({
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    return calculateMessagesPerSession(
-      messages,
-      filteredData.chats,
-      filteredData.attempts,
-      filteredData.simulations,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
-    );
-  }, [
-    filteredData,
-    messages,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculateMessagesPerSession(messages, filteredData);
+  }, [filteredData, messages]);
 
   const {
     currentValue: averageMessagesPerSession,

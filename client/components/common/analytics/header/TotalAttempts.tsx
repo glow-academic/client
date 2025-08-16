@@ -74,13 +74,7 @@ export default function TotalAttempts({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get date range from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  const { selectedCohortIds } = useAnalytics();
 
   // Calculate total attempts using utility function
   const totalAttemptsResult = useMemo(() => {
@@ -88,26 +82,8 @@ export default function TotalAttempts({
       return { currentValue: 0, trendData: [], hasData: false };
     }
 
-    return calculateTotalAttempts(
-      filteredData.attempts,
-      filteredData.simulations,
-      startDate,
-      endDate,
-      undefined, // profileId - not needed since data is already filtered
-      filteredData.cohorts,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      filteredData.profiles?.map((p) => ({ id: p.id, role: p.role }))
-    );
-  }, [
-    filteredData,
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  ]);
+    return calculateTotalAttempts(filteredData);
+  }, [filteredData]);
 
   const {
     currentValue: totalAttempts,
