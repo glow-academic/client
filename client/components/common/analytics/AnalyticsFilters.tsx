@@ -19,7 +19,7 @@ import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import type { ProfileRole } from "@/types";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 
 export interface AnalyticsFiltersProps {
@@ -104,42 +104,6 @@ export function AnalyticsFilters({
   const selectedCohorts = cohortOptions.filter((cohort) =>
     selectedCohortIds.includes(cohort.id)
   );
-
-  // Calculate the earliest creation date of selected cohorts
-  const selectedCohortsEarliestDate = useMemo(() => {
-    if (selectedCohortIds.length === 0) {
-      // If no specific cohorts selected, use all active cohorts
-      const activeCohortDates = activeCohorts
-        .map((cohort) => new Date(cohort.createdAt))
-        .filter((date) => !isNaN(date.getTime()));
-
-      if (activeCohortDates.length === 0) return null;
-      return new Date(Math.min(...activeCohortDates.map((d) => d.getTime())));
-    }
-
-    // Get the earliest creation date among selected cohorts
-    const selectedCohortDates = activeCohorts
-      .filter((cohort) => selectedCohortIds.includes(cohort.id))
-      .map((cohort) => new Date(cohort.createdAt))
-      .filter((date) => !isNaN(date.getTime()));
-
-    if (selectedCohortDates.length === 0) return null;
-    return new Date(Math.min(...selectedCohortDates.map((d) => d.getTime())));
-  }, [selectedCohortIds, activeCohorts]);
-
-  // Automatically adjust date range when cohort selection changes
-  useEffect(() => {
-    if (
-      selectedCohortsEarliestDate &&
-      selectedCohortsEarliestDate.getTime() !== startDate.getTime()
-    ) {
-      // Only adjust if the new earliest date is different from current start date
-      // and if the new date is earlier than current start date
-      if (selectedCohortsEarliestDate < startDate) {
-        setDateRange(selectedCohortsEarliestDate, endDate);
-      }
-    }
-  }, [selectedCohortsEarliestDate, startDate, endDate, setDateRange]);
 
   // Automatically filter available roles and remove invalid selections when cohorts are selected
   useEffect(() => {
