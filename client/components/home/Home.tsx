@@ -27,6 +27,19 @@ import SimulationProgress from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
+// Utility function to format cohort names with proper comma handling
+const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
+  if (cohorts.length === 0) return "";
+  if (cohorts.length === 1) return cohorts[0]?.title || "";
+  if (cohorts.length === 2)
+    return `${cohorts[0]?.title || ""} and ${cohorts[1]?.title || ""}`;
+
+  const firstCohorts = cohorts.slice(0, -2).map((c) => c?.title || "");
+  const lastTwo = cohorts.slice(-2).map((c) => c?.title || "");
+
+  return `${firstCohorts.join(", ")}, ${lastTwo[0]}, and ${lastTwo[1]}`;
+};
+
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
 
@@ -490,7 +503,7 @@ export default function Home() {
     rubrics,
   ]);
 
-  // Enhanced simulation data with completion status and rubric data
+  // Enhanced simulation data with completion status and rubric data (deduplicated)
   const enhancedSimulations = useMemo(() => {
     if (!processedCohortData || !rubrics) return [];
 
@@ -502,8 +515,53 @@ export default function Home() {
         )
       : {};
 
-    return processedCohortData.flatMap((data) => {
-      return data.simulations.map((simulation) => {
+    // Create a map to deduplicate simulations by ID
+    const simulationMap = new Map<
+      string,
+      {
+        simulation: (typeof processedCohortData)[0]["simulations"][0];
+        cohorts: Array<{ title: string }>;
+        progress: (typeof processedCohortData)[0]["simulations"][0]["progress"];
+      }
+    >();
+
+    // Process all simulations and group by simulation ID
+    processedCohortData.forEach((data) => {
+      data.simulations.forEach((simulation) => {
+        const existing = simulationMap.get(simulation.id);
+
+        if (existing) {
+          // Add this cohort to the existing simulation
+          existing.cohorts.push(data.cohort);
+          // Merge progress data (for instructor view, sum the progress)
+          if (shouldShowAll) {
+            existing.progress.totalMembers += simulation.progress.totalMembers;
+            existing.progress.passedCount += simulation.progress.passedCount;
+            existing.progress.inProgressCount +=
+              simulation.progress.inProgressCount;
+            existing.progress.notStartedCount +=
+              simulation.progress.notStartedCount;
+            existing.progress.passedMembers.push(
+              ...simulation.progress.passedMembers
+            );
+            existing.progress.inProgressMembers.push(
+              ...simulation.progress.inProgressMembers
+            );
+          }
+        } else {
+          // First occurrence of this simulation
+          simulationMap.set(simulation.id, {
+            simulation,
+            cohorts: [data.cohort],
+            progress: { ...simulation.progress },
+          });
+        }
+      });
+    });
+
+    // Convert map back to array and enhance with rubric data
+    return Array.from(simulationMap.values()).map(
+      ({ simulation, cohorts, progress }) => {
         const rubric = rubrics.find((r) => r.id === simulation.rubricId);
         const passRate =
           rubric && rubric.points > 0
@@ -517,15 +575,18 @@ export default function Home() {
 
         // For instructor view, check if ALL members have passed
         if (shouldShowAll) {
-          const passedMembers = simulation.progress.passedMembers;
-          const totalMembers = simulation.progress.totalMembers;
+          const passedMembers = progress.passedMembers;
+          const totalMembers = progress.totalMembers;
           hasPassed =
             passedMembers.length > 0 && passedMembers.length >= totalMembers;
         }
 
         return {
           ...simulation,
-          cohort: data.cohort,
+          cohort: cohorts[0] || { title: "", id: "", description: null }, // Keep first cohort for backward compatibility
+          cohorts, // Add all cohorts
+          cohortNames: formatCohortNames(cohorts), // Add formatted cohort names
+          progress,
           rubric,
           passRate,
           hasPassed,
@@ -534,9 +595,19 @@ export default function Home() {
             attempts: [],
             highestScore,
           },
+        } as typeof simulation & {
+          cohort: { id: string; title: string; description: string | null };
+          cohorts: Array<{ title: string }>;
+          cohortNames: string;
+          progress: typeof progress;
+          rubric?: typeof rubric;
+          passRate?: number;
+          hasPassed?: boolean;
+          highestScore?: number;
+          rubricData: { attempts: never[]; highestScore: number };
         };
-      });
-    });
+      }
+    );
   }, [
     processedCohortData,
     rubrics,
@@ -560,18 +631,10 @@ export default function Home() {
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    if (!processedCohortData) return [];
+    if (!enhancedSimulations) return [];
 
-    // Flatten all simulations with their cohort info
-    const allSimulationsWithCohort = processedCohortData.flatMap((data) => {
-      return data.simulations.map((simulation) => ({
-        ...simulation,
-        cohort: data.cohort,
-      }));
-    });
-
-    // Sort using the same logic as sortedSimulations
-    return allSimulationsWithCohort.sort((a, b) => {
+    // Use the deduplicated simulations for progress data
+    return enhancedSimulations.sort((a, b) => {
       // First sort by completion status (non-completed first)
       const aCompleted = a.progress.passedCount >= a.progress.totalMembers;
       const bCompleted = b.progress.passedCount >= b.progress.totalMembers;
@@ -580,10 +643,10 @@ export default function Home() {
         return aCompleted ? 1 : -1;
       }
 
-      // Then sort by cohort title
+      // Then sort by first cohort title
       return a.cohort.title.localeCompare(b.cohort.title);
     });
-  }, [processedCohortData]);
+  }, [enhancedSimulations]);
 
   // Carousel logic
   const maxVisible = 3;

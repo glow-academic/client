@@ -22,6 +22,7 @@ interface SimulationProgressProps {
       title: string;
       description: string | null;
     };
+    cohortNames?: string; // New field for formatted cohort names
   };
 }
 
@@ -103,9 +104,9 @@ export default function SimulationProgress({
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
           {simulation.title}
         </span>
-        {simulation.cohort && (
+        {(simulation.cohortNames || simulation.cohort?.title) && (
           <span className="text-xs text-gray-500 dark:text-gray-400 block mt-1">
-            {simulation.cohort.title}
+            {simulation.cohortNames || simulation.cohort?.title}
           </span>
         )}
       </div>

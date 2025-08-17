@@ -231,6 +231,31 @@ export function useReportColumns({
         enableSorting: true,
       },
 
+      // Highest Score column
+      {
+        accessorKey: "highestScore",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Highest" />
+        ),
+        cell: ({ row }) => {
+          const ta = row.original;
+          const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
+            if (ta.highestScore >= 90) return "bg-green-50";
+            if (ta.highestScore >= 80) return "bg-yellow-50";
+            return "bg-red-50";
+          };
+          return (
+            <div
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+            >
+              {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
+
       // Completion Percentage column
       {
         accessorKey: "completionPercentage",
@@ -275,31 +300,6 @@ export function useReportColumns({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
             >
               {ta.hasNoSessions ? "N/A" : `${ta.firstAttemptPassRate}%`}
-            </div>
-          );
-        },
-        enableSorting: true,
-      },
-
-      // Highest Score column
-      {
-        accessorKey: "highestScore",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Highest" />
-        ),
-        cell: ({ row }) => {
-          const ta = row.original;
-          const getBackgroundColor = () => {
-            if (ta.hasNoSessions) return "bg-gray-50";
-            if (ta.highestScore >= 90) return "bg-green-50";
-            if (ta.highestScore >= 80) return "bg-yellow-50";
-            return "bg-red-50";
-          };
-          return (
-            <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
-            >
-              {ta.hasNoSessions ? "N/A" : `${ta.highestScore}%`}
             </div>
           );
         },
