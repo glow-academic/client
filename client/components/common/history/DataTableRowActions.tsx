@@ -93,7 +93,7 @@ export function DataTableRowActions({
     <div className="flex items-center gap-2">
       <Link href={linkHref}>{buttonEl}</Link>
       {/* Retry icon appears only when it would otherwise say View (completed) */}
-      {buttonText === "View" && isPractice && (simulationId ?? "") !== "" && (
+      {buttonText === "View" && isPractice && isComplete && (simulationId ?? "") !== "" && (
         <Tooltip>
           <TooltipTrigger>
             <Button

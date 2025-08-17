@@ -46,6 +46,7 @@ import { SimulationChat } from "@/types";
 import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
+import { useProfile } from "@/contexts/profile-context";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -56,6 +57,7 @@ import AttemptMessages from "./AttemptMessages";
 export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
+  const { effectiveProfile, activeProfile } = useProfile();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
@@ -66,6 +68,22 @@ export default function AttemptChat() {
 
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
+
+  // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
+  const isAttemptOwner = useMemo(() => {
+    const attemptProfileId = simulationContext?.attempt?.profileId;
+    if (
+      !activeProfile?.id ||
+      !effectiveProfile?.id ||
+      !attemptProfileId
+    ) {
+      return false;
+    }
+    return (
+      activeProfile.id === effectiveProfile.id &&
+      activeProfile.id === attemptProfileId
+    );
+  }, [activeProfile?.id, effectiveProfile?.id, simulationContext?.attempt?.profileId]);
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
@@ -467,7 +485,10 @@ export default function AttemptChat() {
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
-                          <AttemptMessages chatId={selectedChat.id} />
+                          <AttemptMessages
+                            chatId={selectedChat.id}
+                            isAttemptOwner={isAttemptOwner}
+                          />
                         </div>
                       ) : (
                         /* Fallback content when no chat is selected */
@@ -715,14 +736,14 @@ export default function AttemptChat() {
                           />
                         </div>
                       )}
-                    <AttemptMessages />
+                    <AttemptMessages isAttemptOwner={isAttemptOwner} />
                   </div>
                 </ResizablePanel>
 
                 <ResizableHandle disabled />
                 {/* Input Area */}
                 <ResizablePanel defaultSize={10} minSize={10} maxSize={40}>
-                  <AttemptInput />
+                  <AttemptInput isAttemptOwner={isAttemptOwner} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </TooltipProvider>

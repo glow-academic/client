@@ -76,6 +76,7 @@ export interface SimulationPickerProps extends PopoverProps {
   showPracticeSimulations?: boolean;
   showLabel?: boolean;
   buttonClassName?: string;
+  singleSelect?: boolean;
 }
 
 export function SimulationPicker({
@@ -94,6 +95,7 @@ export function SimulationPicker({
   showPracticeSimulations = false,
   showLabel = true,
   buttonClassName,
+  singleSelect = false,
   ...props
 }: SimulationPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -300,12 +302,20 @@ export function SimulationPicker({
         (s) => s.id !== simulation.id
       );
     } else {
-      // Add to selection
-      newSelectedSimulations = [...selectedSimulations, simulation];
+      if (singleSelect) {
+        // For single select, replace the entire selection
+        newSelectedSimulations = [simulation];
+      } else {
+        // Add to selection for multi-select
+        newSelectedSimulations = [...selectedSimulations, simulation];
+      }
     }
 
     onSelect?.(newSelectedSimulations);
-    // Don't close popover in multi-select mode
+    // Close popover for single select, keep open for multi-select
+    if (singleSelect) {
+      setOpen(false);
+    }
   };
 
   // Allow clearing selection
@@ -402,13 +412,19 @@ export function SimulationPicker({
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[350px] p-0">
+        <PopoverContent
+          align="end"
+          side="bottom"
+          sideOffset={4}
+          avoidCollisions={false}
+          className="w-[350px] p-0"
+        >
           <HoverCard>
             <HoverCardContent
               side="left"
               align="start"
               forceMount
-              className="min-h-[200px]"
+              className="min-h-[150px]"
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
@@ -463,7 +479,7 @@ export function SimulationPicker({
               </div>
             </HoverCardContent>
             <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[400px]">
+              <CommandList className="h-[var(--cmdk-list-height)] max-h-[300px]">
                 <CommandInput
                   placeholder="Search simulations..."
                   endAdornment={

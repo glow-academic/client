@@ -35,6 +35,7 @@ import {
 
 import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
@@ -44,13 +45,16 @@ import { deleteSimulationCrowdsourcedMessage } from "@/utils/mutations/simulatio
 import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
 import { getSimulationCrowdsourcedMessagesBySimulationMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
-import { LoadingDots } from "@/components/ui/loading-dots";
 
 export interface AttemptMessagesProps {
   chatId?: string;
+  isAttemptOwner?: boolean;
 }
 
-export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
+export default function AttemptMessages({
+  chatId,
+  isAttemptOwner = true,
+}: AttemptMessagesProps) {
   const simulationContext = useSimulation();
   const { effectiveProfile } = useProfile();
   const queryClient = useQueryClient();
@@ -429,27 +433,30 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
             <div className="space-y-4 py-4">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Choose a prompt below or type your own message
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-3 w-full max-w-md">
-                    {starterPrompts.map((prompt, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        className="h-auto p-4 text-left justify-start whitespace-normal"
-                        onClick={() => handleStarterPromptClick(prompt)}
-                        disabled={
-                          simulationContext?.currentChat?.completed ||
-                          simulationContext?.isSendingMessage
-                        }
-                      >
-                        <span className="text-sm">{prompt}</span>
-                      </Button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Choose a prompt below or type your own message
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3 w-full max-w-md">
+                      {starterPrompts.map((prompt, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-auto p-4 text-left justify-start whitespace-normal"
+                          onClick={() => handleStarterPromptClick(prompt)}
+                          disabled={
+                            simulationContext?.currentChat?.completed ||
+                            simulationContext?.isSendingMessage ||
+                            !isAttemptOwner
+                          }
+                        >
+                          <span className="text-sm">{prompt}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </>
                 </div>
               ) : (
                 groupedMessages.map((group) => (

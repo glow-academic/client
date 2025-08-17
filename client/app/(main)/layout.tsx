@@ -26,13 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -40,12 +34,17 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { log } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Infinity,
+  Map as MapIcon,
   Plus,
-  Settings,
   SlidersHorizontal,
   Upload,
 } from "lucide-react";
@@ -55,6 +54,7 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
+import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
@@ -132,6 +132,22 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     queryFn: () => getSimulationMessagesByChat(currentChatId!),
     enabled: !!currentChatId,
   });
+
+  // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
+  const isAttemptOwner = useMemo(() => {
+    const attemptProfileId = simulationContext?.attempt?.profileId;
+    if (!activeProfile?.id || !effectiveProfile?.id || !attemptProfileId) {
+      return false;
+    }
+    return (
+      activeProfile.id === effectiveProfile.id &&
+      activeProfile.id === attemptProfileId
+    );
+  }, [
+    activeProfile?.id,
+    effectiveProfile?.id,
+    simulationContext?.attempt?.profileId,
+  ]);
 
   // Upload state - track multiple uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -574,7 +590,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       const showEndAllButton = remainingSessions >= 2;
 
       return (
-        !showResults && (
+        !showResults &&
+        isAttemptOwner && (
           <div className="flex gap-2">
             {showEndAllButton && (
               <Button
@@ -827,10 +844,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
-                <AnalyticsFilters
-                  homePage={isHomePage}
-                  reportPage={isReportPage}
-                />
+              <AnalyticsFilters
+                homePage={isHomePage}
+                reportPage={isReportPage}
+              />
             )}
 
             {actionButton && <div className="px-4">{actionButton}</div>}
@@ -857,8 +874,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       </Label>
                     ) : (
                       <Label htmlFor="infinite-mode" className="mb-0">
-                        <Settings />
-                        Custom Mode
+                        <MapIcon />
+                        Scenario Mode
                       </Label>
                     )}
                     <Switch
@@ -877,24 +894,41 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 {isInfiniteMode ? (
                   <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label>Start Simulation</Label>
-                      <Select
-                        value={selectedSimulationId}
-                        onValueChange={setSelectedSimulationId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a simulation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(simulations as Simulation[])
-                            .filter((sim) => sim.practiceSimulation === true)
-                            .map((sim: Simulation) => (
-                              <SelectItem key={sim.id} value={sim.id}>
-                                {sim.title}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                      <SimulationPicker
+                        simulations={(simulations as Simulation[])
+                          .filter((sim) => sim.practiceSimulation === true)
+                          .map((sim) => ({
+                            ...sim,
+                            timeLimit: sim.timeLimit || undefined,
+                          }))}
+                        label="Start Simulation"
+                        placeholder="Choose a practice simulation"
+                        description="Select a practice simulation to start in infinite mode."
+                        onSelect={(selectedSims) => {
+                          if (selectedSims.length > 0) {
+                            setSelectedSimulationId(selectedSims[0]!.id);
+                          } else {
+                            setSelectedSimulationId("");
+                          }
+                        }}
+                        selectedSimulations={
+                          selectedSimulationId
+                            ? (simulations as Simulation[])
+                                .filter(
+                                  (sim) => sim.id === selectedSimulationId
+                                )
+                                .map((sim) => ({
+                                  ...sim,
+                                  timeLimit: sim.timeLimit || undefined,
+                                }))
+                            : []
+                        }
+                        showPracticeSimulations={true}
+                        showOnlyActive={false}
+                        hideSelectedChips={true}
+                        showLabel={true}
+                        singleSelect={true}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="infinite-time-limit">
@@ -948,241 +982,265 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                 >
                   Cancel
                 </Button>
-                <Button
-                  disabled={isStartingAttempt}
-                  onClick={async () => {
-                    try {
-                      if (isInfiniteMode) {
-                        if (!selectedSimulationId) {
-                          toast.error("Select a simulation to start");
+                {effectiveProfile?.id !== activeProfile?.id ? (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button className="cursor-not-allowed opacity-70">
+                        Unavailable
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        You cannot start simulations on behalf of another user.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    disabled={isStartingAttempt}
+                    onClick={async () => {
+                      try {
+                        if (isInfiniteMode) {
+                          if (!selectedSimulationId) {
+                            toast.error("Select a simulation to start");
+                            return;
+                          }
+                          setIsStartingAttempt(true);
+                          const sim = (simulations as Simulation[]).find(
+                            (s) => s.id === selectedSimulationId
+                          );
+                          if (!sim) {
+                            toast.error("Simulation not found");
+                            setIsStartingAttempt(false);
+                            return;
+                          }
+                          if (
+                            !infiniteTimeLimit ||
+                            parseInt(infiniteTimeLimit, 10) <= 0
+                          ) {
+                            toast.error(
+                              "Please provide a positive time limit for infinite mode"
+                            );
+                            setIsStartingAttempt(false);
+                            return;
+                          }
+                          // Start via WebSocket start_simulation with infinite flag
+                          if (!isConnected) {
+                            toast.error(
+                              "WebSocket not connected. Please refresh the page."
+                            );
+                            setIsStartingAttempt(false);
+                            return;
+                          }
+                          const profileIdForEmit =
+                            effectiveProfile?.role === "guest"
+                              ? ""
+                              : String(effectiveProfile?.id || "");
+                          toast.loading("Starting simulation...");
+                          emitStartSimulation({
+                            simulation_id: sim.id,
+                            profile_id: profileIdForEmit,
+                            infinite: true,
+                            infinite_time_limit: infiniteTimeLimit
+                              ? parseInt(infiniteTimeLimit, 10)
+                              : null,
+                          });
+                          setCustomizeOpen(false);
+                          setIsStartingAttempt(false);
                           return;
                         }
+
+                        // Custom one-off scenario
+                        if (!selectedPersona) {
+                          toast.error("Select a persona");
+                          return;
+                        }
+
+                        // Toast loading state lifecycle
+                        const startToastId = toast.loading(
+                          "Starting simulation..."
+                        ) as unknown as string;
                         setIsStartingAttempt(true);
-                        const sim = (simulations as Simulation[]).find(
-                          (s) => s.id === selectedSimulationId
+
+                        // 1) Ask server to randomize missing pieces (keep persona and existing selections)
+                        const selectedParamItemIds = [
+                          ...(selectedParameterItemIds || []),
+                        ];
+                        const randomize = await randomizeScenario({
+                          name: null,
+                          description: null,
+                          personaId: selectedPersona.id,
+                          parameterItemIds: selectedParamItemIds,
+                          targets: ["parameters", "documents"],
+                        });
+                        if (!randomize.success) {
+                          toast.error("Failed to randomize parameters", {
+                            id: startToastId,
+                          });
+                          setIsStartingAttempt(false);
+                          return;
+                        }
+                        // keep loading toast active with same message
+                        const randomizedParamItemIds =
+                          randomize.parameterItemIds || [];
+                        const randomizedDocumentIds =
+                          randomize.documentIds || [];
+
+                        // Merge user selections and server suggestions, keeping at most one per parameter
+                        const itemIdToParamId = new Map<string, string>();
+                        (parameterItems as ParameterItem[]).forEach((pi) => {
+                          const paramId = (
+                            pi as unknown as { parameterId?: string }
+                          ).parameterId;
+                          if (pi?.id && paramId) {
+                            itemIdToParamId.set(pi.id, paramId);
+                          }
+                        });
+
+                        const takenParamIds = new Set<string>();
+                        const finalParamItemIds: string[] = [];
+
+                        // Prefer user selections
+                        for (const id of selectedParamItemIds) {
+                          const pId = itemIdToParamId.get(id);
+                          if (!pId) continue;
+                          if (!takenParamIds.has(pId)) {
+                            takenParamIds.add(pId);
+                            finalParamItemIds.push(id);
+                          }
+                        }
+
+                        // Fill remaining from server suggestions
+                        for (const id of randomizedParamItemIds) {
+                          const pId = itemIdToParamId.get(id);
+                          if (!pId) continue;
+                          if (!takenParamIds.has(pId)) {
+                            takenParamIds.add(pId);
+                            finalParamItemIds.push(id);
+                          }
+                        }
+
+                        // 2) Ask server to generate scenario title/description
+                        const generated = await generateScenario({
+                          personaId: selectedPersona.id,
+                          parameterItemIds: finalParamItemIds,
+                          documentIds: randomizedDocumentIds,
+                          profileId: effectiveProfile?.id || null,
+                        });
+                        if (!generated.success) {
+                          toast.error("Failed to generate scenario details", {
+                            id: startToastId,
+                          });
+                          setIsStartingAttempt(false);
+                          return;
+                        }
+
+                        const scenarioName =
+                          generated.title ||
+                          `Custom Practice - ${selectedPersona.name}`;
+                        const scenarioDescription = generated.description || "";
+
+                        // 3) Persist scenario in DB with generated attributes and randomized parameters
+                        // keep loading toast active with same message
+                        const createdScenario = (await createScenario({
+                          name: scenarioName,
+                          description: scenarioDescription,
+                          personaId: selectedPersona.id,
+                          parameterItemIds: finalParamItemIds,
+                          documentIds: randomizedDocumentIds,
+                          practiceScenario: true,
+                          defaultScenario: false,
+                          generated: true,
+                          active: true,
+                        } as unknown as typeof import("@/utils/drizzle/schema").scenarios.$inferInsert)) as unknown as import("@/types").Scenario;
+
+                        if (!createdScenario || !createdScenario.id) {
+                          toast.error("Failed to create scenario", {
+                            id: startToastId,
+                          });
+                          setIsStartingAttempt(false);
+                          return;
+                        }
+                        const newScenarioId = createdScenario.id;
+                        toast.loading("Creating attempt...", {
+                          description: "Starting your practice session",
+                          id: startToastId,
+                        });
+
+                        // Find base default practice scenario for this persona
+                        const baseScenario = (scenarios as Scenario[]).find(
+                          (s) =>
+                            s.personaId === selectedPersona.id &&
+                            s.defaultScenario === true &&
+                            s.practiceScenario === true
                         );
-                        if (!sim) {
-                          toast.error("Simulation not found");
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-                        if (
-                          !infiniteTimeLimit ||
-                          parseInt(infiniteTimeLimit, 10) <= 0
-                        ) {
-                          toast.error(
-                            "Please provide a positive time limit for infinite mode"
-                          );
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-                        // Start via WebSocket start_simulation with infinite flag
-                        if (!isConnected) {
-                          toast.error(
-                            "WebSocket not connected. Please refresh the page."
-                          );
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-                        const profileIdForEmit =
-                          effectiveProfile?.role === "guest"
-                            ? ""
-                            : String(effectiveProfile?.id || "");
-                        toast.loading("Starting simulation...");
-                        emitStartSimulation({
-                          simulation_id: sim.id,
-                          profile_id: profileIdForEmit,
-                          infinite: true,
-                          infinite_time_limit: infiniteTimeLimit
-                            ? parseInt(infiniteTimeLimit, 10)
-                            : null,
-                        });
-                        setCustomizeOpen(false);
-                        setIsStartingAttempt(false);
-                        return;
-                      }
 
-                      // Custom one-off scenario
-                      if (!selectedPersona) {
-                        toast.error("Select a persona");
-                        return;
-                      }
-
-                      // Toast loading state lifecycle
-                      const startToastId = toast.loading(
-                        "Starting simulation..."
-                      ) as unknown as string;
-                      setIsStartingAttempt(true);
-
-                      // 1) Ask server to randomize missing pieces (keep persona and existing selections)
-                      const selectedParamItemIds = [
-                        ...(selectedParameterItemIds || []),
-                      ];
-                      const randomize = await randomizeScenario({
-                        name: null,
-                        description: null,
-                        personaId: selectedPersona.id,
-                        parameterItemIds: selectedParamItemIds,
-                        targets: ["parameters", "documents"],
-                      });
-                      if (!randomize.success) {
-                        toast.error("Failed to randomize parameters", {
-                          id: startToastId,
-                        });
-                        setIsStartingAttempt(false);
-                        return;
-                      }
-                      // keep loading toast active with same message
-                      const randomizedParamItemIds =
-                        randomize.parameterItemIds || [];
-                      const randomizedDocumentIds = randomize.documentIds || [];
-
-                      // Merge user selections and server suggestions, keeping at most one per parameter
-                      const itemIdToParamId = new Map<string, string>();
-                      (parameterItems as ParameterItem[]).forEach((pi) => {
-                        const paramId = (
-                          pi as unknown as { parameterId?: string }
-                        ).parameterId;
-                        if (pi?.id && paramId) {
-                          itemIdToParamId.set(pi.id, paramId);
-                        }
-                      });
-
-                      const takenParamIds = new Set<string>();
-                      const finalParamItemIds: string[] = [];
-
-                      // Prefer user selections
-                      for (const id of selectedParamItemIds) {
-                        const pId = itemIdToParamId.get(id);
-                        if (!pId) continue;
-                        if (!takenParamIds.has(pId)) {
-                          takenParamIds.add(pId);
-                          finalParamItemIds.push(id);
-                        }
-                      }
-
-                      // Fill remaining from server suggestions
-                      for (const id of randomizedParamItemIds) {
-                        const pId = itemIdToParamId.get(id);
-                        if (!pId) continue;
-                        if (!takenParamIds.has(pId)) {
-                          takenParamIds.add(pId);
-                          finalParamItemIds.push(id);
-                        }
-                      }
-
-                      // 2) Ask server to generate scenario title/description
-                      const generated = await generateScenario({
-                        personaId: selectedPersona.id,
-                        parameterItemIds: finalParamItemIds,
-                        documentIds: randomizedDocumentIds,
-                        profileId: effectiveProfile?.id || null,
-                      });
-                      if (!generated.success) {
-                        toast.error("Failed to generate scenario details", {
-                          id: startToastId,
-                        });
-                        setIsStartingAttempt(false);
-                        return;
-                      }
-
-                      const scenarioName =
-                        generated.title ||
-                        `Custom Practice - ${selectedPersona.name}`;
-                      const scenarioDescription = generated.description || "";
-
-                      // 3) Persist scenario in DB with generated attributes and randomized parameters
-                      // keep loading toast active with same message
-                      const createdScenario = (await createScenario({
-                        name: scenarioName,
-                        description: scenarioDescription,
-                        personaId: selectedPersona.id,
-                        parameterItemIds: finalParamItemIds,
-                        documentIds: randomizedDocumentIds,
-                        practiceScenario: true,
-                        defaultScenario: false,
-                        generated: true,
-                        active: true,
-                      } as unknown as typeof import("@/utils/drizzle/schema").scenarios.$inferInsert)) as unknown as import("@/types").Scenario;
-
-                      if (!createdScenario || !createdScenario.id) {
-                        toast.error("Failed to create scenario", {
-                          id: startToastId,
-                        });
-                        setIsStartingAttempt(false);
-                        return;
-                      }
-                      const newScenarioId = createdScenario.id;
-                      toast.loading("Creating attempt...", {
-                        description: "Starting your practice session",
-                        id: startToastId,
-                      });
-
-                      // Find base default practice scenario for this persona
-                      const baseScenario = (scenarios as Scenario[]).find(
-                        (s) =>
-                          s.personaId === selectedPersona.id &&
-                          s.defaultScenario === true &&
-                          s.practiceScenario === true
-                      );
-
-                      // Find simulation that includes the base scenario (prefer default+practice)
-                      const targetSimulation =
-                        (simulations as Simulation[]).find(
-                          (sim) =>
+                        // Find simulation that includes the base scenario (prefer default+practice)
+                        const targetSimulation =
+                          (simulations as Simulation[]).find(
+                            (sim) =>
+                              (sim.scenarioIds || []).includes(
+                                baseScenario?.id || ""
+                              ) &&
+                              sim.defaultSimulation === true &&
+                              sim.practiceSimulation === true
+                          ) ||
+                          (simulations as Simulation[]).find((sim) =>
                             (sim.scenarioIds || []).includes(
                               baseScenario?.id || ""
-                            ) &&
-                            sim.defaultSimulation === true &&
-                            sim.practiceSimulation === true
-                        ) ||
-                        (simulations as Simulation[]).find((sim) =>
-                          (sim.scenarioIds || []).includes(
-                            baseScenario?.id || ""
-                          )
-                        );
+                            )
+                          );
 
-                      if (!targetSimulation) {
-                        toast.error("No practice simulation found for persona");
-                        setIsStartingAttempt(false);
-                        return;
-                      }
+                        if (!targetSimulation) {
+                          toast.error(
+                            "No practice simulation found for persona"
+                          );
+                          setIsStartingAttempt(false);
+                          return;
+                        }
 
-                      const attempt = (await createSimulationAttempt({
-                        simulationId: targetSimulation.id,
-                        profileId: effectiveProfile?.id,
-                        infiniteMode: false,
-                      } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
-                      if (!attempt || !attempt.id) {
+                        const attempt = (await createSimulationAttempt({
+                          simulationId: targetSimulation.id,
+                          profileId: effectiveProfile?.id,
+                          infiniteMode: false,
+                        } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
+                        if (!attempt || !attempt.id) {
+                          toast.error("Failed to create attempt");
+                          setIsStartingAttempt(false);
+                          return;
+                        }
+                        const attemptIdCreated = attempt.id;
+
+                        await createSimulationChat({
+                          title: scenarioName,
+                          scenarioId: newScenarioId,
+                          attemptId: attemptIdCreated,
+                          completed: false,
+                        } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
+
+                        setCustomizeOpen(false);
+                        toast.success("Simulation started", {
+                          id: startToastId,
+                        });
+                        router.push(`/practice/a/${attemptIdCreated}`);
+                      } catch (err) {
+                        log.error("simulation.attempt.create.failed", {
+                          message: "Failed to create attempt",
+                          error: err,
+                          context: { component: "MainLayoutContent" },
+                        });
                         toast.error("Failed to create attempt");
                         setIsStartingAttempt(false);
-                        return;
                       }
-                      const attemptIdCreated = attempt.id;
-
-                      await createSimulationChat({
-                        title: scenarioName,
-                        scenarioId: newScenarioId,
-                        attemptId: attemptIdCreated,
-                        completed: false,
-                      } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
-
-                      setCustomizeOpen(false);
-                      toast.success("Simulation started", { id: startToastId });
-                      router.push(`/practice/a/${attemptIdCreated}`);
-                    } catch (err) {
-                      log.error("simulation.attempt.create.failed", {
-                        message: "Failed to create attempt",
-                        error: err,
-                        context: { component: "MainLayoutContent" },
-                      });
-                      toast.error("Failed to create attempt");
-                      setIsStartingAttempt(false);
-                    }
-                  }}
-                >
-                  {isStartingAttempt ? "Starting..." : "Start"}
-                </Button>
+                    }}
+                  >
+                    {isStartingAttempt
+                      ? "Starting..."
+                      : effectiveProfile?.id !== activeProfile?.id
+                        ? "Unavailable"
+                        : "Start"}
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>

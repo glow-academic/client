@@ -27,7 +27,13 @@ import {
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 
-export default function AttemptInput() {
+export interface AttemptInputProps {
+  isAttemptOwner?: boolean;
+}
+
+export default function AttemptInput({
+  isAttemptOwner = true,
+}: AttemptInputProps) {
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
@@ -120,7 +126,8 @@ export default function AttemptInput() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [simulationContext?.currentChat?.completed]);
 
-  if (simulationContext?.readOnly || simulationContext?.currentChat?.completed)
+  // Hide input if not the attempt owner or if read-only/completed
+  if (simulationContext?.readOnly || simulationContext?.currentChat?.completed || !isAttemptOwner)
     return null;
 
   return (
