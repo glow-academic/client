@@ -61,54 +61,29 @@ export default function SimulationPerformance({
 
   const scenarios = filteredData?.scenarios;
   const rubrics = filteredData?.rubrics;
-
-  // Filter simulations to exclude practice simulations and those without data
-  const availableSimulations = useMemo(() => {
-    if (!filteredData?.simulations) return [];
-
-    // Filter to active simulations that have data
-    return filteredData.simulations.filter((simulation) => {
-      // Check if this simulation has any attempts
-      const simulationAttempts = filteredData.attempts.filter(
-        (attempt) => attempt.simulationId === simulation.id
-      );
-
-      if (simulationAttempts.length === 0) {
-        return false;
-      }
-
-      // Check if any of these attempts have chats
-      const simulationChats = filteredData.chats.filter((chat) =>
-        simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
-      );
-
-      return simulationChats.length > 0;
-    });
-  }, [filteredData?.simulations, filteredData?.attempts, filteredData?.chats]);
-
   // Auto-select simulation if enabled and available
   useMemo(() => {
-    if (availableSimulations.length > 0) {
+    if (filteredData?.simulations && filteredData?.simulations.length > 0) {
       // If no simulation is selected, select the first one
       if (!selectedSimulation) {
-        const firstSimulation = availableSimulations[0];
+        const firstSimulation = filteredData?.simulations[0];
         if (firstSimulation) {
           setSelectedSimulation(firstSimulation);
         }
       } else {
         // If selected simulation is no longer available, select the first available one
-        const isStillAvailable = availableSimulations.some(
+        const isStillAvailable = filteredData?.simulations.some(
           (sim) => sim.id === selectedSimulation.id
         );
         if (!isStillAvailable) {
-          const firstSimulation = availableSimulations[0];
+          const firstSimulation = filteredData?.simulations[0];
           if (firstSimulation) {
             setSelectedSimulation(firstSimulation);
           }
         }
       }
     }
-  }, [availableSimulations, selectedSimulation]);
+  }, [filteredData?.simulations, selectedSimulation]);
 
   // Calculate scenario performance data for selected simulation using utility function
   const scenarioPerformanceData = useMemo(() => {
@@ -234,7 +209,7 @@ export default function SimulationPerformance({
                   <CommandInput placeholder="Search simulations..." />
                   <CommandEmpty>No simulation found.</CommandEmpty>
                   <CommandGroup>
-                    {availableSimulations.map((simulation) => (
+                    {filteredData?.simulations.map((simulation) => (
                       <CommandItem
                         key={simulation.id}
                         value={simulation.id}
@@ -270,102 +245,82 @@ export default function SimulationPerformance({
       </CardHeader>
 
       <CardContent className="space-y-4 flex-1 flex flex-col">
-        {!selectedSimulation ? (
-          <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground text-sm">
-              Please select a simulation to view scenario performance.
-            </p>
-          </div>
-        ) : !scenarioPerformanceData.length ? (
-          <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground text-sm">
-              No scenario data available for the selected simulation and time
-              period.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Bar Chart */}
-            <div className="flex-1 min-h-[200px] h-[200px]">
-              <div
-                style={
-                  process.env.NODE_ENV === "test"
-                    ? { minWidth: 400, minHeight: 300 }
-                    : undefined
-                }
+        {/* Bar Chart */}
+        <div className="flex-1 min-h-[180px] h-[180px] mb-2">
+          <div
+            style={
+              process.env.NODE_ENV === "test"
+                ? { minWidth: 400, minHeight: 300 }
+                : { width: "100%", height: "100%" }
+            }
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={scenarioPerformanceData}
+                margin={{ top: 10, right: 10, bottom: 30, left: 10 }}
               >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={scenarioPerformanceData}
-                    margin={{ top: 10, right: 10, bottom: 30, left: 10 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-muted"
-                    />
-                    <XAxis
-                      dataKey="scenarioName"
-                      fontSize={10}
-                      height={40}
-                      angle={-45}
-                      textAnchor="end"
-                      tickFormatter={(name: string) =>
-                        name.length > 12 ? name.slice(0, 11) + "…" : name
-                      }
-                    />
-                    <YAxis domain={[0, 100]} fontSize={10} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "6px",
-                        color: "#000000",
-                      }}
-                      labelStyle={{
-                        color: "#000000",
-                      }}
-                      formatter={(value: number, name: string) => [
-                        `${value}%`,
-                        name === "avgScore" ? "Average Score" : "Success Rate",
-                      ]}
-                    />
-                    <Bar
-                      dataKey="avgScore"
-                      fill="#3b82f6"
-                      name="Average Score"
-                      radius={[2, 2, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="successRate"
-                      fill="#10b981"
-                      name="Success Rate"
-                      radius={[2, 2, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="scenarioName"
+                  fontSize={10}
+                  height={40}
+                  angle={-45}
+                  textAnchor="end"
+                  tickFormatter={(name: string) =>
+                    name.length > 12 ? name.slice(0, 11) + "…" : name
+                  }
+                />
+                <YAxis domain={[0, 100]} fontSize={10} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                    color: "#000000",
+                  }}
+                  labelStyle={{
+                    color: "#000000",
+                  }}
+                  formatter={(value: number, name: string) => [
+                    `${value}%`,
+                    name === "avgScore" ? "Average Score" : "Success Rate",
+                  ]}
+                />
+                <Bar
+                  dataKey="avgScore"
+                  fill="#3b82f6"
+                  name="Average Score"
+                  radius={[2, 2, 0, 0]}
+                />
+                <Bar
+                  dataKey="successRate"
+                  fill="#10b981"
+                  name="Success Rate"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-blue-500"></div>
-                <span>Average Score</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-green-500"></div>
-                <span>Success Rate</span>
-              </div>
-            </div>
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-4 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-blue-500"></div>
+            <span>Average Score</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded bg-green-500"></div>
+            <span>Success Rate</span>
+          </div>
+        </div>
 
-            {/* Data-Driven Insights */}
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {insights}
-              </p>
-            </div>
-          </>
-        )}
+        {/* Data-Driven Insights */}
+        <div className="p-3 bg-muted rounded-lg">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {insights}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

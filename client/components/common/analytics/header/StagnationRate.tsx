@@ -171,7 +171,6 @@ export default function StagnationRate({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasDataAvailable ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={stagnationTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -192,11 +191,6 @@ export default function StagnationRate({
                   />
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-              </div>
-            )}
           </div>
 
           {/* Dynamic Trend Analysis */}

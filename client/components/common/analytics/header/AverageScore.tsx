@@ -172,33 +172,27 @@ export default function AverageScore({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            {hasDataAvailable ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={scoreTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? `${value}%` : value,
-                      name === "value" ? "Average Score" : "Sessions",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    fill={colorConfig.primary}
-                    fillOpacity={0.3}
-                    name="value"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                No data available for the selected date range
-              </div>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={scoreTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? `${value}%` : value,
+                    name === "value" ? "Average Score" : "Sessions",
+                  ]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  fill={colorConfig.primary}
+                  fillOpacity={0.3}
+                  name="value"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

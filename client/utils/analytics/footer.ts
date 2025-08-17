@@ -993,10 +993,9 @@ export const calculateScenarioPerformanceWithinSimulation = (
     return attempt?.simulationId === selectedSimulation.id;
   });
 
-  // Get scenarios for the selected simulation
-  const simulationScenarios = filteredData.scenarios.filter((scenario) =>
-    selectedSimulation.scenarioIds.includes(scenario.id)
-  );
+  // Get scenarios for the selected simulation - use all scenarios in filteredData
+  // since the filtering should already be done appropriately upstream
+  const simulationScenarios = filteredData.scenarios;
 
   // Calculate performance for each scenario
   const scenarioData = simulationScenarios
