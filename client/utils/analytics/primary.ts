@@ -123,9 +123,9 @@ export const calculateAttemptImprovement = (
     });
   });
 
-  // Filter to only include simulations with multiple attempts
-  const multiAttemptSimulations = Array.from(simulationAttempts.values())
-    .filter((sim) => sim.attempts.length > 1)
+  // Include simulations with at least one attempt
+  const allSimulations = Array.from(simulationAttempts.values())
+    .filter((sim) => sim.attempts.length > 0)
     .sort((a, b) => {
       const aFirst = a.attempts[0];
       const bFirst = b.attempts[0];
@@ -133,11 +133,11 @@ export const calculateAttemptImprovement = (
       return aFirst.createdAt.getTime() - bFirst.createdAt.getTime();
     });
 
-  if (multiAttemptSimulations.length === 0) return [];
+  if (allSimulations.length === 0) return [];
 
   // Calculate average metrics by attempt number
   const maxAttempts = Math.min(
-    Math.max(...multiAttemptSimulations.map((sim) => sim.attempts.length)),
+    Math.max(...allSimulations.map((sim) => sim.attempts.length)),
     5 // Limit to 5 attempts for clean visualization
   );
 
@@ -164,7 +164,7 @@ export const calculateAttemptImprovement = (
   }
 
   // Aggregate data by attempt number
-  multiAttemptSimulations.forEach((sim) => {
+  allSimulations.forEach((sim) => {
     sim.attempts.slice(0, maxAttempts).forEach((attempt) => {
       const metrics = attemptMetrics.get(attempt.attemptNumber);
       if (metrics) {
