@@ -50,14 +50,18 @@ export function DataTableToolbar<TData>({
   const archiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find((r) => (r.original as unknown as { id: string }).id === attemptId);
+      .rows.find(
+        (r) => (r.original as unknown as { id: string }).id === attemptId
+      );
     return row && !(row.original as unknown as { archived: boolean }).archived;
   }).length;
 
   const unarchiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find((r) => (r.original as unknown as { id: string }).id === attemptId);
+      .rows.find(
+        (r) => (r.original as unknown as { id: string }).id === attemptId
+      );
     return row && (row.original as unknown as { archived: boolean }).archived;
   }).length;
 
