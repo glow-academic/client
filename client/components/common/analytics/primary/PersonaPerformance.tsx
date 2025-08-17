@@ -198,6 +198,7 @@ export default function PersonaPerformance({
               selectedSimulations={selectedSimulations}
               hideSelectedChips={true}
               showLabel={false}
+              showPracticeSimulations={true}
               buttonClassName="w-48"
             />
           )}

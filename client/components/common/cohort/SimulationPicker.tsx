@@ -73,6 +73,7 @@ export interface SimulationPickerProps extends PopoverProps {
   selectedSimulations?: Simulation[];
   hideSelectedChips?: boolean;
   showOnlyActive?: boolean;
+  showPracticeSimulations?: boolean;
   showLabel?: boolean;
   buttonClassName?: string;
 }
@@ -90,6 +91,7 @@ export function SimulationPicker({
   selectedSimulations = [],
   hideSelectedChips = true,
   showOnlyActive = true,
+  showPracticeSimulations = false,
   showLabel = true,
   buttonClassName,
   ...props
@@ -104,10 +106,10 @@ export function SimulationPicker({
     string[]
   >([]);
 
-  // Filter simulations to show only active ones if requested, and exclude practice simulations
+  // Filter simulations to show only active ones if requested, and exclude practice simulations unless requested
   const baseSimulations = (
     showOnlyActive ? simulations.filter((sim) => sim.active) : simulations
-  ).filter((sim) => !sim.practiceSimulation);
+  ).filter((sim) => showPracticeSimulations || !sim.practiceSimulation);
 
   // Build lookup maps for scenarios, personaIds, and parameter items per simulation
   const scenarioById = React.useMemo(() => {

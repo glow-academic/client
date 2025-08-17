@@ -54,42 +54,6 @@ export default function AttemptImprovement({
 
   const rubrics = filteredData?.rubrics;
 
-  // Get simulations that have data available
-  const simulationsWithData = useMemo(() => {
-    if (
-      !filteredData?.simulations ||
-      !filteredData?.grades ||
-      !filteredData?.chats ||
-      !filteredData?.attempts
-    )
-      return [];
-
-    // Get all simulation IDs that have grades (data is already filtered by date)
-    const simulationIdsWithData = new Set<string>();
-
-    filteredData.grades.forEach((grade) => {
-      const chat = filteredData.chats.find(
-        (c) => c.id === grade.simulationChatId
-      );
-      const attempt = filteredData.attempts.find(
-        (a) => a.id === chat?.attemptId
-      );
-
-      if (attempt) {
-        simulationIdsWithData.add(attempt.simulationId);
-      }
-    });
-
-    return filteredData.simulations.filter((s) =>
-      simulationIdsWithData.has(s.id)
-    );
-  }, [
-    filteredData?.simulations,
-    filteredData?.grades,
-    filteredData?.chats,
-    filteredData?.attempts,
-  ]);
-
   // Calculate attempt improvement data
   const improvementData = useMemo(() => {
     if (!filteredData || !rubrics) {
@@ -179,53 +143,56 @@ export default function AttemptImprovement({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={simulationsWithData.map((s) => ({
-              id: s.id,
-              title: s.title,
-              timeLimit: s.timeLimit || undefined,
-              active: s.active,
-              defaultSimulation: s.defaultSimulation,
-              practiceSimulation: s.practiceSimulation,
-            }))}
+            simulations={
+              filteredData?.simulations?.map((s) => ({
+                ...s,
+                timeLimit: s.timeLimit ?? 0,
+              })) ?? []
+            }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}
             hideSelectedChips={true}
             showLabel={false}
+            showPracticeSimulations={true}
             buttonClassName="w-48"
           />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-3">
+        <div className="space-y-3 h-full flex flex-col">
           {/* Composed Chart with Secondary Y-Axis for Time */}
-          <div className="h-64 w-full">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={improvementData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="attempt" className="text-xs" />
                 <YAxis
                   className="text-xs"
+                  dx={0}
                   label={{
                     value: "Score & Pass Rate (%)",
                     angle: -90,
+                    dx: -10,
                   }}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   className="text-xs"
+                  dx={0}
                   label={{
                     value: "Time (minutes)",
                     angle: 90,
+                    dx: 10,
                   }}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
+                    backgroundColor: "black",
+                    border: "1px solid black",
+                    color: "white",
                     borderRadius: "6px",
-                    color: "black",
                   }}
                   formatter={(value: number, name: string) => [
                     name === "Average Time" ? `${value} min` : `${value}%`,
