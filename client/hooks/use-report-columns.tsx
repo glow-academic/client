@@ -443,6 +443,7 @@ export function useReportColumns({
         cell: ({ row }) => {
           const ta = row.original;
           const getBackgroundColor = () => {
+            if (ta.hasNoSessions) return "bg-gray-50";
             if (ta.totalAttempts >= 8) return "bg-green-50";
             if (ta.totalAttempts >= 5) return "bg-yellow-50";
             return "bg-red-50";
@@ -452,7 +453,7 @@ export function useReportColumns({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <Target className="h-2.5 w-2.5" />
-              {ta.totalAttempts}
+              {ta.hasNoSessions ? "N/A" : ta.totalAttempts}
             </div>
           );
         },

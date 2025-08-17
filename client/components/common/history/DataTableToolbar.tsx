@@ -123,7 +123,7 @@ export function DataTableToolbar<TData>({
             <>
               {archiveCount > 0 && (
                 <Button
-                  variant="outline"
+                  variant="destructive"
                   size="sm"
                   onClick={() => onBulkArchive?.(true)}
                   className="h-8"
