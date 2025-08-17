@@ -35,6 +35,8 @@ export interface SkillPerformanceData {
   metric: string;
   value: number;
   fullMark: number;
+  score: number;
+  points: number;
 }
 
 export interface SkillPerformanceResult {
@@ -377,7 +379,7 @@ export const calculateSkillPerformance = (
   );
 
   // Calculate skill-based scores from feedbacks and standards
-  const skillScores = standardGroups.reduce(
+  const skillData = standardGroups.reduce(
     (acc, group) => {
       // Find all standards that belong to this standard group
       const groupStandards = standards.filter(
@@ -427,15 +429,34 @@ export const calculateSkillPerformance = (
               )
             : 0;
 
-        acc[group.shortName || group.name] = averagePerformance;
+        // Calculate average score per user session
+        const averageScore =
+          userPerformances.length > 0
+            ? (Math.round(
+                userPerformances.reduce((sum, perf) => sum + perf, 0) /
+                  userPerformances.length
+              ) /
+                100) *
+              group.points
+            : 0;
+
+        acc[group.shortName || group.name] = {
+          percentage: averagePerformance,
+          score: averageScore,
+          points: group.points,
+        };
       } else {
         // No feedback for this standard group, set to 0
-        acc[group.shortName || group.name] = 0;
+        acc[group.shortName || group.name] = {
+          percentage: 0,
+          score: 0,
+          points: group.points,
+        };
       }
 
       return acc;
     },
-    {} as Record<string, number>
+    {} as Record<string, { percentage: number; score: number; points: number }>
   );
 
   // Create metrics based on standard groups using shortName
@@ -444,12 +465,16 @@ export const calculateSkillPerformance = (
   // Add skill scores based on standard groups
   standardGroups.forEach((group) => {
     const skillKey = group.shortName || group.name;
-    const skillValue = skillScores[skillKey] || 0;
-    radarData.push({
-      metric: skillKey,
-      value: skillValue,
-      fullMark: 100,
-    });
+    const skillInfo = skillData[skillKey];
+    if (skillInfo) {
+      radarData.push({
+        metric: skillKey,
+        value: skillInfo.points > 0 ? skillInfo.score / skillInfo.points : 0,
+        fullMark: 1,
+        score: skillInfo.score,
+        points: skillInfo.points,
+      });
+    }
   });
 
   return {

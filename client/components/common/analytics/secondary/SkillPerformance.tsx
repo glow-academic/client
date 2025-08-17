@@ -24,6 +24,7 @@ import { useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
+  PolarRadiusAxis,
   Radar,
   RadarChart,
   ResponsiveContainer,
@@ -197,22 +198,100 @@ export default function SkillPerformance({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="h-80">
+      <CardContent className="flex-1 overflow-hidden flex flex-col justify-center">
+        <div className="h-96 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={skillPerformanceResult?.radarData ?? []}>
-              <PolarAngleAxis dataKey="metric" />
+            <RadarChart
+              data={skillPerformanceResult?.radarData ?? []}
+              margin={{ top: 60, right: 30, bottom: 10, left: 30 }} // Move chart higher by increasing top margin, reducing bottom
+            >
+              <PolarAngleAxis
+                dataKey="metric"
+                // Custom tick function to angle labels with their radar points and prevent cutoff
+                tick={({ payload, x, y }) => {
+                  // Get the index of this tick in the data array
+                  const dataIndex =
+                    skillPerformanceResult?.radarData?.findIndex(
+                      (item) => item.metric === payload.value
+                    ) ?? 0;
+                  const totalItems =
+                    skillPerformanceResult?.radarData?.length ?? 1;
+
+                  // Calculate the angle for this tick (radar charts start from top and go clockwise)
+                  const angle = (dataIndex * 360) / totalItems;
+
+                  // Calculate the angle for proper text positioning
+                  // Radar charts start from the top (0°) and go clockwise
+                  let textAnchor = "middle";
+                  let rotation = 0;
+
+                  // Determine text anchor and rotation to center text around the point
+                  // The key is to use "middle" anchor and adjust the rotation to point outward
+                  if (angle >= 0 && angle <= 90) {
+                    // Top-right quadrant - rotate to point outward
+                    textAnchor = "middle";
+                    rotation = angle;
+                  } else if (angle > 90 && angle <= 180) {
+                    // Bottom-right quadrant - rotate to point outward and flip text upright
+                    textAnchor = "middle";
+                    rotation = angle + 180;
+                  } else if (angle > 180 && angle <= 270) {
+                    // Bottom-left quadrant - rotate to point outward and flip text upright
+                    textAnchor = "middle";
+                    rotation = angle + 180;
+                  } else {
+                    // Top-left quadrant - rotate to point outward
+                    textAnchor = "middle";
+                    rotation = angle;
+                  }
+
+                  // Only render if we have valid coordinates
+                  if (x === undefined || y === undefined) {
+                    return <g />;
+                  }
+
+                  return (
+                    <g transform={`translate(${x},${y})`}>
+                      <text
+                        x={0}
+                        y={0}
+                        dy={
+                          angle > 90 && angle <= 270
+                            ? 10 // Bottom right or left
+                            : -10 // Top right or left
+                        }
+                        textAnchor={textAnchor}
+                        fill="hsl(var(--muted-foreground))"
+                        fontSize={11}
+                        transform={`rotate(${rotation})`}
+                        className="fill-muted-foreground"
+                        style={{ fontWeight: 500 }}
+                      >
+                        {payload.value}
+                      </text>
+                    </g>
+                  );
+                }}
+              />
               <PolarGrid />
+              <PolarRadiusAxis domain={[0, 1]} axisLine={false} tick={false} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--background))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "6px",
                 }}
-                formatter={(value: number, name: string) => [
-                  `${value}%`,
-                  name === "value" ? "Score" : name,
-                ]}
+                formatter={(
+                  value: number,
+                  name: string,
+                  props: { payload?: { score: number; points: number } }
+                ) => {
+                  if (name === "value" && props?.payload) {
+                    const data = props.payload;
+                    return [`${data.score}/${data.points}`, "Score"];
+                  }
+                  return [value, name];
+                }}
                 labelFormatter={(label: string) => `Skill: ${label}`}
               />
               <Radar
