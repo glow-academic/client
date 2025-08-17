@@ -126,16 +126,8 @@ export const calculateScenarioAttributeBreakdown = (
 
   // Helper function to format time values
   const formatTimeValue = (timeString: string) => {
-    try {
-      const time = new Date(`1970-01-01T${timeString}`);
-      return time.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch {
-      return timeString;
-    }
+    // Just return the time string as-is to avoid "Invalid Date" issues
+    return timeString;
   };
 
   // Analyze each parameter item

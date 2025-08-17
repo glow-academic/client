@@ -306,7 +306,7 @@ describe("Footer Analytics Utilities", () => {
       expect(result[0]).toHaveProperty("insight");
     });
 
-    it("should format time values correctly", () => {
+    it("should display time values as raw text", () => {
       const timeParameter: Parameter = {
         ...mockParameter,
         name: "Time Parameter",
@@ -332,7 +332,7 @@ describe("Footer Analytics Utilities", () => {
       );
 
       expect(result.length).toBeGreaterThan(0);
-      expect(result[0]?.displayName).toMatch(/^\d{1,2}:\d{2}\s?(AM|PM)$/);
+      expect(result[0]?.displayName).toBe("14:30:00");
     });
   });
 

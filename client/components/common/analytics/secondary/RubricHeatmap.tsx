@@ -66,28 +66,13 @@ export default function RubricHeatmap({
 
   const rubrics = filteredData?.rubrics;
 
-  // Set default selection to first rubric when rubrics are loaded
-  const defaultRubrics = useMemo(() => {
-    if (rubrics && rubrics.length > 0 && selectedRubrics.length === 0) {
-      return [rubrics[0]!];
-    }
-    return selectedRubrics;
-  }, [rubrics, selectedRubrics]);
-
-  // Filter rubrics based on selection
-  const filteredRubrics = useMemo(() => {
-    if (!rubrics) return [];
-    if (defaultRubrics.length === 0) return rubrics;
-    return rubrics.filter((r) => defaultRubrics.some((sr) => sr.id === r.id));
-  }, [rubrics, defaultRubrics]);
-
   const standardGroups = filteredData?.standardGroups;
 
   const standards = filteredData?.standards;
 
   // Use the utility function to calculate rubric heatmap
   const rubricHeatmapResult = useMemo(() => {
-    if (!filteredData || !standards || !standardGroups || !filteredRubrics) {
+    if (!filteredData || !standards || !standardGroups || !rubrics) {
       return null;
     }
 
@@ -95,16 +80,10 @@ export default function RubricHeatmap({
       filteredData,
       standards,
       standardGroups,
-      filteredRubrics,
-      defaultRubrics.map((r) => r.id)
+      rubrics,
+      selectedRubrics.map((r) => r.id)
     );
-  }, [
-    filteredData,
-    standards,
-    standardGroups,
-    filteredRubrics,
-    defaultRubrics,
-  ]);
+  }, [filteredData, standards, standardGroups, rubrics, selectedRubrics]);
 
   // Defer heavy result propagation to avoid blocking interactions/scroll
   const deferredResult = useDeferredValue(rubricHeatmapResult);
@@ -123,7 +102,8 @@ export default function RubricHeatmap({
 
   // Calculate threshold status based on correlation matrix data
   const getThresholdStatus = () => {
-    if (!deferredResult || !deferredResult.hasData) return "neutral";
+    if (!deferredResult) return "neutral";
+    if (!deferredResult.hasData) return "neutral";
 
     // Calculate average correlation strength across all non-diagonal cells
     let totalCorrelation = 0;
@@ -217,7 +197,6 @@ export default function RubricHeatmap({
               Correlation between skill areas (standard groups)
             </CardDescription>
           </div>
-          {rubrics && rubrics.length > 0 && (
             <RubricPicker
               rubrics={rubrics.map((r) => ({
                 id: r.id,
@@ -228,9 +207,8 @@ export default function RubricHeatmap({
               }))}
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
-              selectedRubrics={defaultRubrics}
+              selectedRubrics={selectedRubrics}
             />
-          )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
@@ -312,7 +290,7 @@ export default function RubricHeatmap({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div
-                                        className="w-20 h-7 rounded-sm flex items-center justify-center text-xs font-mono"
+                                        className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
                                         style={{ backgroundColor: cell.color }}
                                       >
                                         <span
@@ -340,7 +318,7 @@ export default function RubricHeatmap({
                                   </Tooltip>
                                 ) : (
                                   <div
-                                    className="w-20 h-7 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
                                     style={{ backgroundColor: cell.color }}
                                   >
                                     <span
@@ -414,6 +392,17 @@ export default function RubricHeatmap({
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
                 {deferredResult.insights}
+              </p>
+            </div>
+          )}
+
+          {/* No Data Message */}
+          {deferredResult && !deferredResult.hasData && (
+            <div className="p-3 bg-muted/50 rounded-lg text-left flex-shrink-0 w-full">
+              <p className="text-xs text-muted-foreground">
+                No correlation data available. The matrix shows the structure of
+                skill areas, but correlations will appear once students complete
+                simulations with feedback across multiple skill areas.
               </p>
             </div>
           )}

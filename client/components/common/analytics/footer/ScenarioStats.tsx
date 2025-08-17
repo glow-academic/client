@@ -156,28 +156,6 @@ export default function ScenarioStats({
 
   const thresholdStatus = getThresholdStatus();
 
-  // Show message if no numerical parameters available
-  if (numericalParameters.length === 0) {
-    return (
-      <Card className="w-full h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Scenario Performance Analysis
-          </CardTitle>
-          <CardDescription>
-            Performance correlation with scenario characteristics
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <p className="text-muted-foreground">
-            No numerical parameters available for analysis.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <TooltipProvider>
       <Card className="w-full h-full flex flex-col relative">

@@ -206,7 +206,9 @@ export function filterAnalyticsData(options: FilteringOptions): FilteredData {
   // Step 6: Derive scenarios from filtered simulations
   const filteredScenarios = deriveScenariosFromSimulations(
     allScenarios,
-    filteredSimulations
+    filteredSimulations,
+    filteredAttempts,
+    filteredChats
   );
 
   // Step 7: Derive messages from filtered chats (if provided)
@@ -472,22 +474,31 @@ function filterFeedbacks(
  */
 function deriveScenariosFromSimulations(
   allScenarios: Scenario[],
-  filteredSimulations: Simulation[]
+  filteredSimulations: Simulation[],
+  filteredAttempts: SimulationAttempt[],
+  filteredChats: SimulationChat[]
 ): Scenario[] {
-  // Get all scenario IDs from the filtered simulations
-  const simulationScenarioIds = new Set<string>();
-  filteredSimulations.forEach((simulation) => {
-    simulation.scenarioIds?.forEach((scenarioId) => {
-      if (scenarioId !== "RAY") {
-        // Exclude placeholder
-        simulationScenarioIds.add(scenarioId);
+  // Get all scenario IDs from the actual data flow: attempts → chats → scenarios
+  const scenarioIds = new Set<string>();
+
+  // Get all attempt IDs from filtered simulations
+  const filteredSimulationIds = new Set(filteredSimulations.map((s) => s.id));
+  const relevantAttemptIds = filteredAttempts
+    .filter((attempt) => filteredSimulationIds.has(attempt.simulationId))
+    .map((attempt) => attempt.id);
+
+  // Get all scenario IDs from chats that belong to these attempts
+  filteredChats
+    .filter((chat) => relevantAttemptIds.includes(chat.attemptId))
+    .forEach((chat) => {
+      if (chat.scenarioId && chat.scenarioId !== "RAY") {
+        scenarioIds.add(chat.scenarioId);
       }
     });
-  });
 
-  // Filter scenarios to those in the simulations and only active ones
+  // Filter scenarios to those in the actual data flow and only active ones
   return allScenarios.filter(
-    (scenario) => simulationScenarioIds.has(scenario.id) && scenario.active
+    (scenario) => scenarioIds.has(scenario.id) && scenario.active
   );
 }
 

@@ -444,17 +444,27 @@ export const calculatePlatformGrowth = (
  * @param rubrics - All rubrics for score calculation
  * @param personas - All personas
  * @param scenarios - All scenarios
+ * @param selectedSimulations - Array of selected simulation IDs (optional additional filtering)
  * @returns Array of persona performance data points
  */
 export const calculatePersonaPerformance = (
   filteredData: FilteredData,
   rubrics: Rubric[],
   personas: Persona[],
-  scenarios: Scenario[]
+  scenarios: Scenario[],
+  selectedSimulations: string[] = []
 ): PersonaPerformanceDataPoint[] => {
   if (!personas?.length || !scenarios?.length || !filteredData.grades.length) {
     return [];
   }
+
+  // Filter simulations by selection if provided
+  const filteredSimulations =
+    selectedSimulations.length > 0
+      ? filteredData.simulations.filter((s) =>
+          selectedSimulations.includes(s.id)
+        )
+      : filteredData.simulations;
 
   // Group by persona
   const performanceByPersona = personas
@@ -466,8 +476,23 @@ export const calculatePersonaPerformance = (
       const personaChats = filteredData.chats.filter((chat) =>
         personaScenarios.some((scenario) => scenario.id === chat.scenarioId)
       );
+
+      // Filter chats by selected simulations if provided
+      const filteredPersonaChats =
+        selectedSimulations.length > 0
+          ? personaChats.filter((chat) => {
+              const attempt = filteredData.attempts.find(
+                (a) => a.id === chat.attemptId
+              );
+              return (
+                attempt &&
+                filteredSimulations.some((s) => s.id === attempt.simulationId)
+              );
+            })
+          : personaChats;
+
       const personaGrades = filteredData.grades.filter((grade) =>
-        personaChats.some((chat) => chat.id === grade.simulationChatId)
+        filteredPersonaChats.some((chat) => chat.id === grade.simulationChatId)
       );
 
       // Calculate average score

@@ -85,14 +85,6 @@ export default function PersonaPerformance({
     return map;
   }, [personas]);
 
-  // Get simulations that have data (simplified logic)
-  const simulationsWithData = useMemo(() => {
-    if (!filteredData?.simulations) return [];
-
-    // Filter out practice simulations (data is already filtered by date and cohorts)
-    return filteredData.simulations.filter((s) => !s.practiceSimulation);
-  }, [filteredData?.simulations]);
-
   // Calculate performance by persona
   const performanceData = useMemo(() => {
     if (!filteredData || !scenarios || !rubrics || !personas) {
@@ -103,9 +95,10 @@ export default function PersonaPerformance({
       filteredData,
       rubrics,
       personas,
-      scenarios
+      scenarios,
+      selectedSimulations.map((s) => s.id)
     );
-  }, [filteredData, rubrics, personas, scenarios]);
+  }, [filteredData, rubrics, personas, scenarios, selectedSimulations]);
 
   // Calculate threshold status based on persona performance data
   const getThresholdStatus = () => {
@@ -180,28 +173,21 @@ export default function PersonaPerformance({
               Performance analysis by student persona type
             </CardDescription>
           </div>
-          {filteredData?.simulations && filteredData.simulations.length > 0 && (
-            <SimulationPicker
-              simulations={(simulationsWithData.length > 0
-                ? simulationsWithData
-                : filteredData.simulations
-              ).map((s) => ({
-                id: s.id,
-                title: s.title,
-                timeLimit: s.timeLimit || undefined,
-                active: s.active,
-                defaultSimulation: s.defaultSimulation,
-                practiceSimulation: s.practiceSimulation,
-              }))}
-              placeholder="Filter by simulation..."
-              onSelect={setSelectedSimulations}
-              selectedSimulations={selectedSimulations}
-              hideSelectedChips={true}
-              showLabel={false}
-              showPracticeSimulations={true}
-              buttonClassName="w-48"
-            />
-          )}
+          <SimulationPicker
+            simulations={
+              filteredData?.simulations.map((s) => ({
+                ...s,
+                timeLimit: s.timeLimit ?? 0,
+              })) ?? []
+            }
+            placeholder="Filter by simulation..."
+            onSelect={setSelectedSimulations}
+            selectedSimulations={selectedSimulations}
+            hideSelectedChips={true}
+            showLabel={false}
+            showPracticeSimulations={true}
+            buttonClassName="w-48"
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">

@@ -514,15 +514,10 @@ export const calculateRubricHeatmap = (
     )
   );
 
-  // Get all standard groups that have feedback data
-  const standardGroupsWithData = standardGroups.filter((group) =>
-    filteredFeedbacks.some((feedback) => {
-      const standard = standards.find((s) => s.id === feedback.standardId);
-      return standard && standard.standardGroupId === group.id;
-    })
-  );
+  // Use all standard groups, not just those with data, so users can see the structure
+  const standardGroupsToShow = standardGroups.length >= 2 ? standardGroups : [];
 
-  if (standardGroupsWithData.length < 2) {
+  if (standardGroupsToShow.length < 2) {
     return {
       matrix: [],
       insights: null,
@@ -531,13 +526,21 @@ export const calculateRubricHeatmap = (
     };
   }
 
-  // Create n x n correlation matrix
+  // Get all standard groups that have feedback data (for correlation calculations)
+  const standardGroupsWithData = standardGroups.filter((group) =>
+    filteredFeedbacks.some((feedback) => {
+      const standard = standards.find((s) => s.id === feedback.standardId);
+      return standard && standard.standardGroupId === group.id;
+    })
+  );
+
+  // Create n x n correlation matrix for all standard groups
   const matrix: CorrelationMatrixCell[][] = [];
 
-  // Initialize matrix with zeros
-  for (let i = 0; i < standardGroupsWithData.length; i++) {
+  // Initialize matrix with zeros for all standard groups
+  for (let i = 0; i < standardGroupsToShow.length; i++) {
     matrix[i] = [];
-    for (let j = 0; j < standardGroupsWithData.length; j++) {
+    for (let j = 0; j < standardGroupsToShow.length; j++) {
       if (matrix[i]) {
         matrix[i]![j] = {
           correlation: 0,
@@ -551,10 +554,10 @@ export const calculateRubricHeatmap = (
   }
 
   // Calculate correlations between all pairs of standard groups
-  for (let i = 0; i < standardGroupsWithData.length; i++) {
-    for (let j = 0; j < standardGroupsWithData.length; j++) {
-      const group1 = standardGroupsWithData[i];
-      const group2 = standardGroupsWithData[j];
+  for (let i = 0; i < standardGroupsToShow.length; i++) {
+    for (let j = 0; j < standardGroupsToShow.length; j++) {
+      const group1 = standardGroupsToShow[i];
+      const group2 = standardGroupsToShow[j];
 
       if (!group1 || !group2) continue;
 
@@ -662,12 +665,12 @@ export const calculateRubricHeatmap = (
     let strongestPositive = { correlation: 0, group1: "", group2: "" };
     let strongestNegative = { correlation: 0, group1: "", group2: "" };
 
-    for (let i = 0; i < standardGroupsWithData.length; i++) {
-      for (let j = i + 1; j < standardGroupsWithData.length; j++) {
+    for (let i = 0; i < standardGroupsToShow.length; i++) {
+      for (let j = i + 1; j < standardGroupsToShow.length; j++) {
         const cell = matrix[i]?.[j];
         if (cell && cell.correlation > strongestPositive.correlation) {
-          const group1 = standardGroupsWithData[i];
-          const group2 = standardGroupsWithData[j];
+          const group1 = standardGroupsToShow[i];
+          const group2 = standardGroupsToShow[j];
           if (group1 && group2) {
             strongestPositive = {
               correlation: cell.correlation,
@@ -677,8 +680,8 @@ export const calculateRubricHeatmap = (
           }
         }
         if (cell && cell.correlation < strongestNegative.correlation) {
-          const group1 = standardGroupsWithData[i];
-          const group2 = standardGroupsWithData[j];
+          const group1 = standardGroupsToShow[i];
+          const group2 = standardGroupsToShow[j];
           if (group1 && group2) {
             strongestNegative = {
               correlation: cell.correlation,
@@ -703,7 +706,7 @@ export const calculateRubricHeatmap = (
   return {
     matrix,
     insights,
-    standardGroups: standardGroupsWithData,
-    hasData: matrix.length > 0 && standardGroupsWithData.length > 0,
+    standardGroups: standardGroupsToShow,
+    hasData: matrix.length > 0 && standardGroupsToShow.length > 0,
   };
 };
