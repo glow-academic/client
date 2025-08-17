@@ -128,6 +128,7 @@ export default function CohortPerformance({
             selectedSimulations={selectedSimulations}
             hideSelectedChips={true}
             showLabel={false}
+            showPracticeSimulations={true}
           />
         </div>
       </CardHeader>
@@ -179,14 +180,27 @@ export default function CohortPerformance({
                         </h4>
                         <p className="text-xs text-muted-foreground">
                           {passRatePercentage.toFixed(2)}% of students pass{" "}
-                          {cohort.availableSimulations} quiz
-                          {cohort.availableSimulations !== 1 ? "zes" : ""} with
-                          a{" "}
-                          {Math.round(
-                            (cohort.rubricPassPoints / cohort.rubricPoints) *
-                              100
+                          {cohort.rubricPoints > 0
+                            ? cohort.availableSimulations
+                            : 0}{" "}
+                          quiz
+                          {cohort.rubricPoints > 0
+                            ? cohort.availableSimulations !== 1
+                              ? "zes"
+                              : ""
+                            : "zes"}
+                          {cohort.rubricPoints > 0 && (
+                            <>
+                              {" "}
+                              with a{" "}
+                              {Math.round(
+                                (cohort.rubricPassPoints /
+                                  cohort.rubricPoints) *
+                                  100
+                              )}
+                              % or better
+                            </>
                           )}
-                          % or better
                         </p>
                       </div>
                       <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />

@@ -137,25 +137,7 @@ export const calculateCohortPerformance = (
 
   // Initialize all filtered cohorts
   filteredCohorts.forEach((cohort) => {
-    // Find the rubric for this cohort based on its simulations
-    let cohortRubricPoints = 0;
-    let cohortRubricPassPoints = 0;
-
-    // Get the first simulation's rubric to use as the cohort's rubric
-    // This handles the case where there are no attempts yet but we still want to show rubric info
-    const firstSimulation = filteredSimulations.find((s) =>
-      cohort.simulationIds.includes(s.id)
-    );
-
-    if (firstSimulation) {
-      const rubric = rubrics.find((r) => r.id === firstSimulation.rubricId);
-      if (rubric) {
-        cohortRubricPoints = rubric.points;
-        cohortRubricPassPoints = rubric.passPoints;
-      }
-    }
-
-    // Calculate available simulations for this cohort
+    // Calculate available simulations for this cohort (inner join with filtered simulations)
     // If specific simulations are selected, only count those that are in the cohort
     const availableSimulationIds =
       selectedSimulationIds.length > 0
@@ -163,6 +145,26 @@ export const calculateCohortPerformance = (
             selectedSimulationIds.includes(id)
           )
         : cohort.simulationIds;
+
+    // Find the rubric for this cohort based on available simulations
+    let cohortRubricPoints = 0;
+    let cohortRubricPassPoints = 0;
+
+    // Get the first simulation's rubric from the available simulations for this cohort
+    // This handles the case where there are no attempts yet but we still want to show rubric info
+    const firstAvailableSimulation = filteredData.simulations.find((s) =>
+      availableSimulationIds.includes(s.id)
+    );
+
+    if (firstAvailableSimulation) {
+      const rubric = rubrics.find(
+        (r) => r.id === firstAvailableSimulation.rubricId
+      );
+      if (rubric) {
+        cohortRubricPoints = rubric.points;
+        cohortRubricPassPoints = rubric.passPoints;
+      }
+    }
 
     cohortStats.set(cohort.id, {
       totalAttempts: 0,

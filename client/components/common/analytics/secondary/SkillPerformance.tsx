@@ -288,7 +288,10 @@ export default function SkillPerformance({
                 ) => {
                   if (name === "value" && props?.payload) {
                     const data = props.payload;
-                    return [`${data.score}/${data.points}`, "Score"];
+                    return [
+                      `${data.score.toFixed(2)}/${data.points}`,
+                      "Score",
+                    ];
                   }
                   return [value, name];
                 }}
