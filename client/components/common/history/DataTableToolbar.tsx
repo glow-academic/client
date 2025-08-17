@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { Archive, Unlock, X } from "lucide-react";
 
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ export interface DataTableToolbarProps<TData> {
   showExport?: boolean;
   showAll?: boolean;
   filteredData?: FilteredData | null;
+  showArchive?: boolean;
+  selectedAttempts?: string[];
+  onBulkArchive?: (archive: boolean) => Promise<void>;
 }
 
 export function DataTableToolbar<TData>({
@@ -32,6 +35,9 @@ export function DataTableToolbar<TData>({
   showExport = true,
   showAll = false,
   filteredData,
+  showArchive = false,
+  selectedAttempts = [],
+  onBulkArchive,
 }: DataTableToolbarProps<TData>) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -39,6 +45,21 @@ export function DataTableToolbar<TData>({
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
   const simulationIdColumn = table.getColumn("simulationId");
   const scenariosColumn = table.getColumn("scenarios");
+
+  // Calculate archive/unarchive counts
+  const archiveCount = selectedAttempts.filter((attemptId) => {
+    const row = table
+      .getRowModel()
+      .rows.find((r) => (r.original as any).id === attemptId);
+    return row && !(row.original as any).archived;
+  }).length;
+
+  const unarchiveCount = selectedAttempts.filter((attemptId) => {
+    const row = table
+      .getRowModel()
+      .rows.find((r) => (r.original as any).id === attemptId);
+    return row && (row.original as any).archived;
+  }).length;
 
   return (
     <>
@@ -96,6 +117,34 @@ export function DataTableToolbar<TData>({
           )}
         </div>
         <div className="flex items-center space-x-2">
+          {/* Bulk archive buttons - only show when showArchive is true and items are selected */}
+          {showArchive && selectedAttempts.length > 0 && (
+            <>
+              {archiveCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onBulkArchive?.(true)}
+                  className="h-8"
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive {archiveCount} of {selectedAttempts.length}
+                </Button>
+              )}
+              {unarchiveCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onBulkArchive?.(false)}
+                  className="h-8"
+                >
+                  <Unlock className="mr-2 h-4 w-4" />
+                  Unarchive {unarchiveCount} of {selectedAttempts.length}
+                </Button>
+              )}
+            </>
+          )}
+
           {showExport && (
             <>
               <BrightspaceExportButton
