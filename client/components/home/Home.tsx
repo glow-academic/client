@@ -830,7 +830,11 @@ export default function Home() {
 
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
-        <SimulationHistory filteredData={filteredData} showExport={false} />
+        <SimulationHistory
+          filteredData={filteredData}
+          showExport={false}
+          showArchive={false}
+        />
       </div>
     </div>
   );

@@ -8,6 +8,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/contexts/profile-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -38,6 +39,8 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ profileId }: DashboardProps) {
+  const { effectiveProfile } = useProfile();
+
   // Use centralized filtering hook
   const { data: filteredData, isLoading } = useFilteredAnalyticsData({
     ...(profileId && { profileId }),
@@ -247,6 +250,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
       setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);
     }
   };
+
+  // Determine if user can archive (instructional, admin, superadmin)
+  const canArchive =
+    effectiveProfile?.role === "instructional" ||
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "superadmin";
 
   // Loading state
   if (isLoading) {
@@ -607,6 +616,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <SimulationHistory
         filteredData={filteredData}
         showExport={false}
+        showArchive={canArchive}
       />
     </div>
   );

@@ -36,6 +36,7 @@ export interface DataTableProps<TData, TValue> {
   simulationOptions: { value: string; label: string }[];
   scenarioOptions?: { value: string; label: string }[];
   showExport?: boolean;
+  showArchive?: boolean;
   showAll?: boolean;
   startDate?: Date | undefined;
   endDate?: Date | undefined;
@@ -49,6 +50,7 @@ export function DataTable<TData, TValue>({
   simulationOptions,
   scenarioOptions = [],
   showExport = true,
+  showArchive = false,
   showAll = false,
   startDate: _startDate,
   endDate: _endDate,

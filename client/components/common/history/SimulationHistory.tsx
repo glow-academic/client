@@ -15,16 +15,21 @@ export interface SimulationHistoryProps {
 
   // Required: Whether to show export functionality
   showExport: boolean;
+
+  // Required: Whether to show archive functionality
+  showArchive: boolean;
 }
 
 export default function SimulationHistory({
   filteredData,
   showExport,
+  showArchive,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
       filteredData,
       showExport,
+      showArchive,
     });
 
   return (
@@ -35,6 +40,7 @@ export default function SimulationHistory({
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
       showExport={showExport}
+      showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream
       filteredData={filteredData}
     />

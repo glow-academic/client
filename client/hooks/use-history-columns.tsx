@@ -20,9 +20,11 @@ interface EnhancedAttempt extends SimulationAttempt {
 export function useHistoryColumns({
   filteredData,
   showExport: _showExport = true,
+  showArchive = false,
 }: {
   filteredData: FilteredData | null;
   showExport: boolean;
+  showArchive: boolean;
 }) {
   // Use centralized datasets from filteredData
   const personas = filteredData?.personas;
@@ -644,6 +646,8 @@ export function useHistoryColumns({
               attemptCreatedAt={
                 (attempt as EnhancedAttempt & { createdAt?: string }).createdAt
               }
+              archived={attempt.archived}
+              showArchive={showArchive}
             />
           );
         },
@@ -657,6 +661,7 @@ export function useHistoryColumns({
     validRubrics,
     personaColorMap,
     getBadgeColors,
+    showArchive,
   ]);
 
   // Use enhanced attempts data
