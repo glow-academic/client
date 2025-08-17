@@ -23,6 +23,7 @@ const columnMap = {
   personasTested: "Personas",
   averageScore: "Score",
   scenarios: "Scenarios",
+  search: "Search",
   // Reports page columns
   firstName: "Name",
   username: "Alias",
@@ -91,7 +92,9 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== "undefined" && column.getCanHide()
+              typeof column.accessorFn !== "undefined" &&
+              column.getCanHide() &&
+              column.id !== "search" // Always hide search column
           )
           .map((column) => {
             return (

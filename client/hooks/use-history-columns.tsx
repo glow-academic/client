@@ -2,6 +2,11 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableRowActions } from "@/components/common/history/DataTableRowActions";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
 // No queries; all data comes from filteredData
@@ -184,6 +189,50 @@ export function useHistoryColumns({
   // Define columns - only attempts view
   const columns = useMemo(() => {
     const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
+      // Search column (hidden, used for global search)
+      {
+        id: "search",
+        enableHiding: true,
+        enableSorting: false,
+        filterFn: (row, _id, value) => {
+          if (!value) return true;
+          const searchValue = value.toLowerCase();
+          const attempt = row.original;
+
+          // Search in profile name
+          const profileOption = profileOptions.find(
+            (profile) => profile.value === attempt.profileId
+          );
+          if (profileOption?.label.toLowerCase().includes(searchValue)) {
+            return true;
+          }
+
+          // Search in simulation title
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === attempt.simulationId
+          );
+          if (simulation?.title.toLowerCase().includes(searchValue)) {
+            return true;
+          }
+
+          // Search in scenario names
+          const scenarioNames = attempt.scenarios.map((chat) => {
+            const scenario = filteredData?.scenarios?.find(
+              (s) => s.id === chat.scenarioId
+            );
+            return scenario?.name || "";
+          });
+          if (
+            scenarioNames.some((name) =>
+              name.toLowerCase().includes(searchValue)
+            )
+          ) {
+            return true;
+          }
+
+          return false;
+        },
+      },
       // Date column
       {
         accessorKey: "createdAt",
@@ -204,12 +253,26 @@ export function useHistoryColumns({
             hour12: false,
           });
 
+          const isArchived = (row.original as EnhancedAttempt).archived;
+
           return (
-            <div className="font-medium text-sm">
-              <div>
-                {month}-{day}-{year}
+            <div className="flex items-center justify-between">
+              <div className="font-medium text-sm">
+                <div>
+                  {month}-{day}-{year}
+                </div>
+                <div className="text-xs text-muted-foreground">{time}</div>
               </div>
-              <div className="text-xs text-muted-foreground">{time}</div>
+              {isArchived && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="w-2 h-2 rounded-full bg-red-500 ml-2" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Archived</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           );
         },
@@ -278,39 +341,11 @@ export function useHistoryColumns({
         },
         enableHiding: true,
         filterFn: (row, id, value) => {
-          if (!value) return true;
-
-          const searchTerm = value.toLowerCase();
-          const simulationId = row.getValue(id) as string;
-          const simulation = filteredData?.simulations?.find(
-            (s) => s.id === simulationId
-          );
-          const simulationTitle = simulation?.title?.toLowerCase() || "";
-
-          // Search in simulation title
-          if (simulationTitle.includes(searchTerm)) return true;
-
-          // Search in profile name
-          const profileId = row.getValue("profileId") as string;
-          const profileOption = profileOptions.find(
-            (p) => p.value === profileId
-          );
-          const profileName = profileOption?.label?.toLowerCase() || "";
-          if (profileName.includes(searchTerm)) return true;
-
-          // Search in scenarios (chats)
-          const chats = row.getValue("scenarios") as SimulationChat[];
-          const scenarioIds = chats.map((chat) => chat.scenarioId);
-          const scenarioNames = scenarioIds.map((scenarioId) => {
-            const scenario = filteredData?.scenarios?.find(
-              (s) => s.id === scenarioId
-            );
-            return scenario?.name?.toLowerCase() || "";
-          });
-          if (scenarioNames.some((name) => name.includes(searchTerm)))
+          if (!value || !Array.isArray(value) || value.length === 0)
             return true;
 
-          return false;
+          const simulationId = row.getValue(id) as string;
+          return value.includes(simulationId);
         },
       },
       // Scenarios completion column
@@ -425,11 +460,10 @@ export function useHistoryColumns({
         },
         filterFn: (row, id, value) => {
           const personasTested = row.getValue(id) as string[];
-          if (!value || value.length === 0) return true;
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
           return value.some((filterAgent: string) =>
-            personasTested?.some((agent) =>
-              agent.toLowerCase().includes(filterAgent.toLowerCase())
-            )
+            personasTested?.includes(filterAgent)
           );
         },
       },

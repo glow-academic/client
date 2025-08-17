@@ -66,19 +66,21 @@ const metricOptions = [
 
 export interface BrightspaceExportButtonProps<TData> {
   table: Table<TData>;
-  filteredData: FilteredData | null;
+  filteredData?: FilteredData | null;
+  simulations?: Array<{ id: string; title: string }>;
 }
 
 export function BrightspaceExportButton<TData>({
   table,
   filteredData,
+  simulations,
 }: BrightspaceExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
 
-  // Use filtered simulations from the filtered data
-  const filteredSimulations = filteredData?.simulations || [];
+  // Use filtered simulations from the filtered data or direct simulations prop
+  const filteredSimulations = filteredData?.simulations || simulations || [];
 
   // Function to export to CSV for Brightspace
   const handleBrightspaceExport = () => {

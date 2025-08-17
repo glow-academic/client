@@ -50,15 +50,15 @@ export function DataTableToolbar<TData>({
   const archiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find((r) => (r.original as any).id === attemptId);
-    return row && !(row.original as any).archived;
+      .rows.find((r) => (r.original as unknown as { id: string }).id === attemptId);
+    return row && !(row.original as unknown as { archived: boolean }).archived;
   }).length;
 
   const unarchiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find((r) => (r.original as any).id === attemptId);
-    return row && (row.original as any).archived;
+      .rows.find((r) => (r.original as unknown as { id: string }).id === attemptId);
+    return row && (row.original as unknown as { archived: boolean }).archived;
   }).length;
 
   return (
@@ -68,13 +68,10 @@ export function DataTableToolbar<TData>({
           <Input
             placeholder="Search by name, simulation, or scenarios..."
             value={
-              (table.getColumn("simulationId")?.getFilterValue() as string) ??
-              ""
+              (table.getColumn("search")?.getFilterValue() as string) ?? ""
             }
             onChange={(event) =>
-              table
-                .getColumn("simulationId")
-                ?.setFilterValue(event.target.value)
+              table.getColumn("search")?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
