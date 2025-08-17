@@ -62,7 +62,6 @@ export default function SimulationComposition({
   // Use centralized datasets from filteredData
   const scenarios = filteredData?.scenarios;
   const personas = filteredData?.personas;
-  const agents = filteredData?.agents;
   const parameters = filteredData?.parameters;
   const parameterItems = filteredData?.parameterItems;
 
@@ -72,7 +71,6 @@ export default function SimulationComposition({
       !filteredData ||
       !scenarios ||
       !personas ||
-      !agents ||
       !parameters ||
       !parameterItems
     ) {
@@ -92,15 +90,7 @@ export default function SimulationComposition({
       parameterItems,
       config
     );
-  }, [
-    filteredData,
-    scenarios,
-    personas,
-    agents,
-    parameters,
-    parameterItems,
-    config,
-  ]);
+  }, [filteredData, scenarios, personas, parameters, parameterItems, config]);
 
   // Get method label for dialog titles
   const getMethodLabel = (isHigh: boolean) => {
@@ -146,7 +136,7 @@ export default function SimulationComposition({
     // For low performing simulations, the presence of these attributes suggests they may hinder success
     const impactDirection = isHigh ? "contribute to" : "hinder";
 
-    return `${methodLabel} performing simulations ${significanceText} tend to have more ${topAttribute.name.toLowerCase()}, suggesting that ${topAttribute.description.toLowerCase()} may ${impactDirection} better outcomes.`;
+    return `${methodLabel} performing simulations ${significanceText} tend to have more ${topAttribute.name}, suggesting that ${topAttribute.description} may ${impactDirection} better outcomes.`;
   };
 
   // Check if we have any data at all

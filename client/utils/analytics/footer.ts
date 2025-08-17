@@ -124,11 +124,6 @@ export const calculateScenarioAttributeBreakdown = (
     "#f43f5e",
   ];
 
-  // Helper function to format time values
-  const formatTimeValue = (timeString: string) => {
-    // Just return the time string as-is to avoid "Invalid Date" issues
-    return timeString;
-  };
 
   // Analyze each parameter item
   const elements: ScenarioAttributeElement[] = parameterItemsForSelected.map(
@@ -234,9 +229,9 @@ export const calculateScenarioAttributeBreakdown = (
           const improvement = recentAvg - earlierAvg;
 
           if (improvement > 5) {
-            insight = `Performance has improved by ${Math.round(improvement)}% recently. Consider using this ${selectedParameter.name.toLowerCase()} more frequently.`;
+            insight = `Performance has improved by ${Math.round(improvement)}% recently. Consider using this ${selectedParameter.name} more frequently.`;
           } else if (improvement < -5) {
-            insight = `Performance has declined by ${Math.round(Math.abs(improvement))}% recently. Review training approach for this ${selectedParameter.name.toLowerCase()}.`;
+            insight = `Performance has declined by ${Math.round(Math.abs(improvement))}% recently. Review training approach for this ${selectedParameter.name}.`;
           } else {
             insight = `Performance has remained stable. Current average score is ${Math.round(avgScore)}% with ${Math.round(completionRate)}% completion rate.`;
           }
@@ -246,10 +241,7 @@ export const calculateScenarioAttributeBreakdown = (
       }
 
       // Format display name based on parameter type
-      let displayName = paramItem.value;
-      if (selectedParameter.name.toLowerCase().includes("time")) {
-        displayName = formatTimeValue(paramItem.value);
-      }
+      const displayName = paramItem.value;
 
       return {
         id: paramItem.id,
@@ -599,11 +591,6 @@ export const calculateSimulationComposition = (
       (completedChats.length / performance.chats.length) * 100;
     performance.totalAttempts = performance.chats.length;
 
-    // Calculate parameter breakdown for this simulation
-    const simScenarios = filteredData.scenarios.filter((s) =>
-      performance.simulation.scenarioIds?.includes(s.id)
-    );
-
     // Collect all parameter items used in this simulation's scenarios
     const usedParameterItems = new Map<
       string,
@@ -615,7 +602,18 @@ export const calculateSimulationComposition = (
       }
     >();
 
-    simScenarios.forEach((scenario) => {
+    // Find all scenarios that are actually used in this simulation's chats
+    const simulationScenarioIds = new Set<string>();
+    performance.chats.forEach((chat) => {
+      simulationScenarioIds.add(chat.scenarioId);
+    });
+
+    // Get all scenarios used in this simulation
+    const simulationScenarios = filteredData.scenarios.filter((scenario) =>
+      simulationScenarioIds.has(scenario.id)
+    );
+
+    simulationScenarios.forEach((scenario) => {
       scenario.parameterItemIds?.forEach((paramItemId) => {
         const paramItem = parameterItems.find((pi) => pi.id === paramItemId);
         if (paramItem) {
@@ -993,12 +991,8 @@ export const calculateScenarioPerformanceWithinSimulation = (
     return attempt?.simulationId === selectedSimulation.id;
   });
 
-  // Get scenarios for the selected simulation - use all scenarios in filteredData
-  // since the filtering should already be done appropriately upstream
-  const simulationScenarios = filteredData.scenarios;
-
   // Calculate performance for each scenario
-  const scenarioData = simulationScenarios
+  const scenarioData = filteredData.scenarios
     .map((scenario) => {
       const scenarioChats = filteredData.chats.filter((chat) => {
         const attempt = filteredData.attempts.find(
