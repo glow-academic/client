@@ -73,42 +73,6 @@ export default function CohortPerformance({
     );
   }, [filteredData, rubrics, thresholds, selectedSimulations]);
 
-  // Get simulations that have data available
-  const simulationsWithData = useMemo(() => {
-    if (
-      !filteredData?.simulations ||
-      !filteredData?.grades ||
-      !filteredData?.chats ||
-      !filteredData?.attempts
-    )
-      return [];
-
-    // Get all simulation IDs that have grades (data is already filtered by date)
-    const simulationIdsWithData = new Set<string>();
-
-    filteredData.grades.forEach((grade) => {
-      const chat = filteredData.chats.find(
-        (c) => c.id === grade.simulationChatId
-      );
-      const attempt = filteredData.attempts.find(
-        (a) => a.id === chat?.attemptId
-      );
-
-      if (attempt) {
-        simulationIdsWithData.add(attempt.simulationId);
-      }
-    });
-
-    return filteredData.simulations.filter((s) =>
-      simulationIdsWithData.has(s.id)
-    );
-  }, [
-    filteredData?.simulations,
-    filteredData?.grades,
-    filteredData?.chats,
-    filteredData?.attempts,
-  ]);
-
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
     if (!cohortPerformanceResult || !cohortPerformanceResult.hasData)
@@ -152,23 +116,19 @@ export default function CohortPerformance({
               Pass rates by cohort
             </CardDescription>
           </div>
-          {simulationsWithData && simulationsWithData.length > 0 && (
-            <SimulationPicker
-              simulations={simulationsWithData.map((s) => ({
-                id: s.id,
-                title: s.title,
+          <SimulationPicker
+            simulations={
+              filteredData?.simulations?.map((s) => ({
+                ...s,
                 timeLimit: s.timeLimit || undefined,
-                active: s.active,
-                defaultSimulation: s.defaultSimulation,
-                practiceSimulation: s.practiceSimulation,
-              }))}
-              placeholder="Filter by simulation..."
-              onSelect={setSelectedSimulations}
-              selectedSimulations={selectedSimulations}
-              hideSelectedChips={true}
-              showLabel={false}
-            />
-          )}
+              })) ?? []
+            }
+            placeholder="Filter by simulation..."
+            onSelect={setSelectedSimulations}
+            selectedSimulations={selectedSimulations}
+            hideSelectedChips={true}
+            showLabel={false}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-3">
@@ -177,7 +137,9 @@ export default function CohortPerformance({
           {cohortPerformanceResult?.cohortData.map((cohort) => {
             // Calculate pass rate percentage
             const passRatePercentage =
-              (cohort.passedStudents / cohort.totalStudents) * 100;
+              cohort.totalStudents > 0
+                ? (cohort.passedStudents / cohort.totalStudents) * 100
+                : 0;
 
             // Determine background color based on pass rate
             let bgColor: string;
@@ -217,8 +179,9 @@ export default function CohortPerformance({
                         </h4>
                         <p className="text-xs text-muted-foreground">
                           {passRatePercentage.toFixed(2)}% of students pass{" "}
-                          {selectedSimulations.length} quiz
-                          {selectedSimulations.length !== 1 ? "zes" : ""} with a{" "}
+                          {cohort.availableSimulations} quiz
+                          {cohort.availableSimulations !== 1 ? "zes" : ""} with
+                          a{" "}
                           {Math.round(
                             (cohort.rubricPassPoints / cohort.rubricPoints) *
                               100

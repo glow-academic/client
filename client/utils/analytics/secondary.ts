@@ -135,16 +135,43 @@ export const calculateCohortPerformance = (
 
   // Initialize all filtered cohorts
   filteredCohorts.forEach((cohort) => {
+    // Find the rubric for this cohort based on its simulations
+    let cohortRubricPoints = 0;
+    let cohortRubricPassPoints = 0;
+
+    // Get the first simulation's rubric to use as the cohort's rubric
+    // This handles the case where there are no attempts yet but we still want to show rubric info
+    const firstSimulation = filteredSimulations.find((s) =>
+      cohort.simulationIds.includes(s.id)
+    );
+
+    if (firstSimulation) {
+      const rubric = rubrics.find((r) => r.id === firstSimulation.rubricId);
+      if (rubric) {
+        cohortRubricPoints = rubric.points;
+        cohortRubricPassPoints = rubric.passPoints;
+      }
+    }
+
+    // Calculate available simulations for this cohort
+    // If specific simulations are selected, only count those that are in the cohort
+    const availableSimulationIds =
+      selectedSimulationIds.length > 0
+        ? cohort.simulationIds.filter((id) =>
+            selectedSimulationIds.includes(id)
+          )
+        : cohort.simulationIds;
+
     cohortStats.set(cohort.id, {
       totalAttempts: 0,
       passedAttempts: 0,
       totalStudents: new Set(),
       passedStudents: new Set(),
       totalScores: [],
-      rubricPoints: 0,
-      rubricPassPoints: 0,
+      rubricPoints: cohortRubricPoints,
+      rubricPassPoints: cohortRubricPassPoints,
       studentSimulationPasses: new Map(),
-      availableSimulations: new Set(),
+      availableSimulations: new Set(availableSimulationIds),
     });
   });
 
@@ -183,9 +210,17 @@ export const calculateCohortPerformance = (
           (grade.score / (rubric.points > 0 ? rubric.points : 100)) * 100
         );
         cohortData.totalScores.push(normalizedPercent);
-        cohortData.rubricPoints = rubric.points;
-        cohortData.rubricPassPoints = rubric.passPoints;
-        cohortData.availableSimulations.add(simulation.id);
+        // Update rubric points if this is the first grade or if we need to use a different rubric
+        // This ensures we use the actual rubric from the grade if it differs from the initial simulation rubric
+        if (
+          cohortData.rubricPoints === 0 ||
+          cohortData.rubricPoints !== rubric.points
+        ) {
+          cohortData.rubricPoints = rubric.points;
+          cohortData.rubricPassPoints = rubric.passPoints;
+        }
+        // Note: availableSimulations is pre-populated with cohort simulation IDs
+        // No need to add simulation.id here as it's already included
 
         // Check if this attempt passed based on rubric pass points
         const passed = grade.score >= rubric.passPoints;
