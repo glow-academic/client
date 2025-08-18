@@ -12,15 +12,10 @@ import {
   isSectionAvailableForRole,
 } from "@/utils/navigation-utils";
 import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useContext, useMemo } from "react";
 
 type Profile = typeof profiles.$inferSelect;
 type ProfileRole = Profile["role"];
@@ -45,16 +40,11 @@ const GUEST_PROFILE: Profile = {
 };
 
 interface ProfileContextType {
-  activeProfile: Profile | null;  
+  activeProfile: Profile | null;
   simulatedProfile: Profile | null;
   effectiveProfile: Profile | null;
   isSimulating: boolean;
   isLoading: boolean;
-  setSimulatedProfile: (
-    profileId: string | null,
-    shouldNavigate?: boolean
-  ) => void;
-  clearSimulation: () => void;
   navigateToDefault: (role: ProfileRole) => void;
   isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
 }
@@ -77,148 +67,77 @@ interface ProfileProviderProps {
 
 export function ProfileProvider({
   children,
-  activeProfile,
+  activeProfile: bootstrapProfile, // server-provided profile of the signed-in user (or null)
   isProfileLoading = false,
 }: ProfileProviderProps) {
-  const [isEmulateMode, setIsEmulateMode] = useState<boolean>(
-    () =>
-      typeof window !== "undefined" &&
-      localStorage.getItem("emulate") === "true"
-  );
-  const [simulatedProfileId, setSimulatedProfileId] = useState<string | null>(
-    () =>
-      typeof window === "undefined"
-        ? null
-        : localStorage.getItem("simulatedProfileId")
-  );
-  const [isClient, setIsClient] = useState(false);
-  const queryClient = useQueryClient();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const effectiveId =
+    session?.effectiveProfileId ??
+    session?.user?.profileId ??
+    bootstrapProfile?.id ??
+    null;
 
-  // Keep local emulate flag in sync with localStorage and custom events
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const { data: effectiveProfile, isLoading: isEffLoading } = useQuery({
+    queryKey: ["effectiveProfile", effectiveId],
+    queryFn: () =>
+      effectiveId ? getProfile(effectiveId) : Promise.resolve(null),
+    enabled: !!effectiveId,
+  });
 
-    const updateEmulateFromStorage = () => {
-      try {
-        setIsEmulateMode(localStorage.getItem("emulate") === "true");
-      } catch {
-        setIsEmulateMode(false);
-      }
-    };
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "emulate") {
-        updateEmulateFromStorage();
-      }
-    };
-
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(
-      "profile:emulate-changed",
-      updateEmulateFromStorage as EventListener
+  // Determine if we're in full emulation mode (when "Emulate" button was pressed)
+  const isFullEmulation = useMemo(() => {
+    return !!(
+      bootstrapProfile &&
+      effectiveProfile &&
+      effectiveProfile.id !== bootstrapProfile.id &&
+      session?.emulationTTL && // Full emulation is enabled when TTL is set
+      session?.fullEmulation // And the full emulation flag is set
     );
-    // Initialize once on mount
-    updateEmulateFromStorage();
-
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(
-        "profile:emulate-changed",
-        updateEmulateFromStorage as EventListener
-      );
-    };
-  }, []);
-
-  const { data: simulatedProfileData, isLoading: isSimulatingProfileLoading } =
-    useQuery({
-      queryKey: ["simulatedProfile", simulatedProfileId],
-      queryFn: async () => {
-        if (!simulatedProfileId) return null;
-        return await getProfile(simulatedProfileId);
-      },
-      enabled: !!simulatedProfileId && isClient,
-    });
-
-  const { effectiveProfile, simulatedProfile, isLoading } = useMemo(() => {
-    // During hydration, show loading state
-    if (!isClient) {
-      return {
-        effectiveProfile: null,
-        simulatedProfile: null,
-        isLoading: true,
-      };
-    }
-
-    // Check for guest mode in localStorage
-    const isGuestMode =
-      isClient && localStorage.getItem("guestMode") === "true";
-
-    // If guest mode is active, use guest profile
-    if (isGuestMode) {
-      return {
-        effectiveProfile: GUEST_PROFILE,
-        simulatedProfile: GUEST_PROFILE,
-        isLoading: false,
-      };
-    }
-
-    // If a simulation is active and loaded, it becomes the effective profile.
-    if (simulatedProfileData) {
-      return {
-        effectiveProfile: simulatedProfileData,
-        simulatedProfile: simulatedProfileData,
-        isLoading: false,
-      };
-    }
-
-    // If we're still loading the simulated profile, show loading
-    if (isSimulatingProfileLoading) {
-      return {
-        effectiveProfile: null,
-        simulatedProfile: null,
-        isLoading: true,
-      };
-    }
-
-    // If we're still loading the main profile query, show loading
-    if (isProfileLoading) {
-      return {
-        effectiveProfile: null,
-        simulatedProfile: null,
-        isLoading: true,
-      };
-    }
-
-    // If we have an active profile, use it
-    if (activeProfile) {
-      return {
-        effectiveProfile: activeProfile,
-        simulatedProfile: null,
-        isLoading: false,
-      };
-    }
-
-    // At this point we *know* we have no session *and* no profile. It's truly guest mode.
-    return {
-      effectiveProfile: GUEST_PROFILE,
-      simulatedProfile: null,
-      isLoading: false,
-    };
   }, [
-    isClient,
-    isSimulatingProfileLoading,
-    isProfileLoading,
-    simulatedProfileData,
-    activeProfile,
+    bootstrapProfile,
+    effectiveProfile,
+    session?.emulationTTL,
+    session?.fullEmulation,
   ]);
 
-  const navigateToDefault = React.useCallback(
+  const resolvedActiveProfile = useMemo<Profile | null>(() => {
+    // When authenticated but no effective fetched yet, show null/loading
+    if (status === "loading" || isProfileLoading || isEffLoading) return null;
+    // If not authenticated at all, fallback to guest
+    if (status === "unauthenticated" && !bootstrapProfile) return GUEST_PROFILE;
+
+    // Three states:
+    // 1. Normal: activeProfile = bootstrapProfile, effectiveProfile = bootstrapProfile
+    // 2. Half emulation: activeProfile = bootstrapProfile, effectiveProfile = emulated profile
+    // 3. Full emulation: activeProfile = effectiveProfile (emulated profile), effectiveProfile = emulated profile
+    if (isFullEmulation && effectiveProfile) {
+      return effectiveProfile; // Full emulation: use emulated profile as active
+    } else {
+      return bootstrapProfile; // Normal or half emulation: use user's actual profile as active
+    }
+  }, [
+    status,
+    isProfileLoading,
+    isEffLoading,
+    bootstrapProfile,
+    effectiveProfile,
+    isFullEmulation,
+  ]);
+
+  const simulatedProfile = useMemo<Profile | null>(() => {
+    if (!effectiveProfile || !bootstrapProfile) return null;
+    // If effective profile differs from bootstrapProfile, we are simulating
+    // simulatedProfile represents the profile we're emulating (effectiveProfile)
+    if (effectiveProfile.id !== bootstrapProfile.id) {
+      return effectiveProfile;
+    }
+    return null;
+  }, [bootstrapProfile, effectiveProfile]);
+
+  const navigateToDefault = useCallback(
     (role: ProfileRole) => {
       const defaultSection = getFirstAvailableSectionForRole(role);
       const route = getSectionRoute(defaultSection, pathname);
@@ -227,34 +146,7 @@ export function ProfileProvider({
     [router, pathname]
   );
 
-  const setSimulatedProfile = React.useCallback(
-    (profileId: string | null, shouldNavigate: boolean = true) => {
-      if (!isClient) return;
-
-      setSimulatedProfileId(profileId);
-
-      if (profileId) {
-        localStorage.setItem("simulatedProfileId", profileId);
-      } else {
-        localStorage.removeItem("simulatedProfileId");
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["simulatedProfile"] });
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-
-      // Optional: Handle navigation after state change
-      if (shouldNavigate && !profileId && activeProfile) {
-        navigateToDefault(activeProfile.role);
-      }
-    },
-    [isClient, queryClient, navigateToDefault, activeProfile]
-  );
-
-  const clearSimulation = React.useCallback(() => {
-    setSimulatedProfile(null);
-  }, [setSimulatedProfile]);
-
-  const isSectionAvailable = React.useCallback(
+  const isSectionAvailable = useCallback(
     (section: string, role?: ProfileRole) => {
       const targetRole = role || effectiveProfile?.role || "guest";
       return isSectionAvailableForRole(section, targetRole);
@@ -262,19 +154,17 @@ export function ProfileProvider({
     [effectiveProfile?.role]
   );
 
-  const resolvedActiveProfile = useMemo<Profile | null>(() => {
-    if (isEmulateMode && effectiveProfile) return effectiveProfile;
-    return activeProfile;
-  }, [isEmulateMode, effectiveProfile, activeProfile]);
-
   const value: ProfileContextType = {
     activeProfile: resolvedActiveProfile,
     simulatedProfile,
-    effectiveProfile,
-    isSimulating: !!simulatedProfile,
-    isLoading,
-    setSimulatedProfile,
-    clearSimulation,
+    effectiveProfile:
+      effectiveProfile ?? resolvedActiveProfile ?? GUEST_PROFILE,
+    isSimulating: !!(
+      bootstrapProfile &&
+      effectiveProfile &&
+      effectiveProfile.id !== bootstrapProfile.id
+    ),
+    isLoading: status === "loading" || isProfileLoading || isEffLoading,
     navigateToDefault,
     isSectionAvailable,
   };

@@ -172,10 +172,14 @@ vi.mock("reactour", () => ({
 
 // Logger
 vi.mock("@/utils/logger", () => ({
-  logInfo: vi.fn(),
-  logError: vi.fn(),
-  logWarn: vi.fn(),
-  logDebug: vi.fn(),
+  log: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    event: vi.fn(),
+  },
+  withDuration: vi.fn(),
 }));
 
 // API base for sockets and fetch base URLs

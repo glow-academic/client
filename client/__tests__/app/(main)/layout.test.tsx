@@ -1,12 +1,22 @@
 import { useProfile } from "@/contexts/profile-context";
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { act, render, screen } from "@/test/custom-render";
 import { usePathname } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
 import "@/mocks/auth";
 import "@/mocks/navigation";
+
+// Mock WebSocket context
+vi.mock("@/contexts/websocket-context", () => ({
+  useWebSocket: vi.fn(() => ({
+    isConnected: true,
+    sendMessage: vi.fn(),
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
+  })),
+  WebSocketProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 // Mock simulation context
 vi.mock("@/contexts/simulation-context", () => ({
@@ -105,8 +115,6 @@ vi.mock("@/contexts/profile-context", () => ({
     },
     isSimulating: false,
     isLoading: false,
-    setSimulatedProfile: vi.fn(),
-    clearSimulation: vi.fn(),
     navigateToDefault: vi.fn(),
     isSectionAvailable: vi.fn(() => true),
   })),
@@ -364,8 +372,6 @@ describe("MainLayout", () => {
         },
         isSimulating: false,
         isLoading: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -424,8 +430,6 @@ describe("MainLayout", () => {
         },
         isSimulating: false,
         isLoading: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -479,8 +483,6 @@ describe("MainLayout", () => {
         },
         isSimulating: false,
         isLoading: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });

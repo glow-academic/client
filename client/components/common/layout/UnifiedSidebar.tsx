@@ -66,7 +66,7 @@ import {
   UserCogIcon,
   Users,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -203,8 +203,8 @@ export function UnifiedSidebar({
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Use the profile context
-  const { activeProfile, effectiveProfile, setSimulatedProfile, isLoading } =
-    useProfile();
+  const { activeProfile, effectiveProfile, isLoading } = useProfile();
+  const { update } = useSession();
 
   // Get simulatable profiles for the dropdown
   const { data: simulatableProfiles, isLoading: isLoadingProfiles } = useQuery({
@@ -569,26 +569,52 @@ export function UnifiedSidebar({
     [router, handleSectionChange, isNavigating]
   );
 
-  const handleProfileSelect = (profileId: string) => {
-    const emulateEnabled =
-      typeof window !== "undefined" &&
-      localStorage.getItem("emulate") === "true";
+  const handleProfileSelect = async (profileId: string) => {
+    const isSelf = profileId === activeProfile?.id;
 
-    // If the user selects their own profile
-    if (profileId === activeProfile?.id) {
-      // In emulate mode, do nothing
-      if (emulateEnabled) {
-        return;
+    try {
+      if (isSelf) {
+        // revert to self (no need to authorize)
+        await update({
+          effectiveProfileId: activeProfile!.id,
+          emulationTTL: null,
+        });
+      } else {
+        // 1) server permission check
+        const r = await fetch("/api/emulate/authorize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ targetProfileId: profileId }),
+        });
+        if (!r.ok) {
+          const msg = (await r.json().catch(() => ({})))?.error || "Forbidden";
+          toast.error(msg);
+          return;
+        }
+
+        // 2) write to NextAuth session (authoritative) - this is half emulation
+        await update({
+          effectiveProfileId: profileId,
+          // optional TTL: 2 hours
+          emulationTTL: Date.now() + 120 * 60 * 1000,
+          fullEmulation: false, // This is half emulation, not full
+        });
       }
-      // Otherwise, clear the simulation (resets to activeProfile)
-      setSimulatedProfile(null, true);
-    } else {
-      // Otherwise, simulate the selected profile
-      setSimulatedProfile(profileId, true);
-    }
 
-    // Clear guest flags (simulatedProfileId is managed by setSimulatedProfile)
-    localStorage.removeItem("guestMode");
+      // Reload so server-rendered pages pick up the new session
+      window.location.reload();
+    } catch (error) {
+      log.error("profile.switch.failed", {
+        message: "Failed to switch profile",
+        error,
+        context: {
+          component: "UnifiedSidebar",
+          function: "handleProfileSelect",
+        },
+      });
+      toast.error("Failed to switch profile");
+    }
   };
 
   // Watch for profile changes and redirect if current page is not accessible
@@ -629,10 +655,6 @@ export function UnifiedSidebar({
     toast.promise(
       async () => {
         try {
-          // Clear guest mode if it exists
-          localStorage.removeItem("guestMode");
-          localStorage.removeItem("simulatedProfileId");
-          localStorage.removeItem("emulate");
           await signOut({ redirectTo: `${appPrefix}/` });
           return "Logged out successfully";
         } catch (error) {
@@ -1031,13 +1053,44 @@ export function UnifiedSidebar({
             </Button>
             <Button
               className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              onClick={() => {
+              onClick={async () => {
                 try {
-                  if (typeof window !== "undefined") {
-                    localStorage.setItem("emulate", "true");
-                    window.dispatchEvent(new Event("profile:emulate-changed"));
+                  // Use the same server authorization flow as profile switching
+                  const r = await fetch("/api/emulate/authorize", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      targetProfileId: effectiveProfile.id,
+                    }),
+                  });
+                  if (!r.ok) {
+                    const msg =
+                      (await r.json().catch(() => ({})))?.error || "Forbidden";
+                    toast.error(msg);
+                    return;
                   }
-                } catch {}
+
+                  // Update the session to enable full emulation mode
+                  await update({
+                    effectiveProfileId: effectiveProfile.id,
+                    emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours
+                    fullEmulation: true, // This enables full emulation mode
+                  });
+
+                  // Reload to pick up the new session
+                  window.location.reload();
+                } catch (error) {
+                  log.error("emulation.enable.failed", {
+                    message: "Failed to enable emulation",
+                    error,
+                    context: {
+                      component: "UnifiedSidebar",
+                      function: "emulateButton",
+                    },
+                  });
+                  toast.error("Failed to enable emulation");
+                }
                 setIsEmulateDialogOpen(false);
               }}
             >

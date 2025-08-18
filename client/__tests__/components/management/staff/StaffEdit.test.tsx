@@ -1,5 +1,4 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -226,8 +225,6 @@ describe("StaffEdit", () => {
         simulatedProfile: null,
         isSimulating: false,
         isLoading: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(),
       });
@@ -260,8 +257,6 @@ describe("StaffEdit", () => {
         simulatedProfile: null,
         isSimulating: false,
         isLoading: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(),
       });

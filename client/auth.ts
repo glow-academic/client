@@ -27,12 +27,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PostgresAdapter(pool),
   providers: [
     MicrosoftEntraID({
-      clientId: clientId,
-      clientSecret: clientSecret,
+      clientId,
+      clientSecret,
     }),
   ],
-  secret: secret,
+  secret,
   trustHost: true,
+  // ✨ Use JWT strategy so we can store effectiveProfileId in the token
+  session: { strategy: "jwt" },
   events: {
     async createUser({ user }) {
       try {
@@ -43,20 +45,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
           return;
         }
-
-        // Extract alias from email
         const alias = user.email.split("@")[0];
-
-        // Check if a profile already exists with this alias (pre-seeded profile)
         const existingProfile = await getProfileByAlias(alias || "");
 
         if (existingProfile && !existingProfile.userId) {
-          // Link the existing profile to this new user
           await updateProfile(existingProfile.id, {
             userId: parseInt(user.id!),
             lastLogin: new Date().toISOString(),
           });
-
           await log.info("auth.profile.linked", {
             subject: { entityType: "profile", entityId: existingProfile.id },
             actor: { profileId: existingProfile.id },
@@ -64,15 +60,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             message: "Linked existing profile to new user",
           });
         } else {
-          // Create a new profile for this user
           const nameParts = user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
           await createProfile({
             userId: parseInt(user.id!),
-            firstName: firstName,
-            lastName: lastName,
+            firstName,
+            lastName,
             alias: alias || "",
             viewedIntro: false,
             role: "guest",
@@ -108,7 +103,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return;
         }
 
-        // If this is not a new user, update their profile with latest info
         if (!isNewUser) {
           const nameParts =
             profile?.name?.split(" ") || user.name?.split(" ") || [];
@@ -125,17 +119,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             message: "Updating existing user profile",
           });
 
-          // Get the user's profile to update it
           const userProfiles = await getProfilesByUser(parseInt(user.id!));
           const userProfile = userProfiles[0];
-
           if (userProfile) {
             await updateProfile(userProfile.id, {
-              firstName: firstName,
-              lastName: lastName,
+              firstName,
+              lastName,
               lastLogin: new Date().toISOString(),
             });
-
             await log.info("auth.profile.updated", {
               subject: { entityType: "profile", entityId: userProfile.id },
               context: {
@@ -158,11 +149,56 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    async session({ session, user }) {
-      // Add user ID to session for easier access
-      if (session.user && user?.id) {
-        session.user.id = user.id;
+    // 🔑 Put identity & emulation into the JWT
+    async jwt({ token, user, trigger, session }) {
+      // On initial sign in, attach canonical profileId/role
+      if (user?.id) {
+        // your DB lookup to map user.id -> default profile
+        const profiles = await getProfilesByUser(parseInt(user.id));
+        const primary = profiles?.[0];
+        if (primary) {
+          token["profileId"] = primary.id;
+          token["role"] = primary.role;
+          // initialize effectiveProfileId to self
+          token["effectiveProfileId"] =
+            token["effectiveProfileId"] ?? primary.id;
+        }
       }
+
+      // On client `useSession().update({ ... })`, accept changes
+      if (trigger === "update" && session) {
+        if (typeof session.effectiveProfileId === "string") {
+          token["effectiveProfileId"] = session.effectiveProfileId;
+        }
+        if (session.emulationTTL != null) {
+          token["emulationTTL"] = session.emulationTTL;
+        }
+        if (session.fullEmulation != null) {
+          token["fullEmulation"] = session.fullEmulation;
+        }
+      }
+
+      // Optional TTL auto-revert (hardening)
+      if (token["emulationTTL"] && Date.now() > Number(token["emulationTTL"])) {
+        token["effectiveProfileId"] = token["profileId"];
+        token["emulationTTL"] = null;
+      }
+
+      return token;
+    },
+
+    // 🌐 Expose fields to the client session
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = session.user.id ?? (token.sub as string);
+        session.user.role = (token["role"] as string) || "guest";
+        session.user.profileId = token["profileId"] as string | undefined;
+      }
+      session.effectiveProfileId =
+        (token["effectiveProfileId"] as string) ??
+        (token["profileId"] as string);
+      session.emulationTTL = (token["emulationTTL"] as number | null) ?? null;
+      session.fullEmulation = (token["fullEmulation"] as boolean) ?? false;
       return session;
     },
   },

@@ -1,5 +1,4 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -130,8 +129,6 @@ describe("TATour", () => {
       simulatedProfile: null,
       isLoading: false,
       isSimulating: false,
-      setSimulatedProfile: vi.fn(),
-      clearSimulation: vi.fn(),
       navigateToDefault: vi.fn(),
       isSectionAvailable: vi.fn(() => true),
     });
@@ -179,8 +176,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -200,8 +195,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: true,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -221,8 +214,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -293,8 +284,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -330,8 +319,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -367,8 +354,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -441,8 +426,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });
@@ -479,8 +462,6 @@ describe("TATour", () => {
         simulatedProfile: null,
         isLoading: false,
         isSimulating: false,
-        setSimulatedProfile: vi.fn(),
-        clearSimulation: vi.fn(),
         navigateToDefault: vi.fn(),
         isSectionAvailable: vi.fn(() => true),
       });

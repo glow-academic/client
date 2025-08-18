@@ -5,8 +5,7 @@
  * 07/20/2025
  */
 
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { fireEvent, render, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Import centralized mocks
@@ -29,8 +28,14 @@ vi.mock("sonner", () => ({
 
 // Mock logger
 vi.mock("@/utils/logger", () => ({
-  logInfo: vi.fn(),
-  logError: vi.fn(),
+  log: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+    event: vi.fn(),
+  },
+  withDuration: vi.fn(),
 }));
 
 // Mock getApiBase
@@ -180,7 +185,9 @@ describe("Health", () => {
     });
 
     it("should handle network errors", async () => {
-      (global.fetch as unknown as Mock).mockRejectedValueOnce(new Error("Network error"));
+      (global.fetch as unknown as Mock).mockRejectedValueOnce(
+        new Error("Network error")
+      );
 
       render(<Health />);
 
