@@ -74,7 +74,13 @@ import {
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import type { Parameter, ParameterItem, Persona, Scenario, Simulation } from "@/types";
+import type {
+  Parameter,
+  ParameterItem,
+  Persona,
+  Scenario,
+  Simulation,
+} from "@/types";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
 import {
