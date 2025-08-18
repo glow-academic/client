@@ -53,7 +53,22 @@ export function DataTableRowActions({
   const scenariosArray = Array.isArray(scenarios) ? scenarios : [];
   const completedChats = scenariosArray.filter((chat) => chat.completed).length;
   const totalChats = interactionIds?.length || scenariosArray.length;
-  const isComplete = completedChats === totalChats && totalChats > 0;
+
+  // Check if infinite mode has expired
+  let isInfiniteModeExpired = false;
+  if (infiniteMode && infiniteModeTimeLimit && attemptCreatedAt) {
+    const started = new Date(attemptCreatedAt).getTime();
+    const now = Date.now();
+    const elapsedMinutes = (now - started) / 60000;
+    isInfiniteModeExpired = elapsedMinutes > infiniteModeTimeLimit;
+  }
+
+  // For infinite mode, consider it complete if expired OR if all chats are completed
+  // For normal mode, only consider complete if all chats are completed
+  // This ensures that expired infinite mode attempts show "View" instead of "Continue"
+  const isComplete = infiniteMode
+    ? isInfiniteModeExpired || (completedChats === totalChats && totalChats > 0)
+    : completedChats === totalChats && totalChats > 0;
 
   // Infinite mode: treat as continue if within time window, otherwise view
   let canContinueInfinite = false;
@@ -93,67 +108,70 @@ export function DataTableRowActions({
     <div className="flex items-center gap-2">
       <Link href={linkHref}>{buttonEl}</Link>
       {/* Retry icon appears only when it would otherwise say View (completed) */}
-      {buttonText === "View" && isPractice && isComplete && (simulationId ?? "") !== "" && (
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Retry"
-              className={`h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground ${
-                disabledForEmulation ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={isRetrying || disabledForEmulation}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (disabledForEmulation) {
-                  return;
-                }
-                if (!isConnected) {
-                  return;
-                }
-                setIsRetrying(true);
-                try {
-                  const profileIdForEmit =
-                    effectiveProfile?.role === "guest"
-                      ? ""
-                      : String(effectiveProfile?.id || "");
-                  emitStartSimulation({
-                    simulation_id: String(simulationId),
-                    profile_id: profileIdForEmit,
-                    scenario_id:
-                      scenariosArray.length > 0
-                        ? String(
-                            (
-                              scenariosArray[0] as unknown as {
-                                scenarioId?: string;
-                              }
-                            ).scenarioId || ""
-                          )
-                        : null,
-                  });
-                } finally {
-                  // Leave loading state; navigation will occur via global event listener
-                  setTimeout(() => setIsRetrying(false), 2000);
-                }
-              }}
-            >
-              <RotateCcw
-                className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {disabledForEmulation ? (
-              <p>You can't start a simulation on behalf of another user.</p>
-            ) : (
-              <p>Retry</p>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      )}
+      {buttonText === "View" &&
+        isPractice &&
+        isComplete &&
+        (simulationId ?? "") !== "" && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Retry"
+                className={`h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground ${
+                  disabledForEmulation ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={isRetrying || disabledForEmulation}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (disabledForEmulation) {
+                    return;
+                  }
+                  if (!isConnected) {
+                    return;
+                  }
+                  setIsRetrying(true);
+                  try {
+                    const profileIdForEmit =
+                      effectiveProfile?.role === "guest"
+                        ? ""
+                        : String(effectiveProfile?.id || "");
+                    emitStartSimulation({
+                      simulation_id: String(simulationId),
+                      profile_id: profileIdForEmit,
+                      scenario_id:
+                        scenariosArray.length > 0
+                          ? String(
+                              (
+                                scenariosArray[0] as unknown as {
+                                  scenarioId?: string;
+                                }
+                              ).scenarioId || ""
+                            )
+                          : null,
+                    });
+                  } finally {
+                    // Leave loading state; navigation will occur via global event listener
+                    setTimeout(() => setIsRetrying(false), 2000);
+                  }
+                }}
+              >
+                <RotateCcw
+                  className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {disabledForEmulation ? (
+                <p>You can't start a simulation on behalf of another user.</p>
+              ) : (
+                <p>Retry</p>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        )}
     </div>
   );
 }
