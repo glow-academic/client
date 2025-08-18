@@ -251,3 +251,20 @@ class TestRandomize_Scenario:
         # TODO: Implement error test for randomize_scenario
         assert False, "IMPLEMENT: Error test for randomize_scenario"
 
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `create_practice_scenario`")
+class TestCreate_Practice_Scenario:
+    """Tests for create_practice_scenario endpoint."""
+
+    def test_create_practice_scenario_success(self, client):
+        """Test successful create_practice_scenario request."""
+        # TODO: Implement test for create_practice_scenario
+        assert False, "IMPLEMENT: Test for create_practice_scenario"
+
+    def test_create_practice_scenario_error(self, client):
+        """Test create_practice_scenario error handling."""
+        # TODO: Implement error test for create_practice_scenario
+        assert False, "IMPLEMENT: Error test for create_practice_scenario"
+
