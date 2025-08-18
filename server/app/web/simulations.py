@@ -152,6 +152,9 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Randomly fill any null attributes in the scenario
             scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
 
+            # Check if we got a new scenario or the original one
+            is_new_scenario = scenario.id != old_scenario.id
+
             # Generate scenario description if empty
             if not scenario.description or scenario.description == "":
                 name, description, trace_id = await run_scenario_agent(
@@ -169,9 +172,11 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 chat_title = scenario.name
                 trace_id = gen_trace_id()
 
-            db_session.add(scenario)
-            db_session.commit()
-            db_session.refresh(scenario)
+            # Only add to session if it's a new scenario
+            if is_new_scenario:
+                db_session.add(scenario)
+                db_session.commit()
+                db_session.refresh(scenario)
 
             # Create the chat
             chat = SimulationChats(
@@ -334,6 +339,10 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 old_scenario: Scenarios,
             ) -> Tuple[Scenarios, str, str]:
                 scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
+                
+                # Check if we got a new scenario or the original one
+                is_new_scenario = scenario.id != old_scenario.id
+                
                 if not scenario.description or scenario.description == "":
                     name, description, trace_id = await run_scenario_agent(
                         persona_id=scenario.persona_id,
@@ -350,9 +359,11 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     chat_title = scenario.name
                     trace_id = gen_trace_id()
 
-                db_session.add(scenario)
-                db_session.commit()
-                db_session.refresh(scenario)
+                # Only add to session if it's a new scenario
+                if is_new_scenario:
+                    db_session.add(scenario)
+                    db_session.commit()
+                    db_session.refresh(scenario)
                 return scenario, chat_title, trace_id
 
             async def create_chat_for_scenario_id(

@@ -496,6 +496,16 @@ function deriveScenariosFromSimulations(
       }
     });
 
+  // ALSO include scenarios that are referenced in simulation.scenarioIds
+  // This ensures practice simulations can show persona colors even without attempts
+  filteredSimulations.forEach((simulation) => {
+    simulation.scenarioIds?.forEach((scenarioId) => {
+      if (scenarioId !== "RAY") {
+        scenarioIds.add(scenarioId);
+      }
+    });
+  });
+
   // Filter scenarios to those in the actual data flow and only active ones
   return allScenarios.filter(
     (scenario) => scenarioIds.has(scenario.id) && scenario.active

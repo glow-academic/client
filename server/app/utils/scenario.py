@@ -102,6 +102,8 @@ async def randomly_fill_scenario_attributes(
         Updated scenario object with randomly selected values for null attributes
     """
 
+
+
     # Random agent selection if agent_id is null
     if scenario.persona_id is None:
         # Only select from active personas
@@ -235,7 +237,7 @@ async def randomly_fill_scenario_attributes(
             scenario_parameter_item_ids = []
             logger.info("No active parameters found")
     else:
-        # If parameter_item_ids are provided, ensure we only have one per active parameter
+        # If parameter_item_ids are provided, ensure we have one per active parameter
         # Get all active parameters
         active_parameters = session.exec(
             select(Parameters).where(Parameters.active)
@@ -243,42 +245,59 @@ async def randomly_fill_scenario_attributes(
         active_param_ids = {param.id for param in active_parameters}
 
         # Get all parameter items for the provided IDs
-        all_param_items = session.exec(
+        existing_param_items = session.exec(
             select(ParameterItems).where(
                 ParameterItems.id.in_(scenario.parameter_item_ids)
             )
         ).all()
 
-        # Group parameter items by their parameter_id
-        param_items_by_param: dict[uuid.UUID, list[ParameterItems]] = {}
-        for item in all_param_items:
-            if item.parameter_id not in param_items_by_param:
-                param_items_by_param[item.parameter_id] = []
-            param_items_by_param[item.parameter_id].append(item)
+        # Group existing parameter items by their parameter_id
+        existing_items_by_param: dict[uuid.UUID, list[ParameterItems]] = {}
+        for item in existing_param_items:
+            if item.parameter_id not in existing_items_by_param:
+                existing_items_by_param[item.parameter_id] = []
+            existing_items_by_param[item.parameter_id].append(item)
 
-        # For each active parameter, randomly select one parameter item if multiple exist
+        # For each active parameter, ensure we have exactly one parameter item
         scenario_parameter_item_ids = []
         for param_id in active_param_ids:
-            if param_id in param_items_by_param:
-                items = param_items_by_param[param_id]
+            if param_id in existing_items_by_param:
+                items = existing_items_by_param[param_id]
                 if len(items) > 1:
                     # Multiple items for this parameter, randomly select one
                     selected_item = random.choice(items)
                     scenario_parameter_item_ids.append(selected_item.id)
-                    logger.info(
-                        f"Multiple items for parameter {param_id}, selected: {selected_item.name}"
-                    )
                 else:
                     # Only one item for this parameter
                     scenario_parameter_item_ids.append(items[0].id)
-                    logger.info(
-                        f"Single item for parameter {param_id}: {items[0].name}"
+            else:
+                # No items for this parameter, randomly select one
+                param_items = session.exec(
+                    select(ParameterItems).where(
+                        ParameterItems.parameter_id == param_id
                     )
+                ).all()
+                if param_items:
+                    selected_item = random.choice(param_items)
+                    scenario_parameter_item_ids.append(selected_item.id)
+                    logger.info(f"Filled missing parameter item for parameter {param_id}: {selected_item.name}")
+                else:
+                    logger.warning(f"No parameter items found for parameter {param_id}")
 
-        logger.info(
-            f"Filtered to {len(scenario_parameter_item_ids)} parameter items (one per active parameter): {scenario_parameter_item_ids}"
-        )
-
+    # Check if we actually need to create a new scenario
+    # If all the values are the same as the original scenario, return the original
+    # Sort lists for comparison to handle order differences
+    original_docs = sorted(scenario.document_ids or [])
+    new_docs = sorted(scenario_documents or [])
+    original_params = sorted(scenario.parameter_item_ids or [])
+    new_params = sorted(scenario_parameter_item_ids or [])
+    
+    if (scenario_persona_id == scenario.persona_id and 
+        new_docs == original_docs and 
+        new_params == original_params):
+        return scenario
+    
+    # Create a new scenario only if we actually have changes
     return Scenarios(
         name=scenario.name,
         description=scenario.description,
