@@ -188,12 +188,6 @@ export function Scenarios() {
   };
 
   const handleDuplicate = async (scenario: Scenario) => {
-    // Only allow duplicating non-generated scenarios
-    if (scenario.generated === true) {
-      toast.error("This scenario cannot be duplicated");
-      return;
-    }
-
     setIsDuplicating(scenario.id);
     try {
       await createScenario({

@@ -176,6 +176,10 @@ async def run_grade_agent(
         # add rubric to beginning of input_items
         input_items.insert(0, rubric_input)
 
+        # # get the time taken and time limit from the simulation
+        # time_taken = simulation.time_taken
+        # time_limit = simulation.time_limit
+
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
 
@@ -353,6 +357,10 @@ async def run_grade_agent(
                 continue
 
         logger.info(f"Created {feedback_count} feedback records")
+
+        # Mark chat as completed
+        chat.completed = True
+        session.add(chat)
 
         # Commit all changes
         session.commit()

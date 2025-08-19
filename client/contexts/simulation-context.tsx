@@ -274,6 +274,11 @@ export function SimulationProvider({
     [grades]
   );
 
+  // Helper function to check if a chat has ended (either completed or has completedAt timestamp)
+  const isChatEnded = useCallback((chat: SimulationChat): boolean => {
+    return chat.completed || !!chat.completedAt;
+  }, []);
+
   // Create dynamic rubric for current chat based on grades/feedback
   const currentDynamicRubric = useMemo((): DynamicRubric | null => {
     if (
@@ -468,12 +473,48 @@ export function SimulationProvider({
     const currentSimulation = simulationRef.current;
     if (!attempt?.createdAt || !currentSimulation || showResults) return;
 
+    // Check if current chat has ended (completed or has completedAt timestamp)
+    const currentChatEnded = currentChat ? isChatEnded(currentChat) : false;
+
     const calculateTimerValues = () => {
       const attemptStartTime = new Date(attempt.createdAt);
       const currentTime = new Date();
       const elapsedSeconds = Math.floor(
         (currentTime.getTime() - attemptStartTime.getTime()) / 1000
       );
+
+      // If current chat has ended, freeze the timer at the completion time
+      if (currentChatEnded && currentChat?.completedAt) {
+        const completionTime = new Date(currentChat.completedAt);
+        const frozenElapsedSeconds = Math.floor(
+          (completionTime.getTime() - attemptStartTime.getTime()) / 1000
+        );
+
+        // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
+        if (attempt.infiniteMode) {
+          if (attempt.infiniteModeTimeLimit) {
+            const totalTimeSeconds = attempt.infiniteModeTimeLimit * 60;
+            const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
+            return {
+              elapsedTime: frozenElapsedSeconds,
+              timeRemaining: Math.max(remainingSeconds, 0),
+            };
+          }
+          // No limit: count up only
+          return { elapsedTime: frozenElapsedSeconds, timeRemaining: null };
+        }
+
+        // Normal mode uses simulation.timeLimit (can go negative for display)
+        if (currentSimulation.timeLimit) {
+          const totalTimeSeconds = currentSimulation.timeLimit * 60;
+          const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
+          return {
+            elapsedTime: frozenElapsedSeconds,
+            timeRemaining: remainingSeconds,
+          };
+        }
+        return { elapsedTime: frozenElapsedSeconds, timeRemaining: null };
+      }
 
       // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
       if (attempt.infiniteMode) {
@@ -547,6 +588,8 @@ export function SimulationProvider({
     simulation?.id, // Only depend on simulation ID to trigger re-run when simulation changes
     attempt?.infiniteMode,
     attempt?.infiniteModeTimeLimit,
+    currentChat,
+    isChatEnded,
   ]);
 
   // Initialize to first incomplete chat when data loads
@@ -749,6 +792,50 @@ export function SimulationProvider({
       setEndChatLoading(true);
 
       try {
+        // Optimistically update the chat's completedAt timestamp
+        const completionTime = new Date().toISOString();
+        queryClient.setQueryData(
+          ["simulationChats", attemptId],
+          (old: SimulationChat[] = []) => {
+            return old.map((chat) =>
+              chat.id === targetChatId
+                ? {
+                    ...chat,
+                    completedAt: completionTime,
+                  }
+                : chat
+            );
+          }
+        );
+
+        // Force immediate timer update by recalculating timer values
+        const attemptStartTime = new Date(attempt!.createdAt);
+        const completionTimeDate = new Date(completionTime);
+        const frozenElapsedSeconds = Math.floor(
+          (completionTimeDate.getTime() - attemptStartTime.getTime()) / 1000
+        );
+
+        // Update timer state immediately
+        if (attempt!.infiniteMode) {
+          if (attempt!.infiniteModeTimeLimit) {
+            const totalTimeSeconds = attempt!.infiniteModeTimeLimit * 60;
+            const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
+            setElapsedTime(frozenElapsedSeconds);
+            setTimeRemaining(Math.max(remainingSeconds, 0));
+          } else {
+            setElapsedTime(frozenElapsedSeconds);
+            setTimeRemaining(null);
+          }
+        } else if (simulationRef.current?.timeLimit) {
+          const totalTimeSeconds = simulationRef.current.timeLimit * 60;
+          const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
+          setElapsedTime(frozenElapsedSeconds);
+          setTimeRemaining(remainingSeconds);
+        } else {
+          setElapsedTime(frozenElapsedSeconds);
+          setTimeRemaining(null);
+        }
+
         // Call backend with end_all=false for single chat ending
         emitContinueSimulation({
           chat_id: targetChatId,
@@ -756,11 +843,22 @@ export function SimulationProvider({
           end_all: false,
         });
       } catch (error) {
+        // Revert the optimistic update on error
+        queryClient.invalidateQueries({
+          queryKey: ["simulationChats", attemptId],
+        });
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
       }
     },
-    [currentChat?.id, emitContinueSimulation, attemptId, readOnly]
+    [
+      currentChat?.id,
+      emitContinueSimulation,
+      attemptId,
+      readOnly,
+      queryClient,
+      attempt,
+    ]
   );
 
   const endAllChats = useCallback(async () => {
@@ -770,6 +868,21 @@ export function SimulationProvider({
     setEndChatLoading(true);
 
     try {
+      // Optimistically update all incomplete chats' completedAt timestamps
+      queryClient.setQueryData(
+        ["simulationChats", attemptId],
+        (old: SimulationChat[] = []) => {
+          return old.map((chat) =>
+            !chat.completed
+              ? {
+                  ...chat,
+                  completedAt: new Date().toISOString(),
+                }
+              : chat
+          );
+        }
+      );
+
       // Call backend with end_all=true to handle all remaining chats
       emitContinueSimulation({
         chat_id: currentChat.id,
@@ -777,6 +890,10 @@ export function SimulationProvider({
         end_all: true,
       });
     } catch (error) {
+      // Revert the optimistic update on error
+      queryClient.invalidateQueries({
+        queryKey: ["simulationChats", attemptId],
+      });
       toast.error(`Failed to end all chats: ${error}`);
       setEndChatLoading(false);
     }
@@ -787,6 +904,7 @@ export function SimulationProvider({
     attemptId,
     emitContinueSimulation,
     readOnly,
+    queryClient,
   ]);
 
   // Listen for WebSocket loading state changes
