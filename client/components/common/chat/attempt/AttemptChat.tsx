@@ -108,15 +108,55 @@ export default function AttemptChat() {
   });
 
   // Helper function to calculate time taken from chat timestamps
-  const calculateChatTimeTaken = useCallback((chat: SimulationChat): number => {
-    if (!chat.completed || !chat.completedAt) return 0;
+  const calculateChatTimeTaken = useCallback(
+    (chat: SimulationChat | null): number => {
+      if (!chat?.completed || !chat.completedAt) return 0;
 
-    const startTime = new Date(chat.createdAt).getTime();
-    const endTime = new Date(chat.completedAt).getTime();
-    const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
+      const startTime = new Date(chat.createdAt).getTime();
+      const endTime = new Date(chat.completedAt).getTime();
+      const timeTakenSeconds = Math.floor((endTime - startTime) / 1000);
 
-    return timeTakenSeconds;
-  }, []);
+      return timeTakenSeconds;
+    },
+    []
+  );
+
+  // Helper function to calculate adjusted time limit for multi-simulation attempts
+  const calculateAdjustedTimeLimit = useCallback(
+    (_chat: SimulationChat | null): number => {
+      if (
+        !simulationContext?.simulation?.timeLimit ||
+        !simulationContext?.chats
+      ) {
+        return 0;
+      }
+
+      const totalTimeLimitSeconds = simulationContext.simulation.timeLimit * 60;
+      const totalChats = simulationContext.chats.length;
+
+      // For multi-simulation attempts, split time evenly
+      if (totalChats > 1) {
+        return Math.floor(totalTimeLimitSeconds / totalChats);
+      }
+
+      // For single simulation attempts, use the full time limit
+      return totalTimeLimitSeconds;
+    },
+    [simulationContext?.simulation?.timeLimit, simulationContext?.chats]
+  );
+
+  // Helper function to calculate how much time was exceeded for a chat
+  const calculateTimeExceeded = useCallback(
+    (chat: SimulationChat | null): number => {
+      if (!chat?.completed) return 0;
+
+      const timeTaken = calculateChatTimeTaken(chat);
+      const adjustedTimeLimit = calculateAdjustedTimeLimit(chat);
+
+      return Math.max(0, timeTaken - adjustedTimeLimit);
+    },
+    [calculateChatTimeTaken, calculateAdjustedTimeLimit]
+  );
 
   // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
   useEffect(() => {
@@ -124,6 +164,9 @@ export default function AttemptChat() {
       if (!simulationContext?.currentChat || !isAttemptOwner) return;
 
       const chat = simulationContext.currentChat;
+
+      // Don't reset timestamps for completed chats
+      if (chat.completed) return;
 
       // Check if we've already reset timestamps for this chat to prevent infinite loops
       if (resetChatTimestampsRef.current.has(chat.id)) return;
@@ -137,15 +180,17 @@ export default function AttemptChat() {
         // Mark this chat as processed to prevent infinite loops
         resetChatTimestampsRef.current.add(chat.id);
 
-        // Reset createdAt to current time and update updatedAt to be distinct
+        // Reset createdAt to current time ONLY - never update updatedAt
         const now = new Date();
 
         try {
           const { updateSimulationChat } = await import(
             "@/utils/mutations/simulation_chats/update-simulation-chat"
           );
+          // Preserve the original updatedAt by explicitly setting it to the current value
           await updateSimulationChat(chat.id, {
             createdAt: now.toISOString(),
+            updatedAt: chat.updatedAt, // Explicitly preserve the original updatedAt
           });
 
           // Invalidate queries to refresh the data
@@ -388,12 +433,7 @@ export default function AttemptChat() {
                                 <span
                                   className={`text-sm font-medium ${
                                     selectedChat && selectedChat.completed
-                                      ? simulationContext?.simulation
-                                          ?.timeLimit &&
-                                        calculateChatTimeTaken(selectedChat) >
-                                          simulationContext.simulation
-                                            .timeLimit *
-                                            60
+                                      ? calculateTimeExceeded(selectedChat) > 0
                                         ? "text-red-500"
                                         : ""
                                       : ""
@@ -401,17 +441,8 @@ export default function AttemptChat() {
                                   data-testid="timer"
                                 >
                                   {selectedChat && selectedChat.completed
-                                    ? simulationContext?.simulation
-                                        ?.timeLimit &&
-                                      calculateChatTimeTaken(selectedChat) >
-                                        simulationContext.simulation.timeLimit *
-                                          60
-                                      ? `-${formatTime(
-                                          calculateChatTimeTaken(selectedChat) -
-                                            simulationContext.simulation
-                                              .timeLimit *
-                                              60
-                                        )}`
+                                    ? calculateTimeExceeded(selectedChat) > 0
+                                      ? `-${formatTime(calculateTimeExceeded(selectedChat))}`
                                       : formatTime(
                                           calculateChatTimeTaken(selectedChat)
                                         )
@@ -422,10 +453,12 @@ export default function AttemptChat() {
                                             simulationContext?.timer.elapsed ||
                                               0
                                           )
-                                      : simulationContext?.simulation?.timeLimit
+                                      : simulationContext?.simulation
+                                            ?.timeLimit && selectedChat
                                         ? formatTime(
-                                            simulationContext.simulation
-                                              .timeLimit * 60
+                                            calculateAdjustedTimeLimit(
+                                              selectedChat
+                                            )
                                           )
                                         : "No time limit"}
                                 </span>
@@ -459,6 +492,12 @@ export default function AttemptChat() {
                                     )?.totalPossiblePoints
                                   }
                                   )
+                                  {!simulationContext?.isSingleChatAttempt &&
+                                    calculateTimeExceeded(selectedChat) > 0 && (
+                                      <span className="block text-xs text-muted-foreground mt-1">
+                                        *Overage based on evenly split time*
+                                      </span>
+                                    )}
                                 </p>
                               </TooltipContent>
                             ) : selectedChat && !selectedChat.completed ? (

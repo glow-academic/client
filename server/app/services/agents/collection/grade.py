@@ -173,12 +173,63 @@ async def run_grade_agent(
             rubric, list(standard_groups), list(standards)
         )
 
-        # add rubric to beginning of input_items
-        input_items.insert(0, rubric_input)
+        # get the time limit from the simulation
+        time_limit = simulation.time_limit or -1
+        
+        # Calculate adjusted time limit for multi-simulation attempts
+        # Get all chats for this attempt to determine if it's multi-simulation
+        attempt_chats = session.exec(
+            select(SimulationChats).where(SimulationChats.attempt_id == attempt.id)
+        ).all()
+        
+        total_chats = len(attempt_chats)
+        adjusted_time_limit = (time_limit * 60) if time_limit and total_chats == 1 else ((time_limit * 60) // total_chats) if time_limit else 0
+        
+        # Calculate actual time taken for this specific chat using completed_at
+        chat_created_at = chat.created_at
+        chat_completed_at = chat.completed_at
 
-        # # get the time taken and time limit from the simulation
-        # time_taken = simulation.time_taken
-        # time_limit = simulation.time_limit
+        # Convert timestamps to UTC if they have timezone info
+        if chat_created_at.tzinfo is not None:
+            chat_created_at = chat_created_at.astimezone(timezone.utc)
+        else:
+            chat_created_at = chat_created_at.replace(tzinfo=timezone.utc)
+
+        # Handle case where completed_at might be None (fallback to current time)
+        if chat_completed_at is None:
+            current_time = datetime.now(timezone.utc)
+            actual_time_taken = max(1, int((current_time - chat_created_at).total_seconds()))
+        else:
+            if chat_completed_at.tzinfo is not None:
+                chat_completed_at = chat_completed_at.astimezone(timezone.utc)
+            else:
+                chat_completed_at = chat_completed_at.replace(tzinfo=timezone.utc)
+            
+            # Calculate time taken from created_at to completed_at
+            actual_time_taken = max(1, int((chat_completed_at - chat_created_at).total_seconds()))
+
+        def format_minutes(seconds: int) -> str:
+            minutes = seconds // 60
+            secs = seconds % 60
+            return f"{minutes} min {secs} sec" if minutes > 0 else f"{secs} sec"
+
+        # create time message
+        time_message: TResponseInputItem
+        if adjusted_time_limit > 0:
+            time_message = {
+                "role": "user",
+                "content": f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric."
+            }
+        else:
+            time_message = {
+                "role": "user",
+                "content": f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric."
+            }
+
+        # add rubric to beginning of input_items
+        input_items.insert(0, time_message)
+        input_items.insert(0, rubric_input) # add rubric message before time message
+
 
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
@@ -263,22 +314,15 @@ async def run_grade_agent(
             session.commit()
         logger.info("Grading agent completed successfully")
 
-        # Calculate time taken - ensure both times are in UTC
-        current_time = datetime.now(timezone.utc)
-        chat_created_at = chat.created_at
-
-        # Convert chat_created_at to UTC if it has timezone info
-        if chat_created_at.tzinfo is not None:
-            chat_created_at = chat_created_at.astimezone(timezone.utc)
+        # Log the time calculation
+        if chat_completed_at is None:
+            logger.info(
+                f"Time calculation: created={chat_created_at}, completed=None (using current time), taken={actual_time_taken}s"
+            )
         else:
-            # If timezone-naive, assume it's already UTC and make it timezone-aware
-            chat_created_at = chat_created_at.replace(tzinfo=timezone.utc)
-
-        # Now both times are timezone-aware and in UTC
-        time_taken = max(1, int((current_time - chat_created_at).total_seconds()))
-        logger.info(
-            f"Time calculation: current={current_time}, created={chat_created_at}, taken={time_taken}s"
-        )
+            logger.info(
+                f"Time calculation: created={chat_created_at}, completed={chat_completed_at}, taken={actual_time_taken}s"
+            )
 
         # calculate overall score, sum over only the numeric score fields
         overall_score = 0
@@ -299,7 +343,7 @@ async def run_grade_agent(
             passed=passed,
             score=overall_score,
             description=summary,
-            time_taken=time_taken,
+            time_taken=actual_time_taken,
             rubric_id=rubric_id,
             simulation_chat_id=simulation_chat_id,
         )
