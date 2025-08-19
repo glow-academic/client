@@ -28,26 +28,22 @@ import PracticeZone from "./PracticeZone";
 
 export default function Practice() {
   const router = useRouter();
-  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null
-  );
+
+  // Use global WebSocket context instead of local connection
+  const { isConnected, emitStartSimulation, isStartingSimulation } =
+    useWebSocket();
+
+  // Use WebSocket's loading state instead of local state to prevent flash
+  const loadingSimulation = isStartingSimulation ? "loading" : null;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { effectiveProfile, activeProfile } = useProfile();
 
-  // Use global WebSocket context instead of local connection
-  const { isConnected, emitStartSimulation } = useWebSocket();
-  const {
-    effectiveProfile,
-    activeProfile,
-    isLoading: isProfileLoading,
-  } = useProfile();
-
-  const { data: filteredData, isLoading: isFilteredDataLoading } =
-    useFilteredAnalyticsData({
-      ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
-    });
+  const { data: filteredData } = useFilteredAnalyticsData({
+    ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
+  });
   const enhancedPracticeSimulations = useMemo(() => {
     const sims = filteredData?.simulations ?? [];
     const rubrics = filteredData?.rubrics ?? [];
@@ -89,7 +85,6 @@ export default function Practice() {
         context: { component: "Practice", function: "handleSimulationStarted" },
       });
       router.push(`/practice/a/${attemptId}`);
-      setLoadingSimulation(null);
     };
 
     // Listen for simulation errors to reset loading state
@@ -102,7 +97,6 @@ export default function Practice() {
         setLoadingToastId(null);
       }
       toast.error("Failed to start simulation. Please try again.");
-      setLoadingSimulation(null);
     };
 
     window.addEventListener(
@@ -151,7 +145,6 @@ export default function Practice() {
           return;
         }
 
-        setLoadingSimulation(simulationId);
         const toastId = toast.loading("Starting simulation...");
         setLoadingToastId(toastId);
 
@@ -192,7 +185,6 @@ export default function Practice() {
           });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
-          setLoadingSimulation(null);
           setLoadingToastId(null);
         }, 30000);
       } catch (error) {
@@ -207,7 +199,6 @@ export default function Practice() {
         });
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
-        setLoadingSimulation(null);
         setLoadingToastId(null);
       }
     },
@@ -221,7 +212,7 @@ export default function Practice() {
   );
 
   // Loading state
-  if (isProfileLoading || !effectiveProfile || isFilteredDataLoading) {
+  if (!effectiveProfile) {
     return (
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         {/* Header skeleton */}
@@ -271,28 +262,26 @@ export default function Practice() {
         </div>
 
         {/* History Section skeleton - only show if not guest */}
-        {effectiveProfile?.role !== "guest" && (
-          <div className="space-y-2">
-            <div className="space-y-4">
-              <Skeleton className="h-6 w-32" />
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
-                  >
-                    <Skeleton className="h-4 w-24" />
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <Skeleton className="h-2 w-1/3 rounded-full" />
-                    </div>
-                    <Skeleton className="h-6 w-16" />
-                    <Skeleton className="h-4 w-12" />
+        <div className="space-y-2">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+                >
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <Skeleton className="h-2 w-1/3 rounded-full" />
                   </div>
-                ))}
-              </div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -312,7 +301,11 @@ export default function Practice() {
         {/* History Section for non-guests */}
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
-            <SimulationHistory filteredData={filteredData} showExport={false} showArchive={false} />
+            <SimulationHistory
+              filteredData={filteredData}
+              showExport={false}
+              showArchive={false}
+            />
           </div>
         )}
       </div>

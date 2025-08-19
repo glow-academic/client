@@ -648,18 +648,57 @@ export function WebSocketProvider({
 
             // Invalidate queries to ensure fresh data when navigating back
             // Invalidate all simulation attempts queries (including profile-specific ones)
-            queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
-            queryClient.invalidateQueries({ queryKey: ["simulations"] });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationAttempts"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulations"],
+            });
 
             // Also invalidate related queries that depend on attempts
-            queryClient.invalidateQueries({ queryKey: ["simulationChats"] });
-            queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationChats"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationGrades"],
+            });
             queryClient.invalidateQueries({
               queryKey: ["simulationFeedbacks"],
             });
 
             // Invalidate profiles query since simulation attempts depend on it
-            queryClient.invalidateQueries({ queryKey: ["profiles"] });
+            queryClient.invalidateQueries({
+              queryKey: ["profiles"],
+            });
+
+            // Invalidate analytics-related queries that might be affected
+            queryClient.invalidateQueries({
+              queryKey: ["cohorts"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["scenarios"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["parameters"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["parameterItems"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["personas"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["agents"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["rubrics"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["standardGroups"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["standards"],
+            });
 
             // Trigger navigation by emitting a custom event
             window.dispatchEvent(
@@ -722,6 +761,24 @@ export function WebSocketProvider({
 
           if (data.success) {
             toast.success(data.message);
+
+            // Invalidate analytics queries when simulation progresses
+            queryClient.invalidateQueries({
+              queryKey: ["simulationAttempts"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationChats"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationGrades"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationFeedbacks"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages"],
+            });
+
             // Dispatch a custom event with the new, richer detail object
             window.dispatchEvent(
               new CustomEvent("simulationChatEnded", {
@@ -755,6 +812,24 @@ export function WebSocketProvider({
 
           if (data.success) {
             toast.success(data.message);
+
+            // Invalidate analytics queries when simulation completes
+            queryClient.invalidateQueries({
+              queryKey: ["simulationAttempts"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationChats"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationGrades"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationFeedbacks"],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages"],
+            });
+
             // Dispatch a custom event for end all completion
             window.dispatchEvent(
               new CustomEvent("endAllCompleted", {

@@ -43,14 +43,16 @@ const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
 
-  const { data: filteredData, isLoading: isFilteredDataLoading } =
+  const { data: filteredData } =
     useFilteredAnalyticsData({
       ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
     });
+  const { isConnected, emitStartSimulation, isStartingSimulation } =
+    useWebSocket();
+
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null
-  );
+  // Use WebSocket's loading state instead of local state to prevent flash
+  const loadingSimulation = isStartingSimulation ? "loading" : null;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );
@@ -99,8 +101,6 @@ export default function Home() {
     return filteredData.grades;
   }, [filteredData?.grades]);
 
-  const { isConnected, emitStartSimulation } = useWebSocket();
-
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
     // Listen for successful simulation starts to handle navigation
@@ -119,7 +119,6 @@ export default function Home() {
         context: { component: "Home", function: "handleSimulationStarted" },
       });
       router.push(`/home/a/${attemptId}`);
-      setLoadingSimulation(null);
     };
 
     // Listen for simulation errors to reset loading state
@@ -132,7 +131,6 @@ export default function Home() {
         setLoadingToastId(null);
       }
       toast.error("Failed to start simulation. Please try again.");
-      setLoadingSimulation(null);
     };
 
     window.addEventListener(
@@ -181,7 +179,6 @@ export default function Home() {
           return;
         }
 
-        setLoadingSimulation(simulationId);
         const toastId = toast.loading("Starting simulation...");
         setLoadingToastId(toastId);
 
@@ -219,7 +216,6 @@ export default function Home() {
           });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
-          setLoadingSimulation(null);
           setLoadingToastId(null);
         }, 30000);
       } catch (error) {
@@ -234,7 +230,6 @@ export default function Home() {
         });
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
-        setLoadingSimulation(null);
         setLoadingToastId(null);
       }
     },
@@ -672,9 +667,9 @@ export default function Home() {
   const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
 
   // Loading state
-  const isLoading = isFilteredDataLoading;
+  // const isLoading = isFilteredDataLoading;
 
-  if (isLoading || !effectiveProfile) {
+  if (!effectiveProfile) {
     return (
       <div className="container mx-auto p-4 space-y-8">
         {/* Header skeleton */}
