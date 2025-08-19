@@ -47,8 +47,9 @@ import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
+import { log } from "@/utils/logger";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
@@ -58,6 +59,7 @@ export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
+  const queryClient = useQueryClient();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
@@ -68,6 +70,9 @@ export default function AttemptChat() {
 
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
+
+  // Track which chats have had their timestamps reset to prevent infinite loops
+  const resetChatTimestampsRef = useRef<Set<string>>(new Set());
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
@@ -112,6 +117,63 @@ export default function AttemptChat() {
 
     return timeTakenSeconds;
   }, []);
+
+  // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
+  useEffect(() => {
+    const resetChatTimestamp = async () => {
+      if (!simulationContext?.currentChat || !isAttemptOwner) return;
+
+      const chat = simulationContext.currentChat;
+
+      // Check if we've already reset timestamps for this chat to prevent infinite loops
+      if (resetChatTimestampsRef.current.has(chat.id)) return;
+
+      const createdAt = new Date(chat.createdAt);
+      const updatedAt = new Date(chat.updatedAt);
+
+      // Check if createdAt and updatedAt are the same (within 1 second tolerance)
+      const timeDiff = Math.abs(createdAt.getTime() - updatedAt.getTime());
+      if (timeDiff <= 1000) {
+        // Mark this chat as processed to prevent infinite loops
+        resetChatTimestampsRef.current.add(chat.id);
+
+        // Reset createdAt to current time and update updatedAt to be distinct
+        const now = new Date();
+
+        try {
+          const { updateSimulationChat } = await import(
+            "@/utils/mutations/simulation_chats/update-simulation-chat"
+          );
+          await updateSimulationChat(chat.id, {
+            createdAt: now.toISOString(),
+          });
+
+          // Invalidate queries to refresh the data
+          queryClient.invalidateQueries({
+            queryKey: ["simulationChats", simulationContext.attemptId],
+          });
+        } catch (error) {
+          log.error("chat.timestamp.reset.failed", {
+            message: "Failed to reset chat timestamp",
+            subject: { entityType: "simulation_chat", entityId: chat.id },
+            context: {
+              component: "AttemptChat",
+              function: "resetChatTimestamp",
+              attemptId: simulationContext?.attemptId,
+            },
+            error,
+          });
+        }
+      }
+    };
+
+    resetChatTimestamp();
+  }, [
+    simulationContext?.currentChat,
+    isAttemptOwner,
+    simulationContext?.attemptId,
+    queryClient,
+  ]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed
   useEffect(() => {

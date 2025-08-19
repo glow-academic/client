@@ -479,16 +479,50 @@ export function SimulationProvider({
     const calculateTimerValues = () => {
       const attemptStartTime = new Date(attempt.createdAt);
       const currentTime = new Date();
-      const elapsedSeconds = Math.floor(
-        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
-      );
+
+      // Calculate total elapsed time across all chats
+      let totalElapsedSeconds = 0;
+
+      if (chats && chats.length > 0) {
+        // Sort chats by creation time to ensure proper order
+        const sortedChats = [...chats].sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+
+        for (let i = 0; i < sortedChats.length; i++) {
+          const chat = sortedChats[i];
+          if (!chat) continue;
+
+          const chatStartTime = new Date(chat.createdAt);
+
+          if (isChatEnded(chat) && chat.completedAt) {
+            // Chat has ended, use its completion time
+            const chatEndTime = new Date(chat.completedAt);
+            const chatDuration = Math.floor(
+              (chatEndTime.getTime() - chatStartTime.getTime()) / 1000
+            );
+            totalElapsedSeconds += chatDuration;
+          } else if (i === currentChatIndex) {
+            // Current active chat - calculate time from start to now
+            const chatDuration = Math.floor(
+              (currentTime.getTime() - chatStartTime.getTime()) / 1000
+            );
+            totalElapsedSeconds += chatDuration;
+          }
+          // Skip future chats that haven't started yet
+        }
+      } else {
+        // Fallback to simple calculation if no chats available
+        totalElapsedSeconds = Math.floor(
+          (currentTime.getTime() - attemptStartTime.getTime()) / 1000
+        );
+      }
 
       // If current chat has ended, freeze the timer at the completion time
       if (currentChatEnded && currentChat?.completedAt) {
-        const completionTime = new Date(currentChat.completedAt);
-        const frozenElapsedSeconds = Math.floor(
-          (completionTime.getTime() - attemptStartTime.getTime()) / 1000
-        );
+        // Timer is already frozen at the total elapsed time calculated above
+        const frozenElapsedSeconds = totalElapsedSeconds;
 
         // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
         if (attempt.infiniteMode) {
@@ -520,24 +554,27 @@ export function SimulationProvider({
       if (attempt.infiniteMode) {
         if (attempt.infiniteModeTimeLimit) {
           const totalTimeSeconds = attempt.infiniteModeTimeLimit * 60;
-          const remainingSeconds = totalTimeSeconds - elapsedSeconds;
+          const remainingSeconds = totalTimeSeconds - totalElapsedSeconds;
           // Clamp to zero for display; we'll trigger results on expiry below
           return {
-            elapsedTime: elapsedSeconds,
+            elapsedTime: totalElapsedSeconds,
             timeRemaining: Math.max(remainingSeconds, 0),
           };
         }
         // No limit: count up only
-        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+        return { elapsedTime: totalElapsedSeconds, timeRemaining: null };
       }
 
       // Normal mode uses simulation.timeLimit (can go negative for display)
       if (currentSimulation.timeLimit) {
         const totalTimeSeconds = currentSimulation.timeLimit * 60;
-        const remainingSeconds = totalTimeSeconds - elapsedSeconds;
-        return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
+        const remainingSeconds = totalTimeSeconds - totalElapsedSeconds;
+        return {
+          elapsedTime: totalElapsedSeconds,
+          timeRemaining: remainingSeconds,
+        };
       }
-      return { elapsedTime: elapsedSeconds, timeRemaining: null };
+      return { elapsedTime: totalElapsedSeconds, timeRemaining: null };
     };
 
     const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
@@ -590,6 +627,8 @@ export function SimulationProvider({
     attempt?.infiniteModeTimeLimit,
     currentChat,
     isChatEnded,
+    chats,
+    currentChatIndex,
   ]);
 
   // Initialize to first incomplete chat when data loads
