@@ -383,7 +383,6 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     scenario_id=scenario.id,
                     attempt_id=attempt_id,
                     completed=mark_completed,
-                    completed_at=datetime.now(timezone.utc) if mark_completed else None,
                     trace_id=trace_id,
                 )
                 db_session.add(next_chat)
@@ -467,7 +466,6 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Mark the current chat as completed
             chat.completed = True
-            chat.completed_at = datetime.now(timezone.utc)
             db_session.add(chat)
             db_session.commit()
 
@@ -491,7 +489,6 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                             )
                             await run_grade_agent(existing_chat.id, db_session)
                         existing_chat.completed = True
-                        existing_chat.completed_at = datetime.now(timezone.utc)
                         db_session.add(existing_chat)
                         incomplete_chats_processed += 1
 

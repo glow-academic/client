@@ -847,6 +847,28 @@ export function SimulationProvider({
           }
         );
 
+        // Also update the database immediately for persistence
+        try {
+          const { updateSimulationChat } = await import(
+            "@/utils/mutations/simulation_chats/update-simulation-chat"
+          );
+          await updateSimulationChat(targetChatId, {
+            completedAt: completionTime,
+          });
+        } catch (dbError) {
+          log.error("chat.completion.db_update.failed", {
+            message: "Failed to update chat completion in database",
+            subject: { entityType: "simulation_chat", entityId: targetChatId },
+            context: {
+              component: "SimulationContext",
+              function: "endChat",
+              attemptId,
+            },
+            error: dbError,
+          });
+          // Continue with the flow even if DB update fails - backend will handle it
+        }
+
         // Force immediate timer update by recalculating timer values
         const attemptStartTime = new Date(attempt!.createdAt);
         const completionTimeDate = new Date(completionTime);
@@ -907,6 +929,10 @@ export function SimulationProvider({
     setEndChatLoading(true);
 
     try {
+      // Get all incomplete chats
+      const incompleteChats = chats.filter((chat) => !chat.completed);
+      const completionTime = new Date().toISOString();
+
       // Optimistically update all incomplete chats' completedAt timestamps
       queryClient.setQueryData(
         ["simulationChats", attemptId],
@@ -915,12 +941,38 @@ export function SimulationProvider({
             !chat.completed
               ? {
                   ...chat,
-                  completedAt: new Date().toISOString(),
+                  completedAt: completionTime,
                 }
               : chat
           );
         }
       );
+
+      // Also update the database immediately for persistence
+      try {
+        const { updateSimulationChats } = await import(
+          "@/utils/mutations/simulation_chats/update-simulation-chats"
+        );
+        await updateSimulationChats(
+          incompleteChats.map((chat) => chat.id),
+          {
+            completedAt: completionTime,
+          }
+        );
+      } catch (dbError) {
+        log.error("chat.completion.db_update.failed", {
+          message: "Failed to update chat completions in database",
+          subject: { entityType: "simulation_chat" },
+          context: {
+            component: "SimulationContext",
+            function: "endAllChats",
+            attemptId,
+            chatCount: incompleteChats.length,
+          },
+          error: dbError,
+        });
+        // Continue with the flow even if DB update fails - backend will handle it
+      }
 
       // Call backend with end_all=true to handle all remaining chats
       emitContinueSimulation({
@@ -944,6 +996,7 @@ export function SimulationProvider({
     emitContinueSimulation,
     readOnly,
     queryClient,
+    chats,
   ]);
 
   // Listen for WebSocket loading state changes
