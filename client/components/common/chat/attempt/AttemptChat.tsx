@@ -433,7 +433,8 @@ export default function AttemptChat() {
                                 <span
                                   className={`text-sm font-medium ${
                                     selectedChat && selectedChat.completed
-                                      ? calculateTimeExceeded(selectedChat) > 0
+                                      ? calculateTimeExceeded(selectedChat) > 0 &&
+                                      simulationContext?.simulation?.timeLimit
                                         ? "text-red-500"
                                         : ""
                                       : ""
@@ -441,7 +442,8 @@ export default function AttemptChat() {
                                   data-testid="timer"
                                 >
                                   {selectedChat && selectedChat.completed
-                                    ? calculateTimeExceeded(selectedChat) > 0
+                                    ? calculateTimeExceeded(selectedChat) > 0 &&
+                                      simulationContext?.simulation?.timeLimit
                                       ? `-${formatTime(calculateTimeExceeded(selectedChat))}`
                                       : formatTime(
                                           calculateChatTimeTaken(selectedChat)
