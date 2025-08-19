@@ -385,11 +385,15 @@ function filterAttempts(
   const profileIds = new Set(filteredProfiles.map((p) => p.id));
   const simulationIds = new Set(filteredSimulations.map((s) => s.id));
 
-  return allAttempts.filter((attempt) => {
+  const filteredAttempts = allAttempts.filter((attempt) => {
     // Filter by date range (attempt creation date)
     const attemptDate = new Date(attempt.createdAt);
+
+    // Add a 5-minute buffer to the end date to include recent attempts
+    const bufferedEndDate = new Date(endDate.getTime() + 5 * 60 * 1000); // 5 minutes buffer
+
     const inDateRange =
-      isAfter(attemptDate, startDate) && isBefore(attemptDate, endDate);
+      isAfter(attemptDate, startDate) && isBefore(attemptDate, bufferedEndDate);
 
     if (!inDateRange) return false;
 
@@ -429,6 +433,8 @@ function filterAttempts(
 
     return true;
   });
+
+  return filteredAttempts;
 }
 
 /**

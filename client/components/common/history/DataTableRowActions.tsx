@@ -113,7 +113,7 @@ export function DataTableRowActions({
         isComplete &&
         (simulationId ?? "") !== "" && (
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 type="button"
                 variant="outline"

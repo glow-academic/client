@@ -7,6 +7,7 @@
 
 import { useHistoryColumns } from "@/hooks/use-history-columns";
 import type { FilteredData } from "@/utils/analytics/filtering";
+import * as React from "react";
 import { DataTable } from "./DataTable";
 
 export interface SimulationHistoryProps {
@@ -32,8 +33,15 @@ export default function SimulationHistory({
       showArchive,
     });
 
+  // Create a key based on the data to force re-render when data changes
+  const tableKey = React.useMemo(() => {
+    if (!data || data.length === 0) return "empty";
+    return data.map((item) => (item as { id: string }).id).join("-");
+  }, [data]);
+
   return (
     <DataTable
+      key={tableKey}
       data={data || []}
       columns={columns as never}
       profileOptions={profileOptions}

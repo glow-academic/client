@@ -164,7 +164,7 @@ export function useFilteredAnalyticsData(
       queryKey: ["standardGroups", rubrics.map((r) => r.id)],
       queryFn: () => getStandardGroupsByRubrics(rubrics.map((r) => r.id)),
       enabled: rubrics.length > 0,
-      staleTime: 5 * 60 * 1000,
+      // Remove staleTime to allow immediate refetching when invalidated
     });
 
   const { data: standards = [], isLoading: isLoadingStandards } = useQuery({
@@ -172,7 +172,7 @@ export function useFilteredAnalyticsData(
     queryFn: () =>
       getStandardsByStandardGroups(standardGroups.map((g) => g.id)),
     enabled: standardGroups.length > 0,
-    staleTime: 5 * 60 * 1000,
+    // Remove staleTime to allow immediate refetching when invalidated
   });
 
   // Apply centralized filtering (include rubrics/standards)
