@@ -66,7 +66,7 @@ async def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
     Returns:
         bool: True if the run was found and cancelled, False otherwise
     """
-    from app.main import cancel_active_run
+    from app.extensions import cancel_active_run
 
     return await cancel_active_run(str(chat_id))
 

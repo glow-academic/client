@@ -9,6 +9,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict
+from urllib.parse import parse_qs
 
 import socketio  # type: ignore
 from app.db import init_db
@@ -47,10 +48,13 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 allowed_origins = [origin]
 
 # Import Redis functions from extensions
-from app.extensions import (  # New Redis functions for active connections and runs
-    cleanup_redis_client, find_chat_by_socket, find_profile_by_socket,
-    get_active_connection, get_active_run, get_socket_owner, init_redis_client,
-    remove_active_connection, remove_active_run, remove_socket_owner,
+from app.extensions import (  # New Redis functions for active connections and runs; Guest management functions
+    add_guest_socket, cancel_active_run, cleanup_redis_client,
+    decrement_guest_count, find_chat_by_socket, find_chats_by_socket,
+    find_profile_by_socket, get_active_connection, get_active_run,
+    get_guest_count, get_socket_owner, increment_guest_count,
+    init_redis_client, is_guest_socket, remove_active_connection,
+    remove_active_run, remove_guest_socket, remove_socket_owner,
     set_active_connection, set_active_run, set_socket_owner)
 
 # Store active chat connections - now using Redis
@@ -59,20 +63,20 @@ from app.extensions import (  # New Redis functions for active connections and r
 # Global store for all active runs (unified tracking) - now using Redis
 # active_runs: dict[str, Any] = {}  # REMOVED - using Redis instead
 
-# Profile-based connection management (simplified)
-socket_owner: Dict[str, str] = {}  # profile_id -> socket_id
+# Profile-based connection management (simplified) - now using Redis
+# socket_owner: Dict[str, str] = {}  # profile_id -> socket_id - REMOVED, using Redis
 
-# Track guest connections without restricting concurrency
-guest_connection_count: int = 0
-guest_sids: set[str] = set()
+# Track guest connections without restricting concurrency - now using Redis
+# guest_connection_count: int = 0 - REMOVED, using Redis
+# guest_sids: set[str] = set() - REMOVED, using Redis
 
 
 async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -> None:
     """Clean up all connections for a profile."""
     logger.info(f"Cleaning up profile {profile_id} connections - {reason}")
 
-    # Remove from socket ownership
-    socket_owner.pop(profile_id, None)
+    # Remove from socket ownership using Redis
+    await remove_socket_owner(profile_id)
 
     # Update database to mark profile as inactive
     try:
@@ -162,21 +166,8 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
             )
             return
 
-        # Convert base64 sketch data to bytes if present
-        sketch_bytes = None
-        if sketch_data:
-            try:
-                # Remove data URL prefix if present (data:image/png;base64,)
-                if sketch_data.startswith("data:"):
-                    sketch_data = sketch_data.split(",", 1)[1]
-                sketch_bytes = base64.b64decode(sketch_data)
-                logger.info(f"Decoded sketch data: {len(sketch_bytes)} bytes")
-            except Exception as e:
-                logger.error(f"Error decoding sketch data: {e}")
-                sketch_bytes = None
-
         logger.info(
-            f"Processing send_simulation_message from {sid}: {chat_id} (audio: {assistant_audio_enabled}, sketch: {sketch_bytes is not None})"
+            f"Processing send_simulation_message from {sid}: {chat_id} (audio: {assistant_audio_enabled}, sketch: {sketch_data is not None})"
         )
 
         # Process the message via WebSocket
@@ -280,18 +271,11 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
     profile_id: str | None = None
     guest_id: str | None = None
 
-    # Very lightweight QS parsing (qs is short); avoid full parser to keep dep surface small
+    # Parse query string using urllib.parse for proper URL decoding
     try:
-        parts = query_string.split("&") if query_string else []
-        for p in parts:
-            if p.startswith("profileId="):
-                val = p[len("profileId=") :]
-                if val:  # empty means guest
-                    profile_id = val
-            elif p.startswith("guestId="):
-                val = p[len("guestId=") :]
-                if val:
-                    guest_id = val
+        params = parse_qs(query_string)
+        profile_id = params.get("profileId", [None])[0]
+        guest_id = params.get("guestId", [None])[0]
     except Exception:  # defensive; ignore malformed
         pass
 
@@ -301,20 +285,19 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
 
     if profile_id:
         # Check if another socket is already active for this profile
-        if profile_id in socket_owner:
-            old_sid = socket_owner[profile_id]
-            if old_sid != sid:
-                logger.warning(
-                    f"Profile {profile_id} already has active socket {old_sid}. "
-                    f"Closing old connection and accepting new one {sid}."
-                )
-                # Clean up the entire old session for this profile
-                await cleanup_profile_connection(profile_id, "new socket takeover")
-                # Forcefully disconnect the old socket from the server-side
-                await sio.disconnect(old_sid, ignore_queue=True)
+        old_sid = await get_socket_owner(profile_id)
+        if old_sid and old_sid != sid:
+            logger.warning(
+                f"Profile {profile_id} already has active socket {old_sid}. "
+                f"Closing old connection and accepting new one {sid}."
+            )
+            # Clean up the entire old session for this profile
+            await cleanup_profile_connection(profile_id, "new socket takeover")
+            # Forcefully disconnect the old socket from the server-side
+            await sio.disconnect(old_sid)
 
         # Store socket ownership
-        socket_owner[profile_id] = sid
+        await set_socket_owner(profile_id, sid)
         await sio.enter_room(sid, profile_id)
 
         # Update database to mark profile as active
@@ -345,10 +328,9 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
             logger.info(f"Guest {guest_id} joined room guest_{guest_id}")
             # Track guest connection and update default guest profile activity
             try:
-                guest_sids.add(sid)
+                await add_guest_socket(sid)
                 # Increment guest connection counter
-                global guest_connection_count
-                guest_connection_count += 1
+                await increment_guest_count()
 
                 from app.db import get_session
                 from app.utils.guest import find_default_guest_profile
@@ -396,24 +378,18 @@ async def disconnect(sid: str) -> None:
     logger.info(f"Client disconnecting: {sid}")
 
     # Find and clean up profile for this socket
-    profile_to_cleanup = None
-    for profile_id, socket_id in socket_owner.items():
-        if socket_id == sid:
-            profile_to_cleanup = profile_id
-            break
+    # Find and clean up profile for this socket using Redis
+    profile_to_cleanup = await find_profile_by_socket(sid)
 
     if profile_to_cleanup:
         await cleanup_profile_connection(profile_to_cleanup, "socket disconnect")
 
     # If this was a guest connection, update counter and default guest profile activity
-    if sid in guest_sids:
+    if await is_guest_socket(sid):
         try:
-            guest_sids.remove(sid)
-            global guest_connection_count
-            if guest_connection_count > 0:
-                guest_connection_count -= 1
-
-            remaining_guests = guest_connection_count
+            await remove_guest_socket(sid)
+            # Decrement guest count and get remaining count
+            remaining_guests = await decrement_guest_count()
 
             from app.db import get_session
             from app.utils.guest import find_default_guest_profile
@@ -438,9 +414,9 @@ async def disconnect(sid: str) -> None:
         except Exception as e:
             logger.error(f"Error updating default guest profile activity on disconnect: {e}")
 
-    # Remove from active connections using Redis
-    chat_id = await find_chat_by_socket(sid)
-    if chat_id:
+    # Remove from all active connections using Redis
+    chat_ids = await find_chats_by_socket(sid)
+    for chat_id in chat_ids:
         await remove_active_connection(chat_id)
 
 
@@ -481,24 +457,9 @@ async def leave_chat(sid: str, data: dict[str, Any]) -> None:
 
 async def store_active_run(chat_id: str, run_result: Any) -> None:
     """Store an active run for potential cancellation"""
-    await set_active_run(chat_id, str(run_result))
-
-
-async def cancel_active_run(chat_id: str) -> bool:
-    """Cancel an active run and clean up"""
-    run_data = await get_active_run(chat_id)
-    if run_data:
-        try:
-            # Note: This is a simplified version. In a real implementation,
-            # you might need to store more complex run objects or use a different approach
-            await remove_active_run(chat_id)
-            logger.info(f"Successfully cancelled active run for chat {chat_id}")
-            return True
-        except Exception as e:
-            logger.error(f"Error cancelling active run {chat_id}: {e}")
-            await remove_active_run(chat_id)
-            return False
-    return False
+    # Generate a unique run ID for cooperative cancellation
+    run_id = str(uuid.uuid4())
+    await set_active_run(chat_id, run_id)
 
 
 async def emit_chat_stopped(

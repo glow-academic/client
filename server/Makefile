@@ -25,11 +25,11 @@ redis-install: check-brew
 		echo "🍺 Redis is already installed."; \
 	fi
 
-# Start Redis as a background service
+# Start Redis as a background service on port 6380 by default
 redis-start: redis-install
-	@echo "🍺 Starting Redis service via Homebrew...";
-	@brew services start redis
-	@echo "✅ Redis service started."
+	@echo "🍺 Starting Redis service on port 6380...";
+	@redis-server --port 6380 --daemonize yes
+	@echo "✅ Redis service started on port 6380."
 
 # Stop the Redis service
 redis-stop: check-brew

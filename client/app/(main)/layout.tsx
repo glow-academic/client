@@ -140,11 +140,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     return (
       activeProfile.id === effectiveProfile.id &&
       activeProfile.id === attemptProfileId
-    );
+    ) || activeProfile.role === "guest";
   }, [
     activeProfile?.id,
     effectiveProfile?.id,
     simulationContext?.attempt?.profileId,
+    activeProfile?.role,
   ]);
 
   // Upload state - track multiple uploads

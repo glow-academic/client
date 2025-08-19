@@ -643,7 +643,7 @@ export function UnifiedSidebar({
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (!activeProfile) {
+    if (activeProfile?.role === "guest") {
       // Navigate to login page for guests or when no user
       router.push("/");
       return;

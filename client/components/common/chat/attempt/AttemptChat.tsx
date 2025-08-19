@@ -82,8 +82,8 @@ export default function AttemptChat() {
     return (
       activeProfile.id === effectiveProfile.id &&
       activeProfile.id === attemptProfileId
-    );
-  }, [activeProfile?.id, effectiveProfile?.id, simulationContext?.attempt?.profileId]);
+    ) || activeProfile.role === "guest";
+  }, [activeProfile?.id, effectiveProfile?.id, simulationContext?.attempt?.profileId, activeProfile?.role]);
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
