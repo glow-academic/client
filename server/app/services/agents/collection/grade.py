@@ -354,11 +354,6 @@ async def run_grade_agent(
 
         logger.info(f"Created {feedback_count} feedback records")
 
-        # Mark chat as completed
-        chat.completed = True
-        chat.completed_at = current_time
-        session.add(chat)
-
         # Commit all changes
         session.commit()
         session.refresh(simulation_chat_grade)

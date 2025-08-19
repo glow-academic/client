@@ -325,7 +325,7 @@ export function SimulationProvider({
       }
     });
 
-    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
+    const passed = chatGrade.passed;
 
     return {
       chatId: currentChat.id,
@@ -390,7 +390,7 @@ export function SimulationProvider({
           }
         });
 
-        const passed = chatGrade.score >= totalPossiblePoints * 0.7;
+        const passed = chatGrade.passed;
 
         return {
           chatId: chat.id,

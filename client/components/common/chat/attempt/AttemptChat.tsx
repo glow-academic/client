@@ -72,18 +72,20 @@ export default function AttemptChat() {
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
     const attemptProfileId = simulationContext?.attempt?.profileId;
-    if (
-      !activeProfile?.id ||
-      !effectiveProfile?.id ||
-      !attemptProfileId
-    ) {
+    if (!activeProfile?.id || !effectiveProfile?.id || !attemptProfileId) {
       return false;
     }
     return (
-      activeProfile.id === effectiveProfile.id &&
-      activeProfile.id === attemptProfileId
-    ) || activeProfile.role === "guest";
-  }, [activeProfile?.id, effectiveProfile?.id, simulationContext?.attempt?.profileId, activeProfile?.role]);
+      (activeProfile.id === effectiveProfile.id &&
+        activeProfile.id === attemptProfileId) ||
+      activeProfile.role === "guest"
+    );
+  }, [
+    activeProfile?.id,
+    effectiveProfile?.id,
+    simulationContext?.attempt?.profileId,
+    activeProfile?.role,
+  ]);
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
@@ -324,7 +326,12 @@ export default function AttemptChat() {
                                 <span
                                   className={`text-sm font-medium ${
                                     selectedChat && selectedChat.completed
-                                      ? calculateChatTimeTaken(selectedChat) < 0
+                                      ? simulationContext?.simulation
+                                          ?.timeLimit &&
+                                        calculateChatTimeTaken(selectedChat) >
+                                          simulationContext.simulation
+                                            .timeLimit *
+                                            60
                                         ? "text-red-500"
                                         : ""
                                       : ""
@@ -332,9 +339,20 @@ export default function AttemptChat() {
                                   data-testid="timer"
                                 >
                                   {selectedChat && selectedChat.completed
-                                    ? formatTime(
-                                        calculateChatTimeTaken(selectedChat)
-                                      )
+                                    ? simulationContext?.simulation
+                                        ?.timeLimit &&
+                                      calculateChatTimeTaken(selectedChat) >
+                                        simulationContext.simulation.timeLimit *
+                                          60
+                                      ? `-${formatTime(
+                                          calculateChatTimeTaken(selectedChat) -
+                                            simulationContext.simulation
+                                              .timeLimit *
+                                              60
+                                        )}`
+                                      : formatTime(
+                                          calculateChatTimeTaken(selectedChat)
+                                        )
                                     : isInfiniteMode
                                       ? infiniteLimitMinutes
                                         ? formatTime(infiniteLimitMinutes * 60)
