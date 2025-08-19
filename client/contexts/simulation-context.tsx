@@ -869,34 +869,6 @@ export function SimulationProvider({
           // Continue with the flow even if DB update fails - backend will handle it
         }
 
-        // Force immediate timer update by recalculating timer values
-        const attemptStartTime = new Date(attempt!.createdAt);
-        const completionTimeDate = new Date(completionTime);
-        const frozenElapsedSeconds = Math.floor(
-          (completionTimeDate.getTime() - attemptStartTime.getTime()) / 1000
-        );
-
-        // Update timer state immediately
-        if (attempt!.infiniteMode) {
-          if (attempt!.infiniteModeTimeLimit) {
-            const totalTimeSeconds = attempt!.infiniteModeTimeLimit * 60;
-            const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
-            setElapsedTime(frozenElapsedSeconds);
-            setTimeRemaining(Math.max(remainingSeconds, 0));
-          } else {
-            setElapsedTime(frozenElapsedSeconds);
-            setTimeRemaining(null);
-          }
-        } else if (simulationRef.current?.timeLimit) {
-          const totalTimeSeconds = simulationRef.current.timeLimit * 60;
-          const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
-          setElapsedTime(frozenElapsedSeconds);
-          setTimeRemaining(remainingSeconds);
-        } else {
-          setElapsedTime(frozenElapsedSeconds);
-          setTimeRemaining(null);
-        }
-
         // Call backend with end_all=false for single chat ending
         emitContinueSimulation({
           chat_id: targetChatId,
@@ -912,14 +884,7 @@ export function SimulationProvider({
         setEndChatLoading(false);
       }
     },
-    [
-      currentChat?.id,
-      emitContinueSimulation,
-      attemptId,
-      readOnly,
-      queryClient,
-      attempt,
-    ]
+    [currentChat?.id, emitContinueSimulation, attemptId, readOnly, queryClient]
   );
 
   const endAllChats = useCallback(async () => {
