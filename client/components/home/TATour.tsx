@@ -786,6 +786,7 @@ export default function TATour() {
               currentPath: pathname,
             },
           });
+          expectedPathnameRef.current = targetPage;
           router.push(targetPage);
         }
       }
@@ -900,7 +901,7 @@ export default function TATour() {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-      }, 5000); // 5 second fallback
+      }, 12000); // 12 second fallback
 
       return () => clearTimeout(fallbackTimeout);
     }
@@ -977,7 +978,6 @@ export default function TATour() {
   // Set up WebSocket event listeners for tour progression
   useEffect(() => {
     const handleSimulationStarted = (event: CustomEvent) => {
-      setNavigating(false); // Reset navigating state
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -1004,6 +1004,8 @@ export default function TATour() {
         });
         handleStepComplete(2);
         nextStep();
+        // Don't set navigating to false here - let the pathname monitoring handle it
+        // when we actually reach the attempt page
       } else if (tourState.isOpen && tourState.currentStep === 3) {
         // If we're already on step 3, just reset navigating state
         log.debug("tour.step.already_advanced", {
@@ -1448,13 +1450,15 @@ export default function TATour() {
       3: () => {
         // Step 3: User is now in the simulation - click the first starter prompt
         log.debug("tour.step3.autoclick_prompt", {
-          message: "Step 3 action triggered - clicking first starter prompt",
+          message: "Step 3 action triggered - navigating to attempt page",
           context: { component: "TATour" },
         });
 
         // If we have an attemptId, navigate to the attempt page first
         if (tourState.attemptId) {
-          router.push(`/practice/a/${tourState.attemptId}`);
+          const targetPath = `/practice/a/${tourState.attemptId}`;
+          expectedPathnameRef.current = targetPath;
+          router.push(targetPath);
         }
 
         // Click the first starter prompt button after a short delay to ensure page is loaded
