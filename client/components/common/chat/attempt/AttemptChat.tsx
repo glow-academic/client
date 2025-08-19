@@ -433,8 +433,9 @@ export default function AttemptChat() {
                                 <span
                                   className={`text-sm font-medium ${
                                     selectedChat && selectedChat.completed
-                                      ? calculateTimeExceeded(selectedChat) > 0 &&
-                                      simulationContext?.simulation?.timeLimit
+                                      ? calculateTimeExceeded(selectedChat) >
+                                          0 &&
+                                        simulationContext?.simulation?.timeLimit
                                         ? "text-red-500"
                                         : ""
                                       : ""
@@ -519,10 +520,8 @@ export default function AttemptChat() {
                                       .averageScore
                                   )}
                                   /
-                                  {Math.round(
-                                    (simulationContext?.allDynamicRubrics?.[0]
-                                      ?.totalPossiblePoints || 100) * 0.7
-                                  )}{" "}
+                                  {simulationContext?.allDynamicRubrics?.[0]
+                                    ?.totalPossiblePoints || 100}{" "}
                                   points)
                                 </p>
                               </TooltipContent>
