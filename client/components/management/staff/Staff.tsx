@@ -651,6 +651,15 @@ export default function Staff() {
                   setBulkRole("__keep__");
                   setBulkReqPerDay("");
                   queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                  // Invalidate individual profile queries for all affected profiles
+                  selectedStaffIds.forEach((profileId) => {
+                    queryClient.invalidateQueries({
+                      queryKey: ["profile", profileId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["effectiveProfile", profileId],
+                    });
+                  });
                 } catch {
                   toast.error("Failed to update staff");
                 }
@@ -780,6 +789,15 @@ export default function Staff() {
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);
                   queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                  // Invalidate individual profile queries for all deleted profiles
+                  deletableIds.forEach((profileId) => {
+                    queryClient.invalidateQueries({
+                      queryKey: ["profile", profileId],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["effectiveProfile", profileId],
+                    });
+                  });
                 } catch {
                   toast.error("Failed to delete selected staff");
                 }
@@ -898,6 +916,13 @@ export default function Staff() {
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);
                   queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                  // Invalidate individual profile queries for the deleted profile
+                  queryClient.invalidateQueries({
+                    queryKey: ["profile", deleteStaffMember.id],
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: ["effectiveProfile", deleteStaffMember.id],
+                  });
                 } catch {
                   toast.error("Failed to delete user");
                 }

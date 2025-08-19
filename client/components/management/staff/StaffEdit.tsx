@@ -104,6 +104,9 @@ const useStaffEditBusinessLogic = (
         setHasChanges(false);
         queryClient.invalidateQueries({ queryKey: ["profiles"] });
         queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
+        queryClient.invalidateQueries({
+          queryKey: ["effectiveProfile", profileId],
+        });
         toast.success("User updated successfully");
         if (redirectOnSuccess) {
           router.push("/management/staff");
@@ -134,6 +137,9 @@ const useStaffEditBusinessLogic = (
       await deleteProfile(profileId);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
+      queryClient.invalidateQueries({
+        queryKey: ["effectiveProfile", profileId],
+      });
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {

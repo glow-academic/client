@@ -219,17 +219,15 @@ export default function TATour() {
 
         // Invalidate relevant profile queries to ensure UI updates
         if (profileUpdated) {
-          // Invalidate the specific profile query
+          // Invalidate the effectiveProfile query (this is the main query used in profile context)
+          queryClient.invalidateQueries({
+            queryKey: ["effectiveProfile", effectiveProfile.id],
+          });
+
+          // Invalidate the general profile query as well (for any other components using it)
           queryClient.invalidateQueries({
             queryKey: ["profile", effectiveProfile.id],
           });
-
-          // Invalidate the simulated profile query if this is a simulated profile
-          if (tourState.profile?.id === effectiveProfile.id) {
-            queryClient.invalidateQueries({
-              queryKey: ["simulatedProfile", effectiveProfile.id],
-            });
-          }
 
           // Invalidate all profiles query to update any lists that show this profile
           queryClient.invalidateQueries({
@@ -260,13 +258,7 @@ export default function TATour() {
         });
       }
     },
-    [
-      effectiveProfile,
-      completeStep,
-      tourState.steps,
-      tourState.profile?.id,
-      queryClient,
-    ] // queryClient is stable and doesn't need to be in dependencies
+    [effectiveProfile, completeStep, tourState.steps, queryClient] // queryClient is stable and doesn't need to be in dependencies
   );
 
   // Navigation handlers with proper delays
