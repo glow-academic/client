@@ -27,7 +27,7 @@ upstream next_client  {
 }
 upstream api_socketio {
   hash $socketio_session_id  consistent;
-  server server:8000;
+  include /etc/nginx/conf.d/generated/api_socketio.upstream.conf;
 }
 
 server {

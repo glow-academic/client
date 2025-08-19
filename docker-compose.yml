@@ -234,11 +234,31 @@ services:
       - .env
     volumes:
       - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./web/generated:/etc/nginx/conf.d/generated:rw
     ports:
       - "${CLIENT_PORT}:80"
     depends_on:
       - client
       - server
+    networks:
+      - internal
+      - public_net
+
+  docker-gen:
+    image: jwilder/docker-gen:0.7.6
+    container_name: glow-docker-gen
+    restart: unless-stopped
+    environment:
+    - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./web/templates:/etc/docker-gen/templates:ro
+      - ./web/generated:/etc/nginx/conf.d/generated:rw
+    command: >
+      -notify-sighup glow-nginx
+      -watch
+      /etc/docker-gen/templates/api_socketio.upstream.tmpl
+      /etc/nginx/conf.d/generated/api_socketio.upstream.conf
     networks:
       - internal
       - public_net
