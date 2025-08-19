@@ -13,7 +13,7 @@ import {
 const mockProps: WebSocketContextType = {
   isConnected: false,
   socket: null,
-  isStartingSimulation: false,
+  startingSimulationId: null,
   isSendingSimulationMessage: false,
   isStoppingSimulation: false,
   isContinuingSimulation: false,

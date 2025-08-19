@@ -43,16 +43,15 @@ const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
 
-  const { data: filteredData } =
-    useFilteredAnalyticsData({
-      ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
-    });
-  const { isConnected, emitStartSimulation, isStartingSimulation } =
+  const { data: filteredData } = useFilteredAnalyticsData({
+    ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
+  });
+  const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
 
   const [carouselIndex, setCarouselIndex] = useState(0);
-  // Use WebSocket's loading state instead of local state to prevent flash
-  const loadingSimulation = isStartingSimulation ? "loading" : null;
+  // Use WebSocket's specific simulation ID for precise loading state
+  const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );

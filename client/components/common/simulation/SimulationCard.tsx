@@ -335,7 +335,7 @@ export default function SimulationCard({
                 );
                 onStartSimulation(simulation.id);
               }}
-              disabled={loadingSimulation === simulation.id}
+              disabled={loadingSimulation !== null}
               data-testid={`start-simulation-${simulation.id}`}
               className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
                 loadingSimulation === simulation.id

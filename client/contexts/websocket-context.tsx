@@ -27,7 +27,7 @@ export interface WebSocketContextType {
   socket: Socket | null;
 
   // Loading states for debugging
-  isStartingSimulation: boolean;
+  startingSimulationId: string | null;
   isSendingSimulationMessage: boolean;
   isStoppingSimulation: boolean;
   isContinuingSimulation: boolean;
@@ -112,7 +112,9 @@ export function WebSocketProvider({
   }
 
   // Loading states for debugging
-  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
+  const [startingSimulationId, setStartingSimulationId] = useState<
+    string | null
+  >(null);
   const [isSendingSimulationMessage, setIsSendingSimulationMessage] =
     useState(false);
   const [isStoppingSimulation, setIsStoppingSimulation] = useState(false);
@@ -642,7 +644,7 @@ export function WebSocketProvider({
             message: "Simulation started",
             context: data,
           });
-          setIsStartingSimulation(false);
+          setStartingSimulationId(null);
           if (data.success) {
             toast.success(data.message);
 
@@ -829,7 +831,7 @@ export function WebSocketProvider({
         "simulation_error",
         (data: { success: boolean; message: string }) => {
           log.error("ws.simulation.error", { message: data.message });
-          setIsStartingSimulation(false);
+          setStartingSimulationId(null);
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
           setIsContinuingSimulation(false);
@@ -1183,7 +1185,7 @@ export function WebSocketProvider({
         }),
       };
 
-      setIsStartingSimulation(true);
+      setStartingSimulationId(data.simulation_id);
       log.debug("ws.emit.start_simulation", { context: payload });
       socketRef.current.emit("start_simulation", payload);
     },
@@ -1298,7 +1300,7 @@ export function WebSocketProvider({
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
-    isStartingSimulation,
+    startingSimulationId,
     isSendingSimulationMessage,
     isStoppingSimulation,
     isContinuingSimulation,

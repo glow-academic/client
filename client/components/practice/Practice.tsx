@@ -30,11 +30,11 @@ export default function Practice() {
   const router = useRouter();
 
   // Use global WebSocket context instead of local connection
-  const { isConnected, emitStartSimulation, isStartingSimulation } =
+  const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
 
-  // Use WebSocket's loading state instead of local state to prevent flash
-  const loadingSimulation = isStartingSimulation ? "loading" : null;
+  // Use WebSocket's specific simulation ID for precise loading state
+  const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
     null
   );
