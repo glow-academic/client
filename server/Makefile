@@ -117,7 +117,7 @@ stop: redis-stop
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
 prod: sync redis-start
 	@echo "Starting FastAPI server in production mode..."
-	@.venv/bin/python -m gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+	@.venv/bin/python -m gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 
 # Clean up generated files and cache
 clean:
