@@ -389,11 +389,16 @@ function filterAttempts(
     // Filter by date range (attempt creation date)
     const attemptDate = new Date(attempt.createdAt);
 
-    // Add a 5-minute buffer to the end date to include recent attempts
-    const bufferedEndDate = new Date(endDate.getTime() + 5 * 60 * 1000); // 5 minutes buffer
+    // Use current time as the end date to include all recent attempts
+    // This ensures new attempts created after the page was loaded are included
+    const currentTime = new Date();
+    const effectiveEndDate = new Date(
+      Math.max(endDate.getTime(), currentTime.getTime())
+    );
 
     const inDateRange =
-      isAfter(attemptDate, startDate) && isBefore(attemptDate, bufferedEndDate);
+      isAfter(attemptDate, startDate) &&
+      isBefore(attemptDate, effectiveEndDate);
 
     if (!inDateRange) return false;
 

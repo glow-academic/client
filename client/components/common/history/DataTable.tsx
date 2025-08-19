@@ -101,29 +101,6 @@ export function DataTable<TData, TValue>({
   const [isArchiving, setIsArchiving] = React.useState(false);
   const queryClient = useQueryClient();
 
-  // Create a hash of the data to detect changes
-  const dataHash = React.useMemo(() => {
-    return JSON.stringify(
-      data.map((item: TData) => {
-        const enhancedItem = item as EnhancedAttempt;
-        return {
-          id: enhancedItem.id,
-          archived: enhancedItem.archived,
-          completed: enhancedItem["completed"],
-          createdAt: enhancedItem["createdAt"],
-        };
-      })
-    );
-  }, [data]);
-
-  // Reset table state when data changes (e.g., after query invalidation)
-  React.useEffect(() => {
-    setRowSelection({});
-    setSelectedAttempts([]);
-    setColumnFilters([]);
-    // Keep sorting and column visibility as they are user preferences
-  }, [dataHash]);
-
   // Handle attempt selection
   const _handleAttemptSelect = React.useCallback(
     (attemptId: string, checked: boolean) => {
