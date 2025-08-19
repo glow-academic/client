@@ -1,13 +1,43 @@
-.PHONY: venv dev-tools sync format lint typecheck run prod generate-models clean-venv
+.PHONY: venv dev-tools sync format lint typecheck run prod generate-models clean-venv redis-install redis-start redis-stop check-brew
 
 # Check if venv exists
 VENV_EXISTS := $(shell test -d .venv && echo 1 || echo 0)
 
 ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
-# 1. Ensure the virtual environment exists
+# Check if Python 3.11 is available
 PY311 := $(shell which python3.11 || true)
 
+# Check if Homebrew is installed
+check-brew:
+	@if ! command -v brew &> /dev/null; then \
+		echo "❌ Homebrew is not installed. Please install it to continue: https://brew.sh/"; \
+		exit 1; \
+	fi
+
+# Install Redis using Homebrew if not already installed
+redis-install: check-brew
+	@if ! brew ls --versions redis > /dev/null; then \
+		echo "🍺 Installing Redis via Homebrew..."; \
+		brew install redis; \
+		echo "✅ Redis installed."; \
+	else \
+		echo "🍺 Redis is already installed."; \
+	fi
+
+# Start Redis as a background service
+redis-start: redis-install
+	@echo "🍺 Starting Redis service via Homebrew...";
+	@brew services start redis
+	@echo "✅ Redis service started."
+
+# Stop the Redis service
+redis-stop: check-brew
+	@echo "🍺 Stopping Redis service...";
+	@brew services stop redis
+	@echo "✅ Redis service stopped."
+
+# 1. Ensure the virtual environment exists
 venv:
 	@if [ $(VENV_EXISTS) -eq 0 ]; then \
 		if [ -z "$(PY311)" ]; then \
@@ -74,17 +104,66 @@ test-cov: sync generate-tests
 	@echo "Running pytest tests with coverage..."
 	@.venv/bin/python -m pytest tests/ --cov=app --cov-report=term-missing --cov-report=html
 
-
-run: sync generate-models generate-tests
-	@echo "⇢ starting API  server on :8000"
+# Run the development server with Redis
+run: sync generate-models generate-tests redis-start
+	@echo "⇢ starting API server on :8000"
 	@.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-
-# convenience
-stop:
+# convenience - stop all services
+stop: redis-stop
 	@if [ -f .model.pid ]; then kill `cat .model.pid` || true; rm .model.pid; fi
+	@echo "✅ Stopped running processes and Redis service"
 
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
-prod: sync
+prod: sync redis-start
 	@echo "Starting FastAPI server in production mode..."
 	@.venv/bin/python -m gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+
+# Clean up generated files and cache
+clean:
+	@echo "Cleaning up..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyd" -delete 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name ".coverage" -delete 2>/dev/null || true
+	@find . -type f -name ".model.pid" -delete 2>/dev/null || true
+	@echo "✅ Cleanup complete"
+
+# Show help
+help:
+	@echo "GLOW Server - Available commands:"
+	@echo ""
+	@echo "Environment setup:"
+	@echo "  venv         - Create virtual environment"
+	@echo "  clean-venv   - Remove and recreate virtual environment"
+	@echo "  dev-tools    - Install development tools"
+	@echo "  sync         - Install all dependencies"
+	@echo ""
+	@echo "Code quality:"
+	@echo "  format       - Format code with Ruff"
+	@echo "  lint         - Run linter checks"
+	@echo "  typecheck    - Run MyPy for static type checking"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test         - Run all tests"
+	@echo "  test-cov     - Run tests with coverage"
+	@echo ""
+	@echo "Development:"
+	@echo "  run          - Start development server with Redis"
+	@echo "  prod         - Start production server with Redis"
+	@echo "  stop         - Stop running processes and Redis"
+	@echo "  clean        - Clean up generated files and cache"
+	@echo ""
+	@echo "Services (Homebrew):"
+	@echo "  redis-install - Install Redis via Homebrew"
+	@echo "  redis-start   - Start the Redis service"
+	@echo "  redis-stop    - Stop the Redis service"
+	@echo ""
+	@echo "Code generation:"
+	@echo "  generate-models - Generate SQLModel classes from database schema"
+	@echo "  generate-tests  - Generate pytest tests"

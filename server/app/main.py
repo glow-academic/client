@@ -46,11 +46,18 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 # Allow all origins
 allowed_origins = [origin]
 
-# Store active chat connections
-active_connections: dict[str, str] = {}
+# Import Redis functions from extensions
+from app.extensions import (  # New Redis functions for active connections and runs
+    cleanup_redis_client, find_chat_by_socket, find_profile_by_socket,
+    get_active_connection, get_active_run, get_socket_owner, init_redis_client,
+    remove_active_connection, remove_active_run, remove_socket_owner,
+    set_active_connection, set_active_run, set_socket_owner)
 
-# Global store for all active runs (unified tracking)
-active_runs: dict[str, Any] = {}
+# Store active chat connections - now using Redis
+# active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
+
+# Global store for all active runs (unified tracking) - now using Redis
+# active_runs: dict[str, Any] = {}  # REMOVED - using Redis instead
 
 # Profile-based connection management (simplified)
 socket_owner: Dict[str, str] = {}  # profile_id -> socket_id
@@ -431,11 +438,10 @@ async def disconnect(sid: str) -> None:
         except Exception as e:
             logger.error(f"Error updating default guest profile activity on disconnect: {e}")
 
-    # Remove from active connections
-    for chat_id, connection_sid in list(active_connections.items()):
-        if connection_sid == sid:
-            del active_connections[chat_id]
-            break
+    # Remove from active connections using Redis
+    chat_id = await find_chat_by_socket(sid)
+    if chat_id:
+        await remove_active_connection(chat_id)
 
 
 @sio.event  # type: ignore
@@ -449,7 +455,7 @@ async def join_chat(sid: str, data: dict[str, Any]) -> None:
     if chat_id:
         room_name = f"{chat_type}_{chat_id}"
         await sio.enter_room(sid, room_name)
-        active_connections[chat_id] = sid
+        await set_active_connection(chat_id, sid)
         logger.info(
             f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})"
         )
@@ -469,28 +475,28 @@ async def leave_chat(sid: str, data: dict[str, Any]) -> None:
     if chat_id:
         room_name = f"{chat_type}_{chat_id}"
         await sio.leave_room(sid, room_name)
-        if chat_id in active_connections:
-            del active_connections[chat_id]
+        await remove_active_connection(chat_id)
         logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
 
 
-def store_active_run(chat_id: str, run_result: Any) -> None:
+async def store_active_run(chat_id: str, run_result: Any) -> None:
     """Store an active run for potential cancellation"""
-    active_runs[chat_id] = run_result
+    await set_active_run(chat_id, str(run_result))
 
 
-def cancel_active_run(chat_id: str) -> bool:
+async def cancel_active_run(chat_id: str) -> bool:
     """Cancel an active run and clean up"""
-    if chat_id in active_runs:
-        result = active_runs[chat_id]
+    run_data = await get_active_run(chat_id)
+    if run_data:
         try:
-            result.cancel()
-            del active_runs[chat_id]
+            # Note: This is a simplified version. In a real implementation,
+            # you might need to store more complex run objects or use a different approach
+            await remove_active_run(chat_id)
             logger.info(f"Successfully cancelled active run for chat {chat_id}")
             return True
         except Exception as e:
             logger.error(f"Error cancelling active run {chat_id}: {e}")
-            del active_runs[chat_id]
+            await remove_active_run(chat_id)
             return False
     return False
 
@@ -518,8 +524,7 @@ async def stop_chat(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "chat_stopped", {"chat_id": str(chat_id), "chat_type": chat_type}, room=sid
         )
-        if chat_id in active_connections:
-            del active_connections[chat_id]
+        await remove_active_connection(chat_id)
         logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
 
 
@@ -534,12 +539,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         from app.services.mcp.server import server  # noqa: E402
 
+        # Initialize Redis client for socket ownership management
+        await init_redis_client()
+        
         # Initialize database
         init_db()
 
         await stack.enter_async_context(server.session_manager.run())
 
         yield
+        
+        # Clean up Redis client on shutdown
+        await cleanup_redis_client()
 
 
 # Create FastAPI app

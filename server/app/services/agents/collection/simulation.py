@@ -56,7 +56,7 @@ async def run_simulation_agent(
         raise ValueError(f"Chat not found with ID: {chat_id}")
 
 
-def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
+async def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
     """
     Cancel an active simulation run using unified tracking.
 
@@ -68,7 +68,7 @@ def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
     """
     from app.main import cancel_active_run
 
-    return cancel_active_run(str(chat_id))
+    return await cancel_active_run(str(chat_id))
 
 
 async def _handle_simulation_chat(
@@ -183,7 +183,7 @@ async def _handle_simulation_chat(
     from app.main import store_active_run
 
     chat_id_str = str(chat.id)
-    store_active_run(chat_id_str, result)
+    await store_active_run(chat_id_str, result)
 
     try:
         # Process streaming events
@@ -207,7 +207,6 @@ async def _handle_simulation_chat(
             raise e
     finally:
         # Clean up the active run using unified tracking
-        from app.main import active_runs
+        from app.extensions import remove_active_run
 
-        if chat_id_str in active_runs:
-            del active_runs[chat_id_str]
+        await remove_active_run(chat_id_str)
