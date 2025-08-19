@@ -87,20 +87,26 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const { activeProfile } = useProfile();
 
   // Get assistant chats for the profile
+  // Skip query for guest profiles with invalid UUIDs (like the hardcoded GUEST_PROFILE)
   const { data: chats = [], isLoading: isLoadingChats } = useQuery({
     queryKey: ["assistantChats", activeProfile?.id],
     queryFn: () => getAssistantChatsByProfile(activeProfile!.id),
-    enabled: !!activeProfile?.id,
+    enabled: !!activeProfile?.id && activeProfile.id !== "guest-profile-id",
     staleTime: 30 * 1000, // 30 seconds
   });
 
   // Create new chat mutation
   const createChatMutation = useMutation({
-    mutationFn: (profileId: string) =>
-      createAssistantChat({
+    mutationFn: (profileId: string) => {
+      // Don't allow creating chats for guest profiles with invalid UUIDs
+      if (profileId === "guest-profile-id") {
+        throw new Error("Cannot create chats for guest profiles");
+      }
+      return createAssistantChat({
         profileId,
         title: "New Chat",
-      }),
+      });
+    },
     onSuccess: (newChat) => {
       // Update the chats cache immediately
       if (newChat) {

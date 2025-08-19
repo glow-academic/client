@@ -84,7 +84,8 @@ export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
   const { effectiveProfile, activeProfile } = useProfile();
-  const { isConnected, emitStartSimulation } = useWebSocket();
+  const { isConnected, emitStartSimulation, startingSimulationId } =
+    useWebSocket();
   const queryClient = useQueryClient();
 
   // Comprehensive debug logging on every render
@@ -1003,6 +1004,14 @@ export default function TATour() {
         });
         handleStepComplete(2);
         nextStep();
+      } else if (tourState.isOpen && tourState.currentStep === 3) {
+        // If we're already on step 3, just reset navigating state
+        log.debug("tour.step.already_advanced", {
+          message:
+            "Simulation started - already on step 3, just resetting navigation",
+          context: { component: "TATour" },
+        });
+        setNavigating(false);
       } else if (tourState.isOpen && tourState.currentStep === 2) {
         // Just reset navigating state if step is already completed
         log.debug("tour.step.already_completed", {
@@ -1331,8 +1340,8 @@ export default function TATour() {
         nextStep();
       },
       2: () => {
-        // Step 2: Handle practice simulation start - just click the button and let WebSocket events handle progression
-        nextStep();
+        // Step 2: Handle practice simulation start - use startingSimulationId for loading state
+        // Don't call nextStep() here - let WebSocket events handle step advancement when simulation is actually started
 
         // Dispatch simulationButtonPressed event when Next button is clicked on step 2
         // This will set the navigating state to true
@@ -1360,7 +1369,8 @@ export default function TATour() {
           router.push(`/practice/a/${tourState.attemptId}`);
         } else {
           // If no attemptId, trigger the first practice simulation card click
-          setTimeout(() => {
+          // Use startingSimulationId as loading state instead of timer
+          const triggerSimulationStart = () => {
             // Look for practice simulation cards (permanent-simulation-card) first
             let practiceCards = document.querySelectorAll(
               '[data-testid="permanent-simulation-card"]'
@@ -1426,7 +1436,13 @@ export default function TATour() {
               });
               toast.error("No practice simulations available.");
             }
-          }, 500); // Small delay to ensure page is loaded
+          };
+
+          // If simulation is not starting, trigger immediately
+          if (!startingSimulationId) {
+            triggerSimulationStart();
+          }
+          // If simulation is starting, the effect will handle triggering when it's ready
         }
       },
       3: () => {
@@ -1562,6 +1578,7 @@ export default function TATour() {
     effectiveProfile?.viewedIntro,
     effectiveProfile?.viewedChat,
     setAttemptId,
+    startingSimulationId,
   ]);
 
   // Set up global action handlers for the tour context

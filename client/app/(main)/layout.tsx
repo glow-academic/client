@@ -138,9 +138,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       return false;
     }
     return (
-      activeProfile.id === effectiveProfile.id &&
-      activeProfile.id === attemptProfileId
-    ) || activeProfile.role === "guest";
+      (activeProfile.id === effectiveProfile.id &&
+        activeProfile.id === attemptProfileId) ||
+      activeProfile.role === "guest"
+    );
   }, [
     activeProfile?.id,
     effectiveProfile?.id,

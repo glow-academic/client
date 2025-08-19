@@ -84,7 +84,7 @@ export function ProfileProvider({
     queryKey: ["effectiveProfile", effectiveId],
     queryFn: () =>
       effectiveId ? getProfile(effectiveId) : Promise.resolve(null),
-    enabled: !!effectiveId,
+    enabled: !!effectiveId && effectiveId !== "guest-profile-id",
   });
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
