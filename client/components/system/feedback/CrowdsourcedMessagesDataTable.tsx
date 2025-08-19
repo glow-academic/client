@@ -127,8 +127,12 @@ export function CrowdsourcedMessagesDataTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={`border-r px-2 py-1 text-center ${
-                        cell.column.id === "select" ? "w-12" : ""
+                      className={`border-r px-2 py-1 ${
+                        cell.column.id === "select" ? "w-12 text-center" : ""
+                      } ${
+                        cell.column.id === "messageContent"
+                          ? "text-left align-top"
+                          : "text-center"
                       }`}
                     >
                       {flexRender(

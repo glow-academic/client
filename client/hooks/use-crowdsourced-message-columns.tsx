@@ -20,7 +20,7 @@ export function useCrowdsourcedMessageColumns() {
         <DataTableColumnHeader column={column} title="Message" />
       ),
       cell: ({ row }) => (
-        <div className="max-w-lg text-left mx-auto text-sm">
+        <div className="max-w-lg text-left mx-auto text-sm whitespace-normal break-words">
           {row.getValue("messageContent")}
         </div>
       ),
