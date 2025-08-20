@@ -43,7 +43,18 @@ const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
 
+  // Main filtered data for progress visualization - no profileId for admin/superadmin
   const { data: filteredData } = useFilteredAnalyticsData({
+    // Only pass profileId for non-admin users so admins can see all TA progress
+    ...(effectiveProfile?.id &&
+      effectiveProfile?.role !== "admin" &&
+      effectiveProfile?.role !== "superadmin" && {
+        profileId: effectiveProfile.id,
+      }),
+  });
+
+  // Separate filtered data for history section - always include profileId for current user
+  const { data: historyFilteredData } = useFilteredAnalyticsData({
     ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
   });
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -888,7 +899,7 @@ export default function Home() {
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
-          filteredData={filteredData}
+          filteredData={historyFilteredData}
           showExport={false}
           showArchive={false}
         />

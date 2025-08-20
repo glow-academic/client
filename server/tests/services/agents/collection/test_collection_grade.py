@@ -293,3 +293,21 @@ class TestRun_Grade_Agent:
 
         with pytest.raises(ValueError, match="Grade agent not found"):
             await run_grade_agent(chat_id, mock_session)
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `format_minutes`")
+class TestFormat_Minutes:
+    """Tests for format_minutes function."""
+
+    def test_format_minutes_success(self):
+        """Test successful format_minutes execution."""
+        # TODO: Implement test for format_minutes
+        assert False, "IMPLEMENT: Test for format_minutes"
+
+    def test_format_minutes_error(self):
+        """Test format_minutes error handling."""
+        # TODO: Implement error test for format_minutes
+        assert False, "IMPLEMENT: Error test for format_minutes"
+
