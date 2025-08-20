@@ -67,7 +67,7 @@ export default function AttemptChat() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
-  const [inputPanelHeight, setInputPanelHeight] = useState<number>(60); // Default height in pixels
+  const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
 
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
@@ -680,14 +680,14 @@ export default function AttemptChat() {
               : 100
           }
         >
-          <Card className="h-full flex flex-col py-2">
+          <Card className="h-full flex flex-col py-4">
             <TooltipProvider>
               <ResizablePanelGroup
                 ref={inputPanelGroupRef}
                 direction="vertical"
                 className="h-full"
               >
-                <ResizablePanel defaultSize={88} minSize={60}>
+                <ResizablePanel defaultSize={88} minSize={70}>
                   <div className="h-full flex flex-col">
                     {/* Timer and Controls Header */}
                     <div className="p-4 pt-0 border-b flex flex-col gap-2">
@@ -869,7 +869,7 @@ export default function AttemptChat() {
                 <div
                   style={{
                     height: `${inputPanelHeight}px`,
-                    minHeight: "60px",
+                    minHeight: "70px",
                     maxHeight: "160px",
                   }}
                 >
