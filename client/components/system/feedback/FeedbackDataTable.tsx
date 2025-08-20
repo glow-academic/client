@@ -50,7 +50,7 @@ export function FeedbackDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date
@@ -110,7 +110,7 @@ export function FeedbackDataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -129,13 +129,17 @@ export function FeedbackDataTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={`border-r px-2 py-1 text-center ${
-                        cell.column.id === "select" ? "w-12" : ""
+                      className={`border-r px-2 py-1 ${
+                        cell.column.id === "select" ? "w-12 text-center" : ""
+                      } ${
+                        cell.column.id === "message"
+                          ? "text-left align-top"
+                          : "text-center"
                       }`}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

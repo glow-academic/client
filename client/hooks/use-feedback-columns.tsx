@@ -13,8 +13,7 @@ export interface FeedbackData {
   formattedDate: string;
 }
 
-export function useFeedbackColumns(
-) {
+export function useFeedbackColumns() {
   const getFeedbackTypeVariant = (type: string) => {
     switch (type) {
       case "bug":
@@ -43,13 +42,6 @@ export function useFeedbackColumns(
       default:
         return "📝";
     }
-  };
-
-  const truncateText = (text: string | null, maxLength: number = 100) => {
-    if (!text) return "N/A";
-    return text.length > maxLength
-      ? `${text.substring(0, maxLength)}...`
-      : text;
   };
 
   const columns: ColumnDef<FeedbackData>[] = [
@@ -83,10 +75,8 @@ export function useFeedbackColumns(
         <DataTableColumnHeader column={column} title="Message" />
       ),
       cell: ({ row }) => (
-        <div className="max-w-md">
-          <span className="truncate">
-            {truncateText(row.getValue("message"))}
-          </span>
+        <div className="max-w-lg text-left mx-auto text-sm whitespace-normal break-words">
+          {row.getValue("message") ?? "N/A"}
         </div>
       ),
       enableSorting: true,

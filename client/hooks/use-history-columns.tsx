@@ -173,7 +173,11 @@ export function useHistoryColumns({
   // Create scenario options for filtering
   const scenarioOptions = useMemo(() => {
     if (!filteredData?.scenarios) return [];
-    return filteredData.scenarios.map((scenario) => ({
+    // Only show root scenarios (parentId is null) in the facet options
+    const rootScenarios = filteredData.scenarios.filter(
+      (scenario) => !scenario.parentId
+    );
+    return rootScenarios.map((scenario) => ({
       value: scenario.id,
       label: scenario.name,
     }));
@@ -406,19 +410,29 @@ export function useHistoryColumns({
           const totalChats = interactionIds?.length || chatsArray.length || 0;
           return totalChats > 0 ? completedWithRubricCount / totalChats : 0;
         },
-        filterFn: (row, id, value) => {
+        filterFn: (row, _id, value) => {
           if (!value || value.length === 0) return true;
 
-          const chats = row.getValue(id) as SimulationChat[];
+          // Use original chats because accessorFn changes the accessor value
+          const chats = (row.original as EnhancedAttempt)
+            .scenarios as SimulationChat[];
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
 
-          // Check if any of the selected scenario IDs are present in the attempt's scenarios
-          const attemptScenarioIds =
-            chatsArray.map((chat) => chat.scenarioId) || [];
+          // Build list of root scenario ids for the attempt's chats
+          // If a chat's scenario has a parent, use the parentId; otherwise use its own id
+          const attemptRootScenarioIds = chatsArray
+            .map((chat) => {
+              const scenario = filteredData?.scenarios?.find(
+                (s) => s.id === chat.scenarioId
+              );
+              if (!scenario) return undefined;
+              return (scenario.parentId as string | null) || scenario.id;
+            })
+            .filter(Boolean) as string[];
           const hasSelectedScenario = value.some((scenarioId: string) =>
-            attemptScenarioIds.includes(scenarioId)
+            attemptRootScenarioIds.includes(scenarioId)
           );
 
           return hasSelectedScenario;
@@ -698,6 +712,7 @@ export function useHistoryColumns({
     personaColorMap,
     getBadgeColors,
     showArchive,
+    allSameProfile,
   ]);
 
   // Use enhanced attempts data
