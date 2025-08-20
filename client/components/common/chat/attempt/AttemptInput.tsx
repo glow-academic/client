@@ -29,10 +29,12 @@ import { useWebSocket } from "@/contexts/websocket-context";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
+  onHeightChange?: (height: number) => void;
 }
 
 export default function AttemptInput({
   isAttemptOwner = true,
+  onHeightChange,
 }: AttemptInputProps) {
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const simulationContext = useSimulation();
@@ -103,6 +105,26 @@ export default function AttemptInput({
     setNewMessage("");
   }, [simulationContext?.currentChat?.id]);
 
+  // Auto-resize the textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+
+      // Notify parent of height change
+      if (onHeightChange) {
+        const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
+        const actualTextareaHeight = Math.min(
+          textarea.scrollHeight,
+          maxTextareaHeight
+        );
+        const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
+        onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
+      }
+    }
+  }, [newMessage, onHeightChange]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -127,18 +149,22 @@ export default function AttemptInput({
   }, [simulationContext?.currentChat?.completed]);
 
   // Hide input if not the attempt owner or if read-only/completed
-  if (simulationContext?.readOnly || simulationContext?.currentChat?.completed || !isAttemptOwner)
+  if (
+    simulationContext?.readOnly ||
+    simulationContext?.currentChat?.completed ||
+    !isAttemptOwner
+  )
     return null;
 
   return (
     <TooltipProvider>
       <CardFooter
         ref={inputPanelRef}
-        className="h-full p-4 pb-2 border-t flex flex-col justify-end min-h-0"
+        className="h-full px-4 pb-2 pt-0 border-t flex flex-col justify-end min-h-0"
       >
-        {/* --- Persistent Bottom Bar --- */}
-        <div className="w-full flex items-center gap-2 shrink-0">
-          <div className="flex-1">
+        {/* --- Dynamic Input Area --- */}
+        <div className="w-full flex items-end gap-2 shrink-0">
+          <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}
               value={newMessage}
@@ -147,7 +173,8 @@ export default function AttemptInput({
               }
               placeholder="Type your message..."
               disabled={simulationContext?.readOnly ? true : false}
-              className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
+              className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
+              rows={1}
               maxLength={MAX_INPUT_CHARS}
               onPaste={(e) => {
                 // Disable pasting into the input

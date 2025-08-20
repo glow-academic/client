@@ -227,7 +227,7 @@ async def run_grade_agent(
             }
 
         # add rubric to beginning of input_items
-        input_items.insert(0, time_message)
+        # input_items.insert(0, time_message)
         input_items.insert(0, rubric_input) # add rubric message before time message
 
 
