@@ -19,18 +19,43 @@ export interface SimulationHistoryProps {
 
   // Required: Whether to show archive functionality
   showArchive: boolean;
+
+  // Optional: Whether to hide Name column when all attempts have the same profile
+  singleProfile?: boolean;
 }
 
 export default function SimulationHistory({
   filteredData,
   showExport,
   showArchive,
+  singleProfile = false,
 }: SimulationHistoryProps) {
+  // Check if all attempts have the same profileId (only when singleProfile is true)
+  const allSameProfile = React.useMemo(() => {
+    if (
+      !singleProfile ||
+      !filteredData?.attempts ||
+      filteredData.attempts.length === 0
+    ) {
+      return false;
+    }
+
+    const firstProfileId = filteredData.attempts[0]?.profileId;
+    if (!firstProfileId) {
+      return false;
+    }
+
+    return filteredData.attempts.every(
+      (attempt) => attempt.profileId === firstProfileId
+    );
+  }, [filteredData?.attempts, singleProfile]);
+
   const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
       filteredData,
       showExport,
       showArchive,
+      allSameProfile, // Pass this information to the hook
     });
 
   // Create a key based on the data to force re-render when data changes
@@ -50,7 +75,6 @@ export default function SimulationHistory({
       showExport={showExport}
       showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream
-      filteredData={filteredData}
     />
   );
 }

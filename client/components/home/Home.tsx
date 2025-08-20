@@ -900,8 +900,9 @@ export default function Home() {
       <div className="mt-12">
         <SimulationHistory
           filteredData={historyFilteredData}
-          showExport={false}
+          showExport={true}
           showArchive={false}
+          singleProfile={true}
         />
       </div>
     </div>

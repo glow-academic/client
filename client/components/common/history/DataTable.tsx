@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import type { FilteredData } from "@/utils/analytics/filtering";
 import { log } from "@/utils/logger";
 import { updateSimulationAttempt } from "@/utils/mutations/simulation_attempts/update-simulation-attempt";
 import { useQueryClient } from "@tanstack/react-query";
@@ -63,7 +62,6 @@ export interface DataTableProps<TData, TValue> {
   showAll?: boolean;
   startDate?: Date | undefined;
   endDate?: Date | undefined;
-  filteredData?: FilteredData | null;
 }
 
 export function DataTable<TData, TValue>({
@@ -77,7 +75,6 @@ export function DataTable<TData, TValue>({
   showAll = false,
   startDate: _startDate,
   endDate: _endDate,
-  filteredData,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -289,7 +286,6 @@ export function DataTable<TData, TValue>({
         scenarioOptions={scenarioOptions}
         showExport={showExport}
         showAll={showAll}
-        filteredData={filteredData || null}
         showArchive={showArchive}
         selectedAttempts={selectedAttempts}
         onBulkArchive={handleBulkArchive}

@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import type { FilteredData } from "@/utils/analytics/filtering";
-import { BrightspaceExportButton } from "./BrightspaceExportButton";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 export interface DataTableToolbarProps<TData> {
@@ -34,7 +33,6 @@ export function DataTableToolbar<TData>({
   isAdmin = false,
   showExport = true,
   showAll = false,
-  filteredData,
   showArchive = false,
   selectedAttempts = [],
   onBulkArchive,
@@ -148,10 +146,6 @@ export function DataTableToolbar<TData>({
 
           {showExport && (
             <>
-              <BrightspaceExportButton
-                table={table}
-                filteredData={filteredData || null}
-              />
               <SingleProfileCertificateButton
                 table={table}
                 profileOptions={profileOptions}

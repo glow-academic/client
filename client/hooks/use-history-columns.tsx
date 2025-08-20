@@ -26,10 +26,12 @@ export function useHistoryColumns({
   filteredData,
   showExport: _showExport = true,
   showArchive = false,
+  allSameProfile = false,
 }: {
   filteredData: FilteredData | null;
   showExport: boolean;
   showArchive: boolean;
+  allSameProfile?: boolean;
 }) {
   // Use centralized datasets from filteredData
   const personas = filteredData?.personas;
@@ -108,15 +110,15 @@ export function useHistoryColumns({
     []
   );
 
-  // Create user options for profile names
+  // Create user options for profile names - only if not all attempts have the same profile
   const profileOptions = useMemo(() => {
-    if (!filteredData?.profiles) return [];
+    if (!filteredData?.profiles || allSameProfile) return [];
     return filteredData.profiles.map((profile: Profile) => ({
       value: profile.id,
       label: profile.firstName + " " + profile.lastName,
       icon: null,
     }));
-  }, [filteredData?.profiles]);
+  }, [filteredData?.profiles, allSameProfile]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
@@ -279,8 +281,8 @@ export function useHistoryColumns({
         enableSorting: true,
         sortDescFirst: true, // Default to descending order
       },
-      // User Name column - only show if multiple profiles in filtered data
-      ...(filteredData?.profiles && filteredData.profiles.length > 1
+      // User Name column - only show if not all attempts have the same profile
+      ...(!allSameProfile
         ? [
             {
               accessorKey: "profileId",

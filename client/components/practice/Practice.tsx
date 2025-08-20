@@ -305,6 +305,7 @@ export default function Practice() {
               filteredData={filteredData}
               showExport={false}
               showArchive={false}
+              singleProfile={true}
             />
           </div>
         )}

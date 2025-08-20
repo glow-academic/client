@@ -617,6 +617,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         filteredData={filteredData}
         showExport={false}
         showArchive={canArchive}
+        singleProfile={false}
       />
     </div>
   );

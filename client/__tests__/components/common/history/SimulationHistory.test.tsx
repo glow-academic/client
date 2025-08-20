@@ -1,58 +1,121 @@
-import { render } from '@/test/custom-render';
-import { describe, expect, it } from "vitest";
+import SimulationHistory from "@/components/common/history/SimulationHistory";
+import { useHistoryColumns } from "@/hooks/use-history-columns";
+import { render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import SimulationHistory, {
-  SimulationHistoryProps,
-} from "@/components/common/history/SimulationHistory";
+// Mock the useHistoryColumns hook
+vi.mock("@/hooks/use-history-columns", () => ({
+  useHistoryColumns: vi.fn(),
+}));
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: SimulationHistoryProps = {
-  profileId: "test-profile-id",
-  // showExport: false, /* optional */
-};
-// ------------------------------------------------------------------
+const mockUseHistoryColumns = vi.mocked(useHistoryColumns);
+
 describe("SimulationHistory", () => {
-  describe("basic render smoke-test", () => {
-    it("renders without crashing", async () => {
-      render(<SimulationHistory {...mockProps} />);
+  const mockFilteredData = {
+    attempts: [
+      { id: "1", profileId: "profile1", simulationId: "sim1" },
+      { id: "2", profileId: "profile1", simulationId: "sim2" },
+    ],
+    profiles: [{ id: "profile1", firstName: "John", lastName: "Doe" }],
+    simulations: [],
+    scenarios: [],
+    chats: [],
+    grades: [],
+    personas: [],
+    rubrics: [],
+  };
 
-      // Basic render test - component should render without errors
-      expect(document.body).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("hides Name column when all attempts have same profile and showExport is true", () => {
+    mockUseHistoryColumns.mockReturnValue({
+      columns: [],
+      data: [],
+      profileOptions: [], // Empty because allSameProfile should be true
+      simulationOptions: [],
+      scenarioOptions: [],
     });
 
-    it("should render with props", () => {
-      render(<SimulationHistory {...mockProps} />);
+    render(
+      <SimulationHistory
+        filteredData={mockFilteredData}
+        showExport={true}
+        showArchive={false}
+      />
+    );
 
-      // Component should render with the provided props
-      expect(document.body).toBeInTheDocument();
-    });
-
-    it("should have correct accessibility attributes", () => {
-      render(<SimulationHistory {...mockProps} />);
-
-      // Check for basic accessibility elements
-      const history =
-        document.querySelector('[data-testid="simulation-history"]') ||
-        document.querySelector("div");
-      expect(history).toBeInTheDocument();
+    expect(mockUseHistoryColumns).toHaveBeenCalledWith({
+      filteredData: mockFilteredData,
+      showExport: true,
+      showArchive: false,
+      allSameProfile: true, // Should be true when all attempts have same profile and showExport is true
     });
   });
 
-  describe("Edge Cases", () => {
-    it("should handle edge cases gracefully", () => {
-      render(<SimulationHistory {...mockProps} />);
-
-      // Component should handle edge cases
-      expect(document.body).toBeInTheDocument();
+  it("shows Name column when all attempts have same profile but showExport is false", () => {
+    mockUseHistoryColumns.mockReturnValue({
+      columns: [],
+      data: [],
+      profileOptions: [{ value: "profile1", label: "John Doe", icon: null }], // Not empty because allSameProfile should be false
+      simulationOptions: [],
+      scenarioOptions: [],
     });
 
-    it("should handle missing or invalid props", () => {
-      render(<SimulationHistory profileId={null} />);
+    render(
+      <SimulationHistory
+        filteredData={mockFilteredData}
+        showExport={false}
+        showArchive={false}
+      />
+    );
 
-      // Component should handle missing props
-      expect(document.body).toBeInTheDocument();
+    expect(mockUseHistoryColumns).toHaveBeenCalledWith({
+      filteredData: mockFilteredData,
+      showExport: false,
+      showArchive: false,
+      allSameProfile: false, // Should be false when showExport is false
+    });
+  });
+
+  it("shows Name column when attempts have different profiles", () => {
+    const mixedData = {
+      ...mockFilteredData,
+      attempts: [
+        { id: "1", profileId: "profile1", simulationId: "sim1" },
+        { id: "2", profileId: "profile2", simulationId: "sim2" },
+      ],
+      profiles: [
+        { id: "profile1", firstName: "John", lastName: "Doe" },
+        { id: "profile2", firstName: "Jane", lastName: "Smith" },
+      ],
+    };
+
+    mockUseHistoryColumns.mockReturnValue({
+      columns: [],
+      data: [],
+      profileOptions: [
+        { value: "profile1", label: "John Doe", icon: null },
+        { value: "profile2", label: "Jane Smith", icon: null },
+      ],
+      simulationOptions: [],
+      scenarioOptions: [],
+    });
+
+    render(
+      <SimulationHistory
+        filteredData={mixedData}
+        showExport={true}
+        showArchive={false}
+      />
+    );
+
+    expect(mockUseHistoryColumns).toHaveBeenCalledWith({
+      filteredData: mixedData,
+      showExport: true,
+      showArchive: false,
+      allSameProfile: false, // Should be false when attempts have different profiles
     });
   });
 });
