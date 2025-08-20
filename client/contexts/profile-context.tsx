@@ -26,7 +26,7 @@ const GUEST_PROFILE: Profile = {
   userId: null,
   firstName: "Guest",
   lastName: "User",
-  alias: "Guest",
+  alias: "guest",
   role: "guest",
   active: true,
   viewedIntro: true,
