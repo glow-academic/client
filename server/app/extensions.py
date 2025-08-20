@@ -243,7 +243,6 @@ async def cancel_active_run(chat_id: str) -> bool:
         
         # Set cancellation flag with TTL (5 minutes)
         await redis_client.setex(f"cancel_run:{run_id}", 300, "1")
-        await remove_active_run(chat_id)
         logger.info(f"Successfully cancelled active run {run_id} for chat {chat_id}")
         return True
     except Exception as e:

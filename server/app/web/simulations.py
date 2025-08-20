@@ -246,8 +246,13 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
                 await emit_error(sid, "Chat not found")
                 return
 
-            # Attempt to cancel the simulation run
-            success = cancel_simulation_run(chat_id)
+            # Attempt to cancel the simulation run and the in-process Runner immediately
+            from app.main import cancel_active_result
+
+            # Try immediate in-process cancel first
+            immediate = await cancel_active_result(str(chat_id))
+            # Then set cooperative cancel flag (Redis)
+            success = await cancel_simulation_run(chat_id)
 
             sio_instance = get_sio_instance()
 
@@ -671,7 +676,23 @@ async def process_simulation_message_websocket(
         cancelled = False
 
         try:
+            # Cooperative cancellation support using Redis flags
+            # We poll for a cancellation flag bound to this chat's active run ID
+            from app.extensions import get_active_run, is_run_cancelled
+
             async for token in run_simulation_agent(chat_id, db_session):
+                # Check cancellation BEFORE processing this token to avoid emitting it
+                try:
+                    run_id = await get_active_run(str(chat_id))
+                    if run_id and await is_run_cancelled(run_id):
+                        cancelled = True
+                        assistant_message.completed = True
+                        db_session.add(assistant_message)
+                        db_session.commit()
+                        break
+                except Exception:
+                    pass
+
                 # Regular content token
                 accumulated_content += token
 
@@ -813,12 +834,14 @@ async def process_simulation_message_websocket(
             )
 
         # Also emit the explicit error event for toasts/state resets
-        logger.info(f"Emitting error to room simulation_{chat_id}")
-        await sio_instance.emit(
-            "simulation_message_error",
-            {"chat_id": str(chat_id), "error": str(e)},
-            room=f"simulation_{chat_id}",
-        )
+        # Only emit explicit error event if not cancelled
+        if "cancelled" not in str(e).lower() and "canceled" not in str(e).lower():
+            logger.info(f"Emitting error to room simulation_{chat_id}")
+            await sio_instance.emit(
+                "simulation_message_error",
+                {"chat_id": str(chat_id), "error": str(e)},
+                room=f"simulation_{chat_id}",
+            )
     finally:
         db_session.close()
 

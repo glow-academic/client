@@ -402,7 +402,9 @@ export function TourProvider({ children }: TourProviderProps) {
 
     // Check if tour is actually completed based on latest profile status
     const isTourCompleted =
-      effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat;
+      effectiveProfile?.viewedIntro &&
+      effectiveProfile?.viewedChat &&
+      state.attemptId !== null;
 
     const getNavigatingText = (currentStep: number) => {
       switch (currentStep) {

@@ -331,7 +331,9 @@ export default function TATour() {
       }
 
       setLoadingSimulation(simulationId);
-      const toastId = toast.loading("Starting practice simulation...");
+      const toastId = toast.loading("Starting practice simulation...", {
+        dismissible: true,
+      });
 
       try {
         log.info("tour.simulation.start", {
@@ -979,8 +981,11 @@ export default function TATour() {
         context: { component: "TATour", attemptId },
       });
 
-      // Store attemptId for persistence
-      setAttemptId(attemptId);
+      // Only store attemptId for persistence if user hasn't completed the tour
+      // This prevents the tour from showing when users have already completed it
+      if (!effectiveProfile?.viewedIntro || !effectiveProfile?.viewedChat) {
+        setAttemptId(attemptId);
+      }
       setLoadingSimulation(null);
 
       // Complete step 2 and advance to step 3 when simulation is actually started
@@ -1316,6 +1321,8 @@ export default function TATour() {
     handleNavigateBackToHome,
     handleNavigateBackToCohortLeaderboard,
     pathname,
+    effectiveProfile?.viewedIntro,
+    effectiveProfile?.viewedChat,
   ]);
 
   // Custom step actions mapping - handles Next button clicks

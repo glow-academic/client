@@ -120,6 +120,7 @@ export const calculateCohortPerformance = (
   // return zeroed cohorts so the UI can display cohort rows even without data
 
   // Calculate pass rates per cohort
+  // Note: totalStudents includes ALL profiles in the cohort, not just those with attempts
   const cohortStats = new Map<
     string,
     {
@@ -166,10 +167,19 @@ export const calculateCohortPerformance = (
       }
     }
 
+    // Initialize totalStudents with ALL profiles in this cohort, not just those with attempts
+    const totalStudents = new Set<string>();
+    cohort.profileIds.forEach((profileId) => {
+      // Only add profiles that exist in filteredData.profiles (to respect filtering)
+      if (filteredData.profiles.some((p) => p.id === profileId)) {
+        totalStudents.add(profileId);
+      }
+    });
+
     cohortStats.set(cohort.id, {
       totalAttempts: 0,
       passedAttempts: 0,
-      totalStudents: new Set(),
+      totalStudents,
       passedStudents: new Set(),
       totalScores: [],
       rubricPoints: cohortRubricPoints,
@@ -208,7 +218,7 @@ export const calculateCohortPerformance = (
       const cohortData = cohortStats.get(cohort.id);
       if (cohortData) {
         cohortData.totalAttempts++;
-        cohortData.totalStudents.add(profile.id);
+        // Note: totalStudents is already initialized with all profiles in the cohort
         // Store normalized percentage per grade to avoid divide-by-zero later
         const normalizedPercent = Math.round(
           (grade.score / (rubric.points > 0 ? rubric.points : 100)) * 100

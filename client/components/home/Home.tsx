@@ -189,7 +189,9 @@ export default function Home() {
           return;
         }
 
-        const toastId = toast.loading("Starting simulation...");
+        const toastId = toast.loading("Starting simulation...", {
+          dismissible: true,
+        });
         setLoadingToastId(toastId);
 
         const profileIdForEmit =

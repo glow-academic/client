@@ -249,6 +249,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     // Show progress toast for this specific file
     const toastId = toast.loading(`Preparing upload: ${file.name}`, {
       description: "0% complete",
+      dismissible: true,
     });
 
     // Add to active uploads
@@ -310,6 +311,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           toast.loading(`Uploading ${file.name}... ${progress}%`, {
             description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
             id: toastId,
+            dismissible: true,
           });
         },
         onSuccess: async () => {
@@ -1029,7 +1031,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                             effectiveProfile?.role === "guest"
                               ? ""
                               : String(effectiveProfile?.id || "");
-                          toast.loading("Starting simulation...");
+                          toast.loading("Starting simulation...", {
+                            dismissible: true,
+                          });
                           emitStartSimulation({
                             simulation_id: sim.id,
                             profile_id: profileIdForEmit,
@@ -1051,7 +1055,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
                         // Toast loading state lifecycle
                         const startToastId = toast.loading(
-                          "Creating practice scenario..."
+                          "Creating practice scenario...",
+                          {
+                            dismissible: true,
+                          }
                         ) as unknown as string;
                         setIsStartingAttempt(true);
 
@@ -1073,6 +1080,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         toast.loading("Creating attempt...", {
                           description: "Starting your practice session",
                           id: startToastId,
+                          dismissible: true,
                         });
 
                         // Find base default practice scenario for this persona

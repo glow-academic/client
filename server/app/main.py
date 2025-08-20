@@ -1,4 +1,5 @@
 # server/app/main.py
+import asyncio
 import base64
 import contextlib
 import logging
@@ -60,8 +61,8 @@ from app.extensions import (  # New Redis functions for active connections and r
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
 
-# Global store for all active runs (unified tracking) - now using Redis
-# active_runs: dict[str, Any] = {}  # REMOVED - using Redis instead
+# Global in-process store for active Runner results to support immediate cancel
+active_results: Dict[str, Dict[str, Any]] = {}
 
 # Profile-based connection management (simplified) - now using Redis
 # socket_owner: Dict[str, str] = {}  # profile_id -> socket_id - REMOVED, using Redis
@@ -460,6 +461,51 @@ async def store_active_run(chat_id: str, run_result: Any) -> None:
     # Generate a unique run ID for cooperative cancellation
     run_id = str(uuid.uuid4())
     await set_active_run(chat_id, run_id)
+
+
+async def store_active_result(chat_id: str, result: Any) -> None:
+    """Store the Runner result object locally for immediate cancel."""
+    if chat_id not in active_results:
+        active_results[chat_id] = {}
+    active_results[chat_id]["result"] = result
+
+
+async def store_active_events(chat_id: str, events_iter: Any) -> None:
+    """Store the events iterator (async generator) to allow aclose() on cancel."""
+    if chat_id not in active_results:
+        active_results[chat_id] = {}
+    active_results[chat_id]["events"] = events_iter
+
+
+async def cancel_active_result(chat_id: str) -> bool:
+    """Call cancel() on the local Runner result if present."""
+    entry = active_results.get(chat_id)
+    if not entry:
+        return False
+    try:
+        result = entry.get("result")
+        events_iter = entry.get("events")
+
+        # Best-effort: ask the Runner to cancel upstream generation
+        if result is not None and hasattr(result, "cancel"):
+            cancel_result = result.cancel()
+            if asyncio.iscoroutine(cancel_result):
+                await cancel_result
+
+        # Close our local stream iterator so we stop yielding tokens immediately
+        if events_iter is not None and hasattr(events_iter, "aclose"):
+            await events_iter.aclose()
+        if asyncio.iscoroutine(cancel_result):
+            await cancel_result
+        return True
+    except Exception as e:
+        logger.error(f"Failed to cancel local result for chat {chat_id}: {e}")
+        return False
+
+
+async def remove_active_result(chat_id: str) -> None:
+    """Remove stored Runner result for a chat."""
+    active_results.pop(chat_id, None)
 
 
 async def emit_chat_stopped(

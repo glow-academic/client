@@ -1,3 +1,4 @@
+import asyncio
 import os
 import uuid
 from typing import AsyncGenerator
@@ -180,14 +181,30 @@ async def _handle_simulation_chat(
         )
 
     # Store the result in active runs for potential cancellation using unified tracking
-    from app.main import store_active_run
+    from app.main import (remove_active_result, store_active_events,
+                          store_active_result, store_active_run)
 
     chat_id_str = str(chat.id)
     await store_active_run(chat_id_str, result)
+    await store_active_result(chat_id_str, result)
 
     try:
         # Process streaming events
-        async for event in result.stream_events():
+        from app.extensions import get_active_run, is_run_cancelled
+
+        events = result.stream_events()
+        await store_active_events(chat_id_str, events)
+
+        async for event in events:
+            # Cooperative cancellation: check a Redis flag bound to this chat's active run
+            try:
+                run_id = await get_active_run(chat_id_str)
+                if run_id and await is_run_cancelled(run_id):
+                    # Raise a cancellation to unwind upstream and hit finally cleanup
+                    raise Exception("cancelled")
+            except Exception:
+                # If Redis unavailable or check fails, continue; stop is best-effort
+                pass
             if event.type == "raw_response_event":
                 if isinstance(event.data, ResponseTextDeltaEvent):
                     chunk = event.data.delta
@@ -197,6 +214,9 @@ async def _handle_simulation_chat(
         model_run.input_tokens = usage.input_tokens
         model_run.output_tokens = usage.output_tokens
         session.commit()
+    except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
+        # Treat explicit cancellation/closure as expected
+        pass
     except Exception as e:
         # Handle cancellation or other errors
         if "cancelled" in str(e).lower():
@@ -210,3 +230,4 @@ async def _handle_simulation_chat(
         from app.extensions import remove_active_run
 
         await remove_active_run(chat_id_str)
+        await remove_active_result(chat_id_str)
