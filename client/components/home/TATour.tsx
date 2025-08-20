@@ -988,6 +988,43 @@ export default function TATour() {
       }
       setLoadingSimulation(null);
 
+      // Invalidate simulation context queries to ensure fresh data when navigating to step 3
+      if (attemptId) {
+        log.debug("tour.simulation.invalidate_queries", {
+          message: "Invalidating simulation context queries for new attempt",
+          context: { component: "TATour", attemptId },
+        });
+
+        // Invalidate attempt-specific queries
+        queryClient.invalidateQueries({
+          queryKey: ["attempt", attemptId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationChats", attemptId],
+        });
+
+        // Invalidate simulation queries (will be refetched when attempt data is available)
+        queryClient.invalidateQueries({
+          queryKey: ["simulation"],
+        });
+
+        // Invalidate scenario/interaction queries (will be refetched when chat data is available)
+        queryClient.invalidateQueries({
+          queryKey: ["interaction"],
+        });
+
+        // Invalidate related simulation data queries
+        queryClient.invalidateQueries({
+          queryKey: ["simulationGrades"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationFeedbacks"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationMessages"],
+        });
+      }
+
       // Complete step 2 and advance to step 3 when simulation is actually started
       if (
         tourState.isOpen &&
@@ -1242,6 +1279,44 @@ export default function TATour() {
           context: { component: "TATour" },
         });
       }
+
+      // Invalidate simulation context queries when navigating to existing simulation
+      if (event.detail?.attemptId) {
+        log.debug("tour.simulation.invalidate_existing_navigation", {
+          message:
+            "Invalidating simulation context queries for existing simulation navigation",
+          context: { component: "TATour", attemptId: event.detail.attemptId },
+        });
+
+        // Invalidate attempt-specific queries
+        queryClient.invalidateQueries({
+          queryKey: ["attempt", event.detail.attemptId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationChats", event.detail.attemptId],
+        });
+
+        // Invalidate simulation queries (will be refetched when attempt data is available)
+        queryClient.invalidateQueries({
+          queryKey: ["simulation"],
+        });
+
+        // Invalidate scenario/interaction queries (will be refetched when chat data is available)
+        queryClient.invalidateQueries({
+          queryKey: ["interaction"],
+        });
+
+        // Invalidate related simulation data queries
+        queryClient.invalidateQueries({
+          queryKey: ["simulationGrades"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationFeedbacks"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationMessages"],
+        });
+      }
     };
 
     window.addEventListener(
@@ -1323,6 +1398,7 @@ export default function TATour() {
     pathname,
     effectiveProfile?.viewedIntro,
     effectiveProfile?.viewedChat,
+    queryClient,
   ]);
 
   // Custom step actions mapping - handles Next button clicks
@@ -1358,6 +1434,42 @@ export default function TATour() {
           log.info("tour.simulation.use_existing_attempt", {
             message: "Using existing attemptId for tour navigation",
             context: { component: "TATour", attemptId: tourState.attemptId },
+          });
+
+          // Invalidate simulation context queries to ensure fresh data
+          log.debug("tour.simulation.invalidate_existing_attempt", {
+            message:
+              "Invalidating simulation context queries for existing attempt",
+            context: { component: "TATour", attemptId: tourState.attemptId },
+          });
+
+          // Invalidate attempt-specific queries
+          queryClient.invalidateQueries({
+            queryKey: ["attempt", tourState.attemptId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["simulationChats", tourState.attemptId],
+          });
+
+          // Invalidate simulation queries (will be refetched when attempt data is available)
+          queryClient.invalidateQueries({
+            queryKey: ["simulation"],
+          });
+
+          // Invalidate scenario/interaction queries (will be refetched when chat data is available)
+          queryClient.invalidateQueries({
+            queryKey: ["interaction"],
+          });
+
+          // Invalidate related simulation data queries
+          queryClient.invalidateQueries({
+            queryKey: ["simulationGrades"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["simulationFeedbacks"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["simulationMessages"],
           });
 
           // Dispatch existingSimulationNavigation event to set navigating to false
@@ -1582,6 +1694,7 @@ export default function TATour() {
     effectiveProfile?.viewedChat,
     setAttemptId,
     startingSimulationId,
+    queryClient,
   ]);
 
   // Set up global action handlers for the tour context
