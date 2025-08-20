@@ -26,6 +26,8 @@ import {
 
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
+import { log } from "@/utils/logger";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -47,6 +49,22 @@ export default function AttemptInput({
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
+
+  // Initialize paste prevention hook
+  const pastePrevention = useNoPasteTextarea(textareaRef, {
+    onPasteAttempt: () => {
+      // Optional: Add toast notification here
+      log.info("paste.attempt.blocked", {
+        message: "Paste attempt blocked",
+        context: {
+          component: "AttemptInput",
+          function: "onPasteAttempt",
+        },
+      });
+    },
+    enableBurstDetection: true,
+    maxBurstSize: 1,
+  });
 
   // Connection state for send button
   const hasTextMessage = newMessage.trim().length > 0;
@@ -125,6 +143,11 @@ export default function AttemptInput({
     }
   }, [newMessage, onHeightChange]);
 
+  // Initialize paste prevention previous value
+  useEffect(() => {
+    pastePrevention.updatePrevValue(newMessage);
+  }, [newMessage, pastePrevention]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -169,34 +192,35 @@ export default function AttemptInput({
               ref={textareaRef}
               value={newMessage}
               onChange={(e) =>
-                setNewMessage(sanitizeInputLength(e.target.value))
+                pastePrevention.handleChange(e, (value) =>
+                  setNewMessage(sanitizeInputLength(value))
+                )
               }
               placeholder="Type your message..."
               disabled={simulationContext?.readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}
               maxLength={MAX_INPUT_CHARS}
-              onPaste={(e) => {
-                // Disable pasting into the input
-                e.preventDefault();
-              }}
-              onDrop={(e) => {
-                // Prevent drag-and-drop text insertion
-                e.preventDefault();
-              }}
-              onKeyDown={(e) => {
-                // Block paste keyboard shortcuts (allow copy/cut)
-                const isModifier = e.metaKey || e.ctrlKey;
-                const key = e.key.toLowerCase();
-                const isPaste =
-                  (isModifier && key === "v") ||
-                  (e.shiftKey && e.key === "Insert");
-                if (isPaste) {
-                  e.preventDefault();
-                  return;
-                }
-                if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
-              }}
+              // Block paste/drop at the earliest stage
+              onBeforeInput={pastePrevention.handleBeforeInput}
+              onPaste={pastePrevention.handlePaste}
+              onPasteCapture={pastePrevention.handlePasteCapture}
+              onDrop={pastePrevention.handleDrop}
+              // Kill context menu (mouse + long-press)
+              onContextMenu={pastePrevention.handleContextMenu}
+              // Block middle-click paste (Linux/X11 primary selection)
+              onMouseDown={pastePrevention.handleMouseDown}
+              onKeyDown={(e) =>
+                pastePrevention.handleKeyDown(e, handleSendMessage)
+              }
+              // IME composition support
+              onCompositionStart={pastePrevention.handleCompositionStart}
+              onCompositionEnd={pastePrevention.handleCompositionEnd}
+              // Reduce "smart" automatic inserts that look like paste/autofill
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
             />
           </div>
 
