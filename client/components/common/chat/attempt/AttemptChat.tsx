@@ -444,12 +444,9 @@ export default function AttemptChat() {
                                   data-testid="timer"
                                 >
                                   {selectedChat && selectedChat.completed
-                                    ? calculateTimeExceeded(selectedChat) > 0 &&
-                                      simulationContext?.simulation?.timeLimit
-                                      ? `-${formatTime(calculateTimeExceeded(selectedChat))}`
-                                      : formatTime(
-                                          calculateChatTimeTaken(selectedChat)
-                                        )
+                                    ? formatTime(
+                                        calculateChatTimeTaken(selectedChat)
+                                      )
                                     : isInfiniteMode
                                       ? infiniteLimitMinutes
                                         ? formatTime(infiniteLimitMinutes * 60)
@@ -474,32 +471,38 @@ export default function AttemptChat() {
                               (rubric) => rubric.chatId === selectedChat.id
                             ) ? (
                               <TooltipContent>
-                                <p>
-                                  {simulationContext?.allDynamicRubrics.find(
-                                    (rubric) =>
-                                      rubric.chatId === selectedChat.id
-                                  )?.passed
-                                    ? "Passed"
-                                    : "Failed"}
-                                  (
-                                  {
-                                    simulationContext?.allDynamicRubrics.find(
+                                <p className="flex items-center flex-wrap gap-x-0">
+                                  <span>
+                                    {simulationContext?.allDynamicRubrics.find(
                                       (rubric) =>
                                         rubric.chatId === selectedChat.id
-                                    )?.score
-                                  }
-                                  /
-                                  {
-                                    simulationContext?.allDynamicRubrics.find(
-                                      (rubric) =>
-                                        rubric.chatId === selectedChat.id
-                                    )?.totalPossiblePoints
-                                  }
-                                  )
-                                  {!simulationContext?.isSingleChatAttempt &&
-                                    calculateTimeExceeded(selectedChat) > 0 && (
-                                      <span className="block text-xs text-muted-foreground mt-1">
-                                        *Overage based on evenly split time*
+                                    )?.passed
+                                      ? "Passed"
+                                      : "Failed"}
+                                    (
+                                    {
+                                      simulationContext?.allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === selectedChat.id
+                                      )?.score
+                                    }
+                                    /
+                                    {
+                                      simulationContext?.allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === selectedChat.id
+                                      )?.totalPossiblePoints
+                                    }
+                                    )
+                                  </span>
+                                  {calculateTimeExceeded(selectedChat) > 0 &&
+                                    simulationContext?.simulation
+                                      ?.timeLimit && (
+                                      <span className="text-xs text-muted-foreground ml-2">
+                                        +
+                                        {formatTime(
+                                          calculateTimeExceeded(selectedChat)
+                                        )}
                                       </span>
                                     )}
                                 </p>
