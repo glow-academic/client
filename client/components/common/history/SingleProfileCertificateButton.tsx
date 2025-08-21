@@ -144,23 +144,6 @@ export function SingleProfileCertificateButton<TData>({
     try {
       setIsGenerating(true);
 
-      // Get the first profile from the selected data
-      const selectedData =
-        selectedRows > 0
-          ? table.getFilteredSelectedRowModel().rows
-          : table.getFilteredRowModel().rows;
-
-      if (selectedData.length === 0) {
-        toast?.error("No data to generate certificate for");
-        return;
-      }
-
-      const firstRow = selectedData[0];
-      if (!firstRow) {
-        toast?.error("No data to generate certificate for");
-        return;
-      }
-
       // Get the current user's profile from context
       if (!effectiveProfile?.id) {
         toast?.error("No user profile available");

@@ -196,7 +196,7 @@ export default function AttemptInput({
                   setNewMessage(sanitizeInputLength(value))
                 )
               }
-              placeholder="Type your message..."
+              placeholder="Type your LaTeX message..."
               disabled={simulationContext?.readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}

@@ -15,6 +15,7 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
+import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -36,6 +37,7 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
 
 // Dynamic rubric interface based on grades/feedback
@@ -169,6 +171,54 @@ export function SimulationProvider({
     emitStopSimulation,
     emitContinueSimulation,
   } = useWebSocket();
+
+  // Use the profile context to access the effective profile
+  const { effectiveProfile } = useProfile();
+
+  // Function to set viewedChat to true when simulation is completed
+  const handleSimulationCompletion = useCallback(async () => {
+    if (!effectiveProfile?.id || effectiveProfile.viewedChat) {
+      return; // Already viewed or no profile
+    }
+
+    try {
+      // mark both complete for simplicity
+      await updateProfile(effectiveProfile.id, {
+        viewedIntro: true,
+        viewedChat: true,
+      });
+      log.info("simulation.completion.viewedChat.updated", {
+        message: "Updated profile viewedChat flag after simulation completion",
+        actor: { profileId: effectiveProfile.id },
+        subject: { entityType: "profile", entityId: effectiveProfile.id },
+        context: {
+          component: "SimulationContext",
+          function: "handleSimulationCompletion",
+        },
+      });
+
+      // Invalidate profile queries to ensure UI updates
+      queryClient.invalidateQueries({
+        queryKey: ["effectiveProfile", effectiveProfile.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profile", effectiveProfile.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profiles"],
+      });
+    } catch (error) {
+      log.error("simulation.completion.viewedChat.update.failed", {
+        message: "Failed to update viewedChat flag after simulation completion",
+        error,
+        actor: { profileId: effectiveProfile.id },
+        context: {
+          component: "SimulationContext",
+          function: "handleSimulationCompletion",
+        },
+      });
+    }
+  }, [effectiveProfile?.id, effectiveProfile?.viewedChat, queryClient]);
 
   // Fetch attempt data
   const { data: attempt } = useQuery({
@@ -677,6 +727,7 @@ export function SimulationProvider({
           setShowResults(true);
           setIsActive(false);
           onSimulationFinished?.();
+          handleSimulationCompletion();
         }
       }
 
@@ -694,6 +745,7 @@ export function SimulationProvider({
     showResults,
     isSingleChatAttempt,
     onSimulationFinished,
+    handleSimulationCompletion,
   ]);
 
   // Check if all chats are completed and show results
@@ -708,9 +760,10 @@ export function SimulationProvider({
         setShowResults(true);
         setIsActive(false);
         onSimulationFinished?.();
+        handleSimulationCompletion();
       }
     }
-  }, [chats, showResults, onSimulationFinished]);
+  }, [chats, showResults, onSimulationFinished, handleSimulationCompletion]);
 
   // Handle case where grading data becomes available after chats are loaded as completed
   useEffect(() => {
@@ -738,10 +791,18 @@ export function SimulationProvider({
           setShowResults(true);
           setIsActive(false);
           onSimulationFinished?.();
+          handleSimulationCompletion();
         }
       }
     }
-  }, [grades, feedbacks, chats, showResults, onSimulationFinished]);
+  }, [
+    grades,
+    feedbacks,
+    chats,
+    showResults,
+    onSimulationFinished,
+    handleSimulationCompletion,
+  ]);
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
@@ -1131,6 +1192,9 @@ export function SimulationProvider({
         setIsActive(false);
         onSimulationFinished?.();
         setEndChatLoading(false);
+
+        // Set viewedChat to true when simulation is completed
+        handleSimulationCompletion();
       }
     };
 
@@ -1213,7 +1277,12 @@ export function SimulationProvider({
         handleSimulationMessageToken as EventListener
       );
     };
-  }, [queryClient, attemptId, onSimulationFinished]); // Add queryClient, attemptId, and onSimulationFinished to the dependency array
+  }, [
+    queryClient,
+    attemptId,
+    onSimulationFinished,
+    handleSimulationCompletion,
+  ]); // Add queryClient, attemptId, onSimulationFinished, and handleSimulationCompletion to the dependency array
 
   // After chats refresh, jump to the next chat if one was provided by the server
   useEffect(() => {
