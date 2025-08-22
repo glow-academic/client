@@ -2,3 +2,6 @@
 .cursorignore
 .mypy_cache/
 .pytest_cache/
+
+history/backup6.sql
+history/backup7.sql
