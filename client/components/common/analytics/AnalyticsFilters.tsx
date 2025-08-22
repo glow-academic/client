@@ -17,10 +17,9 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import type { ProfileRole } from "@/types";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
@@ -43,10 +42,7 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalytics();
 
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const {data: cohorts = []} = useCohorts();
 
   // Local UI state to distinguish between "empty (all)" and "specific selections"
   const [practiceSelected, setPracticeSelected] = useState<SimulationFilter[]>(

@@ -6,7 +6,6 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
 import { Brain, Copy, Edit, Eye, Thermometer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,8 +14,6 @@ import { toast } from "sonner";
 import { usePersonaColumns } from "@/hooks/use-persona-columns";
 import { deletePersona } from "@/utils/mutations/personas/delete-persona";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 import {
   AlertDialog,
@@ -41,6 +38,8 @@ import { useProfile } from "@/contexts/profile-context";
 import { Persona } from "@/types";
 import { createPersona } from "@/utils/mutations/personas/create-persona";
 import { PersonasDataTable } from "./PersonasDataTable";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -74,17 +73,8 @@ export default function Personas() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  // Fetch personas data
-  const { data: personas = [], refetch: refetchPersonas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  // Fetch scenarios data to check for dependencies
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  const {data: personas = [], refetch: refetchPersonas} = usePersonas();
+  const {data: scenarios = []} = useScenarios();
 
   // Get table columns and filter options
   const {

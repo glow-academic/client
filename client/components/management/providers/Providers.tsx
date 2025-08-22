@@ -6,7 +6,7 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Cpu, Edit, Plus, Settings, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,10 +14,6 @@ import { toast } from "sonner";
 
 import { deleteModel } from "@/utils/mutations/models/delete-model";
 import { deleteProvider } from "@/utils/mutations/providers/delete-provider";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 import {
   AlertDialog,
@@ -49,6 +45,10 @@ import {
 import { useProviderColumns } from "@/hooks/use-provider-columns";
 import { Model, Provider } from "@/types";
 import { ProvidersDataTable } from "./ProvidersDataTable";
+import { useModels } from "@/lib/api/hooks/models";
+import { useProviders } from "@/lib/api/hooks/providers";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useAgents } from "@/lib/api/hooks/agents";
 
 interface ProviderGroup {
   provider: Provider;
@@ -72,26 +72,10 @@ export default function Providers() {
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
 
-  // Fetch models and providers data
-  const { data: models = [], refetch: refetchModels } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
-
-  const { data: providers = [] } = useQuery({
-    queryKey: ["providers"],
-    queryFn: () => getAllProviders(),
-  });
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
-  });
+  const {data: models = [], refetch: refetchModels} = useModels();
+  const {data: providers = []} = useProviders();
+  const {data: personas = []} = usePersonas();
+  const {data: agents = []} = useAgents();
 
   // Get filter options
   const { columns, providerOptions, customModelOptions, statusOptions } =

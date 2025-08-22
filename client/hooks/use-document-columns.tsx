@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
@@ -10,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Document, Scenario } from "@/types";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Edit, Trash2 } from "lucide-react";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
 
 // Helper function to truncate text
 const truncateText = (text: string, maxLength: number = 30): string => {
@@ -30,11 +29,7 @@ const getFileExtension = (filename: string): string => {
 };
 
 export function useDocumentColumns(onPreview?: (document: Document) => void) {
-  // Fetch data for filter options
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  const {data: scenarios = []} = useScenarios();
 
   // Filter options
   const typeOptions = useMemo(

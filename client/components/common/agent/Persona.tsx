@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -49,12 +49,12 @@ import {
   PERSONA_ICON_MAP,
   PERSONA_ICONS,
 } from "@/utils/persona-icons";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getPersona } from "@/utils/queries/personas/get-persona";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { Check, ChevronsUpDown } from "lucide-react";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
+import { usePersona } from "@/lib/api/hooks/personas";
+import { useModels } from "@/lib/api/hooks/models";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
 
 interface FormData {
   name?: string;
@@ -108,22 +108,11 @@ export default function Persona({
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
-  const { data: persona, isLoading: isLoadingPersona } = useQuery({
-    queryKey: ["persona", personaId],
-    queryFn: () => getPersona(personaId!),
-    enabled: isEditMode,
-  });
+  const {data: persona, isLoading: isLoadingPersona} = usePersona(personaId!);
 
-  const { data: models, isLoading: isModelsLoading } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const {data: models, isLoading: isModelsLoading} = useModels();
 
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-    enabled: isEditMode, // Only fetch when in edit mode
-  });
+  const {data: scenarios = []} = useScenarios();
 
   // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
   const isReadonly = useMemo(() => {

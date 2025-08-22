@@ -7,13 +7,11 @@
 "use client";
 
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppLog, useLogColumns } from "@/hooks/use-log-columns";
-import { getAppLogs } from "@/utils/logs/get-logs";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import type { DateRange } from "react-day-picker";
 import { LogsDataTable } from "./LogsDataTable";
 
@@ -22,6 +20,8 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useAppLogs } from "@/lib/api/hooks/app_logs";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
@@ -29,17 +29,9 @@ export default function Logs() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const queryClient = useQueryClient();
 
-  const { data: logsData } = useQuery({
-    queryKey: ["logs"],
-    queryFn: () => getAppLogs({ page: 1, limit: 1000 }), // Get logs for client-side filtering
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  const {data: logsData = []} = useAppLogs(); // TODO: need some limiting here
 
-  const { data: profilesData } = useQuery({
-    queryKey: ["profiles", "all"],
-    queryFn: () => getAllProfiles(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const {data: profilesData = []} = useProfiles();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -109,7 +101,7 @@ export default function Logs() {
     componentOptions,
     functionOptions,
   } = useMemo(() => {
-    const logs = logsData?.logs ?? [];
+    const logs = logsData ?? [];
     const events = new Set<string>();
     const providers = new Set<string>();
     const models = new Set<string>();
@@ -171,7 +163,7 @@ export default function Logs() {
     <div className="space-y-6">
       <LogsDataTable
         columns={columns}
-        data={logsData ? logsData.logs : []}
+        data={logsData}
         levelOptions={levelOptions}
         eventOptions={eventOptions}
         providerOptions={providerOptions}

@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowDown,
@@ -43,8 +43,8 @@ import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 import { createSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-message";
 import { deleteSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/delete-simulation-crowdsourced-message";
 import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
-import { getSimulationCrowdsourcedMessagesBySimulationMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-simulation-crowdsourced-messages-by-simulationmessages";
-import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
+import { useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch } from "@/lib/api/hooks/simulation_crowdsourced_messages";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -72,11 +72,7 @@ export default function AttemptMessages({
   // State to track if report dialog is open
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["simulationMessages", targetChatId],
-    queryFn: () => getSimulationMessagesByChat(targetChatId!),
-    enabled: !!targetChatId,
-  });
+  const {data: messages = [], isLoading: messagesLoading} = useSimulationMessagesByChatId(targetChatId!);
 
   // IDs of assistant responses in this chat
   const responseMessageIds = useMemo(
@@ -88,19 +84,7 @@ export default function AttemptMessages({
     [messages]
   );
 
-  // Fetch crowdsourced ratings for these messages, then filter to current profile
-  const { data: crowdsourcedAll = [] } = useQuery({
-    queryKey: [
-      "simulationCrowdsourcedMessages",
-      targetChatId,
-      effectiveProfile?.id,
-      responseMessageIds.join("|"),
-    ],
-    queryFn: () =>
-      getSimulationCrowdsourcedMessagesBySimulationMessages(responseMessageIds),
-    enabled: responseMessageIds.length > 0,
-    staleTime: 30_000,
-  });
+  const {data: crowdsourcedAll = []} = useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(responseMessageIds);
 
   type CrowdsourcedSelect = typeof simulationCrowdsourcedMessages.$inferSelect;
   type CrowdsourcedInsert = typeof simulationCrowdsourcedMessages.$inferInsert;

@@ -6,7 +6,6 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronRight,
@@ -40,13 +39,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { Scenario } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
 interface GroupedScenario {
@@ -67,27 +66,10 @@ export function Scenarios() {
     new Set()
   );
 
-  // Fetch scenarios data
-  const { data: scenarios = [], refetch: refetchScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  // Fetch parameters and parameter items for badges
-  const { data: parameters = [] } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems = [] } = useQuery({
-    queryKey: ["parameter-items"],
-    queryFn: () => getAllParameterItems(),
-  });
+  const { data: scenarios = [], refetch: refetchScenarios } = useScenarios();
+  const { data: simulations = [] } = useSimulations();
+  const { data: parameters = [] } = useParameters();
+  const { data: parameterItems = [] } = useParameterItems();
 
   // Group scenarios by parent_id
   const groupedScenarios = useMemo(() => {

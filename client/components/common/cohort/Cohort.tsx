@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -33,13 +33,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { Cohort as CohortType, Profile, Simulation } from "@/types";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -47,6 +40,13 @@ import {
   Simulation as SimulationPickerType,
 } from "./SimulationPicker";
 import CohortStaff from "./staff/CohortStaff";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { usePersonas } from "@/lib/api/hooks/personas";
 
 export interface CohortProps {
   cohortId?: string;
@@ -113,42 +113,13 @@ export default function Cohort({ cohortId }: CohortProps) {
     setProfilesToDelete(profileIds);
   }, []);
 
-  // Fetch cohorts for the list mode
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: simulations = [], isLoading: isLoadingSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
-    useQuery({
-      queryKey: ["parameterItems"],
-      queryFn: () => getAllParameterItems(),
-    });
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const {data: cohorts = []} = useCohorts();
+  const {data: profiles = [], isLoading: isLoadingProfiles} = useProfiles();
+  const {data: simulations = [], isLoading: isLoadingSimulations} = useSimulations();
+  const {data: scenarios = [], isLoading: isLoadingScenarios} = useScenarios();
+  const {data: parameters = [], isLoading: isLoadingParameters} = useParameters();
+  const {data: parameterItems = [], isLoading: isLoadingParameterItems} = useParameterItems();
+  const {data: personas = []} = usePersonas();
 
   const isLoading =
     isLoadingProfiles ||

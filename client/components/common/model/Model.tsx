@@ -5,7 +5,8 @@
  * 06/18/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useModel } from "@/lib/api/hooks/models";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,7 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Model as ModelType } from "@/types";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
-import { getModel } from "@/utils/queries/models/get-model";
 import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
@@ -65,12 +65,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch the specific model directly if in edit mode
-  const { data: modelToEdit, isLoading: isModelLoading } = useQuery({
-    queryKey: ["model", modelId],
-    queryFn: () => getModel(modelId!),
-    enabled: isEditMode,
-  });
+  const {data: modelToEdit, isLoading: isModelLoading} = useModel(modelId!);
 
   const isLoading = isModelLoading;
 

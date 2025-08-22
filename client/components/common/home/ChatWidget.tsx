@@ -21,8 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
-import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
-import { useQuery } from "@tanstack/react-query";
+import { useAssistantChat } from "@/lib/api/hooks/assistant_chats";
 import { Edit, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
@@ -44,11 +43,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
-  const { data: chat } = useQuery({
-    queryKey: ["assistantChat", currentChatId],
-    queryFn: () => getAssistantChat(currentChatId!),
-    enabled: !!currentChatId,
-  });
+  const { data: chat } = useAssistantChat(currentChatId!, currentChatId !== undefined);
 
   if (uiState !== "widget") {
     return null;
@@ -104,7 +99,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime(),
+                          new Date(a.createdAt).getTime()
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>
@@ -125,7 +120,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setCurrentChatId(null)}
+                    onClick={() => setCurrentChatId(undefined)}
                     className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
                   >
                     <Edit className="h-3 w-3" />

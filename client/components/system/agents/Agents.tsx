@@ -5,7 +5,6 @@
  * 07/20/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
 import { Brain, Edit, Thermometer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -14,17 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAgentColumns } from "@/hooks/use-agent-columns";
 import { Agent } from "@/types";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { AgentsDataTable } from "./AgentsDataTable";
+import { useAgents } from "@/lib/api/hooks/agents";
 
 export default function Agents() {
   const router = useRouter();
 
-  // Fetch agents data
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
-  });
+  const {data: agents = []} = useAgents();
 
   // Get table columns and filter options
   const { columns, reasoningOptions, modelOptions, temperatureOptions } =

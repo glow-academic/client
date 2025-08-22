@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { Table } from "@tanstack/react-table";
 import { FileBadge2 } from "lucide-react";
 import { useState } from "react";
@@ -8,13 +7,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { log } from "@/utils/logger";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { toast } from "sonner";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useSimulationAttemptsByProfileIdBatch } from "@/lib/api/hooks/simulation_attempts";
+import { useSimulationChatsByAttemptIdBatch } from "@/lib/api/hooks/simulation_chats";
+import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
 
 interface CohortData {
   name: string;
@@ -39,50 +39,13 @@ export function SingleProfileCertificateButton<TData>({
   const [isGenerating, setIsGenerating] = useState(false);
   const { effectiveProfile } = useProfile();
 
-  // Fetch all necessary data
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: rubrics = [] } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () =>
-      import("@/utils/queries/profiles/get-all-profiles").then((m) =>
-        m.getAllProfiles()
-      ),
-  });
-
-  const { data: attempts = [] } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats = [] } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades = [] } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
+  const {data: cohorts = []} = useCohorts();
+  const {data: simulations = []} = useSimulations();
+  const {data: rubrics = []} = useRubrics();
+  const {data: profiles = []} = useProfiles();
+  const {data: attempts = []} = useSimulationAttemptsByProfileIdBatch(profiles.map((profile) => profile.id));
+  const {data: chats = []} = useSimulationChatsByAttemptIdBatch(attempts.map((attempt) => attempt.id));
+  const {data: grades = []} = useSimulationChatGradesBySimulationChatIdBatch(chats.map((chat) => chat.id));
 
   // Function to calculate highest average score for a simulation
   const calculateHighestScore = (

@@ -1,11 +1,10 @@
 "use client";
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { Clock, Shield, User as UserIcon } from "lucide-react";
 import { useMemo } from "react";
 
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 // Enhanced types for the staff data
 export interface StaffData {
@@ -36,11 +35,7 @@ export function useStaffColumns({
   onEditUser,
   currentUserRole,
 }: UseStaffColumnsProps) {
-  // Fetch data for filter options
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const {data: cohorts} = useCohorts();
 
   // Create filter options
   const roleOptions = useMemo(() => {

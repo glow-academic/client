@@ -1,13 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { DebugInfo as DebugInfoType, Model, ModelRun } from "@/types";
-import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
-import { getModelRunsByPersona } from "@/utils/queries/model_runs/get-model-runs-by-persona";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 import PersonaDebugInfoDataTable from "./PersonaDebugInfoDataTable";
+import { useModelRunsByPersonaId } from "@/lib/api/hooks/model_runs";
+import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
+import { useModels } from "@/lib/api/hooks/models";
 
 export interface PersonaDebugInfoProps {
   personaId: string;
@@ -23,30 +22,16 @@ export interface PersonaDebugInfoRow {
 }
 
 export function PersonaDebugInfo({ personaId }: PersonaDebugInfoProps) {
-  const { data: modelRuns = [], isLoading: isLoadingRuns } = useQuery({
-    queryKey: ["model-runs", "persona", personaId],
-    queryFn: () => getModelRunsByPersona(personaId),
-    enabled: !!personaId,
-  });
+  const {data: modelRuns = [], isLoading: isLoadingRuns} = useModelRunsByPersonaId(personaId);
 
   const modelRunIds = useMemo(
     () => (modelRuns as ModelRun[]).map((mr) => mr.id),
     [modelRuns]
   );
 
-  const { data: debugInfo = [], isLoading: isLoadingDebug } = useQuery({
-    queryKey: ["debug-info", { personaId, modelRunIds }],
-    queryFn: async () => {
-      if (!modelRunIds?.length) return [];
-      return await getDebugInfoByModelRuns(modelRunIds);
-    },
-    enabled: modelRunIds.length > 0,
-  });
+  const {data: debugInfo = [], isLoading: isLoadingDebug} = useDebugInfoByModelRunIdBatch(modelRunIds);
 
-  const { data: models = [], isLoading: isLoadingModels } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const {data: models = [], isLoading: isLoadingModels} = useModels();
 
   const modelIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();

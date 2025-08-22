@@ -5,7 +5,6 @@
  * 07/21/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
 import {
   Book,
   Calendar,
@@ -26,24 +25,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useParameterColumns } from "@/hooks/use-parameter-columns";
 import { Parameter, ParameterItem } from "@/types";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
 import { ParametersDataTable } from "./ParametersDataTable";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 
 export default function Parameters() {
   const router = useRouter();
 
-  // Fetch all parameters and parameter items
-  const { data: parameters = [], isLoading: parametersLoading } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems = [], isLoading: parameterItemsLoading } =
-    useQuery({
-      queryKey: ["parameter-items"],
-      queryFn: () => getAllParameterItems(),
-    });
+  const {data: parameters = [], isLoading: parametersLoading} = useParameters();
+  const {data: parameterItems = [], isLoading: parameterItemsLoading} = useParameterItems();
 
   // Get table columns and filter options
   const {

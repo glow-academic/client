@@ -1,24 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Model, Persona, Scenario } from "@/types";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useModels } from "@/lib/api/hooks/models";
 
 export function usePersonaColumns() {
-  // Fetch data for filter options
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
 
-  const { data: models = [] } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const { data: scenarios = [] } = useScenarios();
+  const { data: models = [] } = useModels();
 
   // Create filter options
   const scenarioOptions = useMemo(() => {

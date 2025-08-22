@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,10 +25,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
-import { getAgent } from "@/utils/queries/agents/get-agent";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
+import { useAgent } from "@/lib/api/hooks/agents";
+import { useModels } from "@/lib/api/hooks/models";
 
 interface SystemAgentFormData {
   name?: string;
@@ -50,16 +50,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
 
-  const { data: agent, isLoading: isLoadingAgent } = useQuery({
-    queryKey: ["agent", agentId],
-    queryFn: () => getAgent(agentId),
-    enabled: !!agentId,
-  });
+  const {data: agent, isLoading: isLoadingAgent} = useAgent(agentId);
 
-  const { data: models, isLoading: isModelsLoading } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const {data: models, isLoading: isModelsLoading} = useModels();
 
   const isLoading = isLoadingAgent || isModelsLoading;
 

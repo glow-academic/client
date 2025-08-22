@@ -17,11 +17,10 @@ import { Document } from "@/types";
 import CodeViewer from "@/components/common/viewers/CodeViewer";
 import HtmlViewer from "@/components/common/viewers/HtmlViewer";
 import { isCodeByName } from "@/utils/mime-map";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { useQuery } from "@tanstack/react-query";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useDocuments } from "@/lib/api/hooks/documents";
 
 export interface DocumentViewerProps {
   document?: Document;
@@ -56,16 +55,7 @@ export default function DocumentViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch documents if filtering by classId
-  const {
-    data: docs = [],
-    isLoading,
-    error: queryError,
-  } = useQuery({
-    queryKey: ["documents", classId],
-    queryFn: () => getAllDocuments(),
-    enabled: !!classId,
-  });
+  const {data: docs = [], isLoading, error: queryError} = useDocuments();
 
   // Memoize documentsToUse to prevent unnecessary re-renders
   const documentsToUse = useMemo(() => {

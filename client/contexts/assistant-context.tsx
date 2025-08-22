@@ -4,11 +4,11 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
+import { useAssistantChatsByProfileId } from "@/lib/api/hooks/assistant_chats";
 import { AssistantChat } from "@/types";
 import { log } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
-import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
@@ -31,8 +31,8 @@ export interface AssistantContextType {
   close: () => void;
 
   // Chat Management
-  currentChatId: string | null;
-  setCurrentChatId: (chatId: string | null) => void;
+  currentChatId: string | undefined;
+  setCurrentChatId: (chatId: string | undefined) => void;
   chats: AssistantChat[];
   pastChats: AssistantChat[];
   isLoadingChats: boolean;
@@ -68,7 +68,7 @@ interface AssistantProviderProps {
 
 export function AssistantProvider({ children }: AssistantProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string>();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const queryClient = useQueryClient();
@@ -86,14 +86,8 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const { activeProfile } = useProfile();
 
-  // Get assistant chats for the profile
-  // Skip query for guest profiles with invalid UUIDs (like the hardcoded GUEST_PROFILE)
-  const { data: chats = [], isLoading: isLoadingChats } = useQuery({
-    queryKey: ["assistantChats", activeProfile?.id],
-    queryFn: () => getAssistantChatsByProfile(activeProfile!.id),
-    enabled: !!activeProfile?.id && activeProfile.id !== "guest-profile-id",
-    staleTime: 30 * 1000, // 30 seconds
-  });
+  const { data: chats = [], isLoading: isLoadingChats } =
+    useAssistantChatsByProfileId(activeProfile!.id);
 
   // Create new chat mutation
   const createChatMutation = useMutation({

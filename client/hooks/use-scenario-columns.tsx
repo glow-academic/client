@@ -1,30 +1,18 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Cohort, Persona, Scenario, Simulation } from "@/types";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { usePersonas } from "@/lib/api/hooks/personas";
 
 export function useScenarioColumns() {
-  // Fetch data for filter options
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
 
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const { data: simulations = [] } = useSimulations();
+  const { data: cohorts = [] } = useCohorts();
+  const { data: personas = [] } = usePersonas();
 
   const columns = useMemo<ColumnDef<Scenario>[]>(
     () => [

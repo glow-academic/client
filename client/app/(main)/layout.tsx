@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Infinity,
   Map as MapIcon,
@@ -74,6 +74,12 @@ import {
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import type {
   Parameter,
   ParameterItem,
@@ -94,12 +100,6 @@ import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import * as tus from "tus-js-client";
 
 // Inner component that uses the role context
@@ -125,11 +125,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   >([]);
   const simulationContext = useSimulation();
   const currentChatId = simulationContext?.currentChat?.id;
-  const { data: currentChatMessages = [] } = useQuery({
-    queryKey: ["simulationMessages", currentChatId],
-    queryFn: () => getSimulationMessagesByChat(currentChatId!),
-    enabled: !!currentChatId,
-  });
+  const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
+    currentChatId!
+  );
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
@@ -194,26 +192,11 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   >([]);
 
   // Data for customize dialog
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-  const { data: parameters = [] } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-  const { data: parameterItems = [] } = useQuery({
-    queryKey: ["parameter-items"],
-    queryFn: () => getAllParameterItems(),
-  });
+  const { data: simulations = [] } = useSimulations();
+  const { data: scenarios = [] } = useScenarios();
+  const { data: personas = [] } = usePersonas();
+  const { data: parameters = [] } = useParameters();
+  const { data: parameterItems = [] } = useParameterItems();
 
   // Only allow customizing non-default parameters and non-default items
   const customParameters = React.useMemo(() => {

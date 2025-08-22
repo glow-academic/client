@@ -6,7 +6,7 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   Edit,
@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { deleteCohort } from "@/utils/mutations/cohorts/delete-cohort";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -44,26 +43,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 
 export default function Cohorts() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  // Fetch cohorts data
-  const {
-    data: cohorts = [],
-    refetch: refetchCohorts,
-    isLoading: loadingCohorts,
-  } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
 
-  // Fetch profiles data for role checking
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  const {data: cohorts = [], refetch: refetchCohorts, isLoading: loadingCohorts} = useCohorts();
+  const {data: profiles = [], isLoading: loadingProfiles} = useProfiles();
+
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{

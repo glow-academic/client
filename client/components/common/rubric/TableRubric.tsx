@@ -40,14 +40,13 @@ import {
   simulationChatFeedbacks,
 } from "@/utils/drizzle/schema";
 import { createSimulationChatCrowdsourcedFeedback } from "@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedback";
-import { getRubric } from "@/utils/queries/rubrics/get-rubric";
-import { getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbacks } from "@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-simulation-chat-crowdsourced-feedbacks-by-simulationchatfeedbacks";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
+import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/hooks/simulation_chat_grades";
+import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
+import { useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
 
 type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
 type SimulationChatCrowdsourcedFeedback =
@@ -106,51 +105,13 @@ export default function TableRubric({
     }
   }, [votedAnchors, effectiveProfile?.id]);
 
-  const { isLoading: loadingRubric } = useQuery({
-    queryKey: ["rubric", rubricId],
-    queryFn: () => getRubric(rubricId),
-    enabled: !!rubricId,
-  });
+  const {data: standardGroups, isLoading: loadingStandardGroups} = useStandardGroupsByRubricId(rubricId!);
 
-  const { data: standardGroups, isLoading: loadingStandardGroups } = useQuery({
-    queryKey: ["standardGroups", rubricId],
-    queryFn: () => getStandardGroupsByRubric(rubricId),
-    enabled: !!rubricId,
-  });
+  const {data: standards, isLoading: loadingStandards} = useStandardsByStandardGroupIdBatch(standardGroups!.map((group) => group.id));
 
-  const { data: standards, isLoading: loadingStandards } = useQuery({
-    queryKey: [
-      "standards",
-      standardGroups?.map((group: StandardGroup) => group.id),
-    ],
-    queryFn: () =>
-      getStandardsByStandardGroups(
-        standardGroups!.map((group: StandardGroup) => group.id)
-      ),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
+  const {data: simulationGrades, isLoading: loadingSimulationGrades} = useSimulationChatGradesBySimulationChatId(simulationChatId!);
 
-  // Fetch grades and feedback for simulation chats
-  const { data: simulationGrades, isLoading: loadingSimulationGrades } =
-    useQuery({
-      queryKey: ["simulationGrades", simulationChatId],
-      queryFn: () =>
-        getSimulationChatGradesBySimulationChats([simulationChatId!]),
-      enabled: !!simulationChatId,
-    });
-
-  const { data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks } =
-    useQuery({
-      queryKey: [
-        "simulationFeedbacks",
-        simulationGrades?.map((grade) => grade.id),
-      ],
-      queryFn: () =>
-        getSimulationChatFeedbacksBySimulationChatGrades(
-          simulationGrades!.map((grade) => grade.id)
-        ),
-      enabled: !!simulationGrades && simulationGrades.length > 0,
-    });
+  const {data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks} = useSimulationChatFeedbacksBySimulationChatGradeIdBatch(simulationGrades!.map((grade) => grade.id));
 
   // Get the appropriate grade and feedback data
   const grades = simulationGrades;
@@ -172,14 +133,7 @@ export default function TableRubric({
     [feedbacks]
   );
 
-  const { data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks } = useQuery({
-    queryKey: ["simulationCrowdFeedbacks", allFeedbackIds],
-    queryFn: () =>
-      getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbacks(
-        allFeedbackIds
-      ),
-    enabled: allFeedbackIds.length > 0,
-  });
+  const {data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks} = useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(allFeedbackIds);
 
   // Build counts per (anchorFeedbackId -> total points -> count)
   const countsByAnchorAndTotal = React.useMemo(() => {
@@ -279,7 +233,6 @@ export default function TableRubric({
   };
 
   if (
-    loadingRubric ||
     loadingStandardGroups ||
     loadingStandards ||
     loadingSimulationGrades ||

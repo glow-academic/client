@@ -1,24 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Cohort, Profile, Simulation } from "@/types";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 
 export function useCohortColumns() {
-  // Fetch data for filter options
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  const { data: simulations = [] } = useSimulations();
+  const { data: profiles = [] } = useProfiles();
 
   const columns = useMemo<ColumnDef<Cohort>[]>(
     () => [

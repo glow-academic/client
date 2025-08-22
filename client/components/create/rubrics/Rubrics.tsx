@@ -6,15 +6,13 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
@@ -35,6 +33,8 @@ import { useProfile } from "@/contexts/profile-context";
 import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import { Rubric } from "@/types";
 import { RubricsDataTable } from "./RubricsDataTable";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -48,20 +48,9 @@ export default function Rubrics() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  // Fetch rubrics data
-  const {
-    data: rubrics = [],
-    refetch: refetchRubrics,
-    isLoading: isRubricsLoading,
-  } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
+  const {data: rubrics = [], refetch: refetchRubrics, isLoading: isRubricsLoading} = useRubrics();
 
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  const {data: simulations = []} = useSimulations();
 
   // Check if a rubric is being used by any simulations
   const isRubricInUse = (rubricId: string) => {

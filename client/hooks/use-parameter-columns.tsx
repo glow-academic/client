@@ -1,24 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { Parameter, ParameterItem, Scenario } from "@/types";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 export function useParameterColumns() {
-  // Fetch data for filter options
-  const { data: parameterItems = [] } = useQuery({
-    queryKey: ["parameter-items"],
-    queryFn: () => getAllParameterItems(),
-  });
-
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  const { data: parameterItems = [] } = useParameterItems();
+  const { data: scenarios = [] } = useScenarios();
 
   const columns = useMemo<ColumnDef<Parameter>[]>(
     () => [
@@ -56,14 +47,14 @@ export function useParameterColumns() {
         cell: ({ row }) => {
           const parameter = row.original;
           const items = parameterItems.filter(
-            (item: ParameterItem) => item.parameterId === parameter.id,
+            (item: ParameterItem) => item.parameterId === parameter.id
           );
           return items.length;
         },
         filterFn: (row, _, value) => {
           const parameter = row.original;
           const items = parameterItems.filter(
-            (item: ParameterItem) => item.parameterId === parameter.id,
+            (item: ParameterItem) => item.parameterId === parameter.id
           );
           const count = items.length;
 
@@ -101,8 +92,8 @@ export function useParameterColumns() {
 
           const relatedScenarios = scenarios.filter((scenario: Scenario) =>
             scenario.parameterItemIds?.some((id: string) =>
-              parameterItemIds.includes(id),
-            ),
+              parameterItemIds.includes(id)
+            )
           );
 
           return relatedScenarios.map((scenario: Scenario) => scenario.id);
@@ -115,15 +106,15 @@ export function useParameterColumns() {
 
           const relatedScenarios = scenarios.filter((scenario: Scenario) =>
             scenario.parameterItemIds?.some((id: string) =>
-              parameterItemIds.includes(id),
-            ),
+              parameterItemIds.includes(id)
+            )
           );
 
           const scenarioIds = relatedScenarios.map(
-            (scenario: Scenario) => scenario.id,
+            (scenario: Scenario) => scenario.id
           );
           return value.some((filterValue: string) =>
-            scenarioIds.includes(filterValue),
+            scenarioIds.includes(filterValue)
           );
         },
       },
@@ -133,7 +124,7 @@ export function useParameterColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [parameterItems, scenarios],
+    [parameterItems, scenarios]
   );
 
   // Filter options
@@ -142,7 +133,7 @@ export function useParameterColumns() {
       { value: "numerical", label: "Numerical" },
       { value: "text", label: "Text" },
     ],
-    [],
+    []
   );
 
   const itemCountOptions = useMemo(
@@ -152,7 +143,7 @@ export function useParameterColumns() {
       { value: "4-6", label: "4-6 items" },
       { value: "7+", label: "7+ items" },
     ],
-    [],
+    []
   );
 
   const statusOptions = useMemo(
@@ -160,7 +151,7 @@ export function useParameterColumns() {
       { value: "active", label: "Active" },
       { value: "inactive", label: "Inactive" },
     ],
-    [],
+    []
   );
 
   const scenarioOptions = useMemo(
@@ -169,7 +160,7 @@ export function useParameterColumns() {
         value: scenario.id,
         label: scenario.name,
       })),
-    [scenarios],
+    [scenarios]
   );
 
   return {

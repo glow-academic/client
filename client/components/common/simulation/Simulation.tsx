@@ -5,7 +5,7 @@
  * 05/20/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,18 +44,18 @@ import { useProfile } from "@/contexts/profile-context";
 import { Rubric, Scenario } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   SimulationScenario,
   SimulationScenarioPicker,
 } from "./SimulationScenarioPicker";
+import { useSimulation } from "@/lib/api/hooks/simulations";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -113,39 +113,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch simulations for the list mode
-  const { data: simulation, isLoading: isLoadingSimulation } = useQuery({
-    queryKey: ["simulation", simulationId],
-    queryFn: () => getSimulation(simulationId!),
-    enabled: isEditMode,
-  });
-
-  const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
-    useQuery({
-      queryKey: ["parameter-items"],
-      queryFn: () => getAllParameterItems(),
-    });
-
-  // Fetch cohorts to determine if this simulation is in use
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const {data: simulation, isLoading: isLoadingSimulation} = useSimulation(simulationId!);
+  const {data: rubrics = [], isLoading: isLoadingRubrics} = useRubrics();
+  const {data: scenarios = [], isLoading: isLoadingScenarios} = useScenarios();
+  const {data: parameters = [], isLoading: isLoadingParameters} = useParameters();
+  const {data: parameterItems = [], isLoading: isLoadingParameterItems} = useParameterItems();
+  const {data: cohorts = []} = useCohorts();
 
   const isLoading =
     isLoadingSimulation ||

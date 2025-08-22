@@ -8,7 +8,6 @@
  * - Displays summary cards and a stacked area chart (per model) + total line
  */
 
-import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, isBefore } from "date-fns";
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
@@ -24,14 +23,14 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
+import { useAgents } from "@/lib/api/hooks/agents";
+import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
+import { useModelRuns } from "@/lib/api/hooks/model_runs";
+import { useModels } from "@/lib/api/hooks/models";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import type { DebugInfo } from "@/types";
-import { Agent, Model, ModelRun, Persona, Profile } from "@/types";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
-import { getAllModelRuns } from "@/utils/queries/model_runs/get-all-model-runs";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { Agent, Model, ModelRun, Persona } from "@/types";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
 import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
@@ -68,30 +67,11 @@ export default function Pricing() {
     return { from: start, to: end };
   });
 
-  const { data: models = [], isLoading: modelsLoading } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels() as Promise<Model[]>,
-  });
-
-  const { data: runs = [], isLoading: runsLoading } = useQuery({
-    queryKey: ["model_runs"],
-    queryFn: () => getAllModelRuns() as Promise<ModelRun[]>,
-  });
-
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents() as Promise<Agent[]>,
-  });
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas() as Promise<Persona[]>,
-  });
-
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles() as Promise<Profile[]>,
-  });
+  const { data: models = [], isLoading: modelsLoading } = useModels();
+  const { data: runs = [], isLoading: runsLoading } = useModelRuns();
+  const { data: agents = [] } = useAgents();
+  const { data: personas = [] } = usePersonas();
+  const { data: profiles = [] } = useProfiles();
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]);
@@ -263,14 +243,8 @@ export default function Pricing() {
     [filteredRuns]
   );
 
-  const { data: debugInfoList = [] } = useQuery({
-    queryKey: ["debug-info", { runIds: filteredRunIds }],
-    queryFn: async () => {
-      if (!filteredRunIds.length) return [] as DebugInfo[];
-      return (await getDebugInfoByModelRuns(filteredRunIds)) as DebugInfo[];
-    },
-    enabled: filteredRunIds.length > 0,
-  });
+  const { data: debugInfoList = [] } =
+    useDebugInfoByModelRunIdBatch(filteredRunIds);
 
   const debugInfoByRunId = useMemo(() => {
     const map = new Map<string, DebugInfo[]>();

@@ -48,12 +48,12 @@ import { formatTime } from "@/utils/time";
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
 import { log } from "@/utils/logger";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
+import { useScenario } from "@/lib/api/hooks/scenarios";
 
 export default function AttemptChat() {
   const router = useRouter();
@@ -101,12 +101,7 @@ export default function AttemptChat() {
     );
   }, [selectedChatId, simulationContext?.chats]);
 
-  // Fetch the scenario corresponding to the selected chat in Results view
-  const { data: selectedScenario } = useQuery({
-    queryKey: ["scenario", selectedChat?.scenarioId],
-    queryFn: () => getScenario(selectedChat!.scenarioId),
-    enabled: !!selectedChat?.scenarioId,
-  });
+  const {data: selectedScenario} = useScenario(selectedChat!.scenarioId);
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback(

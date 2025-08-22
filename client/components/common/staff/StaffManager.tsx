@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -35,9 +34,9 @@ import { profileRole } from "@/utils/drizzle/schema";
 import { log } from "@/utils/logger";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import {
   Check,
   Download,
@@ -170,15 +169,9 @@ export default function StaffManager({
 
   const { effectiveProfile } = useProfile();
 
-  // Shared queries
-  const { data: allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-  const { data: allCohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const { data: allProfiles = [], isLoading: isLoadingProfiles } =
+    useProfiles();
+  const { data: allCohorts = [] } = useCohorts();
 
   // Compute cohort existing ids if in cohort mode
   const cohortExistingIds = useMemo(() => {

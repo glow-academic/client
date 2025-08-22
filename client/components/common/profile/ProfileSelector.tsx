@@ -6,7 +6,7 @@
  */
 
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -32,7 +32,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Profile, ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { Download, Search, Shield, Trash2, User } from "lucide-react";
 
 // A new type to represent a profile that is either saved or new
@@ -172,11 +171,8 @@ export default function ProfileSelector({
   const [isSearching, setIsSearching] = useState(false);
   const [csvPreview, setCsvPreview] = useState<CSVProfile[]>([]);
 
-  // Fetch all profiles for reference
-  const { data: allProfiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+
+  const {data: allProfiles = []} = useProfiles();
 
   // Filter profiles by allowed roles
   const availableProfiles = useMemo(() => {

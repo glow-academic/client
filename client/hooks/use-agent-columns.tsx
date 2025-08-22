@@ -1,18 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
+import { useModels } from "@/lib/api/hooks/models";
 import { Agent, Model } from "@/types";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 
 export function useAgentColumns() {
-  // Fetch data for filter options
-  const { data: models = [] } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const { data: models = [] } = useModels();
 
   // Create filter options
   const reasoningOptions = useMemo(

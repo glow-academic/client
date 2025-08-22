@@ -11,11 +11,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
+import { useAssistantMessagesByChatId } from "@/lib/api/hooks/assistant_messages";
+import { useAssistantToolCallsByChatId } from "@/lib/api/hooks/assistant_tool_calls";
 import { AssistantMessage, AssistantToolCall } from "@/types";
 import { log } from "@/utils/logger";
-import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
-import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
@@ -241,27 +240,11 @@ export default function ChatMessages({
   // Track if there are new messages after user scrolled up
   const [showScrollDown, setShowScrollDown] = useState(false);
 
-  const { data: messages, isLoading: isLoadingMessages } = useQuery({
-    queryKey: ["assistantMessages", currentChatId],
-    queryFn: () => getAssistantMessagesByChat(currentChatId!),
-    enabled: !!currentChatId,
-    refetchInterval: isConnected ? false : 2000,
-    staleTime: isConnected ? 30000 : 0,
-    gcTime: isConnected ? 300000 : 0,
-    refetchOnWindowFocus: !isConnected,
-    refetchOnReconnect: true,
-  });
+  const { data: messages = [], isLoading: isLoadingMessages } =
+    useAssistantMessagesByChatId(currentChatId!);
 
-  const { data: toolCalls, isLoading: isLoadingToolCalls } = useQuery({
-    queryKey: ["assistantToolCalls", currentChatId],
-    queryFn: () => getAssistantToolCallsByChat(currentChatId!),
-    enabled: !!currentChatId,
-    refetchInterval: isConnected ? false : 2000,
-    staleTime: isConnected ? 30000 : 0,
-    gcTime: isConnected ? 300000 : 0,
-    refetchOnWindowFocus: !isConnected,
-    refetchOnReconnect: true,
-  });
+  const { data: toolCalls = [], isLoading: isLoadingToolCalls } =
+    useAssistantToolCallsByChatId(currentChatId!);
 
   useEffect(() => {
     log.debug("chat.messages.debug", {

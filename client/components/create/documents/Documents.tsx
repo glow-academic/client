@@ -6,7 +6,7 @@
  */
 
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -50,11 +50,11 @@ import { UploadCloud } from "lucide-react";
 
 import TagSelector from "@/components/common/tags/TagSelector";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
+import { useDocuments } from "@/lib/api/hooks/documents";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { log } from "@/utils/logger";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
 export default function Documents() {
@@ -81,24 +81,10 @@ export default function Documents() {
   );
   const [bulkTags, setBulkTags] = useState<string[]>([]);
 
-  // Fetch data with optimized caching
-  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+  const { data: documents = [], isLoading: isLoadingDocuments } =
+    useDocuments();
+  const { data: scenarios = [], isLoading: isLoadingScenarios } =
+    useScenarios();
 
   // Check if document can be deleted (not used by active scenarios)
   const canDeleteDocument = useCallback(

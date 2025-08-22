@@ -2,12 +2,11 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
 
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { usePersonas } from "@/lib/api/hooks/personas";
 
 // Enhanced types for the TA performance data with the 10 metrics
 export interface TAPerformanceData {
@@ -89,11 +88,7 @@ export function useReportColumns({
   onViewReport,
 }: UseReportColumnsProps) {
   const { data: filteredData, filters } = useFilteredAnalyticsData();
-
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const {data: personas} = usePersonas();
 
   // Intentionally no local aliases of datasets; use filteredData within memos
 

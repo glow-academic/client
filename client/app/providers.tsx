@@ -3,9 +3,9 @@
 
 import { ProfileProvider } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { useProfilesByUserId } from "@/lib/api/hooks/profiles";
 import { getQueryClient } from "@/utils/react-query/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
@@ -20,12 +20,9 @@ const RoleAndWebSocketProviderWrapper = ({
 }) => {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id;
-  const { data: profile, isLoading: profileQueryLoading } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(Number(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
+  const { data: profiles, isLoading: profileQueryLoading } =
+    useProfilesByUserId(userId);
+  const profile = profiles?.[0];
 
   // ✅ "Really loading" = (session still loading) OR (profile still loading when we have a userId)
   const profileLoading =

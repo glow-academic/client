@@ -1,13 +1,12 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { DebugInfo as DebugInfoType, Model, ModelRun } from "@/types";
-import { getDebugInfoByModelRuns } from "@/utils/queries/debug_info/get-debug-info-by-modelruns";
-import { getModelRunsByAgent } from "@/utils/queries/model_runs/get-model-runs-by-agent";
-import { getAllModels } from "@/utils/queries/models/get-all-models";
 import AgentDebugInfoDataTable from "./AgentDebugInfoDataTable";
+import { useModels } from "@/lib/api/hooks/models";
+import { useModelRunsByAgentId } from "@/lib/api/hooks/model_runs";
+import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
 
 export interface AgentDebugInfoProps {
   agentId: string;
@@ -23,30 +22,17 @@ export interface AgentDebugInfoRow {
 }
 
 export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
-  const { data: modelRuns = [], isLoading: isLoadingRuns } = useQuery({
-    queryKey: ["model-runs", "agent", agentId],
-    queryFn: () => getModelRunsByAgent(agentId),
-    enabled: !!agentId,
-  });
+
+  const {data: modelRuns = [], isLoading: isLoadingRuns} = useModelRunsByAgentId(agentId);
 
   const modelRunIds = useMemo(
     () => (modelRuns as ModelRun[]).map((mr) => mr.id),
     [modelRuns]
   );
 
-  const { data: debugInfo = [], isLoading: isLoadingDebug } = useQuery({
-    queryKey: ["debug-info", { agentId, modelRunIds }],
-    queryFn: async () => {
-      if (!modelRunIds?.length) return [];
-      return await getDebugInfoByModelRuns(modelRunIds);
-    },
-    enabled: modelRunIds.length > 0,
-  });
+  const {data: debugInfo = [], isLoading: isLoadingDebug} = useDebugInfoByModelRunIdBatch(modelRunIds);
 
-  const { data: models = [], isLoading: isLoadingModels } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => getAllModels(),
-  });
+  const {data: models = [], isLoading: isLoadingModels} = useModels();
 
   const modelIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();

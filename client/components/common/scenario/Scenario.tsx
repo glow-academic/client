@@ -5,7 +5,7 @@
  * 05/20/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   Loader2,
@@ -59,12 +59,12 @@ import { randomizeScenario } from "@/utils/api/scenarios/randomize";
 import { log } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useDocuments } from "@/lib/api/hooks/documents";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useScenario } from "@/lib/api/hooks/scenarios";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -114,39 +114,12 @@ export default function Scenario({
     useState<Partial<ScenarioType>>(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
 
-  // Data fetching
-  const { data: documents = [] } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
-  });
-
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
-
-  const { data: parameters = [] } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
-
-  const { data: parameterItems = [] } = useQuery({
-    queryKey: ["parameter-items"],
-    queryFn: () => getAllParameterItems(),
-  });
-
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-    enabled: isEditMode, // Only fetch when in edit mode
-  });
-
-  // Only fetch scenario data if in edit mode
-  const { data: scenario, isLoading } = useQuery({
-    queryKey: ["scenario", scenarioId],
-    queryFn: () => getScenario(scenarioId!),
-    enabled: isEditMode,
-  });
+  const {data: documents = []} = useDocuments();
+  const {data: personas = []} = usePersonas();
+  const {data: parameters = []} = useParameters();
+  const {data: parameterItems = []} = useParameterItems();
+  const {data: simulations = []} = useSimulations();
+  const {data: scenario, isLoading} = useScenario(scenarioId!);
 
   // Load scenario data if editing
   useEffect(() => {

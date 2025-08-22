@@ -38,11 +38,11 @@ import { updateParameterItem } from "@/utils/mutations/parameter_items/update-pa
 import { createParameter } from "@/utils/mutations/parameters/create-parameter";
 import { updateParameter } from "@/utils/mutations/parameters/update-parameter";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getParameterItemsByParameter } from "@/utils/queries/parameter_items/get-parameter-items-by-parameter";
-import { getParameter } from "@/utils/queries/parameters/get-parameter";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Plus, Trash2 } from "lucide-react";
+import { useParameter } from "@/lib/api/hooks/parameters";
+import { useParameterItemsByParameterId } from "@/lib/api/hooks/parameter_items";
 
 interface FormData {
   name?: string;
@@ -93,19 +93,8 @@ export default function Parameter({
     ParameterItemFormData[]
   >([]);
 
-  const { data: parameter, isLoading: isLoadingParameter } = useQuery({
-    queryKey: ["parameter", parameterId],
-    queryFn: () => getParameter(parameterId!),
-    enabled: isEditMode,
-  });
-
-  const { data: parameterItems, isLoading: isLoadingParameterItems } = useQuery(
-    {
-      queryKey: ["parameterItems", parameterId],
-      queryFn: () => getParameterItemsByParameter(parameterId!),
-      enabled: isEditMode,
-    }
-  );
+  const { data: parameter, isLoading: isLoadingParameter } = useParameter(parameterId!);
+  const { data: parameterItems, isLoading: isLoadingParameterItems } = useParameterItemsByParameterId(parameterId!);
 
   // Fetch cohorts, sims, scenarios to compute active usage of parameter items
   const { data: cohorts = [] } = useQuery<

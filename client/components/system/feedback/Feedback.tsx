@@ -21,8 +21,6 @@ import {
   useCrowdsourcedRubricFeedbackColumns,
 } from "@/hooks/use-crowdsourced-rubric-feedback-columns";
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
-import { getAllAppFeedback } from "@/utils/queries/app_feedback/get-all-app-feedback";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationChatCrowdsourcedFeedbacks } from "@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-all-simulation-chat-crowdsourced-feedbacks";
 import { getAllSimulationChatFeedbacks } from "@/utils/queries/simulation_chat_feedbacks/get-all-simulation-chat-feedbacks";
 import { getAllSimulationCrowdsourcedMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-all-simulation-crowdsourced-messages";
@@ -30,6 +28,8 @@ import { getAllSimulationMessages } from "@/utils/queries/simulation_messages/ge
 import { CrowdsourcedMessagesDataTable } from "./CrowdsourcedMessagesDataTable";
 import { CrowdsourcedRubricFeedbackDataTable } from "./CrowdsourcedRubricFeedbackDataTable";
 import { FeedbackDataTable } from "./FeedbackDataTable";
+import { useAppFeedbacks } from "@/lib/api/hooks/app_feedback";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 
 // Removed dialog; no actions column anymore
 
@@ -71,12 +71,7 @@ export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: feedbackData } = useQuery({
-    queryKey: ["app_feedback"],
-    queryFn: () => getAllAppFeedback(),
-    refetchInterval: 60000, // Refetch every minute
-  });
-
+  const {data: feedbackData = []} = useAppFeedbacks();
   // Fetch crowdsourced messages
   const { data: crowdsourcedMessages } = useQuery<
     SimulationCrowdsourcedMessageRow[]
@@ -124,12 +119,7 @@ export default function Feedback() {
     return Array.from(ids);
   }, [feedbackData, crowdsourcedMessages, crowdsourcedRubricFeedbacks]);
 
-  // Fetch profiles for feedback authors
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles", profileIds],
-    queryFn: async () => getAllProfiles(),
-    enabled: profileIds.length > 0,
-  });
+  const {data: profiles = []} = useProfiles();
 
   const profileMap = useMemo(() => {
     const map: Record<string, Profile> = {};

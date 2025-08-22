@@ -6,7 +6,7 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -17,8 +17,8 @@ import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { createTATourSteps } from "@/utils/tour-steps";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 // Guide Button Component
 function GuideButton() {
@@ -114,11 +114,7 @@ export default function TATour() {
     tourStateRef.current = tourState;
   }, [tourState]);
 
-  // Fetch data needed for tour navigation
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const {data: cohorts = []} = useCohorts();
 
   // Get TA's assigned cohorts
   const taCohorts = useMemo(() => {

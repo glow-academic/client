@@ -16,17 +16,7 @@ import {
 import { log } from "@/utils/logger";
 
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
@@ -39,6 +29,16 @@ import React, {
 import { toast } from "sonner";
 import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
+import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
+import { useSimulationChatsByAttemptId } from "@/lib/api/hooks/simulation_chats";
+import { useSimulation as useSimulationHook } from "@/lib/api/hooks/simulations";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useStandardGroupsByRubricIdBatch } from "@/lib/api/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
+import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
+import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
+import { useScenario } from "@/lib/api/hooks/scenarios";
+import { useDocuments } from "@/lib/api/hooks/documents";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -220,62 +220,14 @@ export function SimulationProvider({
     }
   }, [effectiveProfile?.id, effectiveProfile?.viewedChat, queryClient]);
 
-  // Fetch attempt data
-  const { data: attempt } = useQuery({
-    queryKey: ["attempt", attemptId],
-    queryFn: () => getSimulationAttempt(attemptId),
-    enabled: !!attemptId,
-  });
-
-  // Get chats for the attempt
-  const { data: chats = [], isLoading: isLoadingChats } = useQuery({
-    queryKey: ["simulationChats", attemptId],
-    queryFn: () => getSimulationChatsByAttempt(attemptId),
-    enabled: !!attemptId,
-  });
-
-  // Fetch simulation data
-  const { data: simulation } = useQuery({
-    queryKey: ["simulation", attempt?.simulationId],
-    queryFn: () => getSimulation(attempt!.simulationId),
-    enabled: !!attempt,
-  });
-
-  // Fetch rubrics and standards data
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: standardGroups } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () =>
-      getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics,
-  });
-
-  const { data: standards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats,
-  });
-
-  const { data: feedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
-      ),
-    enabled: !!grades,
-  });
+  const {data: attempt} = useSimulationAttempt(attemptId);
+  const {data: chats = [], isLoading: isLoadingChats} = useSimulationChatsByAttemptId(attemptId);
+  const {data: simulation} = useSimulationHook(attempt!.simulationId);
+  const {data: rubrics = []} = useRubrics();
+  const {data: standardGroups = []} = useStandardGroupsByRubricIdBatch(rubrics.map((rubric) => rubric.id));
+  const {data: standards = []} = useStandardsByStandardGroupIdBatch(standardGroups.map((group) => group.id));
+  const {data: grades = []} = useSimulationChatGradesBySimulationChatIdBatch(chats.map((chat) => chat.id));
+  const {data: feedbacks = []} = useSimulationChatFeedbacksBySimulationChatGradeIdBatch(grades.map((grade) => grade.id));
 
   // Determine current chat based on actual chats for this attempt
   const currentChat = useMemo(() => {
@@ -291,19 +243,8 @@ export function SimulationProvider({
     return sortedChats[currentChatIndex] || sortedChats[0];
   }, [chats, currentChatIndex]);
 
-  // Fetch scenario for current chat
-  const { data: scenario } = useQuery({
-    queryKey: ["interaction", currentChat?.scenarioId],
-    queryFn: () => getScenario(currentChat!.scenarioId),
-    enabled: !!currentChat,
-  });
-
-  // Fetch documents
-  const { data: documents = [] } = useQuery({
-    queryKey: ["documents", scenario?.id],
-    queryFn: () => getAllDocuments(),
-    enabled: !!scenario?.id,
-  });
+  const {data: scenario} = useScenario(currentChat!.scenarioId);
+  const {data: documents = []} = useDocuments(scenario!.id);
 
   // Filter documents for the current attempt's class
   const scenarioDocuments = useMemo(() => {

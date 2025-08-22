@@ -29,13 +29,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profile-context";
+import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
+import { useProfile } from "@/lib/api/hooks/profiles";
 import { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -68,14 +68,9 @@ const useStaffEditBusinessLogic = (
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile } = useEffectiveProfile();
 
-  // Fetch the specific target user profile directly
-  const { data: targetUser, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["profile", profileId],
-    queryFn: () => getProfile(profileId),
-    enabled: !!profileId,
-  });
+  const {data: targetUser, isLoading: isProfileLoading} = useProfile(profileId);
 
   const isCurrentUserAdmin =
     effectiveProfile?.role === "admin" ||

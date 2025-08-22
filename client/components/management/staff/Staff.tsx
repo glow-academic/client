@@ -38,10 +38,7 @@ import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 import { Profile } from "@/types";
 import { deleteProfiles } from "@/utils/mutations/profiles/delete-profiles";
 import { updateProfiles } from "@/utils/mutations/profiles/update-profiles";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getModelRunsByProfiles } from "@/utils/queries/model_runs/get-model-runs-by-profiles";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
@@ -49,6 +46,9 @@ import NewStaff from "./NewStaff";
 import { StaffDataTable } from "./StaffDataTable";
 import StaffEdit from "./StaffEdit";
 import { StaffFilterDialog } from "./StaffFilterDialog";
+import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
 
 export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -84,25 +84,10 @@ export default function Staff() {
   const [deleteStaffMember, setDeleteStaffMember] =
     React.useState<StaffData | null>(null);
 
-  // Fetch all users and cohorts
-  const { data: allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
+  const { data: allProfiles = [], isLoading: isLoadingProfiles } = useProfiles();
+  const { data: allCohorts = [], isLoading: isLoadingCohorts } = useCohorts();
 
-  const { data: allCohorts = [], isLoading: isLoadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-
-  // Fetch model runs for visible profiles to compute last-24h usage
-  const { data: recentRuns = [] } = useQuery({
-    queryKey: ["modelRuns", allProfiles.map((p: Profile) => p.id)],
-    queryFn: () =>
-      getModelRunsByProfiles(allProfiles.map((p: Profile) => p.id)),
-    enabled: allProfiles.length > 0,
-  });
+  const {data: recentRuns = []} = useModelRunsByProfileIdBatch(allProfiles.map((p: Profile) => p.id));
 
   // Listen for layout "Create Staff" button broadcast
   React.useEffect(() => {

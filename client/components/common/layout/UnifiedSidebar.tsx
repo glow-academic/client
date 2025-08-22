@@ -43,11 +43,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 import { Cohort } from "@/types";
 import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { log } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -215,12 +215,7 @@ export function UnifiedSidebar({
       ["superadmin", "admin", "instructional"].includes(activeProfile.role),
   });
 
-  const { data: cohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
+  const { data: cohorts } = useCohorts();
 
   // Extract stable profile ID to avoid complex dependency expressions
   const stableProfileId = effectiveProfile?.id || "";

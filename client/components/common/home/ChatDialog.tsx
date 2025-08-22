@@ -27,8 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
-import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
-import { useQuery } from "@tanstack/react-query";
+import { useAssistantChat } from "@/lib/api/hooks/assistant_chats";
 import { Edit, Minimize2, X } from "lucide-react";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
@@ -48,12 +47,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
-  // Get the chat data
-  const { data: chat } = useQuery({
-    queryKey: ["assistantChat", currentChatId],
-    queryFn: () => getAssistantChat(currentChatId!),
-    enabled: !!currentChatId,
-  });
+  const { data: chat } = useAssistantChat(currentChatId!, currentChatId !== undefined);
 
   if (uiState !== "expanded") {
     return null;
@@ -80,9 +74,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
 
   return (
     <Dialog open={true} onOpenChange={() => close()}>
-      <DialogContent
-        className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden gap-0 rounded-t-2xl"
-      >
+      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden gap-0 rounded-t-2xl">
         <DialogDescription hidden>
           This dialog shows the chat history and allows you to add new messages.
         </DialogDescription>
@@ -112,7 +104,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime(),
+                          new Date(a.createdAt).getTime()
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>
@@ -132,7 +124,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setCurrentChatId(null)}
+                      onClick={() => setCurrentChatId(undefined)}
                       className="h-8 w-8 relative z-10"
                     >
                       <Edit className="h-4 w-4" />

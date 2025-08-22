@@ -1,18 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Model, Provider } from "@/types";
-import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
+import { useProviders } from "@/lib/api/hooks/providers";
 
 export function useProviderColumns() {
-  // Fetch data for filter options
-  const { data: providers = [] } = useQuery({
-    queryKey: ["providers"],
-    queryFn: () => getAllProviders(),
-  });
+
+  const { data: providers = [] } = useProviders();
 
   const columns = useMemo<ColumnDef<Model>[]>(
     () => [

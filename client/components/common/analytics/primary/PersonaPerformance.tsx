@@ -25,12 +25,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { usePersonas } from "@/lib/api/hooks/personas";
 
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -66,11 +65,8 @@ export default function PersonaPerformance({
   // Use datasets sourced from filtered data where available
   const rubrics = filteredData?.rubrics;
   const scenarios = filteredData?.scenarios;
-  // Personas are not included in filtered data yet; fetch minimally
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+
+  const {data: personas} = usePersonas();
 
   // Map persona name -> hex color from personas table
   const personaColorMap = useMemo(() => {

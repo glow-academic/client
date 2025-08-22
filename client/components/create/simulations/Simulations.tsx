@@ -6,7 +6,7 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,10 +14,6 @@ import { toast } from "sonner";
 
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 import {
   AlertDialog,
@@ -36,6 +32,10 @@ import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
 import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 export function Simulations() {
   const router = useRouter();
@@ -49,26 +49,10 @@ export function Simulations() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  // Fetch all required data
-  const { data: simulations = [], refetch: refetchSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  const { data: rubrics = [] } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const {data: simulations = [], refetch: refetchSimulations} = useSimulations();
+  const {data: scenarios = []} = useScenarios();
+  const {data: rubrics = []} = useRubrics();
+  const {data: cohorts = []} = useCohorts();
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {

@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -14,11 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { getRubric } from "@/utils/queries/rubrics/get-rubric";
-import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
+import { useRubric } from "@/lib/api/hooks/rubrics";
+import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
 
 export interface RubricProps {
   rubricId?: string;
@@ -44,25 +43,9 @@ export default function Rubric({ rubricId }: RubricProps) {
     updatedAt: new Date().toISOString(),
   };
 
-  // Queries
-  const { data: rubric, isLoading: rubricLoading } = useQuery({
-    queryKey: ["rubric", rubricId],
-    queryFn: () => getRubric(rubricId!),
-    enabled: isEditMode,
-  });
-
-  const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
-    queryKey: ["standardGroups", rubricId],
-    queryFn: () => getStandardGroupsByRubric(rubricId!),
-    enabled: isEditMode,
-  });
-
-  const { data: standards, isLoading: standardsLoading } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
+  const { data: rubric, isLoading: rubricLoading } = useRubric(rubricId!);
+  const { data: standardGroups, isLoading: standardGroupsLoading } = useStandardGroupsByRubricId(rubricId!);
+  const { data: standards, isLoading: standardsLoading } = useStandardsByStandardGroupIdBatch(standardGroups!.map((group) => group.id));
 
   const isLoading = rubricLoading || standardGroupsLoading || standardsLoading;
 

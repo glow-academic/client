@@ -1,6 +1,4 @@
 "use client";
-
-import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 
 import { TagSelector } from "@/components/common/tags/TagSelector";
@@ -23,8 +21,8 @@ import {
 } from "@/components/ui/select";
 import { DocumentType } from "@/types";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { extractKnownTagsFromDocuments } from "@/utils/tags/search-tags";
+import { useDocuments } from "@/lib/api/hooks/documents";
 
 export type FileClassification = {
   type: DocumentType;
@@ -61,14 +59,7 @@ export function UploadClassificationDialog({
   onAddFiles,
   onRemoveFile,
 }: UploadClassificationDialogProps) {
-  const { data: existingDocuments = [] } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+  const {data: existingDocuments = []} = useDocuments();
 
   const knownTags = React.useMemo(
     () => extractKnownTagsFromDocuments(existingDocuments),
