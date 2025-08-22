@@ -12,6 +12,8 @@ import type { Profile } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Crown,
   MessageSquareText,
@@ -34,6 +36,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const router = useRouter();
   const [currentRotationIndex, setCurrentRotationIndex] = useState(0);
+  const [accoladePageIndex, setAccoladePageIndex] = useState(0);
 
   // Use filtered analytics data with cohort-specific filtering if cohortId is provided
   const {
@@ -728,6 +731,26 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const currentAccolades =
     accoladeSets[currentRotationIndex] || accoladeSets[0] || [];
 
+  // Calculate pagination for scrolling by 2 cards at a time
+  const ACCOLADES_PER_ROW = 4;
+  const SCROLL_BY = 2;
+  const totalAccoladePages = Math.ceil(currentAccolades.length / SCROLL_BY);
+
+  const getVisibleAccolades = () => {
+    const startIndex = accoladePageIndex * SCROLL_BY;
+    return currentAccolades.slice(startIndex, startIndex + ACCOLADES_PER_ROW);
+  };
+
+  const navigateAccolades = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setAccoladePageIndex((prev) => Math.max(0, prev - 1));
+    } else {
+      setAccoladePageIndex((prev) =>
+        Math.min(totalAccoladePages - 1, prev + 1)
+      );
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Dashboard Content */}
@@ -756,32 +779,77 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               ▶
             </button>
           </div>
+
+          {/* Accolades Grid */}
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            className="relative group"
             onMouseEnter={() => setIsHoveringAccolades(true)}
             onMouseLeave={() => setIsHoveringAccolades(false)}
           >
-            {currentAccolades.map(({ key, icon, title, accolade }) => (
-              <div
-                key={key}
-                className="transition-all duration-500 ease-in-out"
-              >
-                <AccoladeCard
-                  icon={icon}
-                  title={title}
-                  user={accolade?.holder}
-                  details={accolade?.details || ""}
-                  layoutId={`accolade-${key}`}
-                  onClick={
-                    accolade?.holder && !shouldDisableNavigation
-                      ? () => setSelected({ key, title, icon, accolade })
-                      : undefined
-                  }
-                  disabled={!!shouldDisableNavigation}
-                />
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {getVisibleAccolades().map(({ key, icon, title, accolade }) => (
+                <div
+                  key={key}
+                  className="transition-all duration-500 ease-in-out min-h-[180px]"
+                >
+                  <AccoladeCard
+                    icon={icon}
+                    title={title}
+                    user={accolade?.holder}
+                    details={accolade?.details || ""}
+                    layoutId={`accolade-${key}`}
+                    onClick={
+                      accolade?.holder && !shouldDisableNavigation
+                        ? () => setSelected({ key, title, icon, accolade })
+                        : undefined
+                    }
+                    disabled={!!shouldDisableNavigation}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Accolade Navigation Arrows */}
+            {totalAccoladePages > 1 && (
+              <>
+                <button
+                  aria-label="Previous accolades"
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                    isHoveringAccolades ? "opacity-100" : "opacity-0"
+                  } hover:opacity-100`}
+                  onClick={() => navigateAccolades("prev")}
+                  disabled={accoladePageIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  aria-label="Next accolades"
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                    isHoveringAccolades ? "opacity-100" : "opacity-0"
+                  } hover:opacity-100`}
+                  onClick={() => navigateAccolades("next")}
+                  disabled={accoladePageIndex === totalAccoladePages - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
+
+          {/* Accolade carousel indicators */}
+          {totalAccoladePages > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {Array.from({ length: totalAccoladePages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setAccoladePageIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === accoladePageIndex ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <AnimatePresence>
           {selected && (
