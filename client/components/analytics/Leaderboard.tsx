@@ -56,13 +56,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     isLoading: isFilteredDataLoading,
     rubrics,
     messages,
-  } = useFilteredAnalyticsData(
-    cohortId
-      ? {
-          cohortIds: [cohortId],
-        }
-      : undefined
-  );
+  } = useFilteredAnalyticsData({
+    ...(cohortId && { cohortIds: [cohortId] }),
+    ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
+  });
 
   // Selection + rotation pause state
   const [selected, setSelected] = useState<{
@@ -480,36 +477,20 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     return () => clearInterval(t);
   }, [selected, isHoveringAccolades]);
 
-  // 3) "Split" animation variants (Framer Motion)
-  const splitVariants = {
-    initial: (ctx: { i: number; dir: "next" | "prev" }) => {
-      // For entering items: start slightly off-center toward where they came from
-      const leftHalf = ctx.i < 2;
-      const bias = 60; // px
-      const from =
-        ctx.dir === "next"
-          ? leftHalf
-            ? -bias
-            : bias // page slides in opposite lanes
-          : leftHalf
-            ? bias
-            : -bias;
-      return { x: from, opacity: 0.0, scale: 0.98 };
-    },
+  // Simple fade animation variants
+  const fadeVariants = {
+    initial: { opacity: 0, y: 20 },
     animate: {
-      x: 0,
       opacity: 1,
-      scale: 1,
-      transition: { type: "spring", stiffness: 220, damping: 24 },
+      y: 0,
+      transition: { duration: 0.3, ease: "easeOut" as const },
     },
-    exit: (ctx: { i: number; dir: "next" | "prev" }) => {
-      // For exiting items: split—left two go right, right two go left
-      const leftHalf = ctx.i < 2;
-      const to =
-        ctx.dir === "next" ? (leftHalf ? 60 : -60) : leftHalf ? -60 : 60;
-      return { x: to, opacity: 0, scale: 0.98, transition: { duration: 0.28 } };
+    exit: {
+      opacity: 0,
+      y: -20,
+      transition: { duration: 0.2, ease: "easeIn" as const },
     },
-  } as const;
+  };
 
   // Calculate leaderboard data with detailed metrics and percentile
   const leaderboardData = useMemo(() => {
@@ -819,21 +800,19 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             onMouseLeave={() => setIsHoveringAccolades(false)}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="wait">
                 {pages[page]
                   ?.filter((item): item is NonNullable<typeof item> =>
                     Boolean(item)
                   )
-                  .map(({ key, icon, title, accolade }, i) => (
+                  .map(({ key, icon, title, accolade }) => (
                     <motion.div
-                      key={`${page}-${key}`} // key must change per page so exit/enter runs
-                      custom={{ i, dir: navDirRef.current }}
-                      variants={splitVariants}
+                      key={`${page}-${key}`}
+                      variants={fadeVariants}
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      layout
-                      className="transition-all duration-500"
+                      className="transition-all duration-300"
                     >
                       <AccoladeCard
                         icon={icon}
