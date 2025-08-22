@@ -72,10 +72,9 @@ export default function LeaderboardTable({
   onViewReport,
 }: LeaderboardTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    sessionEfficiency: false,
-    simsCompleted: false,
-    timeSpentMinutes: false,
-    passRate: false,
+    improvementRatePerDay: false,
+    mostImprovedPercent: false,
+    quickestPassMinutes: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -169,7 +168,7 @@ export default function LeaderboardTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Highest Score (Avg)"
+            title="Highest Score"
             className="justify-end"
           />
         ),
@@ -184,13 +183,13 @@ export default function LeaderboardTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Time Spent (min)"
+            title="Time Spent"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
           const v = row.getValue("timeSpentMinutes") as number;
-          return <div className="text-right">{v}</div>;
+          return <div className="text-right">{v} min</div>;
         },
         sortingFn: "basic",
       },
@@ -229,13 +228,13 @@ export default function LeaderboardTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Quickest Pass (min)"
+            title="Quickest Pass"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
           const v = row.getValue("quickestPassMinutes") as number;
-          return <div className="text-right">{v}</div>;
+          return <div className="text-right">{v} min</div>;
         },
         sortingFn: "basic",
       },
@@ -244,13 +243,13 @@ export default function LeaderboardTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Most Improved (%)"
+            title="Most Improved"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
           const v = row.getValue("mostImprovedPercent") as number;
-          return <div className="text-right">{v}</div>;
+          return <div className="text-right">{v}%</div>;
         },
         sortingFn: "basic",
       },
@@ -265,7 +264,7 @@ export default function LeaderboardTable({
         ),
         cell: ({ row }) => {
           const v = row.getValue("improvementRatePerDay") as number;
-          return <div className="text-right">{v}</div>;
+          return <div className="text-right">{v}%</div>;
         },
         sortingFn: "basic",
       },

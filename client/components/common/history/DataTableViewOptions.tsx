@@ -63,6 +63,12 @@ const columnMap = {
   inputTokens: "Input Tokens",
   outputTokens: "Output Tokens",
   profileName: "Person",
+  improvementRatePerDay: "Daily Improvement",
+  mostImprovedPercent: "Most Improved",
+  quickestPassMinutes: "Quickest Pass",
+  perfectScoreCount: "Perfect Score",
+  timeSpentMinutes: "Time Spent",
+  highestScoreAvg: "Highest Score",
 };
 
 export interface DataTableViewOptionsProps<TData> {
