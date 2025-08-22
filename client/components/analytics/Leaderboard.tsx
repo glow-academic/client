@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useProfile } from "@/contexts/profile-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import type { Profile } from "@/types";
@@ -27,6 +28,11 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
+
+// Helper function to get initials from name
+const getInitials = (firstName: string, lastName: string): string => {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+};
 
 export interface LeaderboardProps {
   cohortId?: string;
@@ -82,6 +88,12 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   // Check if navigation should be disabled for TAs viewing a specific cohort
   const shouldDisableNavigation = cohortId && effectiveProfile?.role === "ta";
+
+  // Check if user has permission to view reports (instructional and above)
+  const canViewReports =
+    effectiveProfile?.role === "superadmin" ||
+    effectiveProfile?.role === "admin" ||
+    effectiveProfile?.role === "instructional";
 
   // Calculate accolades from filtered data
   const accolades = useMemo(() => {
@@ -814,7 +826,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               {getVisibleAccolades().map(({ key, icon, title, accolade }) => (
                 <div
                   key={key}
-                  className="transition-all duration-500 ease-in-out min-h-[180px]"
+                  className="transition-all duration-500 ease-in-out"
                 >
                   <AccoladeCard
                     icon={icon}
@@ -823,11 +835,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                     details={accolade?.details || ""}
                     layoutId={`accolade-${key}`}
                     onClick={
-                      accolade?.holder && !shouldDisableNavigation
+                      accolade?.holder
                         ? () => setSelected({ key, title, icon, accolade })
                         : undefined
                     }
-                    disabled={!!shouldDisableNavigation}
+                    disabled={false}
                   />
                 </div>
               ))}
@@ -919,7 +931,17 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                 {selected.accolade.holder ? (
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-muted overflow-hidden" />
+                      <Avatar
+                        className="h-10 w-10 outline outline-muted-foreground"
+                        style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                      >
+                        <AvatarFallback>
+                          {getInitials(
+                            selected.accolade.holder.firstName,
+                            selected.accolade.holder.lastName
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <div className="font-medium">
                           {selected.accolade.holder.firstName}{" "}
@@ -930,7 +952,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                         </div>
                       </div>
                     </div>
-                    {!shouldDisableNavigation && (
+                    {canViewReports && (
                       <Link
                         href={`/analytics/reports/p/${selected.accolade.holder.id}`}
                         className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"

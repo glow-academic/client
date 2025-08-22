@@ -57,7 +57,7 @@ export default function AccoladeCard({
     <div className="animated-gradient-border rounded-2xl p-[1px] h-full">
       <motion.div
         ref={ref}
-        layoutId={layoutId}
+        {...(layoutId && { layoutId })}
         className={clsx(
           "relative group rounded-2xl p-4 h-full bg-card",
           asButton && "cursor-pointer",
@@ -77,12 +77,10 @@ export default function AccoladeCard({
             ref.current.style.setProperty("--ry", "0deg");
           }
         }}
-        whileHover={
-          !disabled
-            ? { boxShadow: "0 20px 40px rgba(0,0,0,0.12)", y: -2 }
-            : undefined
-        }
-        whileTap={!disabled ? { scale: 0.98 } : undefined}
+        {...(!disabled && {
+          whileHover: { boxShadow: "0 20px 40px rgba(0,0,0,0.12)", y: -2 },
+          whileTap: { scale: 0.98 },
+        })}
         onClick={asButton ? onClick : undefined}
         role={asButton ? "button" : undefined}
         tabIndex={asButton ? 0 : -1}
@@ -98,18 +96,18 @@ export default function AccoladeCard({
           <div className="font-semibold text-sm">{title}</div>
         </div>
         {user ? (
-          <div className="flex items-center gap-3 w-full">
+          <div className="flex flex-col items-center justify-center w-full gap-2 py-2">
             <Avatar
-              className="h-9 w-9 outline outline-muted-foreground flex-shrink-0"
+              className="h-14 w-14 outline outline-muted-foreground flex-shrink-0 mb-2"
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
             >
               <AvatarFallback>
                 {getInitials(`${user.firstName} ${user.lastName}`)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="text-lg font-bold truncate">{`${user.firstName} ${user.lastName}`}</p>
-              <p className="text-xs text-muted-foreground truncate">
+            <div className="min-w-0 flex flex-col items-center w-full">
+              <p className="text-lg font-bold text-center truncate w-full">{`${user.firstName} ${user.lastName}`}</p>
+              <p className="text-xs text-muted-foreground text-center truncate w-full">
                 {details}
               </p>
             </div>
