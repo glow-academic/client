@@ -14,6 +14,7 @@ from urllib.parse import parse_qs
 
 import socketio  # type: ignore
 from app.db import init_db
+from app.routes.analytics import router as analytics_router
 from app.routes.csv import router as csv_router
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
@@ -576,6 +577,7 @@ fastapi_app.add_middleware(
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 fastapi_app.include_router(csv_router, prefix="/csv")
+fastapi_app.include_router(analytics_router, prefix="/analytics")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 from app.services.mcp.server import server  # noqa: E402

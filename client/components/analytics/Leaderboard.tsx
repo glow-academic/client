@@ -7,9 +7,13 @@
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import type { Profile } from "@/types";
+import {
+  getLeaderboard,
+  type LeaderboardRow,
+} from "@/utils/api/analytics/get-leaderboard";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -40,6 +44,13 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
   const router = useRouter();
   const _pathname = usePathname();
 
@@ -50,19 +61,42 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   // Track nav direction for animation
   const navDirRef = useRef<"next" | "prev">("next");
 
-  // Use filtered analytics data with cohort-specific filtering if cohortId is provided
-  const {
-    data: filteredData,
-    isLoading: isFilteredDataLoading,
-    rubrics,
-    messages,
-  } = useFilteredAnalyticsData(
-    cohortId
-      ? {
-          cohortIds: [cohortId],
-        }
-      : undefined
+  // Server-backed leaderboard rows (no UI changes; just data source option)
+  const serverFilters = useMemo(
+    () => ({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: cohortId ? [cohortId] : selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters,
+    }),
+    [
+      startDate,
+      endDate,
+      cohortId,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+    ]
   );
+  const [leaderboardServerRows, setLeaderboardServerRows] = useState<
+    LeaderboardRow[] | null
+  >(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getLeaderboard(serverFilters);
+        if (!cancelled) setLeaderboardServerRows(rows);
+      } catch {
+        if (!cancelled) setLeaderboardServerRows([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [serverFilters]);
 
   // Selection + rotation pause state
   const [selected, setSelected] = useState<{
@@ -101,318 +135,154 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "instructional";
 
-  // Calculate accolades from filtered data
-  const accolades = useMemo(() => {
-    if (!filteredData || !rubrics) {
+  // Compute accolade winners from server rows, then build the sets
+  const computedAccolades = useMemo(() => {
+    if (!leaderboardServerRows || leaderboardServerRows.length === 0) {
       return {
-        perfectScore: { holder: null, details: "" },
-        longestConvo: { holder: null, details: "" },
-        mostImproved: { holder: null, details: "" },
-        quickestPass: { holder: null, details: "" },
-        // New rotating accolades
-        thePersistent: { holder: null, details: "" },
-        marathonRunner: { holder: null, details: "" },
-        rapidRiser: { holder: null, details: "" },
-        highestScorer: { holder: null, details: "" },
-      };
+        perfectScore: { holder: undefined, details: "" },
+        longestConvo: { holder: undefined, details: "" },
+        mostImproved: { holder: undefined, details: "" },
+        quickestPass: { holder: undefined, details: "" },
+        thePersistent: { holder: undefined, details: "" },
+        marathonRunner: { holder: undefined, details: "" },
+        rapidRiser: { holder: undefined, details: "" },
+        highestScorer: { holder: undefined, details: "" },
+      } as const;
     }
-
-    const { profiles, grades, chats, attempts } = filteredData;
-
-    // 1. Perfect Score - Find someone who achieved exactly 100% (perfect score)
-    let perfectScoreHolder = null;
-    let perfectScoreDetails = "";
-
-    for (const grade of grades) {
-      const rubric = rubrics.find((r) => r.id === grade.rubricId);
-      if (rubric) {
-        const scorePercentage = (grade.score / rubric.points) * 100;
-        // Only consider it a perfect score if they got exactly 100%
-        if (scorePercentage === 100) {
-          const attempt = attempts.find((a) =>
-            chats.some(
-              (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-            )
-          );
-          perfectScoreHolder = profiles.find(
-            (p) => p.id === attempt?.profileId
-          );
-          perfectScoreDetails = `100% perfect score`;
-          break; // Found a perfect score, no need to look further
-        }
-      }
-    }
-
-    // 2. Longest Conversation - Find the chat with the most messages
-    const chatMessageCounts = chats.map((chat) => ({
-      chatId: chat.id,
-      count: messages?.filter((m) => m.chatId === chat.id).length || 0,
-    }));
-    const longestChat = chatMessageCounts.sort((a, b) => b.count - a.count)[0];
-    const longestChatAttempt = attempts.find((a) =>
-      chats.some((c) => c.id === longestChat?.chatId && c.attemptId === a.id)
-    );
-    const longestConvoHolder = profiles.find(
-      (p) => p.id === longestChatAttempt?.profileId
-    );
-
-    // 3. Most Improved - Calculate the biggest score improvement over time
-    let mostImprovedHolder = null;
-    let mostImprovedDetails = "";
-    let biggestImprovement = 0;
-
-    // Group attempts by profile and simulation to track improvement
-    const profileSimulationAttempts = new Map<
-      string,
-      Array<{
-        profileId: string;
-        simulationId: string;
-        score: number;
-        scorePercentage: number;
-        createdAt: Date;
-      }>
-    >();
-
-    // Build attempt history for each profile-simulation combination
-    for (const grade of grades) {
-      const attempt = attempts.find((a) =>
-        chats.some(
-          (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-        )
+    const toProfile = (r: LeaderboardRow): Profile =>
+      ({
+        // Populate only fields we render; cast to Profile for compatibility
+        id: r.profile_id,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        role: "guest" as Profile["role"],
+        alias: "",
+        active: true,
+        createdAt: new Date().toISOString(),
+        defaultProfile: false,
+        lastActive: null,
+        lastLogin: new Date().toISOString(),
+        reqPerDay: 0,
+        updatedAt: new Date().toISOString(),
+        userId: null,
+        viewedChat: false,
+        viewedIntro: false,
+      }) as unknown as Profile;
+    const pickMax = (key: keyof LeaderboardRow) => {
+      return leaderboardServerRows.reduce(
+        (best, cur) =>
+          best == null || Number(cur[key] ?? 0) > Number(best[key] ?? 0)
+            ? cur
+            : best,
+        leaderboardServerRows[0]!
       );
-      if (!attempt?.profileId) continue;
-
-      const rubric = rubrics.find((r) => r.id === grade.rubricId);
-      if (!rubric) continue;
-
-      const scorePercentage = (grade.score / rubric.points) * 100;
-      const key = `${attempt.profileId}-${attempt.simulationId}`;
-
-      if (!profileSimulationAttempts.has(key)) {
-        profileSimulationAttempts.set(key, []);
-      }
-
-      profileSimulationAttempts.get(key)!.push({
-        profileId: attempt.profileId,
-        simulationId: attempt.simulationId,
-        score: grade.score,
-        scorePercentage,
-        createdAt: new Date(attempt.createdAt),
-      });
-    }
-
-    // Calculate improvement for each profile-simulation combination
-    for (const [, attempts] of profileSimulationAttempts) {
-      if (attempts.length < 2) continue; // Need at least 2 attempts to show improvement
-
-      // Sort by creation date
-      const sortedAttempts = attempts.sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    };
+    const pickMinPositive = (key: keyof LeaderboardRow) => {
+      const positives = leaderboardServerRows.filter(
+        (r) => Number(r[key] ?? 0) > 0
       );
-
-      const firstScore = sortedAttempts[0]?.scorePercentage;
-      const lastScore =
-        sortedAttempts[sortedAttempts.length - 1]?.scorePercentage;
-
-      if (firstScore === undefined || lastScore === undefined) continue;
-
-      const improvement = lastScore - firstScore;
-
-      if (improvement > biggestImprovement) {
-        biggestImprovement = improvement;
-        mostImprovedHolder = profiles.find(
-          (p) => p.id === attempts[0]?.profileId
-        );
-        mostImprovedDetails = `+${Math.round(improvement)}% improvement`;
-      }
-    }
-
-    // 4. Quickest Pass - Find the fastest completion time for a passed attempt
-    const passedGrades = grades.filter((g) => g.passed);
-    const quickestGrade = passedGrades.sort(
-      (a, b) => a.timeTaken - b.timeTaken
-    )[0];
-    const quickestPassAttempt = attempts.find((a) =>
-      chats.some(
-        (c) => c.id === quickestGrade?.simulationChatId && c.attemptId === a.id
-      )
-    );
-    const quickestPassHolder = profiles.find(
-      (p) => p.id === quickestPassAttempt?.profileId
-    );
-
-    // 5. The Persistent - User with the most simulation attempts
-    const attemptsByProfile = attempts.reduce(
-      (acc, attempt) => {
-        if (attempt.profileId) {
-          acc[attempt.profileId] = (acc[attempt.profileId] || 0) + 1;
-        }
-        return acc;
-      },
-      {} as Record<string, number>
-    );
-
-    let persistentHolder = null;
-    let maxAttempts = 0;
-
-    for (const profileId in attemptsByProfile) {
-      const attemptCount = attemptsByProfile[profileId];
-      if (attemptCount && attemptCount > maxAttempts) {
-        maxAttempts = attemptCount;
-        persistentHolder = profiles.find((p) => p.id === profileId) || null;
-      }
-    }
-
-    // 6. Marathon Runner - User with the most time spent in simulations
-    const timeByProfile = new Map<string, number>();
-
-    for (const grade of grades) {
-      const attempt = attempts.find((a) =>
-        chats.some(
-          (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-        )
+      if (positives.length === 0) return undefined;
+      return positives.reduce((best, cur) =>
+        Number(cur[key] ?? 0) < Number(best[key] ?? 0) ? cur : best
       );
-      if (attempt?.profileId && grade.timeTaken) {
-        const currentTime = timeByProfile.get(attempt.profileId) || 0;
-        timeByProfile.set(attempt.profileId, currentTime + grade.timeTaken);
-      }
-    }
-
-    let marathonHolder = null;
-    let maxTime = 0;
-
-    for (const [profileId, totalTime] of timeByProfile.entries()) {
-      if (totalTime > maxTime) {
-        maxTime = totalTime;
-        marathonHolder = profiles.find((p) => p.id === profileId) || null;
-      }
-    }
-
-    // 7. Rapid Riser - Fastest velocity of improvement
-    let rapidRiserHolder = null;
-    let rapidRiserDetails = "";
-    let maxVelocity = 0;
-
-    for (const [, attempts] of profileSimulationAttempts) {
-      if (attempts.length < 2) continue; // Need at least 2 attempts
-
-      const sortedAttempts = attempts.sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    };
+    const highestScorerRow = pickMax("highest_score_avg");
+    const mostImprovedRow = pickMax("most_improved_percent");
+    const rapidRiserRow = pickMax("improvement_rate_per_day");
+    const longestConvoRow = pickMax("messages_per_session");
+    const marathonRunnerRow = pickMax("time_spent_minutes");
+    const persistentRow = pickMax("total_attempts");
+    const quickestPassRow = pickMinPositive("quickest_pass_minutes");
+    const perfectScoreRow = (() => {
+      const byCount = pickMax("perfect_score_count");
+      if (byCount && Number(byCount.perfect_score_count ?? 0) > 0)
+        return byCount;
+      const withHundred = leaderboardServerRows.find(
+        (r) => Math.round(Number(r.highest_score_avg ?? 0)) >= 100
       );
-
-      const firstAttempt = sortedAttempts[0];
-      const lastAttempt = sortedAttempts[sortedAttempts.length - 1];
-
-      if (!firstAttempt || !lastAttempt) continue;
-
-      const scoreImprovement =
-        lastAttempt.scorePercentage - firstAttempt.scorePercentage;
-
-      // Only consider positive improvement
-      if (scoreImprovement > 0) {
-        const timeDiffMs =
-          lastAttempt.createdAt.getTime() - firstAttempt.createdAt.getTime();
-        // Convert time difference to days, ensuring it's at least 1 to avoid division by zero
-        const timeDiffDays = Math.max(1, timeDiffMs / (1000 * 60 * 60 * 24));
-
-        const velocity = scoreImprovement / timeDiffDays;
-
-        if (velocity > maxVelocity) {
-          maxVelocity = velocity;
-          rapidRiserHolder =
-            profiles.find((p) => p.id === firstAttempt.profileId) || null;
-          rapidRiserDetails = `+${Math.round(scoreImprovement)}% in ${Math.round(timeDiffDays)} day(s)`;
-        }
-      }
-    }
-
-    // 8. Highest Scorer - User with the best single score percentage
-    let highestScorerHolder = null;
-    let maxScorePercentage = 0;
-
-    for (const grade of grades) {
-      const rubric = rubrics.find((r) => r.id === grade.rubricId);
-      if (rubric && rubric.points > 0) {
-        const scorePercentage = (grade.score / rubric.points) * 100;
-
-        if (scorePercentage > maxScorePercentage) {
-          maxScorePercentage = scorePercentage;
-          const attempt = attempts.find((a) =>
-            chats.some(
-              (c) => c.id === grade.simulationChatId && c.attemptId === a.id
-            )
-          );
-          highestScorerHolder =
-            profiles.find((p) => p.id === attempt?.profileId) || null;
-        }
-      }
-    }
-
+      return withHundred ?? highestScorerRow;
+    })();
     return {
-      perfectScore: {
-        holder: perfectScoreHolder,
-        details: perfectScoreDetails,
-      },
-      longestConvo: {
-        holder: longestConvoHolder,
-        details: `${longestChat?.count || 0} messages`,
-      },
-      mostImproved: {
-        holder: mostImprovedHolder,
-        details: mostImprovedDetails,
-      },
-      quickestPass: {
-        holder: quickestPassHolder,
-        details: quickestGrade
-          ? `${Math.round(quickestGrade.timeTaken / 60)} min completion`
+      highestScorer: {
+        holder: highestScorerRow ? toProfile(highestScorerRow) : undefined,
+        details: highestScorerRow
+          ? `${Math.round(highestScorerRow.highest_score_avg)} avg`
           : "",
       },
-      // New rotating accolades
-      thePersistent: {
-        holder: persistentHolder,
-        details: `${maxAttempts} attempts made`,
-      },
-      marathonRunner: {
-        holder: marathonHolder,
-        details: `${Math.round(maxTime / 60)} minutes total`,
+      mostImproved: {
+        holder: mostImprovedRow ? toProfile(mostImprovedRow) : undefined,
+        details: mostImprovedRow
+          ? `+${Math.round(mostImprovedRow.most_improved_percent || 0)}%`
+          : "",
       },
       rapidRiser: {
-        holder: rapidRiserHolder,
-        details: rapidRiserDetails,
+        holder: rapidRiserRow ? toProfile(rapidRiserRow) : undefined,
+        details: rapidRiserRow
+          ? `+${Math.round(rapidRiserRow.improvement_rate_per_day || 0)} pts/day`
+          : "",
       },
-      highestScorer: {
-        holder: highestScorerHolder,
-        details: `Top score of ${Math.round(maxScorePercentage)}%`,
+      longestConvo: {
+        holder: longestConvoRow ? toProfile(longestConvoRow) : undefined,
+        details: longestConvoRow
+          ? `${Math.round(longestConvoRow.messages_per_session)} msgs/session`
+          : "",
       },
-    };
-  }, [filteredData, rubrics, messages]);
+      marathonRunner: {
+        holder: marathonRunnerRow ? toProfile(marathonRunnerRow) : undefined,
+        details: marathonRunnerRow
+          ? `${Math.round(marathonRunnerRow.time_spent_minutes)} min`
+          : "",
+      },
+      thePersistent: {
+        holder: persistentRow ? toProfile(persistentRow) : undefined,
+        details: persistentRow
+          ? `${persistentRow.total_attempts} attempts`
+          : "",
+      },
+      quickestPass: {
+        holder: quickestPassRow ? toProfile(quickestPassRow) : undefined,
+        details: quickestPassRow
+          ? `${quickestPassRow.quickest_pass_minutes} min`
+          : "",
+      },
+      perfectScore: {
+        holder: perfectScoreRow ? toProfile(perfectScoreRow) : undefined,
+        details: perfectScoreRow
+          ? Number(perfectScoreRow.perfect_score_count || 0) > 0
+            ? `${perfectScoreRow.perfect_score_count} perfect`
+            : `100 avg`
+          : "",
+      },
+    } as const;
+  }, [leaderboardServerRows]);
 
   // Accolade cards (single set; rotation removed)
   const accoladeSets = useMemo(() => {
+    const accolades = computedAccolades;
     const set1 = [
       {
         key: "perfectScore",
         icon: <Award className="h-4 w-4" />,
         title: "Perfect Score",
-        accolade: accolades.perfectScore,
+        accolade: accolades?.perfectScore,
       },
       {
         key: "longestConvo",
         icon: <MessageSquareText className="h-4 w-4" />,
         title: "Longest Convo",
-        accolade: accolades.longestConvo,
+        accolade: accolades?.longestConvo,
       },
       {
         key: "mostImproved",
         icon: <Zap className="h-4 w-4" />,
         title: "Most Improved",
-        accolade: accolades.mostImproved,
+        accolade: accolades?.mostImproved,
       },
       {
         key: "quickestPass",
         icon: <Crown className="h-4 w-4" />,
         title: "Quickest Pass",
-        accolade: accolades.quickestPass,
+        accolade: accolades?.quickestPass,
       },
     ];
     const set2 = [
@@ -420,29 +290,29 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         key: "thePersistent",
         icon: <Target className="h-4 w-4" />,
         title: "The Persistent",
-        accolade: accolades.thePersistent,
+        accolade: accolades?.thePersistent,
       },
       {
         key: "marathonRunner",
         icon: <Clock className="h-4 w-4" />,
         title: "Marathon Runner",
-        accolade: accolades.marathonRunner,
+        accolade: accolades?.marathonRunner,
       },
       {
         key: "rapidRiser",
         icon: <TrendingUp className="h-4 w-4" />,
         title: "Rapid Riser",
-        accolade: accolades.rapidRiser,
+        accolade: accolades?.rapidRiser,
       },
       {
         key: "highestScorer",
         icon: <Trophy className="h-4 w-4" />,
         title: "Highest Scorer",
-        accolade: accolades.highestScorer,
+        accolade: accolades?.highestScorer,
       },
     ];
     return [set1, set2];
-  }, [accolades]);
+  }, [computedAccolades]);
 
   // 1) Flatten your two sets once
   const allAccolades = useMemo(() => {
@@ -513,271 +383,151 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   // Calculate leaderboard data with detailed metrics and percentile
   const leaderboardData = useMemo(() => {
-    if (!filteredData || filteredData.profiles.length === 0 || !rubrics) {
-      return [];
-    }
-
-    const { profiles, grades, chats, attempts } = filteredData;
-
-    // Build per-user metrics
-    const rows = profiles.map((profile) => {
-      const userAttempts = attempts.filter((a) => a.profileId === profile.id);
-      const userChats = chats.filter((c) =>
-        userAttempts.some((a) => a.id === c.attemptId)
-      );
-      const userGrades = grades.filter((g) =>
-        userChats.some((c) => c.id === g.simulationChatId)
-      );
-
-      // Avg score
-      let avgScore = 0;
-      if (userGrades.length > 0 && rubrics.length > 0) {
-        const totalScore = userGrades.reduce((acc, grade) => {
-          const rubric = rubrics.find((r) => r.id === grade.rubricId);
-          const rubricPoints = rubric?.points || 100;
-          return acc + (grade.score / rubricPoints) * 100;
-        }, 0);
-        avgScore = totalScore / userGrades.length;
-      }
-
-      // (Removed older per-user fields not needed for the new table)
-
-      // Time spent (seconds) based on chat timestamps
-      const timeSpentSeconds = userChats.reduce((sum, chat) => {
-        if (chat.completedAt) {
-          const diff =
-            (new Date(chat.completedAt).getTime() -
-              new Date(chat.createdAt).getTime()) /
-            1000;
-          return sum + Math.max(0, diff);
-        }
-        return sum;
-      }, 0);
-      const timeSpentMinutes = timeSpentSeconds / 60;
-
-      // Messages per session (average)
-      const userMessagesCounts = userChats.map(
-        (chat) => (messages || []).filter((m) => m.chatId === chat.id).length
-      );
-      const messagesPerSession =
-        userMessagesCounts.length > 0
-          ? userMessagesCounts.reduce((a, b) => a + b, 0) /
-            userMessagesCounts.length
-          : 0;
-
-      // Quickest pass (minutes) - min timeTaken among passed grades
-      const quickestPassMinutes = (() => {
-        const passed = userGrades.filter((g) => g.passed && g.timeTaken > 0);
-        if (passed.length === 0) return 0;
-        const minSeconds = passed.reduce(
-          (min, g) => Math.min(min, g.timeTaken),
-          Number.POSITIVE_INFINITY
-        );
-        return Math.round(minSeconds / 60);
-      })();
-
-      // Build attempt history per simulation for improvement metrics
-      const attemptsBySimulation = new Map<
-        string,
-        Array<{ createdAt: Date; percent: number }>
-      >();
-      userGrades.forEach((grade) => {
-        const chat = userChats.find((c) => c.id === grade.simulationChatId);
-        if (!chat) return;
-        const attempt = userAttempts.find((a) => a.id === chat.attemptId);
-        if (!attempt) return;
-        const simId = attempt.simulationId;
-        const rubric = rubrics.find((r) => r.id === grade.rubricId);
-        const pct = (grade.score / (rubric?.points || 100)) * 100;
-        const arr = attemptsBySimulation.get(simId) || [];
-        arr.push({ createdAt: new Date(attempt.createdAt), percent: pct });
-        attemptsBySimulation.set(simId, arr);
-      });
-
-      // Most Improved (percent points) and Rapid Riser (improvement rate per day)
-      let mostImprovedPercent = 0;
-      let improvementRatePerDay = 0;
-      attemptsBySimulation.forEach((entries) => {
-        if (entries.length < 2) return;
-        const sorted = entries.sort(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-        );
-        const first = sorted[0]!;
-        const last = sorted[sorted.length - 1]!;
-        const improvement = last.percent - first.percent;
-        if (improvement > mostImprovedPercent) {
-          mostImprovedPercent = improvement;
-        }
-        const days = Math.max(
-          1,
-          (last.createdAt.getTime() - first.createdAt.getTime()) /
-            (1000 * 60 * 60 * 24)
-        );
-        const rate = improvement / days;
-        if (rate > improvementRatePerDay) {
-          improvementRatePerDay = rate;
-        }
-      });
-
-      // Total attempts
-      const totalAttempts = userAttempts.length;
-
-      return {
-        id: profile.id,
-        name: `${profile.firstName} ${profile.lastName}`,
-        // Accolade-aligned metrics
-        timeSpentMinutes: Math.round(timeSpentMinutes),
-        improvementRatePerDay: Math.round(improvementRatePerDay),
-        messagesPerSession: Math.round(messagesPerSession),
-        perfectScoreCount: 0, // Placeholder, will be calculated later
-        quickestPassMinutes,
-        totalAttempts,
-        highestScoreAvg: Math.round(avgScore),
-        mostImprovedPercent: Math.round(mostImprovedPercent),
-        // placeholder; will set percentile below
+    if (leaderboardServerRows && leaderboardServerRows.length > 0) {
+      const rows = leaderboardServerRows.map((r) => ({
+        id: r.profile_id,
+        name: `${r.first_name} ${r.last_name}`,
+        timeSpentMinutes: Math.round(r.time_spent_minutes || 0),
+        improvementRatePerDay: Math.round(r.improvement_rate_per_day || 0),
+        messagesPerSession: Math.round(r.messages_per_session || 0),
+        perfectScoreCount: Math.round(r.perfect_score_count || 0),
+        quickestPassMinutes: Math.round(r.quickest_pass_minutes || 0),
+        totalAttempts: Number(r.total_attempts || 0),
+        highestScoreAvg: Math.round(r.highest_score_avg || 0),
+        mostImprovedPercent: Math.round(r.most_improved_percent || 0),
         percentile: 0,
+      }));
+
+      const metricKeys = [
+        "timeSpentMinutes",
+        "improvementRatePerDay",
+        "messagesPerSession",
+        "perfectScoreCount",
+        "quickestPassMinutes",
+        "totalAttempts",
+        "highestScoreAvg",
+        "mostImprovedPercent",
+      ] as const;
+      type MetricKey = (typeof metricKeys)[number];
+
+      const values: Record<MetricKey, number[]> = {
+        timeSpentMinutes: rows.map((r) => r.timeSpentMinutes),
+        improvementRatePerDay: rows.map((r) => r.improvementRatePerDay),
+        messagesPerSession: rows.map((r) => r.messagesPerSession),
+        perfectScoreCount: rows.map((r) => r.perfectScoreCount),
+        quickestPassMinutes: rows.map((r) => r.quickestPassMinutes),
+        totalAttempts: rows.map((r) => r.totalAttempts),
+        highestScoreAvg: rows.map((r) => r.highestScoreAvg),
+        mostImprovedPercent: rows.map((r) => r.mostImprovedPercent),
       };
-    });
+      const minMax: Record<MetricKey, { min: number; max: number }> =
+        metricKeys.reduce(
+          (acc, key) => {
+            const arr = values[key];
+            const min = arr.length ? Math.min(...arr) : 0;
+            const max = arr.length ? Math.max(...arr) : 1;
+            acc[key] = { min, max };
+            return acc;
+          },
+          {} as Record<MetricKey, { min: number; max: number }>
+        );
+      const normalize = (
+        value: number,
+        min: number,
+        max: number,
+        invert = false
+      ) => {
+        if (!isFinite(value)) return 0.5;
+        if (max === min) return 0.5;
+        const n = (value - min) / (max - min);
+        const clamped = Math.max(0, Math.min(1, n));
+        return invert ? 1 - clamped : clamped;
+      };
+      const weights = {
+        highestScoreAvg: 0.25,
+        mostImprovedPercent: 0.2,
+        improvementRatePerDay: 0.15,
+        messagesPerSession: 0.1,
+        timeSpentMinutes: 0.1,
+        totalAttempts: 0.05,
+        perfectScoreCount: 0.1,
+        quickestPassMinutes: 0.05,
+      } as const;
 
-    // Compute normalized composite score for percentile calculation using table metrics
-    const metricKeys = [
-      "timeSpentMinutes",
-      "improvementRatePerDay",
-      "messagesPerSession",
-      "perfectScoreCount",
-      "quickestPassMinutes",
-      "totalAttempts",
-      "highestScoreAvg",
-      "mostImprovedPercent",
-    ] as const;
-    type MetricKey = (typeof metricKeys)[number];
-
-    const values: Record<MetricKey, number[]> = {
-      timeSpentMinutes: rows.map((r) => r.timeSpentMinutes),
-      improvementRatePerDay: rows.map((r) => r.improvementRatePerDay),
-      messagesPerSession: rows.map((r) => r.messagesPerSession),
-      perfectScoreCount: rows.map((r) => r.perfectScoreCount),
-      quickestPassMinutes: rows.map((r) => r.quickestPassMinutes),
-      totalAttempts: rows.map((r) => r.totalAttempts),
-      highestScoreAvg: rows.map((r) => r.highestScoreAvg),
-      mostImprovedPercent: rows.map((r) => r.mostImprovedPercent),
-    };
-
-    const minMax: Record<MetricKey, { min: number; max: number }> =
-      metricKeys.reduce(
-        (acc, key) => {
-          const arr = values[key];
-          const min = Math.min(...arr);
-          const max = Math.max(...arr);
-          acc[key] = { min, max };
-          return acc;
-        },
-        {} as Record<MetricKey, { min: number; max: number }>
+      const compositeById = new Map<string, number>();
+      rows.forEach((r) => {
+        const composite =
+          normalize(
+            r.highestScoreAvg,
+            minMax.highestScoreAvg.min,
+            minMax.highestScoreAvg.max
+          ) *
+            weights.highestScoreAvg +
+          normalize(
+            r.mostImprovedPercent,
+            minMax.mostImprovedPercent.min,
+            minMax.mostImprovedPercent.max
+          ) *
+            weights.mostImprovedPercent +
+          normalize(
+            r.improvementRatePerDay,
+            minMax.improvementRatePerDay.min,
+            minMax.improvementRatePerDay.max
+          ) *
+            weights.improvementRatePerDay +
+          normalize(
+            r.messagesPerSession,
+            minMax.messagesPerSession.min,
+            minMax.messagesPerSession.max
+          ) *
+            weights.messagesPerSession +
+          normalize(
+            r.timeSpentMinutes,
+            minMax.timeSpentMinutes.min,
+            minMax.timeSpentMinutes.max
+          ) *
+            weights.timeSpentMinutes +
+          normalize(
+            r.totalAttempts,
+            minMax.totalAttempts.min,
+            minMax.totalAttempts.max
+          ) *
+            weights.totalAttempts +
+          normalize(
+            r.perfectScoreCount,
+            minMax.perfectScoreCount.min,
+            minMax.perfectScoreCount.max
+          ) *
+            weights.perfectScoreCount +
+          normalize(
+            r.quickestPassMinutes,
+            minMax.quickestPassMinutes.min,
+            minMax.quickestPassMinutes.max,
+            true
+          ) *
+            weights.quickestPassMinutes;
+        compositeById.set(r.id, composite);
+      });
+      const composites = rows.map((r) => compositeById.get(r.id) || 0);
+      const n = composites.length || 1;
+      const withPercentile = rows.map((r) => {
+        const comp = compositeById.get(r.id) || 0;
+        const numLower = composites.filter((v) => v < comp).length;
+        const numEqual = composites.filter((v) => v === comp).length;
+        const percentile = Math.round(((numLower + 0.5 * numEqual) / n) * 100);
+        return { ...r, percentile };
+      });
+      const sortedByPercentileDesc = withPercentile.sort(
+        (a, b) => b.percentile - a.percentile
       );
-
-    const normalize = (
-      value: number,
-      min: number,
-      max: number,
-      invert = false
-    ) => {
-      if (!isFinite(value)) return 0.5;
-      if (max === min) return 0.5;
-      const n = (value - min) / (max - min);
-      const clamped = Math.max(0, Math.min(1, n));
-      return invert ? 1 - clamped : clamped;
-    };
-
-    // Weights sum ~1.0; tune as needed
-    const weights = {
-      highestScoreAvg: 0.25,
-      mostImprovedPercent: 0.2,
-      improvementRatePerDay: 0.15,
-      messagesPerSession: 0.1,
-      timeSpentMinutes: 0.1,
-      totalAttempts: 0.05,
-      perfectScoreCount: 0.1,
-      quickestPassMinutes: 0.05, // inverted
-    } as const;
-
-    const compositeById = new Map<string, number>();
-    rows.forEach((r) => {
-      const composite =
-        normalize(
-          r.highestScoreAvg,
-          minMax.highestScoreAvg.min,
-          minMax.highestScoreAvg.max
-        ) *
-          weights.highestScoreAvg +
-        normalize(
-          r.mostImprovedPercent,
-          minMax.mostImprovedPercent.min,
-          minMax.mostImprovedPercent.max
-        ) *
-          weights.mostImprovedPercent +
-        normalize(
-          r.improvementRatePerDay,
-          minMax.improvementRatePerDay.min,
-          minMax.improvementRatePerDay.max
-        ) *
-          weights.improvementRatePerDay +
-        normalize(
-          r.messagesPerSession,
-          minMax.messagesPerSession.min,
-          minMax.messagesPerSession.max
-        ) *
-          weights.messagesPerSession +
-        normalize(
-          r.timeSpentMinutes,
-          minMax.timeSpentMinutes.min,
-          minMax.timeSpentMinutes.max
-        ) *
-          weights.timeSpentMinutes +
-        normalize(
-          r.totalAttempts,
-          minMax.totalAttempts.min,
-          minMax.totalAttempts.max
-        ) *
-          weights.totalAttempts +
-        normalize(
-          r.perfectScoreCount,
-          minMax.perfectScoreCount.min,
-          minMax.perfectScoreCount.max
-        ) *
-          weights.perfectScoreCount +
-        normalize(
-          r.quickestPassMinutes,
-          minMax.quickestPassMinutes.min,
-          minMax.quickestPassMinutes.max,
-          true
-        ) *
-          weights.quickestPassMinutes;
-      compositeById.set(r.id, composite);
-    });
-
-    const composites = rows.map((r) => compositeById.get(r.id) || 0);
-    const n = composites.length || 1;
-
-    const rowsWithPercentile = rows.map((r) => {
-      const comp = compositeById.get(r.id) || 0;
-      const numLower = composites.filter((v) => v < comp).length;
-      const numEqual = composites.filter((v) => v === comp).length;
-      const percentile = Math.round(((numLower + 0.5 * numEqual) / n) * 100);
-      return { ...r, percentile };
-    });
-
-    // Return only top 25% by percentile, descending
-    const sortedByPercentileDesc = rowsWithPercentile.sort(
-      (a, b) => b.percentile - a.percentile
-    );
-    const totalCount = filteredData.profiles.length;
-    const topCount = Math.max(1, Math.ceil(totalCount * 0.25));
-    const topQuarter = sortedByPercentileDesc.slice(0, topCount);
-    return topQuarter;
-  }, [filteredData, rubrics, messages]);
+      const topCount = Math.max(1, Math.ceil(withPercentile.length * 0.25));
+      return sortedByPercentileDesc.slice(0, topCount);
+    }
+    return [];
+  }, [leaderboardServerRows]);
 
   const isLoading =
-    isProfileLoading || isFilteredDataLoading || !effectiveProfile;
+    isProfileLoading || leaderboardServerRows === null || !effectiveProfile;
 
   if (isLoading) {
     return (
@@ -791,7 +541,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   }
 
   // Show error if no data is available
-  if (!filteredData || filteredData.profiles.length === 0) {
+  if (!leaderboardServerRows || leaderboardServerRows.length === 0) {
     return (
       <div className="container mx-auto p-4">
         <div className="text-center">
