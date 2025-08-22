@@ -7,7 +7,7 @@
 "use client";
 
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,15 +21,15 @@ import {
   useCrowdsourcedRubricFeedbackColumns,
 } from "@/hooks/use-crowdsourced-rubric-feedback-columns";
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
-import { getAllSimulationChatCrowdsourcedFeedbacks } from "@/utils/queries/simulation_chat_crowdsourced_feedbacks/get-all-simulation-chat-crowdsourced-feedbacks";
-import { getAllSimulationChatFeedbacks } from "@/utils/queries/simulation_chat_feedbacks/get-all-simulation-chat-feedbacks";
-import { getAllSimulationCrowdsourcedMessages } from "@/utils/queries/simulation_crowdsourced_messages/get-all-simulation-crowdsourced-messages";
-import { getAllSimulationMessages } from "@/utils/queries/simulation_messages/get-all-simulation-messages";
 import { CrowdsourcedMessagesDataTable } from "./CrowdsourcedMessagesDataTable";
 import { CrowdsourcedRubricFeedbackDataTable } from "./CrowdsourcedRubricFeedbackDataTable";
 import { FeedbackDataTable } from "./FeedbackDataTable";
 import { useAppFeedbacks } from "@/lib/api/hooks/app_feedback";
 import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useSimulationCrowdsourcedMessages } from "@/lib/api/hooks/simulation_crowdsourced_messages";
+import { useSimulationChatCrowdsourcedFeedbacks } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
+import { useSimulationMessages } from "@/lib/api/hooks/simulation_messages";
+import { useSimulationChatFeedbacks } from "@/lib/api/hooks/simulation_chat_feedbacks";
 
 // Removed dialog; no actions column anymore
 
@@ -40,71 +40,16 @@ interface Profile {
   alias: string;
 }
 
-interface SimulationCrowdsourcedMessageRow {
-  id: string;
-  createdAt: string | null;
-  profileId: string;
-  simulationMessageId: string;
-  response: boolean;
-}
-
-interface SimulationChatCrowdsourcedFeedbackRow {
-  id: string;
-  createdAt: string | null;
-  profileId: string;
-  simulationChatFeedbackId: string;
-  total: number;
-  feedback: string | null;
-}
-
-interface SimulationMessageRow {
-  id: string;
-  content: string;
-}
-
-interface SimulationChatFeedbackBaseRow {
-  id: string;
-  total: number;
-}
-
 export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
+
   const {data: feedbackData = []} = useAppFeedbacks();
-  // Fetch crowdsourced messages
-  const { data: crowdsourcedMessages } = useQuery<
-    SimulationCrowdsourcedMessageRow[]
-  >({
-    queryKey: ["simulation_crowdsourced_messages"],
-    queryFn: () => getAllSimulationCrowdsourcedMessages(),
-    refetchInterval: 60000,
-  });
-
-  // Fetch simulation messages to resolve message content
-  const { data: simulationMessages } = useQuery<SimulationMessageRow[]>({
-    queryKey: ["simulation_messages"],
-    queryFn: () => getAllSimulationMessages(),
-    refetchInterval: 60000,
-  });
-
-  // Fetch crowdsourced rubric feedback
-  const { data: crowdsourcedRubricFeedbacks } = useQuery<
-    SimulationChatCrowdsourcedFeedbackRow[]
-  >({
-    queryKey: ["simulation_chat_crowdsourced_feedbacks"],
-    queryFn: () => getAllSimulationChatCrowdsourcedFeedbacks(),
-    refetchInterval: 60000,
-  });
-
-  // Fetch base simulation chat feedbacks to get actual totals
-  const { data: simulationChatFeedbacks } = useQuery<
-    SimulationChatFeedbackBaseRow[]
-  >({
-    queryKey: ["simulation_chat_feedbacks"],
-    queryFn: () => getAllSimulationChatFeedbacks(),
-    refetchInterval: 60000,
-  });
+  const {data: crowdsourcedMessages} = useSimulationCrowdsourcedMessages();
+  const {data: crowdsourcedRubricFeedbacks} = useSimulationChatCrowdsourcedFeedbacks();
+  const {data: simulationMessages} = useSimulationMessages();
+  const {data: simulationChatFeedbacks} = useSimulationChatFeedbacks();
 
   // Get unique profile IDs from all datasets
   const profileIds = useMemo(() => {

@@ -11,19 +11,18 @@ import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { useSimulationChatsByAttemptIdBatch } from "@/lib/api/hooks/simulation_chats";
 import { useSimulationAttemptsByProfileIdBatch } from "@/lib/api/hooks/simulation_attempts";
 import { useSimulations } from "@/lib/api/hooks/simulations";
-import type { ProfileRole, SimulationMessage } from "@/types";
+import type { ProfileRole } from "@/types";
 import {
   filterAnalyticsData,
   type FilteredData,
 } from "@/utils/analytics/filtering";
-import { getSimulationMessagesByChats } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chats";
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
 import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { useStandardGroupsByRubricIdBatch } from "@/lib/api/hooks/standard_groups";
 import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
+import { useSimulationMessagesByChatIdBatch } from "@/lib/api/hooks/simulation_messages";
 
 export interface UseFilteredAnalyticsDataOptions {
   // Optional profile-specific filtering
@@ -147,16 +146,7 @@ export function useFilteredAnalyticsData(
     [filteredDataBase?.chats]
   );
 
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery<
-    SimulationMessage[]
-  >({
-    queryKey: ["simulationMessages", chatIdsForMessages],
-    queryFn: () =>
-      chatIdsForMessages.length > 0
-        ? getSimulationMessagesByChats(chatIdsForMessages)
-        : Promise.resolve([]),
-    enabled: chatIdsForMessages.length > 0,
-  });
+  const { data: messages = [], isLoading: isLoadingMessages } = useSimulationMessagesByChatIdBatch(chatIdsForMessages);
 
   // Final filtered data including messages
   const filteredData = useMemo((): FilteredData | null => {

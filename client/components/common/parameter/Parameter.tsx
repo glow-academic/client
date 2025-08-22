@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -32,17 +32,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useParameterItemsByParameterId } from "@/lib/api/hooks/parameter_items";
+import { useParameter } from "@/lib/api/hooks/parameters";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 import { deleteParameterItem } from "@/utils/mutations/parameter_items/delete-parameter-item";
 import { updateParameterItem } from "@/utils/mutations/parameter_items/update-parameter-item";
 import { createParameter } from "@/utils/mutations/parameters/create-parameter";
 import { updateParameter } from "@/utils/mutations/parameters/update-parameter";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { Plus, Trash2 } from "lucide-react";
-import { useParameter } from "@/lib/api/hooks/parameters";
-import { useParameterItemsByParameterId } from "@/lib/api/hooks/parameter_items";
 
 interface FormData {
   name?: string;
@@ -93,28 +93,15 @@ export default function Parameter({
     ParameterItemFormData[]
   >([]);
 
-  const { data: parameter, isLoading: isLoadingParameter } = useParameter(parameterId!);
-  const { data: parameterItems, isLoading: isLoadingParameterItems } = useParameterItemsByParameterId(parameterId!);
+  const { data: parameter, isLoading: isLoadingParameter } = useParameter(
+    parameterId!
+  );
+  const { data: parameterItems, isLoading: isLoadingParameterItems } =
+    useParameterItemsByParameterId(parameterId!);
 
-  // Fetch cohorts, sims, scenarios to compute active usage of parameter items
-  const { data: cohorts = [] } = useQuery<
-    { id: string; active: boolean; simulationIds: string[] }[]
-  >({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
-  const { data: sims = [] } = useQuery<
-    { id: string; active: boolean; scenarioIds: string[] }[]
-  >({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
-  const { data: allScenarios = [] } = useQuery<
-    { id: string; parameterItemIds: string[] | null }[]
-  >({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  const { data: cohorts = [] } = useCohorts();
+  const { data: sims = [] } = useSimulations();
+  const { data: allScenarios = [] } = useScenarios();
 
   const inUseParameterItemIds = useMemo(() => {
     // Active cohorts
@@ -596,27 +583,27 @@ export default function Parameter({
                                 </TooltipContent>
                               </Tooltip>
                             )}
-                            {!inUseParameterItemIds.has(
-                                    item.id || ""
-                                  ) && <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteParameterItem(itemIndex)
-                                  }
-                                  aria-label="Delete parameter item"
-                                  className="pb-1"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Delete parameter item
-                              </TooltipContent>
-                            </Tooltip>}
+                            {!inUseParameterItemIds.has(item.id || "") && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeleteParameterItem(itemIndex)
+                                    }
+                                    aria-label="Delete parameter item"
+                                    className="pb-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Delete parameter item
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
