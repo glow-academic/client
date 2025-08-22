@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
 
@@ -35,7 +35,7 @@ export interface LeaderboardProps {
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const router = useRouter();
-  const [currentRotationIndex, setCurrentRotationIndex] = useState(0);
+  // Rotation index removed to freeze accolade set
   const [accoladePageIndex, setAccoladePageIndex] = useState(0);
 
   // Use filtered analytics data with cohort-specific filtering if cohortId is provided
@@ -60,15 +60,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     accolade: { holder: Profile | null | undefined; details: string };
   } | null>(null);
   const [isHoveringAccolades, setIsHoveringAccolades] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Rotation effect with pause
-  useEffect(() => {
-    if (selected || isHoveringAccolades) return;
-    const interval = setInterval(() => {
-      setCurrentRotationIndex((prev) => (prev + 1) % 2);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [selected, isHoveringAccolades]);
+  // Rotation disabled to simplify carousel behavior
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -375,6 +369,140 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     };
   }, [filteredData, rubrics, messages]);
 
+  // Accolade cards (single set; rotation removed)
+  const accoladeSets = [
+    [
+      {
+        key: "perfectScore",
+        icon: <Award className="h-4 w-4" />,
+        title: "Perfect Score",
+        accolade: accolades.perfectScore,
+      },
+      {
+        key: "longestConvo",
+        icon: <MessageSquareText className="h-4 w-4" />,
+        title: "Longest Convo",
+        accolade: accolades.longestConvo,
+      },
+      {
+        key: "mostImproved",
+        icon: <Zap className="h-4 w-4" />,
+        title: "Most Improved",
+        accolade: accolades.mostImproved,
+      },
+      {
+        key: "quickestPass",
+        icon: <Crown className="h-4 w-4" />,
+        title: "Quickest Pass",
+        accolade: accolades.quickestPass,
+      },
+    ],
+    [
+      {
+        key: "thePersistent",
+        icon: <Target className="h-4 w-4" />,
+        title: "The Persistent",
+        accolade: accolades.thePersistent,
+      },
+      {
+        key: "marathonRunner",
+        icon: <Clock className="h-4 w-4" />,
+        title: "Marathon Runner",
+        accolade: accolades.marathonRunner,
+      },
+      {
+        key: "rapidRiser",
+        icon: <TrendingUp className="h-4 w-4" />,
+        title: "Rapid Riser",
+        accolade: accolades.rapidRiser,
+      },
+      {
+        key: "highestScorer",
+        icon: <Trophy className="h-4 w-4" />,
+        title: "Highest Scorer",
+        accolade: accolades.highestScorer,
+      },
+    ],
+  ];
+
+  const currentAccolades = accoladeSets[0] || [];
+
+  // Carousel constants and helpers
+  const ACCOLADES_PER_ROW = 4; // show 4 at a time
+  const MANUAL_STEP = 2; // chevrons move 2
+  const AUTO_STEP = 4; // auto moves 4
+
+  // wrap-safe window to always fill the row
+  const wrapWindow = <T,>(list: T[], start: number, count: number): T[] => {
+    if (list.length === 0) return [];
+    const out: T[] = [];
+    const length = list.length;
+    for (let i = 0; i < count; i++) {
+      out.push(list[(start + i) % length]!);
+    }
+    return out;
+  };
+
+  // total manual pages measured in steps of 2
+  const manualPages = Math.max(
+    1,
+    Math.ceil(currentAccolades.length / MANUAL_STEP)
+  );
+  const clampPage = useCallback(
+    (idx: number) => ((idx % manualPages) + manualPages) % manualPages,
+    [manualPages]
+  );
+
+  const getVisibleAccolades = () => {
+    const startIndex = accoladePageIndex * MANUAL_STEP;
+    return wrapWindow(currentAccolades, startIndex, ACCOLADES_PER_ROW);
+  };
+
+  const startAuto = () => {
+    if (timerRef.current) return;
+    timerRef.current = setInterval(() => {
+      setAccoladePageIndex((prev) => clampPage(prev + AUTO_STEP / MANUAL_STEP));
+    }, 3500);
+  };
+
+  const resetAuto = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    startAuto();
+  };
+
+  const navigateAccolades = (direction: "prev" | "next") => {
+    setAccoladePageIndex((prev) => {
+      const next = direction === "prev" ? prev - 1 : prev + 1;
+      return clampPage(next);
+    });
+    resetAuto();
+  };
+
+  // Auto-advance effect (placed before any conditional returns)
+  useEffect(() => {
+    if (selected || isHoveringAccolades) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+    if (!timerRef.current) {
+      timerRef.current = setInterval(() => {
+        setAccoladePageIndex((prev) =>
+          clampPage(prev + AUTO_STEP / MANUAL_STEP)
+        );
+      }, 3500);
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [selected, isHoveringAccolades, manualPages, clampPage]);
+
   // Calculate leaderboard data with detailed metrics and percentile
   const leaderboardData = useMemo(() => {
     if (!filteredData || filteredData.profiles.length === 0 || !rubrics) {
@@ -670,116 +798,12 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     );
   }
 
-  // Define the two sets of accolade cards
-  const accoladeSets = [
-    // Set 1: Original accolades
-    [
-      {
-        key: "perfectScore",
-        icon: <Award className="h-4 w-4" />,
-        title: "Perfect Score",
-        accolade: accolades.perfectScore,
-      },
-      {
-        key: "longestConvo",
-        icon: <MessageSquareText className="h-4 w-4" />,
-        title: "Longest Convo",
-        accolade: accolades.longestConvo,
-      },
-      {
-        key: "mostImproved",
-        icon: <Zap className="h-4 w-4" />,
-        title: "Most Improved",
-        accolade: accolades.mostImproved,
-      },
-      {
-        key: "quickestPass",
-        icon: <Crown className="h-4 w-4" />,
-        title: "Quickest Pass",
-        accolade: accolades.quickestPass,
-      },
-    ],
-    // Set 2: New rotating accolades
-    [
-      {
-        key: "thePersistent",
-        icon: <Target className="h-4 w-4" />,
-        title: "The Persistent",
-        accolade: accolades.thePersistent,
-      },
-      {
-        key: "marathonRunner",
-        icon: <Clock className="h-4 w-4" />,
-        title: "Marathon Runner",
-        accolade: accolades.marathonRunner,
-      },
-      {
-        key: "rapidRiser",
-        icon: <TrendingUp className="h-4 w-4" />,
-        title: "Rapid Riser",
-        accolade: accolades.rapidRiser,
-      },
-      {
-        key: "highestScorer",
-        icon: <Trophy className="h-4 w-4" />,
-        title: "Highest Scorer",
-        accolade: accolades.highestScorer,
-      },
-    ],
-  ];
-
-  const currentAccolades =
-    accoladeSets[currentRotationIndex] || accoladeSets[0] || [];
-
-  // Calculate pagination for scrolling by 2 cards at a time
-  const ACCOLADES_PER_ROW = 4;
-  const SCROLL_BY = 2;
-  const totalAccoladePages = Math.ceil(currentAccolades.length / SCROLL_BY);
-
-  const getVisibleAccolades = () => {
-    const startIndex = accoladePageIndex * SCROLL_BY;
-    return currentAccolades.slice(startIndex, startIndex + ACCOLADES_PER_ROW);
-  };
-
-  const navigateAccolades = (direction: "prev" | "next") => {
-    if (direction === "prev") {
-      setAccoladePageIndex((prev) => Math.max(0, prev - 1));
-    } else {
-      setAccoladePageIndex((prev) =>
-        Math.min(totalAccoladePages - 1, prev + 1)
-      );
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Dashboard Content */}
       <div className="container mx-auto p-4 space-y-8">
         {/* Accolades Section */}
         <div className="relative">
-          {/* Left Arrow */}
-          <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-10">
-            <button
-              aria-label="Previous"
-              className="h-8 w-8 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted"
-              onClick={() =>
-                setCurrentRotationIndex((prev) => (prev - 1 + 2) % 2)
-              }
-            >
-              ◀
-            </button>
-          </div>
-          {/* Right Arrow */}
-          <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-            <button
-              aria-label="Next"
-              className="h-8 w-8 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted"
-              onClick={() => setCurrentRotationIndex((prev) => (prev + 1) % 2)}
-            >
-              ▶
-            </button>
-          </div>
-
           {/* Accolades Grid */}
           <div
             className="relative group"
@@ -809,8 +833,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               ))}
             </div>
 
-            {/* Accolade Navigation Arrows */}
-            {totalAccoladePages > 1 && (
+            {/* Accolade Navigation Chevrons */}
+            {manualPages > 1 && (
               <>
                 <button
                   aria-label="Previous accolades"
@@ -818,9 +842,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                     isHoveringAccolades ? "opacity-100" : "opacity-0"
                   } hover:opacity-100`}
                   onClick={() => navigateAccolades("prev")}
-                  disabled={accoladePageIndex === 0}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   aria-label="Next accolades"
@@ -828,21 +851,23 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                     isHoveringAccolades ? "opacity-100" : "opacity-0"
                   } hover:opacity-100`}
                   onClick={() => navigateAccolades("next")}
-                  disabled={accoladePageIndex === totalAccoladePages - 1}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </>
             )}
           </div>
 
           {/* Accolade carousel indicators */}
-          {totalAccoladePages > 1 && (
+          {manualPages > 1 && (
             <div className="flex justify-center gap-2 mt-4">
-              {Array.from({ length: totalAccoladePages }, (_, index) => (
+              {Array.from({ length: manualPages }, (_, index) => (
                 <button
                   key={index}
-                  onClick={() => setAccoladePageIndex(index)}
+                  onClick={() => {
+                    setAccoladePageIndex(index);
+                    resetAuto();
+                  }}
                   className={`w-2 h-2 rounded-full transition-colors ${
                     index === accoladePageIndex ? "bg-primary" : "bg-muted"
                   }`}
