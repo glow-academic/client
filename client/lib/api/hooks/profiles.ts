@@ -1,0 +1,61 @@
+// AUTO-GENERATED minimal hooks for profiles
+// Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api/fetcher";
+import type { Profile, ProfileCreate, ProfileUpdate } from "@/lib/repos/profileRepo";
+import { profileKeys, profileKeysByUserId } from "@/lib/api/keys";
+
+export function useProfiles(filters?: unknown) {
+  return useQuery({
+    queryKey: profileKeys.list(filters),
+    queryFn: () => api<Profile[]>("/api/v1/profiles"),
+  });
+}
+
+export function useCreateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ProfileCreate) => api<Profile>("/api/v1/profiles", { method: "POST", body: JSON.stringify(payload) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+  });
+}
+
+export function useProfile(id: string, enabled = true) {
+  return useQuery({
+    queryKey: profileKeys.detail(id),
+    queryFn: () => api<Profile>(`/api/v1/profiles/${id}`),
+    enabled,
+  });
+}
+
+export function useUpdateProfile(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: ProfileUpdate) => api<Profile>(`/api/v1/profiles/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.detail(id) }),
+  });
+}
+
+export function useDeleteProfile(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<void>(`/api/v1/profiles/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+  });
+}
+
+export function useProfilesByUserId(id: string) {
+  return useQuery({
+    queryKey: profileKeysByUserId.one(id),
+    queryFn: () => api(`/api/v1/profiles/by/userId/${id}`),
+    enabled: id !== undefined && id !== null,
+  });
+}
+
+export function useProfilesByUserIdBatch(ids: string[]) {
+  return useQuery({
+    queryKey: profileKeysByUserId.many(ids),
+    queryFn: () => api(`/api/v1/profiles/by/userId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
