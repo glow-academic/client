@@ -54,68 +54,72 @@ export default function AccoladeCard({
   const asButton = !!onClick && !disabled;
 
   return (
-    <motion.div
-      ref={ref}
-      layoutId={layoutId}
-      className={clsx(
-        "relative group rounded-2xl p-4 h-full ring-1 ring-border bg-card",
-        asButton && "cursor-pointer",
-        "transition-shadow will-change-transform shadow-sm"
-      )}
-      style={{
-        transform: hovering
-          ? "perspective(800px) rotateX(var(--rx)) rotateY(var(--ry))"
-          : undefined,
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => {
-        setHovering(false);
-        if (ref.current) {
-          ref.current.style.setProperty("--rx", "0deg");
-          ref.current.style.setProperty("--ry", "0deg");
+    <div className="animated-gradient-border rounded-2xl p-[1px] h-full">
+      <motion.div
+        ref={ref}
+        layoutId={layoutId}
+        className={clsx(
+          "relative group rounded-2xl p-4 h-full bg-card",
+          asButton && "cursor-pointer",
+          "transition-shadow will-change-transform shadow-sm flex flex-col"
+        )}
+        style={{
+          transform: hovering
+            ? "perspective(800px) rotateX(var(--rx)) rotateY(var(--ry))"
+            : undefined,
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => {
+          setHovering(false);
+          if (ref.current) {
+            ref.current.style.setProperty("--rx", "0deg");
+            ref.current.style.setProperty("--ry", "0deg");
+          }
+        }}
+        whileHover={
+          !disabled
+            ? { boxShadow: "0 20px 40px rgba(0,0,0,0.12)", y: -2 }
+            : undefined
         }
-      }}
-      whileHover={
-        !disabled
-          ? { boxShadow: "0 20px 40px rgba(0,0,0,0.12)", y: -2 }
-          : undefined
-      }
-      whileTap={!disabled ? { scale: 0.98 } : undefined}
-      onClick={asButton ? onClick : undefined}
-      role={asButton ? "button" : undefined}
-      tabIndex={asButton ? 0 : -1}
-      onKeyDown={(e) => {
-        if (asButton && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-    >
-      <div className="flex flex-row items-center justify-between mb-2 text-muted-foreground">
-        <div className="rounded-lg p-2 bg-muted/50">{icon}</div>
-        <div className="font-semibold text-sm">{title}</div>
-      </div>
-      {user ? (
-        <div className="flex items-center gap-3 w-full">
-          <Avatar
-            className="h-9 w-9 outline outline-muted-foreground flex-shrink-0"
-            style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-          >
-            <AvatarFallback>
-              {getInitials(`${user.firstName} ${user.lastName}`)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-lg font-bold truncate">{`${user.firstName} ${user.lastName}`}</p>
-            <p className="text-xs text-muted-foreground truncate">{details}</p>
+        whileTap={!disabled ? { scale: 0.98 } : undefined}
+        onClick={asButton ? onClick : undefined}
+        role={asButton ? "button" : undefined}
+        tabIndex={asButton ? 0 : -1}
+        onKeyDown={(e) => {
+          if (asButton && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onClick?.();
+          }
+        }}
+      >
+        <div className="flex flex-row items-center justify-between mb-2 text-muted-foreground">
+          <div className="rounded-lg p-2 bg-muted/50">{icon}</div>
+          <div className="font-semibold text-sm">{title}</div>
+        </div>
+        {user ? (
+          <div className="flex items-center gap-3 w-full">
+            <Avatar
+              className="h-9 w-9 outline outline-muted-foreground flex-shrink-0"
+              style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+            >
+              <AvatarFallback>
+                {getInitials(`${user.firstName} ${user.lastName}`)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold truncate">{`${user.firstName} ${user.lastName}`}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {details}
+              </p>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-center w-full h-full">
-          <p className="text-sm text-muted-foreground">No holder yet</p>
-        </div>
-      )}
-    </motion.div>
+        ) : (
+          <div className="flex items-center justify-center w-full h-full">
+            <p className="text-sm text-muted-foreground">No holder yet</p>
+          </div>
+        )}
+      </motion.div>
+    </div>
   );
 }

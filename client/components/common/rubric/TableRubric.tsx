@@ -519,6 +519,10 @@ export default function TableRubric({
                           const isFlippable = isAchieved; // flip only on achieved cell
                           const isFlipped = flippedCells.has(standard.id);
 
+                          /* If we're ABOUT to show the back (isFlipped true), spin forward (+1).
+                             If we're ABOUT to show the front (isFlipped false), spin backward (-1). */
+                          const dir = isFlipped ? 1 : -1;
+
                           const frontContent = (
                             <div className="text-xs leading-tight">
                               {feedback?.feedback || standard.description}
@@ -532,35 +536,11 @@ export default function TableRubric({
 
                           const card = isFlippable ? (
                             <div
-                              className="relative"
-                              style={{ perspective: "1000px" }}
+                              className={`flip3d ${isFlipped ? "is-flipped" : ""}`}
+                              data-dir={dir}
                             >
-                              <div
-                                style={{
-                                  transformStyle: "preserve-3d",
-                                  transition: "transform 300ms",
-                                  transform: isFlipped
-                                    ? "rotateY(180deg)"
-                                    : "rotateY(0deg)",
-                                }}
-                              >
-                                <div style={{ backfaceVisibility: "hidden" }}>
-                                  {frontContent}
-                                </div>
-                                <div
-                                  style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                    backfaceVisibility: "hidden",
-                                    transform: "rotateY(180deg)",
-                                  }}
-                                >
-                                  {backContent}
-                                </div>
-                              </div>
+                              <div className="face front">{frontContent}</div>
+                              <div className="face back">{backContent}</div>
                             </div>
                           ) : (
                             <div className="space-y-1">{frontContent}</div>
