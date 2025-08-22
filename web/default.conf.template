@@ -33,6 +33,14 @@ upstream api_socketio {
 server {
     listen 80;
 
+    # --- add these buffer settings ---
+    proxy_buffering on;                 # explicit
+    proxy_buffer_size 128k;             # header buffer (fixes "too big header")
+    proxy_buffers 8 256k;               # 8 buffers of 256k for response body
+    proxy_busy_buffers_size 256k;       # ≤ total proxy_buffers
+    proxy_temp_file_write_size 256k;    # optional, keep consistent
+    # ---------------------------------
+
     # API traffic (prefixed)
     location ^~ ${APP_PREFIX}/api/ {
         proxy_pass         http://next_client;
