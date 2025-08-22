@@ -733,18 +733,31 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       {/* Dashboard Content */}
       <div className="container mx-auto p-4 space-y-8">
         {/* Accolades Section */}
-        <div className="flex items-stretch gap-3">
-          <button
-            aria-label="Previous"
-            className="self-center h-9 w-9 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted shrink-0"
-            onClick={() =>
-              setCurrentRotationIndex((prev) => (prev - 1 + 2) % 2)
-            }
-          >
-            ◀
-          </button>
+        <div className="relative">
+          {/* Left Arrow */}
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 z-10">
+            <button
+              aria-label="Previous"
+              className="h-8 w-8 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted"
+              onClick={() =>
+                setCurrentRotationIndex((prev) => (prev - 1 + 2) % 2)
+              }
+            >
+              ◀
+            </button>
+          </div>
+          {/* Right Arrow */}
+          <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+            <button
+              aria-label="Next"
+              className="h-8 w-8 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted"
+              onClick={() => setCurrentRotationIndex((prev) => (prev + 1) % 2)}
+            >
+              ▶
+            </button>
+          </div>
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
             onMouseEnter={() => setIsHoveringAccolades(true)}
             onMouseLeave={() => setIsHoveringAccolades(false)}
           >
@@ -769,13 +782,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               </div>
             ))}
           </div>
-          <button
-            aria-label="Next"
-            className="self-center h-9 w-9 rounded-full bg-card ring-1 ring-border shadow hover:bg-muted shrink-0"
-            onClick={() => setCurrentRotationIndex((prev) => (prev + 1) % 2)}
-          >
-            ▶
-          </button>
         </div>
         <AnimatePresence>
           {selected && (
@@ -786,81 +792,77 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               exit={{ opacity: 0 }}
               onClick={() => setSelected(null)}
             >
-              <div className="animated-gradient-border rounded-3xl p-[1px] w-full max-w-3xl">
-                <motion.div
-                  layoutId={`accolade-${selected.key}`}
-                  className="relative rounded-3xl bg-card shadow-2xl ring-1 ring-border p-6"
-                  onClick={(e) => e.stopPropagation()}
-                  initial={{ y: 20, scale: 0.98, opacity: 0 }}
-                  animate={{
-                    y: 0,
-                    scale: 1,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 160, damping: 20 },
-                  }}
-                  exit={{ y: 20, opacity: 0 }}
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label={`${selected.title} details`}
+              <motion.div
+                layoutId={`accolade-${selected.key}`}
+                className="relative w-full max-w-3xl rounded-3xl bg-card shadow-2xl ring-1 ring-border p-6"
+                onClick={(e) => e.stopPropagation()}
+                initial={{ y: 20, scale: 0.98, opacity: 0 }}
+                animate={{
+                  y: 0,
+                  scale: 1,
+                  opacity: 1,
+                  transition: { type: "spring", stiffness: 160, damping: 20 },
+                }}
+                exit={{ y: 20, opacity: 0 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`${selected.title} details`}
+              >
+                <button
+                  onClick={() => setSelected(null)}
+                  className="absolute top-3 right-3 rounded-full p-2 hover:bg-muted text-muted-foreground"
+                  aria-label="Close"
                 >
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="absolute top-3 right-3 rounded-full p-2 hover:bg-muted text-muted-foreground"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
+                  ✕
+                </button>
 
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="rounded-lg p-3 bg-muted/60">
-                      {selected.icon}
-                    </div>
-                    <div className="text-xl font-semibold">
-                      {selected.title}
-                    </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg p-3 bg-muted/60">
+                    {selected.icon}
                   </div>
+                  <div className="text-xl font-semibold">{selected.title}</div>
+                </div>
 
-                  {selected.accolade.holder ? (
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-muted overflow-hidden" />
-                        <div>
-                          <div className="font-medium">
-                            {selected.accolade.holder.firstName}{" "}
-                            {selected.accolade.holder.lastName}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {selected.accolade.details}
-                          </div>
+                {selected.accolade.holder ? (
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted overflow-hidden" />
+                      <div>
+                        <div className="font-medium">
+                          {selected.accolade.holder.firstName}{" "}
+                          {selected.accolade.holder.lastName}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {selected.accolade.details}
                         </div>
                       </div>
-                      {!shouldDisableNavigation && (
-                        <Link
-                          href={`/analytics/reports/p/${selected.accolade.holder.id}`}
-                          className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
-                        >
-                          View report
-                        </Link>
-                      )}
                     </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground mb-6">
-                      No winner yet.
-                    </div>
-                  )}
+                    {!shouldDisableNavigation && (
+                      <Link
+                        href={`/analytics/reports/p/${selected.accolade.holder.id}`}
+                        className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
+                      >
+                        View report
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground mb-6">
+                    No winner yet.
+                  </div>
+                )}
 
-                  <div>
-                    <div className="text-sm font-semibold mb-2">
-                      Challengers (closing in)
-                    </div>
-                    <div className="space-y-3">
-                      <div className="text-sm text-muted-foreground">
-                        Coming soon
-                      </div>
+                <div>
+                  <div className="text-sm font-semibold mb-2">
+                    Challengers (closing in)
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      Coming soon
                     </div>
                   </div>
-                </motion.div>
-              </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
