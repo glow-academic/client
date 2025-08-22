@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

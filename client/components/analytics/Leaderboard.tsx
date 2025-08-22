@@ -33,7 +33,6 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     cohortId
       ? {
           cohortIds: [cohortId],
-          ...(effectiveProfile?.id ? { profileId: effectiveProfile.id } : {}),
         }
       : undefined
   );

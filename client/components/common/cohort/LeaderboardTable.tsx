@@ -7,6 +7,7 @@
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -203,6 +205,7 @@ export default function LeaderboardTable({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -327,6 +330,9 @@ export default function LeaderboardTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <DataTablePagination table={table} />
     </div>
   );
 }

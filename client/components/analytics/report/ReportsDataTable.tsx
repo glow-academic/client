@@ -10,6 +10,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   HoverCard,
   HoverCardContent,
@@ -106,6 +108,7 @@ export function ReportsDataTable({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -377,6 +380,9 @@ export function ReportsDataTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      <DataTablePagination table={table} />
     </div>
   );
 }
