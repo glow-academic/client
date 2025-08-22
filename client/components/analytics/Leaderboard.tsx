@@ -8,6 +8,8 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
+import type { Profile } from "@/types";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
   Clock,
@@ -47,13 +49,30 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       : undefined
   );
 
-  // Rotation effect - cycle through accolades every 3 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentRotationIndex((prev) => (prev + 1) % 2); // Rotate between 2 sets of 4 cards
-    }, 3000);
+  // Selection + rotation pause state
+  const [selected, setSelected] = useState<{
+    key: string;
+    title: string;
+    icon: React.ReactNode;
+    accolade: { holder: Profile | null | undefined; details: string };
+  } | null>(null);
+  const [isHoveringAccolades, setIsHoveringAccolades] = useState(false);
 
+  // Rotation effect with pause
+  useEffect(() => {
+    if (selected || isHoveringAccolades) return;
+    const interval = setInterval(() => {
+      setCurrentRotationIndex((prev) => (prev + 1) % 2);
+    }, 3000);
     return () => clearInterval(interval);
+  }, [selected, isHoveringAccolades]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const handleViewReport = (profileId: string) => {
@@ -714,41 +733,112 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       {/* Dashboard Content */}
       <div className="container mx-auto p-4 space-y-8">
         {/* Accolades Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          onMouseEnter={() => setIsHoveringAccolades(true)}
+          onMouseLeave={() => setIsHoveringAccolades(false)}
+        >
           {currentAccolades.map(({ key, icon, title, accolade }) => (
             <div key={key} className="transition-all duration-500 ease-in-out">
-              {accolade?.holder ? (
-                shouldDisableNavigation ? (
-                  <AccoladeCard
-                    icon={icon}
-                    title={title}
-                    user={accolade.holder}
-                    details={accolade.details || ""}
-                  />
-                ) : (
-                  <Link
-                    href={`/analytics/reports/p/${accolade.holder.id}`}
-                    className="block h-full"
-                  >
-                    <AccoladeCard
-                      icon={icon}
-                      title={title}
-                      user={accolade.holder}
-                      details={accolade.details || ""}
-                    />
-                  </Link>
-                )
-              ) : (
-                <AccoladeCard
-                  icon={icon}
-                  title={title}
-                  user={accolade?.holder}
-                  details={accolade?.details || ""}
-                />
-              )}
+              <AccoladeCard
+                icon={icon}
+                title={title}
+                user={accolade?.holder}
+                details={accolade?.details || ""}
+                layoutId={`accolade-${key}`}
+                onClick={
+                  accolade?.holder && !shouldDisableNavigation
+                    ? () => setSelected({ key, title, icon, accolade })
+                    : undefined
+                }
+                disabled={!!shouldDisableNavigation}
+              />
             </div>
           ))}
         </div>
+        <AnimatePresence>
+          {selected && (
+            <motion.div
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelected(null)}
+            >
+              <motion.div
+                layoutId={`accolade-${selected.key}`}
+                className="relative w-full max-w-3xl rounded-3xl bg-card shadow-2xl ring-1 ring-border p-6"
+                onClick={(e) => e.stopPropagation()}
+                initial={{ y: 20, scale: 0.98, opacity: 0 }}
+                animate={{
+                  y: 0,
+                  scale: 1,
+                  opacity: 1,
+                  transition: { type: "spring", stiffness: 160, damping: 20 },
+                }}
+                exit={{ y: 20, opacity: 0 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`${selected.title} details`}
+              >
+                <button
+                  onClick={() => setSelected(null)}
+                  className="absolute top-3 right-3 rounded-full p-2 hover:bg-muted text-muted-foreground"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg p-3 bg-muted/60">
+                    {selected.icon}
+                  </div>
+                  <div className="text-xl font-semibold">{selected.title}</div>
+                </div>
+
+                {selected.accolade.holder ? (
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted overflow-hidden" />
+                      <div>
+                        <div className="font-medium">
+                          {selected.accolade.holder.firstName}{" "}
+                          {selected.accolade.holder.lastName}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {selected.accolade.details}
+                        </div>
+                      </div>
+                    </div>
+                    {!shouldDisableNavigation && (
+                      <Link
+                        href={`/analytics/reports/p/${selected.accolade.holder.id}`}
+                        className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90"
+                      >
+                        View report
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground mb-6">
+                    No winner yet.
+                  </div>
+                )}
+
+                <div>
+                  <div className="text-sm font-semibold mb-2">
+                    Challengers (closing in)
+                  </div>
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">
+                      Coming soon
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div>
           <LeaderboardTable
             data={leaderboardData}
