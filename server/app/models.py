@@ -37,16 +37,16 @@ class AppLogs(_Base, table=True):
     )
 
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    event: str = Field(sa_column=Column('event', Text, server_default=text("'default.event'::text")))
     level: str = Field(sa_column=Column('level', Text, default=r'info'))
+    event: str = Field(sa_column=Column('event', Text, server_default=text("'default.event'::text")))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text, default=r'Default Message'))
+    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB, server_default=text('\'{"route": null, "function": null, "component": null}\'::jsonb')))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     correlation_id: Optional[str] = Field(default=None, sa_column=Column('correlation_id', Text, server_default=text("'default.correlation'::text")))
     actor: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('actor', JSONB, server_default=text('\'{"userId": null, "profileId": null}\'::jsonb')))
     subject: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('subject', JSONB, server_default=text('\'{"entityId": null, "entityType": null}\'::jsonb')))
     metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('metrics', JSONB, server_default=text('\'{"size": null, "count": null, "durationMs": null}\'::jsonb')))
-    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB, server_default=text('\'{"route": null, "function": null, "component": null}\'::jsonb')))
     error: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('error', JSONB, server_default=text('\'{"code": null, "name": null, "stack": null, "message": null}\'::jsonb')))
-    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
 class Cohorts(_Base, table=True):
