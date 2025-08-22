@@ -891,7 +891,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         <AnimatePresence>
           {selected && (
             <motion.div
-              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+              className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden"
+              style={{ minHeight: "100vh", minWidth: "100vw" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -899,7 +900,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             >
               <motion.div
                 layoutId={`accolade-${selected.key}`}
-                className="relative w-full max-w-3xl rounded-3xl bg-card shadow-2xl ring-1 ring-border p-6"
+                className="relative w-full max-w-3xl rounded-3xl bg-card shadow-2xl ring-1 ring-border p-6 max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
                 initial={{ y: 20, scale: 0.98, opacity: 0 }}
                 animate={{
