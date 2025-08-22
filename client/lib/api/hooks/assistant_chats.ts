@@ -45,17 +45,17 @@ export function useDeleteAssistantChat(id: string) {
 }
 
 export function useAssistantChatsByProfileId(id: string) {
-  return useQuery({
+  return useQuery<AssistantChat[]>({
     queryKey: assistantChatKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/assistant_chats/by/profileId/${id}`),
+    queryFn: () => api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useAssistantChatsByProfileIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<AssistantChat[]>({
     queryKey: assistantChatKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/assistant_chats/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

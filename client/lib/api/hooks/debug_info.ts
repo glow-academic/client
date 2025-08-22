@@ -45,17 +45,17 @@ export function useDeleteDebugInfo(id: string) {
 }
 
 export function useDebugInfoByModelRunId(id: string) {
-  return useQuery({
+  return useQuery<DebugInfo[]>({
     queryKey: debugInfoKeysByModelRunId.one(id),
-    queryFn: () => api(`/api/v1/debug_info/by/modelRunId/${id}`),
+    queryFn: () => api<DebugInfo[]>(`/api/v1/debug_info/by/modelRunId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useDebugInfoByModelRunIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<DebugInfo[]>({
     queryKey: debugInfoKeysByModelRunId.many(ids),
-    queryFn: () => api(`/api/v1/debug_info/by/modelRunId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<DebugInfo[]>(`/api/v1/debug_info/by/modelRunId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

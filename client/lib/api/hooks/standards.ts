@@ -45,17 +45,17 @@ export function useDeleteStandard(id: string) {
 }
 
 export function useStandardsByStandardGroupId(id: string) {
-  return useQuery({
+  return useQuery<Standard[]>({
     queryKey: standardKeysByStandardGroupId.one(id),
-    queryFn: () => api(`/api/v1/standards/by/standardGroupId/${id}`),
+    queryFn: () => api<Standard[]>(`/api/v1/standards/by/standardGroupId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useStandardsByStandardGroupIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Standard[]>({
     queryKey: standardKeysByStandardGroupId.many(ids),
-    queryFn: () => api(`/api/v1/standards/by/standardGroupId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Standard[]>(`/api/v1/standards/by/standardGroupId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

@@ -45,17 +45,17 @@ export function useDeleteStandardGroup(id: string) {
 }
 
 export function useStandardGroupsByRubricId(id: string) {
-  return useQuery({
+  return useQuery<StandardGroup[]>({
     queryKey: standardGroupKeysByRubricId.one(id),
-    queryFn: () => api(`/api/v1/standard_groups/by/rubricId/${id}`),
+    queryFn: () => api<StandardGroup[]>(`/api/v1/standard_groups/by/rubricId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useStandardGroupsByRubricIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<StandardGroup[]>({
     queryKey: standardGroupKeysByRubricId.many(ids),
-    queryFn: () => api(`/api/v1/standard_groups/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<StandardGroup[]>(`/api/v1/standard_groups/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

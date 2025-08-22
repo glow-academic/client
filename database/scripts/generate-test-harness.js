@@ -2232,17 +2232,17 @@ function generateHooks(tables) {
         const cap = capitalize(tsProp);
         return `
 export function use${capitalize(exportName)}By${cap}(id: ${pkTs}) {
-  return useQuery({
+  return useQuery<${typeName}[]>({
     queryKey: ${singularName}KeysBy${cap}.one(id),
-    queryFn: () => api(\`/api/v1/${tableName}/by/${tsProp}/\${id}\`),
+    queryFn: () => api<${typeName}[]>(\`/api/v1/${tableName}/by/${tsProp}/\${id}\`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function use${capitalize(exportName)}By${cap}Batch(ids: ${pkTs}[]) {
-  return useQuery({
+  return useQuery<${typeName}[]>({
     queryKey: ${singularName}KeysBy${cap}.many(ids),
-    queryFn: () => api(\`/api/v1/${tableName}/by/${tsProp}/batch\`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<${typeName}[]>(\`/api/v1/${tableName}/by/${tsProp}/batch\`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }`;

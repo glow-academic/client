@@ -45,17 +45,17 @@ export function useDeleteAgent(id: string) {
 }
 
 export function useAgentsByModelId(id: string) {
-  return useQuery({
+  return useQuery<Agent[]>({
     queryKey: agentKeysByModelId.one(id),
-    queryFn: () => api(`/api/v1/agents/by/modelId/${id}`),
+    queryFn: () => api<Agent[]>(`/api/v1/agents/by/modelId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useAgentsByModelIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Agent[]>({
     queryKey: agentKeysByModelId.many(ids),
-    queryFn: () => api(`/api/v1/agents/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Agent[]>(`/api/v1/agents/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

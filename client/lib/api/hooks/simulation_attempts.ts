@@ -45,33 +45,33 @@ export function useDeleteSimulationAttempt(id: string) {
 }
 
 export function useSimulationAttemptsByProfileId(id: string) {
-  return useQuery({
+  return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/simulation_attempts/by/profileId/${id}`),
+    queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationAttemptsByProfileIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_attempts/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useSimulationAttemptsBySimulationId(id: string) {
-  return useQuery({
+  return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysBySimulationId.one(id),
-    queryFn: () => api(`/api/v1/simulation_attempts/by/simulationId/${id}`),
+    queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/simulationId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationAttemptsBySimulationIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysBySimulationId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_attempts/by/simulationId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/simulationId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

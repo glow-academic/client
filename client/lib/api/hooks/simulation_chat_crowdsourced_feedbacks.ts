@@ -45,33 +45,33 @@ export function useDeleteSimulationChatCrowdsourcedFeedback(id: string) {
 }
 
 export function useSimulationChatCrowdsourcedFeedbacksByProfileId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatCrowdsourcedFeedback[]>({
     queryKey: simulationChatCrowdsourcedFeedbackKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/profileId/${id}`),
+    queryFn: () => api<SimulationChatCrowdsourcedFeedback[]>(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatCrowdsourcedFeedbacksByProfileIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatCrowdsourcedFeedback[]>({
     queryKey: simulationChatCrowdsourcedFeedbackKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatCrowdsourcedFeedback[]>(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatCrowdsourcedFeedback[]>({
     queryKey: simulationChatCrowdsourcedFeedbackKeysBySimulationChatFeedbackId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/simulationChatFeedbackId/${id}`),
+    queryFn: () => api<SimulationChatCrowdsourcedFeedback[]>(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/simulationChatFeedbackId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatCrowdsourcedFeedback[]>({
     queryKey: simulationChatCrowdsourcedFeedbackKeysBySimulationChatFeedbackId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/simulationChatFeedbackId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatCrowdsourcedFeedback[]>(`/api/v1/simulation_chat_crowdsourced_feedbacks/by/simulationChatFeedbackId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

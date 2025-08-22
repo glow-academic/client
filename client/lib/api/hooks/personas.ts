@@ -45,17 +45,17 @@ export function useDeletePersona(id: string) {
 }
 
 export function usePersonasByModelId(id: string) {
-  return useQuery({
+  return useQuery<Persona[]>({
     queryKey: personaKeysByModelId.one(id),
-    queryFn: () => api(`/api/v1/personas/by/modelId/${id}`),
+    queryFn: () => api<Persona[]>(`/api/v1/personas/by/modelId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function usePersonasByModelIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Persona[]>({
     queryKey: personaKeysByModelId.many(ids),
-    queryFn: () => api(`/api/v1/personas/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Persona[]>(`/api/v1/personas/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

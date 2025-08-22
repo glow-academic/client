@@ -45,17 +45,17 @@ export function useDeleteSimulationMessage(id: string) {
 }
 
 export function useSimulationMessagesByChatId(id: string) {
-  return useQuery({
+  return useQuery<SimulationMessage[]>({
     queryKey: simulationMessageKeysByChatId.one(id),
-    queryFn: () => api(`/api/v1/simulation_messages/by/chatId/${id}`),
+    queryFn: () => api<SimulationMessage[]>(`/api/v1/simulation_messages/by/chatId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationMessagesByChatIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationMessage[]>({
     queryKey: simulationMessageKeysByChatId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_messages/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationMessage[]>(`/api/v1/simulation_messages/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

@@ -45,17 +45,17 @@ export function useDeleteAssistantMessage(id: string) {
 }
 
 export function useAssistantMessagesByChatId(id: string) {
-  return useQuery({
+  return useQuery<AssistantMessage[]>({
     queryKey: assistantMessageKeysByChatId.one(id),
-    queryFn: () => api(`/api/v1/assistant_messages/by/chatId/${id}`),
+    queryFn: () => api<AssistantMessage[]>(`/api/v1/assistant_messages/by/chatId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useAssistantMessagesByChatIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<AssistantMessage[]>({
     queryKey: assistantMessageKeysByChatId.many(ids),
-    queryFn: () => api(`/api/v1/assistant_messages/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<AssistantMessage[]>(`/api/v1/assistant_messages/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

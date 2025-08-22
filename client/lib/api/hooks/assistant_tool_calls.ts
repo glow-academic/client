@@ -45,17 +45,17 @@ export function useDeleteAssistantToolCall(id: string) {
 }
 
 export function useAssistantToolCallsByChatId(id: string) {
-  return useQuery({
+  return useQuery<AssistantToolCall[]>({
     queryKey: assistantToolCallKeysByChatId.one(id),
-    queryFn: () => api(`/api/v1/assistant_tool_calls/by/chatId/${id}`),
+    queryFn: () => api<AssistantToolCall[]>(`/api/v1/assistant_tool_calls/by/chatId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useAssistantToolCallsByChatIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<AssistantToolCall[]>({
     queryKey: assistantToolCallKeysByChatId.many(ids),
-    queryFn: () => api(`/api/v1/assistant_tool_calls/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<AssistantToolCall[]>(`/api/v1/assistant_tool_calls/by/chatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

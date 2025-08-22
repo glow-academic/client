@@ -45,33 +45,33 @@ export function useDeleteSimulationCrowdsourcedMessage(id: string) {
 }
 
 export function useSimulationCrowdsourcedMessagesBySimulationMessageId(id: string) {
-  return useQuery({
+  return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysBySimulationMessageId.one(id),
-    queryFn: () => api(`/api/v1/simulation_crowdsourced_messages/by/simulationMessageId/${id}`),
+    queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/simulationMessageId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysBySimulationMessageId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_crowdsourced_messages/by/simulationMessageId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/simulationMessageId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useSimulationCrowdsourcedMessagesByProfileId(id: string) {
-  return useQuery({
+  return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/simulation_crowdsourced_messages/by/profileId/${id}`),
+    queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationCrowdsourcedMessagesByProfileIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_crowdsourced_messages/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

@@ -45,65 +45,65 @@ export function useDeleteModelRun(id: string) {
 }
 
 export function useModelRunsByModelId(id: string) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByModelId.one(id),
-    queryFn: () => api(`/api/v1/model_runs/by/modelId/${id}`),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/modelId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useModelRunsByModelIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByModelId.many(ids),
-    queryFn: () => api(`/api/v1/model_runs/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useModelRunsByPersonaId(id: string) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByPersonaId.one(id),
-    queryFn: () => api(`/api/v1/model_runs/by/personaId/${id}`),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/personaId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useModelRunsByPersonaIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByPersonaId.many(ids),
-    queryFn: () => api(`/api/v1/model_runs/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useModelRunsByAgentId(id: string) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByAgentId.one(id),
-    queryFn: () => api(`/api/v1/model_runs/by/agentId/${id}`),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/agentId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useModelRunsByAgentIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByAgentId.many(ids),
-    queryFn: () => api(`/api/v1/model_runs/by/agentId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/agentId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useModelRunsByProfileId(id: string) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/model_runs/by/profileId/${id}`),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useModelRunsByProfileIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/model_runs/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

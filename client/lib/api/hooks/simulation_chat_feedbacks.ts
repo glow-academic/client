@@ -45,33 +45,33 @@ export function useDeleteSimulationChatFeedback(id: string) {
 }
 
 export function useSimulationChatFeedbacksByStandardId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysByStandardId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_feedbacks/by/standardId/${id}`),
+    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/standardId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatFeedbacksByStandardIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysByStandardId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_feedbacks/by/standardId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/standardId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useSimulationChatFeedbacksBySimulationChatGradeId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysBySimulationChatGradeId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/${id}`),
+    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatFeedbacksBySimulationChatGradeIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysBySimulationChatGradeId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

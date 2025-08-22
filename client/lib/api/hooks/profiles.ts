@@ -45,17 +45,17 @@ export function useDeleteProfile(id: string) {
 }
 
 export function useProfilesByUserId(id: string) {
-  return useQuery({
+  return useQuery<Profile[]>({
     queryKey: profileKeysByUserId.one(id),
-    queryFn: () => api(`/api/v1/profiles/by/userId/${id}`),
+    queryFn: () => api<Profile[]>(`/api/v1/profiles/by/userId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useProfilesByUserIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Profile[]>({
     queryKey: profileKeysByUserId.many(ids),
-    queryFn: () => api(`/api/v1/profiles/by/userId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Profile[]>(`/api/v1/profiles/by/userId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

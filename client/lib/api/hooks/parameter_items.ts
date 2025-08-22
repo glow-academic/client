@@ -45,17 +45,17 @@ export function useDeleteParameterItem(id: string) {
 }
 
 export function useParameterItemsByParameterId(id: string) {
-  return useQuery({
+  return useQuery<ParameterItem[]>({
     queryKey: parameterItemKeysByParameterId.one(id),
-    queryFn: () => api(`/api/v1/parameter_items/by/parameterId/${id}`),
+    queryFn: () => api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useParameterItemsByParameterIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<ParameterItem[]>({
     queryKey: parameterItemKeysByParameterId.many(ids),
-    queryFn: () => api(`/api/v1/parameter_items/by/parameterId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

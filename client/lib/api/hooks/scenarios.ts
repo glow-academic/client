@@ -45,17 +45,17 @@ export function useDeleteScenario(id: string) {
 }
 
 export function useScenariosByPersonaId(id: string) {
-  return useQuery({
+  return useQuery<Scenario[]>({
     queryKey: scenarioKeysByPersonaId.one(id),
-    queryFn: () => api(`/api/v1/scenarios/by/personaId/${id}`),
+    queryFn: () => api<Scenario[]>(`/api/v1/scenarios/by/personaId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useScenariosByPersonaIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Scenario[]>({
     queryKey: scenarioKeysByPersonaId.many(ids),
-    queryFn: () => api(`/api/v1/scenarios/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Scenario[]>(`/api/v1/scenarios/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

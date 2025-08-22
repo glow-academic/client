@@ -45,33 +45,33 @@ export function useDeleteSimulationChatGrade(id: string) {
 }
 
 export function useSimulationChatGradesByRubricId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysByRubricId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_grades/by/rubricId/${id}`),
+    queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/rubricId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatGradesByRubricIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysByRubricId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_grades/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
 export function useSimulationChatGradesBySimulationChatId(id: string) {
-  return useQuery({
+  return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysBySimulationChatId.one(id),
-    queryFn: () => api(`/api/v1/simulation_chat_grades/by/simulationChatId/${id}`),
+    queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/simulationChatId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationChatGradesBySimulationChatIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysBySimulationChatId.many(ids),
-    queryFn: () => api(`/api/v1/simulation_chat_grades/by/simulationChatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/simulationChatId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

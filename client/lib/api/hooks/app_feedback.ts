@@ -45,17 +45,17 @@ export function useDeleteAppFeedback(id: number) {
 }
 
 export function useAppFeedbackByProfileId(id: number) {
-  return useQuery({
+  return useQuery<AppFeedback[]>({
     queryKey: appFeedbackKeysByProfileId.one(id),
-    queryFn: () => api(`/api/v1/app_feedback/by/profileId/${id}`),
+    queryFn: () => api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useAppFeedbackByProfileIdBatch(ids: number[]) {
-  return useQuery({
+  return useQuery<AppFeedback[]>({
     queryKey: appFeedbackKeysByProfileId.many(ids),
-    queryFn: () => api(`/api/v1/app_feedback/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

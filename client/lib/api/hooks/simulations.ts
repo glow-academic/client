@@ -45,17 +45,17 @@ export function useDeleteSimulation(id: string) {
 }
 
 export function useSimulationsByRubricId(id: string) {
-  return useQuery({
+  return useQuery<Simulation[]>({
     queryKey: simulationKeysByRubricId.one(id),
-    queryFn: () => api(`/api/v1/simulations/by/rubricId/${id}`),
+    queryFn: () => api<Simulation[]>(`/api/v1/simulations/by/rubricId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
 
 export function useSimulationsByRubricIdBatch(ids: string[]) {
-  return useQuery({
+  return useQuery<Simulation[]>({
     queryKey: simulationKeysByRubricId.many(ids),
-    queryFn: () => api(`/api/v1/simulations/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () => api<Simulation[]>(`/api/v1/simulations/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
