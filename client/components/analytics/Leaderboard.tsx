@@ -24,8 +24,8 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
 
@@ -41,8 +41,14 @@ export interface LeaderboardProps {
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const router = useRouter();
-  // Rotation index removed to freeze accolade set
-  const [accoladePageIndex, setAccoladePageIndex] = useState(0);
+  const _pathname = usePathname();
+
+  // Two-page carousel state
+  const [page, setPage] = useState(0);
+  const [seed, _setSeed] = useState(0);
+
+  // Track nav direction for animation
+  const navDirRef = useRef<"next" | "prev">("next");
 
   // Use filtered analytics data with cohort-specific filtering if cohortId is provided
   const {
@@ -66,9 +72,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     accolade: { holder: Profile | null | undefined; details: string };
   } | null>(null);
   const [isHoveringAccolades, setIsHoveringAccolades] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Rotation disabled to simplify carousel behavior
+  // Randomize which 4 are on page 1 vs page 2 when component mounts or route changes
+  useEffect(() => _setSeed(Math.floor(Math.random() * 8)), [_pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -382,8 +388,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   }, [filteredData, rubrics, messages]);
 
   // Accolade cards (single set; rotation removed)
-  const accoladeSets = [
-    [
+  const accoladeSets = useMemo(() => {
+    const set1 = [
       {
         key: "perfectScore",
         icon: <Award className="h-4 w-4" />,
@@ -408,8 +414,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         title: "Quickest Pass",
         accolade: accolades.quickestPass,
       },
-    ],
-    [
+    ];
+    const set2 = [
       {
         key: "thePersistent",
         icon: <Target className="h-4 w-4" />,
@@ -434,86 +440,76 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         title: "Highest Scorer",
         accolade: accolades.highestScorer,
       },
-    ],
-  ];
+    ];
+    return [set1, set2];
+  }, [accolades]);
 
-  const currentAccolades = accoladeSets[0] || [];
+  // 1) Flatten your two sets once
+  const allAccolades = useMemo(() => {
+    const set1 = accoladeSets[0] || [];
+    const set2 = accoladeSets[1] || [];
+    return [...set1, ...set2];
+  }, [accoladeSets]);
 
-  // Carousel constants and helpers
-  const ACCOLADES_PER_ROW = 4; // show 4 at a time
-  const MANUAL_STEP = 2; // chevrons move 2
-  const AUTO_STEP = 4; // auto moves 4
+  // Rotate for randomization
+  const rotated = useMemo(() => {
+    if (!allAccolades.length) return [];
+    return Array.from(
+      { length: allAccolades.length },
+      (_, i) => allAccolades[(i + seed) % allAccolades.length]
+    );
+  }, [allAccolades, seed]);
 
-  // wrap-safe window to always fill the row
-  const wrapWindow = <T,>(list: T[], start: number, count: number): T[] => {
-    if (list.length === 0) return [];
-    const out: T[] = [];
-    const length = list.length;
-    for (let i = 0; i < count; i++) {
-      out.push(list[(start + i) % length]!);
-    }
-    return out;
+  // 2) Exactly two pages (4 per page)
+  const pages = useMemo(() => {
+    const a = rotated.slice(0, 4);
+    const b = rotated.slice(4, 8);
+    return [a, b];
+  }, [rotated]);
+
+  const goto = (next: "prev" | "next") => {
+    navDirRef.current = next;
+    setPage((p) => (next === "next" ? (p + 1) % 2 : (p + 1) % 2)); // toggles 0 ↔ 1 either way
   };
 
-  // total manual pages measured in steps of 2
-  const manualPages = Math.max(
-    1,
-    Math.ceil(currentAccolades.length / MANUAL_STEP)
-  );
-  const clampPage = useCallback(
-    (idx: number) => ((idx % manualPages) + manualPages) % manualPages,
-    [manualPages]
-  );
-
-  const getVisibleAccolades = () => {
-    const startIndex = accoladePageIndex * MANUAL_STEP;
-    return wrapWindow(currentAccolades, startIndex, ACCOLADES_PER_ROW);
-  };
-
-  const startAuto = () => {
-    if (timerRef.current) return;
-    timerRef.current = setInterval(() => {
-      setAccoladePageIndex((prev) => clampPage(prev + AUTO_STEP / MANUAL_STEP));
-    }, 3500);
-  };
-
-  const resetAuto = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-    startAuto();
-  };
-
-  const navigateAccolades = (direction: "prev" | "next") => {
-    setAccoladePageIndex((prev) => {
-      const next = direction === "prev" ? prev - 1 : prev + 1;
-      return clampPage(next);
-    });
-    resetAuto();
-  };
-
-  // Auto-advance effect (placed before any conditional returns)
+  // Optional: if you still want auto-advance every 3.5s
+  // (pause on hover/selected just like before)
   useEffect(() => {
-    if (selected || isHoveringAccolades) {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      return;
-    }
-    if (!timerRef.current) {
-      timerRef.current = setInterval(() => {
-        setAccoladePageIndex((prev) =>
-          clampPage(prev + AUTO_STEP / MANUAL_STEP)
-        );
-      }, 3500);
-    }
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [selected, isHoveringAccolades, manualPages, clampPage]);
+    if (selected || isHoveringAccolades) return;
+    const t = setInterval(() => goto("next"), 3500);
+    return () => clearInterval(t);
+  }, [selected, isHoveringAccolades]);
+
+  // 3) "Split" animation variants (Framer Motion)
+  const splitVariants = {
+    initial: (ctx: { i: number; dir: "next" | "prev" }) => {
+      // For entering items: start slightly off-center toward where they came from
+      const leftHalf = ctx.i < 2;
+      const bias = 60; // px
+      const from =
+        ctx.dir === "next"
+          ? leftHalf
+            ? -bias
+            : bias // page slides in opposite lanes
+          : leftHalf
+            ? bias
+            : -bias;
+      return { x: from, opacity: 0.0, scale: 0.98 };
+    },
+    animate: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      transition: { type: "spring", stiffness: 220, damping: 24 },
+    },
+    exit: (ctx: { i: number; dir: "next" | "prev" }) => {
+      // For exiting items: split—left two go right, right two go left
+      const leftHalf = ctx.i < 2;
+      const to =
+        ctx.dir === "next" ? (leftHalf ? 60 : -60) : leftHalf ? -60 : 60;
+      return { x: to, opacity: 0, scale: 0.98, transition: { duration: 0.28 } };
+    },
+  } as const;
 
   // Calculate leaderboard data with detailed metrics and percentile
   const leaderboardData = useMemo(() => {
@@ -823,70 +819,76 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             onMouseLeave={() => setIsHoveringAccolades(false)}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {getVisibleAccolades().map(({ key, icon, title, accolade }) => (
-                <div
-                  key={key}
-                  className="transition-all duration-500 ease-in-out"
-                >
-                  <AccoladeCard
-                    icon={icon}
-                    title={title}
-                    user={accolade?.holder}
-                    details={accolade?.details || ""}
-                    layoutId={`accolade-${key}`}
-                    onClick={
-                      accolade?.holder
-                        ? () => setSelected({ key, title, icon, accolade })
-                        : undefined
-                    }
-                    disabled={false}
-                  />
-                </div>
-              ))}
+              <AnimatePresence mode="popLayout">
+                {pages[page]
+                  ?.filter((item): item is NonNullable<typeof item> =>
+                    Boolean(item)
+                  )
+                  .map(({ key, icon, title, accolade }, i) => (
+                    <motion.div
+                      key={`${page}-${key}`} // key must change per page so exit/enter runs
+                      custom={{ i, dir: navDirRef.current }}
+                      variants={splitVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      layout
+                      className="transition-all duration-500"
+                    >
+                      <AccoladeCard
+                        icon={icon}
+                        title={title}
+                        user={accolade?.holder}
+                        details={accolade?.details || ""}
+                        layoutId={`accolade-${key}`}
+                        onClick={
+                          accolade?.holder
+                            ? () => setSelected({ key, title, icon, accolade })
+                            : undefined
+                        }
+                        disabled={false}
+                      />
+                    </motion.div>
+                  ))}
+              </AnimatePresence>
             </div>
 
-            {/* Accolade Navigation Chevrons */}
-            {manualPages > 1 && (
-              <>
-                <button
-                  aria-label="Previous accolades"
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                    isHoveringAccolades ? "opacity-100" : "opacity-0"
-                  } hover:opacity-100`}
-                  onClick={() => navigateAccolades("prev")}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  aria-label="Next accolades"
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
-                    isHoveringAccolades ? "opacity-100" : "opacity-0"
-                  } hover:opacity-100`}
-                  onClick={() => navigateAccolades("next")}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </>
-            )}
-          </div>
+            {/* Two chevrons; each toggles the page and sets direction */}
+            <button
+              aria-label="Previous accolades"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                isHoveringAccolades ? "opacity-100" : "opacity-0"
+              } hover:opacity-100`}
+              onClick={() => goto("prev")}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              aria-label="Next accolades"
+              className={`absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${
+                isHoveringAccolades ? "opacity-100" : "opacity-0"
+              } hover:opacity-100`}
+              onClick={() => goto("next")}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
 
-          {/* Accolade carousel indicators */}
-          {manualPages > 1 && (
+            {/* Two dots */}
             <div className="flex justify-center gap-2 mt-4">
-              {Array.from({ length: manualPages }, (_, index) => (
+              {[0, 1].map((idx) => (
                 <button
-                  key={index}
+                  key={idx}
                   onClick={() => {
-                    setAccoladePageIndex(index);
-                    resetAuto();
+                    navDirRef.current = idx > page ? "next" : "prev";
+                    setPage(idx);
                   }}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    index === accoladePageIndex ? "bg-primary" : "bg-muted"
+                    idx === page ? "bg-primary" : "bg-muted"
                   }`}
                 />
               ))}
             </div>
-          )}
+          </div>
         </div>
         <AnimatePresence>
           {selected && (
