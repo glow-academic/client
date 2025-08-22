@@ -159,9 +159,9 @@ async def get_document(
     content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
     
     # Return the file as a response with proper content type
+    # IMPORTANT: do NOT pass filename= (that forces attachment)
     return FileResponse(
         path=file_path, 
-        filename=result.name, 
         media_type=content_type,
         headers={
             "Content-Disposition": content_disposition,

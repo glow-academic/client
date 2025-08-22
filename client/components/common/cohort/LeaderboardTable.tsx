@@ -41,9 +41,15 @@ import { useMemo, useState } from "react";
 export interface LeaderboardData {
   id: string;
   name: string;
-  avgScore: number;
-  passRate: number;
-  simsCompleted: number;
+  highestScoreAvg: number;
+  timeSpentMinutes: number;
+  messagesPerSession: number;
+  totalAttempts: number;
+  perfectScoreCount: number;
+  quickestPassMinutes: number;
+  mostImprovedPercent: number;
+  improvementRatePerDay: number;
+  percentile: number;
   role?: string; // Optional since we're no longer displaying it
 }
 
@@ -65,27 +71,25 @@ export default function LeaderboardTable({
   currentUserId,
   onViewReport,
 }: LeaderboardTableProps) {
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    sessionEfficiency: false,
+    simsCompleted: false,
+    timeSpentMinutes: false,
+    passRate: false,
+  });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "avgScore", desc: true }, // Default sort by average score descending
+    { id: "percentile", desc: true }, // Default sort by percentile descending
   ]);
 
   // Create filter options
-  const scoreRangeOptions = useMemo(
+  const percentileRangeOptions = useMemo(
     () => [
-      {
-        value: "excellent",
-        label: "Excellent (80%+)",
-      },
-      {
-        value: "good",
-        label: "Good (70-79%)",
-      },
-      {
-        value: "needs-improvement",
-        label: "Needs Improvement (<70%)",
-      },
+      { value: "p95-100", label: "Top 5% (95-100)" },
+      { value: "p90-94", label: "Top 10% (90-94)" },
+      { value: "p85-89", label: "Top 15% (85-89)" },
+      { value: "p80-84", label: "Top 20% (80-84)" },
+      { value: "p75-79", label: "Top 25% (75-79)" },
     ],
     []
   );
@@ -133,58 +137,150 @@ export default function LeaderboardTable({
         },
       },
       {
-        accessorKey: "avgScore",
+        accessorKey: "percentile",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Avg. Score"
+            title="Percentile"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
-          const score = row.getValue("avgScore") as number;
-          return <div className="text-right font-semibold">{score}%</div>;
+          const p = row.getValue("percentile") as number;
+          return <div className="text-right font-semibold">{p}</div>;
         },
-        filterFn: (row, _, value) => {
-          const score = row.getValue("avgScore") as number;
-
-          if (score >= 80) {
-            return value.includes("excellent");
-          } else if (score >= 70) {
-            return value.includes("good");
-          } else {
-            return value.includes("needs-improvement");
-          }
-        },
-        sortingFn: "basic",
-      },
-      {
-        accessorKey: "passRate",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Pass Rate"
-            className="justify-end"
-          />
-        ),
-        cell: ({ row }) => {
-          const passRate = row.getValue("passRate") as number;
-          return <div className="text-right">{passRate}%</div>;
+        filterFn: (row, _id, values: string[]) => {
+          if (!values || values.length === 0) return true;
+          const p = row.getValue("percentile") as number;
+          const inRange = (v: string) => {
+            if (v === "p95-100") return p >= 95 && p <= 100;
+            if (v === "p90-94") return p >= 90 && p <= 94;
+            if (v === "p85-89") return p >= 85 && p <= 89;
+            if (v === "p80-84") return p >= 80 && p <= 84;
+            if (v === "p75-79") return p >= 75 && p <= 79;
+            return true;
+          };
+          return values.some(inRange);
         },
         sortingFn: "basic",
       },
       {
-        accessorKey: "simsCompleted",
+        accessorKey: "highestScoreAvg",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Sims Completed"
+            title="Highest Score (Avg)"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
-          const simsCompleted = row.getValue("simsCompleted") as number;
-          return <div className="text-right">{simsCompleted}</div>;
+          const score = row.getValue("highestScoreAvg") as number;
+          return <div className="text-right">{score}%</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "timeSpentMinutes",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Time Spent (min)"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("timeSpentMinutes") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "messagesPerSession",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Msgs / Session"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("messagesPerSession") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "perfectScoreCount",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Perfect Scores"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("perfectScoreCount") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "quickestPassMinutes",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Quickest Pass (min)"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("quickestPassMinutes") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "mostImprovedPercent",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Most Improved (%)"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("mostImprovedPercent") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "improvementRatePerDay",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Improvement/Day"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("improvementRatePerDay") as number;
+          return <div className="text-right">{v}</div>;
+        },
+        sortingFn: "basic",
+      },
+      {
+        accessorKey: "totalAttempts",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Attempts"
+            className="justify-end"
+          />
+        ),
+        cell: ({ row }) => {
+          const v = row.getValue("totalAttempts") as number;
+          return <div className="text-right">{v}</div>;
         },
         sortingFn: "basic",
       },
@@ -215,7 +311,7 @@ export default function LeaderboardTable({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const nameColumn = table.getColumn("name");
-  const avgScoreColumn = table.getColumn("avgScore");
+  const percentileColumn = table.getColumn("percentile");
 
   if (data.length === 0) {
     return (
@@ -242,15 +338,11 @@ export default function LeaderboardTable({
           </div>
 
           <div className="flex items-center space-x-2 flex-wrap mb-2">
-            {/* Role Filter */}
-            {/* Removed Role Filter */}
-
-            {/* Score Range Filter */}
-            {avgScoreColumn && scoreRangeOptions.length > 0 && (
+            {percentileColumn && percentileRangeOptions.length > 0 && (
               <DataTableFacetedFilter
-                column={avgScoreColumn}
-                title="Score Range"
-                options={scoreRangeOptions}
+                column={percentileColumn}
+                title="Percentile"
+                options={percentileRangeOptions}
               />
             )}
 
@@ -292,31 +384,61 @@ export default function LeaderboardTable({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, index) => (
-                <TableRow
-                  key={row.id}
-                  className={`${
-                    row.original.id === currentUserId ? "bg-muted/50" : ""
-                  } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
-                  onClick={() => onViewReport?.(row.original.id)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {cell.column.id === "rank" ? (
-                        <div className="font-bold text-lg w-[80px]">
-                          {index + 1}
-                        </div>
-                      ) : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+            {(() => {
+              // Restrict to top 25% based on percentile
+              const allRows = table.getRowModel().rows;
+              const topRows = allRows.filter(
+                (r) => (r.original as LeaderboardData).percentile >= 75
+              );
+              return topRows;
+            })().length ? (
+              (() => {
+                const topRows = table
+                  .getRowModel()
+                  .rows.filter(
+                    (r) => (r.original as LeaderboardData).percentile >= 75
+                  );
+                return topRows.map((row, index) => (
+                  <TableRow
+                    key={row.id}
+                    className={`${
+                      row.original.id === currentUserId ? "bg-muted/50" : ""
+                    } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
+                    onClick={() => onViewReport?.(row.original.id)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {cell.column.id === "rank" ? (
+                          <div className="flex items-center gap-2 w-[120px]">
+                            <span className="font-bold text-lg">
+                              {index + 1}
+                            </span>
+                            {index < 3 && row.original.percentile >= 75 ? (
+                              <span
+                                aria-label="medal"
+                                title={
+                                  index === 0
+                                    ? "Gold"
+                                    : index === 1
+                                      ? "Silver"
+                                      : "Bronze"
+                                }
+                              >
+                                {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ));
+              })()
             ) : (
               <TableRow>
                 <TableCell
