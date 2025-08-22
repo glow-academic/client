@@ -320,15 +320,15 @@ export default function TATour() {
         return;
       }
 
-      // Use stored attemptId if available
-      if (tourState.attemptId) {
-        log.info("tour.simulation.use_stored_attempt", {
-          message: "Using stored attemptId for tour",
-          context: { component: "TATour", attemptId: tourState.attemptId },
-        });
-        router.push(`/practice/a/${tourState.attemptId}`);
-        return;
-      }
+      // // Use stored attemptId if available
+      // if (tourState.attemptId) {
+      //   log.info("tour.simulation.use_stored_attempt", {
+      //     message: "Using stored attemptId for tour",
+      //     context: { component: "TATour", attemptId: tourState.attemptId },
+      //   });
+      //   router.push(`/practice/a/${tourState.attemptId}`);
+      //   return;
+      // }
 
       setLoadingSimulation(simulationId);
       const toastId = toast.loading("Starting practice simulation...", {
@@ -376,8 +376,6 @@ export default function TATour() {
       effectiveProfile?.id,
       emitStartSimulation,
       setLoadingSimulation,
-      tourState.attemptId,
-      router,
     ]
   );
 
@@ -1566,11 +1564,11 @@ export default function TATour() {
         });
 
         // If we have an attemptId, navigate to the attempt page first
-        if (tourState.attemptId) {
-          const targetPath = `/practice/a/${tourState.attemptId}`;
-          expectedPathnameRef.current = targetPath;
-          router.push(targetPath);
-        }
+        // if (tourState.attemptId) {
+        //   const targetPath = `/practice/a/${tourState.attemptId}`;
+        //   expectedPathnameRef.current = targetPath;
+        //   router.push(targetPath);
+        // }
 
         // Click the first starter prompt button after a short delay to ensure page is loaded
         setTimeout(() => {
