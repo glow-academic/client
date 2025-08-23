@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FilteredData } from "@/utils/analytics/filtering";
 import { log } from "@/utils/logger";
 import { toast } from "sonner";
 
@@ -42,6 +41,19 @@ interface TAPerformanceData {
   personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
+  simulationMetrics: Record<
+    string,
+    {
+      averageScore: number;
+      highestScore: number;
+      completionPercentage: number;
+      firstAttemptPassRate: number;
+      timeSpent: number;
+      messagesPerSession: number;
+      sessionEfficiency: number;
+      totalAttempts: number;
+    }
+  >;
   hasNoSessions: boolean;
   [key: string]: unknown;
 }
@@ -66,21 +78,19 @@ const metricOptions = [
 
 export interface BrightspaceExportButtonProps<TData> {
   table: Table<TData>;
-  filteredData?: FilteredData | null;
   simulations?: Array<{ id: string; title: string }>;
 }
 
 export function BrightspaceExportButton<TData>({
   table,
-  filteredData,
   simulations,
 }: BrightspaceExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
 
-  // Use filtered simulations from the filtered data or direct simulations prop
-  const filteredSimulations = filteredData?.simulations || simulations || [];
+  // Use simulations prop directly
+  const availableSimulations = simulations || [];
 
   // Function to export to CSV for Brightspace
   const handleBrightspaceExport = () => {
@@ -89,8 +99,8 @@ export function BrightspaceExportButton<TData>({
       return;
     }
 
-    if (!filteredData) {
-      toast?.error("No data available for export");
+    if (availableSimulations.length === 0) {
+      toast?.error("No simulations available for export");
       return;
     }
 
@@ -100,6 +110,11 @@ export function BrightspaceExportButton<TData>({
         selectedRows > 0
           ? table.getFilteredSelectedRowModel().rows
           : table.getFilteredRowModel().rows;
+
+      if (selectedData.length === 0) {
+        toast?.error("No data available for export");
+        return;
+      }
 
       // Get the metric option
       const metricOption = metricOptions.find(
@@ -113,8 +128,9 @@ export function BrightspaceExportButton<TData>({
       // Create CSV header: Username, Simulation1 Points Grade, Simulation2 Points Grade, etc.
       const headerRow = [
         "Username",
-        ...filteredSimulations.map(
-          (sim) => `${sim.title} Points Grade <Numeric MaxPoints:100>`
+        ...availableSimulations.map(
+          (sim: { id: string; title: string }) =>
+            `${sim.title} Points Grade <Numeric MaxPoints:100>`
         ),
         "End-of-Line Indicator",
       ].join(",");
@@ -125,31 +141,49 @@ export function BrightspaceExportButton<TData>({
         const alias = ta.username;
 
         // For each simulation, check if the user has attempted it
-        const simulationValues = filteredSimulations.map((simulation) => {
-          const hasAttempted = ta.simulationIds.includes(simulation.id);
-          if (!hasAttempted) {
-            return ""; // Empty cell if not attempted
-          }
+        const simulationValues = availableSimulations.map(
+          (simulation: { id: string; title: string }) => {
+            const hasAttempted = ta.simulationIds.includes(simulation.id);
 
-          // Get the metric value
-          const metricValue = ta[selectedMetric];
-          if (metricValue === undefined || metricValue === null) {
-            return "";
-          }
+            if (!hasAttempted) {
+              return "0%"; // Use 0% instead of empty cell for reliability
+            }
 
-          // Format the value based on the metric type
-          if (ta.hasNoSessions) {
-            return "N/A";
-          }
+            // Get the per-simulation metric value
+            const simMetrics = ta.simulationMetrics?.[simulation.id];
+            let metricValue: number | undefined;
 
-          if (typeof metricValue === "number") {
-            return metricOption.unit
-              ? `${metricValue}${metricOption.unit}`
-              : `${metricValue}`;
-          }
+            if (simMetrics) {
+              // Use per-simulation metrics if available
+              metricValue =
+                simMetrics[selectedMetric as keyof typeof simMetrics];
+            } else {
+              // Fallback to overall metrics if per-simulation metrics aren't available
+              metricValue = ta[
+                selectedMetric as keyof TAPerformanceData
+              ] as number;
+            }
 
-          return String(metricValue);
-        });
+            if (metricValue === undefined || metricValue === null) {
+              return "0%"; // Use 0% instead of empty cell for reliability
+            }
+
+            // Format the value based on the metric type
+            if (ta.hasNoSessions) {
+              return "N/A";
+            }
+
+            if (typeof metricValue === "number") {
+              // Round to nearest percent for Brightspace export
+              const roundedValue = Math.round(metricValue);
+              return metricOption.unit
+                ? `${roundedValue}${metricOption.unit}`
+                : `${roundedValue}`;
+            }
+
+            return String(metricValue);
+          }
+        );
 
         return [alias, ...simulationValues, "#"].join(",");
       });

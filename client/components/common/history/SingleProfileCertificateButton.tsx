@@ -106,20 +106,41 @@ export function SingleProfileCertificateButton<TData>({
       const attemptChats = chats.filter(
         (chat) => chat.attemptId === attempt.id
       );
-      const chatGrades = attemptChats
-        .map((chat) =>
-          grades.find((grade) => grade.simulationChatId === chat.id)
-        )
-        .filter(Boolean);
 
-      if (chatGrades.length > 0) {
-        const totalScore = chatGrades.reduce(
-          (sum, grade) => sum + (grade?.score || 0),
-          0
-        );
-        const averageScore = totalScore / chatGrades.length;
-        attemptScores.push(averageScore);
+      // Get the simulation to find total expected chats
+      const simulation = simulations.find((s) => s.id === attempt.simulationId);
+      const totalExpected =
+        simulation?.scenarioIds?.length || attemptChats.length || 0;
+
+      if (totalExpected === 0) {
+        return; // Skip this attempt if no expected chats
       }
+
+      // Count completed chats
+      const completedChats = attemptChats.filter((chat) => chat.completed);
+
+      // If no chats are completed, skip this attempt (will show as 0 score)
+      if (completedChats.length === 0) {
+        return;
+      }
+
+      // Calculate total score including zeros for ALL expected chats
+      let totalScore = 0;
+
+      // For each expected chat, find if it exists and has a grade
+      for (let i = 0; i < totalExpected; i++) {
+        const expectedChat = attemptChats[i];
+        if (expectedChat && expectedChat.completed) {
+          const grade = grades.find(
+            (grade) => grade.simulationChatId === expectedChat.id
+          );
+          totalScore += grade?.score || 0;
+        }
+        // If chat doesn't exist or is not completed, add 0 (implicit)
+      }
+
+      const averageScore = totalScore / totalExpected;
+      attemptScores.push(averageScore);
     });
 
     if (attemptScores.length === 0) {

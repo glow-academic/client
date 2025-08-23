@@ -491,32 +491,38 @@ export function useHistoryColumns({
         ),
         accessorFn: (row: EnhancedAttempt) => {
           const chats = row.scenarios;
+          const interactionIds = row.interactionIds;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) return 0;
 
-          // Only include chats that are completed AND have a rubric/grade
-          const gradedCompletedChatGrades = chatsArray
-            .filter((chat) => chat.completed)
-            .map((chat) =>
-              filteredData?.grades?.find(
-                (grade) => grade.simulationChatId === chat.id
-              )
-            )
-            .filter(Boolean);
+          // Get total expected chats (same logic as scenarios column)
+          const totalExpected =
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) return 0;
 
-          if (gradedCompletedChatGrades.length === 0) return 0;
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          return totalScore / gradedCompletedChatGrades.length;
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          // Calculate average: total score / total expected chats
+          return totalScore / totalExpected;
         },
         cell: ({ row }) => {
           const chats = row.original.scenarios;
-          const expectedChats = row.original.interactionIds?.length;
+          const interactionIds = row.original.interactionIds;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
@@ -524,34 +530,37 @@ export function useHistoryColumns({
             return <div className="text-muted-foreground">No chats</div>;
           }
 
-          const completedChats = chatsArray.filter((chat) => chat.completed);
-          const gradedCompletedChatGrades = completedChats
-            .map((chat: SimulationChat) =>
-              filteredData?.grades?.find(
-                (grade) => grade.simulationChatId === chat.id
-              )
-            )
-            .filter(Boolean);
-
-          // Determine if all chats are completed based on expected count
-          const totalExpected = expectedChats || chatsArray.length;
-          const allChatsCompleted = completedChats.length === totalExpected;
-
-          // Show Incomplete if all chats are completed but no rubrics exist
-          if (allChatsCompleted && gradedCompletedChatGrades.length === 0) {
-            return <div className="text-red-500 font-medium">Incomplete</div>;
+          // Get total expected chats (same logic as scenarios column)
+          const totalExpected =
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) {
+            return <div className="text-muted-foreground">No chats</div>;
           }
 
-          // If no graded chats, show Not graded
-          if (gradedCompletedChatGrades.length === 0) {
+          // Count completed chats
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+
+          // If no chats are completed, show Not graded
+          if (completedChats.length === 0) {
             return <div className="text-muted-foreground">Not graded</div>;
           }
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          const averageScore = totalScore / gradedCompletedChatGrades.length;
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
+
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          const averageScore = totalScore / totalExpected;
 
           // Calculate percentage based on rubric total points
           // Find the rubric for this simulation
@@ -588,6 +597,8 @@ export function useHistoryColumns({
         enableSorting: true,
         filterFn: (row, _, value) => {
           const chats = row.getValue("scenarios") as SimulationChat[];
+          const interactionIds = (row.original as EnhancedAttempt)
+            .interactionIds;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
@@ -595,31 +606,29 @@ export function useHistoryColumns({
             return value.includes("not-graded");
           }
 
-          const completedChats = chatsArray.filter((chat) => chat.completed);
-          const gradedCompletedChatGrades = completedChats
-            .map((chat: SimulationChat) =>
-              filteredData?.grades?.find(
-                (grade) => grade.simulationChatId === chat.id
-              )
-            )
-            .filter(Boolean);
-
+          // Get total expected chats (same logic as scenarios column)
           const totalExpected =
-            row.original.interactionIds?.length || chatsArray.length;
-          const allChatsCompleted = completedChats.length === totalExpected;
-
-          if (gradedCompletedChatGrades.length === 0) {
-            if (allChatsCompleted) {
-              return value.includes("incomplete");
-            }
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) {
             return value.includes("not-graded");
           }
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          const averageScore = totalScore / gradedCompletedChatGrades.length;
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
+
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          const averageScore = totalScore / totalExpected;
 
           // Calculate percentage based on rubric total points
           const simulation = filteredData?.simulations?.find(
@@ -647,31 +656,19 @@ export function useHistoryColumns({
         id: "actions",
         cell: ({ row }) => {
           const attempt = row.original;
-          const chats = attempt.scenarios;
 
-          const expectedChats = attempt.interactionIds?.length;
-          const chatsArray = Array.isArray(chats) ? chats : [];
-          const completedChats = chatsArray.filter((chat) => chat.completed);
-          const gradedCompletedChatGrades = completedChats
-            .map((chat: SimulationChat) =>
-              filteredData?.grades?.find(
-                (grade) => grade.simulationChatId === chat.id
-              )
-            )
-            .filter(Boolean);
-
-          const totalExpected = expectedChats || chatsArray.length;
-          const allChatsCompleted = completedChats.length === totalExpected;
-
-          // New definition: incomplete when all chats are completed but none have a rubric
-          const isIncomplete =
-            allChatsCompleted && gradedCompletedChatGrades.length === 0;
+          // With the new scoring logic, we don't need to track grades separately
+          // since we now include zeros for missing grades in the average calculation
 
           // Determine if this is practice mode based on simulation
           const simulation = filteredData?.simulations?.find(
             (s) => s.id === attempt.simulationId
           );
           const isPractice = Boolean(simulation?.practiceSimulation);
+
+          // With the new scoring logic, we don't need the isIncomplete flag
+          // since we now include zeros for missing grades
+          const isIncomplete = false;
 
           return (
             <DataTableRowActions

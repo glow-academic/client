@@ -310,50 +310,57 @@ export default function Home() {
             { passed: boolean; score: number; attemptId: string }
           >();
 
-          // Group grades by attempt and calculate average scores
-          const attemptScores = new Map<
-            string,
-            { scores: number[]; profileId: string }
-          >();
+          // Group attempts by user and calculate best score for each user
+          cohortAttempts.forEach((attempt) => {
+            const attemptChats =
+              cohortChats?.filter((c) => c.attemptId === attempt.id) || [];
 
-          cohortGrades.forEach((grade) => {
-            const chat = cohortChats?.find(
-              (c) => c.id === grade.simulationChatId
-            );
-            const attempt = cohortAttempts.find(
-              (a) => a.id === chat?.attemptId
-            );
+            // Get total expected chats (same logic as scenarios column)
+            const totalExpected =
+              simulation.scenarioIds?.length || attemptChats.length || 0;
 
-            if (attempt?.id && attempt?.profileId) {
-              const existing = attemptScores.get(attempt.id);
-              if (existing) {
-                existing.scores.push(grade.score);
-              } else {
-                attemptScores.set(attempt.id, {
-                  scores: [grade.score],
-                  profileId: attempt.profileId,
-                });
-              }
+            if (totalExpected === 0) {
+              return; // Skip this attempt if no expected chats
             }
-          });
 
-          // Calculate average score for each attempt and find best attempt per user
-          attemptScores.forEach((attemptData, attemptId) => {
-            const averageScore =
-              attemptData.scores.reduce((sum, score) => sum + score, 0) /
-              attemptData.scores.length;
+            // Count completed chats
+            const completedChats = attemptChats.filter(
+              (chat) => chat.completed
+            );
+
+            // If no chats are completed, skip this attempt (will show as 0 score)
+            if (completedChats.length === 0) {
+              return;
+            }
+
+            // Calculate total score including zeros for ALL expected chats
+            let totalScore = 0;
+
+            // For each expected chat, find if it exists and has a grade
+            for (let i = 0; i < totalExpected; i++) {
+              const expectedChat = attemptChats[i];
+              if (expectedChat && expectedChat.completed) {
+                const grade = cohortGrades.find(
+                  (grade) => grade.simulationChatId === expectedChat.id
+                );
+                totalScore += grade?.score || 0;
+              }
+              // If chat doesn't exist or is not completed, add 0 (implicit)
+            }
+
+            const averageScore = totalScore / totalExpected;
 
             // Get rubric to determine pass threshold
             const rubric = rubrics?.find((r) => r.id === simulation.rubricId);
             const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
             const passed = averageScore >= passThreshold;
 
-            const existing = userBestAttempts.get(attemptData.profileId);
+            const existing = userBestAttempts.get(attempt.profileId!);
             if (!existing || averageScore > existing.score) {
-              userBestAttempts.set(attemptData.profileId, {
+              userBestAttempts.set(attempt.profileId!, {
                 passed,
                 score: averageScore,
-                attemptId,
+                attemptId: attempt.id,
               });
             }
           });
@@ -429,33 +436,48 @@ export default function Home() {
               taChats?.some((c) => c.id === g.simulationChatId)
             );
 
-            // Calculate average score for each attempt and find best attempt
-            const taAttemptScores = new Map<string, { scores: number[] }>();
-
-            taGrades.forEach((grade) => {
-              const chat = taChats?.find(
-                (c) => c.id === grade.simulationChatId
-              );
-              const attempt = taAttempts.find((a) => a.id === chat?.attemptId);
-
-              if (attempt?.id) {
-                const existing = taAttemptScores.get(attempt.id);
-                if (existing) {
-                  existing.scores.push(grade.score);
-                } else {
-                  taAttemptScores.set(attempt.id, { scores: [grade.score] });
-                }
-              }
-            });
-
-            // Find best attempt based on average score
+            // Calculate best attempt based on new scoring logic
             let bestAverageScore = 0;
             let hasPassed = false;
 
-            taAttemptScores.forEach((attemptData) => {
-              const averageScore =
-                attemptData.scores.reduce((sum, score) => sum + score, 0) /
-                attemptData.scores.length;
+            taAttempts.forEach((attempt) => {
+              const attemptChats =
+                taChats?.filter((c) => c.attemptId === attempt.id) || [];
+
+              // Get total expected chats (same logic as scenarios column)
+              const totalExpected =
+                simulation.scenarioIds?.length || attemptChats.length || 0;
+
+              if (totalExpected === 0) {
+                return; // Skip this attempt if no expected chats
+              }
+
+              // Count completed chats
+              const completedChats = attemptChats.filter(
+                (chat) => chat.completed
+              );
+
+              // If no chats are completed, skip this attempt (will show as 0 score)
+              if (completedChats.length === 0) {
+                return;
+              }
+
+              // Calculate total score including zeros for ALL expected chats
+              let totalScore = 0;
+
+              // For each expected chat, find if it exists and has a grade
+              for (let i = 0; i < totalExpected; i++) {
+                const expectedChat = attemptChats[i];
+                if (expectedChat && expectedChat.completed) {
+                  const grade = taGrades.find(
+                    (grade) => grade.simulationChatId === expectedChat.id
+                  );
+                  totalScore += grade?.score || 0;
+                }
+                // If chat doesn't exist or is not completed, add 0 (implicit)
+              }
+
+              const averageScore = totalScore / totalExpected;
 
               if (averageScore > bestAverageScore) {
                 bestAverageScore = averageScore;

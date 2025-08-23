@@ -10,7 +10,6 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -25,27 +24,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { TAPerformanceData } from "@/hooks/use-report-columns";
-import { buildFilteredViewForTa } from "@/utils/analytics/report/filtering";
-import {
-  computeAttemptsStats,
-  computeAverageScoreStats,
-  computeCompletionStats,
-  computeFirstAttemptPassStats,
-  computeMessageStats,
-  computePersonaResponseStats,
-  computeSessionEfficiencyStats,
-  computeStagnationStats,
-  computeTimeStats,
-  computeTopScores,
-} from "@/utils/analytics/report/stats";
 import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 
 export interface ReportsDataTableProps {
@@ -69,12 +53,6 @@ export function ReportsDataTable({
   showExport = true,
   onViewReport,
 }: ReportsDataTableProps) {
-  const {
-    data: filteredData,
-    rubrics,
-    messages,
-    filters,
-  } = useFilteredAnalyticsData();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
@@ -108,164 +86,74 @@ export function ReportsDataTable({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
-
-  // Use pre-computed filtered datasets for hover stats
-  const attempts = React.useMemo(
-    () => filteredData?.attempts ?? [],
-    [filteredData?.attempts]
-  );
-  const chats = React.useMemo(
-    () => filteredData?.chats ?? [],
-    [filteredData?.chats]
-  );
-  const grades = React.useMemo(
-    () => filteredData?.grades ?? [],
-    [filteredData?.grades]
-  );
-  const sims = React.useMemo(
-    () => filteredData?.simulations ?? [],
-    [filteredData?.simulations]
-  );
-  const scens = React.useMemo(
-    () => filteredData?.scenarios ?? [],
-    [filteredData?.scenarios]
-  );
-
-  // Toolbar filter selections from the table state
-  const personaFilter = React.useMemo(
-    () =>
-      (table.getColumn("personasTested")?.getFilterValue() as string[]) || [],
-    [table]
-  );
-  const scenarioFilter = React.useMemo(
-    () => (table.getColumn("scenarioIds")?.getFilterValue() as string[]) || [],
-    [table]
-  );
-  const simulationFilter = React.useMemo(
-    () =>
-      (table.getColumn("simulationIds")?.getFilterValue() as string[]) || [],
-    [table]
-  );
-
-  const buildView = React.useCallback(
-    (profileId: string) =>
-      buildFilteredViewForTa(
-        profileId,
-        {
-          attempts,
-          chats,
-          grades,
-          messages: messages ?? [],
-          simulations: sims,
-          scenarios: scens,
-          rubrics: rubrics ?? [],
-        },
-        {
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-          effectiveCohortIds: filters.cohortIds,
-          selectedRoles: filters.roles,
-          showPractice: filters.simulationFilters.includes("practice"),
-          showGeneral: filters.simulationFilters.includes("general"),
-          cohorts: filteredData?.cohorts ?? [],
-        },
-        {
-          personaIds: personaFilter,
-          scenarioIds: scenarioFilter,
-          simulationIds: simulationFilter,
-        }
-      ),
-    [
-      attempts,
-      chats,
-      grades,
-      messages,
-      sims,
-      scens,
-      rubrics,
-      filters.startDate,
-      filters.endDate,
-      filters.cohortIds,
-      filters.roles,
-      filters.simulationFilters,
-      filteredData?.cohorts,
-      personaFilter,
-      scenarioFilter,
-      simulationFilter,
-    ]
-  );
 
   const renderWithHover = (
     key: string,
     content: React.ReactNode,
     taId: string
   ) => {
-    const view = buildView(taId);
+    const ta = data.find((d) => d.id === taId);
+    const h = ta?.hover;
     let bullets: string[] = [];
-    if (key === "averageScore") {
-      const s = computeAverageScoreStats(view);
+    if (key === "averageScore" && h?.scoreStats) {
       bullets = [
-        `Mean: ${s.mean}%`,
-        `Median: ${s.median}%`,
-        `Mode: ${s.mode}%`,
+        `Mean: ${h.scoreStats.mean}%`,
+        `Median: ${h.scoreStats.median}%`,
+        `Mode: ${h.scoreStats.mode}%`,
       ];
-    } else if (key === "highestScore") {
-      const top = computeTopScores(view, 3);
-      bullets = top.length
-        ? top.map((v, i) => `${i + 1}. ${v}%`)
+    } else if (key === "highestScore" && h?.scoreStats?.top) {
+      bullets = h.scoreStats.top.length
+        ? h.scoreStats.top.map((v, i) => `${i + 1}. ${v}%`)
         : ["No scores available"];
-    } else if (key === "timeSpent") {
-      const t = computeTimeStats(view);
+    } else if (key === "timeSpent" && h?.timeStats) {
       bullets = [
-        `Avg session: ${t.avgSessionMinutes}m`,
-        `Avg chat: ${t.avgChatMinutes}m`,
-        `Avg time spent: ${t.avgOverallMinutes}m`,
+        `Avg session: ${h.timeStats.avgSessionMinutes}m`,
+        `Avg chat: ${h.timeStats.avgChatMinutes}m`,
+        `Avg time spent: ${h.timeStats.avgOverallMinutes}m`,
       ];
-    } else if (key === "messagesPerSession") {
-      const m = computeMessageStats(view);
+    } else if (key === "messagesPerSession" && h?.messageStats) {
       bullets = [
-        `Mean msgs/chat: ${m.mean}`,
-        `Median msgs/chat: ${m.median}`,
-        `Chats counted: ${m.count}`,
+        `Mean msgs/chat: ${h.messageStats.mean}`,
+        `Median msgs/chat: ${h.messageStats.median}`,
+        `Chats counted: ${h.messageStats.count}`,
       ];
-    } else if (key === "completionPercentage") {
-      const c = computeCompletionStats(view);
-      bullets = [`Completed: ${c.completed}/${c.total}`, `Rate: ${c.percent}%`];
-    } else if (key === "firstAttemptPassRate") {
-      const f = computeFirstAttemptPassStats(view);
-      bullets = [`First-pass: ${f.passed}/${f.total}`, `Rate: ${f.percent}%`];
-    } else if (key === "personaResponseTimes") {
-      const r = computePersonaResponseStats(view);
+    } else if (key === "completionPercentage" && h?.completionStats) {
       bullets = [
-        `Mean: ${Math.round(r.meanSeconds / 60)}m`,
-        `Median: ${Math.round(r.medianSeconds / 60)}m`,
-        `Samples: ${r.samples}`,
+        `Completed: ${h.completionStats.completed}/${h.completionStats.total}`,
+        `Rate: ${h.completionStats.percent}%`,
       ];
-    } else if (key === "sessionEfficiency") {
-      const e = computeSessionEfficiencyStats(view);
+    } else if (key === "firstAttemptPassRate" && h?.firstAttemptStats) {
       bullets = [
-        `Avg score: ${e.avgScorePercent}%`,
-        `Avg time: ${e.avgMinutes}m`,
-        `Efficiency: ${e.efficiency}`,
+        `First-pass: ${h.firstAttemptStats.passed}/${h.firstAttemptStats.total}`,
+        `Rate: ${h.firstAttemptStats.percent}%`,
       ];
-    } else if (key === "stagnationRate") {
-      const s = computeStagnationStats(view);
+    } else if (key === "personaResponseTimes" && h?.personaResponseStats) {
       bullets = [
-        `Tracked: ${s.tracked}`,
-        `Stagnant: ${s.stagnant}`,
-        `Rate: ${s.ratePercent}%`,
+        `Mean: ${Math.round(h.personaResponseStats.meanSeconds / 60)}m`,
+        `Median: ${Math.round(h.personaResponseStats.medianSeconds / 60)}m`,
+        `Samples: ${h.personaResponseStats.samples}`,
+      ];
+    } else if (key === "sessionEfficiency" && h?.efficiencyStats) {
+      bullets = [
+        `Avg score: ${h.efficiencyStats.avgScorePercent}%`,
+        `Avg time: ${h.efficiencyStats.avgMinutes}m`,
+        `Efficiency: ${h.efficiencyStats.efficiency}`,
+      ];
+    } else if (key === "stagnationRate" && h?.stagnationStats) {
+      bullets = [
+        `Tracked: ${h.stagnationStats.tracked}`,
+        `Stagnant: ${h.stagnationStats.stagnant}`,
+        `Rate: ${h.stagnationStats.ratePercent}%`,
       ];
     } else if (key === "totalAttempts") {
-      const a = computeAttemptsStats(view);
       bullets = [
-        `Attempts: ${a.attempts}`,
-        `Unique sims: ${a.uniqueSimulations}`,
-        `Mean/Sim: ${a.perSimulationMean}`,
+        `Attempts: ${ta?.totalAttempts ?? 0}`,
+        `Unique sims: ${(ta?.simulationIds ?? []).length}`,
+        `Mean/Sim: ${((ta?.totalAttempts ?? 0) / Math.max(1, (ta?.simulationIds ?? []).length)).toFixed(2)}`,
       ];
     }
     return (
@@ -380,9 +268,6 @@ export function ReportsDataTable({
           </TableBody>
         </Table>
       </div>
-
-      {/* Pagination */}
-      <DataTablePagination table={table} />
     </div>
   );
 }
