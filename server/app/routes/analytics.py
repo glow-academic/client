@@ -1,15 +1,20 @@
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, cast
 
 from app.db import get_session
-from app.utils.analytics import AnalyticsFilters, fetch_analytics_base
+from app.models import (Cohorts, ParameterItems, Parameters, Personas,
+                        Profiles, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        StandardGroups, Standards)
 from app.utils import dashboard as dashboard_utils
+from app.utils.analytics import AnalyticsFilters, fetch_analytics_base
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlmodel import Session
-from types import SimpleNamespace
 
 logger = logging.getLogger(__name__)
 
@@ -894,16 +899,16 @@ async def post_analytics_dashboard(
 
     # Core entities
     filtered = dashboard_utils.FilteredData(
-        attempts=to_objs(base.get("attempts", [])),
-        chats=to_objs(base.get("chats", [])),
-        grades=to_objs(base.get("grades", [])),
-        simulations=to_objs(base.get("simulations", [])),
-        scenarios=to_objs(base.get("scenarios", [])),
-        profiles=to_objs(base.get("profiles", [])),
-        feedbacks=to_objs(base.get("feedbacks", [])),
-        cohorts=to_objs(base.get("cohorts", [])),
-        personas=[],  # filled below
-        messages=to_objs(base.get("messages", [])),
+        attempts=cast(List[SimulationAttempts], to_objs(base.get("attempts", []))),
+        chats=cast(List[SimulationChats], to_objs(base.get("chats", []))),
+        grades=cast(List[SimulationChatGrades], to_objs(base.get("grades", []))),
+        simulations=cast(List[Simulations], to_objs(base.get("simulations", []))),
+        scenarios=cast(List[Scenarios], to_objs(base.get("scenarios", []))),
+        profiles=cast(List[Profiles], to_objs(base.get("profiles", []))),
+        feedbacks=cast(List[SimulationChatFeedbacks], to_objs(base.get("feedbacks", []))),
+        cohorts=cast(List[Cohorts], to_objs(base.get("cohorts", []))),
+        personas=cast(List[Personas], []),  # filled below
+        messages=cast(List[SimulationMessages], to_objs(base.get("messages", []))),
     )
 
     rubrics = to_objs(base.get("rubrics", []))
@@ -929,13 +934,13 @@ async def post_analytics_dashboard(
                     m = getattr(row, "_mapping", None)
                     if m:
                         fetched.append({"id": str(m.get("id")), "name": m.get("name"), "color": m.get("color")})
-            filtered.personas = to_objs(fetched)
+            filtered.personas = cast(List[Personas], to_objs(fetched))
     except Exception:
         filtered.personas = []
 
     # Optionally fetch parameters and parameter_items when needed
-    parameters: List[SimpleNamespace] = []
-    parameter_items: List[SimpleNamespace] = []
+    parameters: List[Parameters] = []
+    parameter_items: List[ParameterItems] = []
     if any(fc.name in [
         "calculateScenarioAttributeBreakdown",
         "calculateScenarioPerformance",
@@ -965,7 +970,7 @@ async def post_analytics_dashboard(
                             "active": bool(m.get("active")),
                             "default_parameter": bool(m.get("default_parameter")),
                         })
-            parameters = to_objs(params_rows)
+            parameters = cast(List[Parameters], to_objs(params_rows))
 
             res2 = session.execute(text("select id, name, description, value, parameter_id, default_item from parameter_items"))
             items_rows: List[Dict[str, Any]] = []
@@ -990,7 +995,7 @@ async def post_analytics_dashboard(
                             "parameter_id": str(m.get("parameter_id")) if m.get("parameter_id") else None,
                             "default_item": bool(m.get("default_item")),
                         })
-            parameter_items = to_objs(items_rows)
+            parameter_items = cast(List[ParameterItems], to_objs(items_rows))
         except Exception:
             parameters = []
             parameter_items = []
@@ -1002,72 +1007,73 @@ async def post_analytics_dashboard(
         # Normalize aliases (camelCase -> snake for our function names)
         mapping = {
             # Header
-            "calculateAverageScore": lambda: dashboard_utils.calculate_average_score(filtered, rubrics),
+            "calculateAverageScore": lambda: dashboard_utils.calculate_average_score(filtered, cast(List[Rubrics], rubrics)),
             "calculateCompletionPercentage": lambda: dashboard_utils.calculate_completion_percentage(filtered),
             "calculateFirstAttemptPassRate": lambda: dashboard_utils.calculate_first_attempt_pass_rate(filtered),
-            "calculateHighestScore": lambda: dashboard_utils.calculate_highest_score(filtered, rubrics),
+            "calculateHighestScore": lambda: dashboard_utils.calculate_highest_score(filtered, cast(List[Rubrics], rubrics)),
             "calculateUserSimulationPerformance": lambda: dashboard_utils.calculate_user_simulation_performance(
-                filtered, rubrics, str(args.get("profileId", "")), str(args.get("simulationId", ""))
+                filtered, cast(List[Rubrics], rubrics), str(args.get("profileId", "")), str(args.get("simulationId", ""))
             ),
             "calculateUserPerformanceBySimulation": lambda: dashboard_utils.calculate_user_performance_by_simulation(
-                filtered, rubrics, str(args.get("profileId", ""))
+                filtered, cast(List[Rubrics], rubrics), str(args.get("profileId", ""))
             ),
             "calculateMessagesPerSession": lambda: dashboard_utils.calculate_messages_per_session(filtered.messages, filtered),
             "calculatePersonaResponseTimes": lambda: dashboard_utils.calculate_persona_response_times(filtered.messages, filtered),
-            "calculateSessionEfficiency": lambda: dashboard_utils.calculate_session_efficiency(filtered, rubrics),
-            "calculateStagnationRate": lambda: dashboard_utils.calculate_stagnation_rate(filtered, rubrics),
+            "calculateSessionEfficiency": lambda: dashboard_utils.calculate_session_efficiency(filtered, cast(List[Rubrics], rubrics)),
+            "calculateStagnationRate": lambda: dashboard_utils.calculate_stagnation_rate(filtered, cast(List[Rubrics], rubrics)),
             "calculateTimeSpent": lambda: dashboard_utils.calculate_time_spent(filtered),
             "calculateTotalAttempts": lambda: dashboard_utils.calculate_total_attempts(filtered),
 
             # Footer
             "calculateScenarioAttributeBreakdown": lambda: dashboard_utils.calculate_scenario_attribute_breakdown(
                 filtered,
-                rubrics,
+                cast(List[Rubrics], rubrics),
                 parameter_items,
-                next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None),
+                cast(Parameters, next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None)),
             ),
             "calculateScenarioPerformance": lambda: dashboard_utils.calculate_scenario_performance(
                 filtered,
-                rubrics,
+                cast(List[Rubrics], rubrics),
                 parameter_items,
-                next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None),
+                cast(Parameters, next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None)),
             ),
             "calculateSimulationComposition": lambda: dashboard_utils.calculate_simulation_composition(
                 filtered, parameters, parameter_items, args.get("config", None)
             ),
             "calculateScenarioPerformanceWithinSimulation": lambda: dashboard_utils.calculate_scenario_performance_within_simulation(
                 filtered,
-                rubrics,
+                cast(List[Rubrics], rubrics),
                 next((s for s in filtered.simulations if str(s.id) == str(args.get("selectedSimulationId"))), None),
                 args.get("thresholds", {"danger": 60, "warning": 75, "success": 85}),
             ),
-            "calculateSimulationPerformance": lambda: dashboard_utils.calculate_simulation_performance(filtered, rubrics),
+            "calculateSimulationPerformance": lambda: dashboard_utils.calculate_simulation_performance(filtered, cast(List[Rubrics], rubrics)),
 
             # Primary
             "calculateAttemptImprovement": lambda: dashboard_utils.calculate_attempt_improvement(
-                filtered, rubrics, args.get("selectedSimulationIds", [])
+                filtered, cast(List[Rubrics], rubrics), args.get("selectedSimulationIds", [])
             ),
-            "calculatePlatformGrowth": lambda: dashboard_utils.calculate_platform_growth(filtered, rubrics),
+            "calculatePlatformGrowth": lambda: dashboard_utils.calculate_platform_growth(filtered, cast(List[Rubrics], rubrics)),
             "calculatePersonaPerformance": lambda: dashboard_utils.calculate_persona_performance(
-                filtered, rubrics, filtered.personas, filtered.scenarios, args.get("selectedSimulationIds", [])
+                filtered, cast(List[Rubrics], rubrics), filtered.personas, filtered.scenarios, args.get("selectedSimulationIds", [])
             ),
 
             # Secondary
             "calculateCohortPerformance": lambda: dashboard_utils.calculate_cohort_performance(
-                filtered, rubrics, args.get("thresholds", {"danger": 60, "warning": 75, "success": 85}), args.get("selectedSimulationIds", [])
+                filtered, cast(List[Rubrics], rubrics), args.get("thresholds", {"danger": 60, "warning": 75, "success": 85}), args.get("selectedSimulationIds", [])
             ),
             "calculateSkillPerformance": lambda: dashboard_utils.calculate_skill_performance(
-                filtered, standards, standard_groups, rubrics, args.get("selectedRubricIds", [])
+                filtered, cast(List[Standards], standards), cast(List[StandardGroups], standard_groups), cast(List[Rubrics], rubrics), args.get("selectedRubricIds", [])
             ),
             "calculateRubricHeatmap": lambda: dashboard_utils.calculate_rubric_heatmap(
-                filtered, standards, standard_groups, rubrics, args.get("selectedRubricIds", [])
+                filtered, cast(List[Standards], standards), cast(List[StandardGroups], standard_groups), cast(List[Rubrics], rubrics), args.get("selectedRubricIds", [])
             ),
         }
 
-        fn = mapping.get(name)
+        fn: Optional[Any] = mapping.get(name)
         if not fn:
             raise ValueError(f"Unknown function name: {name}")
-        return fn()
+        result = fn()
+        return result
 
     results: Dict[str, Any] = {}
     for fc in req.functions:

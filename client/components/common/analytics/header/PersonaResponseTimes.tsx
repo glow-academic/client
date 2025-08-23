@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculatePersonaResponseTimes } from "@/utils/analytics/header";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { Clock } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -30,7 +30,6 @@ import {
 } from "recharts";
 
 export interface PersonaResponseTimesProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -76,21 +75,60 @@ const COLOR_CONFIGS = {
 };
 
 export default function PersonaResponseTimes({
-  filteredData,
   thresholds,
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const allMessages = filteredData?.messages;
+  const [serverResult, setServerResult] = useState<{
+    currentValue: number;
+    trendData: Array<{ date: string; value: number; count: number }>;
+    hasData: boolean;
+  } | null>(null);
 
-  // Calculate average response time using utility function
-  const responseTimeResult = useMemo(() => {
-    if (!filteredData || !allMessages) {
-      return { currentValue: 0, trendData: [], hasData: false };
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [{ name: "calculatePersonaResponseTimes" }]
+        );
+        if (!aborted) {
+          const payload = (data.results["calculatePersonaResponseTimes"] as {
+            currentValue: number;
+            trendData: Array<{ date: string; value: number; count: number }>;
+            hasData: boolean;
+          }) ?? { currentValue: 0, trendData: [], hasData: false };
+          setServerResult(payload);
+        }
+      } catch {
+        if (!aborted) setServerResult(null);
+      }
     }
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-    return calculatePersonaResponseTimes(allMessages, filteredData);
-  }, [filteredData, allMessages]);
+  const responseTimeResult = serverResult ?? {
+    currentValue: 0,
+    trendData: [],
+    hasData: false,
+  };
 
   const {
     currentValue: averageResponseTime,
@@ -181,26 +219,26 @@ export default function PersonaResponseTimes({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={responseTimeTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? formatResponseTime(value) : value,
-                      name === "value" ? "Avg Response Time" : "Interactions",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={responseTimeTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? formatResponseTime(value) : value,
+                    name === "value" ? "Avg Response Time" : "Interactions",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

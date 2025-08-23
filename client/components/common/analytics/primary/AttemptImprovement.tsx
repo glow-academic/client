@@ -18,11 +18,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateAttemptImprovement } from "@/utils/analytics/primary";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 
 import { TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -36,7 +37,6 @@ import {
 } from "recharts";
 
 export interface AttemptImprovementProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -44,28 +44,76 @@ export interface AttemptImprovementProps {
   };
 }
 
+type AttemptImprovementRow = {
+  attempt: number | string;
+  "Average Score": number;
+  "Pass Rate": number;
+  "Average Time": number;
+};
+
 export default function AttemptImprovement({
-  filteredData,
   thresholds,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const { data: simulations } = useSimulations();
 
-  const rubrics = filteredData?.rubrics;
+  const [improvementData, setImprovementData] = useState<
+    AttemptImprovementRow[]
+  >([]);
 
-  // Calculate attempt improvement data
-  const improvementData = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return [];
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [
+            {
+              name: "calculateAttemptImprovement",
+              args: {
+                selectedSimulationIds: selectedSimulations.map((s) => s.id),
+              },
+            },
+          ]
+        );
+        if (!aborted) {
+          const payload =
+            (data.results[
+              "calculateAttemptImprovement"
+            ] as AttemptImprovementRow[]) ?? [];
+          setImprovementData(payload);
+        }
+      } catch {
+        if (!aborted) setImprovementData([]);
+      }
     }
-
-    return calculateAttemptImprovement(
-      filteredData,
-      rubrics,
-      selectedSimulations.map((s) => s.id)
-    );
-  }, [filteredData, rubrics, selectedSimulations]);
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    selectedSimulations,
+  ]);
 
   // Get actionable insights
   const getActionableInsights = () => {
@@ -143,12 +191,7 @@ export default function AttemptImprovement({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              filteredData?.simulations?.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit ?? 0,
-              })) ?? []
-            }
+            simulations={(simulations as unknown as Simulation[]) ?? []}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}

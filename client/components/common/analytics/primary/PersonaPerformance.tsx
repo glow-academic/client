@@ -27,11 +27,12 @@ import {
 } from "@/components/ui/dialog";
 import { usePersonas } from "@/lib/api/hooks/personas";
 
+import { useAnalytics } from "@/contexts/analytics-context";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { cn } from "@/lib/utils";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculatePersonaPerformance } from "@/utils/analytics/primary";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -46,7 +47,6 @@ import {
 } from "recharts";
 
 export interface PersonaPerformanceProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -55,18 +55,20 @@ export interface PersonaPerformanceProps {
 }
 
 export default function PersonaPerformance({
-  filteredData,
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
-
-  // Use datasets sourced from filtered data where available
-  const rubrics = filteredData?.rubrics;
-  const scenarios = filteredData?.scenarios;
-
-  const {data: personas} = usePersonas();
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const { data: simulations } = useSimulations();
+  const { data: personas } = usePersonas();
 
   // Map persona name -> hex color from personas table
   const personaColorMap = useMemo(() => {
@@ -81,20 +83,60 @@ export default function PersonaPerformance({
     return map;
   }, [personas]);
 
-  // Calculate performance by persona
-  const performanceData = useMemo(() => {
-    if (!filteredData || !scenarios || !rubrics || !personas) {
-      return [];
-    }
+  type PersonaPerformanceRow = {
+    name: string;
+    score: number;
+    sessions: number;
+    trendData: Array<{ date: string; score: number }>;
+  };
+  const [performanceData, setPerformanceData] = useState<
+    PersonaPerformanceRow[]
+  >([]);
 
-    return calculatePersonaPerformance(
-      filteredData,
-      rubrics,
-      personas,
-      scenarios,
-      selectedSimulations.map((s) => s.id)
-    );
-  }, [filteredData, rubrics, personas, scenarios, selectedSimulations]);
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [
+            {
+              name: "calculatePersonaPerformance",
+              args: {
+                selectedSimulationIds: selectedSimulations.map((s) => s.id),
+              },
+            },
+          ]
+        );
+        if (!aborted) {
+          const payload =
+            (data.results[
+              "calculatePersonaPerformance"
+            ] as PersonaPerformanceRow[]) ?? [];
+          setPerformanceData(payload);
+        }
+      } catch {
+        if (!aborted) setPerformanceData([]);
+      }
+    }
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    selectedSimulations,
+  ]);
 
   // Calculate threshold status based on persona performance data
   const getThresholdStatus = () => {
@@ -170,12 +212,7 @@ export default function PersonaPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              filteredData?.simulations.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit ?? 0,
-              })) ?? []
-            }
+            simulations={(simulations as unknown as Simulation[]) ?? []}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}

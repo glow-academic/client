@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateStagnationRate } from "@/utils/analytics/header";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { TrendingDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -30,7 +30,6 @@ import {
 } from "recharts";
 
 export interface StagnationRateProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -75,22 +74,59 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function StagnationRate({
-  filteredData,
-  thresholds,
-}: StagnationRateProps) {
+export default function StagnationRate({ thresholds }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
-  const rubrics = filteredData?.rubrics;
+  const [serverResult, setServerResult] = useState<{
+    currentValue: number;
+    trendData: Array<{ date: string; value: number; count: number }>;
+    hasData: boolean;
+  } | null>(null);
 
-  // Calculate stagnation rate using utility function
-  const stagnationRateResult = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return { currentValue: 0, trendData: [], hasData: false };
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [{ name: "calculateStagnationRate" }]
+        );
+        if (!aborted) {
+          const payload = (data.results["calculateStagnationRate"] as {
+            currentValue: number;
+            trendData: Array<{ date: string; value: number; count: number }>;
+            hasData: boolean;
+          }) ?? { currentValue: 0, trendData: [], hasData: false };
+          setServerResult(payload);
+        }
+      } catch {
+        if (!aborted) setServerResult(null);
+      }
     }
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-    return calculateStagnationRate(filteredData, rubrics);
-  }, [filteredData, rubrics]);
+  const stagnationRateResult = serverResult ?? {
+    currentValue: 0,
+    trendData: [],
+    hasData: false,
+  };
 
   const {
     currentValue: stagnationRate,
@@ -171,26 +207,26 @@ export default function StagnationRate({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stagnationTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? `${value}%` : value,
-                      name === "value" ? "Stagnation Rate" : "Attempts",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stagnationTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? `${value}%` : value,
+                    name === "value" ? "Stagnation Rate" : "Attempts",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

@@ -129,7 +129,6 @@ export default function SimulationHistory({
 
   const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
-      filteredData: null,
       showExport,
       showArchive,
       allSameProfile, // Pass this information to the hook

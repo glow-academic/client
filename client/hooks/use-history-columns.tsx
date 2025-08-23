@@ -7,32 +7,39 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
-import type { FilteredData } from "@/utils/analytics/filtering";
-// No queries; all data comes from filteredData
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 // Enhanced types for the data table
-interface EnhancedAttempt
-  extends Omit<SimulationAttempt, "infiniteModeTimeLimit"> {
-  scenarios: SimulationChat[];
+interface EnhancedAttempt {
+  id: string;
+  profileId: string | null;
+  simulationId: string;
+  createdAt: string;
+  archived: boolean;
+  infiniteMode?: boolean;
+  infiniteModeTimeLimit?: number | null;
+  scenarios: Array<{
+    id: string;
+    attemptId: string;
+    scenarioId: string;
+    createdAt: string;
+    completedAt: string | null;
+    completed: boolean;
+  }>;
   personasTested: string[];
   interactionIds: string[];
-  // Optionally precomputed from server
   completedWithRubricCount?: number;
   totalExpected?: number;
   scorePercent?: number;
   isPractice?: boolean;
   rootScenarioIds?: string[];
   isIncomplete?: boolean;
-  infiniteModeTimeLimit?: number | null;
 }
 
 // Component to use the columns with filtered data
 export function useHistoryColumns({
-  filteredData,
   showExport: _showExport = true,
   showArchive = false,
   allSameProfile = false,
@@ -41,7 +48,6 @@ export function useHistoryColumns({
   precomputedSimulationOptions,
   precomputedScenarioOptions,
 }: {
-  filteredData: FilteredData | null;
   showExport: boolean;
   showArchive: boolean;
   allSameProfile?: boolean;
@@ -355,14 +361,14 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
-          const simulation = filteredData?.simulations?.find(
-            (s) => s.id === row.getValue("simulationId")
+          const simulation = simulationOptions.find(
+            (s) => s.value === row.getValue("simulationId")
           );
           const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
           return (
             <div className="flex items-center space-x-1">
               <span className="max-w-[500px] truncate font-medium">
-                {simulation?.title || "Unknown Simulation"}
+                {simulation?.label || "Unknown Simulation"}
               </span>
               {isInfinite && (
                 <InfinityIcon className="h-3 w-3 text-muted-foreground" />
@@ -803,6 +809,7 @@ export function useHistoryColumns({
     getBadgeColors,
     showArchive,
     allSameProfile,
+    simulationOptions,
   ]);
 
   // Use enhanced attempts data
