@@ -529,7 +529,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     });
   };
 
-  // Calculate leaderboard data with detailed metrics and percentile
+  // Calculate leaderboard data sorted by highest score
   const leaderboardData = useMemo(() => {
     if (leaderboardServerRows && leaderboardServerRows.length > 0) {
       const rows = leaderboardServerRows.map((r) => ({
@@ -543,133 +543,19 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         totalAttempts: Number(r.total_attempts || 0),
         highestScoreAvg: Math.round(r.highest_score_avg || 0),
         mostImprovedPercent: Math.round(r.most_improved_percent || 0),
-        percentile: 0,
       }));
 
-      const metricKeys = [
-        "timeSpentMinutes",
-        "improvementRatePerDay",
-        "messagesPerSession",
-        "perfectScoreCount",
-        "quickestPassMinutes",
-        "totalAttempts",
-        "highestScoreAvg",
-        "mostImprovedPercent",
-      ] as const;
-      type MetricKey = (typeof metricKeys)[number];
-
-      const values: Record<MetricKey, number[]> = {
-        timeSpentMinutes: rows.map((r) => r.timeSpentMinutes),
-        improvementRatePerDay: rows.map((r) => r.improvementRatePerDay),
-        messagesPerSession: rows.map((r) => r.messagesPerSession),
-        perfectScoreCount: rows.map((r) => r.perfectScoreCount),
-        quickestPassMinutes: rows.map((r) => r.quickestPassMinutes),
-        totalAttempts: rows.map((r) => r.totalAttempts),
-        highestScoreAvg: rows.map((r) => r.highestScoreAvg),
-        mostImprovedPercent: rows.map((r) => r.mostImprovedPercent),
-      };
-      const minMax: Record<MetricKey, { min: number; max: number }> =
-        metricKeys.reduce(
-          (acc, key) => {
-            const arr = values[key];
-            const min = arr.length ? Math.min(...arr) : 0;
-            const max = arr.length ? Math.max(...arr) : 1;
-            acc[key] = { min, max };
-            return acc;
-          },
-          {} as Record<MetricKey, { min: number; max: number }>
-        );
-      const normalize = (
-        value: number,
-        min: number,
-        max: number,
-        invert = false
-      ) => {
-        if (!isFinite(value)) return 0.5;
-        if (max === min) return 0.5;
-        const n = (value - min) / (max - min);
-        const clamped = Math.max(0, Math.min(1, n));
-        return invert ? 1 - clamped : clamped;
-      };
-      const weights = {
-        highestScoreAvg: 0.25,
-        mostImprovedPercent: 0.2,
-        improvementRatePerDay: 0.15,
-        messagesPerSession: 0.1,
-        timeSpentMinutes: 0.1,
-        totalAttempts: 0.05,
-        perfectScoreCount: 0.1,
-        quickestPassMinutes: 0.05,
-      } as const;
-
-      const compositeById = new Map<string, number>();
-      rows.forEach((r) => {
-        const composite =
-          normalize(
-            r.highestScoreAvg,
-            minMax.highestScoreAvg.min,
-            minMax.highestScoreAvg.max
-          ) *
-            weights.highestScoreAvg +
-          normalize(
-            r.mostImprovedPercent,
-            minMax.mostImprovedPercent.min,
-            minMax.mostImprovedPercent.max
-          ) *
-            weights.mostImprovedPercent +
-          normalize(
-            r.improvementRatePerDay,
-            minMax.improvementRatePerDay.min,
-            minMax.improvementRatePerDay.max
-          ) *
-            weights.improvementRatePerDay +
-          normalize(
-            r.messagesPerSession,
-            minMax.messagesPerSession.min,
-            minMax.messagesPerSession.max
-          ) *
-            weights.messagesPerSession +
-          normalize(
-            r.timeSpentMinutes,
-            minMax.timeSpentMinutes.min,
-            minMax.timeSpentMinutes.max
-          ) *
-            weights.timeSpentMinutes +
-          normalize(
-            r.totalAttempts,
-            minMax.totalAttempts.min,
-            minMax.totalAttempts.max
-          ) *
-            weights.totalAttempts +
-          normalize(
-            r.perfectScoreCount,
-            minMax.perfectScoreCount.min,
-            minMax.perfectScoreCount.max
-          ) *
-            weights.perfectScoreCount +
-          normalize(
-            r.quickestPassMinutes,
-            minMax.quickestPassMinutes.min,
-            minMax.quickestPassMinutes.max,
-            true
-          ) *
-            weights.quickestPassMinutes;
-        compositeById.set(r.id, composite);
-      });
-      const composites = rows.map((r) => compositeById.get(r.id) || 0);
-      const n = composites.length || 1;
-      const withPercentile = rows.map((r) => {
-        const comp = compositeById.get(r.id) || 0;
-        const numLower = composites.filter((v) => v < comp).length;
-        const numEqual = composites.filter((v) => v === comp).length;
-        const percentile = Math.round(((numLower + 0.5 * numEqual) / n) * 100);
-        return { ...r, percentile };
-      });
-      const sortedByPercentileDesc = withPercentile.sort(
-        (a, b) => b.percentile - a.percentile
+      // Sort by highest score descending
+      const sortedByHighestScore = rows.sort(
+        (a, b) => b.highestScoreAvg - a.highestScoreAvg
       );
-      const topCount = Math.max(1, Math.ceil(withPercentile.length * 0.25));
-      return sortedByPercentileDesc.slice(0, topCount);
+
+      // Take top 25% based on highest score
+      const topCount = Math.max(
+        1,
+        Math.ceil(sortedByHighestScore.length * 0.25)
+      );
+      return sortedByHighestScore.slice(0, topCount);
     }
     return [];
   }, [leaderboardServerRows]);

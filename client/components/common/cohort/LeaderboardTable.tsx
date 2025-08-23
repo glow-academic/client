@@ -6,7 +6,6 @@
  */
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +46,7 @@ export interface LeaderboardData {
   quickestPassMinutes: number;
   mostImprovedPercent: number;
   improvementRatePerDay: number;
-  percentile: number;
+  percentile?: number; // Optional since we're no longer using it
   role?: string; // Optional since we're no longer displaying it
 }
 
@@ -76,20 +75,8 @@ export default function LeaderboardTable({
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "percentile", desc: true }, // Default sort by percentile descending
+    { id: "highestScoreAvg", desc: true }, // Default sort by highest score descending
   ]);
-
-  // Create filter options
-  const percentileRangeOptions = useMemo(
-    () => [
-      { value: "p95-100", label: "Top 5% (95-100)" },
-      { value: "p90-94", label: "Top 10% (90-94)" },
-      { value: "p85-89", label: "Top 15% (85-89)" },
-      { value: "p80-84", label: "Top 20% (80-84)" },
-      { value: "p75-79", label: "Top 25% (75-79)" },
-    ],
-    []
-  );
 
   // Define columns
   const columns = useMemo<ColumnDef<LeaderboardData>[]>(
@@ -132,34 +119,6 @@ export default function LeaderboardTable({
           const name = row.getValue("name") as string;
           return name.toLowerCase().includes(value.toLowerCase());
         },
-      },
-      {
-        accessorKey: "percentile",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Percentile"
-            className="justify-end"
-          />
-        ),
-        cell: ({ row }) => {
-          const p = row.getValue("percentile") as number;
-          return <div className="text-right font-semibold">{p}</div>;
-        },
-        filterFn: (row, _id, values: string[]) => {
-          if (!values || values.length === 0) return true;
-          const p = row.getValue("percentile") as number;
-          const inRange = (v: string) => {
-            if (v === "p95-100") return p >= 95 && p <= 100;
-            if (v === "p90-94") return p >= 90 && p <= 94;
-            if (v === "p85-89") return p >= 85 && p <= 89;
-            if (v === "p80-84") return p >= 80 && p <= 84;
-            if (v === "p75-79") return p >= 75 && p <= 79;
-            return true;
-          };
-          return values.some(inRange);
-        },
-        sortingFn: "basic",
       },
       {
         accessorKey: "highestScoreAvg",
@@ -307,7 +266,6 @@ export default function LeaderboardTable({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const nameColumn = table.getColumn("name");
-  const percentileColumn = table.getColumn("percentile");
 
   if (data.length === 0) {
     return (
@@ -334,14 +292,6 @@ export default function LeaderboardTable({
           </div>
 
           <div className="flex items-center space-x-2 flex-wrap mb-2">
-            {percentileColumn && percentileRangeOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={percentileColumn}
-                title="Percentile"
-                options={percentileRangeOptions}
-              />
-            )}
-
             {isFiltered && (
               <Button
                 variant="ghost"
@@ -381,20 +331,13 @@ export default function LeaderboardTable({
           </TableHeader>
           <TableBody>
             {(() => {
-              // Restrict to top 25% based on percentile
+              // Show all rows (no percentile filtering)
               const allRows = table.getRowModel().rows;
-              const topRows = allRows.filter(
-                (r) => (r.original as LeaderboardData).percentile >= 75
-              );
-              return topRows;
+              return allRows;
             })().length ? (
               (() => {
-                const topRows = table
-                  .getRowModel()
-                  .rows.filter(
-                    (r) => (r.original as LeaderboardData).percentile >= 75
-                  );
-                return topRows.map((row, index) => (
+                const allRows = table.getRowModel().rows;
+                return allRows.map((row, index) => (
                   <TableRow
                     key={row.id}
                     className={`${
@@ -409,7 +352,7 @@ export default function LeaderboardTable({
                             <span className="font-bold text-lg">
                               {index + 1}
                             </span>
-                            {index < 3 && row.original.percentile >= 75 ? (
+                            {index < 3 ? (
                               <span
                                 aria-label="medal"
                                 title={
