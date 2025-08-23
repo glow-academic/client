@@ -24,7 +24,7 @@ export function useAgent(id: string, enabled = true) {
   return useQuery({
     queryKey: agentKeys.detail(id),
     queryFn: () => api<Agent>(`/api/v1/agents/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useAgentsByModelId(id: string) {
   return useQuery<Agent[]>({
     queryKey: agentKeysByModelId.one(id),
     queryFn: () => api<Agent[]>(`/api/v1/agents/by/modelId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

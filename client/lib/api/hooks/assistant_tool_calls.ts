@@ -24,7 +24,7 @@ export function useAssistantToolCall(id: string, enabled = true) {
   return useQuery({
     queryKey: assistantToolCallKeys.detail(id),
     queryFn: () => api<AssistantToolCall>(`/api/v1/assistant_tool_calls/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useAssistantToolCallsByChatId(id: string) {
   return useQuery<AssistantToolCall[]>({
     queryKey: assistantToolCallKeysByChatId.one(id),
     queryFn: () => api<AssistantToolCall[]>(`/api/v1/assistant_tool_calls/by/chatId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

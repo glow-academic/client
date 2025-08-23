@@ -496,9 +496,15 @@ export function useHistoryColumns({
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) return 0;
 
-          // Only include chats that are completed AND have a rubric/grade
-          const gradedCompletedChatGrades = chatsArray
-            .filter((chat) => chat.completed)
+          const totalExpected = row.interactionIds?.length || chatsArray.length;
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+          const allChatsCompleted = completedChats.length === totalExpected;
+
+          // If no chats are completed at all, return 0 (will show as "Not graded" in cell)
+          if (completedChats.length === 0) return 0;
+
+          // If all chats are completed but no rubrics exist, return 0
+          const gradedCompletedChatGrades = completedChats
             .map((chat) =>
               filteredData?.grades?.find(
                 (grade) => grade.simulationChatId === chat.id
@@ -506,13 +512,20 @@ export function useHistoryColumns({
             )
             .filter(Boolean);
 
-          if (gradedCompletedChatGrades.length === 0) return 0;
+          if (allChatsCompleted && gradedCompletedChatGrades.length === 0)
+            return 0;
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          return totalScore / gradedCompletedChatGrades.length;
+          // Calculate total score including 0 for any completed chats without grades
+          let totalScore = 0;
+          for (const chat of completedChats) {
+            const grade = filteredData?.grades?.find(
+              (grade) => grade.simulationChatId === chat.id
+            );
+            totalScore += grade?.score || 0; // 0 for completed chats without grades
+          }
+
+          // Average over ALL expected chats (not just graded ones)
+          return totalScore / totalExpected;
         },
         cell: ({ row }) => {
           const chats = row.original.scenarios;
@@ -542,16 +555,20 @@ export function useHistoryColumns({
             return <div className="text-red-500 font-medium">Incomplete</div>;
           }
 
-          // If no graded chats, show Not graded
-          if (gradedCompletedChatGrades.length === 0) {
+          // If no chats are completed at all, show "Not graded"
+          if (completedChats.length === 0) {
             return <div className="text-muted-foreground">Not graded</div>;
           }
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          const averageScore = totalScore / gradedCompletedChatGrades.length;
+          // Calculate total score including 0 for any completed chats without grades
+          let totalScore = 0;
+          for (const chat of completedChats) {
+            const grade = filteredData?.grades?.find(
+              (grade) => grade.simulationChatId === chat.id
+            );
+            totalScore += grade?.score || 0; // 0 for completed chats without grades
+          }
+          const averageScore = totalScore / totalExpected;
 
           // Calculate percentage based on rubric total points
           // Find the rubric for this simulation
@@ -592,7 +609,7 @@ export function useHistoryColumns({
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) {
-            return value.includes("not-graded");
+            return value.includes("needs-improvement");
           }
 
           const completedChats = chatsArray.filter((chat) => chat.completed);
@@ -612,14 +629,23 @@ export function useHistoryColumns({
             if (allChatsCompleted) {
               return value.includes("incomplete");
             }
-            return value.includes("not-graded");
+            // If no chats are completed at all, treat as "not-graded"
+            if (completedChats.length === 0) {
+              return value.includes("not-graded");
+            }
+            // For partial completion, calculate actual score (may be 0% if no grades)
+            // This will be handled by the score calculation below
           }
 
-          const totalScore = gradedCompletedChatGrades.reduce(
-            (sum: number, grade) => sum + (grade?.score || 0),
-            0
-          );
-          const averageScore = totalScore / gradedCompletedChatGrades.length;
+          // Calculate total score including 0 for any completed chats without grades
+          let totalScore = 0;
+          for (const chat of completedChats) {
+            const grade = filteredData?.grades?.find(
+              (grade) => grade.simulationChatId === chat.id
+            );
+            totalScore += grade?.score || 0; // 0 for completed chats without grades
+          }
+          const averageScore = totalScore / totalExpected;
 
           // Calculate percentage based on rubric total points
           const simulation = filteredData?.simulations?.find(

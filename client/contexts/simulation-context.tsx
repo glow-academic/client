@@ -15,6 +15,16 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
+import { useDocuments } from "@/lib/api/hooks/documents";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useScenario } from "@/lib/api/hooks/scenarios";
+import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
+import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
+import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
+import { useSimulationChatsByAttemptId } from "@/lib/api/hooks/simulation_chats";
+import { useSimulation as useSimulationHook } from "@/lib/api/hooks/simulations";
+import { useStandardGroupsByRubricIdBatch } from "@/lib/api/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -29,16 +39,6 @@ import React, {
 import { toast } from "sonner";
 import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
-import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
-import { useSimulationChatsByAttemptId } from "@/lib/api/hooks/simulation_chats";
-import { useSimulation as useSimulationHook } from "@/lib/api/hooks/simulations";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useStandardGroupsByRubricIdBatch } from "@/lib/api/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
-import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
-import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
-import { useScenario } from "@/lib/api/hooks/scenarios";
-import { useDocuments } from "@/lib/api/hooks/documents";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -220,14 +220,27 @@ export function SimulationProvider({
     }
   }, [effectiveProfile?.id, effectiveProfile?.viewedChat, queryClient]);
 
-  const {data: attempt} = useSimulationAttempt(attemptId);
-  const {data: chats = [], isLoading: isLoadingChats} = useSimulationChatsByAttemptId(attemptId);
-  const {data: simulation} = useSimulationHook(attempt!.simulationId);
-  const {data: rubrics = []} = useRubrics();
-  const {data: standardGroups = []} = useStandardGroupsByRubricIdBatch(rubrics.map((rubric) => rubric.id));
-  const {data: standards = []} = useStandardsByStandardGroupIdBatch(standardGroups.map((group) => group.id));
-  const {data: grades = []} = useSimulationChatGradesBySimulationChatIdBatch(chats.map((chat) => chat.id));
-  const {data: feedbacks = []} = useSimulationChatFeedbacksBySimulationChatGradeIdBatch(grades.map((grade) => grade.id));
+  const { data: attempt } = useSimulationAttempt(attemptId);
+  const { data: chats = [], isLoading: isLoadingChats } =
+    useSimulationChatsByAttemptId(attemptId);
+  const { data: simulation } = useSimulationHook(
+    attempt?.simulationId || "",
+    attempt !== undefined && attempt !== null
+  );
+  const { data: rubrics = [] } = useRubrics();
+  const { data: standardGroups = [] } = useStandardGroupsByRubricIdBatch(
+    rubrics.map((rubric) => rubric.id)
+  );
+  const { data: standards = [] } = useStandardsByStandardGroupIdBatch(
+    standardGroups.map((group) => group.id)
+  );
+  const { data: grades = [] } = useSimulationChatGradesBySimulationChatIdBatch(
+    chats.map((chat) => chat.id)
+  );
+  const { data: feedbacks = [] } =
+    useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
+      grades.map((grade) => grade.id)
+    );
 
   // Determine current chat based on actual chats for this attempt
   const currentChat = useMemo(() => {
@@ -243,8 +256,11 @@ export function SimulationProvider({
     return sortedChats[currentChatIndex] || sortedChats[0];
   }, [chats, currentChatIndex]);
 
-  const {data: scenario} = useScenario(currentChat!.scenarioId);
-  const {data: documents = []} = useDocuments(scenario!.id);
+  const { data: scenario } = useScenario(
+    currentChat?.scenarioId || "",
+    currentChat !== null
+  );
+  const { data: documents = [] } = useDocuments();
 
   // Filter documents for the current attempt's class
   const scenarioDocuments = useMemo(() => {

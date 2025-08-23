@@ -24,7 +24,7 @@ export function useDebugInfo(id: string, enabled = true) {
   return useQuery({
     queryKey: debugInfoKeys.detail(id),
     queryFn: () => api<DebugInfo>(`/api/v1/debug_info/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useDebugInfoByModelRunId(id: string) {
   return useQuery<DebugInfo[]>({
     queryKey: debugInfoKeysByModelRunId.one(id),
     queryFn: () => api<DebugInfo[]>(`/api/v1/debug_info/by/modelRunId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

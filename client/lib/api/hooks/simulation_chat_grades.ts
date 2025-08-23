@@ -24,7 +24,7 @@ export function useSimulationChatGrade(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationChatGradeKeys.detail(id),
     queryFn: () => api<SimulationChatGrade>(`/api/v1/simulation_chat_grades/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationChatGradesByRubricId(id: string) {
   return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysByRubricId.one(id),
     queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/rubricId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useSimulationChatGradesBySimulationChatId(id: string) {
   return useQuery<SimulationChatGrade[]>({
     queryKey: simulationChatGradeKeysBySimulationChatId.one(id),
     queryFn: () => api<SimulationChatGrade[]>(`/api/v1/simulation_chat_grades/by/simulationChatId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

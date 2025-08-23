@@ -24,7 +24,7 @@ export function useSimulationCrowdsourcedMessage(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationCrowdsourcedMessageKeys.detail(id),
     queryFn: () => api<SimulationCrowdsourcedMessage>(`/api/v1/simulation_crowdsourced_messages/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationCrowdsourcedMessagesBySimulationMessageId(id: strin
   return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysBySimulationMessageId.one(id),
     queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/simulationMessageId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useSimulationCrowdsourcedMessagesByProfileId(id: string) {
   return useQuery<SimulationCrowdsourcedMessage[]>({
     queryKey: simulationCrowdsourcedMessageKeysByProfileId.one(id),
     queryFn: () => api<SimulationCrowdsourcedMessage[]>(`/api/v1/simulation_crowdsourced_messages/by/profileId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

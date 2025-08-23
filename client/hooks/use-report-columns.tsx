@@ -76,19 +76,59 @@ export interface TAPerformanceData {
   personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
+  // Optional hover details provided by the server
+  hover?:
+    | {
+        scoreStats?: {
+          mean: number;
+          median: number;
+          mode: number;
+          top?: number[];
+        };
+        timeStats?: {
+          avgSessionMinutes: number;
+          avgChatMinutes: number;
+          avgOverallMinutes: number;
+        };
+        messageStats?: { mean: number; median: number; count: number };
+        completionStats?: { completed: number; total: number; percent: number };
+        firstAttemptStats?: { passed: number; total: number; percent: number };
+        personaResponseStats?: {
+          meanSeconds: number;
+          medianSeconds: number;
+          samples: number;
+        };
+        efficiencyStats?: {
+          avgScorePercent: number;
+          avgMinutes: number;
+          efficiency: number;
+        };
+        stagnationStats?: {
+          tracked: number;
+          stagnant: number;
+          ratePercent: number;
+        };
+      }
+    | undefined;
 }
 
 export interface UseReportColumnsProps {
   showExport?: boolean;
   onViewReport: (profileId: string) => void;
+  personaOptions?: { value: string; label: string }[];
+  scenarioOptions?: { value: string; label: string }[];
+  simulationOptions?: { value: string; label: string }[];
 }
 
 export function useReportColumns({
   showExport = true,
   onViewReport,
+  personaOptions: personaOptArg = [],
+  scenarioOptions: scenarioOptArg = [],
+  simulationOptions: simulationOptArg = [],
 }: UseReportColumnsProps) {
   const { data: filteredData, filters } = useFilteredAnalyticsData();
-  const {data: personas} = usePersonas();
+  const { data: personas } = usePersonas();
 
   // Intentionally no local aliases of datasets; use filteredData within memos
 
@@ -102,15 +142,14 @@ export function useReportColumns({
   }, [filteredData?.cohorts]);
 
   const personaOptions = useMemo(() => {
+    if (personaOptArg.length > 0) return personaOptArg;
     return (personas ?? [])
       .filter((persona) => persona.defaultPersona === true)
-      .map((persona) => ({
-        value: persona.id,
-        label: persona.name,
-      }));
-  }, [personas]);
+      .map((persona) => ({ value: persona.id, label: persona.name }));
+  }, [personas, personaOptArg]);
 
   const scenarioOptions = useMemo(() => {
+    if (scenarioOptArg.length > 0) return scenarioOptArg;
     const hasPractice = filters.simulationFilters.includes("practice");
     const source = filteredData?.scenarios ?? [];
     const filtered = source.filter((scenario) =>
@@ -120,9 +159,10 @@ export function useReportColumns({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [filteredData?.scenarios, filters.simulationFilters]);
+  }, [filteredData?.scenarios, filters.simulationFilters, scenarioOptArg]);
 
   const simulationOptions = useMemo(() => {
+    if (simulationOptArg.length > 0) return simulationOptArg;
     const hasPractice = filters.simulationFilters.includes("practice");
     const source = filteredData?.simulations ?? [];
     const filtered = source.filter((simulation) =>
@@ -132,7 +172,7 @@ export function useReportColumns({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [filteredData?.simulations, filters.simulationFilters]);
+  }, [filteredData?.simulations, filters.simulationFilters, simulationOptArg]);
 
   // Define columns
   const columns = useMemo(() => {

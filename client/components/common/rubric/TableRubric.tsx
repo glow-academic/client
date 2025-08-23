@@ -34,6 +34,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
+import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
+import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/hooks/simulation_chat_grades";
+import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
 import { Standard, StandardGroup } from "@/types";
 import {
   simulationChatCrowdsourcedFeedbacks,
@@ -42,11 +47,6 @@ import {
 import { createSimulationChatCrowdsourcedFeedback } from "@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedback";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
-import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/hooks/simulation_chat_grades";
-import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
-import { useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
 
 type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
 type SimulationChatCrowdsourcedFeedback =
@@ -105,13 +105,21 @@ export default function TableRubric({
     }
   }, [votedAnchors, effectiveProfile?.id]);
 
-  const {data: standardGroups, isLoading: loadingStandardGroups} = useStandardGroupsByRubricId(rubricId!);
+  const { data: standardGroups, isLoading: loadingStandardGroups } =
+    useStandardGroupsByRubricId(rubricId || "");
 
-  const {data: standards, isLoading: loadingStandards} = useStandardsByStandardGroupIdBatch(standardGroups!.map((group) => group.id));
+  const { data: standards, isLoading: loadingStandards } =
+    useStandardsByStandardGroupIdBatch(
+      standardGroups?.map((group) => group.id) || []
+    );
 
-  const {data: simulationGrades, isLoading: loadingSimulationGrades} = useSimulationChatGradesBySimulationChatId(simulationChatId!);
+  const { data: simulationGrades, isLoading: loadingSimulationGrades } =
+    useSimulationChatGradesBySimulationChatId(simulationChatId || "");
 
-  const {data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks} = useSimulationChatFeedbacksBySimulationChatGradeIdBatch(simulationGrades!.map((grade) => grade.id));
+  const { data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks } =
+    useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
+      simulationGrades?.map((grade) => grade.id) || []
+    );
 
   // Get the appropriate grade and feedback data
   const grades = simulationGrades;
@@ -133,7 +141,10 @@ export default function TableRubric({
     [feedbacks]
   );
 
-  const {data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks} = useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(allFeedbackIds);
+  const { data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks } =
+    useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(
+      allFeedbackIds
+    );
 
   // Build counts per (anchorFeedbackId -> total points -> count)
   const countsByAnchorAndTotal = React.useMemo(() => {
@@ -142,8 +153,10 @@ export default function TableRubric({
       const anchorId = cf.simulationChatFeedbackId as string;
       const total = cf.total as number;
       if (!outer.has(anchorId)) outer.set(anchorId, new Map<number, number>());
-      const inner = outer.get(anchorId)!;
-      inner.set(total, (inner.get(total) || 0) + 1);
+      const inner = outer.get(anchorId);
+      if (inner) {
+        inner.set(total, (inner.get(total) || 0) + 1);
+      }
     });
     return outer;
   }, [crowdFeedbacks]);

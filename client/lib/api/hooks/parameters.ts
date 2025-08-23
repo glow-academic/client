@@ -24,7 +24,7 @@ export function useParameter(id: string, enabled = true) {
   return useQuery({
     queryKey: parameterKeys.detail(id),
     queryFn: () => api<Parameter>(`/api/v1/parameters/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

@@ -24,7 +24,7 @@ export function useAppFeedback(id: number, enabled = true) {
   return useQuery({
     queryKey: appFeedbackKeys.detail(id),
     queryFn: () => api<AppFeedback>(`/api/v1/app_feedback/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null,
   });
 }
 

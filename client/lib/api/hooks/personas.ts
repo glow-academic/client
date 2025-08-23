@@ -24,7 +24,7 @@ export function usePersona(id: string, enabled = true) {
   return useQuery({
     queryKey: personaKeys.detail(id),
     queryFn: () => api<Persona>(`/api/v1/personas/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function usePersonasByModelId(id: string) {
   return useQuery<Persona[]>({
     queryKey: personaKeysByModelId.one(id),
     queryFn: () => api<Persona[]>(`/api/v1/personas/by/modelId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

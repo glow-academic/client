@@ -24,7 +24,7 @@ export function useAssistantMessage(id: string, enabled = true) {
   return useQuery({
     queryKey: assistantMessageKeys.detail(id),
     queryFn: () => api<AssistantMessage>(`/api/v1/assistant_messages/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useAssistantMessagesByChatId(id: string) {
   return useQuery<AssistantMessage[]>({
     queryKey: assistantMessageKeysByChatId.one(id),
     queryFn: () => api<AssistantMessage[]>(`/api/v1/assistant_messages/by/chatId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

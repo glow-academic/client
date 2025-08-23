@@ -24,7 +24,7 @@ export function useSimulationMessage(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationMessageKeys.detail(id),
     queryFn: () => api<SimulationMessage>(`/api/v1/simulation_messages/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationMessagesByChatId(id: string) {
   return useQuery<SimulationMessage[]>({
     queryKey: simulationMessageKeysByChatId.one(id),
     queryFn: () => api<SimulationMessage[]>(`/api/v1/simulation_messages/by/chatId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

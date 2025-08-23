@@ -24,7 +24,7 @@ export function useModel(id: string, enabled = true) {
   return useQuery({
     queryKey: modelKeys.detail(id),
     queryFn: () => api<Model>(`/api/v1/models/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

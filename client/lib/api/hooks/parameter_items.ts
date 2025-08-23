@@ -24,7 +24,7 @@ export function useParameterItem(id: string, enabled = true) {
   return useQuery({
     queryKey: parameterItemKeys.detail(id),
     queryFn: () => api<ParameterItem>(`/api/v1/parameter_items/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useParameterItemsByParameterId(id: string) {
   return useQuery<ParameterItem[]>({
     queryKey: parameterItemKeysByParameterId.one(id),
     queryFn: () => api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

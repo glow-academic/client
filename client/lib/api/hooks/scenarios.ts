@@ -24,7 +24,7 @@ export function useScenario(id: string, enabled = true) {
   return useQuery({
     queryKey: scenarioKeys.detail(id),
     queryFn: () => api<Scenario>(`/api/v1/scenarios/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useScenariosByPersonaId(id: string) {
   return useQuery<Scenario[]>({
     queryKey: scenarioKeysByPersonaId.one(id),
     queryFn: () => api<Scenario[]>(`/api/v1/scenarios/by/personaId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

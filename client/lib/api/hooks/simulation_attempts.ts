@@ -24,7 +24,7 @@ export function useSimulationAttempt(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationAttemptKeys.detail(id),
     queryFn: () => api<SimulationAttempt>(`/api/v1/simulation_attempts/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationAttemptsByProfileId(id: string) {
   return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysByProfileId.one(id),
     queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/profileId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useSimulationAttemptsBySimulationId(id: string) {
   return useQuery<SimulationAttempt[]>({
     queryKey: simulationAttemptKeysBySimulationId.one(id),
     queryFn: () => api<SimulationAttempt[]>(`/api/v1/simulation_attempts/by/simulationId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

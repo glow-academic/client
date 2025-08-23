@@ -24,7 +24,7 @@ export function useAppLog(id: number, enabled = true) {
   return useQuery({
     queryKey: appLogKeys.detail(id),
     queryFn: () => api<AppLog>(`/api/v1/app_logs/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null,
   });
 }
 

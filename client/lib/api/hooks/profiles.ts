@@ -24,7 +24,7 @@ export function useProfile(id: string, enabled = true) {
   return useQuery({
     queryKey: profileKeys.detail(id),
     queryFn: () => api<Profile>(`/api/v1/profiles/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useProfilesByUserId(id: string) {
   return useQuery<Profile[]>({
     queryKey: profileKeysByUserId.one(id),
     queryFn: () => api<Profile[]>(`/api/v1/profiles/by/userId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

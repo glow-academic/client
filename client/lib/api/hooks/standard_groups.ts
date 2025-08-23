@@ -24,7 +24,7 @@ export function useStandardGroup(id: string, enabled = true) {
   return useQuery({
     queryKey: standardGroupKeys.detail(id),
     queryFn: () => api<StandardGroup>(`/api/v1/standard_groups/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useStandardGroupsByRubricId(id: string) {
   return useQuery<StandardGroup[]>({
     queryKey: standardGroupKeysByRubricId.one(id),
     queryFn: () => api<StandardGroup[]>(`/api/v1/standard_groups/by/rubricId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

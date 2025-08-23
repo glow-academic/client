@@ -24,7 +24,7 @@ export function useSimulationChat(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationChatKeys.detail(id),
     queryFn: () => api<SimulationChat>(`/api/v1/simulation_chats/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationChatsByScenarioId(id: string) {
   return useQuery<SimulationChat[]>({
     queryKey: simulationChatKeysByScenarioId.one(id),
     queryFn: () => api<SimulationChat[]>(`/api/v1/simulation_chats/by/scenarioId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useSimulationChatsByAttemptId(id: string) {
   return useQuery<SimulationChat[]>({
     queryKey: simulationChatKeysByAttemptId.one(id),
     queryFn: () => api<SimulationChat[]>(`/api/v1/simulation_chats/by/attemptId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

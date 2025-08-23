@@ -24,7 +24,7 @@ export function useSimulationChatFeedback(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationChatFeedbackKeys.detail(id),
     queryFn: () => api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationChatFeedbacksByStandardId(id: string) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysByStandardId.one(id),
     queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/standardId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useSimulationChatFeedbacksBySimulationChatGradeId(id: string) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysBySimulationChatGradeId.one(id),
     queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

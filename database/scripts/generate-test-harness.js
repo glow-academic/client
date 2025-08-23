@@ -28,7 +28,7 @@ const TABLES_TO_IGNORE = ["users", "accounts", "sessions", "verificationToken"];
 // Non-destructive write flags for BFF generation
 const FORCE_ROUTES = process.argv.includes("--force-routes");
 const FORCE_HOOKS = process.argv.includes("--force-hooks");
-const BACKUP_ON_FORCE = true;
+const BACKUP_ON_FORCE = false;
 
 function writeFileSmart(filePath, content, force = false) {
   const exists = fs.existsSync(filePath);
@@ -2235,7 +2235,9 @@ export function use${capitalize(exportName)}By${cap}(id: ${pkTs}) {
   return useQuery<${typeName}[]>({
     queryKey: ${singularName}KeysBy${cap}.one(id),
     queryFn: () => api<${typeName}[]>(\`/api/v1/${tableName}/by/${tsProp}/\${id}\`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null${
+      pkTs === "string" ? ' && id !== ""' : ""
+    },
   });
 }
 
@@ -2256,7 +2258,9 @@ export function use${typeName}(id: ${pkTs}, enabled = true) {
   return useQuery({
     queryKey: ${singularName}Keys.detail(id),
     queryFn: () => api<${typeName}>(\`/api/v1/${tableName}/\${id}\`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null${
+      pkTs === "string" ? ' && id !== ""' : ""
+    },
   });
 }
 

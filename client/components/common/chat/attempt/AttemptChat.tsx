@@ -47,13 +47,13 @@ import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
+import { useScenario } from "@/lib/api/hooks/scenarios";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
-import { useScenario } from "@/lib/api/hooks/scenarios";
 
 export default function AttemptChat() {
   const router = useRouter();
@@ -101,7 +101,10 @@ export default function AttemptChat() {
     );
   }, [selectedChatId, simulationContext?.chats]);
 
-  const {data: selectedScenario} = useScenario(selectedChat!.scenarioId);
+  const { data: selectedScenario } = useScenario(
+    selectedChat?.scenarioId || "",
+    selectedChat !== null
+  );
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback(
@@ -643,16 +646,19 @@ export default function AttemptChat() {
                     )}
                     {/* Document viewer with minimal padding */}
                     <div className="flex-1 min-h-0 p-2">
-                      {selectedDocumentId && (
-                        <DocumentViewer
-                          key={selectedDocumentId}
-                          document={
+                      {selectedDocumentId &&
+                        (() => {
+                          const document =
                             simulationContext.scenarioDocuments.find(
                               (doc) => doc.id === selectedDocumentId
-                            )!
-                          }
-                        />
-                      )}
+                            ) || simulationContext.scenarioDocuments[0];
+                          return document ? (
+                            <DocumentViewer
+                              key={selectedDocumentId}
+                              document={document}
+                            />
+                          ) : null;
+                        })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -897,16 +903,19 @@ export default function AttemptChat() {
                   )}
                   {/* Document viewer with minimal padding */}
                   <div className="flex-1 min-h-0 p-2">
-                    {selectedDocumentId && (
-                      <DocumentViewer
-                        key={selectedDocumentId}
-                        document={
+                    {selectedDocumentId &&
+                      (() => {
+                        const document =
                           simulationContext.scenarioDocuments.find(
                             (doc) => doc.id === selectedDocumentId
-                          )!
-                        }
-                      />
-                    )}
+                          ) || simulationContext.scenarioDocuments[0];
+                        return document ? (
+                          <DocumentViewer
+                            key={selectedDocumentId}
+                            document={document}
+                          />
+                        ) : null;
+                      })()}
                   </div>
                 </CardContent>
               </Card>

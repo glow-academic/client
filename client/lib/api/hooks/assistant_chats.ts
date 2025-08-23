@@ -24,7 +24,7 @@ export function useAssistantChat(id: string, enabled = true) {
   return useQuery({
     queryKey: assistantChatKeys.detail(id),
     queryFn: () => api<AssistantChat>(`/api/v1/assistant_chats/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useAssistantChatsByProfileId(id: string) {
   return useQuery<AssistantChat[]>({
     queryKey: assistantChatKeysByProfileId.one(id),
     queryFn: () => api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

@@ -24,7 +24,7 @@ export function useSimulation(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationKeys.detail(id),
     queryFn: () => api<Simulation>(`/api/v1/simulations/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useSimulationsByRubricId(id: string) {
   return useQuery<Simulation[]>({
     queryKey: simulationKeysByRubricId.one(id),
     queryFn: () => api<Simulation[]>(`/api/v1/simulations/by/rubricId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

@@ -24,7 +24,7 @@ export function useCohort(id: string, enabled = true) {
   return useQuery({
     queryKey: cohortKeys.detail(id),
     queryFn: () => api<Cohort>(`/api/v1/cohorts/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

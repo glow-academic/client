@@ -24,7 +24,7 @@ export function useRubric(id: string, enabled = true) {
   return useQuery({
     queryKey: rubricKeys.detail(id),
     queryFn: () => api<Rubric>(`/api/v1/rubrics/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

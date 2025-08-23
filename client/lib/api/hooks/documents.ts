@@ -24,7 +24,7 @@ export function useDocument(id: string, enabled = true) {
   return useQuery({
     queryKey: documentKeys.detail(id),
     queryFn: () => api<Document>(`/api/v1/documents/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

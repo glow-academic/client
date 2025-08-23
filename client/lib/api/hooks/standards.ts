@@ -24,7 +24,7 @@ export function useStandard(id: string, enabled = true) {
   return useQuery({
     queryKey: standardKeys.detail(id),
     queryFn: () => api<Standard>(`/api/v1/standards/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useStandardsByStandardGroupId(id: string) {
   return useQuery<Standard[]>({
     queryKey: standardKeysByStandardGroupId.one(id),
     queryFn: () => api<Standard[]>(`/api/v1/standards/by/standardGroupId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 

@@ -24,7 +24,7 @@ export function useProvider(id: string, enabled = true) {
   return useQuery({
     queryKey: providerKeys.detail(id),
     queryFn: () => api<Provider>(`/api/v1/providers/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 

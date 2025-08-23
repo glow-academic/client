@@ -24,7 +24,7 @@ export function useModelRun(id: string, enabled = true) {
   return useQuery({
     queryKey: modelRunKeys.detail(id),
     queryFn: () => api<ModelRun>(`/api/v1/model_runs/${id}`),
-    enabled,
+    enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -48,7 +48,7 @@ export function useModelRunsByModelId(id: string) {
   return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByModelId.one(id),
     queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/modelId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -64,7 +64,7 @@ export function useModelRunsByPersonaId(id: string) {
   return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByPersonaId.one(id),
     queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/personaId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -80,7 +80,7 @@ export function useModelRunsByAgentId(id: string) {
   return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByAgentId.one(id),
     queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/agentId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
@@ -96,7 +96,7 @@ export function useModelRunsByProfileId(id: string) {
   return useQuery<ModelRun[]>({
     queryKey: modelRunKeysByProfileId.one(id),
     queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/profileId/${id}`),
-    enabled: id !== undefined && id !== null,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
