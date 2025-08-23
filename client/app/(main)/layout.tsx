@@ -190,14 +190,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     string[]
   >([]);
 
-  const { mutate: updateDocument } = useUpdateDocument();
-
   // Data for customize dialog
   const { data: simulations = [] } = useSimulations();
   const { data: scenarios = [] } = useScenarios();
   const { data: personas = [] } = usePersonas();
   const { data: parameters = [] } = useParameters();
   const { data: parameterItems = [] } = useParameterItems();
+
+  const { mutate: updateDocument } = useUpdateDocument();
 
   // Only allow customizing non-default parameters and non-default items
   const customParameters = React.useMemo(() => {
@@ -354,7 +354,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               // Apply client-side classification (type/tags)
               try {
                 if (!isZipFile && result.document_id && classification) {
-                  await updateDocument(result.document_id, {
+                  await updateDocument({
+                    id: result.document_id,
                     type: classification.type,
                     tags: classification.tags,
                     classified: true,
@@ -366,11 +367,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   Array.isArray(result.documents) &&
                   zipDefaults
                 ) {
-                  const { updateDocument } = await import(
-                    "@/utils/mutations/documents/update-document"
-                  );
                   for (const d of result.documents) {
-                    await updateDocument(d.id, {
+                    await updateDocument({
+                      id: d.id,
                       type: zipDefaults.type,
                       tags: zipDefaults.tags,
                       classified: true,

@@ -28,18 +28,38 @@ export function useCohort(id: string, enabled = true) {
   });
 }
 
-export function useUpdateCohort(id: string) {
+export function useUpdateCohort(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: CohortUpdate) => api<Cohort>(`/api/v1/cohorts/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: cohortKeys.detail(id) }),
+    mutationFn: (patch: CohortUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<Cohort>(`/api/v1/cohorts/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: cohortKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: cohortKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteCohort(id: string) {
+export function useDeleteCohort(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/cohorts/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/cohorts/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: cohortKeys.all }),
   });
 }

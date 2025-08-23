@@ -28,18 +28,38 @@ export function useAssistantToolCall(id: string, enabled = true) {
   });
 }
 
-export function useUpdateAssistantToolCall(id: string) {
+export function useUpdateAssistantToolCall(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: AssistantToolCallUpdate) => api<AssistantToolCall>(`/api/v1/assistant_tool_calls/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: assistantToolCallKeys.detail(id) }),
+    mutationFn: (patch: AssistantToolCallUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<AssistantToolCall>(`/api/v1/assistant_tool_calls/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: assistantToolCallKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: assistantToolCallKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteAssistantToolCall(id: string) {
+export function useDeleteAssistantToolCall(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/assistant_tool_calls/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/assistant_tool_calls/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: assistantToolCallKeys.all }),
   });
 }

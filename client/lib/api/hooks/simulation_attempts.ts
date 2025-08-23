@@ -28,18 +28,38 @@ export function useSimulationAttempt(id: string, enabled = true) {
   });
 }
 
-export function useUpdateSimulationAttempt(id: string) {
+export function useUpdateSimulationAttempt(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: SimulationAttemptUpdate) => api<SimulationAttempt>(`/api/v1/simulation_attempts/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationAttemptKeys.detail(id) }),
+    mutationFn: (patch: SimulationAttemptUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<SimulationAttempt>(`/api/v1/simulation_attempts/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: simulationAttemptKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteSimulationAttempt(id: string) {
+export function useDeleteSimulationAttempt(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/simulation_attempts/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/simulation_attempts/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationAttemptKeys.all }),
   });
 }

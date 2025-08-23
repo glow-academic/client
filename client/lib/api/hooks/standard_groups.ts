@@ -28,18 +28,38 @@ export function useStandardGroup(id: string, enabled = true) {
   });
 }
 
-export function useUpdateStandardGroup(id: string) {
+export function useUpdateStandardGroup(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: StandardGroupUpdate) => api<StandardGroup>(`/api/v1/standard_groups/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: standardGroupKeys.detail(id) }),
+    mutationFn: (patch: StandardGroupUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<StandardGroup>(`/api/v1/standard_groups/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: standardGroupKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: standardGroupKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteStandardGroup(id: string) {
+export function useDeleteStandardGroup(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/standard_groups/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/standard_groups/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: standardGroupKeys.all }),
   });
 }

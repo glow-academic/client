@@ -48,8 +48,8 @@ import { formatTime } from "@/utils/time";
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
 import { useScenario } from "@/lib/api/hooks/scenarios";
+import { useUpdateSimulationChat } from "@/lib/api/hooks/simulation_chats";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
@@ -59,7 +59,8 @@ export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
-  const queryClient = useQueryClient();
+
+  const { mutate: updateSimulationChat } = useUpdateSimulationChat();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
@@ -183,18 +184,10 @@ export default function AttemptChat() {
         const now = new Date();
 
         try {
-          const { updateSimulationChat } = await import(
-            "@/utils/mutations/simulation_chats/update-simulation-chat"
-          );
-          // Preserve the original updatedAt by explicitly setting it to the current value
-          await updateSimulationChat(chat.id, {
+          await updateSimulationChat({
+            id: chat.id,
             createdAt: now.toISOString(),
             updatedAt: chat.updatedAt, // Explicitly preserve the original updatedAt
-          });
-
-          // Invalidate queries to refresh the data
-          queryClient.invalidateQueries({
-            queryKey: ["simulationChats", simulationContext.attemptId],
           });
         } catch (error) {
           log.error("chat.timestamp.reset.failed", {
@@ -216,7 +209,7 @@ export default function AttemptChat() {
     simulationContext?.currentChat,
     isAttemptOwner,
     simulationContext?.attemptId,
-    queryClient,
+    updateSimulationChat,
   ]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed

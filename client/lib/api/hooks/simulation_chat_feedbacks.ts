@@ -28,18 +28,38 @@ export function useSimulationChatFeedback(id: string, enabled = true) {
   });
 }
 
-export function useUpdateSimulationChatFeedback(id: string) {
+export function useUpdateSimulationChatFeedback(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: SimulationChatFeedbackUpdate) => api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.detail(id) }),
+    mutationFn: (patch: SimulationChatFeedbackUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteSimulationChatFeedback(id: string) {
+export function useDeleteSimulationChatFeedback(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/simulation_chat_feedbacks/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/simulation_chat_feedbacks/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all }),
   });
 }

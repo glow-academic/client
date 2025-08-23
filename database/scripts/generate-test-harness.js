@@ -2264,18 +2264,42 @@ export function use${typeName}(id: ${pkTs}, enabled = true) {
   });
 }
 
-export function useUpdate${typeName}(id: ${pkTs}) {
+export function useUpdate${typeName}(id?: ${pkTs}) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: ${typeName}Update) => api<${typeName}>(\`/api/v1/${tableName}/\${id}\`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ${singularName}Keys.detail(id) }),
+    mutationFn: (patch: ${typeName}Update & { id?: ${pkTs} }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: ${pkTs} })?.id;
+      if (resolvedId === undefined || resolvedId === null${
+        pkTs === "string" ? ' || resolvedId === ""' : ""
+      }) {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<${typeName}>(\`/api/v1/${tableName}/\${resolvedId}\`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: ${pkTs} } | undefined)?.id;
+      if (resolvedId${pkTs === "string" ? ' && resolvedId !== ""' : ""}) {
+        qc.invalidateQueries({ queryKey: ${singularName}Keys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: ${singularName}Keys.all });
+      }
+    },
   });
 }
 
-export function useDelete${typeName}(id: ${pkTs}) {
+export function useDelete${typeName}(id?: ${pkTs}) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(\`/api/v1/${tableName}/\${id}\`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: ${pkTs} } | ${pkTs}) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null${
+        pkTs === "string" ? ' || resolvedId === ""' : ""
+      }) {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(\`/api/v1/${tableName}/\${resolvedId}\`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ${singularName}Keys.all }),
   });
 }`

@@ -28,18 +28,38 @@ export function useSimulationMessage(id: string, enabled = true) {
   });
 }
 
-export function useUpdateSimulationMessage(id: string) {
+export function useUpdateSimulationMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: SimulationMessageUpdate) => api<SimulationMessage>(`/api/v1/simulation_messages/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationMessageKeys.detail(id) }),
+    mutationFn: (patch: SimulationMessageUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<SimulationMessage>(`/api/v1/simulation_messages/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: simulationMessageKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteSimulationMessage(id: string) {
+export function useDeleteSimulationMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/simulation_messages/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/simulation_messages/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationMessageKeys.all }),
   });
 }

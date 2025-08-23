@@ -28,18 +28,38 @@ export function usePersona(id: string, enabled = true) {
   });
 }
 
-export function useUpdatePersona(id: string) {
+export function useUpdatePersona(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: PersonaUpdate) => api<Persona>(`/api/v1/personas/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.detail(id) }),
+    mutationFn: (patch: PersonaUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<Persona>(`/api/v1/personas/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: personaKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: personaKeys.all });
+      }
+    },
   });
 }
 
-export function useDeletePersona(id: string) {
+export function useDeletePersona(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/personas/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/personas/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.all }),
   });
 }

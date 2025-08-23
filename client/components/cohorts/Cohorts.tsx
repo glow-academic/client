@@ -6,7 +6,6 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   Edit,
@@ -23,7 +22,6 @@ import { toast } from "sonner";
 
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
 import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
-import { deleteCohort } from "@/utils/mutations/cohorts/delete-cohort";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -42,16 +40,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { Cohort } from "@/types";
-import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
+import {
+  useCohorts,
+  useDeleteCohort,
+  useUpdateCohort,
+} from "@/lib/api/hooks/cohorts";
 import { useProfiles } from "@/lib/api/hooks/profiles";
 
 export default function Cohorts() {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const {data: cohorts = [], refetch: refetchCohorts, isLoading: loadingCohorts} = useCohorts();
   const {data: profiles = [], isLoading: loadingProfiles} = useProfiles();
+
+  const {mutate: updateCohort} = useUpdateCohort();
+  const {mutate: deleteCohort} = useDeleteCohort();
 
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -241,7 +244,7 @@ export default function Cohorts() {
 
     setIsDeleting(true);
     try {
-      await deleteCohort(deleteItem.id);
+      await deleteCohort({id: deleteItem.id});
       await log.info("cohort.delete.success", {
         message: "Cohort deleted successfully",
         subject: { entityType: "cohort", entityId: deleteItem.id },
@@ -253,7 +256,6 @@ export default function Cohorts() {
       });
       toast.success("Cohort deleted successfully");
       // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
       await log.error("cohort.delete.failed", {
@@ -286,8 +288,8 @@ export default function Cohorts() {
         cohort.profileIds?.filter((id) => id !== effectiveProfile?.id) || [];
 
       // Update the cohort to remove the current user
-      await updateCohort(leaveItem.id, {
-        ...cohort,
+      await updateCohort({
+        id: leaveItem.id,
         profileIds: updatedProfileIds,
         updatedAt: new Date().toISOString(),
       });
@@ -303,7 +305,6 @@ export default function Cohorts() {
       });
       toast.success("Left cohort successfully");
       // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
       await log.error("cohort.leave.failed", {
@@ -343,7 +344,6 @@ export default function Cohorts() {
       });
       toast.success(`Cohort "${cohort.title}" duplicated successfully`);
       // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       refetchCohorts();
     } catch (error) {
       await log.error("cohort.duplicate.failed", {

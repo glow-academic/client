@@ -1,9 +1,13 @@
 // AUTO-GENERATED minimal hooks for documents
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Document, DocumentCreate, DocumentUpdate } from "@/lib/repos/documentRepo";
-import { documentKeys  } from "@/lib/api/keys";
+import { documentKeys } from "@/lib/api/keys";
+import type {
+  Document,
+  DocumentCreate,
+  DocumentUpdate,
+} from "@/lib/repos/documentRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDocuments(filters?: unknown) {
   return useQuery({
@@ -15,7 +19,11 @@ export function useDocuments(filters?: unknown) {
 export function useCreateDocument() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: DocumentCreate) => api<Document>("/api/v1/documents", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: DocumentCreate) =>
+      api<Document>("/api/v1/documents", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
   });
 }
@@ -28,19 +36,49 @@ export function useDocument(id: string, enabled = true) {
   });
 }
 
-export function useUpdateDocument(id: string) {
+export function useUpdateDocument(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: DocumentUpdate) => api<Document>(`/api/v1/documents/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.detail(id) }),
+    mutationFn: (patch: DocumentUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<Document>(`/api/v1/documents/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: documentKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: documentKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteDocument(id: string) {
+export function useDeleteDocument(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/documents/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/documents/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
   });
 }
-

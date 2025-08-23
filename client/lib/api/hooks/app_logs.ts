@@ -28,18 +28,38 @@ export function useAppLog(id: number, enabled = true) {
   });
 }
 
-export function useUpdateAppLog(id: number) {
+export function useUpdateAppLog(id?: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: AppLogUpdate) => api<AppLog>(`/api/v1/app_logs/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.detail(id) }),
+    mutationFn: (patch: AppLogUpdate & { id?: number }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: number })?.id;
+      if (resolvedId === undefined || resolvedId === null) {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<AppLog>(`/api/v1/app_logs/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: number } | undefined)?.id;
+      if (resolvedId) {
+        qc.invalidateQueries({ queryKey: appLogKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: appLogKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteAppLog(id: number) {
+export function useDeleteAppLog(id?: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/app_logs/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: number } | number) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null) {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/app_logs/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.all }),
   });
 }

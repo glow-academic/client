@@ -28,18 +28,38 @@ export function useAssistantMessage(id: string, enabled = true) {
   });
 }
 
-export function useUpdateAssistantMessage(id: string) {
+export function useUpdateAssistantMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: AssistantMessageUpdate) => api<AssistantMessage>(`/api/v1/assistant_messages/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: assistantMessageKeys.detail(id) }),
+    mutationFn: (patch: AssistantMessageUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<AssistantMessage>(`/api/v1/assistant_messages/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: assistantMessageKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: assistantMessageKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteAssistantMessage(id: string) {
+export function useDeleteAssistantMessage(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/assistant_messages/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/assistant_messages/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: assistantMessageKeys.all }),
   });
 }

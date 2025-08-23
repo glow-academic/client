@@ -28,18 +28,38 @@ export function useSimulationChatCrowdsourcedFeedback(id: string, enabled = true
   });
 }
 
-export function useUpdateSimulationChatCrowdsourcedFeedback(id: string) {
+export function useUpdateSimulationChatCrowdsourcedFeedback(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: SimulationChatCrowdsourcedFeedbackUpdate) => api<SimulationChatCrowdsourcedFeedback>(`/api/v1/simulation_chat_crowdsourced_feedbacks/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatCrowdsourcedFeedbackKeys.detail(id) }),
+    mutationFn: (patch: SimulationChatCrowdsourcedFeedbackUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<SimulationChatCrowdsourcedFeedback>(`/api/v1/simulation_chat_crowdsourced_feedbacks/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: simulationChatCrowdsourcedFeedbackKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: simulationChatCrowdsourcedFeedbackKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteSimulationChatCrowdsourcedFeedback(id: string) {
+export function useDeleteSimulationChatCrowdsourcedFeedback(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/simulation_chat_crowdsourced_feedbacks/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/simulation_chat_crowdsourced_feedbacks/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatCrowdsourcedFeedbackKeys.all }),
   });
 }

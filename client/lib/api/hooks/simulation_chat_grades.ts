@@ -28,18 +28,38 @@ export function useSimulationChatGrade(id: string, enabled = true) {
   });
 }
 
-export function useUpdateSimulationChatGrade(id: string) {
+export function useUpdateSimulationChatGrade(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: SimulationChatGradeUpdate) => api<SimulationChatGrade>(`/api/v1/simulation_chat_grades/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatGradeKeys.detail(id) }),
+    mutationFn: (patch: SimulationChatGradeUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<SimulationChatGrade>(`/api/v1/simulation_chat_grades/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: simulationChatGradeKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteSimulationChatGrade(id: string) {
+export function useDeleteSimulationChatGrade(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/simulation_chat_grades/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/simulation_chat_grades/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all }),
   });
 }

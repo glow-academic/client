@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -41,8 +40,6 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { createPersona } from "@/utils/mutations/personas/create-persona";
-import { updatePersona } from "@/utils/mutations/personas/update-persona";
 import {
   getPersonaIconComponent,
   getSuggestedIconsForPersona,
@@ -52,7 +49,11 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
-import { usePersona } from "@/lib/api/hooks/personas";
+import {
+  useCreatePersona,
+  usePersona,
+  useUpdatePersona,
+} from "@/lib/api/hooks/personas";
 import { useModels } from "@/lib/api/hooks/models";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
 
@@ -82,7 +83,6 @@ export default function Persona({
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
-  const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
@@ -113,6 +113,9 @@ export default function Persona({
   const {data: models, isLoading: isModelsLoading} = useModels();
 
   const {data: scenarios = []} = useScenarios();
+
+  const {mutate: createPersona} = useCreatePersona();
+  const {mutate: updatePersona} = useUpdatePersona();
 
   // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
   const isReadonly = useMemo(() => {
@@ -193,7 +196,8 @@ export default function Persona({
 
     try {
       if (isEditMode) {
-        await updatePersona(personaId!, {
+        await updatePersona({
+          id: personaId!,
           name: formData.name,
           description: formData.description,
           systemPrompt: formData.systemPrompt,
@@ -208,11 +212,9 @@ export default function Persona({
           imageInputActive: formData.imageInputActive ?? false,
           updatedAt: new Date().toISOString(),
         });
-        queryClient.invalidateQueries({ queryKey: ["personas"] });
-        queryClient.invalidateQueries({ queryKey: ["persona", personaId] });
         toast.success("Persona updated successfully!");
       } else {
-        const newPersona = await createPersona({
+        await createPersona({
           name: formData.name,
           description: formData.description,
           systemPrompt: formData.systemPrompt,
@@ -225,10 +227,6 @@ export default function Persona({
           defaultPersona: formData.defaultPersona ?? false,
           guardrailActive: formData.guardrailActive ?? false,
           imageInputActive: formData.imageInputActive ?? false,
-        });
-        queryClient.invalidateQueries({ queryKey: ["personas"] });
-        queryClient.invalidateQueries({
-          queryKey: ["persona", newPersona?.id],
         });
         toast.success("Persona created successfully!");
       }

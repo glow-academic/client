@@ -28,18 +28,38 @@ export function useDebugInfo(id: string, enabled = true) {
   });
 }
 
-export function useUpdateDebugInfo(id: string) {
+export function useUpdateDebugInfo(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: DebugInfoUpdate) => api<DebugInfo>(`/api/v1/debug_info/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: debugInfoKeys.detail(id) }),
+    mutationFn: (patch: DebugInfoUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<DebugInfo>(`/api/v1/debug_info/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: debugInfoKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: debugInfoKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteDebugInfo(id: string) {
+export function useDeleteDebugInfo(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/debug_info/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/debug_info/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: debugInfoKeys.all }),
   });
 }

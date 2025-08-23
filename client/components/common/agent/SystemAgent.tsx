@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -24,10 +23,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
-import { useAgent } from "@/lib/api/hooks/agents";
+import { useAgent, useUpdateAgent } from "@/lib/api/hooks/agents";
 import { useModels } from "@/lib/api/hooks/models";
 
 interface SystemAgentFormData {
@@ -45,7 +43,6 @@ export interface SystemAgentProps {
 
 export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -53,6 +50,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const {data: agent, isLoading: isLoadingAgent} = useAgent(agentId);
 
   const {data: models, isLoading: isModelsLoading} = useModels();
+
+  const {mutate: updateAgent} = useUpdateAgent();
 
   const isLoading = isLoadingAgent || isModelsLoading;
 
@@ -101,7 +100,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     setIsSubmitting(true);
 
     try {
-      await updateAgent(agentId, {
+      await updateAgent({
+        id: agentId,
         name: formData.name,
         description: formData.description,
         systemPrompt: formData.systemPrompt,
@@ -113,8 +113,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             : formData.reasoning,
         updatedAt: new Date().toISOString(),
       });
-      queryClient.invalidateQueries({ queryKey: ["agents"] });
-      queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
       toast.success("Agent updated successfully!");
       router.push("/system/agents");
     } catch (error) {

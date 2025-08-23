@@ -5,8 +5,6 @@
  * 06/27/2025
  */
 "use client";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowDown,
@@ -38,13 +36,15 @@ import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
+import {
+  useCreateSimulationCrowdsourcedMessage,
+  useDeleteSimulationCrowdsourcedMessage,
+  useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch,
+  useUpdateSimulationCrowdsourcedMessage,
+} from "@/lib/api/hooks/simulation_crowdsourced_messages";
+import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
 import { SimulationMessage } from "@/types";
 import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
-import { createSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/create-simulation-crowdsourced-message";
-import { deleteSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/delete-simulation-crowdsourced-message";
-import { updateSimulationCrowdsourcedMessage } from "@/utils/mutations/simulation_crowdsourced_messages/update-simulation-crowdsourced-message";
-import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
-import { useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch } from "@/lib/api/hooks/simulation_crowdsourced_messages";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -57,7 +57,15 @@ export default function AttemptMessages({
 }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
+
+  const createSimulationCrowdsourcedMessage =
+    useCreateSimulationCrowdsourcedMessage();
+
+  const updateSimulationCrowdsourcedMessage =
+    useUpdateSimulationCrowdsourcedMessage();
+
+  const deleteSimulationCrowdsourcedMessage =
+    useDeleteSimulationCrowdsourcedMessage();
 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -72,7 +80,8 @@ export default function AttemptMessages({
   // State to track if report dialog is open
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  const {data: messages = [], isLoading: messagesLoading} = useSimulationMessagesByChatId(targetChatId!);
+  const { data: messages = [], isLoading: messagesLoading } =
+    useSimulationMessagesByChatId(targetChatId!);
 
   // IDs of assistant responses in this chat
   const responseMessageIds = useMemo(
@@ -84,10 +93,12 @@ export default function AttemptMessages({
     [messages]
   );
 
-  const {data: crowdsourcedAll = []} = useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(responseMessageIds);
+  const { data: crowdsourcedAll = [] } =
+    useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(
+      responseMessageIds
+    );
 
   type CrowdsourcedSelect = typeof simulationCrowdsourcedMessages.$inferSelect;
-  type CrowdsourcedInsert = typeof simulationCrowdsourcedMessages.$inferInsert;
 
   const myCrowdsourced = useMemo(
     () =>
@@ -111,59 +122,22 @@ export default function AttemptMessages({
     return map;
   }, [myCrowdsourced]);
 
-  const createRatingMutation = useMutation({
-    mutationFn: async (vars: { messageId: string; up: boolean }) => {
-      const payload: CrowdsourcedInsert = {
-        simulationMessageId: vars.messageId,
-        profileId: effectiveProfile!.id,
-        response: vars.up,
-      };
-      return await createSimulationCrowdsourcedMessage(payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
-      });
-    },
-  });
-
-  const updateRatingMutation = useMutation({
-    mutationFn: async (vars: { id: string; up: boolean }) => {
-      const updatePayload: Partial<CrowdsourcedInsert> = { response: vars.up };
-      return await updateSimulationCrowdsourcedMessage(vars.id, updatePayload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
-      });
-    },
-  });
-
-  const deleteRatingMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await deleteSimulationCrowdsourcedMessage(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["simulationCrowdsourcedMessages", targetChatId],
-      });
-    },
-  });
-
   // Helper function to check if a specific rating is being updated
   const isRatingLoading = (messageId: string, isUpvote: boolean) => {
     const existing = ratingsByMessageId[messageId];
     if (existing) {
       // For existing ratings, check if we're updating to the same value or deleting
       return (
-        (updateRatingMutation.isPending && existing.response === isUpvote) ||
-        (deleteRatingMutation.isPending && existing.response === isUpvote)
+        (updateSimulationCrowdsourcedMessage.isPending &&
+          existing.response === isUpvote) ||
+        (deleteSimulationCrowdsourcedMessage.isPending &&
+          existing.response === isUpvote)
       );
     } else {
       // For new ratings, check if we're creating with this value
       return (
-        createRatingMutation.isPending &&
-        createRatingMutation.variables?.up === isUpvote
+        createSimulationCrowdsourcedMessage.isPending &&
+        createSimulationCrowdsourcedMessage.variables?.response === isUpvote
       );
     }
   };
@@ -181,14 +155,21 @@ export default function AttemptMessages({
     if (existing) {
       if (existing.response === up) {
         // If clicking the same rating, deselect it
-        deleteRatingMutation.mutate(existing.id);
+        deleteSimulationCrowdsourcedMessage.mutate(existing.id);
       } else {
         // If clicking a different rating, update it
-        updateRatingMutation.mutate({ id: existing.id, up });
+        updateSimulationCrowdsourcedMessage.mutate({
+          id: existing.id,
+          response: up,
+        });
       }
     } else {
       // First time rating - show thank you toast
-      createRatingMutation.mutate({ messageId, up });
+      createSimulationCrowdsourcedMessage.mutate({
+        simulationMessageId: messageId,
+        profileId: effectiveProfile.id,
+        response: up,
+      });
       toast.success(
         "Thank you for your feedback! Your rating helps make GLOW better."
       );

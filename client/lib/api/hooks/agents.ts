@@ -28,18 +28,38 @@ export function useAgent(id: string, enabled = true) {
   });
 }
 
-export function useUpdateAgent(id: string) {
+export function useUpdateAgent(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: AgentUpdate) => api<Agent>(`/api/v1/agents/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: agentKeys.detail(id) }),
+    mutationFn: (patch: AgentUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<Agent>(`/api/v1/agents/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: agentKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: agentKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteAgent(id: string) {
+export function useDeleteAgent(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/agents/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/agents/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: agentKeys.all }),
   });
 }

@@ -28,18 +28,38 @@ export function useAppFeedback(id: number, enabled = true) {
   });
 }
 
-export function useUpdateAppFeedback(id: number) {
+export function useUpdateAppFeedback(id?: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: AppFeedbackUpdate) => api<AppFeedback>(`/api/v1/app_feedback/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: appFeedbackKeys.detail(id) }),
+    mutationFn: (patch: AppFeedbackUpdate & { id?: number }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: number })?.id;
+      if (resolvedId === undefined || resolvedId === null) {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<AppFeedback>(`/api/v1/app_feedback/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: number } | undefined)?.id;
+      if (resolvedId) {
+        qc.invalidateQueries({ queryKey: appFeedbackKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: appFeedbackKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteAppFeedback(id: number) {
+export function useDeleteAppFeedback(id?: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/app_feedback/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: number } | number) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null) {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/app_feedback/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: appFeedbackKeys.all }),
   });
 }

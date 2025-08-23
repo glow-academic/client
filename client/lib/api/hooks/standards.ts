@@ -28,18 +28,38 @@ export function useStandard(id: string, enabled = true) {
   });
 }
 
-export function useUpdateStandard(id: string) {
+export function useUpdateStandard(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: StandardUpdate) => api<Standard>(`/api/v1/standards/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: standardKeys.detail(id) }),
+    mutationFn: (patch: StandardUpdate & { id?: string }) => {
+      const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for update");
+      }
+      const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
+      return api<Standard>(`/api/v1/standards/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+    },
+    onSuccess: (_data, variables) => {
+      const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
+      if (resolvedId && resolvedId !== "") {
+        qc.invalidateQueries({ queryKey: standardKeys.detail(resolvedId) });
+      } else {
+        qc.invalidateQueries({ queryKey: standardKeys.all });
+      }
+    },
   });
 }
 
-export function useDeleteStandard(id: string) {
+export function useDeleteStandard(id?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api<void>(`/api/v1/standards/${id}`, { method: "DELETE" }),
+    mutationFn: (arg?: { id?: string } | string) => {
+      const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+        throw new Error("Missing id for delete");
+      }
+      return api<void>(`/api/v1/standards/${resolvedId}`, { method: "DELETE" });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: standardKeys.all }),
   });
 }
