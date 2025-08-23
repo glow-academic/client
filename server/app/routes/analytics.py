@@ -502,3 +502,150 @@ async def post_analytics_reports(
         })
 
     return rows
+
+@router.post("/history")
+async def post_analytics_history(
+    filters: AnalyticsFilters, session: Session = Depends(get_session)
+) -> Dict[str, Any]:
+    """
+    Return the minimal data needed for the history page.
+    """
+    base = fetch_analytics_base(session, filters)
+
+    # returning the rows
+    # TODO: compute more filters to return a more succient JSON
+    return base
+
+
+@router.post("/home")
+async def post_analytics_home(
+    filters: AnalyticsFilters, session: Session = Depends(get_session)
+) -> List[Dict[str, Any]]:
+    """
+    Compute per-simulation progress rows for the Home page.
+
+    Response rows provide counts to render progress bars without requiring
+    client-side analytics filtering.
+    """
+    base = fetch_analytics_base(session, filters)
+
+    profiles: List[Dict[str, Any]] = base.get("profiles", [])
+    attempts: List[Dict[str, Any]] = base.get("attempts", [])
+    chats: List[Dict[str, Any]] = base.get("chats", [])
+    grades: List[Dict[str, Any]] = base.get("grades", [])
+    simulations: List[Dict[str, Any]] = base.get("simulations", [])
+    rubrics: List[Dict[str, Any]] = base.get("rubrics", [])
+    cohorts: List[Dict[str, Any]] = base.get("cohorts", [])
+
+    rubric_by_id = {str(r.get("id")): r for r in rubrics}
+
+    # Index: chats by attempt; grades by chat
+    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+    for c in chats:
+        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
+        arr.append(c)
+
+    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
+    for g in grades:
+        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
+        arr.append(g)
+
+    # Cohort membership: for each simulation, union of profile_ids of cohorts that include it
+    cohort_profile_ids_by_sim: Dict[str, List[str]] = {}
+    cohort_ids_by_sim: Dict[str, List[str]] = {}
+    cohort_titles_by_sim: Dict[str, List[str]] = {}
+    for c in cohorts:
+        sim_ids = [str(sid) for sid in (c.get("simulation_ids") or [])]
+        profile_ids = [str(pid) for pid in (c.get("profile_ids") or [])]
+        for sid in sim_ids:
+            cohort_profile_ids_by_sim.setdefault(sid, [])
+            cohort_profile_ids_by_sim[sid].extend(profile_ids)
+            cohort_ids_by_sim.setdefault(sid, []).append(str(c.get("id")))
+            title = c.get("title") or c.get("name") or ""
+            cohort_titles_by_sim.setdefault(sid, []).append(str(title))
+
+    # Fallback: if a simulation has no cohort, consider all distinct profiles in base
+    all_profile_ids = [str(p.get("id")) for p in profiles]
+
+    rows: List[Dict[str, Any]] = []
+    for sim in simulations:
+        sid = str(sim.get("id"))
+        title = str(sim.get("title") or "Simulation")
+
+        cohort_member_ids = cohort_profile_ids_by_sim.get(sid)
+        member_ids = (
+            [pid for pid in cohort_member_ids if pid]
+            if cohort_member_ids and len(cohort_member_ids) > 0
+            else all_profile_ids
+        )
+        # Ensure uniqueness
+        unique_member_ids = list({pid for pid in member_ids if pid})
+
+        # Group attempts by profile for this simulation
+        user_attempts_by_profile: Dict[str, List[Dict[str, Any]]] = {}
+        for att in attempts:
+            if str(att.get("simulation_id")) != sid:
+                continue
+            pid = str(att.get("profile_id") or "")
+            if not pid:
+                continue
+            arr = user_attempts_by_profile.setdefault(pid, [])
+            arr.append(att)
+
+        # For each profile, derive pass/in-progress via best attempt average vs rubric pass
+        passed_members: List[str] = []
+        in_progress_members: List[str] = []
+
+        # Pass threshold per rubric
+        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
+        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+        pass_points = float(rubric.get("pass_points", 70)) if rubric else 70.0
+        pass_threshold = (pass_points / max(rubric_points, 1.0)) * 100.0
+
+        for pid in unique_member_ids:
+            atts = user_attempts_by_profile.get(pid, [])
+            if not atts:
+                continue  # no attempts => handled in not_started
+
+            # Build attempt average scores over its chats' grades
+            best_avg_norm = 0.0
+            for att in atts:
+                chats_for_att = chats_by_attempt.get(str(att.get("id")), [])
+                # Collect grades for chats
+                scores: List[float] = []
+                for ch in chats_for_att:
+                    gid = str(ch.get("id"))
+                    for g in grades_by_chat.get(gid, []):
+                        score = float(g.get("score", 0.0))
+                        norm = (score / max(rubric_points, 1.0)) * 100.0
+                        scores.append(norm)
+                if scores:
+                    avg = sum(scores) / len(scores)
+                    if avg > best_avg_norm:
+                        best_avg_norm = avg
+
+            if best_avg_norm >= pass_threshold:
+                passed_members.append(pid)
+            else:
+                # Has attempts but hasn't met threshold
+                in_progress_members.append(pid)
+
+        total_members = len(unique_member_ids)
+        passed_count = len(passed_members)
+        in_progress_count = len(in_progress_members)
+        not_started_count = max(0, total_members - passed_count - in_progress_count)
+
+        rows.append({
+            "simulation_id": sid,
+            "simulation_title": title,
+            "cohort_ids": cohort_ids_by_sim.get(sid, []),
+            "cohort_titles": cohort_titles_by_sim.get(sid, []),
+            "total_members": total_members,
+            "passed_count": passed_count,
+            "in_progress_count": in_progress_count,
+            "not_started_count": not_started_count,
+            "passed_members": passed_members,
+            "in_progress_members": in_progress_members,
+        })
+
+    return rows

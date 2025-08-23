@@ -51,3 +51,52 @@ class TestPost_Analytics_Leaderboard:
         # TODO: Implement error test for post_analytics_leaderboard
         assert False, "IMPLEMENT: Error test for post_analytics_leaderboard"
 
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `post_analytics_reports`")
+class TestPost_Analytics_Reports:
+    """Tests for post_analytics_reports endpoint."""
+
+    def test_post_analytics_reports_success(self, client):
+        """Test successful post_analytics_reports request."""
+        # TODO: Implement test for post_analytics_reports
+        assert False, "IMPLEMENT: Test for post_analytics_reports"
+
+    def test_post_analytics_reports_error(self, client):
+        """Test post_analytics_reports error handling."""
+        # TODO: Implement error test for post_analytics_reports
+        assert False, "IMPLEMENT: Error test for post_analytics_reports"
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `post_analytics_history`")
+class TestPost_Analytics_History:
+    """Tests for post_analytics_history endpoint."""
+
+    def test_post_analytics_history_success(self, client):
+        """Test successful post_analytics_history request."""
+        # TODO: Implement test for post_analytics_history
+        assert False, "IMPLEMENT: Test for post_analytics_history"
+
+    def test_post_analytics_history_error(self, client):
+        """Test post_analytics_history error handling."""
+        # TODO: Implement error test for post_analytics_history
+        assert False, "IMPLEMENT: Error test for post_analytics_history"
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `post_analytics_home`")
+class TestPost_Analytics_Home:
+    """Tests for post_analytics_home endpoint."""
+
+    def test_post_analytics_home_success(self, client):
+        """Test successful post_analytics_home request."""
+        # TODO: Implement test for post_analytics_home
+        assert False, "IMPLEMENT: Test for post_analytics_home"
+
+    def test_post_analytics_home_error(self, client):
+        """Test post_analytics_home error handling."""
+        # TODO: Implement error test for post_analytics_home
+        assert False, "IMPLEMENT: Error test for post_analytics_home"
+

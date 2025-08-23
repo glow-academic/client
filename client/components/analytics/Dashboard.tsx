@@ -8,8 +8,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
+import type { AnalyticsBasePayload } from "@/utils/api/analytics/get-history";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -40,11 +42,71 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   const { effectiveProfile } = useProfile();
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   // Use centralized filtering hook
   const { data: filteredData, isLoading } = useFilteredAnalyticsData({
     ...(profileId && { profileId }),
   });
+
+  // Server-backed history for SimulationHistory only
+  const [historyData, setHistoryData] = useState<AnalyticsBasePayload | null>(
+    null
+  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/analytics/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+            profileId: profileId ?? effectiveProfile?.id,
+          }),
+        });
+        const json = (await res.json()) as AnalyticsBasePayload;
+        if (!cancelled) setHistoryData(json);
+      } catch {
+        if (!cancelled)
+          setHistoryData({
+            attempts: [],
+            chats: [],
+            grades: [],
+            feedbacks: [],
+            messages: [],
+            simulations: [],
+            scenarios: [],
+            profiles: [],
+            cohorts: [],
+            rubrics: [],
+            standardGroups: [],
+            standards: [],
+          } as AnalyticsBasePayload);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    profileId,
+    effectiveProfile?.id,
+  ]);
 
   // Threshold data
   const thresholds = {
@@ -614,7 +676,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-        filteredData={filteredData}
+        serverData={historyData}
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}

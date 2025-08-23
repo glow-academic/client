@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/card";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
+import type { AnalyticsBasePayload } from "@/utils/api/analytics/get-history";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
@@ -44,6 +46,65 @@ export default function Practice() {
   const { data: filteredData } = useFilteredAnalyticsData({
     ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
   });
+
+  // Server-backed history for SimulationHistory (no filteredData usage)
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const [historyData, setHistoryData] = useState<AnalyticsBasePayload | null>(
+    null
+  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/analytics/history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+            profileId: effectiveProfile?.id,
+          }),
+        });
+        const json = (await res.json()) as AnalyticsBasePayload;
+        if (!cancelled) setHistoryData(json);
+      } catch {
+        if (!cancelled)
+          setHistoryData({
+            attempts: [],
+            chats: [],
+            grades: [],
+            feedbacks: [],
+            messages: [],
+            simulations: [],
+            scenarios: [],
+            profiles: [],
+            cohorts: [],
+            rubrics: [],
+            standardGroups: [],
+            standards: [],
+          } as AnalyticsBasePayload);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    effectiveProfile?.id,
+  ]);
   const enhancedPracticeSimulations = useMemo(() => {
     const sims = filteredData?.simulations ?? [];
     const rubrics = filteredData?.rubrics ?? [];
@@ -304,7 +365,7 @@ export default function Practice() {
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
             <SimulationHistory
-              filteredData={filteredData}
+              serverData={historyData}
               showExport={false}
               showArchive={false}
               singleProfile={true}
