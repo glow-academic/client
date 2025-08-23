@@ -6,20 +6,10 @@
  */
 
 import { useHistoryColumns } from "@/hooks/use-history-columns";
-import type { FilteredData } from "@/utils/analytics/filtering";
+// no filtered client transformation needed; server returns precomputed rows
 import type {
-  AnalyticsBasePayload,
-  AttemptRow,
-  ChatRow,
-  CohortRow,
-  GradeRow,
-  MessageRow,
-  ProfileRow,
-  RubricRow,
-  ScenarioRow,
-  SimulationRow,
-  StandardGroupRow,
-  StandardRow,
+  HistoryResponse,
+  HistoryRow,
 } from "@/utils/api/analytics/get-history";
 import * as React from "react";
 import { DataTable } from "./DataTable";
@@ -35,7 +25,7 @@ export interface SimulationHistoryProps {
   singleProfile?: boolean;
 
   // Required: Server-side history payload
-  serverData: AnalyticsBasePayload | null;
+  serverData: HistoryResponse | null;
 }
 
 export default function SimulationHistory({
@@ -44,120 +34,80 @@ export default function SimulationHistory({
   singleProfile = false,
   serverData,
 }: SimulationHistoryProps) {
-  // Transform server history payload to FilteredData shape when requested
-  const transformedData = React.useMemo<FilteredData | null>(() => {
+  // Transform new server response to the minimal client needs
+  type MinimalTransformed = {
+    attempts: Array<{
+      id: string;
+      profileId: string | null;
+      simulationId: string;
+      createdAt: string;
+      archived: boolean;
+      infiniteMode: boolean;
+      infiniteModeTimeLimit: number | null;
+      scenarios: Array<{
+        id: string;
+        attemptId: string;
+        scenarioId: string;
+        createdAt: string;
+        completedAt: string | null;
+        completed: boolean;
+      }>;
+      personasTested: string[];
+      interactionIds: string[];
+      completedWithRubricCount?: number;
+      totalExpected?: number;
+      scorePercent?: number;
+      isPractice?: boolean;
+      rootScenarioIds?: string[];
+      isIncomplete?: boolean;
+    }>;
+    profiles: { value: string; label: string }[];
+    simulations: { value: string; label: string }[];
+    scenarios: { value: string; label: string }[];
+  };
+
+  const transformedData = React.useMemo<MinimalTransformed | null>(() => {
     if (!serverData) return null;
-
-    // Helpers to map snake_case to camelCase minimal fields used by history table
-    const attempts = (serverData.attempts || []).map((a: AttemptRow) => ({
-      id: String(a.id),
-      profileId: a.profile_id ? String(a.profile_id) : null,
-      simulationId: String(a.simulation_id),
-      createdAt: String(a.created_at || ""),
-      archived: Boolean(a.archived ?? false),
-      infiniteMode: Boolean(a.infinite_mode ?? false),
-      infiniteModeTimeLimit: a.infinite_mode_time_limit ?? null,
-    }));
-
-    const chats = (serverData.chats || []).map((c: ChatRow) => ({
-      id: String(c.id),
-      attemptId: String(c.attempt_id),
-      scenarioId: c.scenario_id ? String(c.scenario_id) : "",
-      completed: Boolean(c.completed ?? Boolean(c.completed_at)),
-      createdAt: String(c.created_at || ""),
-      completedAt: c.completed_at ? String(c.completed_at) : null,
-    }));
-
-    const grades = (serverData.grades || []).map((g: GradeRow) => ({
-      id: String(g.id),
-      simulationChatId: String(g.simulation_chat_id),
-      rubricId: String(g.rubric_id || ""),
-      score: Number(g.score ?? 0),
-      passed: Boolean(g.passed ?? false),
-      timeTaken: Number(g.time_taken ?? 0),
-      createdAt: String(g.created_at || ""),
-    }));
-
-    const simulations = (serverData.simulations || []).map(
-      (s: SimulationRow) => ({
-        id: String(s.id),
-        title: String(s.title ?? "Simulation"),
-        rubricId: String(s.rubric_id || ""),
-        practiceSimulation: Boolean(s.practice_simulation ?? false),
-        scenarioIds: (s.scenario_ids || []).map((x: string) => String(x)),
-        description: s.description ?? null,
-        timeLimit: s.time_limit ?? null,
-        active: Boolean(s.active ?? true),
-      })
-    );
-
-    const scenarios = (serverData.scenarios || []).map((sc: ScenarioRow) => ({
-      id: String(sc.id),
-      name: String(sc.name ?? "Scenario"),
-      personaId: sc.persona_id ? String(sc.persona_id) : null,
-      parentId: sc.parent_id ? String(sc.parent_id) : null,
-      active: Boolean(sc.active ?? true),
-    }));
-
-    const profiles = (serverData.profiles || []).map((p: ProfileRow) => ({
-      id: String(p.id),
-      firstName: String(p.first_name ?? ""),
-      lastName: String(p.last_name ?? ""),
-      role: p.role ?? undefined,
-    }));
-
-    const cohorts = (serverData.cohorts || []).map((c: CohortRow) => ({
-      id: String(c.id),
-      title: String(c.title ?? ""),
-      active: Boolean(c.active ?? true),
-      profileIds: (c.profile_ids || []).map((x: string) => String(x)),
-      simulationIds: (c.simulation_ids || []).map((x: string) => String(x)),
-      createdAt: String(c.created_at || ""),
-    }));
-
-    const rubrics = (serverData.rubrics || []).map((r: RubricRow) => ({
+    const attempts = (serverData.rows || []).map((r: HistoryRow) => ({
       id: String(r.id),
-      points: Number(r.points ?? 100),
-      passPoints: Number(r.pass_points ?? 70),
+      profileId: r.profileId ? String(r.profileId) : null,
+      simulationId: String(r.simulationId),
+      createdAt: String(r.createdAt || ""),
+      archived: Boolean(r.archived ?? false),
+      infiniteMode: Boolean(r.infiniteMode ?? false),
+      infiniteModeTimeLimit: r.infiniteModeTimeLimit ?? null,
+      scenarios: r.scenarios.map((c) => ({
+        id: String(c.id),
+        attemptId: String(c.attemptId),
+        scenarioId: c.scenarioId ? String(c.scenarioId) : "",
+        completed: Boolean(c.completed),
+        createdAt: String(c.createdAt || ""),
+        completedAt: c.completedAt ? String(c.completedAt) : null,
+      })),
+      personasTested: r.personasTested || [],
+      interactionIds: r.interactionIds || [],
+      completedWithRubricCount: r.completedWithRubricCount,
+      totalExpected: r.totalExpected,
+      scorePercent: r.scorePercent,
+      isPractice: r.isPractice,
+      rootScenarioIds: r.rootScenarioIds || [],
+      isIncomplete: r.isIncomplete,
     }));
 
-    const standardGroups = (serverData.standardGroups || []).map(
-      (g: StandardGroupRow) => ({
-        id: String(g.id),
-        rubricId: String(g.rubric_id || ""),
-      })
-    );
-
-    const standards = (serverData.standards || []).map((s: StandardRow) => ({
-      id: String(s.id),
-      standardGroupId: String(s.standard_group_id || ""),
+    const profiles = (serverData.profiles || []).map((p) => ({
+      value: String(p.id),
+      label: String(p.name || ""),
+    }));
+    const simulations = (serverData.simulations || []).map((s) => ({
+      value: String(s.id),
+      label: String(s.title || "Simulation"),
+    }));
+    const scenarios = (serverData.rootScenarios || []).map((s) => ({
+      value: String(s.id),
+      label: String(s.name || "Scenario"),
     }));
 
-    const messages = (serverData.messages || []).map((m: MessageRow) => ({
-      id: String(m.id),
-      chatId: String(m.chat_id),
-      createdAt: String(m.created_at || ""),
-      type: m.type ?? undefined,
-    }));
-
-    return {
-      attempts,
-      chats,
-      grades,
-      feedbacks: serverData.feedbacks || [],
-      messages,
-      simulations,
-      scenarios,
-      profiles,
-      cohorts,
-      rubrics,
-      standardGroups,
-      standards,
-      parameters: [],
-      parameterItems: [],
-      personas: [],
-      agents: [],
-    } as unknown as FilteredData;
+    return { attempts, profiles, simulations, scenarios };
   }, [serverData]);
 
   // Check if all attempts have the same profileId (only when singleProfile is true)
@@ -179,10 +129,14 @@ export default function SimulationHistory({
 
   const { columns, data, profileOptions, simulationOptions, scenarioOptions } =
     useHistoryColumns({
-      filteredData: transformedData,
+      filteredData: null,
       showExport,
       showArchive,
       allSameProfile, // Pass this information to the hook
+      precomputedAttempts: transformedData?.attempts as never,
+      precomputedProfileOptions: transformedData?.profiles as never,
+      precomputedSimulationOptions: transformedData?.simulations as never,
+      precomputedScenarioOptions: transformedData?.scenarios as never,
     });
 
   // Create a key based on the data to force re-render when data changes
