@@ -12,7 +12,7 @@ export type AnalyticsFilters = {
   profileId?: string;
 };
 
-// Server payload row types (snake_case fields)
+// Minimal server payload row types (snake_case fields from server)
 export type AttemptRow = {
   id: string;
   profile_id: string | null;
@@ -42,13 +42,6 @@ export type GradeRow = {
   created_at?: string;
 };
 
-export type MessageRow = {
-  id: string;
-  chat_id: string;
-  created_at?: string;
-  type?: string;
-};
-
 export type SimulationRow = {
   id: string;
   title: string;
@@ -75,48 +68,49 @@ export type ProfileRow = {
   role?: string;
 };
 
-export type CohortRow = {
-  id: string;
-  title: string;
-  active: boolean;
-  profile_ids: string[];
-  simulation_ids: string[];
-  created_at: string;
-};
-
 export type RubricRow = {
   id: string;
   points: number;
   pass_points: number;
 };
 
-export type StandardGroupRow = {
+export type HistoryRow = {
   id: string;
-  rubric_id: string;
+  profileId: string | null;
+  profileName: string;
+  simulationId: string;
+  simulationTitle: string;
+  createdAt: string;
+  archived: boolean;
+  infiniteMode?: boolean;
+  infiniteModeTimeLimit?: number | null;
+  scenarios: Array<{
+    id: string;
+    attemptId: string;
+    scenarioId: string | null;
+    createdAt: string;
+    completedAt: string | null;
+    completed: boolean;
+  }>;
+  interactionIds: string[];
+  completedWithRubricCount: number;
+  totalExpected: number;
+  scorePercent: number;
+  isPractice: boolean;
+  rootScenarioIds: string[];
+  personasTested: string[];
+  isIncomplete: boolean;
 };
 
-export type StandardRow = {
-  id: string;
-  standard_group_id: string;
-};
-
-export type AnalyticsBasePayload = {
-  attempts: AttemptRow[];
-  chats: ChatRow[];
-  grades: GradeRow[];
-  feedbacks: unknown[];
-  messages: MessageRow[];
-  simulations: SimulationRow[];
-  scenarios: ScenarioRow[];
-  profiles: ProfileRow[];
-  cohorts: CohortRow[];
-  rubrics: RubricRow[];
-  standardGroups: StandardGroupRow[];
-  standards: StandardRow[];
+export type HistoryResponse = {
+  rows: HistoryRow[];
+  profiles: Array<{ id: string; name: string }>;
+  simulations: Array<{ id: string; title: string }>;
+  rootScenarios: Array<{ id: string; name: string }>;
 };
 
 export async function getAnalyticsHistory(filters: AnalyticsFilters) {
-  return api<AnalyticsBasePayload>("/api/analytics/history", {
+  return api<HistoryResponse>("/api/analytics/history", {
     method: "POST",
     body: JSON.stringify(filters),
   });

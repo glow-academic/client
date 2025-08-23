@@ -512,9 +512,220 @@ async def post_analytics_history(
     """
     base = fetch_analytics_base(session, filters)
 
-    # returning the rows
-    # TODO: compute more filters to return a more succient JSON
-    return base
+    attempts = base.get("attempts", []) or []
+    chats = base.get("chats", []) or []
+    grades = base.get("grades", []) or []
+    simulations = base.get("simulations", []) or []
+    scenarios = base.get("scenarios", []) or []
+    profiles = base.get("profiles", []) or []
+    rubrics = base.get("rubrics", []) or []
+
+    # Index helpers
+    sims_by_id: Dict[str, Dict[str, Any]] = {str(s.get("id")): s for s in simulations}
+    scen_by_id: Dict[str, Dict[str, Any]] = {str(s.get("id")): s for s in scenarios}
+    prof_by_id: Dict[str, Dict[str, Any]] = {str(p.get("id")): p for p in profiles}
+    rubric_by_id: Dict[str, Dict[str, Any]] = {str(r.get("id")): r for r in rubrics}
+
+    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+    for c in chats:
+        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
+        arr.append(c)
+
+    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
+    for g in grades:
+        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
+        arr.append(g)
+
+    # Build persona name/color map for scenarios' persona_ids
+    persona_ids: List[str] = []
+    for sc in scenarios:
+        pid = sc.get("persona_id")
+        if pid:
+            persona_ids.append(str(pid))
+    uniq_persona_ids = list({pid for pid in persona_ids})
+
+    persona_by_id: Dict[str, Dict[str, Any]] = {}
+    if uniq_persona_ids:
+        # Fetch only referenced personas
+        try:
+            placeholders = ",".join([f"'{pid}'" for pid in uniq_persona_ids])
+            q = text(f"select id, name, color from personas where id in ({placeholders})")
+            res = session.execute(q)
+            for row in res:
+                # row may be tuple-like or mapping
+                try:
+                    pid = str(row[0])
+                    persona_by_id[pid] = {"id": pid, "name": row[1], "color": row[2]}
+                except Exception:
+                    m = getattr(row, "_mapping", None)
+                    if m:
+                        pid = str(m.get("id"))
+                        persona_by_id[pid] = {
+                            "id": pid,
+                            "name": m.get("name"),
+                            "color": m.get("color"),
+                        }
+        except Exception:
+            persona_by_id = {}
+
+    rows: List[Dict[str, Any]] = []
+    for a in attempts:
+        aid = str(a.get("id"))
+        pid = str(a.get("profile_id")) if a.get("profile_id") else ""
+        sid = str(a.get("simulation_id"))
+        sim = sims_by_id.get(sid, {})
+        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
+        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+        attempt_chats = chats_by_attempt.get(aid, [])
+
+        # scenarios array for row
+        row_chats: List[Dict[str, Any]] = []
+        for c in attempt_chats:
+            completed = bool(c.get("completed")) or bool(c.get("completed_at"))
+            row_chats.append({
+                "id": str(c.get("id")),
+                "attemptId": aid,
+                "scenarioId": str(c.get("scenario_id")) if c.get("scenario_id") else None,
+                "createdAt": str(c.get("created_at") or ""),
+                "completedAt": str(c.get("completed_at")) if c.get("completed_at") else None,
+                "completed": completed,
+            })
+
+        # interactionIds expected from simulation.scenario_ids
+        interaction_ids = [str(x) for x in (sim.get("scenario_ids") or [])]
+
+        # completed with rubric count
+        completed_with_rubric = 0
+        total_score_points = 0.0
+        for c in attempt_chats:
+            completed = bool(c.get("completed")) or bool(c.get("completed_at"))
+            if not completed:
+                continue
+            gid = str(c.get("id"))
+            g_list = grades_by_chat.get(gid, [])
+            if g_list:
+                completed_with_rubric += 1
+                # take the latest grade if timestamps exist, else first
+                try:
+                    g_sorted = sorted(
+                        g_list,
+                        key=lambda gg: str(gg.get("created_at") or ""),
+                    )
+                    g = g_sorted[-1]
+                except Exception:
+                    g = g_list[0]
+                total_score_points += float(g.get("score", 0.0))
+
+        total_expected = len(interaction_ids) if interaction_ids else len(attempt_chats)
+        avg_score_points = (total_score_points / max(1, total_expected))
+        score_percent = int(round((avg_score_points / max(1.0, rubric_points)) * 100.0))
+
+        # Completion flags
+        completed_chats_count = sum(
+            1 for c in attempt_chats if bool(c.get("completed")) or bool(c.get("completed_at"))
+        )
+        all_chats_completed = total_expected > 0 and completed_chats_count == total_expected
+        is_incomplete = all_chats_completed and completed_with_rubric == 0
+
+        # personas tested (names/colors) from scenarios
+        persona_names: List[str] = []
+        for c in attempt_chats:
+            sid_sc = str(c.get("scenario_id")) if c.get("scenario_id") else None
+            if not sid_sc:
+                continue
+            sc = scen_by_id.get(sid_sc)
+            if not sc:
+                continue
+            pers_id = str(sc.get("persona_id")) if sc.get("persona_id") else None
+            if not pers_id:
+                continue
+            pers = persona_by_id.get(pers_id)
+            if pers and pers.get("name"):
+                persona_names.append(str(pers.get("name")))
+        personas_tested = list({n for n in persona_names})
+
+        # root scenario ids for filtering
+        root_scenario_ids = []
+        seen_root = set()
+        for c in attempt_chats:
+            sid_sc = str(c.get("scenario_id")) if c.get("scenario_id") else None
+            if not sid_sc:
+                continue
+            sc = scen_by_id.get(sid_sc)
+            if not sc:
+                continue
+            root_id = str(sc.get("parent_id")) if sc.get("parent_id") else str(sc.get("id"))
+            if root_id not in seen_root:
+                seen_root.add(root_id)
+                root_scenario_ids.append(root_id)
+
+        prof = prof_by_id.get(pid, {})
+        full_name = f"{prof.get('first_name','')} {prof.get('last_name','')}".strip()
+
+        rows.append({
+            "id": aid,
+            "profileId": pid,
+            "profileName": full_name,
+            "simulationId": sid,
+            "simulationTitle": str(sim.get("title") or "Simulation"),
+            "createdAt": str(a.get("created_at") or ""),
+            "archived": bool(a.get("archived", False)),
+            "infiniteMode": bool(a.get("infinite_mode", False)),
+            "infiniteModeTimeLimit": a.get("infinite_mode_time_limit"),
+            "scenarios": row_chats,
+            "interactionIds": interaction_ids,
+            "completedWithRubricCount": completed_with_rubric,
+            "totalExpected": total_expected,
+            "scorePercent": score_percent,
+            "isPractice": bool(sim.get("practice_simulation", False)),
+            "rootScenarioIds": root_scenario_ids,
+            "personasTested": personas_tested,
+            "isIncomplete": is_incomplete,
+        })
+
+    # Build options for filters on client
+    from typing import Set
+    profile_options: List[Dict[str, Any]] = []
+    seen_prof: Set[str] = set()
+    for r in rows:
+        pid_opt = r.get("profileId")
+        pid = str(pid_opt) if pid_opt else None
+        if pid and pid not in seen_prof:
+            seen_prof.add(pid)
+            profile_options.append({"id": pid, "name": r.get("profileName", "")})
+
+    simulation_options: List[Dict[str, Any]] = []
+    seen_sim: Set[str] = set()
+    for r in rows:
+        sim_id_opt = r.get("simulationId")
+        sim_id = str(sim_id_opt) if sim_id_opt else None
+        if sim_id and sim_id not in seen_sim:
+            seen_sim.add(sim_id)
+            simulation_options.append({"id": sim_id, "title": r.get("simulationTitle", "Simulation")})
+
+    # Root scenarios from base
+    root_scenarios = []
+    seen_rs = set()
+    for sc in scenarios:
+        rid = str(sc.get("parent_id")) if sc.get("parent_id") else str(sc.get("id"))
+        if rid in seen_rs:
+            continue
+        seen_rs.add(rid)
+        # Find the representative name (parent's name if parent exists)
+        name = None
+        if sc.get("parent_id"):
+            parent = scen_by_id.get(str(sc.get("parent_id")))
+            name = parent.get("name") if parent else sc.get("name")
+        else:
+            name = sc.get("name")
+        root_scenarios.append({"id": rid, "name": name or "Scenario"})
+
+    return {
+        "rows": rows,
+        "profiles": profile_options,
+        "simulations": simulation_options,
+        "rootScenarios": root_scenarios,
+    }
 
 
 @router.post("/home")

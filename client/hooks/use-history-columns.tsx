@@ -15,10 +15,19 @@ import { Infinity as InfinityIcon } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Enhanced types for the data table
-interface EnhancedAttempt extends SimulationAttempt {
+interface EnhancedAttempt
+  extends Omit<SimulationAttempt, "infiniteModeTimeLimit"> {
   scenarios: SimulationChat[];
   personasTested: string[];
   interactionIds: string[];
+  // Optionally precomputed from server
+  completedWithRubricCount?: number;
+  totalExpected?: number;
+  scorePercent?: number;
+  isPractice?: boolean;
+  rootScenarioIds?: string[];
+  isIncomplete?: boolean;
+  infiniteModeTimeLimit?: number | null;
 }
 
 // Component to use the columns with filtered data
@@ -27,11 +36,23 @@ export function useHistoryColumns({
   showExport: _showExport = true,
   showArchive = false,
   allSameProfile = false,
+  precomputedAttempts,
+  precomputedProfileOptions,
+  precomputedSimulationOptions,
+  precomputedScenarioOptions,
 }: {
   filteredData: FilteredData | null;
   showExport: boolean;
   showArchive: boolean;
   allSameProfile?: boolean;
+  precomputedAttempts?: EnhancedAttempt[];
+  precomputedProfileOptions?: {
+    value: string;
+    label: string;
+    icon?: unknown;
+  }[];
+  precomputedSimulationOptions?: { value: string; label: string }[];
+  precomputedScenarioOptions?: { value: string; label: string }[];
 }) {
   // Use centralized datasets from filteredData
   const personas = filteredData?.personas;
@@ -112,13 +133,14 @@ export function useHistoryColumns({
 
   // Create user options for profile names - only if not all attempts have the same profile
   const profileOptions = useMemo(() => {
+    if (precomputedProfileOptions) return precomputedProfileOptions;
     if (!filteredData?.profiles || allSameProfile) return [];
     return filteredData.profiles.map((profile: Profile) => ({
       value: profile.id,
       label: profile.firstName + " " + profile.lastName,
       icon: null,
     }));
-  }, [filteredData?.profiles, allSameProfile]);
+  }, [filteredData?.profiles, allSameProfile, precomputedProfileOptions]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
@@ -130,6 +152,7 @@ export function useHistoryColumns({
 
   // Create enhanced attempts data from filtered data
   const enhancedAttempts = useMemo(() => {
+    if (precomputedAttempts) return precomputedAttempts;
     if (!filteredData || !personas) return [];
 
     return filteredData.attempts.map(
@@ -168,10 +191,11 @@ export function useHistoryColumns({
         };
       }
     );
-  }, [filteredData, personas]);
+  }, [filteredData, personas, precomputedAttempts]);
 
   // Create scenario options for filtering
   const scenarioOptions = useMemo(() => {
+    if (precomputedScenarioOptions) return precomputedScenarioOptions;
     if (!filteredData?.scenarios) return [];
     // Only show root scenarios (parentId is null) in the facet options
     const rootScenarios = filteredData.scenarios.filter(
@@ -181,16 +205,17 @@ export function useHistoryColumns({
       value: scenario.id,
       label: scenario.name,
     }));
-  }, [filteredData?.scenarios]);
+  }, [filteredData?.scenarios, precomputedScenarioOptions]);
 
   // Create simulation options for filtering
   const simulationOptions = useMemo(() => {
+    if (precomputedSimulationOptions) return precomputedSimulationOptions;
     if (!filteredData?.simulations) return [];
     return filteredData.simulations.map((simulation) => ({
       value: simulation.id,
       label: simulation.title,
     }));
-  }, [filteredData?.simulations]);
+  }, [filteredData?.simulations, precomputedSimulationOptions]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -363,19 +388,28 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
+          const preCompleted = (row.original as EnhancedAttempt)
+            .completedWithRubricCount;
+          const preTotal = (row.original as EnhancedAttempt).totalExpected;
           const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
           // Count only chats that are completed AND have a corresponding rubric/grade
-          const completedWithRubricCount = chatsArray.filter((chat) => {
-            if (!chat.completed) return false;
-            const grade = filteredData?.grades?.find(
-              (g) => g.simulationChatId === chat.id
-            );
-            return Boolean(grade);
-          }).length;
-          const totalChats = interactionIds?.length || chatsArray.length || 0;
+          const completedWithRubricCount =
+            typeof preCompleted === "number"
+              ? preCompleted
+              : chatsArray.filter((chat) => {
+                  if (!chat.completed) return false;
+                  const grade = filteredData?.grades?.find(
+                    (g) => g.simulationChatId === chat.id
+                  );
+                  return Boolean(grade);
+                }).length;
+          const totalChats =
+            typeof preTotal === "number"
+              ? preTotal
+              : interactionIds?.length || chatsArray.length || 0;
 
           return (
             <div className="text-center">
@@ -396,32 +430,46 @@ export function useHistoryColumns({
         accessorFn: (row: EnhancedAttempt) => {
           const chats = row.scenarios;
           const interactionIds = row.interactionIds;
+          const preCompleted = (row as EnhancedAttempt)
+            .completedWithRubricCount;
+          const preTotal = (row as EnhancedAttempt).totalExpected;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
           // Only count chats that are completed AND have a corresponding rubric/grade
-          const completedWithRubricCount = chatsArray.filter((chat) => {
-            if (!chat.completed) return false;
-            const grade = filteredData?.grades?.find(
-              (g) => g.simulationChatId === chat.id
-            );
-            return Boolean(grade);
-          }).length;
-          const totalChats = interactionIds?.length || chatsArray.length || 0;
+          const completedWithRubricCount =
+            typeof preCompleted === "number"
+              ? preCompleted
+              : chatsArray.filter((chat) => {
+                  if (!chat.completed) return false;
+                  const grade = filteredData?.grades?.find(
+                    (g) => g.simulationChatId === chat.id
+                  );
+                  return Boolean(grade);
+                }).length;
+          const totalChats =
+            typeof preTotal === "number"
+              ? preTotal
+              : interactionIds?.length || chatsArray.length || 0;
           return totalChats > 0 ? completedWithRubricCount / totalChats : 0;
         },
         filterFn: (row, _id, value) => {
           if (!value || value.length === 0) return true;
 
-          // Use original chats because accessorFn changes the accessor value
+          // Prefer precomputed root scenario ids if available
+          const preRootIds = (row.original as EnhancedAttempt).rootScenarioIds;
+          if (Array.isArray(preRootIds) && preRootIds.length > 0) {
+            return value.some((scenarioId: string) =>
+              preRootIds.includes(scenarioId)
+            );
+          }
+
+          // Fallback: derive from chats
           const chats = (row.original as EnhancedAttempt)
             .scenarios as SimulationChat[];
 
-          // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
 
-          // Build list of root scenario ids for the attempt's chats
-          // If a chat's scenario has a parent, use the parentId; otherwise use its own id
           const attemptRootScenarioIds = chatsArray
             .map((chat) => {
               const scenario = filteredData?.scenarios?.find(
@@ -529,7 +577,9 @@ export function useHistoryColumns({
         },
         cell: ({ row }) => {
           const chats = row.original.scenarios;
-          const expectedChats = row.original.interactionIds?.length;
+          const expectedChats =
+            (row.original as EnhancedAttempt).totalExpected ??
+            row.original.interactionIds?.length;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
@@ -550,8 +600,12 @@ export function useHistoryColumns({
           const totalExpected = expectedChats || chatsArray.length;
           const allChatsCompleted = completedChats.length === totalExpected;
 
-          // Show Incomplete if all chats are completed but no rubrics exist
-          if (allChatsCompleted && gradedCompletedChatGrades.length === 0) {
+          // Prefer precomputed incomplete flag
+          const isIncomplete = (row.original as EnhancedAttempt).isIncomplete;
+          if (
+            isIncomplete ||
+            (allChatsCompleted && gradedCompletedChatGrades.length === 0)
+          ) {
             return <div className="text-red-500 font-medium">Incomplete</div>;
           }
 
@@ -568,22 +622,22 @@ export function useHistoryColumns({
             );
             totalScore += grade?.score || 0; // 0 for completed chats without grades
           }
-          const averageScore = totalScore / totalExpected;
-
-          // Calculate percentage based on rubric total points
-          // Find the rubric for this simulation
-          const simulation = filteredData?.simulations?.find(
-            (s) => s.id === row.original.simulationId
-          );
-          const rubric = validRubrics.find(
-            (r) => r.id === simulation?.rubricId
-          );
-
-          // Calculate percentage using rubric total points, fallback to 100 if not found
-          const rubricTotalPoints = rubric?.points || 100;
-          const scorePercent = Math.round(
-            (averageScore / rubricTotalPoints) * 100
-          );
+          // Prefer precomputed percent
+          const prePercent = (row.original as EnhancedAttempt).scorePercent;
+          let scorePercent: number;
+          if (typeof prePercent === "number") {
+            scorePercent = prePercent;
+          } else {
+            const averageScore = totalScore / totalExpected;
+            const simulation = filteredData?.simulations?.find(
+              (s) => s.id === row.original.simulationId
+            );
+            const rubric = validRubrics.find(
+              (r) => r.id === simulation?.rubricId
+            );
+            const rubricTotalPoints = rubric?.points || 100;
+            scorePercent = Math.round((averageScore / rubricTotalPoints) * 100);
+          }
 
           return (
             <div className="text-center">
@@ -604,14 +658,28 @@ export function useHistoryColumns({
         },
         enableSorting: true,
         filterFn: (row, _, value) => {
-          const chats = row.getValue("scenarios") as SimulationChat[];
+          // Prefer precomputed flags and percent
+          const preIsIncomplete = (row.original as EnhancedAttempt)
+            .isIncomplete;
+          if (preIsIncomplete) {
+            return value.includes("incomplete");
+          }
+          const prePercent = (row.original as EnhancedAttempt).scorePercent;
+          if (typeof prePercent === "number") {
+            if (prePercent >= 80) {
+              return value.includes("excellent");
+            } else if (prePercent >= 70) {
+              return value.includes("good");
+            } else {
+              return value.includes("needs-improvement");
+            }
+          }
 
-          // Ensure chats is an array
+          const chats = row.getValue("scenarios") as SimulationChat[];
           const chatsArray = Array.isArray(chats) ? chats : [];
           if (chatsArray.length === 0) {
             return value.includes("needs-improvement");
           }
-
           const completedChats = chatsArray.filter((chat) => chat.completed);
           const gradedCompletedChatGrades = completedChats
             .map((chat: SimulationChat) =>
@@ -620,24 +688,17 @@ export function useHistoryColumns({
               )
             )
             .filter(Boolean);
-
           const totalExpected =
             row.original.interactionIds?.length || chatsArray.length;
           const allChatsCompleted = completedChats.length === totalExpected;
-
           if (gradedCompletedChatGrades.length === 0) {
             if (allChatsCompleted) {
               return value.includes("incomplete");
             }
-            // If no chats are completed at all, treat as "not-graded"
             if (completedChats.length === 0) {
               return value.includes("not-graded");
             }
-            // For partial completion, calculate actual score (may be 0% if no grades)
-            // This will be handled by the score calculation below
           }
-
-          // Calculate total score including 0 for any completed chats without grades
           let totalScore = 0;
           for (const chat of completedChats) {
             const grade = filteredData?.grades?.find(
@@ -646,8 +707,6 @@ export function useHistoryColumns({
             totalScore += grade?.score || 0; // 0 for completed chats without grades
           }
           const averageScore = totalScore / totalExpected;
-
-          // Calculate percentage based on rubric total points
           const simulation = filteredData?.simulations?.find(
             (s) => s.id === row.original.simulationId
           );
@@ -675,7 +734,9 @@ export function useHistoryColumns({
           const attempt = row.original;
           const chats = attempt.scenarios;
 
-          const expectedChats = attempt.interactionIds?.length;
+          const expectedChats =
+            (attempt as EnhancedAttempt).totalExpected ??
+            attempt.interactionIds?.length;
           const chatsArray = Array.isArray(chats) ? chats : [];
           const completedChats = chatsArray.filter((chat) => chat.completed);
           const gradedCompletedChatGrades = completedChats
@@ -691,13 +752,16 @@ export function useHistoryColumns({
 
           // New definition: incomplete when all chats are completed but none have a rubric
           const isIncomplete =
-            allChatsCompleted && gradedCompletedChatGrades.length === 0;
+            (attempt as EnhancedAttempt).isIncomplete ||
+            (allChatsCompleted && gradedCompletedChatGrades.length === 0);
 
           // Determine if this is practice mode based on simulation
           const simulation = filteredData?.simulations?.find(
             (s) => s.id === attempt.simulationId
           );
-          const isPractice = Boolean(simulation?.practiceSimulation);
+          const isPractice =
+            (attempt as EnhancedAttempt).isPractice ??
+            Boolean(simulation?.practiceSimulation);
 
           return (
             <DataTableRowActions

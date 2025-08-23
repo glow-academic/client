@@ -87,7 +87,9 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const { activeProfile } = useProfile();
 
   const { data: chats = [], isLoading: isLoadingChats } =
-    useAssistantChatsByProfileId(activeProfile?.id || "");
+    useAssistantChatsByProfileId(
+      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || ""
+    );
 
   // Create new chat mutation
   const createChatMutation = useMutation({
