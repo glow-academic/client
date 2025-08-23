@@ -24,6 +24,7 @@ import { useWebSocket } from "@/contexts/websocket-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
 import type { HistoryResponse } from "@/utils/api/analytics/get-history";
+import { getAnalyticsHistory } from "@/utils/api/analytics/get-history";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
@@ -60,20 +61,20 @@ export default function Practice() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/analytics/history", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-            profileId: effectiveProfile?.id,
-          }),
+        const baseFilters = {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          cohortIds: selectedCohortIds,
+          roles: selectedRoles as unknown as string[],
+          simulationFilters,
+        } as const;
+        const json = await getAnalyticsHistory({
+          ...baseFilters,
+          ...(effectiveProfile?.id
+            ? { profileId: String(effectiveProfile.id) }
+            : {}),
         });
-        const json = (await res.json()) as HistoryResponse;
-        if (!cancelled) setHistoryData(json);
+        if (!cancelled) setHistoryData(json ?? null);
       } catch {
         if (!cancelled)
           setHistoryData({
@@ -81,7 +82,7 @@ export default function Practice() {
             profiles: [],
             simulations: [],
             rootScenarios: [],
-          });
+          } as unknown as HistoryResponse);
       }
     })();
     return () => {

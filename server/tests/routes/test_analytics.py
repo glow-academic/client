@@ -100,3 +100,36 @@ class TestPost_Analytics_Home:
         # TODO: Implement error test for post_analytics_home
         assert False, "IMPLEMENT: Error test for post_analytics_home"
 
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `post_analytics_practice`")
+class TestPost_Analytics_Practice:
+    """Tests for post_analytics_practice endpoint."""
+
+    def test_post_analytics_practice_success(self, client):
+        """Test successful post_analytics_practice request."""
+        # TODO: Implement test for post_analytics_practice
+        assert False, "IMPLEMENT: Test for post_analytics_practice"
+
+    def test_post_analytics_practice_error(self, client):
+        """Test post_analytics_practice error handling."""
+        # TODO: Implement error test for post_analytics_practice
+        assert False, "IMPLEMENT: Error test for post_analytics_practice"
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `post_analytics_dashboard`")
+class TestPost_Analytics_Dashboard:
+    """Tests for post_analytics_dashboard endpoint."""
+
+    def test_post_analytics_dashboard_success(self, client):
+        """Test successful post_analytics_dashboard request."""
+        # TODO: Implement test for post_analytics_dashboard
+        assert False, "IMPLEMENT: Test for post_analytics_dashboard"
+
+    def test_post_analytics_dashboard_error(self, client):
+        """Test post_analytics_dashboard error handling."""
+        # TODO: Implement error test for post_analytics_dashboard
+        assert False, "IMPLEMENT: Error test for post_analytics_dashboard"
+

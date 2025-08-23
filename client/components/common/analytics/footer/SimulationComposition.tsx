@@ -33,7 +33,7 @@ import {
 import { useAnalytics } from "@/contexts/analytics-context";
 import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
@@ -64,8 +64,20 @@ export default function SimulationComposition({
     simulationFilters,
   } = useAnalytics();
   const [simulationComposition, setSimulationComposition] = useState<{
-    highPerforming: Array<{ name: string; value: number; icon?: string }>;
-    lowPerforming: Array<{ name: string; value: number; icon?: string }>;
+    highPerforming: Array<{
+      name: string;
+      value: number;
+      icon?: string;
+      significance?: "high" | "medium" | "low" | "none";
+      description?: string;
+    }>;
+    lowPerforming: Array<{
+      name: string;
+      value: number;
+      icon?: string;
+      significance?: "high" | "medium" | "low" | "none";
+      description?: string;
+    }>;
     highPerformingCount: number;
     lowPerformingCount: number;
     highPerformingDetails: Array<{
@@ -116,15 +128,25 @@ export default function SimulationComposition({
           [
             {
               name: "calculateSimulationComposition",
-              args: { config },
+              args: {
+                method: config.method,
+                topPercentage: config.topPercentage,
+                bottomPercentage: config.bottomPercentage,
+              },
             },
           ]
         );
         if (!aborted) {
-          const payload =
-            (data.results[
-              "calculateSimulationComposition"
-            ] as typeof simulationComposition) ?? simulationComposition;
+          const payload = (data.results[
+            "calculateSimulationComposition"
+          ] as typeof simulationComposition) ?? {
+            highPerforming: [],
+            lowPerforming: [],
+            highPerformingCount: 0,
+            lowPerformingCount: 0,
+            highPerformingDetails: [],
+            lowPerformingDetails: [],
+          };
           setSimulationComposition(payload);
         }
       } catch {
@@ -149,7 +171,9 @@ export default function SimulationComposition({
     selectedCohortIds,
     selectedRoles,
     simulationFilters,
-    config,
+    config.method,
+    config.topPercentage,
+    config.bottomPercentage,
   ]);
 
   // Get method label for dialog titles

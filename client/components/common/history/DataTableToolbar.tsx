@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import type { FilteredData } from "@/utils/analytics/filtering";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 export interface DataTableToolbarProps<TData> {
@@ -19,7 +18,6 @@ export interface DataTableToolbarProps<TData> {
   isAdmin?: boolean;
   showExport?: boolean;
   showAll?: boolean;
-  filteredData?: FilteredData | null;
   showArchive?: boolean;
   selectedAttempts?: string[];
   onBulkArchive?: (archive: boolean) => Promise<void>;

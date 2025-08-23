@@ -365,9 +365,6 @@ export default function Home() {
   const endIndex = startIndex + maxVisible;
   const visibleSimulations = sortedSimulations.slice(startIndex, endIndex);
 
-  // Loading state
-  // const isLoading = isFilteredDataLoading;
-
   if (!effectiveProfile) {
     return (
       <div className="container mx-auto p-4 space-y-8">

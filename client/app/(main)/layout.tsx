@@ -40,7 +40,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Infinity,
   Map as MapIcon,
@@ -101,6 +100,7 @@ import {
   isMainScreen,
 } from "@/utils/navigation-utils";
 import * as tus from "tus-js-client";
+import { useUpdateDocument } from "@/lib/api/hooks/documents";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -116,7 +116,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
-  const queryClient = useQueryClient();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -190,6 +189,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
+
+  const { mutate: updateDocument } = useUpdateDocument();
 
   // Data for customize dialog
   const { data: simulations = [] } = useSimulations();
@@ -353,9 +354,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               // Apply client-side classification (type/tags)
               try {
                 if (!isZipFile && result.document_id && classification) {
-                  const { updateDocument } = await import(
-                    "@/utils/mutations/documents/update-document"
-                  );
                   await updateDocument(result.document_id, {
                     type: classification.type,
                     tags: classification.tags,
@@ -385,17 +383,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   message: "Post-upload classification update failed",
                   error: classificationError,
                   context: { component: "MainLayoutContent" },
-                });
-              }
-
-              // Invalidate documents queries to refresh the UI
-              await queryClient.invalidateQueries({ queryKey: ["documents"] });
-
-              // If we're on the documents page, also invalidate any filtered queries
-              if (pathname === "/create/documents") {
-                await queryClient.invalidateQueries({
-                  queryKey: ["documents"],
-                  exact: false,
                 });
               }
 

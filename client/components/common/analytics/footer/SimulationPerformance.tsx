@@ -21,7 +21,7 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { BarChart3 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -45,7 +45,7 @@ export default function SimulationPerformance({
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // Removed unused local popover state after switching to SimulationPicker
   const {
     startDate,
     endDate,

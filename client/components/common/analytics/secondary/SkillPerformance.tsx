@@ -54,7 +54,7 @@ export default function SkillPerformance({
   const { data: rubricsData } = useRubrics();
 
   // Use centralized datasets from API
-  const rubrics = rubricsData ?? [];
+  const rubrics = useMemo(() => rubricsData ?? [], [rubricsData]);
 
   // Set default selection to first rubric when rubrics are loaded
   const defaultRubrics = useMemo(() => {
