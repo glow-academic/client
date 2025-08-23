@@ -17,10 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateSkillPerformance } from "@/utils/analytics/secondary";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { GraduationCap, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -32,7 +33,6 @@ import {
 } from "recharts";
 
 export interface SkillPerformanceProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -41,13 +41,20 @@ export interface SkillPerformanceProps {
 }
 
 export default function SkillPerformance({
-  filteredData,
   thresholds,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const { data: rubricsData } = useRubrics();
 
-  // Use centralized datasets from filteredData
-  const rubrics = filteredData?.rubrics;
+  // Use centralized datasets from API
+  const rubrics = rubricsData ?? [];
 
   // Set default selection to first rubric when rubrics are loaded
   const defaultRubrics = useMemo(() => {
@@ -64,23 +71,60 @@ export default function SkillPerformance({
     return rubrics.filter((r) => defaultRubrics.some((sr) => sr.id === r.id));
   }, [rubrics, defaultRubrics]);
 
-  const standardGroups = filteredData?.standardGroups;
-  const standards = filteredData?.standards;
+  // standards and standardGroups will be derived on the server
 
-  // Calculate skill performance using utility function
-  const skillPerformanceResult = useMemo(() => {
-    if (!filteredData || !standards || !standardGroups || !filteredRubrics) {
-      return null;
+  const [skillPerformanceResult, setSkillPerformanceResult] = useState<{
+    hasData: boolean;
+    radarData: Array<{
+      metric: string;
+      value: number;
+      score: number;
+      points: number;
+    }>;
+  } | null>(null);
+
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [
+            {
+              name: "calculateSkillPerformance",
+              args: { selectedRubricIds: filteredRubrics.map((r) => r.id) },
+            },
+          ]
+        );
+        if (!aborted) {
+          const payload =
+            (data.results[
+              "calculateSkillPerformance"
+            ] as typeof skillPerformanceResult) ?? null;
+          setSkillPerformanceResult(payload);
+        }
+      } catch {
+        if (!aborted) setSkillPerformanceResult(null);
+      }
     }
-
-    return calculateSkillPerformance(
-      filteredData,
-      standards,
-      standardGroups,
-      filteredRubrics,
-      filteredRubrics.map((r) => r.id)
-    );
-  }, [filteredData, standards, standardGroups, filteredRubrics]);
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    filteredRubrics,
+  ]);
 
   // Calculate threshold status based on skill performance data
   const getThresholdStatus = () => {
@@ -102,7 +146,7 @@ export default function SkillPerformance({
   const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
-  const isLoading = !rubrics || !standardGroups || !standards;
+  const isLoading = !rubrics || rubrics.length === 0;
 
   // Show loading state
   if (isLoading) {
@@ -288,10 +332,7 @@ export default function SkillPerformance({
                 ) => {
                   if (name === "value" && props?.payload) {
                     const data = props.payload;
-                    return [
-                      `${data.score.toFixed(2)}/${data.points}`,
-                      "Score",
-                    ];
+                    return [`${data.score.toFixed(2)}/${data.points}`, "Score"];
                   }
                   return [value, name];
                 }}

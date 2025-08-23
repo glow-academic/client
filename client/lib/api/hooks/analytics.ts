@@ -246,7 +246,7 @@ export function useAnalyticsPractice(
     queryKey: analyticsPracticeKeys.list(filters),
     enabled,
     queryFn: async () => {
-      const res = await api<unknown[]>("/api/v1/analytics/practice", {
+      const res = await api<unknown[]>("/api/analytics/practice", {
         method: "POST",
         body: JSON.stringify(filters),
       });

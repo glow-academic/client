@@ -869,6 +869,102 @@ async def post_analytics_home(
     return rows
 
 
+@router.post("/practice")
+async def post_analytics_practice(
+    filters: AnalyticsFilters, session: Session = Depends(get_session)
+) -> List[Dict[str, Any]]:
+    """
+    Compute per-practice-simulation rows for the Practice page for a given profile.
+
+    Each row contains the simulation id/title, the user's highest normalized score
+    across attempts, and whether the user has passed based on the rubric threshold.
+    """
+    base = fetch_analytics_base(session, filters)
+
+    attempts: List[Dict[str, Any]] = base.get("attempts", []) or []
+    chats: List[Dict[str, Any]] = base.get("chats", []) or []
+    grades: List[Dict[str, Any]] = base.get("grades", []) or []
+    simulations: List[Dict[str, Any]] = base.get("simulations", []) or []
+    rubrics: List[Dict[str, Any]] = base.get("rubrics", []) or []
+
+    rubric_by_id: Dict[str, Dict[str, Any]] = {str(r.get("id")): r for r in rubrics}
+
+    # Index helpers
+    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+    for c in chats:
+        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
+        arr.append(c)
+
+    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
+    for g in grades:
+        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
+        arr.append(g)
+
+    profile_id: Optional[str] = None
+    try:
+        pid = getattr(filters, "profileId", None)
+        if pid:
+            profile_id = str(pid)
+    except Exception:
+        profile_id = None
+
+    rows: List[Dict[str, Any]] = []
+    for sim in simulations:
+        # Only practice simulations
+        if not bool(sim.get("practice_simulation", False)):
+            continue
+
+        sid = str(sim.get("id"))
+        title = str(sim.get("title") or "Simulation")
+
+        highest_norm_percent = 0.0
+
+        # If no profile provided, return zeros (client can still render cards)
+        if profile_id:
+            # All attempts by this profile for this simulation
+            user_attempts = [
+                a for a in attempts
+                if str(a.get("simulation_id")) == sid and str(a.get("profile_id") or "") == profile_id
+            ]
+
+            # For each attempt, compute average normalized score across its chats' grades
+            for att in user_attempts:
+                att_id = str(att.get("id"))
+                att_chats = chats_by_attempt.get(att_id, [])
+                rubric = rubric_by_id.get(str(sim.get("rubric_id")))
+                rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+
+                scores: List[float] = []
+                for ch in att_chats:
+                    gid = str(ch.get("id"))
+                    for g in grades_by_chat.get(gid, []):
+                        score = float(g.get("score", 0.0))
+                        norm = (score / max(rubric_points, 1.0)) * 100.0
+                        scores.append(norm)
+
+                if scores:
+                    avg = sum(scores) / len(scores)
+                    if avg > highest_norm_percent:
+                        highest_norm_percent = avg
+
+        # Pass threshold per rubric
+        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
+        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+        pass_points = float(rubric.get("pass_points", 70)) if rubric else 70.0
+        pass_threshold = (pass_points / max(rubric_points, 1.0)) * 100.0
+
+        has_passed = highest_norm_percent >= pass_threshold and highest_norm_percent > 0.0
+
+        rows.append({
+            "simulation_id": sid,
+            "simulation_title": title,
+            "highest_score": int(round(highest_norm_percent)),
+            "has_passed": bool(has_passed),
+        })
+
+    return rows
+
+
 class DashboardFunctionCall(BaseModel):
     name: str
     args: Dict[str, Any] = Field(default_factory=dict)

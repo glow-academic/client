@@ -1,5 +1,4 @@
 import { api } from "@/lib/api/fetcher";
-import "server-only";
 
 export type SimulationFilter = "general" | "practice" | "archived";
 

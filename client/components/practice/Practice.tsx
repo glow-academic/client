@@ -23,7 +23,7 @@ import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
-import type { AnalyticsBasePayload } from "@/utils/api/analytics/get-history";
+import type { HistoryResponse } from "@/utils/api/analytics/get-history";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
@@ -55,9 +55,7 @@ export default function Practice() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-  const [historyData, setHistoryData] = useState<AnalyticsBasePayload | null>(
-    null
-  );
+  const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -74,24 +72,16 @@ export default function Practice() {
             profileId: effectiveProfile?.id,
           }),
         });
-        const json = (await res.json()) as AnalyticsBasePayload;
+        const json = (await res.json()) as HistoryResponse;
         if (!cancelled) setHistoryData(json);
       } catch {
         if (!cancelled)
           setHistoryData({
-            attempts: [],
-            chats: [],
-            grades: [],
-            feedbacks: [],
-            messages: [],
-            simulations: [],
-            scenarios: [],
+            rows: [],
             profiles: [],
-            cohorts: [],
-            rubrics: [],
-            standardGroups: [],
-            standards: [],
-          } as AnalyticsBasePayload);
+            simulations: [],
+            rootScenarios: [],
+          });
       }
     })();
     return () => {

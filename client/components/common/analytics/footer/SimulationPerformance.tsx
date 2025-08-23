@@ -6,7 +6,10 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
+import {
+  SimulationPicker,
+  type Simulation,
+} from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
   CardContent,
@@ -14,23 +17,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Simulation } from "@/types";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateScenarioPerformanceWithinSimulation } from "@/utils/analytics/footer";
-import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -43,7 +33,6 @@ import {
 } from "recharts";
 
 export interface SimulationPerformanceProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -52,52 +41,89 @@ export interface SimulationPerformanceProps {
 }
 
 export default function SimulationPerformance({
-  filteredData,
   thresholds,
 }: SimulationPerformanceProps) {
   const [selectedSimulation, setSelectedSimulation] =
     useState<Simulation | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const { data: simulations } = useSimulations();
 
-  const scenarios = filteredData?.scenarios;
-  const rubrics = filteredData?.rubrics;
-  // Auto-select simulation if enabled and available
-  useMemo(() => {
-    if (filteredData?.simulations && filteredData?.simulations.length > 0) {
-      // If no simulation is selected, select the first one
+  type ScenarioRow = {
+    scenarioId: string;
+    scenarioName: string;
+    avgScore: number;
+    successRate: number;
+    performanceChange: number;
+  };
+  const [scenarioPerformanceData, setScenarioPerformanceData] = useState<
+    ScenarioRow[]
+  >([]);
+
+  useEffect(() => {
+    // Default selection to first available simulation
+    if (
+      !selectedSimulation &&
+      Array.isArray(simulations) &&
+      simulations.length > 0
+    ) {
+      setSelectedSimulation(simulations[0] as unknown as Simulation);
+    }
+  }, [simulations, selectedSimulation]);
+
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
       if (!selectedSimulation) {
-        const firstSimulation = filteredData?.simulations[0];
-        if (firstSimulation) {
-          setSelectedSimulation(firstSimulation);
-        }
-      } else {
-        // If selected simulation is no longer available, select the first available one
-        const isStillAvailable = filteredData?.simulations.some(
-          (sim) => sim.id === selectedSimulation.id
+        setScenarioPerformanceData([]);
+        return;
+      }
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [
+            {
+              name: "calculateScenarioPerformanceWithinSimulation",
+              args: { selectedSimulationId: selectedSimulation.id, thresholds },
+            },
+          ]
         );
-        if (!isStillAvailable) {
-          const firstSimulation = filteredData?.simulations[0];
-          if (firstSimulation) {
-            setSelectedSimulation(firstSimulation);
-          }
+        if (!aborted) {
+          const payload =
+            (data.results[
+              "calculateScenarioPerformanceWithinSimulation"
+            ] as ScenarioRow[]) ?? [];
+          setScenarioPerformanceData(payload);
         }
+      } catch {
+        if (!aborted) setScenarioPerformanceData([]);
       }
     }
-  }, [filteredData?.simulations, selectedSimulation]);
-
-  // Calculate scenario performance data for selected simulation using utility function
-  const scenarioPerformanceData = useMemo(() => {
-    if (!selectedSimulation || !scenarios || !filteredData || !rubrics) {
-      return [];
-    }
-
-    return calculateScenarioPerformanceWithinSimulation(
-      filteredData,
-      rubrics,
-      selectedSimulation,
-      thresholds
-    );
-  }, [selectedSimulation, filteredData, rubrics, thresholds, scenarios]);
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    selectedSimulation,
+    thresholds,
+  ]);
 
   // Calculate insights
   const insights = useMemo(() => {
@@ -188,58 +214,20 @@ export default function SimulationPerformance({
 
           {/* Simulation Picker */}
           <div className="flex items-center gap-2">
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={pickerOpen}
-                  className="w-48 justify-between text-sm h-8"
-                >
-                  <span className="truncate text-left">
-                    {selectedSimulation
-                      ? selectedSimulation.title
-                      : "Select simulation..."}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0">
-                <Command>
-                  <CommandInput placeholder="Search simulations..." />
-                  <CommandEmpty>No simulation found.</CommandEmpty>
-                  <CommandGroup>
-                    {filteredData?.simulations.map((simulation) => (
-                      <CommandItem
-                        key={simulation.id}
-                        value={simulation.id}
-                        onSelect={() => {
-                          setSelectedSimulation(simulation);
-                          setPickerOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4 shrink-0",
-                            selectedSimulation?.id === simulation.id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">
-                            {simulation.title}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {simulation.scenarioIds?.length || 0} scenarios
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <SimulationPicker
+              simulations={(simulations as unknown as Simulation[]) ?? []}
+              placeholder="Select simulation..."
+              onSelect={(s) => {
+                setSelectedSimulation(s[0] ?? null);
+              }}
+              selectedSimulations={
+                selectedSimulation ? [selectedSimulation] : []
+              }
+              singleSelect
+              hideSelectedChips
+              showLabel={false}
+              buttonClassName="w-48 h-8 text-sm"
+            />
           </div>
         </div>
       </CardHeader>

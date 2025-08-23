@@ -26,10 +26,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateCohortPerformance } from "@/utils/analytics/secondary";
+import { useAnalytics } from "@/contexts/analytics-context";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
 import { BarChart3, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -41,7 +42,6 @@ import {
 } from "recharts";
 
 export interface CohortPerformanceProps {
-  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -50,28 +50,84 @@ export interface CohortPerformanceProps {
 }
 
 export default function CohortPerformance({
-  filteredData,
   thresholds,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
+  const { data: simulations } = useSimulations();
 
-  const rubrics = filteredData?.rubrics;
+  type CohortDaily = { date: string; avgScore: number };
+  type CohortRow = {
+    id: string;
+    name: string;
+    passRate: number;
+    totalStudents: number;
+    passedStudents: number;
+    rubricPoints: number;
+    rubricPassPoints: number;
+    availableSimulations: number;
+  };
+  const [cohortPerformanceResult, setCohortPerformanceResult] = useState<{
+    hasData: boolean;
+    cohortData: CohortRow[];
+    dailyData: CohortDaily[];
+    insights?: string;
+  } | null>(null);
 
-  // Use the utility function to calculate cohort performance
-  const cohortPerformanceResult = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return null;
+  useEffect(() => {
+    let aborted = false;
+    async function run() {
+      try {
+        const data = await getAnalyticsDashboard(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            cohortIds: selectedCohortIds,
+            roles: selectedRoles,
+            simulationFilters,
+          },
+          [
+            {
+              name: "calculateCohortPerformance",
+              args: {
+                thresholds,
+                selectedSimulationIds: selectedSimulations.map((s) => s.id),
+              },
+            },
+          ]
+        );
+        if (!aborted) {
+          const payload =
+            (data.results[
+              "calculateCohortPerformance"
+            ] as typeof cohortPerformanceResult) ?? null;
+          setCohortPerformanceResult(payload);
+        }
+      } catch {
+        if (!aborted) setCohortPerformanceResult(null);
+      }
     }
-
-    return calculateCohortPerformance(
-      filteredData,
-      rubrics,
-      thresholds,
-      selectedSimulations.map((s) => s.id)
-    );
-  }, [filteredData, rubrics, thresholds, selectedSimulations]);
+    run();
+    return () => {
+      aborted = true;
+    };
+  }, [
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+    thresholds,
+    selectedSimulations,
+  ]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
@@ -117,12 +173,7 @@ export default function CohortPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              filteredData?.simulations?.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit || undefined,
-              })) ?? []
-            }
+            simulations={(simulations as unknown as Simulation[]) ?? []}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}

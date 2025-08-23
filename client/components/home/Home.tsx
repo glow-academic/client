@@ -17,13 +17,13 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import type { Simulation } from "@/types";
-import type { AnalyticsFilters as ClientAnalyticsFilters } from "@/utils/api/analytics/client-home-history";
-import {
-  fetchAnalyticsHistory,
-  fetchAnalyticsHome,
-} from "@/utils/api/analytics/client-home-history";
 import type { HistoryResponse } from "@/utils/api/analytics/get-history";
-import type { HomeRow } from "@/utils/api/analytics/get-home";
+import { getAnalyticsHistory } from "@/utils/api/analytics/get-history";
+import type {
+  AnalyticsFilters as ClientAnalyticsFilters,
+  HomeRow,
+} from "@/utils/api/analytics/get-home";
+import { getAnalyticsHome } from "@/utils/api/analytics/get-home";
 import { log } from "@/utils/logger";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -89,8 +89,8 @@ export default function Home() {
         };
 
         const [homeJson, historyJson] = await Promise.all([
-          fetchAnalyticsHome(filters),
-          fetchAnalyticsHistory(filters),
+          getAnalyticsHome(filters),
+          getAnalyticsHistory(filters),
         ]);
         if (!cancelled) {
           setHomeRows(Array.isArray(homeJson) ? homeJson : []);
