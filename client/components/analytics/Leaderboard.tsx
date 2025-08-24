@@ -25,7 +25,6 @@ import {
   Target,
   TrendingUp,
   Trophy,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -146,7 +145,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return {
         perfectScore: { holder: undefined, details: "" },
         longestConvo: { holder: undefined, details: "" },
-        mostImproved: { holder: undefined, details: "" },
+        responseTimes: { holder: undefined, details: "" },
         quickestPass: { holder: undefined, details: "" },
         thePersistent: { holder: undefined, details: "" },
         marathonRunner: { holder: undefined, details: "" },
@@ -192,7 +191,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       );
     };
     const highestScorerRow = pickMax("highest_score_avg");
-    const mostImprovedRow = pickMax("most_improved_percent");
+    const responseTimesRow = pickMinPositive("persona_response_seconds");
     const rapidRiserRow = pickMax("improvement_rate_per_day");
     const longestConvoRow = pickMax("messages_per_session");
     const marathonRunnerRow = pickMax("time_spent_minutes");
@@ -212,10 +211,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           ? `${Math.round(highestScorerRow.highest_score_avg)} avg`
           : "",
       },
-      mostImproved: {
-        holder: mostImprovedRow ? toProfile(mostImprovedRow) : undefined,
-        details: mostImprovedRow
-          ? `+${Math.round(mostImprovedRow.most_improved_percent || 0)}%`
+      responseTimes: {
+        holder: responseTimesRow ? toProfile(responseTimesRow) : undefined,
+        details: responseTimesRow
+          ? `${Math.round(responseTimesRow.persona_response_seconds || 0)}s`
           : "",
       },
       rapidRiser: {
@@ -276,10 +275,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         accolade: accolades?.longestConvo,
       },
       {
-        key: "mostImproved",
-        icon: <Zap className="h-4 w-4" />,
-        title: "Most Improved",
-        accolade: accolades?.mostImproved,
+        key: "responseTimes",
+        icon: <Clock className="h-4 w-4" />,
+        title: "Fastest Responses",
+        accolade: accolades?.responseTimes,
       },
       {
         key: "quickestPass",
@@ -434,11 +433,14 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             Number(a.row.messages_per_session || 0)
           );
 
-        case "mostImproved":
-          return (
-            Number(b.row.most_improved_percent || 0) -
-            Number(a.row.most_improved_percent || 0)
-          );
+        case "responseTimes":
+          // For response times, we want the lowest positive values (fastest responders)
+          const aResponseTime = Number(a.row.persona_response_seconds || 0);
+          const bResponseTime = Number(b.row.persona_response_seconds || 0);
+          if (aResponseTime <= 0 && bResponseTime <= 0) return 0;
+          if (aResponseTime <= 0) return 1;
+          if (bResponseTime <= 0) return -1;
+          return aResponseTime - bResponseTime;
 
         case "quickestPass":
           // For quickest pass, we want the lowest positive values
@@ -494,9 +496,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           metricValue = Math.round(Number(row.messages_per_session || 0));
           metricLabel = `${metricValue} msgs/session`;
           break;
-        case "mostImproved":
-          metricValue = Math.round(Number(row.most_improved_percent || 0));
-          metricLabel = `+${metricValue}%`;
+        case "responseTimes":
+          metricValue = Math.round(Number(row.persona_response_seconds || 0));
+          metricLabel = `${metricValue}s`;
           break;
         case "quickestPass":
           metricValue = Math.round(Number(row.quickest_pass_minutes || 0));
@@ -541,6 +543,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         totalAttempts: Number(r.total_attempts || 0),
         highestScoreAvg: Math.round(r.highest_score_avg || 0),
         mostImprovedPercent: Math.round(r.most_improved_percent || 0),
+        personaResponseSeconds: Math.round(r.persona_response_seconds || 0),
       }));
 
       // Sort by highest score descending

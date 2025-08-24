@@ -144,6 +144,57 @@ async def post_analytics_leaderboard(
                 if score >= total_points:
                     perfect_score_count += 1
 
+        # Calculate user response times (seconds) - how long users take to respond to persona messages
+        user_response_times: List[float] = []
+        
+        # Group messages by chat and calculate response times
+        messages_by_chat_detailed: Dict[str, List[Dict[str, Any]]] = {}
+        for m in messages:
+            chat_id = str(m.get("chat_id"))
+            if chat_id not in messages_by_chat_detailed:
+                messages_by_chat_detailed[chat_id] = []
+            messages_by_chat_detailed[chat_id].append(m)
+        
+        # For each chat, calculate user response times
+        for chat_id, chat_messages in messages_by_chat_detailed.items():
+            if chat_id not in user_chat_ids:
+                continue  # Skip chats not belonging to this user
+                
+            # Sort messages by created_at
+            try:
+                sorted_messages = sorted(
+                    chat_messages,
+                    key=lambda msg: datetime.fromisoformat(str(msg.get("created_at")).replace("Z", "+00:00"))
+                )
+            except Exception:
+                continue
+            
+            # Calculate response times for response->query pairs (persona message -> user response)
+            for i in range(len(sorted_messages) - 1):
+                current_msg = sorted_messages[i]
+                next_msg = sorted_messages[i + 1]
+                
+                # Look for response -> query pairs (persona response followed by user query)
+                if (current_msg.get("type") == "response" and 
+                    next_msg.get("type") == "query" and
+                    current_msg.get("created_at") and 
+                    next_msg.get("created_at")):
+                    try:
+                        persona_time = datetime.fromisoformat(str(current_msg.get("created_at")).replace("Z", "+00:00"))
+                        user_time = datetime.fromisoformat(str(next_msg.get("created_at")).replace("Z", "+00:00"))
+                        response_time_seconds = (user_time - persona_time).total_seconds()
+                        
+                        # Only include reasonable response times (between 1 second and 1 hour)
+                        if 1.0 <= response_time_seconds <= 3600.0:
+                            user_response_times.append(response_time_seconds)
+                    except Exception:
+                        continue
+        
+        # Calculate average user response time in seconds
+        persona_response_seconds = (
+            sum(user_response_times) / len(user_response_times) if user_response_times else 0.0
+        )
+
         # Time spent minutes from chat timestamps
         time_spent_seconds = 0.0
         for chat in user_chats:
@@ -242,6 +293,7 @@ async def post_analytics_leaderboard(
             "most_improved_percent": int(round(most_improved_percent)),
             "improvement_rate_per_day": int(round(improvement_rate_per_day)),
             "perfect_score_count": perfect_score_count,
+            "persona_response_seconds": int(round(persona_response_seconds)),
         })
 
     return rows

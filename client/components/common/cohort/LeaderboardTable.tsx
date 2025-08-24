@@ -44,7 +44,7 @@ export interface LeaderboardData {
   totalAttempts: number;
   perfectScoreCount: number;
   quickestPassMinutes: number;
-  mostImprovedPercent: number;
+  personaResponseSeconds: number;
   improvementRatePerDay: number;
   percentile?: number; // Optional since we're no longer using it
   role?: string; // Optional since we're no longer displaying it
@@ -70,7 +70,7 @@ export default function LeaderboardTable({
 }: LeaderboardTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     improvementRatePerDay: false,
-    mostImprovedPercent: false,
+    personaResponseSeconds: false,
     quickestPassMinutes: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -196,17 +196,17 @@ export default function LeaderboardTable({
         sortingFn: "basic",
       },
       {
-        accessorKey: "mostImprovedPercent",
+        accessorKey: "personaResponseSeconds",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Most Improved"
+            title="Response Times"
             className="justify-end"
           />
         ),
         cell: ({ row }) => {
-          const v = row.getValue("mostImprovedPercent") as number;
-          return <div className="text-right">{v}%</div>;
+          const v = row.getValue("personaResponseSeconds") as number;
+          return <div className="text-right">{v}s</div>;
         },
         sortingFn: "basic",
       },
