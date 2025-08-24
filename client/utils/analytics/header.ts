@@ -928,18 +928,144 @@ export const calculateSessionEfficiency = (
       : timeSpentMinutes;
 
   // Calculate efficiency: score adjusted by time (bounded 0..100) - matching server logic
-  const currentValue = Math.max(
-    0.0,
-    Math.min(100.0, avgScore * (1.0 - Math.min(1.0, avgMinutes / 120.0)))
+  const currentValue = Math.round(
+    Math.max(
+      0.0,
+      Math.min(100.0, avgScore * (1.0 - Math.min(1.0, avgMinutes / 120.0)))
+    )
   );
 
-  // Simplified trend data (server doesn't calculate complex trend data for session efficiency)
-  const trendData: AnalyticsDataPoint[] = [];
+  // Generate trend data for the chart by grouping attempts by date
+  const attemptsByDate = new Map<string, SimulationAttempt[]>();
+
+  filteredData.attempts.forEach((attempt) => {
+    const dateStr = format(new Date(attempt.createdAt), "yyyy-MM-dd");
+    if (!attemptsByDate.has(dateStr)) {
+      attemptsByDate.set(dateStr, []);
+    }
+    attemptsByDate.get(dateStr)!.push(attempt);
+  });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(attemptsByDate.entries())
+    .map(([dateStr, dayAttempts]) => {
+      const dayAttemptScores: number[] = [];
+
+      dayAttempts.forEach((attempt) => {
+        const attemptChats = filteredData.chats.filter(
+          (chat) => chat.attemptId === attempt.id
+        );
+
+        const simulation = filteredData.simulations.find(
+          (s) => s.id === attempt.simulationId
+        );
+        const totalExpected =
+          simulation?.scenarioIds?.length || attemptChats.length || 0;
+
+        if (totalExpected === 0) {
+          return;
+        }
+
+        const completedChats = attemptChats.filter((chat) => chat.completed);
+
+        if (completedChats.length === 0) {
+          return;
+        }
+
+        let totalScore = 0;
+
+        for (let i = 0; i < totalExpected; i++) {
+          const expectedChat = attemptChats[i];
+          if (expectedChat && expectedChat.completed) {
+            const grade = filteredData.grades.find(
+              (g) => g.simulationChatId === expectedChat.id
+            );
+            totalScore += grade?.score || 0;
+          }
+        }
+
+        const attemptAvgScore = totalScore / totalExpected;
+
+        if (attemptChats.length > 0) {
+          const firstChat = attemptChats[0];
+          if (firstChat) {
+            const grade = filteredData.grades.find(
+              (g) => g.simulationChatId === firstChat.id
+            );
+            if (grade) {
+              const rubric = rubrics.find((r) => r.id === simulation?.rubricId);
+              const rubricPoints = rubric?.points || 100;
+              const normalizedAttemptScore =
+                (attemptAvgScore / Math.max(rubricPoints, 1)) * 100;
+              dayAttemptScores.push(normalizedAttemptScore);
+            }
+          }
+        }
+      });
+
+      const dayAvgScore =
+        dayAttemptScores.length > 0
+          ? dayAttemptScores.reduce((sum, score) => sum + score, 0) /
+            dayAttemptScores.length
+          : 0;
+
+      // Calculate day-specific time spent
+      const dayTimeSpent = filteredData.chats.reduce((sum, chat) => {
+        const chatAttempt = filteredData.attempts.find(
+          (a) => a.id === chat.attemptId
+        );
+        if (
+          chatAttempt &&
+          format(new Date(chatAttempt.createdAt), "yyyy-MM-dd") === dateStr &&
+          chat.completedAt
+        ) {
+          const timeSpent =
+            (new Date(chat.completedAt).getTime() -
+              new Date(chat.createdAt).getTime()) /
+            1000;
+          return sum + timeSpent;
+        }
+        return sum;
+      }, 0);
+
+      const daySessions = filteredData.chats.filter((chat) => {
+        const chatAttempt = filteredData.attempts.find(
+          (a) => a.id === chat.attemptId
+        );
+        return (
+          chatAttempt &&
+          format(new Date(chatAttempt.createdAt), "yyyy-MM-dd") === dateStr
+        );
+      }).length;
+
+      const dayTimeSpentMinutes = dayTimeSpent / 60.0;
+      const dayAvgMinutes =
+        daySessions > 0
+          ? dayTimeSpentMinutes / Math.max(daySessions, 1)
+          : dayTimeSpentMinutes;
+
+      const dayEfficiency = Math.round(
+        Math.max(
+          0.0,
+          Math.min(
+            100.0,
+            dayAvgScore * (1.0 - Math.min(1.0, dayAvgMinutes / 120.0))
+          )
+        )
+      );
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayEfficiency,
+        count: dayAttempts.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
     trendData,
-    hasData: trendData.some((day) => day.count > 0),
+    // Trend data is intentionally empty; base it on actual data presence
+    hasData: attemptScores.length > 0 || filteredData.chats.length > 0,
   };
 };
 
@@ -989,13 +1115,55 @@ export const calculateStagnationRate = (
   const currentValue =
     transitions > 0 ? Math.round((stagnant / transitions) * 100) : 0;
 
-  // Simplified trend data (server doesn't calculate complex trend data for stagnation)
-  const trendData: AnalyticsDataPoint[] = [];
+  // Generate trend data for the chart by grouping grades by date
+  const gradesByDate = new Map<string, typeof sortedGrades>();
+
+  sortedGrades.forEach((grade) => {
+    const dateStr = format(new Date(grade.createdAt), "yyyy-MM-dd");
+    if (!gradesByDate.has(dateStr)) {
+      gradesByDate.set(dateStr, []);
+    }
+    gradesByDate.get(dateStr)!.push(grade);
+  });
+
+  const trendData: AnalyticsDataPoint[] = Array.from(gradesByDate.entries())
+    .map(([dateStr, dayGrades]) => {
+      let dayStagnant = 0;
+      let dayTransitions = 0;
+      let prevNorm: number | null = null;
+
+      for (const grade of dayGrades) {
+        const rubric = rubrics.find((r) => r.id === grade.rubricId);
+        const rubricPoints = rubric?.points || 100;
+        const norm = (grade.score / Math.max(rubricPoints, 1)) * 100;
+
+        if (prevNorm !== null) {
+          dayTransitions += 1;
+          if (norm <= prevNorm + 0.1) {
+            dayStagnant += 1;
+          }
+        }
+        prevNorm = norm;
+      }
+
+      const dayStagnationRate =
+        dayTransitions > 0
+          ? Math.round((dayStagnant / dayTransitions) * 100)
+          : 0;
+
+      return {
+        date: format(new Date(dateStr), "MM/dd"),
+        value: dayStagnationRate,
+        count: dayGrades.length,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return {
     currentValue,
     trendData,
-    hasData: trendData.some((day) => day.count > 0),
+    // Trend data is intentionally empty; base it on computed transitions
+    hasData: transitions > 0,
   };
 };
 
