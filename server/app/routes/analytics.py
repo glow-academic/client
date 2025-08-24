@@ -129,6 +129,18 @@ async def post_analytics_leaderboard(
         # Calculate overall average score
         avg_score = sum(attempt_scores) / len(attempt_scores) if attempt_scores else 0.0
 
+        # Calculate perfect score count - count individual simulation chat grades that achieved 100% of total points
+        perfect_score_count = 0
+        for grade in user_grades:
+            # Check if this grade achieved 100% of the total points
+            score = float(grade.get("score", 0))
+            rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+            if rubric:
+                total_points = float(rubric.get("points", 100))
+                # Count as perfect score if the grade equals the total points (100%)
+                if score >= total_points:
+                    perfect_score_count += 1
+
         # Time spent minutes from chat timestamps
         time_spent_seconds = 0.0
         for chat in user_chats:
@@ -226,7 +238,7 @@ async def post_analytics_leaderboard(
             "quickest_pass_minutes": quickest_pass_minutes,
             "most_improved_percent": int(round(most_improved_percent)),
             "improvement_rate_per_day": int(round(improvement_rate_per_day)),
-            "perfect_score_count": 0,
+            "perfect_score_count": perfect_score_count,
         })
 
     return rows
@@ -285,6 +297,7 @@ async def post_analytics_reports(
                 "stagnationRate": 0,
                 "timeSpent": 0,
                 "totalAttempts": 0,
+                "perfectScoreCount": 0,
                 "riskLevel": "good",
                 "riskDetails": {
                     "dangerCount": 0,
@@ -410,6 +423,18 @@ async def post_analytics_reports(
         # Calculate overall average and highest scores
         avg_score = sum(attempt_scores) / len(attempt_scores) if attempt_scores else 0.0
         highest_score = max(attempt_scores) if attempt_scores else 0.0
+
+        # Calculate perfect score count - count individual simulation chat grades that achieved 100% of total points
+        perfect_score_count = 0
+        for grade in user_grades:
+            # Check if this grade achieved 100% of the total points
+            score = float(grade.get("score", 0))
+            rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+            if rubric:
+                total_points = float(rubric.get("points", 100))
+                # Count as perfect score if the grade equals the total points (100%)
+                if score >= total_points:
+                    perfect_score_count += 1
 
         # Time spent (minutes) from completed chats
         time_spent_seconds = 0.0
@@ -749,6 +774,7 @@ async def post_analytics_reports(
             "stagnationRate": int(round(stagnation_rate)),
             "timeSpent": int(round(time_spent_minutes)),
             "totalAttempts": len(user_attempts),
+            "perfectScoreCount": perfect_score_count,
             "riskLevel": risk_level,
             "riskDetails": {
                 "dangerCount": danger_count,

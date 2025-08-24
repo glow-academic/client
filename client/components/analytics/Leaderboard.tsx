@@ -202,10 +202,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       const byCount = pickMax("perfect_score_count");
       if (byCount && Number(byCount.perfect_score_count ?? 0) > 0)
         return byCount;
-      const withHundred = leaderboardServerRows.find(
-        (r) => Math.round(Number(r.highest_score_avg ?? 0)) >= 100
-      );
-      return withHundred ?? highestScorerRow;
+      // Only fall back to highest score if no one has perfect scores
+      return highestScorerRow;
     })();
     return {
       highestScorer: {
@@ -255,7 +253,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         details: perfectScoreRow
           ? Number(perfectScoreRow.perfect_score_count || 0) > 0
             ? `${perfectScoreRow.perfect_score_count} perfect`
-            : `100 avg`
+            : `${Math.round(perfectScoreRow.highest_score_avg || 0)} avg`
           : "",
       },
     } as const;
