@@ -77,19 +77,6 @@ export default function CohortPerformance({
       selectedSimulations.map((s) => s.id)
     );
 
-    // Debug logging to see if filtering is working
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        "CohortPerformance - Selected simulations:",
-        selectedSimulations.map((s) => s.id)
-      );
-      console.log("CohortPerformance - Result has data:", result?.hasData);
-      console.log(
-        "CohortPerformance - Cohort data length:",
-        result?.cohortData.length
-      );
-    }
-
     return result;
   }, [filteredData, rubrics, thresholds, selectedSimulations]);
 
