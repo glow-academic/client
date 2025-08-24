@@ -844,7 +844,11 @@ export default function Home() {
       <div className="space-y-6">
         <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
           {sortedProgressData.map((sim) => (
-            <SimulationProgress key={sim.id} simulation={sim} />
+            <SimulationProgress
+              key={sim.id}
+              simulation={sim}
+              isTAView={!shouldShowAll}
+            />
           ))}
         </div>
       </div>

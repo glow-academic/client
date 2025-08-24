@@ -372,19 +372,47 @@ export function calculateUserSimulationPerformance(
     return { highestScorePercent: 0, passed: false };
   }
 
-  // Average raw points per attempt across its graded chats
+  // Calculate attempt averages using the same logic as other components
   const attemptAverages: number[] = profileAttempts.map((attempt) => {
     const attemptChats = filteredData.chats.filter(
       (chat) => chat.attemptId === attempt.id
     );
-    const chatGrades = attemptChats
-      .map((chat) =>
-        filteredData.grades.find((g) => g.simulationChatId === chat.id)
-      )
-      .filter(Boolean) as SimulationChatGrade[];
-    if (chatGrades.length === 0) return 0;
-    const totalScore = chatGrades.reduce((sum, g) => sum + g.score, 0);
-    return totalScore / chatGrades.length; // raw points average
+
+    // Get simulation to find total expected chats
+    const simulation = filteredData.simulations.find(
+      (s) => s.id === simulationId
+    );
+    const totalExpected =
+      simulation?.scenarioIds?.length || attemptChats.length || 0;
+
+    if (totalExpected === 0) {
+      return 0;
+    }
+
+    // Count completed chats
+    const completedChats = attemptChats.filter((chat) => chat.completed);
+
+    // If no chats are completed, return 0
+    if (completedChats.length === 0) {
+      return 0;
+    }
+
+    // Calculate total score including zeros for ALL expected chats
+    let totalScore = 0;
+
+    // For each expected chat, find if it exists and has a grade
+    for (let i = 0; i < totalExpected; i++) {
+      const expectedChat = attemptChats[i];
+      if (expectedChat && expectedChat.completed) {
+        const grade = filteredData.grades.find(
+          (g) => g.simulationChatId === expectedChat.id
+        );
+        totalScore += grade?.score || 0;
+      }
+      // If chat doesn't exist or is not completed, add 0 (implicit)
+    }
+
+    return totalScore / totalExpected; // raw points average
   });
 
   const highestRawAverage = Math.max(...attemptAverages);
