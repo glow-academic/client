@@ -114,12 +114,10 @@ export default function CohortPerformance({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <BarChart3 className="h-4 w-4" />
-              {isSingleProfileMode ? "My Performance" : "Cohort Performance"}
+              Cohort Performance
             </CardTitle>
             <CardDescription className="text-xs">
-              {isSingleProfileMode
-                ? "Your pass rates by cohort"
-                : "Pass rates by cohort"}
+              Pass rates by cohort
             </CardDescription>
           </div>
           <SimulationPicker
