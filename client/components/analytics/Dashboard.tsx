@@ -139,6 +139,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       key="cohort-performance"
       filteredData={filteredData}
       thresholds={thresholds}
+      profileId={profileId}
     />,
     <AttemptImprovement
       key="attempt-improvement"

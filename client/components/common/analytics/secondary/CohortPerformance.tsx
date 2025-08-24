@@ -42,6 +42,7 @@ import {
 
 export interface CohortPerformanceProps {
   filteredData: FilteredData | null;
+  profileId: string | undefined;
   thresholds: {
     danger: number;
     warning: number;
@@ -51,6 +52,7 @@ export interface CohortPerformanceProps {
 
 export default function CohortPerformance({
   filteredData,
+  profileId,
   thresholds,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
@@ -58,6 +60,8 @@ export default function CohortPerformance({
   );
 
   const rubrics = filteredData?.rubrics;
+
+  const isSingleProfileMode = profileId !== undefined;
 
   // Use the utility function to calculate cohort performance
   const cohortPerformanceResult = useMemo(() => {
@@ -110,10 +114,12 @@ export default function CohortPerformance({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <BarChart3 className="h-4 w-4" />
-              Cohort Performance
+              {isSingleProfileMode ? "My Performance" : "Cohort Performance"}
             </CardTitle>
             <CardDescription className="text-xs">
-              Pass rates by cohort
+              {isSingleProfileMode
+                ? "Your pass rates by cohort"
+                : "Pass rates by cohort"}
             </CardDescription>
           </div>
           <SimulationPicker
@@ -139,7 +145,9 @@ export default function CohortPerformance({
             // Calculate pass rate percentage
             const passRatePercentage =
               cohort.totalStudents > 0
-                ? (cohort.passedStudents / cohort.totalStudents) * 100
+                ? (cohort.passedStudents /
+                    (isSingleProfileMode ? 1 : cohort.totalStudents)) *
+                  100
                 : 0;
 
             // Determine background color based on pass rate
@@ -179,7 +187,9 @@ export default function CohortPerformance({
                           {cohort.name}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          {passRatePercentage.toFixed(2)}% of students pass{" "}
+                          {isSingleProfileMode
+                            ? `${passRatePercentage.toFixed(2)}% pass rate for `
+                            : `${passRatePercentage.toFixed(2)}% of students pass `}
                           {cohort.rubricPoints > 0
                             ? cohort.availableSimulations
                             : 0}{" "}

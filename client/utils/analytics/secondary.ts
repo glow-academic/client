@@ -96,6 +96,8 @@ export const calculateCohortPerformance = (
   thresholds: { danger: number; warning: number; success: number },
   selectedSimulationIds: string[] = []
 ): CohortPerformanceResult => {
+  // Check if we're in single-profile mode
+  const isSingleProfileMode = filteredData.profiles.length === 1;
   // Filter cohorts to only active ones
   const filteredCohorts = filteredData.cohorts.filter((c) => c.active);
 
@@ -167,14 +169,22 @@ export const calculateCohortPerformance = (
       }
     }
 
-    // Initialize totalStudents with ALL profiles in this cohort, not just those with attempts
+    // Initialize totalStudents based on filtering mode
     const totalStudents = new Set<string>();
-    cohort.profileIds.forEach((profileId) => {
-      // Only add profiles that exist in filteredData.profiles (to respect filtering)
-      if (filteredData.profiles.some((p) => p.id === profileId)) {
-        totalStudents.add(profileId);
+    if (isSingleProfileMode) {
+      // In single-profile mode, only count the specific profile if they're in this cohort
+      const singleProfile = filteredData.profiles[0];
+      if (singleProfile && cohort.profileIds.includes(singleProfile.id)) {
+        totalStudents.add(singleProfile.id);
       }
-    });
+    } else {
+      // In multi-profile mode, count all profiles in the cohort that exist in filteredData.profiles
+      cohort.profileIds.forEach((profileId) => {
+        if (filteredData.profiles.some((p) => p.id === profileId)) {
+          totalStudents.add(profileId);
+        }
+      });
+    }
 
     cohortStats.set(cohort.id, {
       totalAttempts: 0,
@@ -265,7 +275,11 @@ export const calculateCohortPerformance = (
         : cohort.simulationIds;
 
     // For each student in this cohort, check if they've passed all relevant simulations
-    cohort.profileIds.forEach((profileId: string) => {
+    const profilesToCheck = isSingleProfileMode
+      ? filteredData.profiles.map((p) => p.id) // Only check the single profile
+      : cohort.profileIds; // Check all profiles in the cohort
+
+    profilesToCheck.forEach((profileId: string) => {
       const studentPassedSimulations =
         cohortData.studentSimulationPasses.get(profileId) || new Set();
 
