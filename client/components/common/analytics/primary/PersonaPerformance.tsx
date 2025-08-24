@@ -28,6 +28,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidPersonaData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
 import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
 import { useQuery } from "@tanstack/react-query";
@@ -175,10 +176,14 @@ export default function PersonaPerformance({
           </div>
           <SimulationPicker
             simulations={
-              filteredData?.simulations.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit ?? 0,
-              })) ?? []
+              filteredData && rubrics
+                ? getSimulationsWithValidPersonaData(filteredData, rubrics).map(
+                    (s) => ({
+                      ...s,
+                      timeLimit: s.timeLimit ?? 0,
+                    })
+                  )
+                : []
             }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}

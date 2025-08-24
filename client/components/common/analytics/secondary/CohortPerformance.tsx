@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 
 import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidData } from "@/utils/analytics/filtering";
 import { calculateCohortPerformance } from "@/utils/analytics/secondary";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -69,12 +70,27 @@ export default function CohortPerformance({
       return null;
     }
 
-    return calculateCohortPerformance(
+    const result = calculateCohortPerformance(
       filteredData,
       rubrics,
       thresholds,
       selectedSimulations.map((s) => s.id)
     );
+
+    // Debug logging to see if filtering is working
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "CohortPerformance - Selected simulations:",
+        selectedSimulations.map((s) => s.id)
+      );
+      console.log("CohortPerformance - Result has data:", result?.hasData);
+      console.log(
+        "CohortPerformance - Cohort data length:",
+        result?.cohortData.length
+      );
+    }
+
+    return result;
   }, [filteredData, rubrics, thresholds, selectedSimulations]);
 
   // Calculate threshold status based on cohort performance data
@@ -122,10 +138,14 @@ export default function CohortPerformance({
           </div>
           <SimulationPicker
             simulations={
-              filteredData?.simulations?.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit || undefined,
-              })) ?? []
+              filteredData && rubrics
+                ? getSimulationsWithValidData(filteredData, rubrics).map(
+                    (s) => ({
+                      ...s,
+                      timeLimit: s.timeLimit || undefined,
+                    })
+                  )
+                : []
             }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}

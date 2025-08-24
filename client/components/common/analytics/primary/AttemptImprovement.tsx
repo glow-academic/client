@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 
 import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidAttemptData } from "@/utils/analytics/filtering";
 import { calculateAttemptImprovement } from "@/utils/analytics/primary";
 
 import { TrendingUp } from "lucide-react";
@@ -144,10 +145,14 @@ export default function AttemptImprovement({
           </div>
           <SimulationPicker
             simulations={
-              filteredData?.simulations?.map((s) => ({
-                ...s,
-                timeLimit: s.timeLimit ?? 0,
-              })) ?? []
+              filteredData && rubrics
+                ? getSimulationsWithValidAttemptData(filteredData, rubrics).map(
+                    (s) => ({
+                      ...s,
+                      timeLimit: s.timeLimit ?? 0,
+                    })
+                  )
+                : []
             }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}

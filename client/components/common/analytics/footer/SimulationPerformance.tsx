@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Simulation } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidData } from "@/utils/analytics/filtering";
 import { calculateScenarioPerformanceWithinSimulation } from "@/utils/analytics/footer";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -61,29 +62,35 @@ export default function SimulationPerformance({
 
   const scenarios = filteredData?.scenarios;
   const rubrics = filteredData?.rubrics;
+  // Get simulations with valid data for this component
+  const validSimulations = useMemo(() => {
+    if (!filteredData || !rubrics) return [];
+    return getSimulationsWithValidData(filteredData, rubrics);
+  }, [filteredData, rubrics]);
+
   // Auto-select simulation if enabled and available
   useMemo(() => {
-    if (filteredData?.simulations && filteredData?.simulations.length > 0) {
+    if (validSimulations.length > 0) {
       // If no simulation is selected, select the first one
       if (!selectedSimulation) {
-        const firstSimulation = filteredData?.simulations[0];
+        const firstSimulation = validSimulations[0];
         if (firstSimulation) {
           setSelectedSimulation(firstSimulation);
         }
       } else {
         // If selected simulation is no longer available, select the first available one
-        const isStillAvailable = filteredData?.simulations.some(
+        const isStillAvailable = validSimulations.some(
           (sim) => sim.id === selectedSimulation.id
         );
         if (!isStillAvailable) {
-          const firstSimulation = filteredData?.simulations[0];
+          const firstSimulation = validSimulations[0];
           if (firstSimulation) {
             setSelectedSimulation(firstSimulation);
           }
         }
       }
     }
-  }, [filteredData?.simulations, selectedSimulation]);
+  }, [validSimulations, selectedSimulation]);
 
   // Calculate scenario performance data for selected simulation using utility function
   const scenarioPerformanceData = useMemo(() => {
@@ -209,7 +216,7 @@ export default function SimulationPerformance({
                   <CommandInput placeholder="Search simulations..." />
                   <CommandEmpty>No simulation found.</CommandEmpty>
                   <CommandGroup>
-                    {filteredData?.simulations.map((simulation) => (
+                    {validSimulations.map((simulation) => (
                       <CommandItem
                         key={simulation.id}
                         value={simulation.id}
