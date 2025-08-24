@@ -95,8 +95,8 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
         name: "Response Times",
         color: "#84cc16",
         description: "Average response time to persona interactions",
-        unit: "min",
-        formatter: (value: number) => `${value}m`,
+        unit: "sec",
+        formatter: (value: number) => `${value}s`,
       },
       {
         id: "sessionEfficiency",

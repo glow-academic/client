@@ -133,8 +133,8 @@ export function ReportsDataTable({
       ];
     } else if (key === "personaResponseTimes" && h?.personaResponseStats) {
       bullets = [
-        `Mean: ${Math.round(h.personaResponseStats.meanSeconds / 60)}m`,
-        `Median: ${Math.round(h.personaResponseStats.medianSeconds / 60)}m`,
+        `Mean: ${h.personaResponseStats.meanSeconds}s`,
+        `Median: ${h.personaResponseStats.medianSeconds}s`,
         `Samples: ${h.personaResponseStats.samples}`,
       ];
     } else if (key === "sessionEfficiency" && h?.efficiencyStats) {

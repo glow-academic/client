@@ -20,7 +20,7 @@ export interface TAPerformanceData {
   firstAttemptPassRate: number;
   highestScore: number;
   messagesPerSession: number;
-  personaResponseTimes: number; // in minutes
+  personaResponseTimes: number; // in seconds
   sessionEfficiency: number; // percentage
   stagnationRate: number; // percentage
   timeSpent: number; // in minutes
@@ -392,8 +392,8 @@ export function useReportColumns({
           const ta = row.original;
           const getBackgroundColor = () => {
             if (ta.hasNoSessions) return "bg-gray-50";
-            if (ta.personaResponseTimes <= 3) return "bg-green-50";
-            if (ta.personaResponseTimes <= 5) return "bg-yellow-50";
+            if (ta.personaResponseTimes <= 180) return "bg-green-50"; // 3 minutes in seconds
+            if (ta.personaResponseTimes <= 300) return "bg-yellow-50"; // 5 minutes in seconds
             return "bg-red-50";
           };
           return (
@@ -401,7 +401,7 @@ export function useReportColumns({
               className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
             >
               <Clock className="h-2.5 w-2.5" />
-              {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}m`}
+              {ta.hasNoSessions ? "N/A" : `${ta.personaResponseTimes}s`}
             </div>
           );
         },

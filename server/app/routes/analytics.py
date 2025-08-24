@@ -128,6 +128,9 @@ async def post_analytics_leaderboard(
         
         # Calculate overall average score
         avg_score = sum(attempt_scores) / len(attempt_scores) if attempt_scores else 0.0
+        
+        # Calculate highest score (maximum of all attempt scores)
+        highest_score = max(attempt_scores) if attempt_scores else 0.0
 
         # Calculate perfect score count - count individual simulation chat grades that achieved 100% of total points
         perfect_score_count = 0
@@ -232,7 +235,7 @@ async def post_analytics_leaderboard(
             "first_name": p.get("first_name"),
             "last_name": p.get("last_name"),
             "total_attempts": total_attempts,
-            "highest_score_avg": int(round(avg_score)),
+            "highest_score_avg": int(round(highest_score)),
             "messages_per_session": int(round(messages_per_session)),
             "time_spent_minutes": int(round(time_spent_minutes)),
             "quickest_pass_minutes": quickest_pass_minutes,
@@ -492,8 +495,56 @@ async def post_analytics_reports(
         first_attempt_total = len(first_attempt_by_sim)
         first_attempt_pass_rate = (first_attempt_passes / first_attempt_total * 100.0) if first_attempt_total > 0 else 0.0
 
-        # Persona response times (seconds) - base messages lack role; return 0 for now
-        persona_response_seconds = 0
+        # User response times (seconds) - calculate how long users take to respond to persona messages
+        user_response_times: List[float] = []
+        
+        # Group messages by chat and calculate response times
+        messages_by_chat_detailed: Dict[str, List[Dict[str, Any]]] = {}
+        for m in messages:
+            chat_id = str(m.get("chat_id"))
+            if chat_id not in messages_by_chat_detailed:
+                messages_by_chat_detailed[chat_id] = []
+            messages_by_chat_detailed[chat_id].append(m)
+        
+        # For each chat, calculate user response times
+        for chat_id, chat_messages in messages_by_chat_detailed.items():
+            if chat_id not in user_chat_ids:
+                continue  # Skip chats not belonging to this user
+                
+            # Sort messages by created_at
+            try:
+                sorted_messages = sorted(
+                    chat_messages,
+                    key=lambda msg: datetime.fromisoformat(str(msg.get("created_at")).replace("Z", "+00:00"))
+                )
+            except Exception:
+                continue
+            
+            # Calculate response times for response->query pairs (persona message -> user response)
+            for i in range(len(sorted_messages) - 1):
+                current_msg = sorted_messages[i]
+                next_msg = sorted_messages[i + 1]
+                
+                # Look for response -> query pairs (persona response followed by user query)
+                if (current_msg.get("type") == "response" and 
+                    next_msg.get("type") == "query" and
+                    current_msg.get("created_at") and 
+                    next_msg.get("created_at")):
+                    try:
+                        persona_time = datetime.fromisoformat(str(current_msg.get("created_at")).replace("Z", "+00:00"))
+                        user_time = datetime.fromisoformat(str(next_msg.get("created_at")).replace("Z", "+00:00"))
+                        response_time_seconds = (user_time - persona_time).total_seconds()
+                        
+                        # Only include reasonable response times (between 1 second and 1 hour)
+                        if 1.0 <= response_time_seconds <= 3600.0:
+                            user_response_times.append(response_time_seconds)
+                    except Exception:
+                        continue
+        
+        # Calculate average user response time in seconds
+        persona_response_seconds = (
+            sum(user_response_times) / len(user_response_times) if user_response_times else 0.0
+        )
 
         # Session efficiency: score adjusted by time (bounded 0..100)
         avg_minutes = (time_spent_minutes / max(total_sessions, 1)) if total_sessions > 0 else time_spent_minutes
@@ -719,7 +770,7 @@ async def post_analytics_reports(
             "firstAttemptPassRate": {"danger": 70, "warning": 80},
             "highestScore": {"danger": 80, "warning": 85},
             "messagesPerSession": {"danger": 5, "warning": 8},
-            "personaResponseTimes": {"danger": 10, "warning": 5},
+            "personaResponseTimes": {"danger": 600, "warning": 300},
             "sessionEfficiency": {"danger": 70, "warning": 80},
             "stagnationRate": {"danger": 30, "warning": 20},
             "timeSpent": {"danger": 120, "warning": 90},
@@ -745,7 +796,7 @@ async def post_analytics_reports(
             "firstAttemptPassRate": band(first_attempt_pass_rate, "firstAttemptPassRate"),
             "highestScore": band(highest_score, "highestScore"),
             "messagesPerSession": band(messages_per_session, "messagesPerSession"),
-            "personaResponseTimes": band(persona_response_seconds / 60.0, "personaResponseTimes", invert=True),
+            "personaResponseTimes": band(persona_response_seconds, "personaResponseTimes", invert=True),
             "sessionEfficiency": band(session_efficiency, "sessionEfficiency"),
             "stagnationRate": band(stagnation_rate, "stagnationRate", invert=True),
             "timeSpent": band(time_spent_minutes, "timeSpent", invert=True),
@@ -769,7 +820,7 @@ async def post_analytics_reports(
             "firstAttemptPassRate": int(round(first_attempt_pass_rate)),
             "highestScore": int(round(highest_score)),
             "messagesPerSession": int(round(messages_per_session)),
-            "personaResponseTimes": int(round(persona_response_seconds / 60.0)),
+            "personaResponseTimes": int(round(persona_response_seconds)),
             "sessionEfficiency": int(round(session_efficiency)),
             "stagnationRate": int(round(stagnation_rate)),
             "timeSpent": int(round(time_spent_minutes)),
@@ -811,9 +862,9 @@ async def post_analytics_reports(
                 "completionStats": completion_stats,
                 "firstAttemptStats": first_attempt_stats,
                 "personaResponseStats": {
-                    "meanSeconds": 0,
-                    "medianSeconds": 0,
-                    "samples": 0,
+                    "meanSeconds": int(round(sum(user_response_times) / len(user_response_times))) if user_response_times else 0,
+                    "medianSeconds": int(round(sorted(user_response_times)[len(user_response_times) // 2])) if user_response_times else 0,
+                    "samples": len(user_response_times),
                 },
                 "efficiencyStats": {
                     "avgScorePercent": int(round(avg_score)),
