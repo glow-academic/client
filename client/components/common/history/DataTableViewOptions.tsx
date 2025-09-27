@@ -69,6 +69,7 @@ const columnMap = {
   perfectScoreCount: "Perfect Score",
   timeSpentMinutes: "Time Spent",
   highestScoreAvg: "Highest Score",
+  personaResponseSeconds: "Response Times",
 };
 
 export interface DataTableViewOptionsProps<TData> {
