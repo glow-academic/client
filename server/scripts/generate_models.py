@@ -143,10 +143,10 @@ def generate_sqlmodel_from_sql():
         
         # Fix datetime type hints - remove the redundant datetime.datetime references
         class_definitions = re.sub(
-            r": datetime\.datetime", r": datetime", class_definitions
+            r": datetime\.datetime(?=\s*=)", r": datetime", class_definitions
         )
         class_definitions = re.sub(
-            r": Optional\[datetime\.datetime\]", r": Optional[datetime]", class_definitions
+            r": Optional\[datetime\.datetime\](?=\s*=)", r": Optional[datetime]", class_definitions
         )
 
         # Map array element types based on the ARRAY inner SQL type instead of blanket UUID
