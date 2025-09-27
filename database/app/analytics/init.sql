@@ -194,18 +194,18 @@ BEGIN
 END $$;
 
 -- Header
-\i header/prep_average_score.sql
-\i header/prep_completion_percentage.sql
-\i header/prep_first_attempt_pass_rate.sql
-\i header/prep_highest_score.sql
-\i header/prep_messages_per_session.sql
-\i header/prep_persona_response_times.sql
-\i header/prep_session_efficiency.sql
-\i header/prep_stagnation_rate.sql
-\i header/prep_time_spent.sql
-\i header/prep_total_attempts.sql
+\i app/analytics/header/prep_average_score.sql
+\i app/analytics/header/prep_completion_percentage.sql
+\i app/analytics/header/prep_first_attempt_pass_rate.sql
+\i app/analytics/header/prep_highest_score.sql
+\i app/analytics/header/prep_messages_per_session.sql
+\i app/analytics/header/prep_persona_response_times.sql
+\i app/analytics/header/prep_session_efficiency.sql
+\i app/analytics/header/prep_stagnation_rate.sql
+\i app/analytics/header/prep_time_spent.sql
+\i app/analytics/header/prep_total_attempts.sql
 
 -- Leaderboard
-\i leaderboard/prep_improvement_per_day.sql
-\i leaderboard/prep_perfect_scores.sql
-\i leaderboard/prep_quickest_pass.sql
+\i app/analytics/leaderboard/prep_improvement_per_day.sql
+\i app/analytics/leaderboard/prep_perfect_scores.sql
+\i app/analytics/leaderboard/prep_quickest_pass.sql

@@ -2,7 +2,13 @@
 -- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 
-DEALLOCATE prep_average_score;
+DO $$
+BEGIN
+    DEALLOCATE prep_average_score;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_average_score (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid

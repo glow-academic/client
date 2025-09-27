@@ -2,7 +2,13 @@
 -- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 
-DEALLOCATE prep_messages_per_session;
+DO $$
+BEGIN
+    DEALLOCATE prep_messages_per_session;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_messages_per_session (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -31,7 +37,7 @@ cur AS (
   SELECT round(avg(num_messages_total))::int AS current_value,
          count(*) > 0                         AS has_data
   FROM filt
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,

@@ -4,7 +4,13 @@
 -- What it is: Slope (percentage points per day) of average grade per day
 -- Method: slope (client computes slope of value vs. date treated as day index)
 
-DEALLOCATE prep_improvement_per_day;
+DO $$
+BEGIN
+    DEALLOCATE prep_improvement_per_day;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_improvement_per_day (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid

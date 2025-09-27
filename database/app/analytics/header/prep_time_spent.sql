@@ -2,7 +2,13 @@
 -- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 
-DEALLOCATE prep_time_spent;
+DO $$
+BEGIN
+    DEALLOCATE prep_time_spent;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_time_spent (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -32,7 +38,7 @@ cur AS (
   SELECT COALESCE(round(sum(time_taken_seconds))::int, 0) AS current_value,
          count(time_taken_seconds) > 0                    AS has_data
   FROM filt
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,

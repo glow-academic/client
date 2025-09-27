@@ -4,7 +4,13 @@
 -- What it is: Fastest time-to-pass among sessions that passed
 -- Method: min (client computes min of value in seconds, optionally per profileId)
 
-DEALLOCATE prep_quickest_pass;
+DO $$
+BEGIN
+    DEALLOCATE prep_quickest_pass;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_quickest_pass (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid

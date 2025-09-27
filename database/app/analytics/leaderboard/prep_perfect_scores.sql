@@ -4,7 +4,13 @@
 -- What it is: Count of sessions with a perfect grade (100%)
 -- Method: sum (client sums value which is 1 for a perfect)
 
-DEALLOCATE prep_perfect_scores;
+DO $$
+BEGIN
+    DEALLOCATE prep_perfect_scores;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_perfect_scores (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid

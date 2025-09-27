@@ -5,7 +5,13 @@
 -- eff = LEAST(100, GREATEST(0, grade_percent / NULLIF(time_taken_seconds,0) * 300))
 -- i.e., 100% if you score 100 in ≤ 300s, scales down with more time
 
-DEALLOCATE prep_session_efficiency;
+DO $$
+BEGIN
+    DEALLOCATE prep_session_efficiency;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_session_efficiency (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -44,7 +50,7 @@ cur AS (
   SELECT round(avg(eff_value))::int AS current_value,
          count(eff_value) > 0        AS has_data
   FROM eff
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,

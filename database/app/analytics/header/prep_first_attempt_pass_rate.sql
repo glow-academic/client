@@ -3,7 +3,13 @@
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 -- Note: "First attempt" = earliest chat_created_at per (profile_id, simulation_id) within the filtered range
 
-DEALLOCATE prep_first_attempt_pass_rate;
+DO $$
+BEGIN
+    DEALLOCATE prep_first_attempt_pass_rate;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_first_attempt_pass_rate (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid

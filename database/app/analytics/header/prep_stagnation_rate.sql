@@ -6,7 +6,13 @@
 -- - max per-message delta ≥ 120s (long stall), OR
 -- - total messages ≤ 2
 
-DEALLOCATE prep_stagnation_rate;
+DO $$
+BEGIN
+    DEALLOCATE prep_stagnation_rate;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_stagnation_rate (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -45,7 +51,7 @@ cur AS (
   SELECT round(100.0 * avg((stagnated)::int))::int AS current_value,
          count(*) > 0                               AS has_data
   FROM flags
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,

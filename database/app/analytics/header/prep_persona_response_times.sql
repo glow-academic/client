@@ -4,7 +4,13 @@
 -- Note: Uses message_time_taken_seconds (int[]) and averages all deltas
 -- count = number of deltas aggregated that day
 
-DEALLOCATE prep_persona_response_times;
+DO $$
+BEGIN
+    DEALLOCATE prep_persona_response_times;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_persona_response_times (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -36,7 +42,7 @@ cur AS (
   SELECT round(avg(delta))::int AS current_value,
          count(*) > 0           AS has_data
   FROM flat
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', f.profile_id::text,

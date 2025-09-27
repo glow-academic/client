@@ -3,7 +3,13 @@
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 -- Note: Counts distinct attempt_id overall and per day (distinct per day as well)
 
-DEALLOCATE prep_total_attempts;
+DO $$
+BEGIN
+    DEALLOCATE prep_total_attempts;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
+END $$;
 
 PREPARE prep_total_attempts (
   timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
@@ -32,7 +38,7 @@ cur AS (
   SELECT count(DISTINCT attempt_id)::int AS current_value,
          count(*) > 0                    AS has_data
   FROM filt
-)
+),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,
