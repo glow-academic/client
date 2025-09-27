@@ -25,13 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { usePersonas } from "@/lib/api/hooks/personas";
+import {
+  type AnalyticsFilters,
+  type PersonaPerformanceFilters,
+} from "@/lib/analytics";
+import { useAnalyticsPersonaPerformance } from "@/lib/api/hooks/analytics";
 import { cn } from "@/lib/utils";
-import type { Simulation } from "@/types";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { getSimulationsWithValidPersonaData } from "@/utils/analytics/filtering";
-import { calculatePersonaPerformance } from "@/utils/analytics/primary";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -48,7 +47,7 @@ import {
 } from "recharts";
 
 export interface PersonaPerformanceProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -57,95 +56,96 @@ export interface PersonaPerformanceProps {
 }
 
 export default function PersonaPerformance({
-  filteredData,
+  filters,
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<
     SimulationPickerType[]
   >([]);
 
-  // Use datasets sourced from filtered data where available
-  const rubrics = filteredData?.rubrics;
-  const scenarios = filteredData?.scenarios;
-  // Personas are not included in filtered data yet; fetch minimally
-  const { data: personas = [] } = usePersonas();
+  // Extend server filters with selected simulationIds (hook expects PersonaPerformanceFilters)
+  const personaFilters: PersonaPerformanceFilters = useMemo(
+    () => ({
+      ...filters,
+      simulationIds:
+        selectedSimulations.length > 0
+          ? selectedSimulations.map((s) => s.id)
+          : undefined,
+    }),
+    [filters, selectedSimulations]
+  );
 
-  // Map persona name -> hex color from personas table
-  const personaColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    if (personas.length > 0) {
-      for (const persona of personas) {
-        if (persona?.name && persona?.color) {
-          map[persona.name] = persona.color;
-        }
-      }
-    }
-    return map;
-  }, [personas]);
+  const { data, isLoading, error } =
+    useAnalyticsPersonaPerformance(personaFilters);
 
-  // Calculate performance by persona
-  const performanceData = useMemo(() => {
-    if (!filteredData || !scenarios || !rubrics || personas.length === 0) {
-      return [];
-    }
+  const performanceData = data?.chartData ?? [];
+  const personaColorMap = data?.personaColors ?? {};
+  const availableSimulations = useMemo<SimulationPickerType[]>(
+    () =>
+      (data?.availableSimulations ?? []).map((s) => ({
+        id: s.id,
+        title: s.name,
+        timeLimit: s.timeLimit ?? 0,
+        active: true, // All simulations from API are active
+      })),
+    [data?.availableSimulations]
+  );
 
-    return calculatePersonaPerformance(
-      filteredData,
-      rubrics,
-      personas,
-      scenarios,
-      selectedSimulations.map((s) => s.id)
-    );
-  }, [filteredData, rubrics, personas, scenarios, selectedSimulations]);
+  // Traffic-light from server
+  const thresholdStatus = data?.performanceStatus ?? "neutral";
 
-  // Calculate threshold status based on persona performance data
-  const getThresholdStatus = () => {
-    if (performanceData.length === 0) return "neutral";
-
-    // Calculate average score across all personas
-    const avgScore =
-      performanceData.reduce((sum, persona) => sum + persona.score, 0) /
-      performanceData.length;
-
-    if (avgScore >= thresholds.success) return "success";
-    if (avgScore >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
-
-  // Get background color based on performance thresholds
+  // Background color by thresholds
   const getBackgroundColor = (score: number) => {
     if (score >= thresholds.success) return "bg-green-50 dark:bg-green-950";
     if (score >= thresholds.warning) return "bg-yellow-50 dark:bg-yellow-950";
     return "bg-red-50 dark:bg-red-950";
   };
 
-  // Get actionable insights
+  // Simple persona-level insight from trend data
   const getActionableInsights = (trendData: Array<{ score: number }>) => {
-    if (trendData.length < 2) return null;
+    if (!trendData || trendData.length < 2) return null;
+    const recent = trendData.slice(-3);
+    const early = trendData.slice(0, 3);
+    if (recent.length === 0 || early.length === 0) return null;
 
-    const recentScores = trendData.slice(-3);
-    const earlierScores = trendData.slice(0, 3);
+    const avg = (arr: Array<{ score: number }>) =>
+      arr.reduce((s, x) => s + x.score, 0) / arr.length;
 
-    if (recentScores.length === 0 || earlierScores.length === 0) return null;
-
-    const recentAvg =
-      recentScores.reduce((sum, item) => sum + item.score, 0) /
-      recentScores.length;
-    const earlierAvg =
-      earlierScores.reduce((sum, item) => sum + item.score, 0) /
-      earlierScores.length;
-    const improvement = recentAvg - earlierAvg;
-
-    if (improvement > 5) {
-      return "Performance has improved significantly. Consider advancing to more challenging scenarios.";
-    } else if (improvement < -5) {
-      return "Performance has declined. Review training approach for this persona type.";
-    }
-
+    const improvement = avg(recent) - avg(early);
+    if (improvement > 5)
+      return "Performance improved recently — consider introducing harder scenarios.";
+    if (improvement < -5)
+      return "Performance declined — review scaffolding and guidance.";
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Persona Performance</CardTitle>
+          <CardDescription>Loading persona data...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Persona Performance</CardTitle>
+          <CardDescription>Error loading persona data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">Failed to load persona data</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -172,16 +172,7 @@ export default function PersonaPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              filteredData && rubrics
-                ? getSimulationsWithValidPersonaData(filteredData, rubrics).map(
-                    (s: Simulation) => ({
-                      ...s,
-                      timeLimit: s.timeLimit ?? 0,
-                    })
-                  )
-                : []
-            }
+            simulations={availableSimulations}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}
@@ -231,7 +222,9 @@ export default function PersonaPerformance({
                   {performanceData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={personaColorMap[entry.name] ?? "#999999"}
+                      fill={
+                        personaColorMap[entry.name] ?? entry.color ?? "#999999"
+                      }
                       className="hover:opacity-80 transition-opacity"
                     />
                   ))}
@@ -253,10 +246,12 @@ export default function PersonaPerformance({
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={cn("w-4 h-4 rounded-full")}
+                        className="w-4 h-4 rounded-full"
                         style={{
                           backgroundColor:
-                            personaColorMap[persona.name] ?? "#999999",
+                            personaColorMap[persona.name] ??
+                            persona.color ??
+                            "#999999",
                         }}
                       />
                       <div>
@@ -275,10 +270,12 @@ export default function PersonaPerformance({
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <div
-                        className={cn("w-4 h-4 rounded-full")}
+                        className="w-4 h-4 rounded-full"
                         style={{
                           backgroundColor:
-                            personaColorMap[persona.name] ?? "#999999",
+                            personaColorMap[persona.name] ??
+                            persona.color ??
+                            "#999999",
                         }}
                       />
                       {persona.name} Student Performance
@@ -325,7 +322,11 @@ export default function PersonaPerformance({
                           <Line
                             type="monotone"
                             dataKey="score"
-                            stroke={personaColorMap[persona.name] ?? "#999999"}
+                            stroke={
+                              personaColorMap[persona.name] ??
+                              persona.color ??
+                              "#999999"
+                            }
                             strokeWidth={2}
                             dot={{ r: 4 }}
                             name="Score"

@@ -1,15 +1,26 @@
-import { AnalyticsFilters, MetricResponseSchema } from "@/lib/analytics";
+import {
+  AnalyticsFilters,
+  GrowthDataResponseSchema,
+  MetricResponseSchema,
+  PersonaPerformanceFilters,
+  PersonaPerformanceResponseSchema,
+  RubricHeatmapFilters,
+  RubricHeatmapResponseSchema,
+} from "@/lib/analytics";
 import { api } from "@/lib/api/fetcher";
 import {
   analyticsAverageScoreKeys,
   analyticsCompletionPercentageKeys,
   analyticsFirstAttemptPassRateKeys,
+  analyticsGrowthDataKeys,
   analyticsHighestScoreKeys,
   analyticsImprovementPerDayKeys,
   analyticsMessagesPerSessionKeys,
   analyticsPerfectScoresKeys,
+  analyticsPersonaPerformanceKeys,
   analyticsPersonaResponseTimesKeys,
   analyticsQuickestPassKeys,
+  analyticsRubricHeatmapKeys,
   analyticsSessionEfficiencyKeys,
   analyticsStagnationRateKeys,
   analyticsTimeSpentKeys,
@@ -268,6 +279,65 @@ export function useAnalyticsQuickestPass(
         }
       );
       return MetricResponseSchema.parse(res);
+    },
+  });
+}
+
+// Primary Analytics Hooks (3 complex metrics)
+
+export function useAnalyticsRubricHeatmap(
+  filters: RubricHeatmapFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsRubricHeatmapKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/primary/rubric-heatmap",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return RubricHeatmapResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsGrowthData(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsGrowthDataKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/primary/growth-data", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return GrowthDataResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsPersonaPerformance(
+  filters: PersonaPerformanceFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsPersonaPerformanceKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/primary/persona-performance",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return PersonaPerformanceResponseSchema.parse(res);
     },
   });
 }

@@ -1,0 +1,34 @@
+import { AnalyticsFiltersSchema } from "@/lib/analytics";
+import { analyticsRepo } from "@/lib/repos/analyticsRepo";
+import { log } from "@/utils/logger";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const PersonaPerformanceRequestSchema = AnalyticsFiltersSchema.extend({
+  simulationIds: z.array(z.string().uuid()).optional(),
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const filters = PersonaPerformanceRequestSchema.parse(body);
+
+    log.info("analytics.primary.persona-performance", {
+      message: "Fetching persona performance analytics",
+      context: { filters },
+    });
+
+    const result = await analyticsRepo.getPersonaPerformance(filters);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.error("analytics.primary.persona-performance.error", {
+      message: errorMessage,
+      error,
+    });
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}

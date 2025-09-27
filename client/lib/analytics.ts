@@ -59,6 +59,132 @@ export type TrendData = z.infer<typeof TrendDataSchema>;
 
 export type MetricResponse = z.infer<typeof MetricResponseSchema>;
 
+// Primary Analytics Types
+
+// Rubric Heatmap Types
+export const RubricHeatmapCellSchema = z.object({
+  correlation: z.number(),
+  pValue: z.number().nullable(),
+  color: z.string(),
+  strength: z.string(),
+  dataPoints: z.number(),
+});
+
+export const StandardGroupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  shortName: z.string().nullable(),
+  rubricId: z.string(),
+});
+
+export const RubricSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  points: z.number(),
+  active: z.boolean(),
+});
+
+export const RubricHeatmapResponseSchema = z.object({
+  matrix: z.array(z.array(RubricHeatmapCellSchema)),
+  standardGroups: z.array(StandardGroupSchema),
+  availableRubrics: z.array(RubricSchema),
+  insights: z.string().nullable(),
+  correlationStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  hasData: z.boolean(),
+});
+
+// Growth Data Types
+export const GrowthDataPointSchema = z.object({
+  date: z.string(),
+  averageScore: z.number(),
+  passRate: z.number(),
+  completionRate: z.number(),
+  firstAttemptPassRate: z.number(),
+  messagesPerSession: z.number(),
+  personaResponseTimes: z.number(),
+  sessionEfficiency: z.number(),
+  stagnationRate: z.number(),
+  timeSpent: z.number(),
+  totalAttempts: z.number(),
+});
+
+export const GrowthMetricSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string(),
+  unit: z.string(),
+  description: z.string(),
+  formatterId: z.enum(["percent", "int", "sec", "min"]),
+});
+
+export const GrowthDataResponseSchema = z.object({
+  chartData: z.array(GrowthDataPointSchema),
+  availableMetrics: z.array(GrowthMetricSchema),
+  growthStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  actionableInsight: z.string().nullable(),
+});
+
+// Persona Performance Types
+export const PersonaTrendDataSchema = z.object({
+  date: z.string(),
+  score: z.number(),
+  timestamp: z.number(),
+});
+
+export const PersonaPerformanceDataSchema = z.object({
+  name: z.string(),
+  score: z.number(),
+  sessions: z.number(),
+  color: z.string(),
+  trendData: z.array(PersonaTrendDataSchema),
+});
+
+export const SimulationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  timeLimit: z.number().nullable(),
+});
+
+export const PersonaPerformanceResponseSchema = z.object({
+  chartData: z.array(PersonaPerformanceDataSchema),
+  availableSimulations: z.array(SimulationSchema),
+  personaColors: z.record(z.string(), z.string()),
+  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
+});
+
+// Extended Analytics Filters for Primary Functions
+export const RubricHeatmapFiltersSchema = AnalyticsFiltersSchema.extend({
+  rubricId: z.string().uuid(),
+});
+
+export const PersonaPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
+  simulationIds: z.array(z.string().uuid()).optional(),
+});
+
+export type RubricHeatmapCell = z.infer<typeof RubricHeatmapCellSchema>;
+export type StandardGroup = z.infer<typeof StandardGroupSchema>;
+export type Rubric = z.infer<typeof RubricSchema>;
+export type RubricHeatmapResponse = z.infer<typeof RubricHeatmapResponseSchema>;
+
+export type GrowthDataPoint = z.infer<typeof GrowthDataPointSchema>;
+export type GrowthMetric = z.infer<typeof GrowthMetricSchema>;
+export type GrowthDataResponse = z.infer<typeof GrowthDataResponseSchema>;
+
+export type PersonaTrendData = z.infer<typeof PersonaTrendDataSchema>;
+export type PersonaPerformanceData = z.infer<
+  typeof PersonaPerformanceDataSchema
+>;
+export type Simulation = z.infer<typeof SimulationSchema>;
+export type PersonaPerformanceResponse = z.infer<
+  typeof PersonaPerformanceResponseSchema
+>;
+
+export type RubricHeatmapFilters = z.infer<typeof RubricHeatmapFiltersSchema>;
+export type PersonaPerformanceFilters = z.infer<
+  typeof PersonaPerformanceFiltersSchema
+>;
+
 // Narrow what can be used as "valueField" and "keyField" so indexing is safe
 type ValueField = "value" | "count";
 type KeyField = "attemptId" | "simulationId" | "profileId" | "date";

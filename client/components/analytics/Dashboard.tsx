@@ -8,6 +8,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -26,14 +27,13 @@ import SessionEfficiency from "../common/analytics/header/SessionEfficiency";
 import StagnationRate from "../common/analytics/header/StagnationRate";
 import TimeSpent from "../common/analytics/header/TimeSpent";
 import TotalAttempts from "../common/analytics/header/TotalAttempts";
-import AttemptImprovement from "../common/analytics/primary/AttemptImprovement";
 import Growth from "../common/analytics/primary/Growth";
 import PersonaPerformance from "../common/analytics/primary/PersonaPerformance";
+import RubricHeatmap from "../common/analytics/primary/RubricHeatmap";
+import AttemptImprovement from "../common/analytics/secondary/AttemptImprovement";
 import CohortPerformance from "../common/analytics/secondary/CohortPerformance";
-import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
 import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
 import SimulationHistory from "../common/history/SimulationHistory";
-import { useAnalytics } from "@/contexts/analytics-context";
 
 interface DashboardProps {
   profileId?: string;
@@ -190,16 +190,34 @@ export default function Dashboard({ profileId }: DashboardProps) {
   ];
 
   const primaryComponents = [
-    <Growth key="growth" filteredData={filteredData} thresholds={thresholds} />,
+    <Growth key="growth" filters={{
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters,
+      profileId,
+    }} />,
     <PersonaPerformance
       key="persona-performance"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <RubricHeatmap
       key="rubric-heatmap"
-      filteredData={filteredData}
-      thresholds={thresholds}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
     />,
   ];
 

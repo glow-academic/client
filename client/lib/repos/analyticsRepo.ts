@@ -4,8 +4,16 @@ import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
   AnalyticsFilters,
+  GrowthDataResponse,
+  GrowthDataResponseSchema,
   MetricResponse,
   MetricResponseSchema,
+  PersonaPerformanceFilters,
+  PersonaPerformanceResponse,
+  PersonaPerformanceResponseSchema,
+  RubricHeatmapFilters,
+  RubricHeatmapResponse,
+  RubricHeatmapResponseSchema,
 } from "../analytics";
 
 // Types from Drizzle materialized view
@@ -76,6 +84,38 @@ async function executeMetricFunction(
   const raw = rows?.[0]?.result ?? MetricResponseFallback;
 
   return MetricResponseSchema.parse(raw);
+}
+
+// Helper to execute primary analytics functions
+async function executePrimaryFunction<T>(
+  fnName: string,
+  filters: AnalyticsFilters,
+  additionalParams: SQL[] = []
+): Promise<T> {
+  const db = await getDb();
+
+  // Normalize params so the SQL sees NULL or valid arrays (never `()` or scalars)
+  const cohortIdsParam = toUuidArray(filters.cohortIds);
+  const rolesParam = toProfileRoleArray(filters.roles);
+  const simFiltersParam = toTextArray(filters.simulationFilters);
+  const profileIdParam = filters.profileId ?? null; // uuid or null
+
+  // Build the SQL with additional parameters
+  const baseParams = [
+    sql`${filters.startDate}::timestamptz`,
+    sql`${filters.endDate}::timestamptz`,
+    cohortIdsParam || sql`NULL`,
+    rolesParam || sql`NULL`,
+    simFiltersParam || sql`NULL`,
+    sql`${profileIdParam}::uuid`,
+  ];
+
+  // Call the SQL function directly
+  const rows = await db.execute<MetricRow>(
+    sql`SELECT ${sql.raw(fnName)}(${sql.join([...baseParams, ...additionalParams], sql`, `)}) AS result`
+  );
+
+  return rows?.[0]?.result as T;
 }
 
 export const analyticsRepo = {
@@ -149,5 +189,41 @@ export const analyticsRepo = {
 
   async getQuickestPass(filters: AnalyticsFilters): Promise<MetricResponse> {
     return executeMetricFunction("analytics_quickest_pass_fn", filters);
+  },
+
+  // Primary Analytics (3 complex metrics)
+  async getRubricHeatmap(
+    filters: RubricHeatmapFilters
+  ): Promise<RubricHeatmapResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_rubric_heatmap_fn",
+      filters,
+      [sql`${filters.rubricId}::uuid`]
+    );
+    return RubricHeatmapResponseSchema.parse(result);
+  },
+
+  async getGrowthData(filters: AnalyticsFilters): Promise<GrowthDataResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_growth_data_fn",
+      filters
+    );
+    return GrowthDataResponseSchema.parse(result);
+  },
+
+  async getPersonaPerformance(
+    filters: PersonaPerformanceFilters
+  ): Promise<PersonaPerformanceResponse> {
+    const simulationIdsParam =
+      filters.simulationIds && filters.simulationIds.length > 0
+        ? toUuidArray(filters.simulationIds) || sql`NULL`
+        : sql`NULL`;
+
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_persona_performance_fn",
+      filters,
+      [simulationIdsParam]
+    );
+    return PersonaPerformanceResponseSchema.parse(result);
   },
 };

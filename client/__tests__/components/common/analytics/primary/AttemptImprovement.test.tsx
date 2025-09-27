@@ -1,7 +1,7 @@
-import AttemptImprovement from "@/components/common/analytics/primary/AttemptImprovement";
+import AttemptImprovement from "@/components/common/analytics/secondary/AttemptImprovement";
+import { render, screen, waitFor } from "@/test/custom-render";
 import { calculateAttemptImprovement } from "@/utils/analytics/primary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the utility function

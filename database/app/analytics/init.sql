@@ -209,3 +209,9 @@ END $$;
 \i app/analytics/leaderboard/prep_improvement_per_day.sql
 \i app/analytics/leaderboard/prep_perfect_scores.sql
 \i app/analytics/leaderboard/prep_quickest_pass.sql
+
+-- Primary Analytics Functions
+\i app/analytics/primary/helpers.sql
+\i app/analytics/primary/rubric_heatmap.sql
+\i app/analytics/primary/growth_data.sql
+\i app/analytics/primary/persona_performance.sql

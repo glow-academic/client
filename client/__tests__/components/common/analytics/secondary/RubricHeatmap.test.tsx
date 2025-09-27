@@ -4,7 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
-import RubricHeatmap from "@/components/common/analytics/secondary/RubricHeatmap";
+import RubricHeatmap from "@/components/common/analytics/primary/RubricHeatmap";
+import { render, screen, waitFor } from "@/test/custom-render";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -15,7 +16,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the utility function

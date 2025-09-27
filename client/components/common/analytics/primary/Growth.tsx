@@ -14,8 +14,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculatePlatformGrowth } from "@/utils/analytics/primary";
+import type { AnalyticsFilters } from "@/lib/analytics";
+import { attachFormatters } from "@/lib/analyticsAdapters";
+import { useAnalyticsGrowthData } from "@/lib/api/hooks/analytics";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -29,109 +30,28 @@ import {
   YAxis,
 } from "recharts";
 import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
-
 export interface GrowthProps {
-  filteredData: FilteredData | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  filters: AnalyticsFilters;
 }
 
-export default function Growth({ filteredData, thresholds }: GrowthProps) {
+export default function Growth({ filters }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
 
-  // Use rubrics from filtered data
-  const rubrics = filteredData?.rubrics;
+  // Fetch growth data using the hook
+  const { data: rawData, isLoading, error } = useAnalyticsGrowthData(filters);
 
-  // Define all available metrics (expandable to all 10 header metrics)
-  const availableMetrics: GrowthMetric[] = useMemo(
-    () => [
-      {
-        id: "averageScore",
-        name: "Average Score",
-        color: "#3b82f6",
-        description: "Average performance score across all sessions",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "passRate",
-        name: "Pass Rate",
-        color: "#10b981",
-        description: "Percentage of sessions that meet passing criteria",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "completionRate",
-        name: "Completion Rate",
-        color: "#8b5cf6",
-        description: "Percentage of sessions that were completed",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "firstAttemptPassRate",
-        name: "First Attempt Pass Rate",
-        color: "#f97316",
-        description: "Percentage of first attempts that passed",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "messagesPerSession",
-        name: "Messages Per Session",
-        color: "#06b6d4",
-        description: "Average number of messages per session",
-        unit: "msgs",
-        formatter: (value: number) => `${value} msgs`,
-      },
-      {
-        id: "personaResponseTimes",
-        name: "Response Times",
-        color: "#84cc16",
-        description: "Average response time to persona interactions",
-        unit: "sec",
-        formatter: (value: number) => `${value}s`,
-      },
-      {
-        id: "sessionEfficiency",
-        name: "Session Efficiency",
-        color: "#ec4899",
-        description: "Overall session efficiency rating",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "stagnationRate",
-        name: "Stagnation Rate",
-        color: "#ef4444",
-        description: "Rate of performance stagnation",
-        unit: "%",
-        formatter: (value: number) => `${value}%`,
-      },
-      {
-        id: "timeSpent",
-        name: "Time Spent",
-        color: "#a855f7",
-        description: "Average time spent per session",
-        unit: "min",
-        formatter: (value: number) => `${value}m`,
-      },
-      {
-        id: "totalAttempts",
-        name: "Total Attempts",
-        color: "#f59e0b",
-        description: "Total number of simulation attempts",
-        unit: "attempts",
-        formatter: (value: number) => `${value} attempts`,
-      },
-    ],
-    []
+  // Transform data to include formatter functions
+  const data = rawData ? attachFormatters(rawData) : undefined;
+
+  const chartData = useMemo(
+    () => (data?.["chartData"] as unknown[]) ?? [],
+    [data]
+  );
+  const availableMetrics = useMemo(
+    () => (data?.["availableMetrics"] ?? []) as GrowthMetric[],
+    [data]
   );
 
   // Ensure at least one metric is always selected
@@ -152,82 +72,39 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
     );
   }, [availableMetrics, selectedMetrics]);
 
-  // Calculate growth data using utility function
-  const growthData = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return [];
-    }
+  // Use server-provided growth status, fallback to local calculation if needed
+  const thresholdStatus = data?.["growthStatus"] ?? "neutral";
 
-    return calculatePlatformGrowth(filteredData, rubrics);
-  }, [filteredData, rubrics]);
+  // Use server-provided actionable insight
+  const insight = data?.["actionableInsight"] ?? null;
 
-  // Calculate threshold status based on growth data
-  const getThresholdStatus = () => {
-    if (growthData.length < 2) return "neutral";
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Growth Analytics</CardTitle>
+          <CardDescription>Loading growth data...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-    const latest = growthData[growthData.length - 1];
-    const previous = growthData[Math.floor(growthData.length / 2)]; // Mid-point for comparison
-
-    if (!latest || !previous) return "neutral";
-
-    // Calculate average improvement across selected metrics
-    const improvements = selectedMetricObjects.map((metric) => {
-      const current = latest[metric.id as keyof typeof latest] as number;
-      const prev = previous[metric.id as keyof typeof previous] as number;
-      return current - prev;
-    });
-
-    const avgImprovement =
-      improvements.reduce((sum, imp) => sum + imp, 0) / improvements.length;
-
-    if (avgImprovement >= thresholds.success) return "success";
-    if (avgImprovement >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
-
-  // Get actionable insights
-  const getActionableInsights = () => {
-    if (growthData.length < 2) return null;
-
-    const latest = growthData[growthData.length - 1];
-    const previous = growthData[Math.floor(growthData.length / 2)]; // Mid-point for comparison
-
-    if (!latest || !previous) return null;
-
-    const metrics = selectedMetricObjects.map((metric) => ({
-      name: metric.name,
-      current: latest[metric.id as keyof typeof latest] as number,
-      previous: previous[metric.id as keyof typeof previous] as number,
-      color: metric.color,
-    }));
-
-    // Find the metric with the biggest decline
-    const worstMetric = metrics.reduce((worst, metric) => {
-      const change = metric.current - metric.previous;
-      const worstChange = worst.current - worst.previous;
-      return change < worstChange ? metric : worst;
-    }, metrics[0]!); // Use non-null assertion since we already checked metrics.length > 0
-
-    if (!worstMetric) return null;
-
-    const change = worstMetric.current - worstMetric.previous;
-
-    if (change < -5) {
-      if (worstMetric.name === "Pass Rate") {
-        return `${worstMetric.name} has declined by ${Math.abs(change)}%. Consider making scenarios more challenging.`;
-      } else if (worstMetric.name === "Completion Rate") {
-        return `${worstMetric.name} has declined by ${Math.abs(change)}%. Review session time limits and difficulty.`;
-      } else if (worstMetric.name === "Efficiency Index") {
-        return `${worstMetric.name} has declined by ${Math.abs(change)}%. Focus on time management training.`;
-      } else {
-        return `${worstMetric.name} has declined by ${Math.abs(change)}%. Consider additional training support.`;
-      }
-    }
-
-    return null;
-  };
+  if (error) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Growth Analytics</CardTitle>
+          <CardDescription>Error loading growth data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">Failed to load growth data</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -272,7 +149,7 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
             }
           >
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={growthData} margin={{ bottom: 20 }}>
+              <LineChart data={chartData} margin={{ bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="date"
@@ -281,7 +158,7 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
                   textAnchor="end"
                   height={60}
                 />
-                <YAxis className="text-xs" domain={[0, 100]} />
+                <YAxis className="text-xs" domain={[0, "auto"]} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
@@ -313,11 +190,9 @@ export default function Growth({ filteredData, thresholds }: GrowthProps) {
           </div>
 
           {/* Actionable Insights */}
-          {getActionableInsights() && (
+          {insight && (
             <div className="p-3 bg-muted rounded-lg mt-2">
-              <p className="text-sm text-muted-foreground">
-                {getActionableInsights()}
-              </p>
+              <p className="text-sm text-muted-foreground">{String(insight)}</p>
             </div>
           )}
         </div>

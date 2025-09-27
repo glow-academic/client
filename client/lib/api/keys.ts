@@ -229,6 +229,21 @@ export const analyticsQuickestPassKeys = {
   list: (filters?: unknown) =>
     [...analyticsQuickestPassKeys.all, { filters }] as const,
 };
+export const analyticsRubricHeatmapKeys = {
+  all: ["analytics:primary:rubric-heatmap"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsRubricHeatmapKeys.all, { filters }] as const,
+};
+export const analyticsGrowthDataKeys = {
+  all: ["analytics:primary:growth-data"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsGrowthDataKeys.all, { filters }] as const,
+};
+export const analyticsPersonaPerformanceKeys = {
+  all: ["analytics:primary:persona-performance"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsPersonaPerformanceKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>
