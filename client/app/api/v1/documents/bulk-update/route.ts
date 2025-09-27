@@ -1,31 +1,14 @@
 import { handle } from "@/lib/api/route-factory";
-import { documentRepo } from "@/lib/repos/documentRepo";
+import {
+  documentRepo,
+  DocumentUpdateSchema,
+  type DocumentUpdate,
+} from "@/lib/repos/documentRepo";
 import { log } from "@/utils/logger";
 import { z } from "zod";
 
 const BulkUpdateBody = z.object({
-  updates: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        type: z
-          .enum([
-            "homework",
-            "project",
-            "quiz",
-            "midterm",
-            "lab",
-            "lecture",
-            "syllabus",
-          ])
-          .optional(),
-        tags: z.array(z.string()).optional(),
-        updatedAt: z.string().optional(),
-        active: z.boolean().optional(),
-        classified: z.boolean().optional(),
-      })
-    )
-    .min(1),
+  updates: z.array(DocumentUpdateSchema).min(1),
 });
 
 export async function PATCH(req: Request) {
@@ -34,13 +17,16 @@ export async function PATCH(req: Request) {
   if (!parsed.success) {
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+
+  const updates = parsed.data.updates as Array<{ id: string } & DocumentUpdate>;
+
   return handle(
-    () => documentRepo.updateMany(parsed.data.updates),
+    () => documentRepo.updateMany(updates),
     (e: unknown) =>
       log.error("api.documents.bulk_update.failed", {
         message: "Failed to update documents in bulk",
         subject: { entityType: "documents" },
-        context: { count: parsed.data.updates.length },
+        context: { count: updates.length },
         error: e,
       })
   );

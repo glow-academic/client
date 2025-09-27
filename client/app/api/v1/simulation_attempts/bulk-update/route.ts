@@ -1,19 +1,14 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationAttemptRepo } from "@/lib/repos/simulationAttemptRepo";
+import {
+  simulationAttemptRepo,
+  SimulationAttemptUpdateSchema,
+  type SimulationAttemptUpdate,
+} from "@/lib/repos/simulationAttemptRepo";
 import { log } from "@/utils/logger";
 import { z } from "zod";
 
 const BulkUpdateBody = z.object({
-  updates: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        archived: z.boolean().optional(),
-        infiniteMode: z.boolean().optional(),
-        infiniteModeTimeLimit: z.number().optional(),
-      })
-    )
-    .min(1),
+  updates: z.array(SimulationAttemptUpdateSchema).min(1),
 });
 
 export async function PATCH(req: Request) {
@@ -22,13 +17,18 @@ export async function PATCH(req: Request) {
   if (!parsed.success) {
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+
+  const updates = parsed.data.updates as Array<
+    { id: string } & SimulationAttemptUpdate
+  >;
+
   return handle(
-    () => simulationAttemptRepo.updateMany(parsed.data.updates),
+    () => simulationAttemptRepo.updateMany(updates),
     (e: unknown) =>
       log.error("api.simulation_attempts.bulk_update.failed", {
         message: "Failed to update simulation attempts in bulk",
         subject: { entityType: "simulation_attempts" },
-        context: { count: parsed.data.updates.length },
+        context: { count: updates.length },
         error: e,
       })
   );
