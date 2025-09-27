@@ -38,7 +38,6 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  useUpdateSimulationAttempt,
   useUpdateSimulationAttempts,
 } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
@@ -100,7 +99,6 @@ export function DataTable<TData, TValue>({
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const queryClient = useQueryClient();
-  const updateSimulationAttemptMutation = useUpdateSimulationAttempt();
   const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
 
   // Handle attempt selection
@@ -223,7 +221,7 @@ export function DataTable<TData, TValue>({
     selectedAttempts,
     data,
     queryClient,
-    updateSimulationAttemptMutation,
+    updateSimulationAttemptsMutation,
   ]);
 
   // Add checkbox column when showArchive is true

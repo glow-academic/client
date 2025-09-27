@@ -356,7 +356,75 @@ export default function Practice() {
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
             <SimulationHistory
-              serverData={historyData}
+              filteredData={
+                historyData
+                  ? {
+                      attempts: historyData.rows.map((row) => ({
+                        ...row,
+                        infiniteMode: row.infiniteMode ?? false,
+                        infiniteModeTimeLimit:
+                          row.infiniteModeTimeLimit ?? null,
+                      })),
+                      chats: [],
+                      grades: [],
+                      feedbacks: [],
+                      messages: [],
+                      simulations: historyData.simulations.map((sim) => ({
+                        ...sim,
+                        updatedAt: new Date().toISOString(),
+                        createdAt: new Date().toISOString(),
+                        active: true,
+                        description: "",
+                        timeLimit: null,
+                        scenarioIds: [],
+                        rubricId: "",
+                        defaultSimulation: false,
+                        practiceSimulation: false,
+                      })),
+                      scenarios: historyData.rootScenarios.map((scenario) => ({
+                        ...scenario,
+                        generated: false,
+                        updatedAt: new Date().toISOString(),
+                        createdAt: new Date().toISOString(),
+                        active: true,
+                        description: "",
+                        personaId: null,
+                        parameterItemIds: null,
+                        documentIds: null,
+                        defaultScenario: false,
+                        practiceScenario: false,
+                        parentId: null,
+                      })),
+                      profiles: historyData.profiles.map((profile) => ({
+                        id: profile.id,
+                        updatedAt: new Date().toISOString(),
+                        userId: null,
+                        lastLogin: new Date().toISOString(),
+                        firstName: profile.name,
+                        lastName: "",
+                        alias: profile.name,
+                        viewedIntro: false,
+                        viewedChat: false,
+                        createdAt: new Date().toISOString(),
+                        role: "guest" as const,
+                        defaultProfile: false,
+                        active: true,
+                        lastActive: null,
+                        reqPerDay: 0,
+                        reqUsed: 0,
+                        reqResetDate: new Date().toISOString(),
+                      })),
+                      personas: [],
+                      rubrics: [],
+                      cohorts: [],
+                      parameters: [],
+                      agents: [],
+                      standardGroups: [],
+                      standards: [],
+                      parameterItems: [],
+                    }
+                  : null
+              }
               showExport={false}
               showArchive={false}
               singleProfile={true}

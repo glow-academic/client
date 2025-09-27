@@ -44,7 +44,7 @@ export default async function ModelEditPage({
 
   await queryClient.prefetchQuery({
     queryKey: ["providers"],
-    queryFn: () => providerRepo.findAll(),
+    queryFn: () => providerRepo.list(),
   });
 
   return (
