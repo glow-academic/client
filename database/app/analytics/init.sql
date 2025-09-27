@@ -1,5 +1,5 @@
 -- Adjust schema name if needed (e.g., public)
-CREATE MATERIALIZED VIEW IF NOT EXISTS chat_analytics_mv AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS analytics AS
 WITH RECURSIVE scenario_roots AS (
   -- Map every scenario.id to its root_id (follow parents to the top)
   SELECT id, parent_id, id AS root_id
@@ -131,47 +131,47 @@ LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
 WITH NO DATA;
 
 -- Unique index required for CONCURRENT refresh
-CREATE UNIQUE INDEX IF NOT EXISTS chat_analytics_mv_pk
-  ON chat_analytics_mv (chat_id);
+CREATE UNIQUE INDEX IF NOT EXISTS analytics_pk
+  ON analytics (chat_id);
 
 -- Filter/slicing indexes
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_simulation_id_idx
-  ON chat_analytics_mv (simulation_id);
+CREATE INDEX IF NOT EXISTS analytics_simulation_id_idx
+  ON analytics (simulation_id);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_profile_id_idx
-  ON chat_analytics_mv (profile_id);
+CREATE INDEX IF NOT EXISTS analytics_profile_id_idx
+  ON analytics (profile_id);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_scenario_id_idx
-  ON chat_analytics_mv (scenario_id);
+CREATE INDEX IF NOT EXISTS analytics_scenario_id_idx
+  ON analytics (scenario_id);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_leaf_scenario_id_idx
-  ON chat_analytics_mv (leaf_scenario_id);
+CREATE INDEX IF NOT EXISTS analytics_leaf_scenario_id_idx
+  ON analytics (leaf_scenario_id);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_chat_created_at_idx
-  ON chat_analytics_mv (chat_created_at);
+CREATE INDEX IF NOT EXISTS analytics_chat_created_at_idx
+  ON analytics (chat_created_at);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_is_practice_idx
-  ON chat_analytics_mv (is_practice);
+CREATE INDEX IF NOT EXISTS analytics_is_practice_idx
+  ON analytics (is_practice);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_is_archived_idx
-  ON chat_analytics_mv (is_archived);
+CREATE INDEX IF NOT EXISTS analytics_is_archived_idx
+  ON analytics (is_archived);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_is_general_idx
-  ON chat_analytics_mv (is_general);
+CREATE INDEX IF NOT EXISTS analytics_is_general_idx
+  ON analytics (is_general);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_profile_role_idx
-  ON chat_analytics_mv (profile_role);
+CREATE INDEX IF NOT EXISTS analytics_profile_role_idx
+  ON analytics (profile_role);
 
 -- GIN for array membership filtering on cohort_ids
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_cohort_ids_gin
-  ON chat_analytics_mv USING GIN (cohort_ids);
+CREATE INDEX IF NOT EXISTS analytics_cohort_ids_gin
+  ON analytics USING GIN (cohort_ids);
 
 -- Optional: fast pass-rate and time-range scans
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_passed_idx
-  ON chat_analytics_mv (passed);
+CREATE INDEX IF NOT EXISTS analytics_passed_idx
+  ON analytics (passed);
 
-CREATE INDEX IF NOT EXISTS chat_analytics_mv_time_taken_idx
-  ON chat_analytics_mv (time_taken_seconds);
+CREATE INDEX IF NOT EXISTS analytics_time_taken_idx
+  ON analytics (time_taken_seconds);
 
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$
@@ -182,13 +182,13 @@ BEGIN
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE c.relkind = 'm'
       AND n.nspname = 'public'
-      AND c.relname = 'chat_analytics_mv'
+      AND c.relname = 'analytics'
       AND c.relispopulated
   ) THEN
     -- initial load
-    REFRESH MATERIALIZED VIEW chat_analytics_mv;
+    REFRESH MATERIALIZED VIEW analytics;
   ELSE
     -- subsequent runs
-    REFRESH MATERIALIZED VIEW CONCURRENTLY chat_analytics_mv;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY analytics;
   END IF;
 END $$;

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client start-db migrate-db connect-db
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client start-db migrate-db connect-db fresh-db
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -10,7 +10,7 @@ VENV_PIP := $(VENV_BIN)/pip
 # Service ports
 SERVER_PORT := 8000
 CLIENT_PORT := 3000
-REDIS_PORT := 6379
+REDIS_PORT := 6380
 DATABASE_PORT := 5432
 
 # Check if Python 3.11 is available
@@ -117,7 +117,7 @@ run: check-venv
 	(redis-server --port $(REDIS_PORT) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && (echo "Generating SQLModel classes from database schema..." && $(PWD)/$(VENV_PYTHON) scripts/generate_models.py && echo "✅ Models generated" && $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT)) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
-	(cd database && yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
+	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
 
 # Stop all services (for cleanup)
@@ -185,7 +185,7 @@ connect-db:
 	@echo "✅ Connected to database"
 
 # Start database with fresh data (clean start)
-start-fresh-db:
+fresh-db:
 	@echo "Starting database with fresh data..."
 	@cd database && yarn start:clean
 	@echo "✅ Fresh database started"
@@ -207,6 +207,7 @@ help:
 	@echo "  start-db     - Start database service"
 	@echo "  migrate-db   - Run database migrations"
 	@echo "  connect-db   - Connect to database"
+	@echo "  fresh-db     - Start database with fresh data"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"

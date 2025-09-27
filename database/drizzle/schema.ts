@@ -543,7 +543,7 @@ export const verificationToken = pgTable("verification_token", {
 }, (table) => [
 	primaryKey({ columns: [table.identifier, table.token], name: "verification_token_pkey"}),
 ]);
-export const chatAnalyticsMv = pgMaterializedView("chat_analytics_mv", {	chatId: uuid("chat_id"),
+export const analytics = pgMaterializedView("analytics", {	chatId: uuid("chat_id"),
 	attemptId: uuid("attempt_id"),
 	profileId: uuid("profile_id"),
 	simulationId: uuid("simulation_id"),

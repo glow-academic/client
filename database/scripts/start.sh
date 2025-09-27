@@ -331,7 +331,7 @@ if [[ "$CLEAN_DB" == true ]]; then
   start_fresh_from_init
   
   # Generate and copy files
-  # generate_and_copy_files
+  generate_and_copy_files
   
   echo "✅ Clean database setup completed!"
   exit 0
