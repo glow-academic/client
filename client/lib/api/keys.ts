@@ -160,10 +160,6 @@ export const standardKeys = {
   list: (filters?: unknown) => [...standardKeys.all, { filters }] as const,
   detail: (id: string | number) => [...standardKeys.all, String(id)] as const,
 };
-export const analyticsKeys = {
-  all: ["analytics"] as const,
-  list: (filters?: unknown) => [...analyticsKeys.all, { filters }] as const,
-};
 export const analyticsLeaderboardKeys = {
   all: ["analytics:leaderboard"] as const,
   list: (filters?: unknown) =>
@@ -187,6 +183,11 @@ export const analyticsPracticeKeys = {
   all: ["analytics:practice"] as const,
   list: (filters?: unknown) =>
     [...analyticsPracticeKeys.all, { filters }] as const,
+};
+export const analyticsHistoryKeys = {
+  all: ["analytics:history"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsHistoryKeys.all, { filters }] as const,
 };
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,

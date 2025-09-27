@@ -1,8 +1,8 @@
 import { api } from "@/lib/api/fetcher";
 import {
   analyticsDashboardKeys,
+  analyticsHistoryKeys,
   analyticsHomeKeys,
-  analyticsKeys,
   analyticsLeaderboardKeys,
   analyticsPracticeKeys,
   analyticsReportsKeys,
@@ -20,20 +20,6 @@ export type AnalyticsFilters = {
   simulationFilters?: SimulationFilter[];
   profileId?: string;
 };
-
-export function useAnalyticsData(filters: AnalyticsFilters, enabled = true) {
-  return useQuery({
-    queryKey: analyticsKeys.list(filters),
-    enabled,
-    queryFn: () =>
-      api<unknown[]>("/api/v1/analytics", {
-        method: "POST",
-        body: JSON.stringify(filters),
-      }),
-  });
-}
-
-// Zod schemas per view
 
 // Leaderboard
 export const LeaderboardRowSchema = z.object({
@@ -157,23 +143,6 @@ export const AnalyticsBaseSchema = z.object({
   standards: z.array(z.any()),
 });
 
-export function useAnalyticsBaseData(
-  filters: AnalyticsFilters,
-  enabled = true
-) {
-  return useQuery({
-    queryKey: analyticsKeys.list({ view: "base", ...filters }),
-    enabled,
-    queryFn: async () => {
-      const res = await api<unknown>("/api/analytics", {
-        method: "POST",
-        body: JSON.stringify(filters),
-      });
-      return AnalyticsBaseSchema.parse(res);
-    },
-  });
-}
-
 // Hooks per view with schema validation
 
 export function useAnalyticsLeaderboard(
@@ -251,6 +220,20 @@ export function useAnalyticsPractice(
         body: JSON.stringify(filters),
       });
       return PracticeResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsHistory(filters: AnalyticsFilters, enabled = true) {
+  return useQuery({
+    queryKey: analyticsHistoryKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown[]>("/api/v1/analytics/history", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return res; // TODO: Add proper schema validation
     },
   });
 }
