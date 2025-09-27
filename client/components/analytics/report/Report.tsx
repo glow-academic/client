@@ -9,8 +9,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
-import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/lib/api/hooks/profiles";
 
 import Dashboard from "../Dashboard";
 
@@ -53,10 +52,7 @@ export interface ReportProps {
 
 export default function Report({ profileId }: ReportProps) {
   // Fetch profile data
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: ["profile", profileId],
-    queryFn: () => getProfile(profileId),
-  });
+  const { data: profile, isLoading: isLoadingProfile } = useProfile(profileId);
 
   // Loading state
   if (isLoadingProfile || !profile) {

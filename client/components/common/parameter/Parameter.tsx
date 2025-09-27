@@ -6,7 +6,6 @@
  */
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -33,15 +32,19 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useCohorts } from "@/lib/api/hooks/cohorts";
-import { useParameterItemsByParameterId } from "@/lib/api/hooks/parameter_items";
-import { useParameter } from "@/lib/api/hooks/parameters";
+import {
+  useCreateParameterItem,
+  useDeleteParameterItem,
+  useParameterItemsByParameterId,
+  useUpdateParameterItem,
+} from "@/lib/api/hooks/parameter_items";
+import {
+  useCreateParameter,
+  useParameter,
+  useUpdateParameter,
+} from "@/lib/api/hooks/parameters";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { useSimulations } from "@/lib/api/hooks/simulations";
-import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
-import { deleteParameterItem } from "@/utils/mutations/parameter_items/delete-parameter-item";
-import { updateParameterItem } from "@/utils/mutations/parameter_items/update-parameter-item";
-import { createParameter } from "@/utils/mutations/parameters/create-parameter";
-import { updateParameter } from "@/utils/mutations/parameters/update-parameter";
 import { Plus, Trash2 } from "lucide-react";
 
 interface FormData {
@@ -73,7 +76,6 @@ export default function Parameter({
 }: ParameterProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
-  const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
@@ -102,6 +104,13 @@ export default function Parameter({
   const { data: cohorts = [] } = useCohorts();
   const { data: sims = [] } = useSimulations();
   const { data: allScenarios = [] } = useScenarios();
+
+  // Mutation hooks
+  const createParameterMutation = useCreateParameter();
+  const updateParameterMutation = useUpdateParameter();
+  const createParameterItemMutation = useCreateParameterItem();
+  const updateParameterItemMutation = useUpdateParameterItem();
+  const deleteParameterItemMutation = useDeleteParameterItem();
 
   const inUseParameterItemIds = useMemo(() => {
     // Active cohorts
@@ -205,7 +214,8 @@ export default function Parameter({
     try {
       if (isEditMode) {
         // Update existing parameter
-        await updateParameter(parameterId!, {
+        await updateParameterMutation.mutateAsync({
+          id: parameterId!,
           name: formData.name!,
           description: formData.description!,
           numerical: formData.numerical,
@@ -220,11 +230,11 @@ export default function Parameter({
         parameterItemsFormData.forEach((item) => {
           if (item.isDeleted && item.id) {
             // Delete existing items
-            promises.push(deleteParameterItem(item.id));
+            promises.push(deleteParameterItemMutation.mutateAsync(item.id));
           } else if (item.isNew && !item.isDeleted) {
             // Create new items
             promises.push(
-              createParameterItem({
+              createParameterItemMutation.mutateAsync({
                 name: item.name,
                 description: item.description,
                 value: formData.numerical ? item.value : item.name,
@@ -235,7 +245,8 @@ export default function Parameter({
           } else if (!item.isNew && !item.isDeleted && item.id) {
             // Update existing items
             promises.push(
-              updateParameterItem(item.id, {
+              updateParameterItemMutation.mutateAsync({
+                id: item.id,
                 name: item.name,
                 description: item.description,
                 value: formData.numerical ? item.value : item.name,
@@ -247,15 +258,10 @@ export default function Parameter({
         });
 
         await Promise.all(promises);
-        queryClient.invalidateQueries({ queryKey: ["parameters"] });
-        queryClient.invalidateQueries({ queryKey: ["parameter", parameterId] });
-        queryClient.invalidateQueries({
-          queryKey: ["parameterItems", parameterId],
-        });
         toast.success("Parameter updated successfully!");
       } else {
         // Create new parameter
-        const newParameter = await createParameter({
+        const newParameter = await createParameterMutation.mutateAsync({
           name: formData.name!,
           description: formData.description!,
           numerical: formData.numerical || false,
@@ -269,7 +275,7 @@ export default function Parameter({
           parameterItemsFormData.forEach((item) => {
             if (!item.isDeleted) {
               promises.push(
-                createParameterItem({
+                createParameterItemMutation.mutateAsync({
                   name: item.name,
                   description: item.description,
                   value: formData.numerical || false ? item.value : item.name,
@@ -283,10 +289,6 @@ export default function Parameter({
           await Promise.all(promises);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["parameters"] });
-        queryClient.invalidateQueries({
-          queryKey: ["parameter", newParameter?.id],
-        });
         toast.success("Parameter created successfully!");
       }
 

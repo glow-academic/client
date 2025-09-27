@@ -6,7 +6,6 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   Edit,
@@ -22,9 +21,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
-import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
-import { deleteCohort } from "@/utils/mutations/cohorts/delete-cohort";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import {
+  useCohorts,
+  useCreateCohort,
+  useDeleteCohort,
+} from "@/lib/api/hooks/cohorts";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -42,28 +44,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
+import { useUpdateCohort } from "@/lib/api/hooks/cohorts";
 import { Cohort } from "@/types";
-import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 
 export default function Cohorts() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   // Fetch cohorts data
-  const {
-    data: cohorts = [],
-    refetch: refetchCohorts,
-    isLoading: loadingCohorts,
-  } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const { data: cohorts = [], isLoading: loadingCohorts } = useCohorts();
 
   // Fetch profiles data for role checking
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  const { data: profiles = [], isLoading: loadingProfiles } = useProfiles();
+
+  // Mutation hooks
+  const createCohortMutation = useCreateCohort();
+  const deleteCohortMutation = useDeleteCohort();
+  const updateCohortMutation = useUpdateCohort();
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -252,7 +247,7 @@ export default function Cohorts() {
 
     setIsDeleting(true);
     try {
-      await deleteCohort(deleteItem.id);
+      await deleteCohortMutation.mutateAsync(deleteItem.id);
       await log.info("cohort.delete.success", {
         message: "Cohort deleted successfully",
         subject: { entityType: "cohort", entityId: deleteItem.id },
@@ -263,9 +258,6 @@ export default function Cohorts() {
         },
       });
       toast.success("Cohort deleted successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      refetchCohorts();
     } catch (error) {
       await log.error("cohort.delete.failed", {
         message: "Error deleting cohort",
@@ -297,8 +289,8 @@ export default function Cohorts() {
         cohort.profileIds?.filter((id) => id !== effectiveProfile?.id) || [];
 
       // Update the cohort to remove the current user
-      await updateCohort(leaveItem.id, {
-        ...cohort,
+      await updateCohortMutation.mutateAsync({
+        id: leaveItem.id,
         profileIds: updatedProfileIds,
         updatedAt: new Date().toISOString(),
       });
@@ -313,9 +305,6 @@ export default function Cohorts() {
         },
       });
       toast.success("Left cohort successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      refetchCohorts();
     } catch (error) {
       await log.error("cohort.leave.failed", {
         message: "Error leaving cohort",
@@ -334,7 +323,7 @@ export default function Cohorts() {
   const handleDuplicate = async (cohort: Cohort) => {
     setIsDuplicating(cohort.id);
     try {
-      await createCohort({
+      await createCohortMutation.mutateAsync({
         ...cohort,
         id: undefined,
         createdAt: undefined,
@@ -353,9 +342,6 @@ export default function Cohorts() {
         },
       });
       toast.success(`Cohort "${cohort.title}" duplicated successfully`);
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
-      refetchCohorts();
     } catch (error) {
       await log.error("cohort.duplicate.failed", {
         message: "Error duplicating cohort",

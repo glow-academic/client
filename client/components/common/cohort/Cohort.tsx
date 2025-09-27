@@ -5,7 +5,6 @@
  * 06/18/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,16 +29,18 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useProfile } from "@/contexts/profile-context";
+import {
+  useCohorts,
+  useCreateCohort,
+  useUpdateCohort,
+} from "@/lib/api/hooks/cohorts";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { Cohort as CohortType, Profile, Simulation } from "@/types";
-import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
-import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { getAllParameterItems } from "@/utils/queries/parameter_items/get-all-parameter-items";
-import { getAllParameters } from "@/utils/queries/parameters/get-all-parameters";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -69,7 +70,6 @@ type EditableProfile =
     };
 
 export default function Cohort({ cohortId }: CohortProps) {
-  const queryClient = useQueryClient();
   const router = useRouter();
   const { effectiveProfile } = useProfile();
 
@@ -114,41 +114,27 @@ export default function Cohort({ cohortId }: CohortProps) {
   }, []);
 
   // Fetch cohorts for the list mode
-  const { data: cohorts = [] } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
-  });
+  const { data: cohorts = [] } = useCohorts();
 
-  const { data: profiles = [], isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
+  const { data: profiles = [], isLoading: isLoadingProfiles } = useProfiles();
 
-  const { data: simulations = [], isLoading: isLoadingSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  const { data: simulations = [], isLoading: isLoadingSimulations } =
+    useSimulations();
 
-  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
+  const { data: scenarios = [], isLoading: isLoadingScenarios } =
+    useScenarios();
 
-  const { data: parameters = [], isLoading: isLoadingParameters } = useQuery({
-    queryKey: ["parameters"],
-    queryFn: () => getAllParameters(),
-  });
+  const { data: parameters = [], isLoading: isLoadingParameters } =
+    useParameters();
 
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
-    useQuery({
-      queryKey: ["parameterItems"],
-      queryFn: () => getAllParameterItems(),
-    });
+    useParameterItems();
 
-  const { data: personas = [] } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const { data: personas = [] } = usePersonas();
+
+  // Mutation hooks
+  const createCohortMutation = useCreateCohort();
+  const updateCohortMutation = useUpdateCohort();
 
   const isLoading =
     isLoadingProfiles ||
@@ -459,17 +445,17 @@ export default function Cohort({ cohortId }: CohortProps) {
       // Prepare profile IDs from staff profiles
       const profileIds = staffProfiles.map((profile) => profile.id);
 
-      let result;
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
-        result = await updateCohort(targetCohortId, {
+        await updateCohortMutation.mutateAsync({
+          id: targetCohortId,
           ...formData,
           profileIds,
           updatedAt: new Date().toISOString(),
         });
         toast.success("Cohort updated successfully!");
       } else {
-        result = await createCohort({
+        await createCohortMutation.mutateAsync({
           title: formData.title || "",
           description: formData.description || "",
           profileIds,
@@ -482,13 +468,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         toast.success("Cohort created successfully!");
       }
 
-      if (!result) {
-        toast.error("Failed to create cohort");
-        return;
-      }
-
       resetFormAndState();
-      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       router.push(`/cohorts`);
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;

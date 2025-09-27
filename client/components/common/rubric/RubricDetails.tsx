@@ -5,7 +5,6 @@
  * 06/07/2025
  */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -16,10 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useCreateRubric, useUpdateRubric } from "@/lib/api/hooks/rubrics";
 import { Rubric as RubricType } from "@/types";
 import { log } from "@/utils/logger";
-import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
-import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -36,56 +34,18 @@ export default function RubricDetails({
   isCreateMode = false,
   isReadonly = false,
 }: RubricDetailsProps) {
-  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
+
+  // Mutation hooks
+  const createRubricMutation = useCreateRubric();
+  const updateRubricMutation = useUpdateRubric();
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
     active: rubric.active ?? true,
     points: rubric.points || 0,
     passPoints: rubric.passPoints || 0,
-  });
-
-  const updateRubricMutation = useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Partial<RubricType>;
-    }) => {
-      if (isCreateMode) {
-        return await createRubric(data as Parameters<typeof createRubric>[0]);
-      } else {
-        return await updateRubric(id, data);
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
-      queryClient.invalidateQueries({ queryKey: ["rubrics"] });
-      if (isCreateMode && data && "id" in data) {
-        // Redirect to the newly created rubric for editing
-        router.push(`/create/rubrics/r/${data.id}`);
-      } else {
-        toast.success(
-          isCreateMode
-            ? "Rubric created successfully"
-            : "Rubric updated successfully"
-        );
-        setIsEditing(false);
-      }
-    },
-    onError: (error) => {
-      log.error("rubric.update.failed", {
-        message: "Error updating rubric",
-        error,
-        context: { component: "RubricDetails", rubricId },
-      });
-      toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
-      );
-    },
   });
 
   const handleInputChange = (
@@ -95,11 +55,32 @@ export default function RubricDetails({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    updateRubricMutation.mutate({
-      id: rubricId,
-      data: formData,
-    });
+  const handleSave = async () => {
+    try {
+      if (isCreateMode) {
+        const data = await createRubricMutation.mutateAsync(formData);
+        if (data && "id" in data) {
+          // Redirect to the newly created rubric for editing
+          router.push(`/create/rubrics/r/${data.id}`);
+        }
+      } else {
+        await updateRubricMutation.mutateAsync({
+          id: rubricId,
+          ...formData,
+        });
+        toast.success("Rubric updated successfully");
+        setIsEditing(false);
+      }
+    } catch (error) {
+      log.error("rubric.update.failed", {
+        message: "Error updating rubric",
+        error,
+        context: { component: "RubricDetails", rubricId },
+      });
+      toast.error(
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
+      );
+    }
   };
 
   const handleCancel = () => {

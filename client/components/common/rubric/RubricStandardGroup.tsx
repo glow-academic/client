@@ -5,7 +5,6 @@
  * 06/07/2025
  */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,16 +33,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useUpdateRubric } from "@/lib/api/hooks/rubrics";
+import {
+  useCreateStandardGroup,
+  useDeleteStandardGroup,
+  useStandardGroupsByRubricId,
+  useUpdateStandardGroup,
+} from "@/lib/api/hooks/standard_groups";
+import {
+  useCreateStandard,
+  useDeleteStandard,
+  useUpdateStandard,
+} from "@/lib/api/hooks/standards";
 import { Standard, StandardGroup } from "@/types";
 import { log } from "@/utils/logger";
-import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
-import { createStandardGroup } from "@/utils/mutations/standard_groups/create-standard-group";
-import { deleteStandardGroup } from "@/utils/mutations/standard_groups/delete-standard-group";
-import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
-import { createStandard } from "@/utils/mutations/standards/create-standard";
-import { deleteStandard } from "@/utils/mutations/standards/delete-standard";
-import { updateStandard } from "@/utils/mutations/standards/update-standard";
-import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import {
   Award,
   BookOpen,
@@ -257,8 +260,17 @@ export default function RubricStandardGroup({
   onToggle,
   mode = "edit",
 }: RubricStandardGroupProps) {
-  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(mode === "create");
+
+  // Mutation hooks
+  const createStandardGroupMutation = useCreateStandardGroup();
+  const updateStandardGroupMutation = useUpdateStandardGroup();
+  const deleteStandardGroupMutation = useDeleteStandardGroup();
+  const createStandardMutation = useCreateStandard();
+  const updateStandardMutation = useUpdateStandard();
+  const deleteStandardMutation = useDeleteStandard();
+  const updateRubricMutation = useUpdateRubric();
+  const { data: standardGroups } = useStandardGroupsByRubricId(rubricId);
 
   // Form state for standard group
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
@@ -295,87 +307,6 @@ export default function RubricStandardGroup({
     }));
     setStandardsFormData(formData);
   }, [standards, group?.id, mode]);
-
-  const updateStandardGroupMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<StandardGroup> }) =>
-      updateStandardGroup(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
-      toast.success("Standard group updated successfully");
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to update standard group");
-    },
-  });
-
-  const createStandardGroupMutation = useMutation({
-    mutationFn: createStandardGroup,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
-      toast.success("Standard group created successfully");
-      setIsEditing(false);
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to create standard group");
-    },
-  });
-
-  const deleteStandardGroupMutation = useMutation({
-    mutationFn: deleteStandardGroup,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
-      toast.success("Standard group deleted successfully");
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to delete standard group");
-    },
-  });
-
-  const createStandardMutation = useMutation({
-    mutationFn: createStandard,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["standards", [group?.id]],
-      });
-      toast.success("Standard created successfully");
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to create standard");
-    },
-  });
-
-  const updateStandardMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Standard> }) =>
-      updateStandard(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["standards", [group?.id]],
-      });
-      toast.success("Standard updated successfully");
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to update standard");
-    },
-  });
-
-  const deleteStandardMutation = useMutation({
-    mutationFn: deleteStandard,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["standards", [group?.id]],
-      });
-      toast.success("Standard deleted successfully");
-      updateRubricPoints();
-    },
-    onError: () => {
-      toast.error("Failed to delete standard");
-    },
-  });
 
   const handleGroupInputChange = (
     field: keyof StandardGroupFormData,
@@ -543,11 +474,9 @@ export default function RubricStandardGroup({
         // Update existing standard group
         await updateStandardGroupMutation.mutateAsync({
           id: group!.id,
-          data: {
-            ...groupFormData,
-            points: parseInt(groupFormData.points),
-            passPoints: parseInt(groupFormData.passPoints),
-          },
+          ...groupFormData,
+          points: parseInt(groupFormData.points),
+          passPoints: parseInt(groupFormData.passPoints),
         });
 
         // Handle standards
@@ -572,11 +501,9 @@ export default function RubricStandardGroup({
             promises.push(
               updateStandardMutation.mutateAsync({
                 id: standard.id,
-                data: {
-                  name: standard.name,
-                  description: standard.description,
-                  points: parseInt(standard.points),
-                },
+                name: standard.name,
+                description: standard.description,
+                points: parseInt(standard.points),
               })
             );
           }
@@ -586,7 +513,15 @@ export default function RubricStandardGroup({
         setIsEditing(false);
         toast.success("All changes saved successfully");
       }
-    } catch {
+
+      // Update rubric points after successful save
+      await updateRubricPoints();
+    } catch (error) {
+      log.error("rubric.standard_group.save.failed", {
+        message: "Error saving standard group changes",
+        error,
+        context: { component: "RubricStandardGroup", rubricId, mode },
+      });
       toast.error("Failed to save changes");
     }
   };
@@ -630,13 +565,28 @@ export default function RubricStandardGroup({
     }
   };
 
-  const handleDeleteGroup = () => {
+  const handleDeleteGroup = async () => {
     if (
       confirm(
         "Are you sure you want to delete this standard group? This will also delete all associated standards."
       )
     ) {
-      deleteStandardGroupMutation.mutate(group!.id);
+      try {
+        await deleteStandardGroupMutation.mutateAsync(group!.id);
+        toast.success("Standard group deleted successfully");
+        await updateRubricPoints();
+      } catch (error) {
+        log.error("rubric.standard_group.delete.failed", {
+          message: "Error deleting standard group",
+          error,
+          context: {
+            component: "RubricStandardGroup",
+            rubricId,
+            groupId: group!.id,
+          },
+        });
+        toast.error("Failed to delete standard group");
+      }
     }
   };
 
@@ -648,30 +598,23 @@ export default function RubricStandardGroup({
     }
 
     try {
-      // Get all standard groups for this rubric
-      const allStandardGroups = await queryClient.fetchQuery({
-        queryKey: ["standardGroups", rubricId],
-        queryFn: () => getStandardGroupsByRubric(rubricId),
-      });
-
-      if (allStandardGroups) {
-        const totalPoints = allStandardGroups.reduce(
+      // Use the data from the hook instead of fetching manually
+      if (standardGroups) {
+        const totalPoints = standardGroups.reduce(
           (sum, group) => sum + group.points,
           0
         );
-        const totalPassPoints = allStandardGroups.reduce(
+        const totalPassPoints = standardGroups.reduce(
           (sum, group) => sum + group.passPoints,
           0
         );
 
         // Update the rubric with new totals
-        await updateRubric(rubricId, {
+        await updateRubricMutation.mutateAsync({
+          id: rubricId,
           points: totalPoints,
           passPoints: totalPassPoints,
         });
-
-        // Invalidate rubric query to refresh the data
-        queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
       }
     } catch (error) {
       log.error("rubric.points.update.failed", {

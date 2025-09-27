@@ -5,7 +5,6 @@
  * 07/18/2025
  */
 "use client";
-import { useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -14,15 +13,14 @@ import { toast } from "sonner";
 import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
 import { updateProviderWithEncryption } from "@/utils/model/update-provider-with-encryption";
-import { createProvider } from "@/utils/mutations/providers/create-provider";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useCreateProvider, useProvider } from "@/lib/api/hooks/providers";
 import { log } from "@/utils/logger";
-import { useProvider } from "@/lib/api/hooks/providers";
 
 export interface ProviderProps {
   providerId?: string;
@@ -43,7 +41,6 @@ interface FormData {
 
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -65,7 +62,13 @@ export default function Provider({ providerId }: ProviderProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: provider, isLoading: isProviderLoading } = useProvider(providerId!);
+  const { data: provider, isLoading: isProviderLoading } = useProvider(
+    providerId!,
+    !!providerId
+  );
+
+  // Mutation hooks
+  const createProviderMutation = useCreateProvider();
 
   // Initialize form when provider data loads or in create mode
   useEffect(() => {
@@ -164,7 +167,7 @@ export default function Provider({ providerId }: ProviderProps) {
         await updateProviderWithEncryption(providerId, updateData);
         result = true;
       } else {
-        result = await createProvider({
+        result = await createProviderMutation.mutateAsync({
           name: formData.name!,
           description: formData.description!,
           apiKey: formData.apiKey!,
@@ -180,10 +183,6 @@ export default function Provider({ providerId }: ProviderProps) {
       }
 
       resetFormAndState();
-      queryClient.invalidateQueries({ queryKey: ["providers"] });
-      if (isEditMode && providerId) {
-        queryClient.invalidateQueries({ queryKey: ["provider", providerId] });
-      }
       toast.success(
         isEditMode && providerId
           ? "Provider updated successfully!"

@@ -5,8 +5,6 @@
  * 06/18/2025
  */
 "use client";
-import { useModel } from "@/lib/api/hooks/models";
-import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,9 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import {
+  useCreateModel,
+  useModel,
+  useUpdateModel,
+} from "@/lib/api/hooks/models";
 import { Model as ModelType } from "@/types";
-import { createModel } from "@/utils/mutations/models/create-model";
-import { updateModel } from "@/utils/mutations/models/update-model";
 import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
@@ -44,7 +45,6 @@ export interface ModelProps {
 }
 
 export default function Model({ modelId, providerId }: ModelProps) {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +65,14 @@ export default function Model({ modelId, providerId }: ModelProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const {data: modelToEdit, isLoading: isModelLoading} = useModel(modelId!);
+  const { data: modelToEdit, isLoading: isModelLoading } = useModel(
+    modelId!,
+    !!modelId
+  );
+
+  // Mutation hooks
+  const createModelMutation = useCreateModel();
+  const updateModelMutation = useUpdateModel();
 
   const isLoading = isModelLoading;
 
@@ -136,9 +143,9 @@ export default function Model({ modelId, providerId }: ModelProps) {
     setIsSubmitting(true);
 
     try {
-      let result;
       if (isEditMode && modelId) {
-        result = await updateModel(modelId, {
+        await updateModelMutation.mutateAsync({
+          id: modelId,
           name: formData.name,
           description: formData.description,
           active: formData.active,
@@ -148,7 +155,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
           updatedAt: new Date().toISOString(),
         });
       } else {
-        result = await createModel({
+        await createModelMutation.mutateAsync({
           name: formData.name,
           description: formData.description,
           providerId: providerId,
@@ -161,16 +168,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
         });
       }
 
-      if (!result) {
-        toast.error("Failed to create model");
-        return;
-      }
-
       resetFormAndState();
-      queryClient.invalidateQueries({ queryKey: ["models"] });
-      if (isEditMode && modelId) {
-        queryClient.invalidateQueries({ queryKey: ["model", modelId] });
-      }
       toast.success(
         isEditMode && modelId
           ? "Model updated successfully!"
