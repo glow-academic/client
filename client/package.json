@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"next dev\" \"npm run generate-tests\"",
+    "dev": "next dev",
     "dev:next": "next dev",
+    "dev:with-tests": "concurrently --kill-others-on-fail \"next dev\" \"npm run generate-tests\"",
     "generate-tests": "node scripts/generate-component-tests.js && next lint --fix --dir __tests__",
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc --noEmit --strict",

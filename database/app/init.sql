@@ -48,6 +48,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 7. Insert seed init file
 \i seed/init.sql
 
+-- 8. Create materialized view
+\i app/analytics/init.sql
+
+-- 9. Audit tables, after seed data has been inserted
+\i app/audit/init.sql
+
 -- ============================================================================
 -- COMPLETION MESSAGE
 -- ============================================================================

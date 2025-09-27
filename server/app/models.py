@@ -16,11 +16,11 @@ class Accounts(_Base, table=True):
         PrimaryKeyConstraint('id', name='accounts_pkey'),
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    userId: int = Field(sa_column=Column('userId', Integer))
-    type: str = Field(sa_column=Column('type', String(255)))
-    provider: str = Field(sa_column=Column('provider', String(255)))
-    providerAccountId: str = Field(sa_column=Column('providerAccountId', String(255)))
+    id: int = Field(sa_column=Column('id', Integer, primary_key=True))
+    userId: int = Field(sa_column=Column('userId', Integer, nullable=False))
+    type: str = Field(sa_column=Column('type', String(255), nullable=False))
+    provider: str = Field(sa_column=Column('provider', String(255), nullable=False))
+    providerAccountId: str = Field(sa_column=Column('providerAccountId', String(255), nullable=False))
     refresh_token: Optional[str] = Field(default=None, sa_column=Column('refresh_token', Text))
     access_token: Optional[str] = Field(default=None, sa_column=Column('access_token', Text))
     expires_at: Optional[int] = Field(default=None, sa_column=Column('expires_at', BigInteger))
@@ -36,17 +36,17 @@ class AppLogs(_Base, table=True):
         PrimaryKeyConstraint('id', name='app_logs_pkey'),
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    level: str = Field(sa_column=Column('level', Text, default=r'info'))
-    event: str = Field(sa_column=Column('event', Text, server_default=text("'default.event'::text")))
+    id: int = Field(sa_column=Column('id', Integer, primary_key=True))
+    event: str = Field(sa_column=Column('event', Text, nullable=False, server_default=text("'default.event'::text")))
+    level: str = Field(sa_column=Column('level', Text, nullable=False, default=r'info'))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text, default=r'Default Message'))
-    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB, server_default=text('\'{"route": null, "function": null, "component": null}\'::jsonb')))
-    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     correlation_id: Optional[str] = Field(default=None, sa_column=Column('correlation_id', Text, server_default=text("'default.correlation'::text")))
     actor: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('actor', JSONB, server_default=text('\'{"userId": null, "profileId": null}\'::jsonb')))
     subject: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('subject', JSONB, server_default=text('\'{"entityId": null, "entityType": null}\'::jsonb')))
     metrics: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('metrics', JSONB, server_default=text('\'{"size": null, "count": null, "durationMs": null}\'::jsonb')))
+    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB, server_default=text('\'{"route": null, "function": null, "component": null}\'::jsonb')))
     error: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('error', JSONB, server_default=text('\'{"code": null, "name": null, "stack": null, "message": null}\'::jsonb')))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
 class Cohorts(_Base, table=True):
@@ -55,13 +55,13 @@ class Cohorts(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    title: str = Field(sa_column=Column('title', Text))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    profile_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True))))
-    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, default=False))
-    simulation_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True))))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    profile_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
+    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, nullable=False, default=False))
+    simulation_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
@@ -71,15 +71,15 @@ class Documents(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    file_path: str = Field(sa_column=Column('file_path', Text))
-    mime_type: str = Field(sa_column=Column('mime_type', Text))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), default=r'homework'))
-    classified: bool = Field(sa_column=Column('classified', Boolean, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    tags: List[str] = Field(sa_column=Column('tags', ARRAY(Text()), server_default=text("'{}'::text[]")))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    file_path: str = Field(sa_column=Column('file_path', Text, nullable=False))
+    mime_type: str = Field(sa_column=Column('mime_type', Text, nullable=False))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), nullable=False, default=r'homework'))
+    classified: bool = Field(sa_column=Column('classified', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
 
@@ -89,19 +89,19 @@ class Models(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    input_ppm: float = Field(sa_column=Column('input_ppm', Double(53), default=0.0))
-    output_ppm: float = Field(sa_column=Column('output_ppm', Double(53), default=0.0))
-    custom_model: bool = Field(sa_column=Column('custom_model', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid, nullable=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    input_ppm: float = Field(sa_column=Column('input_ppm', Double(53), nullable=False, default=0.0))
+    output_ppm: float = Field(sa_column=Column('output_ppm', Double(53), nullable=False, default=0.0))
+    custom_model: bool = Field(sa_column=Column('custom_model', Boolean, nullable=False, default=False))
 
-    agents: List['Agents'] = Relationship(back_populates='model')
-    personas: List['Personas'] = Relationship(back_populates='model')
-    model_runs: List['ModelRuns'] = Relationship(back_populates='model')
+    agents: list['Agents'] = Relationship(back_populates='model')
+    personas: list['Personas'] = Relationship(back_populates='model')
+    model_runs: list['ModelRuns'] = Relationship(back_populates='model')
 
 
 class Parameters(_Base, table=True):
@@ -110,15 +110,15 @@ class Parameters(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    numerical: bool = Field(sa_column=Column('numerical', Boolean, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, default=False))
-    default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    numerical: bool = Field(sa_column=Column('numerical', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=False))
+    default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, nullable=False, default=False))
 
-    parameter_items: List['ParameterItems'] = Relationship(back_populates='parameter')
+    parameter_items: list['ParameterItems'] = Relationship(back_populates='parameter')
 
 
 class Providers(_Base, table=True):
@@ -127,11 +127,11 @@ class Providers(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    api_key: str = Field(sa_column=Column('api_key', Text))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    api_key: str = Field(sa_column=Column('api_key', Text, nullable=False))
     base_url: Optional[str] = Field(default=None, sa_column=Column('base_url', Text))
 
 
@@ -141,18 +141,18 @@ class Rubrics(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    points: int = Field(sa_column=Column('points', Integer))
-    pass_points: int = Field(sa_column=Column('pass_points', Integer))
-    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    points: int = Field(sa_column=Column('points', Integer, nullable=False))
+    pass_points: int = Field(sa_column=Column('pass_points', Integer, nullable=False))
+    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
 
-    simulations: List['Simulations'] = Relationship(back_populates='rubric')
-    standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
-    simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='rubric')
+    simulations: list['Simulations'] = Relationship(back_populates='rubric')
+    standard_groups: list['StandardGroups'] = Relationship(back_populates='rubric')
+    simulation_chat_grades: list['SimulationChatGrades'] = Relationship(back_populates='rubric')
 
 
 class Sessions(_Base, table=True):
@@ -160,10 +160,10 @@ class Sessions(_Base, table=True):
         PrimaryKeyConstraint('id', name='sessions_pkey'),
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    userId: int = Field(sa_column=Column('userId', Integer))
-    expires: datetime = Field(sa_column=Column('expires', DateTime(True)))
-    sessionToken: str = Field(sa_column=Column('sessionToken', String(255)))
+    id: int = Field(sa_column=Column('id', Integer, primary_key=True))
+    userId: int = Field(sa_column=Column('userId', Integer, nullable=False))
+    expires: datetime = Field(sa_column=Column('expires', DateTime(True), nullable=False))
+    sessionToken: str = Field(sa_column=Column('sessionToken', String(255), nullable=False))
 
 
 class Users(_Base, table=True):
@@ -171,13 +171,13 @@ class Users(_Base, table=True):
         PrimaryKeyConstraint('id', name='users_pkey'),
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    id: int = Field(sa_column=Column('id', Integer, primary_key=True))
     name: Optional[str] = Field(default=None, sa_column=Column('name', String(255)))
     email: Optional[str] = Field(default=None, sa_column=Column('email', String(255)))
     emailVerified: Optional[datetime] = Field(default=None, sa_column=Column('emailVerified', DateTime(True)))
     image: Optional[str] = Field(default=None, sa_column=Column('image', Text))
 
-    profiles: List['Profiles'] = Relationship(back_populates='user')
+    profiles: list['Profiles'] = Relationship(back_populates='user')
 
 
 class VerificationToken(_Base, table=True):
@@ -187,7 +187,7 @@ class VerificationToken(_Base, table=True):
     )
 
     identifier: str = Field(sa_column=Column('identifier', Text, primary_key=True))
-    expires: datetime = Field(sa_column=Column('expires', DateTime(True)))
+    expires: datetime = Field(sa_column=Column('expires', DateTime(True), nullable=False))
     token: str = Field(sa_column=Column('token', Text, primary_key=True))
 
 
@@ -198,17 +198,17 @@ class Agents(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: float = Field(sa_column=Column('temperature', REAL))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    system_prompt: str = Field(sa_column=Column('system_prompt', Text, nullable=False))
+    temperature: float = Field(sa_column=Column('temperature', REAL, nullable=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
-    model_runs: List['ModelRuns'] = Relationship(back_populates='agent')
+    model_runs: list['ModelRuns'] = Relationship(back_populates='agent')
 
 
 class ParameterItems(_Base, table=True):
@@ -219,13 +219,13 @@ class ParameterItems(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    value: str = Field(sa_column=Column('value', Text))
-    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid(as_uuid=True)))
-    default_item: bool = Field(sa_column=Column('default_item', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    value: str = Field(sa_column=Column('value', Text, nullable=False))
+    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid, nullable=False))
+    default_item: bool = Field(sa_column=Column('default_item', Boolean, nullable=False, default=False))
 
     parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
 
@@ -237,24 +237,24 @@ class Personas(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    temperature: float = Field(sa_column=Column('temperature', REAL))
-    default_persona: bool = Field(sa_column=Column('default_persona', Boolean, default=False))
-    color: str = Field(sa_column=Column('color', Text))
-    icon: str = Field(sa_column=Column('icon', Text))
-    active: bool = Field(sa_column=Column('active', Boolean, default=False))
-    guardrail_active: bool = Field(sa_column=Column('guardrail_active', Boolean, default=False))
-    image_input_active: bool = Field(sa_column=Column('image_input_active', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    system_prompt: str = Field(sa_column=Column('system_prompt', Text, nullable=False))
+    temperature: float = Field(sa_column=Column('temperature', REAL, nullable=False))
+    default_persona: bool = Field(sa_column=Column('default_persona', Boolean, nullable=False, default=False))
+    color: str = Field(sa_column=Column('color', Text, nullable=False))
+    icon: str = Field(sa_column=Column('icon', Text, nullable=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=False))
+    guardrail_active: bool = Field(sa_column=Column('guardrail_active', Boolean, nullable=False, default=False))
+    image_input_active: bool = Field(sa_column=Column('image_input_active', Boolean, nullable=False, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='personas')
-    model_runs: List['ModelRuns'] = Relationship(back_populates='persona')
-    scenarios: List['Scenarios'] = Relationship(back_populates='persona')
+    model_runs: list['ModelRuns'] = Relationship(back_populates='persona')
+    scenarios: list['Scenarios'] = Relationship(back_populates='persona')
 
 
 class Profiles(_Base, table=True):
@@ -264,28 +264,28 @@ class Profiles(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_login', DateTime(True)))
-    first_name: str = Field(sa_column=Column('first_name', Text))
-    last_name: str = Field(sa_column=Column('last_name', Text))
-    alias: str = Field(sa_column=Column('alias', Text))
-    viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, default=False))
-    viewed_chat: bool = Field(sa_column=Column('viewed_chat', Boolean, default=False))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    role: str = Field(sa_column=Column('role', Enum('superadmin', 'admin', 'instructional', 'ta', 'guest', name='profile_role'), default=r'guest'))
-    default_profile: bool = Field(sa_column=Column('default_profile', Boolean, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, default=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('last_login', DateTime(True), nullable=False))
+    first_name: str = Field(sa_column=Column('first_name', Text, nullable=False))
+    last_name: str = Field(sa_column=Column('last_name', Text, nullable=False))
+    alias: str = Field(sa_column=Column('alias', Text, nullable=False))
+    viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, nullable=False, default=False))
+    viewed_chat: bool = Field(sa_column=Column('viewed_chat', Boolean, nullable=False, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    role: str = Field(sa_column=Column('role', Enum('superadmin', 'admin', 'instructional', 'ta', 'guest', name='profile_role'), nullable=False, default=r'guest'))
+    default_profile: bool = Field(sa_column=Column('default_profile', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=False))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
     last_active: Optional[datetime] = Field(default=None, sa_column=Column('last_active', DateTime(True)))
     req_per_day: Optional[int] = Field(default=None, sa_column=Column('req_per_day', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
-    app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
-    assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
-    model_runs: List['ModelRuns'] = Relationship(back_populates='profile')
-    simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
-    simulation_crowdsourced_messages: List['SimulationCrowdsourcedMessages'] = Relationship(back_populates='profile')
-    simulation_chat_crowdsourced_feedbacks: List['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='profile')
+    app_feedback: list['AppFeedback'] = Relationship(back_populates='profile')
+    assistant_chats: list['AssistantChats'] = Relationship(back_populates='profile')
+    model_runs: list['ModelRuns'] = Relationship(back_populates='profile')
+    simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='profile')
+    simulation_crowdsourced_messages: list['SimulationCrowdsourcedMessages'] = Relationship(back_populates='profile')
+    simulation_chat_crowdsourced_feedbacks: list['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='profile')
 
 
 class Simulations(_Base, table=True):
@@ -295,19 +295,19 @@ class Simulations(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    title: str = Field(sa_column=Column('title', Text))
-    description: str = Field(sa_column=Column('description', Text, default=r'No description provided'))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
-    scenario_ids: List[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True))))
-    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
-    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, default=False))
-    practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False, default=r'No description provided'))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    scenario_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
+    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
+    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, nullable=False, default=False))
+    practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, nullable=False, default=False))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
-    simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='simulation')
+    simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='simulation')
 
 
 class StandardGroups(_Base, table=True):
@@ -318,16 +318,16 @@ class StandardGroups(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    short_name: str = Field(sa_column=Column('short_name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    points: int = Field(sa_column=Column('points', Integer))
-    pass_points: int = Field(sa_column=Column('pass_points', Integer))
-    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    short_name: str = Field(sa_column=Column('short_name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    points: int = Field(sa_column=Column('points', Integer, nullable=False))
+    pass_points: int = Field(sa_column=Column('pass_points', Integer, nullable=False))
+    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
-    standards: List['Standards'] = Relationship(back_populates='standard_group')
+    standards: list['Standards'] = Relationship(back_populates='standard_group')
 
 
 class AppFeedback(_Base, table=True):
@@ -337,8 +337,8 @@ class AppFeedback(_Base, table=True):
         PrimaryKeyConstraint('id', name='app_feedback_pkey')
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type')))
+    id: int = Field(sa_column=Column('id', Integer, primary_key=True))
+    type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type'), nullable=False))
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
@@ -354,15 +354,15 @@ class AssistantChats(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    title: str = Field(sa_column=Column('title', Text))
-    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, nullable=False))
     trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
 
     profile: Optional['Profiles'] = Relationship(back_populates='assistant_chats')
-    assistant_messages: List['AssistantMessages'] = Relationship(back_populates='chat')
-    assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='chat')
+    assistant_messages: list['AssistantMessages'] = Relationship(back_populates='chat')
+    assistant_tool_calls: list['AssistantToolCalls'] = Relationship(back_populates='chat')
 
 
 class ModelRuns(_Base, table=True):
@@ -376,10 +376,10 @@ class ModelRuns(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    input_tokens: int = Field(sa_column=Column('input_tokens', Integer, default=0))
-    output_tokens: int = Field(sa_column=Column('output_tokens', Integer, default=0))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    input_tokens: int = Field(sa_column=Column('input_tokens', Integer, nullable=False, default=0))
+    output_tokens: int = Field(sa_column=Column('output_tokens', Integer, nullable=False, default=0))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
     agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
@@ -389,7 +389,7 @@ class ModelRuns(_Base, table=True):
     model: Optional['Models'] = Relationship(back_populates='model_runs')
     persona: Optional['Personas'] = Relationship(back_populates='model_runs')
     profile: Optional['Profiles'] = Relationship(back_populates='model_runs')
-    debug_info: List['DebugInfo'] = Relationship(back_populates='model_run')
+    debug_info: list['DebugInfo'] = Relationship(back_populates='model_run')
 
 
 class Scenarios(_Base, table=True):
@@ -399,21 +399,21 @@ class Scenarios(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, default=False))
-    practice_scenario: bool = Field(sa_column=Column('practice_scenario', Boolean, default=False))
-    generated: bool = Field(sa_column=Column('generated', Boolean, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, default=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, nullable=False, default=False))
+    practice_scenario: bool = Field(sa_column=Column('practice_scenario', Boolean, nullable=False, default=False))
+    generated: bool = Field(sa_column=Column('generated', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
-    parameter_item_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
-    document_ids: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
+    parameter_item_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
+    document_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
 
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
-    simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
+    simulation_chats: list['SimulationChats'] = Relationship(back_populates='scenario')
 
 
 class SimulationAttempts(_Base, table=True):
@@ -425,16 +425,16 @@ class SimulationAttempts(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
-    infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, default=False))
-    archived: bool = Field(sa_column=Column('archived', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid, nullable=False))
+    infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, nullable=False, default=False))
+    archived: bool = Field(sa_column=Column('archived', Boolean, nullable=False, default=False))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
     infinite_mode_time_limit: Optional[int] = Field(default=None, sa_column=Column('infinite_mode_time_limit', Integer))
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
     simulation: Optional['Simulations'] = Relationship(back_populates='simulation_attempts')
-    simulation_chats: List['SimulationChats'] = Relationship(back_populates='attempt')
+    simulation_chats: list['SimulationChats'] = Relationship(back_populates='attempt')
 
 
 class Standards(_Base, table=True):
@@ -444,14 +444,14 @@ class Standards(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    points: int = Field(sa_column=Column('points', Integer))
-    standard_group_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_group_id', Uuid(as_uuid=True)))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    points: int = Field(sa_column=Column('points', Integer, nullable=False))
+    standard_group_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_group_id', Uuid, nullable=False))
 
     standard_group: Optional['StandardGroups'] = Relationship(back_populates='standards')
-    simulation_chat_feedbacks: List['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
+    simulation_chat_feedbacks: list['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
 
 
 class AssistantMessages(_Base, table=True):
@@ -462,12 +462,12 @@ class AssistantMessages(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
-    role: str = Field(sa_column=Column('role', Enum('user', 'assistant', name='assistant_message_type')))
-    content: str = Field(sa_column=Column('content', Text))
-    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid, nullable=False))
+    role: str = Field(sa_column=Column('role', Enum('user', 'assistant', name='assistant_message_type'), nullable=False))
+    content: str = Field(sa_column=Column('content', Text, nullable=False))
+    completed: bool = Field(sa_column=Column('completed', Boolean, nullable=False, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_messages')
@@ -481,14 +481,14 @@ class AssistantToolCalls(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
-    tool_name: str = Field(sa_column=Column('tool_name', Text))
-    tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
-    tool_arguments: Dict[str, Any] = Field(sa_column=Column('tool_arguments', JSONB))
-    tool_result: Dict[str, Any] = Field(sa_column=Column('tool_result', JSONB))
-    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid, nullable=False))
+    tool_name: str = Field(sa_column=Column('tool_name', Text, nullable=False))
+    tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type'), nullable=False))
+    tool_arguments: Dict[str, Any] = Field(sa_column=Column('tool_arguments', JSONB, nullable=False))
+    tool_result: Dict[str, Any] = Field(sa_column=Column('tool_result', JSONB, nullable=False))
+    completed: bool = Field(sa_column=Column('completed', Boolean, nullable=False, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
@@ -502,9 +502,9 @@ class DebugInfo(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    model_run_id: Mapped[uuid.UUID] = Field(sa_column=Column('model_run_id', Uuid(as_uuid=True)))
-    content: str = Field(sa_column=Column('content', Text))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    model_run_id: Mapped[uuid.UUID] = Field(sa_column=Column('model_run_id', Uuid, nullable=False))
+    content: str = Field(sa_column=Column('content', Text, nullable=False))
 
     model_run: Optional['ModelRuns'] = Relationship(back_populates='debug_info')
 
@@ -518,19 +518,19 @@ class SimulationChats(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    title: str = Field(sa_column=Column('title', Text))
-    scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
-    attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
-    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid, nullable=False))
+    attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid, nullable=False))
+    completed: bool = Field(sa_column=Column('completed', Boolean, nullable=False, default=False))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
     trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
 
     attempt: Optional['SimulationAttempts'] = Relationship(back_populates='simulation_chats')
     scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_chats')
-    simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='simulation_chat')
-    simulation_messages: List['SimulationMessages'] = Relationship(back_populates='chat')
+    simulation_chat_grades: list['SimulationChatGrades'] = Relationship(back_populates='simulation_chat')
+    simulation_messages: list['SimulationMessages'] = Relationship(back_populates='chat')
 
 
 class SimulationChatGrades(_Base, table=True):
@@ -542,17 +542,17 @@ class SimulationChatGrades(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    description: str = Field(sa_column=Column('description', Text, default=r'No description provided'))
-    passed: bool = Field(sa_column=Column('passed', Boolean))
-    score: int = Field(sa_column=Column('score', Integer))
-    time_taken: int = Field(sa_column=Column('time_taken', Integer))
-    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
-    simulation_chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_id', Uuid(as_uuid=True)))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False, default=r'No description provided'))
+    passed: bool = Field(sa_column=Column('passed', Boolean, nullable=False))
+    score: int = Field(sa_column=Column('score', Integer, nullable=False))
+    time_taken: int = Field(sa_column=Column('time_taken', Integer, nullable=False))
+    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
+    simulation_chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_id', Uuid, nullable=False))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulation_chat_grades')
     simulation_chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_chat_grades')
-    simulation_chat_feedbacks: List['SimulationChatFeedbacks'] = Relationship(back_populates='simulation_chat_grade')
+    simulation_chat_feedbacks: list['SimulationChatFeedbacks'] = Relationship(back_populates='simulation_chat_grade')
 
 
 class SimulationMessages(_Base, table=True):
@@ -563,15 +563,15 @@ class SimulationMessages(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True)))
-    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
-    content: str = Field(sa_column=Column('content', Text))
-    type: str = Field(sa_column=Column('type', Enum('query', 'response', name='simulation_message_type')))
-    completed: bool = Field(sa_column=Column('completed', Boolean, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid, nullable=False))
+    content: str = Field(sa_column=Column('content', Text, nullable=False))
+    type: str = Field(sa_column=Column('type', Enum('query', 'response', name='simulation_message_type'), nullable=False))
+    completed: bool = Field(sa_column=Column('completed', Boolean, nullable=False, default=False))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
-    simulation_crowdsourced_messages: List['SimulationCrowdsourcedMessages'] = Relationship(back_populates='simulation_message')
+    simulation_crowdsourced_messages: list['SimulationCrowdsourcedMessages'] = Relationship(back_populates='simulation_message')
 
 
 class SimulationChatFeedbacks(_Base, table=True):
@@ -583,15 +583,15 @@ class SimulationChatFeedbacks(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    standard_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_id', Uuid(as_uuid=True)))
-    simulation_chat_grade_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_grade_id', Uuid(as_uuid=True)))
-    total: int = Field(sa_column=Column('total', Integer))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    standard_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_id', Uuid, nullable=False))
+    simulation_chat_grade_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_grade_id', Uuid, nullable=False))
+    total: int = Field(sa_column=Column('total', Integer, nullable=False))
     feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
 
     simulation_chat_grade: Optional['SimulationChatGrades'] = Relationship(back_populates='simulation_chat_feedbacks')
     standard: Optional['Standards'] = Relationship(back_populates='simulation_chat_feedbacks')
-    simulation_chat_crowdsourced_feedbacks: List['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='simulation_chat_feedback')
+    simulation_chat_crowdsourced_feedbacks: list['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='simulation_chat_feedback')
 
 
 class SimulationCrowdsourcedMessages(_Base, table=True):
@@ -603,10 +603,10 @@ class SimulationCrowdsourcedMessages(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid(as_uuid=True)))
-    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
-    response: bool = Field(sa_column=Column('response', Boolean))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid, nullable=False))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, nullable=False))
+    response: bool = Field(sa_column=Column('response', Boolean, nullable=False))
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_crowdsourced_messages')
     simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_crowdsourced_messages')
@@ -621,10 +621,10 @@ class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
-    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
-    simulation_chat_feedback_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_feedback_id', Uuid(as_uuid=True)))
-    total: int = Field(sa_column=Column('total', Integer))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, nullable=False))
+    simulation_chat_feedback_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_feedback_id', Uuid, nullable=False))
+    total: int = Field(sa_column=Column('total', Integer, nullable=False))
     feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')

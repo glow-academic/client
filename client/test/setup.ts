@@ -63,6 +63,11 @@ function setupMocks() {
   setVitestMock('createDocument', (data) => mockDb.createDocument(data));
   setVitestMock('updateDocument', (id, data) => mockDb.updateDocument(id, data));
   setVitestMock('deleteDocument', (id) => mockDb.deleteDocument(id));
+  setVitestMock('getAllMigrations', () => mockDb.getAllMigrations());
+  setVitestMock('getMigration', (id) => mockDb.getMigration(id));
+  setVitestMock('createMigration', (data) => mockDb.createMigration(data));
+  setVitestMock('updateMigration', (id, data) => mockDb.updateMigration(id, data));
+  setVitestMock('deleteMigration', (id) => mockDb.deleteMigration(id));
   setVitestMock('getAllModelRuns', () => mockDb.getAllModelRuns());
   setVitestMock('getModelRun', (id) => mockDb.getModelRun(id));
   setVitestMock('createModelRun', (data) => mockDb.createModelRun(data));

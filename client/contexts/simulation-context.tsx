@@ -16,16 +16,19 @@ import {
 import { log } from "@/utils/logger";
 
 import { useDocuments } from "@/lib/api/hooks/documents";
+import { useUpdateProfile } from "@/lib/api/hooks/profiles";
 import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { useScenario } from "@/lib/api/hooks/scenarios";
 import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
 import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/hooks/simulation_chat_grades";
-import { useSimulationChatsByAttemptId } from "@/lib/api/hooks/simulation_chats";
+import {
+  useSimulationChatsByAttemptId,
+  useUpdateSimulationChat,
+} from "@/lib/api/hooks/simulation_chats";
 import { useSimulation as useSimulationHook } from "@/lib/api/hooks/simulations";
 import { useStandardGroupsByRubricIdBatch } from "@/lib/api/hooks/standard_groups";
 import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -155,6 +158,8 @@ export function SimulationProvider({
   const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
 
   const queryClient = useQueryClient();
+  const updateProfileMutation = useUpdateProfile();
+  const updateSimulationChatMutation = useUpdateSimulationChat();
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
@@ -183,7 +188,8 @@ export function SimulationProvider({
 
     try {
       // mark both complete for simplicity
-      await updateProfile(effectiveProfile.id, {
+      await updateProfileMutation.mutateAsync({
+        id: effectiveProfile.id,
         viewedIntro: true,
         viewedChat: true,
       });
@@ -218,7 +224,12 @@ export function SimulationProvider({
         },
       });
     }
-  }, [effectiveProfile?.id, effectiveProfile?.viewedChat, queryClient]);
+  }, [
+    effectiveProfile?.id,
+    effectiveProfile?.viewedChat,
+    queryClient,
+    updateProfileMutation,
+  ]);
 
   const { data: attempt } = useSimulationAttempt(attemptId);
   const { data: chats = [], isLoading: isLoadingChats } =
@@ -867,10 +878,8 @@ export function SimulationProvider({
 
         // Also update the database immediately for persistence
         try {
-          const { updateSimulationChat } = await import(
-            "@/utils/mutations/simulation_chats/update-simulation-chat"
-          );
-          await updateSimulationChat(targetChatId, {
+          await updateSimulationChatMutation.mutateAsync({
+            id: targetChatId,
             completedAt: completionTime,
           });
         } catch (dbError) {
@@ -902,7 +911,14 @@ export function SimulationProvider({
         setEndChatLoading(false);
       }
     },
-    [currentChat?.id, emitContinueSimulation, attemptId, readOnly, queryClient]
+    [
+      currentChat?.id,
+      emitContinueSimulation,
+      attemptId,
+      readOnly,
+      queryClient,
+      updateSimulationChatMutation,
+    ]
   );
 
   const endAllChats = useCallback(async () => {
@@ -933,14 +949,14 @@ export function SimulationProvider({
 
       // Also update the database immediately for persistence
       try {
-        const { updateSimulationChats } = await import(
-          "@/utils/mutations/simulation_chats/update-simulation-chats"
-        );
-        await updateSimulationChats(
-          incompleteChats.map((chat) => chat.id),
-          {
-            completedAt: completionTime,
-          }
+        // Update each chat individually since there's no bulk update function
+        await Promise.all(
+          incompleteChats.map((chat) =>
+            updateSimulationChatMutation.mutateAsync({
+              id: chat.id,
+              completedAt: completionTime,
+            })
+          )
         );
       } catch (dbError) {
         log.error("chat.completion.db_update.failed", {
@@ -980,6 +996,7 @@ export function SimulationProvider({
     readOnly,
     queryClient,
     chats,
+    updateSimulationChatMutation,
   ]);
 
   // Listen for WebSocket loading state changes

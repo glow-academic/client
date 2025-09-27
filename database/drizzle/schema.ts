@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar, text, bigint, timestamp, uuid, boolean, foreignKey, doublePrecision, jsonb, real, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, varchar, timestamp, text, foreignKey, uuid, integer, boolean, doublePrecision, bigint, jsonb, real, primaryKey, pgMaterializedView, numeric, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
@@ -9,43 +9,6 @@ export const profileRole = pgEnum("profile_role", ['superadmin', 'admin', 'instr
 export const reasoningEffort = pgEnum("reasoning_effort", ['minimal', 'low', 'medium', 'high'])
 export const simulationMessageType = pgEnum("simulation_message_type", ['query', 'response'])
 
-
-export const accounts = pgTable("accounts", {
-	id: serial().primaryKey().notNull(),
-	userId: integer().notNull(),
-	type: varchar({ length: 255 }).notNull(),
-	provider: varchar({ length: 255 }).notNull(),
-	providerAccountId: varchar({ length: 255 }).notNull(),
-	refreshToken: text("refresh_token"),
-	accessToken: text("access_token"),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	expiresAt: bigint("expires_at", { mode: "number" }),
-	idToken: text("id_token"),
-	scope: text(),
-	sessionState: text("session_state"),
-	tokenType: text("token_type"),
-});
-
-export const sessions = pgTable("sessions", {
-	id: serial().primaryKey().notNull(),
-	userId: integer().notNull(),
-	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-	sessionToken: varchar({ length: 255 }).notNull(),
-});
-
-export const documents = pgTable("documents", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	filePath: text("file_path").notNull(),
-	mimeType: text("mime_type").notNull(),
-	type: documentType().default('homework').notNull(),
-	classified: boolean().default(false).notNull(),
-	fileId: text("file_id"),
-	active: boolean().default(true).notNull(),
-	tags: text().array().default([""]).notNull(),
-});
 
 export const users = pgTable("users", {
 	id: serial().primaryKey().notNull(),
@@ -79,16 +42,6 @@ export const profiles = pgTable("profiles", {
 		}).onDelete("cascade"),
 ]);
 
-export const providers = pgTable("providers", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	apiKey: text("api_key").notNull(),
-	baseUrl: text("base_url"),
-});
-
 export const models = pgTable("models", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -100,6 +53,29 @@ export const models = pgTable("models", {
 	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
 	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
 	customModel: boolean("custom_model").default(false).notNull(),
+});
+
+export const accounts = pgTable("accounts", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	type: varchar({ length: 255 }).notNull(),
+	provider: varchar({ length: 255 }).notNull(),
+	providerAccountId: varchar({ length: 255 }).notNull(),
+	refreshToken: text("refresh_token"),
+	accessToken: text("access_token"),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	expiresAt: bigint("expires_at", { mode: "number" }),
+	idToken: text("id_token"),
+	scope: text(),
+	sessionState: text("session_state"),
+	tokenType: text("token_type"),
+});
+
+export const sessions = pgTable("sessions", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+	sessionToken: varchar({ length: 255 }).notNull(),
 });
 
 export const rubrics = pgTable("rubrics", {
@@ -131,20 +107,6 @@ export const standardGroups = pgTable("standard_groups", {
 		}).onDelete("cascade"),
 ]);
 
-export const appLogs = pgTable("app_logs", {
-	id: serial().primaryKey().notNull(),
-	event: text().default('default.event').notNull(),
-	level: text().default('info').notNull(),
-	message: text().default('Default Message'),
-	correlationId: text("correlation_id").default('default.correlation'),
-	actor: jsonb().default({"userId":null,"profileId":null}),
-	subject: jsonb().default({"entityId":null,"entityType":null}),
-	metrics: jsonb().default({"size":null,"count":null,"durationMs":null}),
-	context: jsonb().default({"route":null,"function":null,"component":null}),
-	error: jsonb().default({"code":null,"name":null,"stack":null,"message":null}),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
-});
-
 export const standards = pgTable("standards", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -159,6 +121,20 @@ export const standards = pgTable("standards", {
 			name: "standards_standard_group_id_fkey"
 		}).onDelete("cascade"),
 ]);
+
+export const appLogs = pgTable("app_logs", {
+	id: serial().primaryKey().notNull(),
+	event: text().default('default.event').notNull(),
+	level: text().default('info').notNull(),
+	message: text().default('Default Message'),
+	correlationId: text("correlation_id").default('default.correlation'),
+	actor: jsonb().default({"userId":null,"profileId":null}),
+	subject: jsonb().default({"entityId":null,"entityType":null}),
+	metrics: jsonb().default({"size":null,"count":null,"durationMs":null}),
+	context: jsonb().default({"route":null,"function":null,"component":null}),
+	error: jsonb().default({"code":null,"name":null,"stack":null,"message":null}),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
 
 export const appFeedback = pgTable("app_feedback", {
 	id: serial().primaryKey().notNull(),
@@ -524,6 +500,30 @@ export const simulationCrowdsourcedMessages = pgTable("simulation_crowdsourced_m
 		}).onDelete("cascade"),
 ]);
 
+export const documents = pgTable("documents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	filePath: text("file_path").notNull(),
+	mimeType: text("mime_type").notNull(),
+	type: documentType().default('homework').notNull(),
+	classified: boolean().default(false).notNull(),
+	fileId: text("file_id"),
+	active: boolean().default(true).notNull(),
+	tags: text().array().default([""]).notNull(),
+});
+
+export const providers = pgTable("providers", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	apiKey: text("api_key").notNull(),
+	baseUrl: text("base_url"),
+});
+
 export const cohorts = pgTable("cohorts", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -543,3 +543,27 @@ export const verificationToken = pgTable("verification_token", {
 }, (table) => [
 	primaryKey({ columns: [table.identifier, table.token], name: "verification_token_pkey"}),
 ]);
+export const chatAnalyticsMv = pgMaterializedView("chat_analytics_mv", {	chatId: uuid("chat_id"),
+	attemptId: uuid("attempt_id"),
+	profileId: uuid("profile_id"),
+	simulationId: uuid("simulation_id"),
+	scenarioId: uuid("scenario_id"),
+	leafScenarioId: uuid("leaf_scenario_id"),
+	personaId: uuid("persona_id"),
+	personaColor: text("persona_color"),
+	isPractice: boolean("is_practice"),
+	isArchived: boolean("is_archived"),
+	isGeneral: boolean("is_general"),
+	profileRole: profileRole("profile_role"),
+	cohortIds: uuid("cohort_ids"),
+	chatCreatedAt: timestamp("chat_created_at", { withTimezone: true, mode: 'string' }),
+	chatCompletedAt: timestamp("chat_completed_at", { withTimezone: true, mode: 'string' }),
+	gradePercent: numeric("grade_percent"),
+	passed: boolean(),
+	timeTakenSeconds: numeric("time_taken_seconds"),
+	completed: boolean(),
+	numMessagesTotal: integer("num_messages_total"),
+	numQueryMessages: integer("num_query_messages"),
+	numResponseMessages: integer("num_response_messages"),
+	messageTimeTakenSeconds: integer("message_time_taken_seconds"),
+}).as(sql`WITH RECURSIVE scenario_roots AS ( SELECT scenarios.id, scenarios.parent_id, scenarios.id AS root_id FROM scenarios WHERE scenarios.parent_id IS NULL UNION ALL SELECT s_1.id, s_1.parent_id, sr.root_id FROM scenarios s_1 JOIN scenario_roots sr ON s_1.parent_id = sr.id ), root_map AS ( SELECT s_1.id AS leaf_scenario_id, COALESCE(sr.root_id, s_1.id) AS root_scenario_id FROM scenarios s_1 LEFT JOIN scenario_roots sr ON s_1.id = sr.id ), latest_grade AS ( SELECT DISTINCT ON (simulation_chat_grades.simulation_chat_id) simulation_chat_grades.simulation_chat_id, simulation_chat_grades.score::numeric AS score, simulation_chat_grades.time_taken::numeric AS time_taken_seconds, simulation_chat_grades.rubric_id, simulation_chat_grades.created_at FROM simulation_chat_grades ORDER BY simulation_chat_grades.simulation_chat_id, simulation_chat_grades.created_at DESC ), cohorts_by_sim AS ( SELECT s_1.id AS simulation_id, ARRAY( SELECT DISTINCT c.id FROM cohorts c WHERE s_1.id = ANY (c.simulation_ids)) AS cohort_ids FROM simulations s_1 ), message_counts AS ( SELECT sm.chat_id, count(*)::integer AS num_messages_total, count(*) FILTER (WHERE sm.type = 'query'::simulation_message_type)::integer AS num_query_messages, count(*) FILTER (WHERE sm.type = 'response'::simulation_message_type)::integer AS num_response_messages FROM simulation_messages sm GROUP BY sm.chat_id ), message_deltas AS ( SELECT m.chat_id, GREATEST(EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::integer, 0) AS delta_seconds, m.created_at FROM simulation_messages m JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id ), message_deltas_agg AS ( SELECT message_deltas.chat_id, array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at) AS message_time_taken_seconds FROM message_deltas GROUP BY message_deltas.chat_id ) SELECT sc.id AS chat_id, sc.attempt_id, sa.profile_id, sa.simulation_id, rm.root_scenario_id AS scenario_id, rm.leaf_scenario_id, s.persona_id, p.color AS persona_color, sim.practice_simulation AS is_practice, sa.archived AS is_archived, NOT sim.practice_simulation AND NOT sa.archived AS is_general, pr.role AS profile_role, cbs.cohort_ids, sc.created_at AS chat_created_at, sc.completed_at AS chat_completed_at, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL::numeric ELSE lg.score / r.points::numeric * 100.0 END AS grade_percent, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL::boolean ELSE lg.score >= r.pass_points::numeric END AS passed, lg.time_taken_seconds, sc.completed OR sc.completed_at IS NOT NULL OR lg.simulation_chat_id IS NOT NULL AS completed, COALESCE(mc.num_messages_total, 0) AS num_messages_total, COALESCE(mc.num_query_messages, 0) AS num_query_messages, COALESCE(mc.num_response_messages, 0) AS num_response_messages, COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds FROM simulation_chats sc JOIN simulation_attempts sa ON sa.id = sc.attempt_id JOIN simulations sim ON sim.id = sa.simulation_id JOIN profiles pr ON pr.id = sa.profile_id JOIN scenarios s ON s.id = sc.scenario_id JOIN root_map rm ON rm.leaf_scenario_id = s.id LEFT JOIN personas p ON p.id = s.persona_id LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id LEFT JOIN rubrics r ON r.id = lg.rubric_id LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id LEFT JOIN message_counts mc ON mc.chat_id = sc.id LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id`);

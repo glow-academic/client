@@ -5,10 +5,11 @@
  */
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import { useCreateParameterItem } from "@/lib/api/hooks/parameter_items";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Parameter, ParameterItem } from "@/types";
 import { log } from "@/utils/logger";
-import { createParameterItem } from "@/utils/mutations/parameter_items/create-parameter-item";
 
 export interface ParameterItemPickerProps {
   parameter: Parameter;
@@ -69,8 +69,7 @@ export function ParameterItemPicker({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const queryClient = useQueryClient();
+  const createParameterItemMutation = useCreateParameterItem();
 
   // Robust multi-term search across name, description, and value
   const filteredItems = useMemo(() => {
@@ -124,28 +123,18 @@ export function ParameterItemPicker({
       toast.error("An item with the same value already exists");
       return;
     }
-    setIsCreating(true);
     try {
-      const created = await createParameterItem({
+      const created = await createParameterItemMutation.mutateAsync({
         name: newName.trim(),
         description: newDescription.trim(),
         value: proposedValue,
         parameterId: parameter.id,
-      } as unknown as typeof import("@/utils/drizzle/schema").parameterItems.$inferInsert);
-
-      // Update cache for ["parameter-items"] immediately so upstream consumers see it
-      queryClient.setQueryData<ParameterItem[] | undefined>(
-        ["parameter-items"],
-        (old) => {
-          if (!old) return [created as unknown as ParameterItem];
-          return [...old, created as unknown as ParameterItem];
-        }
-      );
+      });
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);
       setOpen(false);
-      onSelect((created as unknown as ParameterItem).id);
+      onSelect((created as ParameterItem).id);
     } catch (error) {
       log.error("parameter_item.create.failed", {
         message: "Failed to create parameter item",
@@ -156,8 +145,6 @@ export function ParameterItemPicker({
         },
       });
       toast.error("Failed to create parameter item");
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -299,12 +286,15 @@ export function ParameterItemPicker({
             <Button
               variant="outline"
               onClick={() => setShowCreateDialog(false)}
-              disabled={isCreating}
+              disabled={createParameterItemMutation.isPending}
             >
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create"}
+            <Button
+              onClick={handleCreate}
+              disabled={createParameterItemMutation.isPending}
+            >
+              {createParameterItemMutation.isPending ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>

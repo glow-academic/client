@@ -4,3 +4,5 @@
 .pytest_cache/
 
 history/backup6_7/
+.venv/
+dump.rdb

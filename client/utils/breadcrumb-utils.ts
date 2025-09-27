@@ -4,19 +4,19 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
+import { agentRepo } from "@/lib/repos/agentRepo";
+import { cohortRepo } from "@/lib/repos/cohortRepo";
+import { modelRepo } from "@/lib/repos/modelRepo";
+import { parameterRepo } from "@/lib/repos/parameterRepo";
+import { personaRepo } from "@/lib/repos/personaRepo";
+import { profileRepo } from "@/lib/repos/profileRepo";
+import { providerRepo } from "@/lib/repos/providerRepo";
+import { rubricRepo } from "@/lib/repos/rubricRepo";
+import { scenarioRepo } from "@/lib/repos/scenarioRepo";
+import { simulationAttemptRepo } from "@/lib/repos/simulationAttemptRepo";
+import { simulationChatRepo } from "@/lib/repos/simulationChatRepo";
+import { simulationRepo } from "@/lib/repos/simulationRepo";
 import { log } from "@/utils/logger";
-import { getPersona } from "@/utils/queries/personas/get-persona";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getAgent } from "./queries/agents/get-agent";
-import { getCohort } from "./queries/cohorts/get-cohort";
-import { getModel } from "./queries/models/get-model";
-import { getParameter } from "./queries/parameters/get-parameter";
-import { getProfile } from "./queries/profiles/get-profile";
-import { getProvider } from "./queries/providers/get-provider";
-import { getRubric } from "./queries/rubrics/get-rubric";
-import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
-import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
 
 interface BreadcrumbItem {
   title: string;
@@ -33,63 +33,63 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
   try {
     switch (context) {
       case "attempt":
-        const attemptData = await getSimulationAttempt(id);
+        const attemptData = await simulationAttemptRepo.find(id);
         if (!attemptData) {
           return `Attempt ${id.substring(0, 8)}...`;
         }
         // get simulation for attempt
-        const attemptSimulation = await getSimulation(
+        const attemptSimulation = await simulationRepo.find(
           attemptData?.simulationId
         );
         // Attempts don't have a title, so we'll use a generic name with timestamp
         return attemptSimulation?.title || `Attempt ${id.substring(0, 8)}...`;
 
       case "scenario":
-        const scenarioData = await getScenario(id);
+        const scenarioData = await scenarioRepo.find(id);
         return scenarioData?.name || `Scenario ${id.substring(0, 8)}...`;
 
       case "persona":
-        const personaData = await getPersona(id);
+        const personaData = await personaRepo.find(id);
         return personaData?.name || `Persona ${id.substring(0, 8)}...`;
       case "agent":
-        const agentData = await getAgent(id);
+        const agentData = await agentRepo.find(id);
         return agentData?.name || `Agent ${id.substring(0, 8)}...`;
       case "simulation":
-        const simulationData = await getSimulation(id);
+        const simulationData = await simulationRepo.find(id);
         return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
 
       case "chat":
-        const chatData = await getSimulationChat(id);
+        const chatData = await simulationChatRepo.find(id);
         return chatData?.title || `Chat ${id.substring(0, 8)}...`;
 
       case "profile":
-        const profileData = await getProfile(id);
+        const profileData = await profileRepo.find(id);
         return (
           profileData?.firstName + " " + profileData?.lastName ||
           `Profile ${id.substring(0, 8)}...`
         );
 
       case "rubric":
-        const rubricData = await getRubric(id);
+        const rubricData = await rubricRepo.find(id);
         return rubricData?.name || `Rubric ${id.substring(0, 8)}...`;
 
       case "cohort":
-        const cohortData = await getCohort(id);
+        const cohortData = await cohortRepo.find(id);
         return cohortData?.title || `Cohort ${id.substring(0, 8)}...`;
 
       case "model":
-        const modelData = await getModel(id);
+        const modelData = await modelRepo.find(id);
         return modelData?.name || `Model ${id.substring(0, 8)}...`;
 
       case "report":
-        const reportProfileData = await getProfile(id);
+        const reportProfileData = await profileRepo.find(id);
         return (
           reportProfileData?.firstName + " " + reportProfileData?.lastName ||
           `Profile ${id.substring(0, 8)}...`
         );
 
       case "provider":
-        const providerData = await getProvider(id);
+        const providerData = await providerRepo.find(id);
         if (providerData?.name) {
           return providerData.name;
         }
@@ -97,7 +97,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return `Provider ${id.substring(0, 8)}...`;
 
       case "parameter":
-        const parameterData = await getParameter(id);
+        const parameterData = await parameterRepo.find(id);
         return parameterData?.name || `Parameter ${id.substring(0, 8)}...`;
 
       default:

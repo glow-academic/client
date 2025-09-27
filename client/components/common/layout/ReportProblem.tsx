@@ -24,9 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
+import { useCreateAppFeedback } from "@/lib/api/hooks/app_feedback";
+import type { AppFeedback } from "@/lib/repos/appFeedbackRepo";
 import { log } from "@/utils/logger";
-import { createAppFeedback } from "@/utils/mutations/app_feedback/create-app-feedback";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -55,9 +55,8 @@ export default function ReportProblem({
   onDialogStateChange,
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const createAppFeedbackMutation = useCreateAppFeedback();
 
   const { activeProfile } = useProfile();
 
@@ -88,40 +87,37 @@ export default function ReportProblem({
     }
   }, [isOpen, initialMessage]);
 
-  const createFeedbackMutation = useMutation({
-    mutationFn: createAppFeedback,
-    onSuccess: async (data) => {
-      await log.info("feedback.create.success", {
-        message: "Feedback submitted successfully",
-        subject: {
-          entityType: "app_feedback",
-          entityId: String(data[0]?.id ?? ""),
-        },
-        context: {
-          component: "ReportProblem",
-          function: "createFeedbackMutation.onSuccess",
-        },
-      });
-      queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
-      toast.success(
-        "Feedback submitted successfully! Thank you for your input."
-      );
-      setIsOpen(false);
-      resetForm();
-    },
-    onError: async (error) => {
-      await log.error("feedback.create.failed", {
-        message: "Failed to submit feedback",
-        subject: { entityType: "app_feedback" },
-        context: {
-          component: "ReportProblem",
-          function: "createFeedbackMutation.onError",
-        },
-        error,
-      });
-      toast.error("Failed to submit feedback. Please try again.");
-    },
-  });
+  // Handle successful feedback creation
+  const handleSuccess = async (data: AppFeedback) => {
+    await log.info("feedback.create.success", {
+      message: "Feedback submitted successfully",
+      subject: {
+        entityType: "app_feedback",
+        entityId: String(data?.id ?? ""),
+      },
+      context: {
+        component: "ReportProblem",
+        function: "handleSuccess",
+      },
+    });
+    toast.success("Feedback submitted successfully! Thank you for your input.");
+    setIsOpen(false);
+    resetForm();
+  };
+
+  // Handle feedback creation errors
+  const handleError = async (error: Error) => {
+    await log.error("feedback.create.failed", {
+      message: "Failed to submit feedback",
+      subject: { entityType: "app_feedback" },
+      context: {
+        component: "ReportProblem",
+        function: "handleError",
+      },
+      error,
+    });
+    toast.error("Failed to submit feedback. Please try again.");
+  };
 
   const resetForm = () => {
     setFormData({
@@ -165,38 +161,23 @@ export default function ReportProblem({
       return;
     }
 
-    setIsSubmitting(true);
+    const feedbackData = {
+      type: formData.type as "feature" | "bug" | "question" | "other",
+      message: formData.message,
+      profileId: activeProfile?.id || null,
+    };
 
-    try {
-      const feedbackData = {
-        type: formData.type as "feature" | "bug" | "question" | "other",
-        message: formData.message,
-        profileId: activeProfile?.id || null,
-      };
+    await log.info("feedback.create.start", {
+      message: "Submitting feedback",
+      subject: { entityType: "app_feedback" },
+      ...(activeProfile?.id ? { actor: { profileId: activeProfile.id } } : {}),
+      context: { component: "ReportProblem", function: "handleSubmit" },
+    });
 
-      await log.info("feedback.create.start", {
-        message: "Submitting feedback",
-        subject: { entityType: "app_feedback" },
-        ...(activeProfile?.id
-          ? { actor: { profileId: activeProfile.id } }
-          : {}),
-        context: { component: "ReportProblem", function: "handleSubmit" },
-      });
-      createFeedbackMutation.mutate([feedbackData]);
-    } catch (error) {
-      await log.error("feedback.create.error", {
-        message: "Error preparing feedback data",
-        subject: { entityType: "app_feedback" },
-        ...(activeProfile?.id
-          ? { actor: { profileId: activeProfile.id } }
-          : {}),
-        context: { component: "ReportProblem", function: "handleSubmit" },
-        error,
-      });
-      toast.error("Error preparing feedback. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    createAppFeedbackMutation.mutate(feedbackData, {
+      onSuccess: handleSuccess,
+      onError: handleError,
+    });
   };
 
   const handleDialogClose = (open: boolean) => {
@@ -269,7 +250,7 @@ export default function ReportProblem({
               onChange={(e) => handleInputChange("message", e.target.value)}
               placeholder="Please describe your issue, feature request, or question..."
               className={`min-h-[100px] ${errors.message ? "border-red-500" : ""}`}
-              disabled={isSubmitting}
+              disabled={createAppFeedbackMutation.isPending}
             />
             {errors.message && (
               <p className="text-sm text-red-500">{errors.message}</p>
@@ -281,12 +262,15 @@ export default function ReportProblem({
               type="button"
               variant="outline"
               onClick={() => setIsOpen(false)}
-              disabled={isSubmitting}
+              disabled={createAppFeedbackMutation.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit"}
+            <Button
+              type="submit"
+              disabled={createAppFeedbackMutation.isPending}
+            >
+              {createAppFeedbackMutation.isPending ? "Submitting..." : "Submit"}
             </Button>
           </div>
         </form>

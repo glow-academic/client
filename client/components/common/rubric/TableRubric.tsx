@@ -34,7 +34,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
+import {
+  useCreateSimulationChatCrowdsourcedFeedback,
+  useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch,
+} from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
 import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/hooks/simulation_chat_grades";
 import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
@@ -44,8 +47,6 @@ import {
   simulationChatCrowdsourcedFeedbacks,
   simulationChatFeedbacks,
 } from "@/utils/drizzle/schema";
-import { createSimulationChatCrowdsourcedFeedback } from "@/utils/mutations/simulation_chat_crowdsourced_feedbacks/create-simulation-chat-crowdsourced-feedback";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
@@ -61,8 +62,9 @@ export default function TableRubric({
   rubricId,
   simulationChatId,
 }: TableRubricProps) {
-  const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
+  const createSimulationChatCrowdsourcedFeedbackMutation =
+    useCreateSimulationChatCrowdsourcedFeedback();
   const canCrowdsource =
     !!effectiveProfile &&
     ["instructional", "admin", "superadmin"].includes(
@@ -163,32 +165,23 @@ export default function TableRubric({
 
   // (Note) We rely on a local set to block further votes within a row after first submit.
 
-  const { mutateAsync: submitCrowdFeedback, isPending: isSubmitting } =
-    useMutation({
-      mutationFn: async ({
-        simulationChatFeedbackId,
-        total,
-        feedback,
-      }: {
-        simulationChatFeedbackId: string;
-        total: number;
-        feedback: string | null;
-      }) => {
-        const payload: typeof simulationChatCrowdsourcedFeedbacks.$inferInsert =
-          {
-            profileId: effectiveProfile?.id as string,
-            simulationChatFeedbackId,
-            total,
-            feedback,
-          };
-        return createSimulationChatCrowdsourcedFeedback(payload);
-      },
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["simulationCrowdFeedbacks"],
-        });
-      },
-    });
+  const submitCrowdFeedback = async ({
+    simulationChatFeedbackId,
+    total,
+    feedback,
+  }: {
+    simulationChatFeedbackId: string;
+    total: number;
+    feedback: string | null;
+  }) => {
+    const payload: typeof simulationChatCrowdsourcedFeedbacks.$inferInsert = {
+      profileId: effectiveProfile?.id as string,
+      simulationChatFeedbackId,
+      total,
+      feedback,
+    };
+    await createSimulationChatCrowdsourcedFeedbackMutation.mutateAsync(payload);
+  };
 
   // Helper function to get feedback for a specific standard
   const getFeedbackForStandard = (standardId: string) => {
@@ -569,7 +562,9 @@ export default function TableRubric({
                                   </Button>
                                   <Button
                                     size="sm"
-                                    disabled={isSubmitting}
+                                    disabled={
+                                      createSimulationChatCrowdsourcedFeedbackMutation.isPending
+                                    }
                                     onClick={async (e) => {
                                       e.stopPropagation();
                                       if (!rowAnchorFeedbackId) return;
@@ -592,7 +587,9 @@ export default function TableRubric({
                                       );
                                     }}
                                   >
-                                    {isSubmitting ? "Submitting..." : "Submit"}
+                                    {createSimulationChatCrowdsourcedFeedbackMutation.isPending
+                                      ? "Submitting..."
+                                      : "Submit"}
                                   </Button>
                                 </div>
                               </div>

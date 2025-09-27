@@ -28,15 +28,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useProfile } from "@/contexts/profile-context";
+import { useCohorts, useUpdateCohort } from "@/lib/api/hooks/cohorts";
+import { useCreateProfiles, useProfiles } from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { profileRole } from "@/utils/drizzle/schema";
 import { log } from "@/utils/logger";
-import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
-import { createProfiles } from "@/utils/mutations/profiles/create-profiles";
-
-import { useCohorts } from "@/lib/api/hooks/cohorts";
-import { useProfiles } from "@/lib/api/hooks/profiles";
 import {
   Check,
   Download,
@@ -172,6 +169,10 @@ export default function StaffManager({
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
     useProfiles();
   const { data: allCohorts = [] } = useCohorts();
+
+  // Mutation hooks
+  const createProfilesMutation = useCreateProfiles();
+  const updateCohortMutation = useUpdateCohort();
 
   // Compute cohort existing ids if in cohort mode
   const cohortExistingIds = useMemo(() => {
@@ -408,7 +409,8 @@ export default function StaffManager({
 
             if (profilesToCreate.length > 0) {
               try {
-                const created = await createProfiles(profilesToCreate);
+                const created =
+                  await createProfilesMutation.mutateAsync(profilesToCreate);
                 // update temp ids to real ids in insertion order for newly created ones
                 let createdIdx = 0;
                 for (let i = 0; i < newSel.length; i++) {
@@ -540,6 +542,7 @@ export default function StaffManager({
       selectedProfiles,
       availableRoles,
       validateAlias,
+      createProfilesMutation,
     ]
   );
 
@@ -723,7 +726,7 @@ export default function StaffManager({
         return;
       }
       try {
-        const created = await createProfiles([
+        const created = await createProfilesMutation.mutateAsync([
           {
             firstName: manualProfileCohort.firstName.trim(),
             lastName: manualProfileCohort.lastName.trim(),
@@ -771,6 +774,7 @@ export default function StaffManager({
     selectedProfiles,
     validateAlias,
     validateCohortForm,
+    createProfilesMutation,
   ]);
 
   // Non-cohort submit
@@ -778,7 +782,7 @@ export default function StaffManager({
     if (csvPreview.length === 0) return;
     setIsSubmitting(true);
     try {
-      const created = await createProfiles(
+      const created = await createProfilesMutation.mutateAsync(
         csvPreview.map((p) => ({
           firstName: p.firstName,
           lastName: p.lastName,
@@ -806,7 +810,8 @@ export default function StaffManager({
               ...cohort.profileIds,
               ...profiles.map((p) => p.id),
             ];
-            await updateCohort(cohort.id, {
+            await updateCohortMutation.mutateAsync({
+              id: cohort.id,
               profileIds: updatedProfileIds,
               updatedAt: new Date().toISOString(),
             });
@@ -836,7 +841,14 @@ export default function StaffManager({
     } finally {
       setIsSubmitting(false);
     }
-  }, [csvPreview, allCohorts, onDone, router]);
+  }, [
+    csvPreview,
+    allCohorts,
+    onDone,
+    router,
+    createProfilesMutation,
+    updateCohortMutation,
+  ]);
 
   const removeFromPreview = useCallback(
     (id: string) => setCsvPreview((prev) => prev.filter((p) => p.id !== id)),

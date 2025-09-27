@@ -1,4 +1,5 @@
 // auth.ts
+import { profileRepo } from "@/lib/repos/profileRepo";
 import { log } from "@/utils/server-logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
@@ -6,9 +7,6 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
 import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";
 import { db_url } from "./utils/drizzle/db";
-import { createProfile } from "./utils/mutations/profiles/create-profile";
-import { updateProfile } from "./utils/mutations/profiles/update-profile";
-import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
@@ -49,7 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const existingProfile = await getProfileByAlias(alias || "");
 
         if (existingProfile && !existingProfile.userId) {
-          await updateProfile(existingProfile.id, {
+          await profileRepo.update(existingProfile.id, {
             userId: parseInt(user.id!),
             lastLogin: new Date().toISOString(),
           });
@@ -64,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          await createProfile({
+          await profileRepo.create({
             userId: parseInt(user.id!),
             firstName,
             lastName,
@@ -119,10 +117,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             message: "Updating existing user profile",
           });
 
-          const userProfiles = await getProfilesByUser(parseInt(user.id!));
+          const userProfiles = await profileRepo.listByUser(parseInt(user.id!));
           const userProfile = userProfiles[0];
           if (userProfile) {
-            await updateProfile(userProfile.id, {
+            await profileRepo.update(userProfile.id, {
               firstName,
               lastName,
               lastLogin: new Date().toISOString(),
@@ -154,7 +152,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // On initial sign in, attach canonical profileId/role
       if (user?.id) {
         // your DB lookup to map user.id -> default profile
-        const profiles = await getProfilesByUser(parseInt(user.id));
+        const profiles = await profileRepo.listByUser(parseInt(user.id));
         const primary = profiles?.[0];
         if (primary) {
           token["profileId"] = primary.id;

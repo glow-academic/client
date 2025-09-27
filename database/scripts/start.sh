@@ -238,6 +238,10 @@ run_migrations() {
       echo "📝 No migration files found - database is up to date"
     fi
   fi
+  
+  # Keep audit triggers in sync with any new tables
+  psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+    -v ON_ERROR_STOP=1 -c "SELECT audit.install_row_triggers();" >/dev/null 2>&1 || true
 }
 
 generate_and_copy_files() {
@@ -327,7 +331,7 @@ if [[ "$CLEAN_DB" == true ]]; then
   start_fresh_from_init
   
   # Generate and copy files
-  generate_and_copy_files
+  # generate_and_copy_files
   
   echo "✅ Clean database setup completed!"
   exit 0

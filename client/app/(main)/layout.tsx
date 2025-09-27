@@ -73,10 +73,13 @@ import {
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useUpdateDocument } from "@/lib/api/hooks/documents";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParameters } from "@/lib/api/hooks/parameters";
 import { usePersonas } from "@/lib/api/hooks/personas";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useCreateSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
+import { useCreateSimulationChat } from "@/lib/api/hooks/simulation_chats";
 import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import type {
@@ -93,14 +96,11 @@ import {
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { createSimulationAttempt } from "@/utils/mutations/simulation_attempts/create-simulation-attempt";
-import { createSimulationChat } from "@/utils/mutations/simulation_chats/create-simulation-chat";
 import {
   createSectionChangeHandler,
   isMainScreen,
 } from "@/utils/navigation-utils";
 import * as tus from "tus-js-client";
-import { useUpdateDocument } from "@/lib/api/hooks/documents";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -198,6 +198,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: parameterItems = [] } = useParameterItems();
 
   const { mutate: updateDocument } = useUpdateDocument();
+  const createSimulationAttemptMutation = useCreateSimulationAttempt();
+  const createSimulationChatMutation = useCreateSimulationChat();
 
   // Only allow customizing non-default parameters and non-default items
   const customParameters = React.useMemo(() => {
@@ -1084,11 +1086,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           return;
                         }
 
-                        const attempt = (await createSimulationAttempt({
-                          simulationId: targetSimulation.id,
-                          profileId: effectiveProfile?.id,
-                          infiniteMode: false,
-                        } as unknown as typeof import("@/utils/drizzle/schema").simulationAttempts.$inferInsert)) as unknown as import("@/types").SimulationAttempt;
+                        const attempt =
+                          await createSimulationAttemptMutation.mutateAsync({
+                            simulationId: targetSimulation.id,
+                            profileId: effectiveProfile?.id,
+                            infiniteMode: false,
+                          });
                         if (!attempt || !attempt.id) {
                           toast.error("Failed to create attempt");
                           setIsStartingAttempt(false);
@@ -1096,12 +1099,12 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                         }
                         const attemptIdCreated = attempt.id;
 
-                        await createSimulationChat({
+                        await createSimulationChatMutation.mutateAsync({
                           title: result.scenario.name,
                           scenarioId: result.scenario.id,
                           attemptId: attemptIdCreated,
                           completed: false,
-                        } as unknown as typeof import("@/utils/drizzle/schema").simulationChats.$inferInsert);
+                        });
 
                         setCustomizeOpen(false);
                         toast.success("Simulation started", {

@@ -37,8 +37,8 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { useUpdateSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
-import { updateSimulationAttempt } from "@/utils/mutations/simulation_attempts/update-simulation-attempt";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
@@ -97,6 +97,7 @@ export function DataTable<TData, TValue>({
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const queryClient = useQueryClient();
+  const updateSimulationAttemptMutation = useUpdateSimulationAttempt();
 
   // Handle attempt selection
   const _handleAttemptSelect = React.useCallback(
@@ -166,7 +167,10 @@ export function DataTable<TData, TValue>({
     setIsArchiving(true);
     try {
       for (const attemptId of attemptsToUpdate) {
-        await updateSimulationAttempt(attemptId, { archived: archiveAction });
+        await updateSimulationAttemptMutation.mutateAsync({
+          id: attemptId,
+          archived: archiveAction,
+        });
         await log.info("simulation_attempt.bulk_archive.success", {
           message: `Simulation attempt ${archiveAction ? "archived" : "unarchived"}`,
           subject: { entityType: "simulation_attempt", entityId: attemptId },
@@ -205,7 +209,13 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, selectedAttempts, data, queryClient]);
+  }, [
+    archiveAction,
+    selectedAttempts,
+    data,
+    queryClient,
+    updateSimulationAttemptMutation,
+  ]);
 
   // Add checkbox column when showArchive is true
   const columnsWithCheckbox = React.useMemo(() => {

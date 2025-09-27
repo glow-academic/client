@@ -16,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { createTATourSteps } from "@/utils/tour-steps";
 import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useUpdateProfile } from "@/lib/api/hooks/profiles";
+import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
 function GuideButton() {
@@ -87,6 +87,7 @@ export default function TATour() {
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
+  const updateProfileMutation = useUpdateProfile();
 
   // Comprehensive debug logging on every render
   useEffect(() => {
@@ -114,7 +115,7 @@ export default function TATour() {
     tourStateRef.current = tourState;
   }, [tourState]);
 
-  const {data: cohorts = []} = useCohorts();
+  const { data: cohorts = [] } = useCohorts();
 
   // Get TA's assigned cohorts
   const taCohorts = useMemo(() => {
@@ -182,7 +183,10 @@ export default function TATour() {
         let profileUpdated = false;
 
         if (introStepsComplete && !effectiveProfile.viewedIntro) {
-          await updateProfile(effectiveProfile.id, { viewedIntro: true });
+          await updateProfileMutation.mutateAsync({
+            id: effectiveProfile.id,
+            viewedIntro: true,
+          });
           log.info("tour.profile.flag.updated", {
             message: "Updated profile viewedIntro",
             actor: { profileId: effectiveProfile.id },
@@ -198,7 +202,10 @@ export default function TATour() {
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
-          await updateProfile(effectiveProfile.id, { viewedChat: true });
+          await updateProfileMutation.mutateAsync({
+            id: effectiveProfile.id,
+            viewedChat: true,
+          });
           log.info("tour.profile.flag.updated", {
             message: "Updated profile viewedChat",
             actor: { profileId: effectiveProfile.id },
@@ -254,7 +261,13 @@ export default function TATour() {
         });
       }
     },
-    [effectiveProfile, completeStep, tourState.steps, queryClient] // queryClient is stable and doesn't need to be in dependencies
+    [
+      effectiveProfile,
+      completeStep,
+      tourState.steps,
+      queryClient,
+      updateProfileMutation,
+    ] // queryClient is stable and doesn't need to be in dependencies
   );
 
   // Navigation handlers with proper delays

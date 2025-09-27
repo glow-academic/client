@@ -4,11 +4,13 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import { useAssistantChatsByProfileId } from "@/lib/api/hooks/assistant_chats";
+import {
+  useAssistantChatsByProfileId,
+  useCreateAssistantChat,
+} from "@/lib/api/hooks/assistant_chats";
 import { AssistantChat } from "@/types";
 import { log } from "@/utils/logger";
-import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
@@ -92,38 +94,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     );
 
   // Create new chat mutation
-  const createChatMutation = useMutation({
-    mutationFn: (profileId: string) => {
-      // Don't allow creating chats for guest profiles with invalid UUIDs
-      if (profileId === "guest-profile-id") {
-        throw new Error("Cannot create chats for guest profiles");
-      }
-      return createAssistantChat({
-        profileId,
-        title: "New Chat",
-      });
-    },
-    onSuccess: (newChat) => {
-      // Update the chats cache immediately
-      if (newChat) {
-        queryClient.setQueryData(
-          ["assistantChats", activeProfile?.id],
-          (old: AssistantChat[] = []) => [newChat, ...old]
-        );
-      }
-    },
-    onError: (error) => {
-      log.error("assistant.chat.create.failed", {
-        message: "Failed to create chat",
-        context: {
-          component: "AssistantContext",
-          function: "createChatMutation.onError",
-        },
-        error,
-      });
-      toast.error("Failed to create new chat");
-    },
-  });
+  const createChatMutation = useCreateAssistantChat();
 
   // Set up assistant-specific event listeners
   useEffect(() => {
@@ -245,7 +216,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     }
 
     try {
-      const newChat = await createChatMutation.mutateAsync(activeProfile.id);
+      // Don't allow creating chats for guest profiles with invalid UUIDs
+      if (activeProfile.id === "guest-profile-id") {
+        throw new Error("Cannot create chats for guest profiles");
+      }
+      const newChat = await createChatMutation.mutateAsync({
+        profileId: activeProfile.id,
+        title: "New Chat",
+      });
       if (newChat?.id) {
         setCurrentChatId(newChat.id);
       }
@@ -255,6 +233,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         context: { component: "AssistantContext", function: "startBlankChat" },
         error,
       });
+      toast.error("Failed to create new chat");
     }
   }, [activeProfile?.id, createChatMutation]);
 
@@ -265,7 +244,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     }
 
     try {
-      const newChat = await createChatMutation.mutateAsync(activeProfile.id);
+      // Don't allow creating chats for guest profiles with invalid UUIDs
+      if (activeProfile.id === "guest-profile-id") {
+        throw new Error("Cannot create chats for guest profiles");
+      }
+      const newChat = await createChatMutation.mutateAsync({
+        profileId: activeProfile.id,
+        title: "New Chat",
+      });
       return newChat?.id || null;
     } catch (error) {
       log.error("assistant.chat.create.failed", {
@@ -273,6 +259,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         context: { component: "AssistantContext", function: "createNewChat" },
         error,
       });
+      toast.error("Failed to create new chat");
       return null;
     }
   }, [activeProfile?.id, createChatMutation]);
@@ -306,9 +293,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
             message: "No chat selected, creating new chat for message",
             context: { component: "AssistantContext", function: "sendMessage" },
           });
-          const newChat = await createChatMutation.mutateAsync(
-            activeProfile.id
-          );
+          // Don't allow creating chats for guest profiles with invalid UUIDs
+          if (activeProfile.id === "guest-profile-id") {
+            throw new Error("Cannot create chats for guest profiles");
+          }
+          const newChat = await createChatMutation.mutateAsync({
+            profileId: activeProfile.id,
+            title: "New Chat",
+          });
           if (!newChat?.id) {
             toast.error("Failed to create new chat");
             setIsSendingMessage(false);

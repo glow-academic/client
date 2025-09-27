@@ -111,16 +111,6 @@ else
   log_warning "⚠️  Agent generation script not found, using existing SQL"
 fi
 
-# --- GENERATE ANALYTICS COMPONENTS -----------------------------------
-log_info "🔧 Generating analytics components and registry..."
-if [ -f "/docker-entrypoint-initdb.d/app/analytics/generate-components.sh" ]; then
-  cd /docker-entrypoint-initdb.d/app/analytics
-  ./generate-components.sh
-  log_success "✅ Analytics components and registry generated"
-else
-  log_warning "⚠️  Analytics generation script not found, using existing SQL"
-fi
-
 # --- GENERATE MODEL SQL WITH ENCRYPTED KEYS -------------------------
 log_info "🔐 Generating model SQL with encrypted API keys..."
 if [ -f "/docker-entrypoint-initdb.d/app/models/generate-models.sh" ]; then

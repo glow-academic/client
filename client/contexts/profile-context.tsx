@@ -5,14 +5,13 @@
  */
 "use client";
 
+import { useProfile as useProfileQuery } from "@/lib/api/hooks/profiles";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
   isSectionAvailableForRole,
 } from "@/utils/navigation-utils";
-import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
@@ -80,12 +79,10 @@ export function ProfileProvider({
     bootstrapProfile?.id ??
     null;
 
-  const { data: effectiveProfile, isLoading: isEffLoading } = useQuery({
-    queryKey: ["effectiveProfile", effectiveId],
-    queryFn: () =>
-      effectiveId ? getProfile(effectiveId) : Promise.resolve(null),
-    enabled: !!effectiveId && effectiveId !== "guest-profile-id",
-  });
+  const { data: effectiveProfile, isLoading: isEffLoading } = useProfileQuery(
+    effectiveId || "",
+    !!effectiveId && effectiveId !== "guest-profile-id"
+  );
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
