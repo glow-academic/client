@@ -2,8 +2,7 @@
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { useQuery } from "@tanstack/react-query";
+import { usePersonas } from "@/lib/api/hooks/personas";
 import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useMemo } from "react";
@@ -141,10 +140,7 @@ export function useReportColumns({
   simulationOptions: simulationOptArg = [],
 }: UseReportColumnsProps) {
   const { data: filteredData, filters } = useFilteredAnalyticsData();
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const { data: personas = [] } = usePersonas();
   // Intentionally no local aliases of datasets; use filteredData within memos
 
   // Create filter options
@@ -158,7 +154,7 @@ export function useReportColumns({
 
   const personaOptions = useMemo(() => {
     if (personaOptArg.length > 0) return personaOptArg;
-    return (personas ?? [])
+    return personas
       .filter((persona) => persona.defaultPersona === true)
       .map((persona) => ({ value: persona.id, label: persona.name }));
   }, [personas, personaOptArg]);

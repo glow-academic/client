@@ -11,9 +11,8 @@ import {
   TAPerformanceData,
   useReportColumns,
 } from "@/hooks/use-report-columns";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { getReports, type ReportRow } from "@/utils/api/analytics/get-reports";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { useQuery } from "@tanstack/react-query";
 import { ReportsDataTable } from "./ReportsDataTable";
 
 export default function Reports() {
@@ -34,10 +33,7 @@ export default function Reports() {
   const [cohortSimulationIds, setCohortSimulationIds] = useState<string[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const { data: allSimulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
-  });
+  const { data: allSimulations = [] } = useSimulations();
 
   useEffect(() => {
     let cancelled = false;

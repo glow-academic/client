@@ -8,7 +8,7 @@
 
 import {
   SimulationPicker,
-  type Simulation,
+  type Simulation as SimulationPickerType,
 } from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
@@ -26,12 +26,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { usePersonas } from "@/lib/api/hooks/personas";
 import { cn } from "@/lib/utils";
+import type { Simulation } from "@/types";
 import type { FilteredData } from "@/utils/analytics/filtering";
 import { getSimulationsWithValidPersonaData } from "@/utils/analytics/filtering";
 import { calculatePersonaPerformance } from "@/utils/analytics/primary";
-import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
-import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -60,23 +60,20 @@ export default function PersonaPerformance({
   filteredData,
   thresholds,
 }: PersonaPerformanceProps) {
-  const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    []
-  );
+  const [selectedSimulations, setSelectedSimulations] = useState<
+    SimulationPickerType[]
+  >([]);
 
   // Use datasets sourced from filtered data where available
   const rubrics = filteredData?.rubrics;
   const scenarios = filteredData?.scenarios;
   // Personas are not included in filtered data yet; fetch minimally
-  const { data: personas } = useQuery({
-    queryKey: ["personas"],
-    queryFn: () => getAllPersonas(),
-  });
+  const { data: personas = [] } = usePersonas();
 
   // Map persona name -> hex color from personas table
   const personaColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    if (personas && personas.length > 0) {
+    if (personas.length > 0) {
       for (const persona of personas) {
         if (persona?.name && persona?.color) {
           map[persona.name] = persona.color;
@@ -88,7 +85,7 @@ export default function PersonaPerformance({
 
   // Calculate performance by persona
   const performanceData = useMemo(() => {
-    if (!filteredData || !scenarios || !rubrics || !personas) {
+    if (!filteredData || !scenarios || !rubrics || personas.length === 0) {
       return [];
     }
 
@@ -178,7 +175,7 @@ export default function PersonaPerformance({
             simulations={
               filteredData && rubrics
                 ? getSimulationsWithValidPersonaData(filteredData, rubrics).map(
-                    (s) => ({
+                    (s: Simulation) => ({
                       ...s,
                       timeLimit: s.timeLimit ?? 0,
                     })

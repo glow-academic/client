@@ -575,3 +575,207 @@ export function isSimulationIncluded(
 
   return (hasPractice && isPractice) || (hasGeneral && !isPractice);
 }
+
+/**
+ * Filter simulations to only include those with valid data for effective graphs
+ * @param filteredData - The filtered analytics data
+ * @param rubrics - All available rubrics
+ * @returns Array of simulations that have sufficient data for meaningful visualization
+ */
+export const getSimulationsWithValidData = (
+  filteredData: FilteredData,
+  rubrics: Rubric[]
+): Simulation[] => {
+  if (!filteredData || !filteredData.simulations || !rubrics) {
+    return [];
+  }
+
+  return filteredData.simulations.filter((simulation) => {
+    // Check if this simulation has any attempts
+    const simulationAttempts = filteredData.attempts.filter(
+      (attempt) => attempt.simulationId === simulation.id
+    );
+
+    if (simulationAttempts.length === 0) {
+      return false;
+    }
+
+    // Check if there are any completed chats for this simulation
+    const simulationChats = filteredData.chats.filter((chat) =>
+      simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+    );
+
+    const completedChats = simulationChats.filter((chat) => chat.completed);
+
+    if (completedChats.length === 0) {
+      return false;
+    }
+
+    // Check if there are any grades for this simulation
+    const simulationGrades = filteredData.grades.filter((grade) =>
+      completedChats.some((chat) => chat.id === grade.simulationChatId)
+    );
+
+    if (simulationGrades.length === 0) {
+      return false;
+    }
+
+    // Check if the simulation has scenarios (for scenario-based components)
+    if (simulation.scenarioIds && simulation.scenarioIds.length === 0) {
+      return false;
+    }
+
+    // Check if there's a valid rubric for this simulation
+    const rubric = rubrics.find((r) => r.id === simulation.rubricId);
+    if (!rubric) {
+      return false;
+    }
+
+    // For cohort performance, check if there are profiles in cohorts that have this simulation
+    const cohortsWithSimulation = filteredData.cohorts.filter((cohort) =>
+      cohort.simulationIds.includes(simulation.id)
+    );
+
+    if (cohortsWithSimulation.length === 0) {
+      return false;
+    }
+
+    // Check if there are profiles in these cohorts with attempts
+    const profilesInCohorts = new Set<string>();
+    cohortsWithSimulation.forEach((cohort) => {
+      cohort.profileIds.forEach((profileId) => {
+        if (filteredData.profiles.some((p) => p.id === profileId)) {
+          profilesInCohorts.add(profileId);
+        }
+      });
+    });
+
+    const attemptsFromCohortProfiles = simulationAttempts.filter(
+      (attempt) => attempt.profileId && profilesInCohorts.has(attempt.profileId)
+    );
+
+    return attemptsFromCohortProfiles.length > 0;
+  });
+};
+
+/**
+ * Filter simulations to only include those with valid data for attempt improvement graphs
+ * @param filteredData - The filtered analytics data
+ * @param rubrics - All available rubrics
+ * @returns Array of simulations that have sufficient data for meaningful attempt improvement visualization
+ */
+export const getSimulationsWithValidAttemptData = (
+  filteredData: FilteredData,
+  rubrics: Rubric[]
+): Simulation[] => {
+  if (!filteredData || !filteredData.simulations || !rubrics) {
+    return [];
+  }
+
+  return filteredData.simulations.filter((simulation) => {
+    // Check if this simulation has multiple attempts (needed for improvement tracking)
+    const simulationAttempts = filteredData.attempts.filter(
+      (attempt) => attempt.simulationId === simulation.id
+    );
+
+    if (simulationAttempts.length < 2) {
+      return false; // Need at least 2 attempts to show improvement
+    }
+
+    // Check if there are any completed chats for this simulation
+    const simulationChats = filteredData.chats.filter((chat) =>
+      simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+    );
+
+    const completedChats = simulationChats.filter((chat) => chat.completed);
+
+    if (completedChats.length === 0) {
+      return false;
+    }
+
+    // Check if there are any grades for this simulation
+    const simulationGrades = filteredData.grades.filter((grade) =>
+      completedChats.some((chat) => chat.id === grade.simulationChatId)
+    );
+
+    if (simulationGrades.length === 0) {
+      return false;
+    }
+
+    // Check if there's a valid rubric for this simulation
+    const rubric = rubrics.find((r) => r.id === simulation.rubricId);
+    if (!rubric) {
+      return false;
+    }
+
+    // Check if there are multiple profiles with attempts (for meaningful comparison)
+    const uniqueProfiles = new Set(
+      simulationAttempts.map((attempt) => attempt.profileId)
+    );
+
+    return uniqueProfiles.size > 0;
+  });
+};
+
+/**
+ * Filter simulations to only include those with valid data for persona performance graphs
+ * @param filteredData - The filtered analytics data
+ * @param rubrics - All available rubrics
+ * @returns Array of simulations that have sufficient data for meaningful persona performance visualization
+ */
+export const getSimulationsWithValidPersonaData = (
+  filteredData: FilteredData,
+  rubrics: Rubric[]
+): Simulation[] => {
+  if (!filteredData || !filteredData.simulations || !rubrics) {
+    return [];
+  }
+
+  return filteredData.simulations.filter((simulation) => {
+    // Check if this simulation has any attempts
+    const simulationAttempts = filteredData.attempts.filter(
+      (attempt) => attempt.simulationId === simulation.id
+    );
+
+    if (simulationAttempts.length === 0) {
+      return false;
+    }
+
+    // Check if there are any completed chats for this simulation
+    const simulationChats = filteredData.chats.filter((chat) =>
+      simulationAttempts.some((attempt) => attempt.id === chat.attemptId)
+    );
+
+    const completedChats = simulationChats.filter((chat) => chat.completed);
+
+    if (completedChats.length === 0) {
+      return false;
+    }
+
+    // Check if there are any grades for this simulation
+    const simulationGrades = filteredData.grades.filter((grade) =>
+      completedChats.some((chat) => chat.id === grade.simulationChatId)
+    );
+
+    if (simulationGrades.length === 0) {
+      return false;
+    }
+
+    // Check if there's a valid rubric for this simulation
+    const rubric = rubrics.find((r) => r.id === simulation.rubricId);
+    if (!rubric) {
+      return false;
+    }
+
+    // Check if there are scenarios with personas for this simulation
+    const simulationScenarios = filteredData.scenarios.filter((scenario) =>
+      simulation.scenarioIds?.includes(scenario.id)
+    );
+
+    const scenariosWithPersonas = simulationScenarios.filter(
+      (scenario) => scenario.personaId
+    );
+
+    return scenariosWithPersonas.length > 0;
+  });
+};
