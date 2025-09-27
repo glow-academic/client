@@ -1,7 +1,7 @@
 "use server";
 
-import { api } from "@/lib/api/fetcher";
 import type { Provider } from "@/lib/repos/providerRepo";
+import { providerRepo } from "@/lib/repos/providerRepo";
 import { providers } from "@/utils/drizzle/schema";
 import { log } from "@/utils/logger";
 import { encryptProviderKey } from "@/utils/model/server-model";
@@ -16,7 +16,7 @@ interface UpdateProviderData {
 export async function updateProviderWithEncryption(
   id: string,
   data: UpdateProviderData
-) {
+): Promise<Provider> {
   try {
     // Prepare the update data
     const updateData: Partial<typeof providers.$inferInsert> = {
@@ -41,11 +41,8 @@ export async function updateProviderWithEncryption(
       updateData.apiKey = await encryptProviderKey(data.apiKey);
     }
 
-    // Update the provider using the repository API
-    const result = await api<Provider>(`/api/v1/providers/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(updateData),
-    });
+    // Update the provider using the providerRepo directly
+    const result = await providerRepo.update(id, updateData);
 
     return result;
   } catch (error) {

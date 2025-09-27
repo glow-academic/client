@@ -6,16 +6,16 @@
  */
 
 import EditParameter from "@/components/common/parameter/Parameter";
-import { getParameter } from "@/utils/queries/parameters/get-parameter";
+import { parameterRepo } from "@/lib/repos/parameterRepo";
 import type { Metadata, ResolvingMetadata } from "next";
 import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { parameterId } = await params;
-  const parameter = await getParameter(parameterId);
+  const parameter = await parameterRepo.find(parameterId);
   return {
     title: `${parameter?.name || "Parameter"} Parameter`,
     description: `${parameter?.name + " " + parameter?.description || "Parameter"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,

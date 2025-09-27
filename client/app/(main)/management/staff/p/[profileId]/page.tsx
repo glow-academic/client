@@ -6,18 +6,18 @@
  */
 
 import StaffEdit from "@/components/management/staff/StaffEdit";
-import { getProfile } from "@/utils/queries/profiles/get-profile";
-import { use } from "react";
+import { profileRepo } from "@/lib/repos/profileRepo";
 import type { Metadata, ResolvingMetadata } from "next";
+import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { profileId } = await params;
 
-  const staff = await getProfile(profileId);
+  const staff = await profileRepo.find(profileId);
 
   return {
     title: `${staff?.firstName} ${staff?.lastName}`,

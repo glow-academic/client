@@ -73,6 +73,7 @@ import {
 } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useBreadcrumbs } from "@/hooks/use-breadcrumbs";
 import { useUpdateDocument } from "@/lib/api/hooks/documents";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParameters } from "@/lib/api/hooks/parameters";
@@ -91,10 +92,7 @@ import type {
 } from "@/types";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
-import {
-  generateEnhancedBreadcrumbs,
-  getActiveSectionFromPath,
-} from "@/utils/breadcrumb-utils";
+import { getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { inferMimeFromName } from "@/utils/mime-map";
 import {
   createSectionChangeHandler,
@@ -119,9 +117,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
-  const [breadcrumbs, setBreadcrumbs] = React.useState<
-    Array<{ title: string; section?: string }>
-  >([]);
+  const { breadcrumbs } = useBreadcrumbs(pathname);
   const simulationContext = useSimulation();
   const currentChatId = simulationContext?.currentChat?.id;
   const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
@@ -508,15 +504,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     isLoading,
     isHomePage,
   ]);
-
-  // Load enhanced breadcrumbs with async ID resolution
-  React.useEffect(() => {
-    const loadBreadcrumbs = async () => {
-      const enhancedBreadcrumbs = await generateEnhancedBreadcrumbs(pathname);
-      setBreadcrumbs(enhancedBreadcrumbs);
-    };
-    loadBreadcrumbs();
-  }, [pathname]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 

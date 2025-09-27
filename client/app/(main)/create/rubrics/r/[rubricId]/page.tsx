@@ -8,15 +8,15 @@
 import RubricEdit from "@/components/create/rubrics/RubricEdit";
 import { use } from "react";
 
-import { getRubric } from "@/utils/queries/rubrics/get-rubric";
+import { rubricRepo } from "@/lib/repos/rubricRepo";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  const rubric = await getRubric(rubricId);
+  const rubric = await rubricRepo.find(rubricId);
 
   return {
     title: `${rubric?.name || "Rubric"}`,

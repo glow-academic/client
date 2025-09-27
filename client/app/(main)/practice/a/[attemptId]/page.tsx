@@ -6,18 +6,18 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { simulationAttemptRepo } from "@/lib/repos/simulationAttemptRepo";
+import { simulationRepo } from "@/lib/repos/simulationRepo";
 import { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { attemptId } = await params;
 
-  const attemptData = await getSimulationAttempt(attemptId);
+  const attemptData = await simulationAttemptRepo.find(attemptId);
   if (!attemptData) {
     return {
       title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
@@ -25,7 +25,9 @@ export async function generateMetadata(
     };
   }
   // get simulation for attempt
-  const attemptSimulation = await getSimulation(attemptData?.simulationId);
+  const attemptSimulation = await simulationRepo.find(
+    attemptData?.simulationId
+  );
   // Attempts don't have a title, so we'll use a generic name with timestamp
   return {
     title: `Practice ${attemptSimulation?.title || "Attempt"}`,

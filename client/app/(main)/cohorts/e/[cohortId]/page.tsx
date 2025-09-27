@@ -8,7 +8,7 @@
 import CohortEdit from "@/components/cohorts/CohortEdit";
 import { use } from "react";
 
-import { getCohort } from "@/utils/queries/cohorts/get-cohort";
+import { cohortRepo } from "@/lib/repos/cohortRepo";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
@@ -18,7 +18,7 @@ export async function generateMetadata(
   // read route params
   const { cohortId } = await params;
 
-  const cohort = await getCohort(cohortId);
+  const cohort = await cohortRepo.find(cohortId);
 
   return {
     title: `${cohort?.title || "Cohort"} Edit`,

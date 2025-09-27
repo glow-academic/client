@@ -6,20 +6,20 @@
  */
 
 import ModelEdit from "@/components/management/providers/ModelEdit";
-import { getModel } from "@/utils/queries/models/get-model";
-import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
+import { modelRepo } from "@/lib/repos/modelRepo";
+import { providerRepo } from "@/lib/repos/providerRepo";
 import { getQueryClient } from "@/utils/react-query/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { modelId } = await params;
 
-  const model = await getModel(modelId);
+  const model = await modelRepo.find(modelId);
 
   return {
     title: `${model?.name || "Model"}`,
@@ -39,12 +39,12 @@ export default async function ModelEditPage({
 
   await queryClient.prefetchQuery({
     queryKey: ["model", modelId],
-    queryFn: () => getModel(modelId),
+    queryFn: () => modelRepo.find(modelId),
   });
 
   await queryClient.prefetchQuery({
     queryKey: ["providers"],
-    queryFn: () => getAllProviders(),
+    queryFn: () => providerRepo.findAll(),
   });
 
   return (

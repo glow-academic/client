@@ -5,18 +5,18 @@
  * 06/09/2025
  */
 
-import { use } from "react";
 import SimulationEdit from "@/components/create/simulations/SimulationEdit";
+import { use } from "react";
 
+import { simulationRepo } from "@/lib/repos/simulationRepo";
 import type { Metadata, ResolvingMetadata } from "next";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  const simulation = await getSimulation(simulationId);
+  const simulation = await simulationRepo.find(simulationId);
 
   return {
     title: `${simulation?.title || "Simulation"}`,

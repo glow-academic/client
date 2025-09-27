@@ -6,16 +6,16 @@
  */
 
 import EditSystemAgent from "@/components/system/agents/EditAgent";
-import { getAgent } from "@/utils/queries/agents/get-agent";
+import { agentRepo } from "@/lib/repos/agentRepo";
 import type { Metadata, ResolvingMetadata } from "next";
 import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { agentId } = await params;
-  const agent = await getAgent(agentId);
+  const agent = await agentRepo.find(agentId);
   return {
     title: `${agent?.name || "Agent"} Agent`,
     description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,

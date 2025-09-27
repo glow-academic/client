@@ -5,18 +5,18 @@
  * 06/09/2025
  */
 
-import { use } from "react";
 import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
+import { use } from "react";
 
+import { scenarioRepo } from "@/lib/repos/scenarioRepo";
 import type { Metadata, ResolvingMetadata } from "next";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  const scenario = await getScenario(scenarioId);
+  const scenario = await scenarioRepo.find(scenarioId);
 
   return {
     title: `${scenario?.name || "Scenario"}`,

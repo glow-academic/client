@@ -6,19 +6,19 @@
  */
 
 import NewModel from "@/components/management/providers/NewModel";
-import { getProvider } from "@/utils/queries/providers/get-provider";
+import { providerRepo } from "@/lib/repos/providerRepo";
 
 import type { Metadata, ResolvingMetadata } from "next";
 import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { providerId } = await params;
 
-  const provider = await getProvider(providerId);
+  const provider = await providerRepo.find(providerId);
 
   return {
     title: `${provider?.name || "Provider"} Models`,

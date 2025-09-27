@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
+import { profileRepo } from "@/lib/repos/profileRepo";
 import { canEmulate } from "@/utils/auth/can-emulate";
-import { getProfile } from "@/utils/queries/profiles/get-profile";
 import { log } from "@/utils/server-logger";
 import { NextResponse } from "next/server";
 
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const target = await getProfile(targetProfileId);
+  const target = await profileRepo.find(targetProfileId);
   if (!target)
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 

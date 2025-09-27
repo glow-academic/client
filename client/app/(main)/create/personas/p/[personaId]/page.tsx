@@ -8,15 +8,15 @@
 import PersonaEdit from "@/components/create/personas/PersonaEdit";
 import { use } from "react";
 
-import { getPersona } from "@/utils/queries/personas/get-persona";
+import { personaRepo } from "@/lib/repos/personaRepo";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { personaId } = await params;
-  const persona = await getPersona(personaId);
+  const persona = await personaRepo.find(personaId);
   return {
     title: `${persona?.name || "Persona"} Persona`,
     description: `${persona?.name + " " + persona?.description || "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
