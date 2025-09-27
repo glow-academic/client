@@ -39,8 +39,9 @@ import { useCohorts } from "@/lib/api/hooks/cohorts";
 import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
 import {
   useDeleteProfile,
+  useDeleteProfiles,
   useProfiles,
-  useUpdateProfile,
+  useUpdateProfiles,
 } from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
@@ -62,7 +63,8 @@ export default function Staff() {
 
   // Mutation hooks
   const deleteProfileMutation = useDeleteProfile();
-  const updateProfileMutation = useUpdateProfile();
+  const deleteProfilesMutation = useDeleteProfiles();
+  const updateProfilesMutation = useUpdateProfiles();
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -630,15 +632,13 @@ export default function Staff() {
                 }
                 try {
                   if (Object.keys(updates).length > 0) {
-                    // Update each profile individually
-                    await Promise.all(
-                      selectedStaffIds.map((profileId) =>
-                        updateProfileMutation.mutateAsync({
-                          id: profileId,
-                          ...(updates as { [key: string]: unknown }),
-                        })
-                      )
-                    );
+                    // Use bulk update for efficiency
+                    await updateProfilesMutation.mutateAsync({
+                      updates: selectedStaffIds.map((profileId) => ({
+                        id: profileId,
+                        ...(updates as { [key: string]: unknown }),
+                      })),
+                    });
                   }
                   toast.success("Staff updated successfully");
                   setShowBulkEditModal(false);
@@ -769,12 +769,10 @@ export default function Staff() {
                     setShowBulkDeleteDialog(false);
                     return;
                   }
-                  // Delete each profile individually
-                  await Promise.all(
-                    deletableIds.map((profileId) =>
-                      deleteProfileMutation.mutateAsync(profileId)
-                    )
-                  );
+                  // Use bulk delete for efficiency
+                  await deleteProfilesMutation.mutateAsync({
+                    ids: deletableIds,
+                  });
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);

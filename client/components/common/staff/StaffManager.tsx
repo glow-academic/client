@@ -28,7 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useCohorts, useUpdateCohort } from "@/lib/api/hooks/cohorts";
+import { useCohorts, useUpdateCohorts } from "@/lib/api/hooks/cohorts";
 import { useCreateProfiles, useProfiles } from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
@@ -172,7 +172,7 @@ export default function StaffManager({
 
   // Mutation hooks
   const createProfilesMutation = useCreateProfiles();
-  const updateCohortMutation = useUpdateCohort();
+  const updateCohortsMutation = useUpdateCohorts();
 
   // Compute cohort existing ids if in cohort mode
   const cohortExistingIds = useMemo(() => {
@@ -802,6 +802,15 @@ export default function StaffManager({
         const realId = idMap.get(p.id) || p.id;
         byCohort.get(cohortName)!.push({ ...p, id: realId });
       });
+      // Collect cohort updates for bulk operation
+      const cohortUpdates: Array<{
+        id: string;
+        profileIds: string[];
+        updatedAt: string;
+      }> = [];
+      const cohortUpdateMessages: string[] = [];
+      const warningMessages: string[] = [];
+
       for (const [cohortName, profiles] of byCohort) {
         if (cohortName !== "No Cohort") {
           const cohort = allCohorts.find((c) => c.title === cohortName);
@@ -810,21 +819,36 @@ export default function StaffManager({
               ...cohort.profileIds,
               ...profiles.map((p) => p.id),
             ];
-            await updateCohortMutation.mutateAsync({
+            cohortUpdates.push({
               id: cohort.id,
               profileIds: updatedProfileIds,
               updatedAt: new Date().toISOString(),
             });
-            toast.success(
+            cohortUpdateMessages.push(
               `Added ${profiles.length} profile(s) to cohort "${cohortName}"`
             );
           } else {
-            toast.warning(
+            warningMessages.push(
               `Cohort "${cohortName}" not found. Profiles were created but not assigned to a cohort.`
             );
           }
         }
       }
+
+      // Execute bulk cohort updates
+      if (cohortUpdates.length > 0) {
+        await updateCohortsMutation.mutateAsync({ updates: cohortUpdates });
+
+        // Show success messages for each cohort
+        cohortUpdateMessages.forEach((message) => {
+          toast.success(message);
+        });
+      }
+
+      // Show warning messages
+      warningMessages.forEach((message) => {
+        toast.warning(message);
+      });
       toast.success(
         `Successfully created ${csvPreview.length} staff member(s)!`
       );
@@ -847,7 +871,7 @@ export default function StaffManager({
     onDone,
     router,
     createProfilesMutation,
-    updateCohortMutation,
+    updateCohortsMutation,
   ]);
 
   const removeFromPreview = useCallback(

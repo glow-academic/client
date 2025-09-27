@@ -51,8 +51,10 @@ import TagSelector from "@/components/common/tags/TagSelector";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import {
   useDeleteDocument,
+  useDeleteDocuments,
   useDocuments,
   useUpdateDocument,
+  useUpdateDocuments,
 } from "@/lib/api/hooks/documents";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { log } from "@/utils/logger";
@@ -61,7 +63,9 @@ import { DocumentsDataTable } from "./DocumentsDataTable";
 export default function Documents() {
   // Mutation hooks
   const deleteDocumentMutation = useDeleteDocument();
+  const deleteDocumentsMutation = useDeleteDocuments();
   const updateDocumentMutation = useUpdateDocument();
+  const updateDocumentsMutation = useUpdateDocuments();
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -236,8 +240,11 @@ export default function Documents() {
 
       setIsDeleting(true);
       try {
+        // Use bulk delete for efficiency
+        await deleteDocumentsMutation.mutateAsync({ ids: deletableDocuments });
+
+        // Log success for each document
         for (const documentId of deletableDocuments) {
-          await deleteDocumentMutation.mutateAsync(documentId);
           await log.info("document.delete.success", {
             message: "Document deleted",
             subject: { entityType: "document", entityId: documentId },
@@ -307,23 +314,25 @@ export default function Documents() {
     if (selectedDocuments.length === 0) return;
     setIsBulkUpdating(true);
     try {
-      for (const id of selectedDocuments) {
-        const updates: Partial<DocumentInsert> = {
-          updatedAt: new Date().toISOString(),
-        };
-        if (bulkType !== "__keep__") updates.type = bulkType;
-        // If the user used Clear, bulkTags will be [] and should be applied
-        // Apply tags if the user interacted with tags selector (we treat presence of array as intentional)
-        if (Array.isArray(bulkTags)) updates.tags = bulkTags;
-        if (Object.keys(updates).length > 0) {
-          const mutationData: { id: string } & Partial<DocumentInsert> = { id };
-          if (updates.type !== undefined) mutationData.type = updates.type;
-          if (updates.tags !== undefined) mutationData.tags = updates.tags;
-          if (updates.updatedAt !== undefined)
-            mutationData.updatedAt = updates.updatedAt;
+      const updates: Partial<DocumentInsert> = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (bulkType !== "__keep__") updates.type = bulkType;
+      // If the user used Clear, bulkTags will be [] and should be applied
+      // Apply tags if the user interacted with tags selector (we treat presence of array as intentional)
+      if (Array.isArray(bulkTags)) updates.tags = bulkTags;
 
-          await updateDocumentMutation.mutateAsync(mutationData);
-        }
+      if (Object.keys(updates).length > 0) {
+        // Use bulk update for efficiency
+        await updateDocumentsMutation.mutateAsync({
+          updates: selectedDocuments.map(
+            (id) =>
+              ({
+                id,
+                ...updates,
+              }) as { id: string } & Partial<DocumentInsert>
+          ),
+        });
       }
       toast.success("Documents updated successfully");
       setShowBulkEditDialog(false);

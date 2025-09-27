@@ -83,4 +83,35 @@ export const profileRepo = {
     const rows = await db.insert(profiles).values(payloads).returning();
     return rows;
   },
+
+  async updateMany(updates: Array<{ id: string } & ProfileUpdate>) {
+    const db = await getDb();
+    if (!Array.isArray(updates) || updates.length === 0) return [];
+
+    const results = await Promise.all(
+      updates.map(async (update) => {
+        const { id, ...patch } = update;
+        const rows = await db
+          .update(profiles)
+          .set(patch)
+          .where(eq(profiles.id, id))
+          .returning();
+        if (!rows[0])
+          throw HttpError.notFound("Profile with id " + id + " not found");
+        return rows[0];
+      })
+    );
+    return results;
+  },
+
+  async removeMany(ids: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+
+    const rows = await db
+      .delete(profiles)
+      .where(inArray(profiles.id, ids))
+      .returning();
+    return rows;
+  },
 };

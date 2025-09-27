@@ -1,6 +1,5 @@
-
+import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { eq } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { documents } from "@/utils/drizzle/schema";
@@ -15,7 +14,9 @@ export type DocumentUpdate = Partial<DocumentCreate>;
 export const DocumentCreateSchema = createInsertSchema(documents);
 export const DocumentUpdateSchema = DocumentCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const documentRepo = {
   async create(payload: DocumentCreate) {
@@ -26,27 +27,73 @@ export const documentRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(documents).orderBy(documents.createdAt ?? documents.id);
+    return db
+      .select()
+      .from(documents)
+      .orderBy(documents.createdAt ?? documents.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(documents).where(eq(documents.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Document with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Document with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: DocumentUpdate) {
     const db = await getDb();
-    const rows = await db.update(documents).set(patch).where(eq(documents.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Document with id " + id + " not found");
+    const rows = await db
+      .update(documents)
+      .set(patch)
+      .where(eq(documents.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Document with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(documents).where(eq(documents.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Document with id " + id + " not found");
+    const rows = await db
+      .delete(documents)
+      .where(eq(documents.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Document with id " + id + " not found");
   },
 
+  async updateMany(updates: Array<{ id: string } & DocumentUpdate>) {
+    const db = await getDb();
+    if (!Array.isArray(updates) || updates.length === 0) return [];
 
+    const results = await Promise.all(
+      updates.map(async (update) => {
+        const { id, ...patch } = update;
+        const rows = await db
+          .update(documents)
+          .set(patch)
+          .where(eq(documents.id, id))
+          .returning();
+        if (!rows[0])
+          throw HttpError.notFound("Document with id " + id + " not found");
+        return rows[0];
+      })
+    );
+    return results;
+  },
+
+  async removeMany(ids: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+
+    const rows = await db
+      .delete(documents)
+      .where(inArray(documents.id, ids))
+      .returning();
+    return rows;
+  },
 };

@@ -42,7 +42,7 @@ import {
 } from "@/lib/api/hooks/standard_groups";
 import {
   useCreateStandard,
-  useDeleteStandard,
+  useDeleteStandards,
   useUpdateStandard,
 } from "@/lib/api/hooks/standards";
 import { Standard, StandardGroup } from "@/types";
@@ -268,7 +268,7 @@ export default function RubricStandardGroup({
   const deleteStandardGroupMutation = useDeleteStandardGroup();
   const createStandardMutation = useCreateStandard();
   const updateStandardMutation = useUpdateStandard();
-  const deleteStandardMutation = useDeleteStandard();
+  const deleteStandardsMutation = useDeleteStandards();
   const updateRubricMutation = useUpdateRubric();
   const { data: standardGroups } = useStandardGroupsByRubricId(rubricId);
 
@@ -479,35 +479,63 @@ export default function RubricStandardGroup({
           passPoints: parseInt(groupFormData.passPoints),
         });
 
-        // Handle standards
+        // Handle standards with bulk operations
         const promises: Promise<unknown>[] = [];
 
-        standardsFormData.forEach((standard) => {
-          if (standard.isDeleted && standard.id) {
-            // Delete existing standards
-            promises.push(deleteStandardMutation.mutateAsync(standard.id));
-          } else if (standard.isNew && !standard.isDeleted) {
-            // Create new standards
-            promises.push(
-              createStandardMutation.mutateAsync({
-                name: standard.name,
-                description: standard.description,
-                points: parseInt(standard.points),
-                standardGroupId: group!.id,
-              })
-            );
-          } else if (!standard.isNew && !standard.isDeleted && standard.id) {
-            // Update existing standards
-            promises.push(
+        // Collect standards to delete for bulk operation
+        const standardsToDelete = standardsFormData
+          .filter((standard) => standard.isDeleted && standard.id)
+          .map((standard) => standard.id!);
+
+        // Collect standards to create
+        const standardsToCreate = standardsFormData
+          .filter((standard) => standard.isNew && !standard.isDeleted)
+          .map((standard) => ({
+            name: standard.name,
+            description: standard.description,
+            points: parseInt(standard.points),
+            standardGroupId: group!.id,
+          }));
+
+        // Collect standards to update
+        const standardsToUpdate = standardsFormData
+          .filter(
+            (standard) => !standard.isNew && !standard.isDeleted && standard.id
+          )
+          .map((standard) => ({
+            id: standard.id,
+            name: standard.name,
+            description: standard.description,
+            points: parseInt(standard.points),
+          }));
+
+        // Execute bulk operations
+        if (standardsToDelete.length > 0) {
+          promises.push(
+            deleteStandardsMutation.mutateAsync({ ids: standardsToDelete })
+          );
+        }
+
+        if (standardsToCreate.length > 0) {
+          promises.push(
+            ...standardsToCreate.map((standard) =>
+              createStandardMutation.mutateAsync(standard)
+            )
+          );
+        }
+
+        if (standardsToUpdate.length > 0) {
+          promises.push(
+            ...standardsToUpdate.map((standard) =>
               updateStandardMutation.mutateAsync({
-                id: standard.id,
+                id: standard.id!,
                 name: standard.name,
                 description: standard.description,
-                points: parseInt(standard.points),
+                points: standard.points,
               })
-            );
-          }
-        });
+            )
+          );
+        }
 
         await Promise.all(promises);
         setIsEditing(false);

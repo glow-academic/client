@@ -114,3 +114,27 @@ export function useProfilesByUserIdBatch(ids: string[]) {
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
+
+export function useUpdateProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { updates: Array<{ id: string } & ProfileUpdate> }) =>
+      api<Profile[]>(`/api/v1/profiles/bulk-update`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+  });
+}
+
+export function useDeleteProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { ids: string[] }) =>
+      api<Profile[]>(`/api/v1/profiles/bulk-delete`, {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+  });
+}

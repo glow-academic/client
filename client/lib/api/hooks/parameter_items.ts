@@ -1,9 +1,16 @@
 // AUTO-GENERATED minimal hooks for parameter_items
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { ParameterItem, ParameterItemCreate, ParameterItemUpdate } from "@/lib/repos/parameterItemRepo";
-import { parameterItemKeys, parameterItemKeysByParameterId } from "@/lib/api/keys";
+import {
+  parameterItemKeys,
+  parameterItemKeysByParameterId,
+} from "@/lib/api/keys";
+import type {
+  ParameterItem,
+  ParameterItemCreate,
+  ParameterItemUpdate,
+} from "@/lib/repos/parameterItemRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useParameterItems(filters?: unknown) {
   return useQuery({
@@ -15,7 +22,11 @@ export function useParameterItems(filters?: unknown) {
 export function useCreateParameterItem() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ParameterItemCreate) => api<ParameterItem>("/api/v1/parameter_items", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ParameterItemCreate) =>
+      api<ParameterItem>("/api/v1/parameter_items", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: parameterItemKeys.all }),
   });
 }
@@ -33,16 +44,25 @@ export function useUpdateParameterItem(id?: string) {
   return useMutation({
     mutationFn: (patch: ParameterItemUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<ParameterItem>(`/api/v1/parameter_items/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<ParameterItem>(`/api/v1/parameter_items/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
       if (resolvedId && resolvedId !== "") {
-        qc.invalidateQueries({ queryKey: parameterItemKeys.detail(resolvedId) });
+        qc.invalidateQueries({
+          queryKey: parameterItemKeys.detail(resolvedId),
+        });
       } else {
         qc.invalidateQueries({ queryKey: parameterItemKeys.all });
       }
@@ -55,10 +75,16 @@ export function useDeleteParameterItem(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/parameter_items/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/parameter_items/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parameterItemKeys.all }),
   });
@@ -67,7 +93,8 @@ export function useDeleteParameterItem(id?: string) {
 export function useParameterItemsByParameterId(id: string) {
   return useQuery<ParameterItem[]>({
     queryKey: parameterItemKeysByParameterId.one(id),
-    queryFn: () => api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/${id}`),
+    queryFn: () =>
+      api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -75,7 +102,49 @@ export function useParameterItemsByParameterId(id: string) {
 export function useParameterItemsByParameterIdBatch(ids: string[]) {
   return useQuery<ParameterItem[]>({
     queryKey: parameterItemKeysByParameterId.many(ids),
-    queryFn: () => api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ParameterItem[]>(`/api/v1/parameter_items/by/parameterId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useCreateParameterItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { items: ParameterItemCreate[] }) =>
+      api<ParameterItem[]>(`/api/v1/parameter_items/bulk-create`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: parameterItemKeys.all }),
+  });
+}
+
+export function useUpdateParameterItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      updates: Array<{ id: string } & ParameterItemUpdate>;
+    }) =>
+      api<ParameterItem[]>(`/api/v1/parameter_items/bulk-update`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: parameterItemKeys.all }),
+  });
+}
+
+export function useDeleteParameterItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { ids: string[] }) =>
+      api<ParameterItem[]>(`/api/v1/parameter_items/bulk-delete`, {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: parameterItemKeys.all }),
   });
 }

@@ -82,3 +82,29 @@ export function useDeleteDocument(id?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
   });
 }
+
+export function useUpdateDocuments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      updates: Array<{ id: string } & DocumentUpdate>;
+    }) =>
+      api<Document[]>(`/api/v1/documents/bulk-update`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
+  });
+}
+
+export function useDeleteDocuments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { ids: string[] }) =>
+      api<Document[]>(`/api/v1/documents/bulk-delete`, {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
+  });
+}

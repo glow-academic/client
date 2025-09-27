@@ -37,7 +37,10 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { useUpdateSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
+import {
+  useUpdateSimulationAttempt,
+  useUpdateSimulationAttempts,
+} from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -98,6 +101,7 @@ export function DataTable<TData, TValue>({
   const [isArchiving, setIsArchiving] = React.useState(false);
   const queryClient = useQueryClient();
   const updateSimulationAttemptMutation = useUpdateSimulationAttempt();
+  const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
 
   // Handle attempt selection
   const _handleAttemptSelect = React.useCallback(
@@ -166,11 +170,16 @@ export function DataTable<TData, TValue>({
 
     setIsArchiving(true);
     try {
-      for (const attemptId of attemptsToUpdate) {
-        await updateSimulationAttemptMutation.mutateAsync({
+      // Use bulk update for efficiency
+      await updateSimulationAttemptsMutation.mutateAsync({
+        updates: attemptsToUpdate.map((attemptId) => ({
           id: attemptId,
           archived: archiveAction,
-        });
+        })),
+      });
+
+      // Log success for each attempt
+      for (const attemptId of attemptsToUpdate) {
         await log.info("simulation_attempt.bulk_archive.success", {
           message: `Simulation attempt ${archiveAction ? "archived" : "unarchived"}`,
           subject: { entityType: "simulation_attempt", entityId: attemptId },

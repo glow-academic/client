@@ -34,9 +34,10 @@ import { useProfile } from "@/contexts/profile-context";
 import { useCohorts } from "@/lib/api/hooks/cohorts";
 import {
   useCreateParameterItem,
-  useDeleteParameterItem,
+  useCreateParameterItems,
+  useDeleteParameterItems,
   useParameterItemsByParameterId,
-  useUpdateParameterItem,
+  useUpdateParameterItems,
 } from "@/lib/api/hooks/parameter_items";
 import {
   useCreateParameter,
@@ -109,8 +110,9 @@ export default function Parameter({
   const createParameterMutation = useCreateParameter();
   const updateParameterMutation = useUpdateParameter();
   const createParameterItemMutation = useCreateParameterItem();
-  const updateParameterItemMutation = useUpdateParameterItem();
-  const deleteParameterItemMutation = useDeleteParameterItem();
+  const createParameterItemsMutation = useCreateParameterItems();
+  const updateParameterItemsMutation = useUpdateParameterItems();
+  const deleteParameterItemsMutation = useDeleteParameterItems();
 
   const inUseParameterItemIds = useMemo(() => {
     // Active cohorts
@@ -224,38 +226,55 @@ export default function Parameter({
           updatedAt: new Date().toISOString(),
         });
 
-        // Handle parameter items
+        // Handle parameter items with bulk operations
         const promises: Promise<unknown>[] = [];
 
-        parameterItemsFormData.forEach((item) => {
-          if (item.isDeleted && item.id) {
-            // Delete existing items
-            promises.push(deleteParameterItemMutation.mutateAsync(item.id));
-          } else if (item.isNew && !item.isDeleted) {
-            // Create new items
-            promises.push(
-              createParameterItemMutation.mutateAsync({
-                name: item.name,
-                description: item.description,
-                value: formData.numerical ? item.value : item.name,
-                parameterId: parameterId!,
-                defaultItem: !!item.defaultItem,
-              })
-            );
-          } else if (!item.isNew && !item.isDeleted && item.id) {
-            // Update existing items
-            promises.push(
-              updateParameterItemMutation.mutateAsync({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                value: formData.numerical ? item.value : item.name,
-                defaultItem: !!item.defaultItem,
-                updatedAt: new Date().toISOString(),
-              })
-            );
-          }
-        });
+        // Collect items to delete for bulk operation
+        const itemsToDelete = parameterItemsFormData
+          .filter((item) => item.isDeleted && item.id)
+          .map((item) => item.id!);
+
+        // Collect items to create
+        const itemsToCreate = parameterItemsFormData
+          .filter((item) => item.isNew && !item.isDeleted)
+          .map((item) => ({
+            name: item.name,
+            description: item.description,
+            value: formData.numerical ? item.value : item.name,
+            parameterId: parameterId!,
+            defaultItem: !!item.defaultItem,
+          }));
+
+        // Collect items to update
+        const itemsToUpdate = parameterItemsFormData
+          .filter((item) => !item.isNew && !item.isDeleted && item.id)
+          .map((item) => ({
+            id: item.id!,
+            name: item.name,
+            description: item.description,
+            value: formData.numerical ? item.value : item.name,
+            defaultItem: !!item.defaultItem,
+            updatedAt: new Date().toISOString(),
+          }));
+
+        // Execute bulk operations
+        if (itemsToDelete.length > 0) {
+          promises.push(
+            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete })
+          );
+        }
+
+        if (itemsToCreate.length > 0) {
+          promises.push(
+            createParameterItemsMutation.mutateAsync({ items: itemsToCreate })
+          );
+        }
+
+        if (itemsToUpdate.length > 0) {
+          promises.push(
+            updateParameterItemsMutation.mutateAsync({ updates: itemsToUpdate })
+          );
+        }
 
         await Promise.all(promises);
         toast.success("Parameter updated successfully!");

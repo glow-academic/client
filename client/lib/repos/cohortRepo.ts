@@ -1,6 +1,5 @@
-
-import { createInsertSchema } from "drizzle-zod";
 import { eq } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { cohorts } from "@/utils/drizzle/schema";
@@ -15,7 +14,9 @@ export type CohortUpdate = Partial<CohortCreate>;
 export const CohortCreateSchema = createInsertSchema(cohorts);
 export const CohortUpdateSchema = CohortCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const cohortRepo = {
   async create(payload: CohortCreate) {
@@ -26,27 +27,59 @@ export const cohortRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(cohorts).orderBy(cohorts.createdAt ?? cohorts.id);
+    return db
+      .select()
+      .from(cohorts)
+      .orderBy(cohorts.createdAt ?? cohorts.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(cohorts).where(eq(cohorts.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Cohort with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(cohorts)
+      .where(eq(cohorts.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Cohort with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: CohortUpdate) {
     const db = await getDb();
-    const rows = await db.update(cohorts).set(patch).where(eq(cohorts.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Cohort with id " + id + " not found");
+    const rows = await db
+      .update(cohorts)
+      .set(patch)
+      .where(eq(cohorts.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Cohort with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
     const rows = await db.delete(cohorts).where(eq(cohorts.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Cohort with id " + id + " not found");
+    if (!rows[0])
+      throw HttpError.notFound("Cohort with id " + id + " not found");
   },
 
+  async updateMany(updates: Array<{ id: string } & CohortUpdate>) {
+    const db = await getDb();
+    if (!Array.isArray(updates) || updates.length === 0) return [];
 
+    const results = await Promise.all(
+      updates.map(async (update) => {
+        const { id, ...patch } = update;
+        const rows = await db
+          .update(cohorts)
+          .set(patch)
+          .where(eq(cohorts.id, id))
+          .returning();
+        if (!rows[0])
+          throw HttpError.notFound("Cohort with id " + id + " not found");
+        return rows[0];
+      })
+    );
+    return results;
+  },
 };
