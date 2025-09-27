@@ -1,7 +1,7 @@
 /**
  * MessagesPerSession.tsx
- * This component displays the messages per session for the agents.
- * @AshokSaravanan222 & @siladiea
+ * Displays the messages per session metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateMessagesPerSession } from "@/utils/analytics/header";
 import { MessageSquare } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,13 @@ import {
   YAxis,
 } from "recharts";
 
+import { computeCurrent, MetricResponse, TrendData, AnalyticsFilters } from "@/lib/analytics";
+import {
+  useAnalyticsMessagesPerSession,
+} from "@/lib/api/hooks/analytics";
+
 export interface MessagesPerSessionProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -76,60 +78,70 @@ const COLOR_CONFIGS = {
 };
 
 export default function MessagesPerSession({
-  filteredData,
+  filters,
   thresholds,
 }: MessagesPerSessionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const messages = filteredData?.messages;
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsMessagesPerSession(
+    filters,
+    true
+  );
 
-  // Calculate messages per session using utility function
-  const messagesPerSessionResult = useMemo(() => {
-    if (!filteredData || !messages) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { averageMessagesPerSession, messagesTrend, hasDataAvailable } =
+    useMemo(() => {
+      const resp = data as MetricResponse | undefined;
+      if (!resp) {
+        return {
+          averageMessagesPerSession: 0,
+          messagesTrend: [] as TrendData[],
+          hasDataAvailable: false,
+        };
+      }
 
-    return calculateMessagesPerSession(messages, filteredData);
-  }, [filteredData, messages]);
+      // Use all data points for aggregate view
+      const points = resp.dataPoints;
+      const current = computeCurrent(resp.method, points); // returns number for avg/sum, etc.
 
-  const {
-    currentValue: averageMessagesPerSession,
-    trendData: messagesTrend,
-    hasData: hasDataAvailable,
-  } = messagesPerSessionResult;
+      return {
+        averageMessagesPerSession: Number.isFinite(current)
+          ? Math.round(current)
+          : 0,
+        messagesTrend: resp.trendData ?? [],
+        hasDataAvailable: !!resp.hasData && points.length > 0,
+      };
+    }, [data]);
 
-  // Determine color based on messages per session and thresholds
-  const getColorConfig = (avgMessages: number) => {
+  // 3) Color config
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (avgMessages < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (avgMessages < thresholds.warning) return COLOR_CONFIGS.warning;
+    if (averageMessagesPerSession < thresholds.danger)
+      return COLOR_CONFIGS.danger;
+    if (averageMessagesPerSession < thresholds.warning)
+      return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [averageMessagesPerSession, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(averageMessagesPerSession);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (messagesTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || messagesTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = messagesTrend.slice(-3);
     const earlierData = messagesTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -139,17 +151,46 @@ export default function MessagesPerSession({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `Messages per session ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
+  }, [hasDataAvailable, messagesTrend]);
 
-  const trendAnalysis = getTrendAnalysis();
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            Messages Per Session
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
 
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            Messages Per Session
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
@@ -173,29 +214,29 @@ export default function MessagesPerSession({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={messagesTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? value.toFixed(1) : value,
-                      name === "value" ? "Avg Messages" : "Sessions",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={messagesTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? Math.round(value * 10) / 10 : value,
+                    name === "value" ? "Avg Messages" : "Sessions",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  name="value"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">

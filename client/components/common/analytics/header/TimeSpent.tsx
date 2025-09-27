@@ -1,7 +1,7 @@
 /**
  * TimeSpent.tsx
- * This component displays the time spent for the agents.
- * @AshokSaravanan222 & @siladiea
+ * Displays the time spent metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateTimeSpent } from "@/utils/analytics/header";
 import { Timer } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,16 @@ import {
   YAxis,
 } from "recharts";
 
+import {
+  AnalyticsFilters,
+  computeCurrent,
+  MetricResponse,
+  TrendData,
+} from "@/lib/analytics";
+import { useAnalyticsTimeSpent } from "@/lib/api/hooks/analytics";
+
 export interface TimeSpentProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -75,59 +80,60 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function TimeSpent({
-  filteredData,
-  thresholds,
-}: TimeSpentProps) {
+export default function TimeSpent({ filters, thresholds }: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Calculate time spent using utility function
-  const timeSpentResult = useMemo(() => {
-    if (!filteredData) {
-      return { currentValue: 0, trendData: [], hasData: false };
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsTimeSpent(filters, true);
+
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { totalTimeSpent, timeSpentTrend, hasDataAvailable } = useMemo(() => {
+    const resp = data as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        totalTimeSpent: 0,
+        timeSpentTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
     }
 
-    return calculateTimeSpent(filteredData);
-  }, [filteredData]);
+    // Use all data points for aggregate view
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp["method"], points); // returns number for avg/sum, etc.
 
-  const {
-    currentValue: totalTimeSpent,
-    trendData: timeSpentTrend,
-    hasData: hasDataAvailable,
-  } = timeSpentResult;
+    return {
+      totalTimeSpent: Number.isFinite(current) ? Math.round(current) : 0,
+      timeSpentTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  }, [data]);
 
-  // Determine color based on time spent and thresholds (more time is better)
-  const getColorConfig = (timeSpent: number) => {
+  // 3) Color config
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (timeSpent < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (timeSpent < thresholds.warning) return COLOR_CONFIGS.warning;
+    if (totalTimeSpent < thresholds.danger) return COLOR_CONFIGS.danger;
+    if (totalTimeSpent < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [totalTimeSpent, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(totalTimeSpent);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (timeSpentTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || timeSpentTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = timeSpentTrend.slice(-3);
     const earlierData = timeSpentTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -137,11 +143,8 @@ export default function TimeSpent({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `Time spent ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
-
-  const trendAnalysis = getTrendAnalysis();
+  }, [hasDataAvailable, timeSpentTrend]);
 
   // Format time for display
   const formatTime = (seconds: number) => {
@@ -161,11 +164,41 @@ export default function TimeSpent({
     return `${hours}h ${minutes}m`;
   };
 
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Time Spent</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            Time Spent
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Time Spent</CardTitle>
@@ -187,29 +220,29 @@ export default function TimeSpent({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeSpentTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? formatTime(value) : value,
-                      name === "value" ? "Time Spent" : "Sessions",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timeSpentTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? formatTime(value) : value,
+                    name === "value" ? "Time Spent" : "Sessions",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  name="value"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">

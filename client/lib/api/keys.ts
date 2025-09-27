@@ -160,34 +160,74 @@ export const standardKeys = {
   list: (filters?: unknown) => [...standardKeys.all, { filters }] as const,
   detail: (id: string | number) => [...standardKeys.all, String(id)] as const,
 };
-export const analyticsLeaderboardKeys = {
-  all: ["analytics:leaderboard"] as const,
+
+// New analytics keys for header metrics
+export const analyticsAverageScoreKeys = {
+  all: ["analytics:header:average-score"] as const,
   list: (filters?: unknown) =>
-    [...analyticsLeaderboardKeys.all, { filters }] as const,
+    [...analyticsAverageScoreKeys.all, { filters }] as const,
 };
-export const analyticsReportsKeys = {
-  all: ["analytics:reports"] as const,
+export const analyticsCompletionPercentageKeys = {
+  all: ["analytics:header:completion-percentage"] as const,
   list: (filters?: unknown) =>
-    [...analyticsReportsKeys.all, { filters }] as const,
+    [...analyticsCompletionPercentageKeys.all, { filters }] as const,
 };
-export const analyticsDashboardKeys = {
-  all: ["analytics:dashboard"] as const,
+export const analyticsFirstAttemptPassRateKeys = {
+  all: ["analytics:header:first-attempt-pass-rate"] as const,
   list: (filters?: unknown) =>
-    [...analyticsDashboardKeys.all, { filters }] as const,
+    [...analyticsFirstAttemptPassRateKeys.all, { filters }] as const,
 };
-export const analyticsHomeKeys = {
-  all: ["analytics:home"] as const,
-  list: (filters?: unknown) => [...analyticsHomeKeys.all, { filters }] as const,
-};
-export const analyticsPracticeKeys = {
-  all: ["analytics:practice"] as const,
+export const analyticsHighestScoreKeys = {
+  all: ["analytics:header:highest-score"] as const,
   list: (filters?: unknown) =>
-    [...analyticsPracticeKeys.all, { filters }] as const,
+    [...analyticsHighestScoreKeys.all, { filters }] as const,
 };
-export const analyticsHistoryKeys = {
-  all: ["analytics:history"] as const,
+export const analyticsMessagesPerSessionKeys = {
+  all: ["analytics:header:messages-per-session"] as const,
   list: (filters?: unknown) =>
-    [...analyticsHistoryKeys.all, { filters }] as const,
+    [...analyticsMessagesPerSessionKeys.all, { filters }] as const,
+};
+export const analyticsPersonaResponseTimesKeys = {
+  all: ["analytics:header:persona-response-times"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsPersonaResponseTimesKeys.all, { filters }] as const,
+};
+export const analyticsSessionEfficiencyKeys = {
+  all: ["analytics:header:session-efficiency"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsSessionEfficiencyKeys.all, { filters }] as const,
+};
+export const analyticsStagnationRateKeys = {
+  all: ["analytics:header:stagnation-rate"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsStagnationRateKeys.all, { filters }] as const,
+};
+export const analyticsTimeSpentKeys = {
+  all: ["analytics:header:time-spent"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsTimeSpentKeys.all, { filters }] as const,
+};
+export const analyticsTotalAttemptsKeys = {
+  all: ["analytics:header:total-attempts"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsTotalAttemptsKeys.all, { filters }] as const,
+};
+
+// New analytics keys for leaderboard metrics
+export const analyticsImprovementPerDayKeys = {
+  all: ["analytics:leaderboard:improvement-per-day"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsImprovementPerDayKeys.all, { filters }] as const,
+};
+export const analyticsPerfectScoresKeys = {
+  all: ["analytics:leaderboard:perfect-scores"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsPerfectScoresKeys.all, { filters }] as const,
+};
+export const analyticsQuickestPassKeys = {
+  all: ["analytics:leaderboard:quickest-pass"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsQuickestPassKeys.all, { filters }] as const,
 };
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,

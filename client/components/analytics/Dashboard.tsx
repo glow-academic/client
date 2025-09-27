@@ -33,6 +33,7 @@ import CohortPerformance from "../common/analytics/secondary/CohortPerformance";
 import RubricHeatmap from "../common/analytics/secondary/RubricHeatmap";
 import SkillPerformance from "../common/analytics/secondary/SkillPerformance";
 import SimulationHistory from "../common/history/SimulationHistory";
+import { useAnalytics } from "@/contexts/analytics-context";
 
 interface DashboardProps {
   profileId?: string;
@@ -45,6 +46,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const { data: filteredData, isLoading } = useFilteredAnalyticsData({
     ...(profileId && { profileId }),
   });
+
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   // Threshold data
   const thresholds = {
@@ -70,52 +79,112 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const headerComponents = [
     <AverageScore
       key="average-score"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <CompletionPercentage
       key="completion-percentage"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <HighestScore
       key="highest-score"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <MessagesPerSession
       key="messages-per-session"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <SessionEfficiency
       key="session-efficiency"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <StagnationRate
       key="stagnation-rate"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <TimeSpent
       key="time-spent"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <TotalAttempts
       key="total-attempts"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
   ];

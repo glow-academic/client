@@ -1,7 +1,7 @@
 /**
  * CompletionPercentage.tsx
- * This component displays the completion percentage for the agents.
- * @AshokSaravanan222 & @siladiea
+ * Displays the completion percentage metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateCompletionPercentage } from "@/utils/analytics/header";
 import { Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,13 @@ import {
   YAxis,
 } from "recharts";
 
+import { computeCurrent, MetricResponse, TrendData, AnalyticsFilters } from "@/lib/analytics";
+import {
+  useAnalyticsCompletionPercentage,
+} from "@/lib/api/hooks/analytics";
+
 export interface CompletionPercentageProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -44,7 +46,6 @@ const COLOR_CONFIGS = {
     border: "border-gray-200",
     text: "text-gray-700",
     icon: "text-gray-600",
-    accent: "text-gray-600",
     primary: "#6b7280",
   },
   danger: {
@@ -52,7 +53,6 @@ const COLOR_CONFIGS = {
     border: "border-red-200",
     text: "text-red-700",
     icon: "text-red-600",
-    accent: "text-red-600",
     primary: "#ef4444",
   },
   warning: {
@@ -61,7 +61,6 @@ const COLOR_CONFIGS = {
     border: "border-yellow-200",
     text: "text-yellow-700",
     icon: "text-yellow-600",
-    accent: "text-yellow-600",
     primary: "#eab308",
   },
   success: {
@@ -70,64 +69,71 @@ const COLOR_CONFIGS = {
     border: "border-green-200",
     text: "text-green-700",
     icon: "text-green-600",
-    accent: "text-green-600",
     primary: "#10b981",
   },
 };
 
 export default function CompletionPercentage({
-  filteredData,
+  filters,
   thresholds,
 }: CompletionPercentageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Calculate completion percentage using utility function
-  const completionResult = useMemo(() => {
-    if (!filteredData) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsCompletionPercentage(
+    filters,
+    true
+  );
 
-    return calculateCompletionPercentage(filteredData);
-  }, [filteredData]);
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { completionPercentage, completionTrend, hasDataAvailable } =
+    useMemo(() => {
+      const resp = data as MetricResponse | undefined;
+      if (!resp) {
+        return {
+          completionPercentage: 0,
+          completionTrend: [] as TrendData[],
+          hasDataAvailable: false,
+        };
+      }
 
-  const {
-    currentValue: completionPercentage,
-    trendData: completionTrend,
-    hasData: hasDataAvailable,
-  } = completionResult;
+      // Use all data points for aggregate view (rate -> percent)
+      const points = resp.dataPoints;
+      const current = computeCurrent(resp.method, points); // for 'rate', returns 0..100
 
-  // Determine color based on completion percentage and thresholds
-  const getColorConfig = (percentage: number) => {
+      return {
+        completionPercentage: Number.isFinite(current) ? current : 0,
+        completionTrend: resp.trendData ?? [],
+        hasDataAvailable: !!resp.hasData && points.length > 0,
+      };
+    }, [data]);
+
+  // 3) Color config
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (percentage < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (percentage < thresholds.warning) return COLOR_CONFIGS.warning;
+    if (completionPercentage < thresholds.danger) return COLOR_CONFIGS.danger;
+    if (completionPercentage < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [completionPercentage, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(completionPercentage);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (completionTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || completionTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = completionTrend.slice(-3);
     const earlierData = completionTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -137,17 +143,46 @@ export default function CompletionPercentage({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `Completion percentage ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
+  }, [hasDataAvailable, completionTrend]);
 
-  const trendAnalysis = getTrendAnalysis();
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            Completion Percentage
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
 
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            Completion Percentage
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
@@ -171,29 +206,29 @@ export default function CompletionPercentage({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={completionTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? `${value}%` : value,
-                      name === "value" ? "Completion Rate" : "Total Sessions",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={completionTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? `${Math.round(value)}%` : value,
+                    name === "value" ? "Completion Rate" : "Total Sessions",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  name="value"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">

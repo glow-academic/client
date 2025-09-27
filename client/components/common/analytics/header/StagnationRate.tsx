@@ -1,7 +1,7 @@
 /**
  * StagnationRate.tsx
- * This component displays the stagnation rate for the agents.
- * @AshokSaravanan222 & @siladiea
+ * Displays the stagnation rate metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateStagnationRate } from "@/utils/analytics/header";
 import { TrendingDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,16 @@ import {
   YAxis,
 } from "recharts";
 
+import {
+  AnalyticsFilters,
+  computeCurrent,
+  MetricResponse,
+  TrendData,
+} from "@/lib/analytics";
+import { useAnalyticsStagnationRate } from "@/lib/api/hooks/analytics";
+
 export interface StagnationRateProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -76,60 +81,65 @@ const COLOR_CONFIGS = {
 };
 
 export default function StagnationRate({
-  filteredData,
+  filters,
   thresholds,
 }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const rubrics = filteredData?.rubrics;
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsStagnationRate(
+    filters,
+    true
+  );
 
-  // Calculate stagnation rate using utility function
-  const stagnationRateResult = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return { currentValue: 0, trendData: [], hasData: false };
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { stagnationRate, stagnationTrend, hasDataAvailable } = useMemo(() => {
+    const resp = data as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        stagnationRate: 0,
+        stagnationTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
     }
 
-    return calculateStagnationRate(filteredData, rubrics);
-  }, [filteredData, rubrics]);
+    // Use all data points for aggregate view (rate -> percent)
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp["method"], points); // for 'rate', returns 0..100
 
-  const {
-    currentValue: stagnationRate,
-    trendData: stagnationTrend,
-    hasData: hasDataAvailable,
-  } = stagnationRateResult;
+    return {
+      stagnationRate: Number.isFinite(current) ? current : 0,
+      stagnationTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  }, [data]);
 
-  // Determine color based on stagnation rate and thresholds (lower is better)
-  const getColorConfig = (stagnationRate: number) => {
+  // 3) Color config (lower is better for stagnation rate)
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (stagnationRate > thresholds.danger) return COLOR_CONFIGS.danger;
     if (stagnationRate > thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [stagnationRate, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(stagnationRate);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (stagnationTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || stagnationTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = stagnationTrend.slice(-3);
     const earlierData = stagnationTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -139,17 +149,44 @@ export default function StagnationRate({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `Stagnation rate ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
+  }, [hasDataAvailable, stagnationTrend]);
 
-  const trendAnalysis = getTrendAnalysis();
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Stagnation Rate</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
 
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            Stagnation Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Stagnation Rate</CardTitle>
@@ -171,29 +208,29 @@ export default function StagnationRate({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stagnationTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? `${value}%` : value,
-                      name === "value" ? "Stagnation Rate" : "Attempts",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stagnationTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? `${Math.round(value)}%` : value,
+                    name === "value" ? "Stagnation Rate" : "Attempts",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  name="value"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">

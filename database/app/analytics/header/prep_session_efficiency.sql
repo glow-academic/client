@@ -1,32 +1,34 @@
--- Session Efficiency Analytics Prepared Statement
+-- Session Efficiency Analytics Function
 -- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
 -- Note: Define per-session efficiency as:
 -- eff = LEAST(100, GREATEST(0, grade_percent / NULLIF(time_taken_seconds,0) * 300))
 -- i.e., 100% if you score 100 in ≤ 300s, scales down with more time
 
-DO $$
-BEGIN
-    DEALLOCATE prep_session_efficiency;
-EXCEPTION
-    WHEN OTHERS THEN
-        NULL; -- Ignore any error (prepared statement doesn't exist or other issues)
-END $$;
-
-PREPARE prep_session_efficiency (
-  timestamptz, timestamptz, uuid[], profile_role[], text[], uuid
-) AS
+CREATE OR REPLACE FUNCTION analytics_session_efficiency_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
 WITH filt AS (
   SELECT *
   FROM analytics a
-  WHERE a.chat_created_at >= $1
-    AND a.chat_created_at <  $2
-    AND ($3 IS NULL OR a.cohort_ids && $3)
-    AND ($4 IS NULL OR a.profile_role = ANY ($4))
-    AND ($5 IS NULL OR (('general'=ANY($5) AND a.is_general)
-                     OR ('practice'=ANY($5) AND a.is_practice)
-                     OR ('archived'=ANY($5) AND a.is_archived)))
-    AND ($6 IS NULL OR a.profile_id = $6)
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
 eff AS (
   SELECT *,
@@ -61,12 +63,15 @@ data_points AS (
   WHERE eff_value IS NOT NULL
 )
 SELECT jsonb_build_object(
-  'hasData',   COALESCE((SELECT has_data FROM cur), false),
-  'method',    'avg',
-  'trendData', COALESCE((SELECT jsonb_agg(jsonb_build_object(
-                      'date',  date,
-                      'value', round(value)::int,
-                      'count', count
-                   ) ORDER BY date) FROM by_day), '[]'::jsonb),
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
   'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
-) AS result;
+);
+$$;

@@ -1,7 +1,7 @@
 /**
  * PersonaResponseTimes.tsx
- * This component displays the response times for the personas.
- * @AshokSaravanan222 & @siladiea
+ * Displays the persona response times metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculatePersonaResponseTimes } from "@/utils/analytics/header";
 import { Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,16 @@ import {
   YAxis,
 } from "recharts";
 
+import {
+  AnalyticsFilters,
+  computeCurrent,
+  MetricResponse,
+  TrendData,
+} from "@/lib/analytics";
+import { useAnalyticsPersonaResponseTimes } from "@/lib/api/hooks/analytics";
+
 export interface PersonaResponseTimesProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -76,60 +81,66 @@ const COLOR_CONFIGS = {
 };
 
 export default function PersonaResponseTimes({
-  filteredData,
+  filters,
   thresholds,
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const allMessages = filteredData?.messages;
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsPersonaResponseTimes(
+    filters,
+    true
+  );
 
-  // Calculate average response time using utility function
-  const responseTimeResult = useMemo(() => {
-    if (!filteredData || !allMessages) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { averageResponseTime, responseTimeTrend, hasDataAvailable } =
+    useMemo(() => {
+      const resp = data as MetricResponse | undefined;
+      if (!resp) {
+        return {
+          averageResponseTime: 0,
+          responseTimeTrend: [] as TrendData[],
+          hasDataAvailable: false,
+        };
+      }
 
-    return calculatePersonaResponseTimes(allMessages, filteredData);
-  }, [filteredData, allMessages]);
+      // Use all data points for aggregate view
+      const points = resp.dataPoints;
+      const current = computeCurrent(resp["method"], points); // returns number for avg/sum, etc.
 
-  const {
-    currentValue: averageResponseTime,
-    trendData: responseTimeTrend,
-    hasData: hasDataAvailable,
-  } = responseTimeResult;
+      return {
+        averageResponseTime: Number.isFinite(current) ? Math.round(current) : 0,
+        responseTimeTrend: resp.trendData ?? [],
+        hasDataAvailable: !!resp.hasData && points.length > 0,
+      };
+    }, [data]);
 
-  // Determine color based on response time and thresholds (lower is better)
-  const getColorConfig = (responseTime: number) => {
+  // 3) Color config (lower is better for response times)
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (responseTime > thresholds.danger) return COLOR_CONFIGS.danger;
-    if (responseTime > thresholds.warning) return COLOR_CONFIGS.warning;
+    if (averageResponseTime > thresholds.danger) return COLOR_CONFIGS.danger;
+    if (averageResponseTime > thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [averageResponseTime, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(averageResponseTime);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (responseTimeTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || responseTimeTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = responseTimeTrend.slice(-3);
     const earlierData = responseTimeTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -139,11 +150,8 @@ export default function PersonaResponseTimes({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `Response time ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
-
-  const trendAnalysis = getTrendAnalysis();
+  }, [hasDataAvailable, responseTimeTrend]);
 
   // Format response time for display
   const formatResponseTime = (seconds: number) => {
@@ -153,11 +161,43 @@ export default function PersonaResponseTimes({
     return `${minutes}m ${remainingSeconds}s`;
   };
 
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            Persona Response Times
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            Persona Response Times
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
@@ -181,29 +221,29 @@ export default function PersonaResponseTimes({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={responseTimeTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? formatResponseTime(value) : value,
-                      name === "value" ? "Avg Response Time" : "Interactions",
-                    ]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={colorConfig.primary}
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={responseTimeTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? formatResponseTime(value) : value,
+                    name === "value" ? "Avg Response Time" : "Interactions",
+                  ]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  name="value"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">

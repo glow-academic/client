@@ -1,7 +1,7 @@
 /**
  * FirstAttemptPassRate.tsx
- * This component displays the first attempt pass rate for the agents.
- * @AshokSaravanan222 & @siladiea
+ * Displays the first attempt pass rate metric using analytics endpoint.
+ * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
  * 07/23/2025
  */
 "use client";
@@ -14,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateFirstAttemptPassRate } from "@/utils/analytics/header";
 import { Award } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,8 +26,13 @@ import {
   YAxis,
 } from "recharts";
 
+import { computeCurrent, MetricResponse, TrendData, AnalyticsFilters } from "@/lib/analytics";
+import {
+  useAnalyticsFirstAttemptPassRate,
+} from "@/lib/api/hooks/analytics";
+
 export interface FirstAttemptPassRateProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -44,7 +46,6 @@ const COLOR_CONFIGS = {
     border: "border-gray-200",
     text: "text-gray-700",
     icon: "text-gray-600",
-    accent: "text-gray-600",
     primary: "#6b7280",
   },
   danger: {
@@ -52,7 +53,6 @@ const COLOR_CONFIGS = {
     border: "border-red-200",
     text: "text-red-700",
     icon: "text-red-600",
-    accent: "text-red-600",
     primary: "#ef4444",
   },
   warning: {
@@ -61,7 +61,6 @@ const COLOR_CONFIGS = {
     border: "border-yellow-200",
     text: "text-yellow-700",
     icon: "text-yellow-600",
-    accent: "text-yellow-600",
     primary: "#eab308",
   },
   success: {
@@ -70,64 +69,71 @@ const COLOR_CONFIGS = {
     border: "border-green-200",
     text: "text-green-700",
     icon: "text-green-600",
-    accent: "text-green-600",
     primary: "#10b981",
   },
 };
 
 export default function FirstAttemptPassRate({
-  filteredData,
+  filters,
   thresholds,
 }: FirstAttemptPassRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Calculate first attempt pass rate using utility function
-  const firstAttemptResult = useMemo(() => {
-    if (!filteredData) {
-      return { currentValue: 0, trendData: [], hasData: false };
-    }
+  // 1) Fetch data from analytics API
+  const { data, isLoading, isError } = useAnalyticsFirstAttemptPassRate(
+    filters,
+    true
+  );
 
-    return calculateFirstAttemptPassRate(filteredData);
-  }, [filteredData]);
+  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
+  const { firstAttemptPassRate, passRateTrend, hasDataAvailable } =
+    useMemo(() => {
+      const resp = data as MetricResponse | undefined;
+      if (!resp) {
+        return {
+          firstAttemptPassRate: 0,
+          passRateTrend: [] as TrendData[],
+          hasDataAvailable: false,
+        };
+      }
 
-  const {
-    currentValue: firstAttemptPassRate,
-    trendData: passRateTrend,
-    hasData: hasDataAvailable,
-  } = firstAttemptResult;
+      // Use all data points for aggregate view (rate -> percent)
+      const points = resp.dataPoints;
+      const current = computeCurrent(resp.method, points); // for 'rate', returns 0..100
 
-  // Determine color based on pass rate and thresholds
-  const getColorConfig = (rate: number) => {
+      return {
+        firstAttemptPassRate: Number.isFinite(current) ? current : 0,
+        passRateTrend: resp.trendData ?? [],
+        hasDataAvailable: !!resp.hasData && points.length > 0,
+      };
+    }, [data]);
+
+  // 3) Color config
+  const colorConfig = useMemo(() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (rate < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (rate < thresholds.warning) return COLOR_CONFIGS.warning;
+    if (firstAttemptPassRate < thresholds.danger) return COLOR_CONFIGS.danger;
+    if (firstAttemptPassRate < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  };
+  }, [firstAttemptPassRate, thresholds, hasDataAvailable]);
 
-  const colorConfig = getColorConfig(firstAttemptPassRate);
+  // 4) Trend insight (lightweight)
+  const trendAnalysis = useMemo(() => {
+    if (!hasDataAvailable || (passRateTrend?.length ?? 0) < 2) return null;
 
-  const handleCardClick = () => {
-    setIsDialogOpen(true);
-  };
-
-  // Calculate actual trend from data
-  const getTrendAnalysis = () => {
-    if (!hasDataAvailable || passRateTrend.length < 2) return null;
-
-    // Get recent data (last 3 days, 1 week, or 1 month depending on data availability)
     const recentData = passRateTrend.slice(-3);
     const earlierData = passRateTrend.slice(0, 3);
-
-    if (recentData.length === 0 || earlierData.length === 0) return null;
+    if (!recentData.length || !earlierData.length) return null;
 
     const recentAvg =
-      recentData.reduce((sum, day) => sum + day.value, 0) / recentData.length;
+      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      recentData.length;
     const earlierAvg =
-      earlierData.reduce((sum, day) => sum + day.value, 0) / earlierData.length;
+      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
+      earlierData.length;
+
     const change = recentAvg - earlierAvg;
     const changePercent =
       earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-
     if (Math.abs(changePercent) < 1) return null;
 
     const period =
@@ -137,17 +143,46 @@ export default function FirstAttemptPassRate({
           ? "1 week"
           : "1 month";
     const direction = changePercent > 0 ? "increased" : "decreased";
-
     return `First attempt pass rate ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  };
+  }, [hasDataAvailable, passRateTrend]);
 
-  const trendAnalysis = getTrendAnalysis();
+  // 5) UI states
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">
+            First Attempt Pass Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-8 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
+        </CardContent>
+      </Card>
+    );
+  }
 
+  if (isError) {
+    return (
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-red-700">
+            First Attempt Pass Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-red-700">Failed to load.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Render
   return (
     <>
       <Card
         className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
-        onClick={handleCardClick}
+        onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
@@ -171,28 +206,27 @@ export default function FirstAttemptPassRate({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={passRateTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip
-                    formatter={(value: number, name: string) => [
-                      name === "value" ? `${value}%` : value,
-                      name === "value" ? "Pass Rate" : "Total First Attempts",
-                    ]}
-                  />
-                  <Bar
-                    dataKey="value"
-                    fill={colorConfig.primary}
-                    name="value"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={passRateTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    name === "value" ? `${Math.round(value)}%` : value,
+                    name === "value" ? "Pass Rate" : "Total First Attempts",
+                  ]}
+                />
+                <Bar
+                  dataKey="value"
+                  fill={colorConfig.primary}
+                  name="value"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Dynamic Trend Analysis */}
           {trendAnalysis && (
             <div className="p-3 bg-gray-50 dark:bg-gray-950 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">
