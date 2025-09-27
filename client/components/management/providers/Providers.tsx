@@ -6,14 +6,10 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { Cpu, Edit, Plus, Settings, Sparkles, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-
-import { deleteModel } from "@/utils/mutations/models/delete-model";
-import { deleteProvider } from "@/utils/mutations/providers/delete-provider";
 
 import {
   AlertDialog,
@@ -43,12 +39,12 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useProviderColumns } from "@/hooks/use-provider-columns";
+import { useAgents } from "@/lib/api/hooks/agents";
+import { useDeleteModel, useModels } from "@/lib/api/hooks/models";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import { useDeleteProvider, useProviders } from "@/lib/api/hooks/providers";
 import { Model, Provider } from "@/types";
 import { ProvidersDataTable } from "./ProvidersDataTable";
-import { useModels } from "@/lib/api/hooks/models";
-import { useProviders } from "@/lib/api/hooks/providers";
-import { usePersonas } from "@/lib/api/hooks/personas";
-import { useAgents } from "@/lib/api/hooks/agents";
 
 interface ProviderGroup {
   provider: Provider;
@@ -57,7 +53,6 @@ interface ProviderGroup {
 
 export default function Providers() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -72,10 +67,14 @@ export default function Providers() {
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
 
-  const {data: models = [], refetch: refetchModels} = useModels();
-  const {data: providers = []} = useProviders();
-  const {data: personas = []} = usePersonas();
-  const {data: agents = []} = useAgents();
+  // Mutation hooks
+  const deleteModelMutation = useDeleteModel();
+  const deleteProviderMutation = useDeleteProvider();
+
+  const { data: models = [] } = useModels();
+  const { data: providers = [] } = useProviders();
+  const { data: personas = [] } = usePersonas();
+  const { data: agents = [] } = useAgents();
 
   // Get filter options
   const { columns, providerOptions, customModelOptions, statusOptions } =
@@ -86,12 +85,9 @@ export default function Providers() {
 
     setIsDeleting(true);
     try {
-      await deleteModel(deleteItem.id);
+      await deleteModelMutation.mutateAsync(deleteItem.id);
 
       toast.success("Model deleted successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["models"] });
-      refetchModels();
     } catch (error) {
       log.error("provider.model.delete.failed", {
         message: "Error deleting model",
@@ -138,13 +134,9 @@ export default function Providers() {
 
     setIsDeletingProvider(true);
     try {
-      await deleteProvider(deleteProviderItem.id);
+      await deleteProviderMutation.mutateAsync(deleteProviderItem.id);
 
       toast.success("Provider deleted successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["providers"] });
-      queryClient.invalidateQueries({ queryKey: ["models"] });
-      refetchModels();
     } catch (error) {
       log.error("provider.delete.failed", {
         message: "Error deleting provider",
@@ -371,15 +363,19 @@ export default function Providers() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting || deleteModelMutation.isPending}
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting}
+                disabled={isDeleting || deleteModelMutation.isPending}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting || deleteModelMutation.isPending
+                  ? "Deleting..."
+                  : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -402,15 +398,23 @@ export default function Providers() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeletingProvider}>
+              <AlertDialogCancel
+                disabled={
+                  isDeletingProvider || deleteProviderMutation.isPending
+                }
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteProvider}
-                disabled={isDeletingProvider}
+                disabled={
+                  isDeletingProvider || deleteProviderMutation.isPending
+                }
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isDeletingProvider ? "Deleting..." : "Delete"}
+                {isDeletingProvider || deleteProviderMutation.isPending
+                  ? "Deleting..."
+                  : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

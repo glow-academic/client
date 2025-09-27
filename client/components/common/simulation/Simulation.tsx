@@ -5,7 +5,6 @@
  * 05/20/2025
  */
 "use client";
-import { useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -41,21 +40,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import {
+  useCreateSimulation,
+  useSimulation,
+  useUpdateSimulation,
+} from "@/lib/api/hooks/simulations";
 import { Rubric, Scenario } from "@/types";
-import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
-import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   SimulationScenario,
   SimulationScenarioPicker,
 } from "./SimulationScenarioPicker";
-import { useSimulation } from "@/lib/api/hooks/simulations";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -81,8 +82,11 @@ interface FormErrors {
 }
 
 export default function Simulation({ simulationId }: SimulationProps) {
-  const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
+
+  // Mutation hooks
+  const createSimulationMutation = useCreateSimulation();
+  const updateSimulationMutation = useUpdateSimulation();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -113,12 +117,17 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const {data: simulation, isLoading: isLoadingSimulation} = useSimulation(simulationId!);
-  const {data: rubrics = [], isLoading: isLoadingRubrics} = useRubrics();
-  const {data: scenarios = [], isLoading: isLoadingScenarios} = useScenarios();
-  const {data: parameters = [], isLoading: isLoadingParameters} = useParameters();
-  const {data: parameterItems = [], isLoading: isLoadingParameterItems} = useParameterItems();
-  const {data: cohorts = []} = useCohorts();
+  const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
+    simulationId!
+  );
+  const { data: rubrics = [], isLoading: isLoadingRubrics } = useRubrics();
+  const { data: scenarios = [], isLoading: isLoadingScenarios } =
+    useScenarios();
+  const { data: parameters = [], isLoading: isLoadingParameters } =
+    useParameters();
+  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
+    useParameterItems();
+  const { data: cohorts = [] } = useCohorts();
 
   const isLoading =
     isLoadingSimulation ||
@@ -251,15 +260,16 @@ export default function Simulation({ simulationId }: SimulationProps) {
     setIsSubmitting(true);
 
     try {
-      let result;
       const targetSimulationId = simulationId || editingSimulationId;
+
       if (targetSimulationId) {
         // Save only the scenarios that correspond to the current practiceSimulation state
         const scenarioIdsToSave = formData?.practiceSimulation
           ? practiceScenarioIds
           : regularScenarioIds;
 
-        result = await updateSimulation(targetSimulationId, {
+        await updateSimulationMutation.mutateAsync({
+          id: targetSimulationId,
           ...formData,
           scenarioIds: scenarioIdsToSave,
           description: formData?.description ?? "",
@@ -274,7 +284,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           ? practiceScenarioIds
           : regularScenarioIds;
 
-        result = await createSimulation({
+        await createSimulationMutation.mutateAsync({
           title: formData?.title || "",
           description: formData?.description ?? "",
           rubricId: formData?.rubricId || "",
@@ -289,24 +299,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         toast.success("Simulation created successfully!");
       }
 
-      if (!result) {
-        toast.error("Failed to create simulation");
-        return;
-      }
-
       resetFormAndState();
-
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ["simulations"] });
-      if (targetSimulationId) {
-        queryClient.invalidateQueries({
-          queryKey: ["simulation", targetSimulationId],
-        });
-      }
-      if (result?.id) {
-        queryClient.invalidateQueries({ queryKey: ["simulation", result.id] });
-      }
-
       router.push(`/create/simulations`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
@@ -831,10 +824,18 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
+            disabled={
+              isSubmitting ||
+              isReadonly ||
+              (isEditMode && !hasChanges) ||
+              createSimulationMutation.isPending ||
+              updateSimulationMutation.isPending
+            }
             className="min-w-[120px]"
           >
-            {isSubmitting ? (
+            {isSubmitting ||
+            createSimulationMutation.isPending ||
+            updateSimulationMutation.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {simulationId || editingSimulationId
@@ -861,15 +862,19 @@ export default function Simulation({ simulationId }: SimulationProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
+            <AlertDialogCancel
+              disabled={isSubmitting || updateSimulationMutation.isPending}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmUpdate}
-              disabled={isSubmitting}
+              disabled={isSubmitting || updateSimulationMutation.isPending}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isSubmitting ? "Updating..." : "Update"}
+              {isSubmitting || updateSimulationMutation.isPending
+                ? "Updating..."
+                : "Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

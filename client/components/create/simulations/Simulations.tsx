@@ -6,14 +6,10 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-
-import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
-import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 
 import {
   AlertDialog,
@@ -30,16 +26,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useScenarios } from "@/lib/api/hooks/scenarios";
+import {
+  useCreateSimulation,
+  useDeleteSimulation,
+  useSimulations,
+} from "@/lib/api/hooks/simulations";
 import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
 
 export function Simulations() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -49,10 +48,14 @@ export function Simulations() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  const {data: simulations = [], refetch: refetchSimulations} = useSimulations();
-  const {data: scenarios = []} = useScenarios();
-  const {data: rubrics = []} = useRubrics();
-  const {data: cohorts = []} = useCohorts();
+  // Mutation hooks
+  const createSimulationMutation = useCreateSimulation();
+  const deleteSimulationMutation = useDeleteSimulation();
+
+  const { data: simulations = [] } = useSimulations();
+  const { data: scenarios = [] } = useScenarios();
+  const { data: rubrics = [] } = useRubrics();
+  const { data: cohorts = [] } = useCohorts();
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {
@@ -123,12 +126,9 @@ export function Simulations() {
           name: deleteItem.name,
         },
       });
-      await deleteSimulation(deleteItem.id);
+      await deleteSimulationMutation.mutateAsync(deleteItem.id);
 
       toast.success("Simulation deleted successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["simulations"] });
-      refetchSimulations();
       await log.info("simulation.delete.success", {
         message: "Simulation deleted successfully",
         subject: { entityType: "simulation", entityId: deleteItem.id },
@@ -186,11 +186,9 @@ export function Simulations() {
         defaultSimulation: false, // Duplicated simulations are not default
       };
 
-      await createSimulation(duplicatedSimulation);
+      await createSimulationMutation.mutateAsync(duplicatedSimulation);
 
       toast.success("Simulation duplicated successfully");
-      queryClient.invalidateQueries({ queryKey: ["simulations"] });
-      refetchSimulations();
       await log.info("simulation.duplicate.success", {
         message: "Simulation duplicated successfully",
         subject: { entityType: "simulation", entityId: simulation.id },
@@ -277,7 +275,10 @@ export function Simulations() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicate(simulation)}
-                disabled={isDuplicating === simulation.id}
+                disabled={
+                  isDuplicating === simulation.id ||
+                  createSimulationMutation.isPending
+                }
                 aria-label={`Duplicate ${simulation.title}`}
               >
                 {isDuplicating === simulation.id ? (
@@ -339,13 +340,19 @@ export function Simulations() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting || deleteSimulationMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isDeleting || deleteSimulationMutation.isPending}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting || deleteSimulationMutation.isPending
+                ? "Deleting..."
+                : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

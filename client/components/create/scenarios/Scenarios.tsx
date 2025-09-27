@@ -41,11 +41,13 @@ import {
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParameters } from "@/lib/api/hooks/parameters";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import {
+  useCreateScenario,
+  useDeleteScenario,
+  useScenarios,
+} from "@/lib/api/hooks/scenarios";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import { Scenario } from "@/types";
-import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
-import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
 interface GroupedScenario {
@@ -66,7 +68,11 @@ export function Scenarios() {
     new Set()
   );
 
-  const { data: scenarios = [], refetch: refetchScenarios } = useScenarios();
+  // Mutation hooks
+  const createScenarioMutation = useCreateScenario();
+  const deleteScenarioMutation = useDeleteScenario();
+
+  const { data: scenarios = [] } = useScenarios();
   const { data: simulations = [] } = useSimulations();
   const { data: parameters = [] } = useParameters();
   const { data: parameterItems = [] } = useParameterItems();
@@ -142,7 +148,7 @@ export function Scenarios() {
 
     setIsDeleting(true);
     try {
-      await deleteScenario(deleteItem.id);
+      await deleteScenarioMutation.mutateAsync(deleteItem.id);
       await log.info("scenario.delete.success", {
         message: "Scenario deleted successfully",
         subject: { entityType: "scenario", entityId: deleteItem.id },
@@ -153,7 +159,6 @@ export function Scenarios() {
         },
       });
       toast.success("Scenario deleted successfully");
-      refetchScenarios();
     } catch (error) {
       await log.error("scenario.delete.failed", {
         message: "Error deleting scenario",
@@ -172,7 +177,7 @@ export function Scenarios() {
   const handleDuplicate = async (scenario: Scenario) => {
     setIsDuplicating(scenario.id);
     try {
-      await createScenario({
+      await createScenarioMutation.mutateAsync({
         ...scenario,
         id: undefined,
         createdAt: undefined,
@@ -192,7 +197,6 @@ export function Scenarios() {
         },
       });
       toast.success(`Scenario "${scenario.name}" duplicated successfully`);
-      refetchScenarios();
     } catch (error) {
       await log.error("scenario.duplicate.failed", {
         message: "Error duplicating scenario",
@@ -379,7 +383,10 @@ export function Scenarios() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDuplicate(scenario)}
-                    disabled={isDuplicating === scenario.id}
+                    disabled={
+                      isDuplicating === scenario.id ||
+                      createScenarioMutation.isPending
+                    }
                   >
                     <Copy className="h-4 w-4" />
                     {isDuplicating === scenario.id ? "..." : ""}
@@ -418,7 +425,10 @@ export function Scenarios() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDuplicate(scenario)}
-                    disabled={isDuplicating === scenario.id}
+                    disabled={
+                      isDuplicating === scenario.id ||
+                      createScenarioMutation.isPending
+                    }
                   >
                     <Copy className="h-4 w-4" />
                     {isDuplicating === scenario.id ? "..." : ""}

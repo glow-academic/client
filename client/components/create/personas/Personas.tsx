@@ -12,7 +12,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { usePersonaColumns } from "@/hooks/use-persona-columns";
-import { deletePersona } from "@/utils/mutations/personas/delete-persona";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 import {
@@ -35,11 +34,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { Persona } from "@/types";
-import { createPersona } from "@/utils/mutations/personas/create-persona";
-import { PersonasDataTable } from "./PersonasDataTable";
-import { usePersonas } from "@/lib/api/hooks/personas";
+import {
+  useCreatePersona,
+  useDeletePersona,
+  usePersonas,
+} from "@/lib/api/hooks/personas";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { Persona } from "@/types";
+import { PersonasDataTable } from "./PersonasDataTable";
 
 // Utility function to generate gradient from hex color
 const generateGradientFromHex = (hexColor: string): string => {
@@ -73,8 +75,12 @@ export default function Personas() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  const {data: personas = [], refetch: refetchPersonas} = usePersonas();
-  const {data: scenarios = []} = useScenarios();
+  // Mutation hooks
+  const createPersonaMutation = useCreatePersona();
+  const deletePersonaMutation = useDeletePersona();
+
+  const { data: personas = [] } = usePersonas();
+  const { data: scenarios = [] } = useScenarios();
 
   // Get table columns and filter options
   const {
@@ -106,7 +112,7 @@ export default function Personas() {
 
     setIsDeleting(true);
     try {
-      await deletePersona(deleteItem.id);
+      await deletePersonaMutation.mutateAsync(deleteItem.id);
       await log.info("persona.delete.success", {
         message: "Persona deleted successfully",
         subject: { entityType: "persona", entityId: deleteItem.id },
@@ -117,7 +123,6 @@ export default function Personas() {
         },
       });
       toast.success("Persona deleted successfully");
-      refetchPersonas();
     } catch (error) {
       await log.error("persona.delete.failed", {
         message: "Error deleting persona",
@@ -136,7 +141,7 @@ export default function Personas() {
   const handleDuplicate = async (persona: Persona) => {
     setIsDuplicating(persona.id);
     try {
-      await createPersona({
+      await createPersonaMutation.mutateAsync({
         ...persona,
         id: undefined,
         createdAt: undefined,
@@ -155,7 +160,6 @@ export default function Personas() {
         },
       });
       toast.success(`Persona "${persona.name}" duplicated successfully`);
-      refetchPersonas();
     } catch (error) {
       await log.error("persona.duplicate.failed", {
         message: "Error duplicating persona",
@@ -292,7 +296,10 @@ export default function Personas() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleDuplicate(persona)}
-                disabled={isDuplicating === persona.id}
+                disabled={
+                  isDuplicating === persona.id ||
+                  createPersonaMutation.isPending
+                }
               >
                 <Copy className="h-4 w-4" />
                 {isDuplicating === persona.id ? "..." : ""}
@@ -353,15 +360,19 @@ export default function Personas() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
+              <AlertDialogCancel
+                disabled={isDeleting || deletePersonaMutation.isPending}
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                disabled={isDeleting}
+                disabled={isDeleting || deletePersonaMutation.isPending}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting || deletePersonaMutation.isPending
+                  ? "Deleting..."
+                  : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -35,10 +35,14 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
 import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
+import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
+import {
+  useDeleteProfile,
+  useProfiles,
+  useUpdateProfile,
+} from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
-import { deleteProfiles } from "@/utils/mutations/profiles/delete-profiles";
-import { updateProfiles } from "@/utils/mutations/profiles/update-profiles";
-import { useQueryClient } from "@tanstack/react-query";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
@@ -46,9 +50,6 @@ import NewStaff from "./NewStaff";
 import { StaffDataTable } from "./StaffDataTable";
 import StaffEdit from "./StaffEdit";
 import { StaffFilterDialog } from "./StaffFilterDialog";
-import { useProfiles } from "@/lib/api/hooks/profiles";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
-import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
 
 export default function Staff() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -58,7 +59,10 @@ export default function Staff() {
     StaffData[]
   >([]);
   const { effectiveProfile } = useProfile();
-  const queryClient = useQueryClient();
+
+  // Mutation hooks
+  const deleteProfileMutation = useDeleteProfile();
+  const updateProfileMutation = useUpdateProfile();
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -84,10 +88,13 @@ export default function Staff() {
   const [deleteStaffMember, setDeleteStaffMember] =
     React.useState<StaffData | null>(null);
 
-  const { data: allProfiles = [], isLoading: isLoadingProfiles } = useProfiles();
+  const { data: allProfiles = [], isLoading: isLoadingProfiles } =
+    useProfiles();
   const { data: allCohorts = [], isLoading: isLoadingCohorts } = useCohorts();
 
-  const {data: recentRuns = []} = useModelRunsByProfileIdBatch(allProfiles.map((p: Profile) => p.id));
+  const { data: recentRuns = [] } = useModelRunsByProfileIdBatch(
+    allProfiles.map((p: Profile) => p.id)
+  );
 
   // Listen for layout "Create Staff" button broadcast
   React.useEffect(() => {
@@ -519,7 +526,6 @@ export default function Staff() {
           <NewStaff
             onDone={() => {
               setShowCreateModal(false);
-              queryClient.invalidateQueries({ queryKey: ["profiles"] });
             }}
           />
         </DialogContent>
@@ -543,7 +549,6 @@ export default function Staff() {
               canToggleDefault={effectiveProfile?.role === "superadmin"}
               onDone={() => {
                 setEditProfileId(null);
-                queryClient.invalidateQueries({ queryKey: ["profiles"] });
               }}
             />
           )}
@@ -625,9 +630,14 @@ export default function Staff() {
                 }
                 try {
                   if (Object.keys(updates).length > 0) {
-                    await updateProfiles(
-                      selectedStaffIds,
-                      updates as { [key: string]: unknown }
+                    // Update each profile individually
+                    await Promise.all(
+                      selectedStaffIds.map((profileId) =>
+                        updateProfileMutation.mutateAsync({
+                          id: profileId,
+                          ...(updates as { [key: string]: unknown }),
+                        })
+                      )
                     );
                   }
                   toast.success("Staff updated successfully");
@@ -635,16 +645,6 @@ export default function Staff() {
                   setSelectedStaffIds([]);
                   setBulkRole("__keep__");
                   setBulkReqPerDay("");
-                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
-                  // Invalidate individual profile queries for all affected profiles
-                  selectedStaffIds.forEach((profileId) => {
-                    queryClient.invalidateQueries({
-                      queryKey: ["profile", profileId],
-                    });
-                    queryClient.invalidateQueries({
-                      queryKey: ["effectiveProfile", profileId],
-                    });
-                  });
                 } catch {
                   toast.error("Failed to update staff");
                 }
@@ -769,20 +769,15 @@ export default function Staff() {
                     setShowBulkDeleteDialog(false);
                     return;
                   }
-                  await deleteProfiles(deletableIds);
+                  // Delete each profile individually
+                  await Promise.all(
+                    deletableIds.map((profileId) =>
+                      deleteProfileMutation.mutateAsync(profileId)
+                    )
+                  );
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
                   setShowBulkDeleteDialog(false);
-                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
-                  // Invalidate individual profile queries for all deleted profiles
-                  deletableIds.forEach((profileId) => {
-                    queryClient.invalidateQueries({
-                      queryKey: ["profile", profileId],
-                    });
-                    queryClient.invalidateQueries({
-                      queryKey: ["effectiveProfile", profileId],
-                    });
-                  });
                 } catch {
                   toast.error("Failed to delete selected staff");
                 }
@@ -896,18 +891,10 @@ export default function Staff() {
                 }
 
                 try {
-                  await deleteProfiles([deleteStaffMember.id]);
+                  await deleteProfileMutation.mutateAsync(deleteStaffMember.id);
                   toast.success("User deleted successfully");
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);
-                  queryClient.invalidateQueries({ queryKey: ["profiles"] });
-                  // Invalidate individual profile queries for the deleted profile
-                  queryClient.invalidateQueries({
-                    queryKey: ["profile", deleteStaffMember.id],
-                  });
-                  queryClient.invalidateQueries({
-                    queryKey: ["effectiveProfile", deleteStaffMember.id],
-                  });
                 } catch {
                   toast.error("Failed to delete user");
                 }

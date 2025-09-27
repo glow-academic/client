@@ -6,7 +6,6 @@
  */
 
 "use client";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -50,15 +49,19 @@ import { UploadCloud } from "lucide-react";
 
 import TagSelector from "@/components/common/tags/TagSelector";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
-import { useDocuments } from "@/lib/api/hooks/documents";
+import {
+  useDeleteDocument,
+  useDocuments,
+  useUpdateDocument,
+} from "@/lib/api/hooks/documents";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
-import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { log } from "@/utils/logger";
-import { updateDocument } from "@/utils/mutations/documents/update-document";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
 export default function Documents() {
-  const queryClient = useQueryClient();
+  // Mutation hooks
+  const deleteDocumentMutation = useDeleteDocument();
+  const updateDocumentMutation = useUpdateDocument();
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -196,7 +199,7 @@ export default function Documents() {
 
       setIsDeleting(true);
       try {
-        await deleteDocument(editingDocument.id);
+        await deleteDocumentMutation.mutateAsync(editingDocument.id);
         await log.info("document.delete.success", {
           message: "Document deleted",
           subject: { entityType: "document", entityId: editingDocument.id },
@@ -205,7 +208,6 @@ export default function Documents() {
         toast.success("Document deleted successfully");
         setShowDeleteDialog(false);
         setEditingDocument(null);
-        queryClient.invalidateQueries({ queryKey: ["documents"] });
       } catch (error) {
         await log.error("document.delete.failed", {
           message: "Error deleting document",
@@ -235,7 +237,7 @@ export default function Documents() {
       setIsDeleting(true);
       try {
         for (const documentId of deletableDocuments) {
-          await deleteDocument(documentId);
+          await deleteDocumentMutation.mutateAsync(documentId);
           await log.info("document.delete.success", {
             message: "Document deleted",
             subject: { entityType: "document", entityId: documentId },
@@ -253,7 +255,6 @@ export default function Documents() {
         toast.success(message);
         setSelectedDocuments([]);
         setShowDeleteDialog(false);
-        queryClient.invalidateQueries({ queryKey: ["documents"] });
       } catch (error) {
         await log.error("document.delete_many.failed", {
           message: "Error deleting documents",
@@ -274,7 +275,8 @@ export default function Documents() {
 
     setIsUpdating(true);
     try {
-      await updateDocument(editingDocument.id, {
+      await updateDocumentMutation.mutateAsync({
+        id: editingDocument.id,
         name: editingDocument.name,
         type: editingDocument.type,
         tags: editingDocument.tags,
@@ -285,7 +287,6 @@ export default function Documents() {
       toast.success("Document updated successfully");
       setShowEditDialog(false);
       setEditingDocument(null);
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
     } catch (error) {
       await log.error("document.update.failed", {
         message: "Error updating document",
@@ -306,9 +307,6 @@ export default function Documents() {
     if (selectedDocuments.length === 0) return;
     setIsBulkUpdating(true);
     try {
-      const { updateDocument } = await import(
-        "@/utils/mutations/documents/update-document"
-      );
       for (const id of selectedDocuments) {
         const updates: Partial<DocumentInsert> = {
           updatedAt: new Date().toISOString(),
@@ -318,13 +316,18 @@ export default function Documents() {
         // Apply tags if the user interacted with tags selector (we treat presence of array as intentional)
         if (Array.isArray(bulkTags)) updates.tags = bulkTags;
         if (Object.keys(updates).length > 0) {
-          await updateDocument(id, updates);
+          const mutationData: { id: string } & Partial<DocumentInsert> = { id };
+          if (updates.type !== undefined) mutationData.type = updates.type;
+          if (updates.tags !== undefined) mutationData.tags = updates.tags;
+          if (updates.updatedAt !== undefined)
+            mutationData.updatedAt = updates.updatedAt;
+
+          await updateDocumentMutation.mutateAsync(mutationData);
         }
       }
       toast.success("Documents updated successfully");
       setShowBulkEditDialog(false);
       setSelectedDocuments([]);
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
     } catch (error) {
       await log.error("document.update_many.failed", {
         message: "Error bulk updating documents",
@@ -491,8 +494,13 @@ export default function Documents() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Update"}
+            <Button
+              onClick={handleUpdate}
+              disabled={isUpdating || updateDocumentMutation.isPending}
+            >
+              {isUpdating || updateDocumentMutation.isPending
+                ? "Updating..."
+                : "Update"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -553,8 +561,13 @@ export default function Documents() {
             >
               Cancel
             </Button>
-            <Button onClick={handleBulkUpdate} disabled={isBulkUpdating}>
-              {isBulkUpdating ? "Updating..." : "Apply Changes"}
+            <Button
+              onClick={handleBulkUpdate}
+              disabled={isBulkUpdating || updateDocumentMutation.isPending}
+            >
+              {isBulkUpdating || updateDocumentMutation.isPending
+                ? "Updating..."
+                : "Apply Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -684,11 +697,16 @@ export default function Documents() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting || deleteDocumentMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={
                 isDeleting ||
+                deleteDocumentMutation.isPending ||
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.id)
                   : selectedDocuments.filter((documentId) =>
@@ -697,7 +715,7 @@ export default function Documents() {
               }
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting
+              {isDeleting || deleteDocumentMutation.isPending
                 ? "Deleting..."
                 : editingDocument && !selectedDocuments.length
                   ? "Delete Document"

@@ -5,14 +5,7 @@
  * 05/20/2025
  */
 "use client";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  Check,
-  Loader2,
-  RotateCcw,
-  Settings,
-  Shuffle,
-} from "lucide-react";
+import { Check, Loader2, RotateCcw, Settings, Shuffle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -53,18 +46,20 @@ import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
 import { useProfile } from "@/contexts/profile-context";
+import { useDocuments } from "@/lib/api/hooks/documents";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
+import { usePersonas } from "@/lib/api/hooks/personas";
+import {
+  useCreateScenario,
+  useScenario,
+  useUpdateScenario,
+} from "@/lib/api/hooks/scenarios";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { randomizeScenario } from "@/utils/api/scenarios/randomize";
 import { log } from "@/utils/logger";
-import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
-import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
-import { useDocuments } from "@/lib/api/hooks/documents";
-import { usePersonas } from "@/lib/api/hooks/personas";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import { useScenario } from "@/lib/api/hooks/scenarios";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -86,9 +81,12 @@ export default function Scenario({
   scenarioId,
 }: ScenarioProps) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
   const isEditMode = mode === "edit" && !!scenarioId;
+
+  // Mutation hooks
+  const createScenarioMutation = useCreateScenario();
+  const updateScenarioMutation = useUpdateScenario();
 
   // Form data state
   const initialFormData: Partial<ScenarioType> = {
@@ -114,12 +112,12 @@ export default function Scenario({
     useState<Partial<ScenarioType>>(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
 
-  const {data: documents = []} = useDocuments();
-  const {data: personas = []} = usePersonas();
-  const {data: parameters = []} = useParameters();
-  const {data: parameterItems = []} = useParameterItems();
-  const {data: simulations = []} = useSimulations();
-  const {data: scenario, isLoading} = useScenario(scenarioId!);
+  const { data: documents = [] } = useDocuments();
+  const { data: personas = [] } = usePersonas();
+  const { data: parameters = [] } = useParameters();
+  const { data: parameterItems = [] } = useParameterItems();
+  const { data: simulations = [] } = useSimulations();
+  const { data: scenario, isLoading } = useScenario(scenarioId!);
 
   // Load scenario data if editing
   useEffect(() => {
@@ -447,45 +445,29 @@ export default function Scenario({
       };
 
       if (isEditMode) {
-        await updateScenario(scenarioId!, {
+        await updateScenarioMutation.mutateAsync({
+          id: scenarioId!,
           ...payload,
           updatedAt: new Date().toISOString(),
         });
         toast.success("Scenario updated successfully!");
       } else {
-        await createScenario(payload);
+        await createScenarioMutation.mutateAsync(payload);
         toast.success("Scenario created successfully!");
       }
 
-      // Invalidate all relevant queries to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ["scenarios"] });
-
-      // Invalidate specific scenario query if in edit mode
-      if (isEditMode && scenarioId) {
-        queryClient.invalidateQueries({ queryKey: ["scenario", scenarioId] });
-      }
-
-      // Invalidate simulations queries since scenarios are used by simulations
-      queryClient.invalidateQueries({ queryKey: ["simulations"] });
-
-      // Invalidate analytics queries that depend on scenarios
-      queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
-      queryClient.invalidateQueries({ queryKey: ["simulationChats"] });
-      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-
-      // Invalidate documents queries since scenarios reference documents
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
-
-      // Invalidate personas queries since scenarios reference personas
-      queryClient.invalidateQueries({ queryKey: ["personas"] });
-
-      // Invalidate parameters queries since scenarios reference parameters
-      queryClient.invalidateQueries({ queryKey: ["parameters"] });
-      queryClient.invalidateQueries({ queryKey: ["parameter-items"] });
-
       router.push("/create/scenarios");
     } catch (error) {
+      log.error("scenario.submit.failed", {
+        message: "Error submitting scenario",
+        error,
+        context: {
+          component: "Scenario",
+          function: "handleSubmit",
+          mode: isEditMode ? "edit" : "create",
+          scenarioId,
+        },
+      });
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -969,11 +951,15 @@ export default function Scenario({
             isSubmitting ||
             isGeneratingScenario ||
             (isEditMode && !hasChanges) ||
-            isReadonly
+            isReadonly ||
+            createScenarioMutation.isPending ||
+            updateScenarioMutation.isPending
           }
           className="min-w-[120px]"
         >
-          {isSubmitting ? (
+          {isSubmitting ||
+          createScenarioMutation.isPending ||
+          updateScenarioMutation.isPending ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               {isEditMode ? "Updating..." : "Saving..."}

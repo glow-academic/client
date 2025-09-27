@@ -30,12 +30,13 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
-import { useProfile } from "@/lib/api/hooks/profiles";
+import {
+  useDeleteProfile,
+  useProfile,
+  useUpdateProfile,
+} from "@/lib/api/hooks/profiles";
 import { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
-import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -64,13 +65,17 @@ const useStaffEditBusinessLogic = (
   redirectOnSuccess: boolean,
   onDone?: () => void
 ) => {
-  const queryClient = useQueryClient();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { effectiveProfile } = useEffectiveProfile();
 
-  const {data: targetUser, isLoading: isProfileLoading} = useProfile(profileId);
+  // Mutation hooks
+  const updateProfileMutation = useUpdateProfile();
+  const deleteProfileMutation = useDeleteProfile();
+
+  const { data: targetUser, isLoading: isProfileLoading } =
+    useProfile(profileId);
 
   const isCurrentUserAdmin =
     effectiveProfile?.role === "admin" ||
@@ -89,7 +94,8 @@ const useStaffEditBusinessLogic = (
           formData.reqPerDay === "" || formData.reqPerDay === undefined
             ? null
             : Number(formData.reqPerDay);
-        await updateProfile(profileId, {
+        await updateProfileMutation.mutateAsync({
+          id: profileId,
           firstName: formData.firstName || "",
           lastName: formData.lastName || "",
           alias: formData.alias || "",
@@ -97,11 +103,6 @@ const useStaffEditBusinessLogic = (
           reqPerDay: parsedReqPerDay,
         });
         setHasChanges(false);
-        queryClient.invalidateQueries({ queryKey: ["profiles"] });
-        queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-        queryClient.invalidateQueries({
-          queryKey: ["effectiveProfile", profileId],
-        });
         toast.success("User updated successfully");
         if (redirectOnSuccess) {
           router.push("/management/staff");
@@ -123,18 +124,13 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [profileId, queryClient, router, redirectOnSuccess, onDone]
+    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation]
   );
 
   const handleDelete = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      await deleteProfile(profileId);
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
-      queryClient.invalidateQueries({
-        queryKey: ["effectiveProfile", profileId],
-      });
+      await deleteProfileMutation.mutateAsync(profileId);
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {
@@ -150,7 +146,7 @@ const useStaffEditBusinessLogic = (
     } finally {
       setIsSubmitting(false);
     }
-  }, [profileId, queryClient, router]);
+  }, [profileId, router, deleteProfileMutation]);
 
   const handleBackNavigation = useCallback(() => {
     router.push("/management/staff");

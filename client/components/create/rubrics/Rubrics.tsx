@@ -6,13 +6,11 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, Eye, FileCheck, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
@@ -31,14 +29,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useRubricColumns } from "@/hooks/use-rubric-columns";
+import { useDeleteRubric, useRubrics } from "@/lib/api/hooks/rubrics";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { Rubric } from "@/types";
 import { RubricsDataTable } from "./RubricsDataTable";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useSimulations } from "@/lib/api/hooks/simulations";
 
 export default function Rubrics() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -48,9 +45,12 @@ export default function Rubrics() {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
 
-  const {data: rubrics = [], refetch: refetchRubrics, isLoading: isRubricsLoading} = useRubrics();
+  // Mutation hooks
+  const deleteRubricMutation = useDeleteRubric();
 
-  const {data: simulations = []} = useSimulations();
+  const { data: rubrics = [], isLoading: isRubricsLoading } = useRubrics();
+
+  const { data: simulations = [] } = useSimulations();
 
   // Check if a rubric is being used by any simulations
   const isRubricInUse = (rubricId: string) => {
@@ -81,7 +81,7 @@ export default function Rubrics() {
 
     setIsDeleting(true);
     try {
-      await deleteRubric(deleteItem.id);
+      await deleteRubricMutation.mutateAsync(deleteItem.id);
       await log.info("rubric.delete.success", {
         message: "Rubric deleted successfully",
         subject: { entityType: "rubric", entityId: deleteItem.id },
@@ -92,9 +92,6 @@ export default function Rubrics() {
         },
       });
       toast.success("Rubric deleted successfully");
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["rubrics"] });
-      refetchRubrics();
     } catch (error) {
       await log.error("rubric.delete.failed", {
         message: "Error deleting rubric",
@@ -130,9 +127,6 @@ export default function Rubrics() {
         },
       });
       toast.success(`Rubric "${rubric.name}" duplicated successfully`);
-      // Invalidate queries to ensure all components refresh
-      queryClient.invalidateQueries({ queryKey: ["rubrics"] });
-      refetchRubrics();
     } catch (error) {
       await log.error("rubric.duplicate.failed", {
         message: "Error duplicating rubric",
@@ -280,13 +274,19 @@ export default function Rubrics() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting || deleteRubricMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={isDeleting || deleteRubricMutation.isPending}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting || deleteRubricMutation.isPending
+                ? "Deleting..."
+                : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
