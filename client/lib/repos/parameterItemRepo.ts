@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { parameterItems } from "@/utils/drizzle/schema";
 import { HttpError } from "@/utils/HttpError";
+import { OptimizedBulkUpdate } from "../optimizedBulkUpdate";
 
 // Types from Drizzle schema
 export type ParameterItem = typeof parameterItems.$inferSelect;
@@ -91,25 +92,11 @@ export const parameterItemRepo = {
   },
 
   async updateMany(updates: Array<{ id: string } & ParameterItemUpdate>) {
-    const db = await getDb();
-    if (!Array.isArray(updates) || updates.length === 0) return [];
-
-    const results = await Promise.all(
-      updates.map(async (update) => {
-        const { id, ...patch } = update;
-        const rows = await db
-          .update(parameterItems)
-          .set(patch)
-          .where(eq(parameterItems.id, id))
-          .returning();
-        if (!rows[0])
-          throw HttpError.notFound(
-            "ParameterItem with id " + id + " not found"
-          );
-        return rows[0];
-      })
+    return OptimizedBulkUpdate.updateManyOptimized(
+      parameterItems,
+      updates,
+      "ParameterItem"
     );
-    return results;
   },
 
   async removeMany(ids: string[]) {
