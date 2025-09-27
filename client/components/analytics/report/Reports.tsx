@@ -12,6 +12,8 @@ import {
   useReportColumns,
 } from "@/hooks/use-report-columns";
 import { getReports, type ReportRow } from "@/utils/api/analytics/get-reports";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { useQuery } from "@tanstack/react-query";
 import { ReportsDataTable } from "./ReportsDataTable";
 
 export default function Reports() {
@@ -29,7 +31,13 @@ export default function Reports() {
     simulationFilters,
   } = useAnalytics();
   const [rows, setRows] = useState<ReportRow[] | null>(null);
+  const [cohortSimulationIds, setCohortSimulationIds] = useState<string[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const { data: allSimulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +51,8 @@ export default function Reports() {
           simulationFilters,
         });
         if (!cancelled) {
-          setRows(data);
+          setRows(data.rows);
+          setCohortSimulationIds(data.cohortSimulationIds);
           setLoadError(null);
         }
       } catch (e) {
@@ -142,6 +151,7 @@ export default function Reports() {
       personasTested: r.personasTested,
       scenarioIds: r.scenarioIds,
       simulationIds: r.simulationIds,
+      simulationMetrics: r.simulationMetrics,
       hover: r.hover,
     }));
   }, [rows]);
@@ -176,7 +186,9 @@ export default function Reports() {
         personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
-        simulations={[]}
+        simulations={allSimulations.filter((sim) =>
+          cohortSimulationIds.includes(sim.id)
+        )}
         showExport={true}
         onViewReport={handleViewReport}
       />

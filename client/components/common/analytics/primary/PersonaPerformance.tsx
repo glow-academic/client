@@ -25,14 +25,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { usePersonas } from "@/lib/api/hooks/personas";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useSimulations } from "@/lib/api/hooks/simulations";
 import { cn } from "@/lib/utils";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidPersonaData } from "@/utils/analytics/filtering";
+import { calculatePersonaPerformance } from "@/utils/analytics/primary";
+import { getAllPersonas } from "@/utils/queries/personas/get-all-personas";
+import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -47,6 +48,7 @@ import {
 } from "recharts";
 
 export interface PersonaPerformanceProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -55,20 +57,21 @@ export interface PersonaPerformanceProps {
 }
 
 export default function PersonaPerformance({
+  filteredData,
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const { data: simulations } = useSimulations();
-  const { data: personas } = usePersonas();
+
+  // Use datasets sourced from filtered data where available
+  const rubrics = filteredData?.rubrics;
+  const scenarios = filteredData?.scenarios;
+  // Personas are not included in filtered data yet; fetch minimally
+  const { data: personas } = useQuery({
+    queryKey: ["personas"],
+    queryFn: () => getAllPersonas(),
+  });
 
   // Map persona name -> hex color from personas table
   const personaColorMap = useMemo(() => {
@@ -83,60 +86,20 @@ export default function PersonaPerformance({
     return map;
   }, [personas]);
 
-  type PersonaPerformanceRow = {
-    name: string;
-    score: number;
-    sessions: number;
-    trendData: Array<{ date: string; score: number }>;
-  };
-  const [performanceData, setPerformanceData] = useState<
-    PersonaPerformanceRow[]
-  >([]);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculatePersonaPerformance",
-              args: {
-                selectedSimulationIds: selectedSimulations.map((s) => s.id),
-              },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload =
-            (data.results[
-              "calculatePersonaPerformance"
-            ] as PersonaPerformanceRow[]) ?? [];
-          setPerformanceData(payload);
-        }
-      } catch {
-        if (!aborted) setPerformanceData([]);
-      }
+  // Calculate performance by persona
+  const performanceData = useMemo(() => {
+    if (!filteredData || !scenarios || !rubrics || !personas) {
+      return [];
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    selectedSimulations,
-  ]);
+
+    return calculatePersonaPerformance(
+      filteredData,
+      rubrics,
+      personas,
+      scenarios,
+      selectedSimulations.map((s) => s.id)
+    );
+  }, [filteredData, rubrics, personas, scenarios, selectedSimulations]);
 
   // Calculate threshold status based on persona performance data
   const getThresholdStatus = () => {
@@ -212,7 +175,16 @@ export default function PersonaPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={(simulations as unknown as Simulation[]) ?? []}
+            simulations={
+              filteredData && rubrics
+                ? getSimulationsWithValidPersonaData(filteredData, rubrics).map(
+                    (s) => ({
+                      ...s,
+                      timeLimit: s.timeLimit ?? 0,
+                    })
+                  )
+                : []
+            }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}

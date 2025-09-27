@@ -31,20 +31,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { cn } from "@/lib/utils";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateRubricHeatmap } from "@/utils/analytics/secondary";
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
-  useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 export interface RubricHeatmapProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -52,16 +52,11 @@ export interface RubricHeatmapProps {
   };
 }
 
-export default function RubricHeatmap({ thresholds }: RubricHeatmapProps) {
+export default function RubricHeatmap({
+  filteredData,
+  thresholds,
+}: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const { data: rubricsData } = useRubrics();
 
   // State to track hovered cell for highlighting
   const [hoveredCell, setHoveredCell] = useState<{
@@ -69,67 +64,26 @@ export default function RubricHeatmap({ thresholds }: RubricHeatmapProps) {
     col: number | null;
   }>({ row: null, col: null });
 
-  const rubrics = rubricsData ?? [];
+  const rubrics = filteredData?.rubrics;
 
-  // Server will compute standardGroups/standards
+  const standardGroups = filteredData?.standardGroups;
+
+  const standards = filteredData?.standards;
 
   // Use the utility function to calculate rubric heatmap
-  const [rubricHeatmapResult, setRubricHeatmapResult] = useState<{
-    hasData: boolean;
-    standardGroups: Array<{ id: string; shortName: string }>;
-    matrix: Array<
-      Array<{
-        correlation: number;
-        pValue: number;
-        dataPoints: number;
-        color: string;
-      } | null>
-    >;
-    insights?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculateRubricHeatmap",
-              args: { selectedRubricIds: selectedRubrics.map((r) => r.id) },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload =
-            (data.results[
-              "calculateRubricHeatmap"
-            ] as typeof rubricHeatmapResult) ?? null;
-          setRubricHeatmapResult(payload);
-        }
-      } catch {
-        if (!aborted) setRubricHeatmapResult(null);
-      }
+  const rubricHeatmapResult = useMemo(() => {
+    if (!filteredData || !standards || !standardGroups || !rubrics) {
+      return null;
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    selectedRubrics,
-  ]);
+
+    return calculateRubricHeatmap(
+      filteredData,
+      standards,
+      standardGroups,
+      rubrics,
+      selectedRubrics.map((r) => r.id)
+    );
+  }, [filteredData, standards, standardGroups, rubrics, selectedRubrics]);
 
   // Defer heavy result propagation to avoid blocking interactions/scroll
   const deferredResult = useDeferredValue(rubricHeatmapResult);
@@ -183,7 +137,7 @@ export default function RubricHeatmap({ thresholds }: RubricHeatmapProps) {
   const thresholdStatus = getThresholdStatus();
 
   // Check if any critical data is still loading
-  const isLoading = !rubrics || rubrics.length === 0;
+  const isLoading = !rubrics || !standardGroups || !standards;
 
   // Show loading state
   if (isLoading) {
@@ -243,18 +197,18 @@ export default function RubricHeatmap({ thresholds }: RubricHeatmapProps) {
               Correlation between skill areas (standard groups)
             </CardDescription>
           </div>
-          <RubricPicker
-            rubrics={rubrics.map((r) => ({
-              id: r.id,
-              name: r.name,
-              description: r.description,
-              points: r.points,
-              active: r.active,
-            }))}
-            placeholder="Filter by rubric..."
-            onSelect={setSelectedRubrics}
-            selectedRubrics={selectedRubrics}
-          />
+            <RubricPicker
+              rubrics={rubrics.map((r) => ({
+                id: r.id,
+                name: r.name,
+                description: r.description,
+                points: r.points,
+                active: r.active,
+              }))}
+              placeholder="Filter by rubric..."
+              onSelect={setSelectedRubrics}
+              selectedRubrics={selectedRubrics}
+            />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">

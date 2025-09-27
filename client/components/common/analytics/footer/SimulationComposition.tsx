@@ -30,15 +30,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateSimulationComposition } from "@/utils/analytics/footer";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
 
 export interface SimulationCompositionProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -47,6 +48,7 @@ export interface SimulationCompositionProps {
 }
 
 export default function SimulationComposition({
+  filteredData,
   thresholds,
 }: SimulationCompositionProps) {
   // Configuration state
@@ -56,125 +58,39 @@ export default function SimulationComposition({
     bottomPercentage: 25,
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const [simulationComposition, setSimulationComposition] = useState<{
-    highPerforming: Array<{
-      name: string;
-      value: number;
-      icon?: string;
-      significance?: "high" | "medium" | "low" | "none";
-      description?: string;
-    }>;
-    lowPerforming: Array<{
-      name: string;
-      value: number;
-      icon?: string;
-      significance?: "high" | "medium" | "low" | "none";
-      description?: string;
-    }>;
-    highPerformingCount: number;
-    lowPerformingCount: number;
-    highPerformingDetails: Array<{
-      id: string;
-      title: string;
-      avgScore: number;
-      completionRate: number;
-      totalAttempts: number;
-      scenarioCount: number;
-      parameterBreakdown: Array<{
-        parameterName: string;
-        parameterValue: string;
-      }>;
-    }>;
-    lowPerformingDetails: Array<{
-      id: string;
-      title: string;
-      avgScore: number;
-      completionRate: number;
-      totalAttempts: number;
-      scenarioCount: number;
-      parameterBreakdown: Array<{
-        parameterName: string;
-        parameterValue: string;
-      }>;
-    }>;
-  }>({
-    highPerforming: [],
-    lowPerforming: [],
-    highPerformingCount: 0,
-    lowPerformingCount: 0,
-    highPerformingDetails: [],
-    lowPerformingDetails: [],
-  });
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculateSimulationComposition",
-              args: {
-                method: config.method,
-                topPercentage: config.topPercentage,
-                bottomPercentage: config.bottomPercentage,
-              },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload = (data.results[
-            "calculateSimulationComposition"
-          ] as typeof simulationComposition) ?? {
-            highPerforming: [],
-            lowPerforming: [],
-            highPerformingCount: 0,
-            lowPerformingCount: 0,
-            highPerformingDetails: [],
-            lowPerformingDetails: [],
-          };
-          setSimulationComposition(payload);
-        }
-      } catch {
-        if (!aborted)
-          setSimulationComposition({
-            highPerforming: [],
-            lowPerforming: [],
-            highPerformingCount: 0,
-            lowPerformingCount: 0,
-            highPerformingDetails: [],
-            lowPerformingDetails: [],
-          });
-      }
+  // Use centralized datasets from filteredData
+  const scenarios = filteredData?.scenarios;
+  const personas = filteredData?.personas;
+  const parameters = filteredData?.parameters;
+  const parameterItems = filteredData?.parameterItems;
+
+  // Calculate simulation composition data using utility function
+  const simulationComposition = useMemo(() => {
+    if (
+      !filteredData ||
+      !scenarios ||
+      !personas ||
+      !parameters ||
+      !parameterItems
+    ) {
+      return {
+        highPerforming: [],
+        lowPerforming: [],
+        highPerformingCount: 0,
+        lowPerformingCount: 0,
+        highPerformingDetails: [],
+        lowPerformingDetails: [],
+      };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    config.method,
-    config.topPercentage,
-    config.bottomPercentage,
-  ]);
+
+    return calculateSimulationComposition(
+      filteredData,
+      parameters,
+      parameterItems,
+      config
+    );
+  }, [filteredData, scenarios, personas, parameters, parameterItems, config]);
 
   // Get method label for dialog titles
   const getMethodLabel = (isHigh: boolean) => {

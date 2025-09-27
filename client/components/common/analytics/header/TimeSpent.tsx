@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateTimeSpent } from "@/utils/analytics/header";
 import { Timer } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -30,6 +30,7 @@ import {
 } from "recharts";
 
 export interface TimeSpentProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -74,59 +75,20 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function TimeSpent({ thresholds }: TimeSpentProps) {
+export default function TimeSpent({
+  filteredData,
+  thresholds,
+}: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
-  const [serverResult, setServerResult] = useState<{
-    currentValue: number;
-    trendData: Array<{ date: string; value: number; count: number }>;
-    hasData: boolean;
-  } | null>(null);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculateTimeSpent" }]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateTimeSpent"] as {
-            currentValue: number;
-            trendData: Array<{ date: string; value: number; count: number }>;
-            hasData: boolean;
-          }) ?? { currentValue: 0, trendData: [], hasData: false };
-          setServerResult(payload);
-        }
-      } catch {
-        if (!aborted) setServerResult(null);
-      }
+  // Calculate time spent using utility function
+  const timeSpentResult = useMemo(() => {
+    if (!filteredData) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-  const timeSpentResult = serverResult ?? {
-    currentValue: 0,
-    trendData: [],
-    hasData: false,
-  };
+    return calculateTimeSpent(filteredData);
+  }, [filteredData]);
 
   const {
     currentValue: totalTimeSpent,
@@ -225,26 +187,26 @@ export default function TimeSpent({ thresholds }: TimeSpentProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timeSpentTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    name === "value" ? formatTime(value) : value,
-                    name === "value" ? "Time Spent" : "Sessions",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={colorConfig.primary}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timeSpentTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      name === "value" ? formatTime(value) : value,
+                      name === "value" ? "Time Spent" : "Sessions",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={colorConfig.primary}
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

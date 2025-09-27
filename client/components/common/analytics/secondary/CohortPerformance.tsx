@@ -26,11 +26,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { getSimulationsWithValidData } from "@/utils/analytics/filtering";
+import { calculateCohortPerformance } from "@/utils/analytics/secondary";
 import { BarChart3, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -42,6 +42,8 @@ import {
 } from "recharts";
 
 export interface CohortPerformanceProps {
+  filteredData: FilteredData | null;
+  profileId: string | undefined;
   thresholds: {
     danger: number;
     warning: number;
@@ -50,84 +52,33 @@ export interface CohortPerformanceProps {
 }
 
 export default function CohortPerformance({
+  filteredData,
+  profileId,
   thresholds,
 }: CohortPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const { data: simulations } = useSimulations();
 
-  type CohortDaily = { date: string; avgScore: number };
-  type CohortRow = {
-    id: string;
-    name: string;
-    passRate: number;
-    totalStudents: number;
-    passedStudents: number;
-    rubricPoints: number;
-    rubricPassPoints: number;
-    availableSimulations: number;
-  };
-  const [cohortPerformanceResult, setCohortPerformanceResult] = useState<{
-    hasData: boolean;
-    cohortData: CohortRow[];
-    dailyData: CohortDaily[];
-    insights?: string;
-  } | null>(null);
+  const rubrics = filteredData?.rubrics;
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculateCohortPerformance",
-              args: {
-                thresholds,
-                selectedSimulationIds: selectedSimulations.map((s) => s.id),
-              },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload =
-            (data.results[
-              "calculateCohortPerformance"
-            ] as typeof cohortPerformanceResult) ?? null;
-          setCohortPerformanceResult(payload);
-        }
-      } catch {
-        if (!aborted) setCohortPerformanceResult(null);
-      }
+  const isSingleProfileMode = profileId !== undefined;
+
+  // Use the utility function to calculate cohort performance
+  const cohortPerformanceResult = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return null;
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    thresholds,
-    selectedSimulations,
-  ]);
+
+    const result = calculateCohortPerformance(
+      filteredData,
+      rubrics,
+      thresholds,
+      selectedSimulations.map((s) => s.id)
+    );
+
+    return result;
+  }, [filteredData, rubrics, thresholds, selectedSimulations]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
@@ -173,7 +124,16 @@ export default function CohortPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={(simulations as unknown as Simulation[]) ?? []}
+            simulations={
+              filteredData && rubrics
+                ? getSimulationsWithValidData(filteredData, rubrics).map(
+                    (s) => ({
+                      ...s,
+                      timeLimit: s.timeLimit || undefined,
+                    })
+                  )
+                : []
+            }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}
@@ -190,7 +150,9 @@ export default function CohortPerformance({
             // Calculate pass rate percentage
             const passRatePercentage =
               cohort.totalStudents > 0
-                ? (cohort.passedStudents / cohort.totalStudents) * 100
+                ? (cohort.passedStudents /
+                    (isSingleProfileMode ? 1 : cohort.totalStudents)) *
+                  100
                 : 0;
 
             // Determine background color based on pass rate
@@ -230,7 +192,9 @@ export default function CohortPerformance({
                           {cohort.name}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                          {passRatePercentage.toFixed(2)}% of students pass{" "}
+                          {isSingleProfileMode
+                            ? `${passRatePercentage.toFixed(2)}% pass rate for `
+                            : `${passRatePercentage.toFixed(2)}% of students pass `}
                           {cohort.rubricPoints > 0
                             ? cohort.availableSimulations
                             : 0}{" "}

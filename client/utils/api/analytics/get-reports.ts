@@ -35,6 +35,19 @@ export interface ReportRow {
   personasTested: string[];
   scenarioIds: string[];
   simulationIds: string[];
+  simulationMetrics: Record<
+    string,
+    {
+      averageScore: number;
+      highestScore: number;
+      completionPercentage: number;
+      firstAttemptPassRate: number;
+      timeSpent: number;
+      messagesPerSession: number;
+      sessionEfficiency: number;
+      totalAttempts: number;
+    }
+  >;
   hover?: {
     scoreStats?: { mean: number; median: number; mode: number; top?: number[] };
     timeStats?: {
@@ -63,9 +76,14 @@ export interface ReportRow {
   };
 }
 
+export interface ReportsResponse {
+  rows: ReportRow[];
+  cohortSimulationIds: string[];
+}
+
 export async function getReports(
   params: GetReportsParams
-): Promise<ReportRow[]> {
+): Promise<ReportsResponse> {
   try {
     const url = new URL(`${getApiBase()}/analytics/reports`);
     const response = await fetch(url.toString(), {
@@ -85,7 +103,7 @@ export async function getReports(
       });
       throw new Error(errorMessage);
     }
-    return (await response.json()) as ReportRow[];
+    return (await response.json()) as ReportsResponse;
   } catch (error) {
     const errorMessage = `Error getting reports: ${error instanceof Error ? error.message : "Unknown error"}`;
     log.error("analytics.get.reports.error", {

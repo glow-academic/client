@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateMessagesPerSession } from "@/utils/analytics/header";
 import { MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -30,6 +30,7 @@ import {
 } from "recharts";
 
 export interface MessagesPerSessionProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -75,60 +76,21 @@ const COLOR_CONFIGS = {
 };
 
 export default function MessagesPerSession({
+  filteredData,
   thresholds,
 }: MessagesPerSessionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
-  const [serverResult, setServerResult] = useState<{
-    currentValue: number;
-    trendData: Array<{ date: string; value: number; count: number }>;
-    hasData: boolean;
-  } | null>(null);
+  const messages = filteredData?.messages;
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculateMessagesPerSession" }]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateMessagesPerSession"] as {
-            currentValue: number;
-            trendData: Array<{ date: string; value: number; count: number }>;
-            hasData: boolean;
-          }) ?? { currentValue: 0, trendData: [], hasData: false };
-          setServerResult(payload);
-        }
-      } catch {
-        if (!aborted) setServerResult(null);
-      }
+  // Calculate messages per session using utility function
+  const messagesPerSessionResult = useMemo(() => {
+    if (!filteredData || !messages) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-  const messagesPerSessionResult = serverResult ?? {
-    currentValue: 0,
-    trendData: [],
-    hasData: false,
-  };
+    return calculateMessagesPerSession(messages, filteredData);
+  }, [filteredData, messages]);
 
   const {
     currentValue: averageMessagesPerSession,
@@ -211,26 +173,26 @@ export default function MessagesPerSession({
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={messagesTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    name === "value" ? value.toFixed(1) : value,
-                    name === "value" ? "Avg Messages" : "Sessions",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={colorConfig.primary}
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={messagesTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      name === "value" ? value.toFixed(1) : value,
+                      name === "value" ? "Avg Messages" : "Sessions",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={colorConfig.primary}
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

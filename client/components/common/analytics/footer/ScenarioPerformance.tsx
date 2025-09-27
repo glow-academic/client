@@ -35,12 +35,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useParameters } from "@/lib/api/hooks/parameters";
 import { cn } from "@/lib/utils";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateScenarioAttributeBreakdown } from "@/utils/analytics/footer";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Cell,
   Legend,
@@ -55,6 +54,7 @@ import {
 } from "recharts";
 
 export interface ScenarioPerformanceProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -69,18 +69,16 @@ interface ParameterOption {
 }
 
 export default function ScenarioPerformance({
+  filteredData,
   thresholds,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const { data: parameters } = useParameters();
+
+  // Use centralized datasets from filteredData
+  const parameters = filteredData?.parameters;
+  const parameterItems = filteredData?.parameterItems;
+  const rubrics = filteredData?.rubrics;
 
   // Get non-numerical parameters only
   const nonNumericalParameters = useMemo(() => {
@@ -109,69 +107,18 @@ export default function ScenarioPerformance({
   }, [nonNumericalParameters]);
 
   // Calculate attribute breakdown using utility function
-  type AttributeElement = {
-    name: string;
-    displayName: string;
-    color: string;
-    percentage: number;
-    count: number;
-    avgScore: number;
-    completionRate: number;
-    totalAttempts: number;
-    icon?: string;
-    trendData: Array<{ date: string; score: number }>;
-    insight?: string;
-  };
-  const [attributeElements, setAttributeElements] = useState<
-    AttributeElement[]
-  >([]);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      if (!selectedParameter) {
-        setAttributeElements([]);
-        return;
-      }
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculateScenarioAttributeBreakdown",
-              args: { selectedParameterId: selectedParameter.id },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload =
-            (data.results[
-              "calculateScenarioAttributeBreakdown"
-            ] as AttributeElement[]) ?? [];
-          setAttributeElements(payload);
-        }
-      } catch {
-        if (!aborted) setAttributeElements([]);
-      }
+  const attributeElements = useMemo(() => {
+    if (!filteredData || !parameterItems || !selectedParameter || !rubrics) {
+      return [];
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    selectedParameter,
-  ]);
+
+    return calculateScenarioAttributeBreakdown(
+      filteredData,
+      rubrics,
+      parameterItems,
+      selectedParameter
+    );
+  }, [filteredData, parameterItems, selectedParameter, rubrics]);
 
   // Calculate threshold status based on attribute performance
   const getThresholdStatus = () => {
@@ -276,146 +223,154 @@ export default function ScenarioPerformance({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Pie Chart */}
-        <div className="flex-1 min-h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={attributeElements}
-                dataKey="percentage"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                innerRadius={60}
-                paddingAngle={2}
-              >
-                {attributeElements.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, name: string, _props: unknown) => {
-                  const element = attributeElements.find(
-                    (e) => e.name === name
-                  );
-                  if (!element) return [value, name];
-
-                  return [
-                    <div key="tooltip" className="space-y-2">
-                      <div className="font-medium">
-                        {element.icon} {element.displayName}
-                      </div>
-                      <div className="text-sm space-y-1">
-                        <div>Usage: {element.percentage}%</div>
-                        <div>Scenarios: {element.count}</div>
-                        <div>Avg Score: {element.avgScore}%</div>
-                        <div>Completion: {element.completionRate}%</div>
-                        <div>Attempts: {element.totalAttempts}</div>
-                      </div>
-                    </div>,
-                    "",
-                  ];
-                }}
-                labelFormatter={() => ""}
-              />
-              <Legend
-                verticalAlign="bottom"
-                height={80}
-                content={({ payload }) => (
-                  <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                    {payload?.map((entry, index) => {
-                      const element = attributeElements[index];
-                      if (!element) return null;
-                      return (
-                        <Dialog key={entry.value}>
-                          <DialogTrigger asChild>
-                            <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap">
-                              <span style={{ color: element.color }}>●</span>
-                              {element.name}
-                            </span>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogDescription hidden>
-                              This chart shows the scenario performance over
-                              time.
-                            </DialogDescription>
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <span className="text-lg">{element.icon}</span>
-                                {element.displayName} Performance
-                              </DialogTitle>
-                              <DialogDescription>
-                                Detailed performance analysis for{" "}
-                                {element.displayName}{" "}
-                                {selectedParameter?.name.toLowerCase()}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-6">
-                              {/* Performance Trend Chart */}
-                              {element.trendData.length > 0 && (
-                                <div className="h-64">
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <LineChart data={element.trendData}>
-                                      <XAxis
-                                        dataKey="date"
-                                        className="text-xs"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={60}
-                                      />
-                                      <YAxis className="text-xs" />
-                                      <Tooltip
-                                        contentStyle={{
-                                          backgroundColor:
-                                            "hsl(var(--background))",
-                                          border:
-                                            "1px solid hsl(var(--border))",
-                                          borderRadius: "6px",
-                                        }}
-                                        formatter={(value: number) => [
-                                          `${value}%`,
-                                          "Score",
-                                        ]}
-                                      />
-                                      <Line
-                                        type="monotone"
-                                        dataKey="score"
-                                        stroke={element.color}
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                        name="Score"
-                                      />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              )}
-
-                              {/* Actionable Insights */}
-                              <div className="p-3 bg-muted rounded-lg">
-                                <p className="text-sm text-muted-foreground">
-                                  {element.insight}
-                                </p>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+            {/* Pie Chart */}
+            <div className="flex-1 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={attributeElements}
+                    dataKey="percentage"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    innerRadius={60}
+                    paddingAngle={2}
+                  >
+                    {attributeElements.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                    formatter={(
+                      value: number,
+                      name: string,
+                      _props: unknown
+                    ) => {
+                      const element = attributeElements.find(
+                        (e) => e.name === name
                       );
-                    })}
-                  </div>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+                      if (!element) return [value, name];
+
+                      return [
+                        <div key="tooltip" className="space-y-2">
+                          <div className="font-medium">
+                            {element.icon} {element.displayName}
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <div>Usage: {element.percentage}%</div>
+                            <div>Scenarios: {element.count}</div>
+                            <div>Avg Score: {element.avgScore}%</div>
+                            <div>Completion: {element.completionRate}%</div>
+                            <div>Attempts: {element.totalAttempts}</div>
+                          </div>
+                        </div>,
+                        "",
+                      ];
+                    }}
+                    labelFormatter={() => ""}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={80}
+                    content={({ payload }) => (
+                      <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                        {payload?.map((entry, index) => {
+                          const element = attributeElements[index];
+                          if (!element) return null;
+                          return (
+                            <Dialog key={entry.value}>
+                              <DialogTrigger asChild>
+                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap">
+                                  <span style={{ color: element.color }}>
+                                    ●
+                                  </span>
+                                  {element.name}
+                                </span>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogDescription hidden>
+                                  This chart shows the scenario performance over
+                                  time.
+                                </DialogDescription>
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <span className="text-lg">
+                                      {element.icon}
+                                    </span>
+                                    {element.displayName} Performance
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    Detailed performance analysis for{" "}
+                                    {element.displayName}{" "}
+                                    {selectedParameter?.name.toLowerCase()}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* Performance Trend Chart */}
+                                  {element.trendData.length > 0 && (
+                                    <div className="h-64">
+                                      <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                      >
+                                        <LineChart data={element.trendData}>
+                                          <XAxis
+                                            dataKey="date"
+                                            className="text-xs"
+                                            angle={-45}
+                                            textAnchor="end"
+                                            height={60}
+                                          />
+                                          <YAxis className="text-xs" />
+                                          <Tooltip
+                                            contentStyle={{
+                                              backgroundColor:
+                                                "hsl(var(--background))",
+                                              border:
+                                                "1px solid hsl(var(--border))",
+                                              borderRadius: "6px",
+                                            }}
+                                            formatter={(value: number) => [
+                                              `${value}%`,
+                                              "Score",
+                                            ]}
+                                          />
+                                          <Line
+                                            type="monotone"
+                                            dataKey="score"
+                                            stroke={element.color}
+                                            strokeWidth={2}
+                                            dot={{ r: 4 }}
+                                            name="Score"
+                                          />
+                                        </LineChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  )}
+
+                                  {/* Actionable Insights */}
+                                  <div className="p-3 bg-muted rounded-lg">
+                                    <p className="text-sm text-muted-foreground">
+                                      {element.insight}
+                                    </p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          );
+                        })}
+                      </div>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
       </CardContent>
     </Card>
   );

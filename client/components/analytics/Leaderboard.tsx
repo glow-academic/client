@@ -25,7 +25,6 @@ import {
   Target,
   TrendingUp,
   Trophy,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -60,6 +59,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
 
   // Track nav direction for animation
   const navDirRef = useRef<"next" | "prev">("next");
+  // Prevent initial mount animation
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
 
   // Server-backed leaderboard rows (no UI changes; just data source option)
   const serverFilters = useMemo(
@@ -141,7 +145,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       return {
         perfectScore: { holder: undefined, details: "" },
         longestConvo: { holder: undefined, details: "" },
-        mostImproved: { holder: undefined, details: "" },
+        responseTimes: { holder: undefined, details: "" },
         quickestPass: { holder: undefined, details: "" },
         thePersistent: { holder: undefined, details: "" },
         marathonRunner: { holder: undefined, details: "" },
@@ -187,7 +191,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       );
     };
     const highestScorerRow = pickMax("highest_score_avg");
-    const mostImprovedRow = pickMax("most_improved_percent");
+    const responseTimesRow = pickMinPositive("persona_response_seconds");
     const rapidRiserRow = pickMax("improvement_rate_per_day");
     const longestConvoRow = pickMax("messages_per_session");
     const marathonRunnerRow = pickMax("time_spent_minutes");
@@ -197,10 +201,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       const byCount = pickMax("perfect_score_count");
       if (byCount && Number(byCount.perfect_score_count ?? 0) > 0)
         return byCount;
-      const withHundred = leaderboardServerRows.find(
-        (r) => Math.round(Number(r.highest_score_avg ?? 0)) >= 100
-      );
-      return withHundred ?? highestScorerRow;
+      // Only fall back to highest score if no one has perfect scores
+      return highestScorerRow;
     })();
     return {
       highestScorer: {
@@ -209,10 +211,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           ? `${Math.round(highestScorerRow.highest_score_avg)} avg`
           : "",
       },
-      mostImproved: {
-        holder: mostImprovedRow ? toProfile(mostImprovedRow) : undefined,
-        details: mostImprovedRow
-          ? `+${Math.round(mostImprovedRow.most_improved_percent || 0)}%`
+      responseTimes: {
+        holder: responseTimesRow ? toProfile(responseTimesRow) : undefined,
+        details: responseTimesRow
+          ? `${Math.round(responseTimesRow.persona_response_seconds || 0)}s`
           : "",
       },
       rapidRiser: {
@@ -250,7 +252,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         details: perfectScoreRow
           ? Number(perfectScoreRow.perfect_score_count || 0) > 0
             ? `${perfectScoreRow.perfect_score_count} perfect`
-            : `100 avg`
+            : `${Math.round(perfectScoreRow.highest_score_avg || 0)} avg`
           : "",
       },
     } as const;
@@ -273,10 +275,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         accolade: accolades?.longestConvo,
       },
       {
-        key: "mostImproved",
-        icon: <Zap className="h-4 w-4" />,
-        title: "Most Improved",
-        accolade: accolades?.mostImproved,
+        key: "responseTimes",
+        icon: <Clock className="h-4 w-4" />,
+        title: "Fastest Responses",
+        accolade: accolades?.responseTimes,
       },
       {
         key: "quickestPass",
@@ -381,7 +383,153 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     },
   } as const;
 
-  // Calculate leaderboard data with detailed metrics and percentile
+  // Calculate challengers for each accolade
+  const getChallengers = (
+    accoladeKey: string,
+    currentWinner: Profile | null | undefined
+  ) => {
+    if (!leaderboardServerRows || leaderboardServerRows.length === 0) return [];
+
+    const toProfile = (r: LeaderboardRow): Profile =>
+      ({
+        id: r.profile_id,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        role: "guest" as Profile["role"],
+        alias: "",
+        active: true,
+        createdAt: new Date().toISOString(),
+        defaultProfile: false,
+        lastActive: null,
+        lastLogin: new Date().toISOString(),
+        reqPerDay: 0,
+        updatedAt: new Date().toISOString(),
+        userId: null,
+        viewedChat: false,
+        viewedIntro: false,
+      }) as unknown as Profile;
+
+    // Filter out the current winner
+    const challengers = leaderboardServerRows
+      .filter((r) => !currentWinner || r.profile_id !== currentWinner.id)
+      .map((r) => ({ profile: toProfile(r), row: r }));
+
+    // Sort by the relevant metric for each accolade
+    const sortedChallengers = challengers.sort((a, b) => {
+      switch (accoladeKey) {
+        case "perfectScore":
+          // Sort by perfect score count, then by highest score avg
+          const aPerfect = Number(a.row.perfect_score_count || 0);
+          const bPerfect = Number(b.row.perfect_score_count || 0);
+          if (aPerfect !== bPerfect) return bPerfect - aPerfect;
+          return (
+            Number(b.row.highest_score_avg || 0) -
+            Number(a.row.highest_score_avg || 0)
+          );
+
+        case "longestConvo":
+          return (
+            Number(b.row.messages_per_session || 0) -
+            Number(a.row.messages_per_session || 0)
+          );
+
+        case "responseTimes":
+          // For response times, we want the lowest positive values (fastest responders)
+          const aResponseTime = Number(a.row.persona_response_seconds || 0);
+          const bResponseTime = Number(b.row.persona_response_seconds || 0);
+          if (aResponseTime <= 0 && bResponseTime <= 0) return 0;
+          if (aResponseTime <= 0) return 1;
+          if (bResponseTime <= 0) return -1;
+          return aResponseTime - bResponseTime;
+
+        case "quickestPass":
+          // For quickest pass, we want the lowest positive values
+          const aTime = Number(a.row.quickest_pass_minutes || 0);
+          const bTime = Number(b.row.quickest_pass_minutes || 0);
+          if (aTime <= 0 && bTime <= 0) return 0;
+          if (aTime <= 0) return 1;
+          if (bTime <= 0) return -1;
+          return aTime - bTime;
+
+        case "thePersistent":
+          return (
+            Number(b.row.total_attempts || 0) -
+            Number(a.row.total_attempts || 0)
+          );
+
+        case "marathonRunner":
+          return (
+            Number(b.row.time_spent_minutes || 0) -
+            Number(a.row.time_spent_minutes || 0)
+          );
+
+        case "rapidRiser":
+          return (
+            Number(b.row.improvement_rate_per_day || 0) -
+            Number(a.row.improvement_rate_per_day || 0)
+          );
+
+        case "highestScorer":
+          return (
+            Number(b.row.highest_score_avg || 0) -
+            Number(a.row.highest_score_avg || 0)
+          );
+
+        default:
+          return 0;
+      }
+    });
+
+    return sortedChallengers.slice(0, 5).map(({ profile, row }) => {
+      let metricValue: number;
+      let metricLabel: string;
+
+      switch (accoladeKey) {
+        case "perfectScore":
+          metricValue = Number(row.perfect_score_count || 0);
+          metricLabel =
+            metricValue > 0
+              ? `${metricValue} perfect`
+              : `${Math.round(Number(row.highest_score_avg || 0))} avg`;
+          break;
+        case "longestConvo":
+          metricValue = Math.round(Number(row.messages_per_session || 0));
+          metricLabel = `${metricValue} msgs/session`;
+          break;
+        case "responseTimes":
+          metricValue = Math.round(Number(row.persona_response_seconds || 0));
+          metricLabel = `${metricValue}s`;
+          break;
+        case "quickestPass":
+          metricValue = Math.round(Number(row.quickest_pass_minutes || 0));
+          metricLabel = `${metricValue} min`;
+          break;
+        case "thePersistent":
+          metricValue = Number(row.total_attempts || 0);
+          metricLabel = `${metricValue} attempts`;
+          break;
+        case "marathonRunner":
+          metricValue = Math.round(Number(row.time_spent_minutes || 0));
+          metricLabel = `${metricValue} min`;
+          break;
+        case "rapidRiser":
+          metricValue = Math.round(Number(row.improvement_rate_per_day || 0));
+          metricLabel = `+${metricValue} pts/day`;
+          break;
+        case "highestScorer":
+          metricValue = Math.round(Number(row.highest_score_avg || 0));
+          metricLabel = `${metricValue} avg`;
+          break;
+        default:
+          metricValue = 0;
+          metricLabel = "";
+      }
+
+      return { profile, metricValue, metricLabel };
+    });
+  };
+
+  // Calculate leaderboard data sorted by highest score
   const leaderboardData = useMemo(() => {
     if (leaderboardServerRows && leaderboardServerRows.length > 0) {
       const rows = leaderboardServerRows.map((r) => ({
@@ -395,133 +543,20 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         totalAttempts: Number(r.total_attempts || 0),
         highestScoreAvg: Math.round(r.highest_score_avg || 0),
         mostImprovedPercent: Math.round(r.most_improved_percent || 0),
-        percentile: 0,
+        personaResponseSeconds: Math.round(r.persona_response_seconds || 0),
       }));
 
-      const metricKeys = [
-        "timeSpentMinutes",
-        "improvementRatePerDay",
-        "messagesPerSession",
-        "perfectScoreCount",
-        "quickestPassMinutes",
-        "totalAttempts",
-        "highestScoreAvg",
-        "mostImprovedPercent",
-      ] as const;
-      type MetricKey = (typeof metricKeys)[number];
-
-      const values: Record<MetricKey, number[]> = {
-        timeSpentMinutes: rows.map((r) => r.timeSpentMinutes),
-        improvementRatePerDay: rows.map((r) => r.improvementRatePerDay),
-        messagesPerSession: rows.map((r) => r.messagesPerSession),
-        perfectScoreCount: rows.map((r) => r.perfectScoreCount),
-        quickestPassMinutes: rows.map((r) => r.quickestPassMinutes),
-        totalAttempts: rows.map((r) => r.totalAttempts),
-        highestScoreAvg: rows.map((r) => r.highestScoreAvg),
-        mostImprovedPercent: rows.map((r) => r.mostImprovedPercent),
-      };
-      const minMax: Record<MetricKey, { min: number; max: number }> =
-        metricKeys.reduce(
-          (acc, key) => {
-            const arr = values[key];
-            const min = arr.length ? Math.min(...arr) : 0;
-            const max = arr.length ? Math.max(...arr) : 1;
-            acc[key] = { min, max };
-            return acc;
-          },
-          {} as Record<MetricKey, { min: number; max: number }>
-        );
-      const normalize = (
-        value: number,
-        min: number,
-        max: number,
-        invert = false
-      ) => {
-        if (!isFinite(value)) return 0.5;
-        if (max === min) return 0.5;
-        const n = (value - min) / (max - min);
-        const clamped = Math.max(0, Math.min(1, n));
-        return invert ? 1 - clamped : clamped;
-      };
-      const weights = {
-        highestScoreAvg: 0.25,
-        mostImprovedPercent: 0.2,
-        improvementRatePerDay: 0.15,
-        messagesPerSession: 0.1,
-        timeSpentMinutes: 0.1,
-        totalAttempts: 0.05,
-        perfectScoreCount: 0.1,
-        quickestPassMinutes: 0.05,
-      } as const;
-
-      const compositeById = new Map<string, number>();
-      rows.forEach((r) => {
-        const composite =
-          normalize(
-            r.highestScoreAvg,
-            minMax.highestScoreAvg.min,
-            minMax.highestScoreAvg.max
-          ) *
-            weights.highestScoreAvg +
-          normalize(
-            r.mostImprovedPercent,
-            minMax.mostImprovedPercent.min,
-            minMax.mostImprovedPercent.max
-          ) *
-            weights.mostImprovedPercent +
-          normalize(
-            r.improvementRatePerDay,
-            minMax.improvementRatePerDay.min,
-            minMax.improvementRatePerDay.max
-          ) *
-            weights.improvementRatePerDay +
-          normalize(
-            r.messagesPerSession,
-            minMax.messagesPerSession.min,
-            minMax.messagesPerSession.max
-          ) *
-            weights.messagesPerSession +
-          normalize(
-            r.timeSpentMinutes,
-            minMax.timeSpentMinutes.min,
-            minMax.timeSpentMinutes.max
-          ) *
-            weights.timeSpentMinutes +
-          normalize(
-            r.totalAttempts,
-            minMax.totalAttempts.min,
-            minMax.totalAttempts.max
-          ) *
-            weights.totalAttempts +
-          normalize(
-            r.perfectScoreCount,
-            minMax.perfectScoreCount.min,
-            minMax.perfectScoreCount.max
-          ) *
-            weights.perfectScoreCount +
-          normalize(
-            r.quickestPassMinutes,
-            minMax.quickestPassMinutes.min,
-            minMax.quickestPassMinutes.max,
-            true
-          ) *
-            weights.quickestPassMinutes;
-        compositeById.set(r.id, composite);
-      });
-      const composites = rows.map((r) => compositeById.get(r.id) || 0);
-      const n = composites.length || 1;
-      const withPercentile = rows.map((r) => {
-        const comp = compositeById.get(r.id) || 0;
-        const numLower = composites.filter((v) => v < comp).length;
-        const numEqual = composites.filter((v) => v === comp).length;
-        const percentile = Math.round(((numLower + 0.5 * numEqual) / n) * 100);
-        return { ...r, percentile };
-      });
-      const sortedByPercentileDesc = withPercentile.sort(
-        (a, b) => b.percentile - a.percentile
+      // Sort by highest score descending
+      const sortedByHighestScore = rows.sort(
+        (a, b) => b.highestScoreAvg - a.highestScoreAvg
       );
-      const topCount = Math.max(1, Math.ceil(withPercentile.length * 0.25));
-      return sortedByPercentileDesc.slice(0, topCount);
+
+      // Take top 25% based on highest score
+      const topCount = Math.max(
+        1,
+        Math.ceil(sortedByHighestScore.length * 0.25)
+      );
+      return sortedByHighestScore.slice(0, topCount);
     }
     return [];
   }, [leaderboardServerRows]);
@@ -569,7 +604,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             onMouseLeave={() => setIsHoveringAccolades(false)}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {pages[page]
                   ?.filter((item): item is NonNullable<typeof item> =>
                     Boolean(item)
@@ -579,7 +614,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                       key={`${page}-${key}`} // key must change per page so exit/enter runs
                       custom={{ i, dir: navDirRef.current }}
                       variants={splitVariants}
-                      initial="initial"
+                      initial={hasMountedRef.current ? "initial" : false}
                       animate="animate"
                       exit="exit"
                       layout
@@ -725,9 +760,64 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                     Challengers (closing in)
                   </div>
                   <div className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      Coming soon
-                    </div>
+                    {(() => {
+                      const challengers = getChallengers(
+                        selected.key,
+                        selected.accolade.holder
+                      );
+                      if (challengers.length === 0) {
+                        return (
+                          <div className="text-sm text-muted-foreground">
+                            No challengers yet.
+                          </div>
+                        );
+                      }
+                      return challengers.map((challenger, index) => (
+                        <div
+                          key={challenger.profile.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground w-6">
+                                #{index + 1}
+                              </span>
+                              <Avatar
+                                className="h-8 w-8 outline outline-muted-foreground"
+                                style={{
+                                  outlineWidth: "1px",
+                                  outlineStyle: "solid",
+                                }}
+                              >
+                                <AvatarFallback>
+                                  {getInitials(
+                                    challenger.profile.firstName,
+                                    challenger.profile.lastName
+                                  )}
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">
+                                {challenger.profile.firstName}{" "}
+                                {challenger.profile.lastName}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {challenger.metricLabel}
+                              </div>
+                            </div>
+                          </div>
+                          {canViewReports && (
+                            <Link
+                              href={`/analytics/reports/p/${challenger.profile.id}`}
+                              className="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            >
+                              View
+                            </Link>
+                          )}
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
               </motion.div>

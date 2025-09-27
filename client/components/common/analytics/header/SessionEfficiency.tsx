@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateSessionEfficiency } from "@/utils/analytics/header";
 import { TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -30,6 +30,7 @@ import {
 } from "recharts";
 
 export interface SessionEfficiencyProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -75,60 +76,21 @@ const COLOR_CONFIGS = {
 };
 
 export default function SessionEfficiency({
+  filteredData,
   thresholds,
 }: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
-  const [serverResult, setServerResult] = useState<{
-    currentValue: number;
-    trendData: Array<{ date: string; value: number; count: number }>;
-    hasData: boolean;
-  } | null>(null);
+  const rubrics = filteredData?.rubrics;
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculateSessionEfficiency" }]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateSessionEfficiency"] as {
-            currentValue: number;
-            trendData: Array<{ date: string; value: number; count: number }>;
-            hasData: boolean;
-          }) ?? { currentValue: 0, trendData: [], hasData: false };
-          setServerResult(payload);
-        }
-      } catch {
-        if (!aborted) setServerResult(null);
-      }
+  // Calculate session efficiency using utility function
+  const sessionEfficiencyResult = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-  const sessionEfficiencyResult = serverResult ?? {
-    currentValue: 0,
-    trendData: [],
-    hasData: false,
-  };
+    return calculateSessionEfficiency(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   const {
     currentValue: sessionEfficiency,
@@ -197,7 +159,7 @@ export default function SessionEfficiency({
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className={`text-2xl font-bold ${colorConfig.text}`}>
-            {hasDataAvailable ? `${sessionEfficiency}` : "0"}
+            {hasDataAvailable ? `${sessionEfficiency}%` : "0%"}
           </div>
         </CardContent>
       </Card>

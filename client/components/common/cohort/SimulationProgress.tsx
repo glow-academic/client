@@ -23,11 +23,27 @@ interface SimulationProgressProps {
       description: string | null;
     };
     cohortNames?: string; // New field for formatted cohort names
+    highestScore?: number; // User's highest score for this simulation
+    rubric?:
+      | {
+          name: string;
+          id: string;
+          updatedAt: string;
+          createdAt: string;
+          active: boolean;
+          description: string;
+          points: number;
+          passPoints: number;
+          defaultRubric: boolean;
+        }
+      | undefined;
   };
+  isTAView?: boolean; // Whether this is being shown in TA view
 }
 
 export default function SimulationProgress({
   simulation,
+  isTAView = false,
 }: SimulationProgressProps) {
   const { progress } = simulation;
 
@@ -50,45 +66,97 @@ export default function SimulationProgress({
     inProgressMembers: progress.inProgressMembers || [],
   };
 
-  // Calculate completion percentage (capped at 100%)
-  const totalCompleted =
-    validatedProgress.passedCount + validatedProgress.inProgressCount;
-  const completionPercentage =
-    validatedProgress.totalMembers > 0
-      ? Math.min(
-          100,
-          Math.round((totalCompleted / validatedProgress.totalMembers) * 100)
-        )
-      : 0;
+  // For TA view, use highest score instead of completion percentage
+  const isTAViewMode = isTAView && simulation.highestScore !== undefined;
 
-  // Determine if all members have passed (for instructor view)
-  const allPassed =
-    validatedProgress.passedCount >= validatedProgress.totalMembers;
-  const isComplete = allPassed;
+  let progressPercentage: number;
+  let isComplete: boolean;
+
+  if (isTAViewMode) {
+    // TA view: use highest score as progress
+    progressPercentage = Math.min(
+      100,
+      Math.max(0, simulation.highestScore || 0)
+    );
+
+    // Calculate pass threshold as percentage: (passPoints / points) * 100
+    const passThreshold = simulation.rubric
+      ? Math.round(
+          (simulation.rubric.passPoints / simulation.rubric.points) * 100
+        )
+      : 70; // Default fallback
+
+    isComplete =
+      simulation.highestScore !== undefined &&
+      simulation.highestScore >= passThreshold;
+  } else {
+    // Instructor view: use completion percentage
+    const totalCompleted =
+      validatedProgress.passedCount + validatedProgress.inProgressCount;
+    progressPercentage =
+      validatedProgress.totalMembers > 0
+        ? Math.min(
+            100,
+            Math.round((totalCompleted / validatedProgress.totalMembers) * 100)
+          )
+        : 0;
+
+    // Determine if all members have passed (for instructor view)
+    const allPassed =
+      validatedProgress.passedCount >= validatedProgress.totalMembers;
+    isComplete = allPassed;
+  }
 
   // Get status text and color
   const getStatusInfo = () => {
-    if (isComplete) {
-      return {
-        text: "Complete",
-        color: "text-green-600 dark:text-green-400",
-        bgColor: "bg-green-100 dark:bg-green-900/20",
-        borderColor: "border-green-200 dark:border-green-800",
-      };
-    } else if (validatedProgress.passedCount > 0) {
-      return {
-        text: "In Progress",
-        color: "text-blue-600 dark:text-blue-400",
-        bgColor: "bg-blue-100 dark:bg-blue-900/20",
-        borderColor: "border-blue-200 dark:border-blue-800",
-      };
+    if (isTAViewMode) {
+      // TA view: show based on highest score
+      if (isComplete) {
+        return {
+          text: "Passed",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-green-100 dark:bg-green-900/20",
+          borderColor: "border-green-200 dark:border-green-800",
+        };
+      } else if (simulation.highestScore && simulation.highestScore > 0) {
+        return {
+          text: "In Progress",
+          color: "text-blue-600 dark:text-blue-400",
+          bgColor: "bg-blue-100 dark:bg-blue-900/20",
+          borderColor: "border-blue-200 dark:border-blue-800",
+        };
+      } else {
+        return {
+          text: "Not Started",
+          color: "text-gray-600 dark:text-gray-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/20",
+          borderColor: "border-gray-200 dark:border-gray-800",
+        };
+      }
     } else {
-      return {
-        text: "Not Started",
-        color: "text-gray-600 dark:text-gray-400",
-        bgColor: "bg-gray-100 dark:bg-gray-900/20",
-        borderColor: "border-gray-200 dark:border-gray-800",
-      };
+      // Instructor view: show based on completion
+      if (isComplete) {
+        return {
+          text: "Complete",
+          color: "text-green-600 dark:text-green-400",
+          bgColor: "bg-green-100 dark:bg-green-900/20",
+          borderColor: "border-green-200 dark:border-green-800",
+        };
+      } else if (validatedProgress.passedCount > 0) {
+        return {
+          text: "In Progress",
+          color: "text-blue-600 dark:text-blue-400",
+          bgColor: "bg-blue-100 dark:bg-blue-900/20",
+          borderColor: "border-blue-200 dark:border-blue-800",
+        };
+      } else {
+        return {
+          text: "Not Started",
+          color: "text-gray-600 dark:text-gray-400",
+          bgColor: "bg-gray-100 dark:bg-gray-900/20",
+          borderColor: "border-gray-200 dark:border-gray-800",
+        };
+      }
     }
   };
 
@@ -117,11 +185,15 @@ export default function SimulationProgress({
           className={`h-2 rounded-full transition-all duration-300 ${
             isComplete
               ? "bg-green-500"
-              : validatedProgress.passedCount > 0
+              : (
+                    isTAViewMode
+                      ? simulation.highestScore && simulation.highestScore > 0
+                      : validatedProgress.passedCount > 0
+                  )
                 ? "bg-blue-500"
                 : "bg-gray-400"
           }`}
-          style={{ width: `${completionPercentage}%` }}
+          style={{ width: `${progressPercentage}%` }}
         />
       </div>
 
@@ -133,29 +205,44 @@ export default function SimulationProgress({
           {statusInfo.text}
         </span>
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {completionPercentage}%
+          {progressPercentage}%
         </span>
       </div>
 
-      {/* Detailed counts */}
-      <div className="text-xs text-gray-500 dark:text-gray-400 space-x-2">
-        <span className="inline-flex items-center">
-          <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-          {validatedProgress.passedCount} passed
-        </span>
-        {validatedProgress.inProgressCount > 0 && (
+      {/* Detailed counts or pass threshold */}
+      {isTAViewMode ? (
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           <span className="inline-flex items-center">
-            <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
-            {validatedProgress.inProgressCount} in progress
+            <span className="w-2 h-2 bg-orange-500 rounded-full mr-1"></span>
+            {simulation.rubric
+              ? Math.round(
+                  (simulation.rubric.passPoints / simulation.rubric.points) *
+                    100
+                )
+              : 70}
+            % to pass
           </span>
-        )}
-        {validatedProgress.notStartedCount > 0 && (
+        </div>
+      ) : (
+        <div className="text-xs text-gray-500 dark:text-gray-400 space-x-2">
           <span className="inline-flex items-center">
-            <span className="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
-            {validatedProgress.notStartedCount} not started
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+            {validatedProgress.passedCount} passed
           </span>
-        )}
-      </div>
+          {validatedProgress.inProgressCount > 0 && (
+            <span className="inline-flex items-center">
+              <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+              {validatedProgress.inProgressCount} in progress
+            </span>
+          )}
+          {validatedProgress.notStartedCount > 0 && (
+            <span className="inline-flex items-center">
+              <span className="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+              {validatedProgress.notStartedCount} not started
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

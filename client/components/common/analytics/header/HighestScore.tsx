@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateHighestScore } from "@/utils/analytics/header";
 import { Trophy } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -30,6 +30,7 @@ import {
 } from "recharts";
 
 export interface HighestScoreProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -74,59 +75,22 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function HighestScore({ thresholds }: HighestScoreProps) {
+export default function HighestScore({
+  filteredData,
+  thresholds,
+}: HighestScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
-  const [serverResult, setServerResult] = useState<{
-    currentValue: number;
-    trendData: Array<{ date: string; value: number; count: number }>;
-    hasData: boolean;
-  } | null>(null);
+  const rubrics = filteredData?.rubrics;
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculateHighestScore" }]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateHighestScore"] as {
-            currentValue: number;
-            trendData: Array<{ date: string; value: number; count: number }>;
-            hasData: boolean;
-          }) ?? { currentValue: 0, trendData: [], hasData: false };
-          setServerResult(payload);
-        }
-      } catch {
-        if (!aborted) setServerResult(null);
-      }
+  // Calculate highest score using utility function
+  const highestScoreResult = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-  const highestScoreResult = serverResult ?? {
-    currentValue: 0,
-    trendData: [],
-    hasData: false,
-  };
+    return calculateHighestScore(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   const {
     currentValue: highestScore,
@@ -207,25 +171,25 @@ export default function HighestScore({ thresholds }: HighestScoreProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scoreTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    name === "value" ? `${value}%` : value,
-                    name === "value" ? "Highest Score" : "Sessions",
-                  ]}
-                />
-                <Bar
-                  dataKey="value"
-                  fill={colorConfig.primary}
-                  name="value"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scoreTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      name === "value" ? `${value}%` : value,
+                      name === "value" ? "Highest Score" : "Sessions",
+                    ]}
+                  />
+                  <Bar
+                    dataKey="value"
+                    fill={colorConfig.primary}
+                    name="value"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
           </div>
 
           {/* Dynamic Trend Analysis */}

@@ -31,12 +31,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useParameters } from "@/lib/api/hooks/parameters";
 import { cn } from "@/lib/utils";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateScenarioPerformance } from "@/utils/analytics/footer";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -48,6 +47,7 @@ import {
 } from "recharts";
 
 export interface ScenarioStatsProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -61,17 +61,17 @@ interface MetricOption {
   description: string;
 }
 
-export default function ScenarioStats({ thresholds }: ScenarioStatsProps) {
+export default function ScenarioStats({
+  filteredData,
+  thresholds,
+}: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
-  const { data: parameters } = useParameters();
+
+  // Use centralized datasets from filteredData
+  const parameters = filteredData?.parameters;
+  const parameterItems = filteredData?.parameterItems;
+  const rubrics = filteredData?.rubrics;
 
   // Get numerical parameters only
   const numericalParameters = useMemo(() => {
@@ -100,73 +100,22 @@ export default function ScenarioStats({ thresholds }: ScenarioStatsProps) {
   }, [numericalParameters]);
 
   // Calculate performance data using utility function
-  type AggregatedRow = {
-    metricLevel: string | number;
-    avgScore: number;
-    scenarioCount: number;
-  };
-  const [aggregatedPerformanceData, setAggregatedPerformanceData] = useState<
-    AggregatedRow[]
-  >([]);
-  const [correlationData, setCorrelationData] = useState<{
-    correlation: number;
-    pValue: number;
-  }>({ correlation: 0, pValue: 1 });
+  const { performanceData: aggregatedPerformanceData, correlationData } =
+    useMemo(() => {
+      if (!filteredData || !parameterItems || !selectedParameter || !rubrics) {
+        return {
+          performanceData: [],
+          correlationData: { correlation: 0, pValue: 1 },
+        };
+      }
 
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      if (!selectedParameter) {
-        setAggregatedPerformanceData([]);
-        setCorrelationData({ correlation: 0, pValue: 1 });
-        return;
-      }
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [
-            {
-              name: "calculateScenarioPerformance",
-              args: { selectedParameterId: selectedParameter.id },
-            },
-          ]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateScenarioPerformance"] as {
-            performanceData: AggregatedRow[];
-            correlationData: { correlation: number; pValue: number };
-          }) ?? {
-            performanceData: [],
-            correlationData: { correlation: 0, pValue: 1 },
-          };
-          setAggregatedPerformanceData(payload.performanceData);
-          setCorrelationData(payload.correlationData);
-        }
-      } catch {
-        if (!aborted) {
-          setAggregatedPerformanceData([]);
-          setCorrelationData({ correlation: 0, pValue: 1 });
-        }
-      }
-    }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    selectedParameter,
-  ]);
+      return calculateScenarioPerformance(
+        filteredData,
+        rubrics,
+        parameterItems,
+        selectedParameter
+      );
+    }, [filteredData, parameterItems, selectedParameter, rubrics]);
 
   const { correlation, pValue } = correlationData;
 

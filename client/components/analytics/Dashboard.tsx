@@ -8,12 +8,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { HistoryResponse } from "@/utils/api/analytics/get-history";
-import { getAnalyticsHistory } from "@/utils/api/analytics/get-history";
+import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
 import ScenarioStats from "../common/analytics/footer/ScenarioStats";
 import SimulationComposition from "../common/analytics/footer/SimulationComposition";
@@ -42,62 +40,11 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   const { effectiveProfile } = useProfile();
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
 
-  // Server-backed history for SimulationHistory only
-  const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const baseFilters = {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          cohortIds: selectedCohortIds,
-          roles: selectedRoles as unknown as string[],
-          simulationFilters,
-        } as const;
-        const json = await getAnalyticsHistory({
-          ...baseFilters,
-          ...((profileId ?? effectiveProfile?.id)
-            ? { profileId: String(profileId ?? effectiveProfile?.id) }
-            : {}),
-        });
-        if (!cancelled) {
-          setHistoryData(json ?? null);
-          setIsLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setHistoryData({
-            rows: [],
-            profiles: [],
-            simulations: [],
-            rootScenarios: [],
-          } as unknown as HistoryResponse);
-          setIsLoading(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    profileId,
-    effectiveProfile?.id,
-  ]);
+  // Use centralized filtering hook
+  const { data: filteredData, isLoading } = useFilteredAnalyticsData({
+    ...(profileId && { profileId }),
+  });
 
   // Threshold data
   const thresholds = {
@@ -121,51 +68,113 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
   const headerComponents = [
-    <AverageScore key="average-score" thresholds={thresholds} />,
+    <AverageScore
+      key="average-score"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
     <CompletionPercentage
       key="completion-percentage"
+      filteredData={filteredData}
       thresholds={thresholds}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
+      filteredData={filteredData}
       thresholds={thresholds}
     />,
-    <HighestScore key="highest-score" thresholds={thresholds} />,
-    <MessagesPerSession key="messages-per-session" thresholds={thresholds} />,
+    <HighestScore
+      key="highest-score"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <MessagesPerSession
+      key="messages-per-session"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
     <PersonaResponseTimes
       key="persona-response-times"
+      filteredData={filteredData}
       thresholds={thresholds}
     />,
-    <SessionEfficiency key="session-efficiency" thresholds={thresholds} />,
-    <StagnationRate key="stagnation-rate" thresholds={thresholds} />,
-    <TimeSpent key="time-spent" thresholds={thresholds} />,
-    <TotalAttempts key="total-attempts" thresholds={thresholds} />,
+    <SessionEfficiency
+      key="session-efficiency"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <StagnationRate
+      key="stagnation-rate"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <TimeSpent
+      key="time-spent"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <TotalAttempts
+      key="total-attempts"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
   ];
 
   const primaryComponents = [
-    <Growth key="growth" thresholds={thresholds} />,
-    <PersonaPerformance key="persona-performance" thresholds={thresholds} />,
-    <RubricHeatmap key="rubric-heatmap" thresholds={thresholds} />,
+    <Growth key="growth" filteredData={filteredData} thresholds={thresholds} />,
+    <PersonaPerformance
+      key="persona-performance"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <RubricHeatmap
+      key="rubric-heatmap"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
   ];
 
   const secondaryComponents = [
-    <CohortPerformance key="cohort-performance" thresholds={thresholds} />,
-    <AttemptImprovement key="attempt-improvement" thresholds={thresholds} />,
-    <SkillPerformance key="skill-performance" thresholds={thresholds} />,
+    <CohortPerformance
+      key="cohort-performance"
+      filteredData={filteredData}
+      thresholds={thresholds}
+      profileId={profileId}
+    />,
+    <AttemptImprovement
+      key="attempt-improvement"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <SkillPerformance
+      key="skill-performance"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
   ];
 
   const leftFooterComponents = [
-    <ScenarioPerformance key="scenario-performance" thresholds={thresholds} />,
-    <ScenarioStats key="scenario-stats" thresholds={thresholds} />,
+    <ScenarioPerformance
+      key="scenario-performance"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
+    <ScenarioStats
+      key="scenario-stats"
+      filteredData={filteredData}
+      thresholds={thresholds}
+    />,
   ];
 
   const rightFooterComponents = [
     <SimulationPerformance
       key="simulation-performance"
+      filteredData={filteredData}
       thresholds={thresholds}
     />,
     <SimulationComposition
       key="simulation-composition"
+      filteredData={filteredData}
       thresholds={thresholds}
     />,
   ];
@@ -606,7 +615,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-        serverData={historyData}
+        filteredData={filteredData}
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}

@@ -14,8 +14,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculatePlatformGrowth } from "@/utils/analytics/primary";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -31,6 +31,7 @@ import {
 import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
 
 export interface GrowthProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -38,17 +39,13 @@ export interface GrowthProps {
   };
 }
 
-export default function Growth({ thresholds }: GrowthProps) {
+export default function Growth({ filteredData, thresholds }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+
+  // Use rubrics from filtered data
+  const rubrics = filteredData?.rubrics;
 
   // Define all available metrics (expandable to all 10 header metrics)
   const availableMetrics: GrowthMetric[] = useMemo(
@@ -98,8 +95,8 @@ export default function Growth({ thresholds }: GrowthProps) {
         name: "Response Times",
         color: "#84cc16",
         description: "Average response time to persona interactions",
-        unit: "min",
-        formatter: (value: number) => `${value}m`,
+        unit: "sec",
+        formatter: (value: number) => `${value}s`,
       },
       {
         id: "sessionEfficiency",
@@ -155,36 +152,14 @@ export default function Growth({ thresholds }: GrowthProps) {
     );
   }, [availableMetrics, selectedMetrics]);
 
-  const [growthData, setGrowthData] = useState<any[]>([]);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculatePlatformGrowth" }]
-        );
-        if (!aborted) {
-          const payload =
-            (data.results["calculatePlatformGrowth"] as any[]) ?? [];
-          setGrowthData(payload);
-        }
-      } catch {
-        if (!aborted) setGrowthData([]);
-      }
+  // Calculate growth data using utility function
+  const growthData = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return [];
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
+
+    return calculatePlatformGrowth(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   // Calculate threshold status based on growth data
   const getThresholdStatus = () => {

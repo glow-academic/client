@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { getAnalyticsDashboard } from "@/utils/api/analytics/get-dashboard";
+import type { FilteredData } from "@/utils/analytics/filtering";
+import { calculateAverageScore } from "@/utils/analytics/header";
 import { TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -30,6 +30,7 @@ import {
 } from "recharts";
 
 export interface AverageScoreProps {
+  filteredData: FilteredData | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -74,66 +75,23 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function AverageScore({ thresholds }: AverageScoreProps) {
+export default function AverageScore({
+  filteredData,
+  thresholds,
+}: AverageScoreProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Pull filters from analytics context
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  // Use rubrics from filtered data
+  const rubrics = filteredData?.rubrics;
 
-  // Client-fetched result from server endpoint
-  const [serverResult, setServerResult] = useState<{
-    currentValue: number;
-    trendData: Array<{ date: string; value: number; count: number }>;
-    hasData: boolean;
-  } | null>(null);
-
-  useEffect(() => {
-    let aborted = false;
-    async function run() {
-      try {
-        const data = await getAnalyticsDashboard(
-          {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            cohortIds: selectedCohortIds,
-            roles: selectedRoles,
-            simulationFilters,
-          },
-          [{ name: "calculateAverageScore" }]
-        );
-        if (!aborted) {
-          const payload = (data.results["calculateAverageScore"] as {
-            currentValue: number;
-            trendData: Array<{ date: string; value: number; count: number }>;
-            hasData: boolean;
-          }) ?? {
-            currentValue: 0,
-            trendData: [],
-            hasData: false,
-          };
-          setServerResult(payload);
-        }
-      } catch {
-        if (!aborted) setServerResult(null);
-      }
+  // Calculate average score using utility function
+  const averageScoreResult = useMemo(() => {
+    if (!filteredData || !rubrics) {
+      return { currentValue: 0, trendData: [], hasData: false };
     }
-    run();
-    return () => {
-      aborted = true;
-    };
-  }, [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]);
 
-  const averageScoreResult = serverResult ?? {
-    currentValue: 0,
-    trendData: [],
-    hasData: false,
-  };
+    return calculateAverageScore(filteredData, rubrics);
+  }, [filteredData, rubrics]);
 
   const {
     currentValue: averageScore,

@@ -1,19 +1,9 @@
 import logging
-import re
-from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List
 
 from app.db import get_session
-from app.models import (Cohorts, ParameterItems, Parameters, Personas,
-                        Profiles, Rubrics, Scenarios, SimulationAttempts,
-                        SimulationChatFeedbacks, SimulationChatGrades,
-                        SimulationChats, SimulationMessages, Simulations,
-                        StandardGroups, Standards)
-from app.utils import dashboard as dashboard_utils
 from app.utils.analytics import AnalyticsFilters, fetch_analytics_base
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
-from sqlalchemy import text
 from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
@@ -50,6 +40,9 @@ async def post_analytics_leaderboard(
 
     rubric_by_id = {str(r.get("id")): r for r in rubrics}
 
+    # Get simulations data for total expected chats calculation
+    simulations = base.get("simulations", [])
+
     chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
     for c in chats:
         arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
@@ -74,16 +67,133 @@ async def post_analytics_leaderboard(
         user_chat_ids = {str(c.get("id")) for c in user_chats}
         user_grades = [g for g in grades if str(g.get("simulation_chat_id")) in user_chat_ids]
 
-        # Avg normalized score
-        avg_score = 0.0
-        if user_grades:
+        # Calculate attempt-level scores using the same logic as client-side
+        attempt_scores: List[float] = []
+        
+        # Group chats by attempt for this user
+        user_chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+        for chat in user_chats:
+            attempt_id = str(chat.get("attempt_id"))
+            if attempt_id not in user_chats_by_attempt:
+                user_chats_by_attempt[attempt_id] = []
+            user_chats_by_attempt[attempt_id].append(chat)
+        
+        # Calculate score for each attempt
+        for user_attempt in user_attempts:
+            attempt_id = str(user_attempt.get("id"))
+            attempt_chats = user_chats_by_attempt.get(attempt_id, [])
+            
+            # Get simulation to find total expected chats
+            simulation_id = str(user_attempt.get("simulation_id"))
+            simulation = next((s for s in simulations if str(s.get("id")) == simulation_id), None)
+            total_expected = len(simulation.get("scenario_ids", [])) if simulation else len(attempt_chats)
+            
+            if total_expected == 0:
+                continue
+            
+            # Count completed chats
+            completed_chats = [c for c in attempt_chats if bool(c.get("completed"))]
+            
+            # If no chats are completed, skip this attempt
+            if len(completed_chats) == 0:
+                continue
+            
+            # Calculate total score including zeros for ALL expected chats
             total_score = 0.0
-            for g in user_grades:
-                rubric = rubric_by_id.get(str(g.get("rubric_id")))
-                rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-                score = float(g.get("score", 0))
-                total_score += (score / max(rubric_points, 1.0)) * 100.0
-            avg_score = total_score / len(user_grades)
+            
+            # For each expected chat, find if it exists and has a grade
+            for i in range(total_expected):
+                if i < len(attempt_chats) and bool(attempt_chats[i].get("completed")):
+                    # Find grade for this chat
+                    chat_id = str(attempt_chats[i].get("id"))
+                    grade = next((g for g in user_grades if str(g.get("simulation_chat_id")) == chat_id), None)
+                    if grade:
+                        total_score += float(grade.get("score", 0))
+                    # If no grade exists, add 0 (implicit)
+                # If chat doesn't exist or is not completed, add 0 (implicit)
+            
+            # Calculate average score for this attempt
+            attempt_avg_score = total_score / total_expected
+            
+            # Normalize by rubric points
+            if attempt_chats:
+                # Use the first chat's rubric (all chats in an attempt should have the same rubric)
+                first_chat = attempt_chats[0]
+                grade = next((g for g in user_grades if str(g.get("simulation_chat_id")) == str(first_chat.get("id"))), None)
+                if grade:
+                    rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+                    rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+                    normalized_attempt_score = (attempt_avg_score / max(rubric_points, 1.0)) * 100.0
+                    attempt_scores.append(normalized_attempt_score)
+        
+        # Calculate overall average score
+        avg_score = sum(attempt_scores) / len(attempt_scores) if attempt_scores else 0.0
+        
+        # Calculate highest score (maximum of all attempt scores)
+        highest_score = max(attempt_scores) if attempt_scores else 0.0
+
+        # Calculate perfect score count - count individual simulation chat grades that achieved 100% of total points
+        perfect_score_count = 0
+        for grade in user_grades:
+            # Check if this grade achieved 100% of the total points
+            score = float(grade.get("score", 0))
+            rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+            if rubric:
+                total_points = float(rubric.get("points", 100))
+                # Count as perfect score if the grade equals the total points (100%)
+                if score >= total_points:
+                    perfect_score_count += 1
+
+        # Calculate user response times (seconds) - how long users take to respond to persona messages
+        user_response_times: List[float] = []
+        
+        # Group messages by chat and calculate response times
+        messages_by_chat_detailed: Dict[str, List[Dict[str, Any]]] = {}
+        for m in messages:
+            chat_id = str(m.get("chat_id"))
+            if chat_id not in messages_by_chat_detailed:
+                messages_by_chat_detailed[chat_id] = []
+            messages_by_chat_detailed[chat_id].append(m)
+        
+        # For each chat, calculate user response times
+        for chat_id, chat_messages in messages_by_chat_detailed.items():
+            if chat_id not in user_chat_ids:
+                continue  # Skip chats not belonging to this user
+                
+            # Sort messages by created_at
+            try:
+                sorted_messages = sorted(
+                    chat_messages,
+                    key=lambda msg: datetime.fromisoformat(str(msg.get("created_at")).replace("Z", "+00:00"))
+                )
+            except Exception:
+                continue
+            
+            # Calculate response times for response->query pairs (persona message -> user response)
+            for i in range(len(sorted_messages) - 1):
+                current_msg = sorted_messages[i]
+                next_msg = sorted_messages[i + 1]
+                
+                # Look for response -> query pairs (persona response followed by user query)
+                if (current_msg.get("type") == "response" and 
+                    next_msg.get("type") == "query" and
+                    current_msg.get("created_at") and 
+                    next_msg.get("created_at")):
+                    try:
+                        persona_time = datetime.fromisoformat(str(current_msg.get("created_at")).replace("Z", "+00:00"))
+                        user_time = datetime.fromisoformat(str(next_msg.get("created_at")).replace("Z", "+00:00"))
+                        response_time_seconds = (user_time - persona_time).total_seconds()
+                        
+                        # Only include reasonable response times (between 1 second and 1 hour)
+                        if 1.0 <= response_time_seconds <= 3600.0:
+                            user_response_times.append(response_time_seconds)
+                    except Exception:
+                        continue
+        
+        # Calculate average user response time in seconds
+        persona_response_seconds = (
+            sum(user_response_times) / len(user_response_times) if user_response_times else 0.0
+        )
 
         # Time spent minutes from chat timestamps
         time_spent_seconds = 0.0
@@ -176,13 +286,14 @@ async def post_analytics_leaderboard(
             "first_name": p.get("first_name"),
             "last_name": p.get("last_name"),
             "total_attempts": total_attempts,
-            "highest_score_avg": int(round(avg_score)),
+            "highest_score_avg": int(round(highest_score)),
             "messages_per_session": int(round(messages_per_session)),
             "time_spent_minutes": int(round(time_spent_minutes)),
             "quickest_pass_minutes": quickest_pass_minutes,
             "most_improved_percent": int(round(most_improved_percent)),
             "improvement_rate_per_day": int(round(improvement_rate_per_day)),
-            "perfect_score_count": 0,
+            "perfect_score_count": perfect_score_count,
+            "persona_response_seconds": int(round(persona_response_seconds)),
         })
 
     return rows
@@ -190,7 +301,7 @@ async def post_analytics_leaderboard(
 @router.post("/reports")
 async def post_analytics_reports(
     filters: AnalyticsFilters, session: Session = Depends(get_session)
-) -> List[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """Compute per-profile report rows (full header metrics) server-side."""
     base = fetch_analytics_base(session, filters)
 
@@ -202,6 +313,7 @@ async def post_analytics_reports(
     rubrics: List[Dict[str, Any]] = base.get("rubrics", [])
     scenarios: List[Dict[str, Any]] = base.get("scenarios", [])
     cohorts: List[Dict[str, Any]] = base.get("cohorts", [])
+    simulations: List[Dict[str, Any]] = base.get("simulations", [])
 
     rubric_by_id = {str(r.get("id")): r for r in rubrics}
     scenario_by_id = {str(s.get("id")): s for s in scenarios}
@@ -223,22 +335,161 @@ async def post_analytics_reports(
         user_chat_ids = {str(c.get("id")) for c in user_chats}
         user_grades = [g for g in grades if str(g.get("simulation_chat_id")) in user_chat_ids]
 
-        # Average and highest normalized score; collect list for stats
-        avg_score = 0.0
-        highest_score = 0.0
+        # Handle profiles with no attempts - set all metrics to zero/defaults
+        if not user_attempts:
+            rows.append({
+                "id": pid,
+                "firstName": p.get("first_name"),
+                "lastName": p.get("last_name"),
+                "username": p.get("alias") or "",
+                "averageScore": 0,
+                "completionPercentage": 0,
+                "firstAttemptPassRate": 0,
+                "highestScore": 0,
+                "messagesPerSession": 0,
+                "personaResponseTimes": 0,
+                "sessionEfficiency": 0,
+                "stagnationRate": 0,
+                "timeSpent": 0,
+                "totalAttempts": 0,
+                "perfectScoreCount": 0,
+                "riskLevel": "good",
+                "riskDetails": {
+                    "dangerCount": 0,
+                    "warningCount": 0,
+                    "goodCount": 10,
+                },
+                "completedSessions": 0,
+                "totalSessions": 0,
+                "lastActivity": None,
+                "scenariosCompleted": 0,
+                "personasTested": [],
+                "scenarioIds": [],
+                "simulationIds": [],
+                "simulationMetrics": {},
+                "hover": {
+                    "scoreStats": {
+                        "mean": 0,
+                        "median": 0,
+                        "mode": 0,
+                        "top": [],
+                    },
+                    "timeStats": {
+                        "avgSessionMinutes": 0,
+                        "avgChatMinutes": 0,
+                        "avgOverallMinutes": 0,
+                    },
+                    "messageStats": {
+                        "mean": 0.0,
+                        "median": 0.0,
+                        "count": 0,
+                    },
+                    "completionStats": {
+                        "completed": 0,
+                        "total": 0,
+                        "percent": 0,
+                    },
+                    "firstAttemptStats": {
+                        "passed": 0,
+                        "total": 0,
+                        "percent": 0,
+                    },
+                    "personaResponseStats": {
+                        "meanSeconds": 0,
+                        "medianSeconds": 0,
+                        "samples": 0,
+                    },
+                    "efficiencyStats": {
+                        "avgScorePercent": 0,
+                        "avgMinutes": 0,
+                        "efficiency": 0,
+                    },
+                    "stagnationStats": {
+                        "tracked": 0,
+                        "stagnant": 0,
+                        "ratePercent": 0,
+                    },
+                },
+            })
+            continue
+
+        # Calculate attempt-level scores using the same logic as client-side
+        # Group attempts and calculate average scores including zeros for missing chats
+        attempt_scores: List[float] = []
         normalized_scores: List[float] = []
-        if user_grades:
+        
+        # Group chats by attempt
+        chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+        for chat in user_chats:
+            attempt_id = str(chat.get("attempt_id"))
+            if attempt_id not in chats_by_attempt:
+                chats_by_attempt[attempt_id] = []
+            chats_by_attempt[attempt_id].append(chat)
+        
+        # Calculate score for each attempt
+        for attempt in user_attempts:
+            attempt_id = str(attempt.get("id"))
+            attempt_chats = chats_by_attempt.get(attempt_id, [])
+            
+            # Get simulation to find total expected chats
+            simulation_id = str(attempt.get("simulation_id"))
+            simulation = next((s for s in simulations if str(s.get("id")) == simulation_id), None)
+            total_expected = len(simulation.get("scenario_ids", [])) if simulation else len(attempt_chats)
+            
+            if total_expected == 0:
+                continue
+            
+            # Count completed chats
+            completed_chats = [c for c in attempt_chats if bool(c.get("completed"))]
+            
+            # If no chats are completed, skip this attempt
+            if len(completed_chats) == 0:
+                continue
+            
+            # Calculate total score including zeros for ALL expected chats
             total_score = 0.0
-            for g in user_grades:
-                rubric = rubric_by_id.get(str(g.get("rubric_id")))
-                rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-                score = float(g.get("score", 0))
-                norm = (score / max(rubric_points, 1.0)) * 100.0
-                total_score += norm
-                if norm > highest_score:
-                    highest_score = norm
-                normalized_scores.append(norm)
-            avg_score = total_score / len(user_grades)
+            
+            # For each expected chat, find if it exists and has a grade
+            for i in range(total_expected):
+                if i < len(attempt_chats) and bool(attempt_chats[i].get("completed")):
+                    # Find grade for this chat
+                    chat_id = str(attempt_chats[i].get("id"))
+                    grade = next((g for g in user_grades if str(g.get("simulation_chat_id")) == chat_id), None)
+                    if grade:
+                        total_score += float(grade.get("score", 0))
+                    # If no grade exists, add 0 (implicit)
+                # If chat doesn't exist or is not completed, add 0 (implicit)
+            
+            # Calculate average score for this attempt
+            attempt_avg_score = total_score / total_expected
+            
+            # Normalize by rubric points
+            if attempt_chats:
+                # Use the first chat's rubric (all chats in an attempt should have the same rubric)
+                first_chat = attempt_chats[0]
+                grade = next((g for g in user_grades if str(g.get("simulation_chat_id")) == str(first_chat.get("id"))), None)
+                if grade:
+                    rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+                    rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+                    normalized_attempt_score = (attempt_avg_score / max(rubric_points, 1.0)) * 100.0
+                    attempt_scores.append(normalized_attempt_score)
+                    normalized_scores.append(normalized_attempt_score)
+        
+        # Calculate overall average and highest scores
+        avg_score = sum(attempt_scores) / len(attempt_scores) if attempt_scores else 0.0
+        highest_score = max(attempt_scores) if attempt_scores else 0.0
+
+        # Calculate perfect score count - count individual simulation chat grades that achieved 100% of total points
+        perfect_score_count = 0
+        for grade in user_grades:
+            # Check if this grade achieved 100% of the total points
+            score = float(grade.get("score", 0))
+            rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+            if rubric:
+                total_points = float(rubric.get("points", 100))
+                # Count as perfect score if the grade equals the total points (100%)
+                if score >= total_points:
+                    perfect_score_count += 1
 
         # Time spent (minutes) from completed chats
         time_spent_seconds = 0.0
@@ -296,8 +547,56 @@ async def post_analytics_reports(
         first_attempt_total = len(first_attempt_by_sim)
         first_attempt_pass_rate = (first_attempt_passes / first_attempt_total * 100.0) if first_attempt_total > 0 else 0.0
 
-        # Persona response times (seconds) - base messages lack role; return 0 for now
-        persona_response_seconds = 0
+        # User response times (seconds) - calculate how long users take to respond to persona messages
+        user_response_times: List[float] = []
+        
+        # Group messages by chat and calculate response times
+        messages_by_chat_detailed: Dict[str, List[Dict[str, Any]]] = {}
+        for m in messages:
+            chat_id = str(m.get("chat_id"))
+            if chat_id not in messages_by_chat_detailed:
+                messages_by_chat_detailed[chat_id] = []
+            messages_by_chat_detailed[chat_id].append(m)
+        
+        # For each chat, calculate user response times
+        for chat_id, chat_messages in messages_by_chat_detailed.items():
+            if chat_id not in user_chat_ids:
+                continue  # Skip chats not belonging to this user
+                
+            # Sort messages by created_at
+            try:
+                sorted_messages = sorted(
+                    chat_messages,
+                    key=lambda msg: datetime.fromisoformat(str(msg.get("created_at")).replace("Z", "+00:00"))
+                )
+            except Exception:
+                continue
+            
+            # Calculate response times for response->query pairs (persona message -> user response)
+            for i in range(len(sorted_messages) - 1):
+                current_msg = sorted_messages[i]
+                next_msg = sorted_messages[i + 1]
+                
+                # Look for response -> query pairs (persona response followed by user query)
+                if (current_msg.get("type") == "response" and 
+                    next_msg.get("type") == "query" and
+                    current_msg.get("created_at") and 
+                    next_msg.get("created_at")):
+                    try:
+                        persona_time = datetime.fromisoformat(str(current_msg.get("created_at")).replace("Z", "+00:00"))
+                        user_time = datetime.fromisoformat(str(next_msg.get("created_at")).replace("Z", "+00:00"))
+                        response_time_seconds = (user_time - persona_time).total_seconds()
+                        
+                        # Only include reasonable response times (between 1 second and 1 hour)
+                        if 1.0 <= response_time_seconds <= 3600.0:
+                            user_response_times.append(response_time_seconds)
+                    except Exception:
+                        continue
+        
+        # Calculate average user response time in seconds
+        persona_response_seconds = (
+            sum(user_response_times) / len(user_response_times) if user_response_times else 0.0
+        )
 
         # Session efficiency: score adjusted by time (bounded 0..100)
         avg_minutes = (time_spent_minutes / max(total_sessions, 1)) if total_sessions > 0 else time_spent_minutes
@@ -394,6 +693,128 @@ async def post_analytics_reports(
                 user_persona_ids.append(str(persona_id))
         user_simulation_ids = list({str(a.get("simulation_id")) for a in user_attempts})
 
+        # Calculate per-simulation metrics for export
+        simulation_metrics: Dict[str, Dict[str, float]] = {}
+        for simulation_id in user_simulation_ids:
+            # Get attempts for this simulation
+            sim_attempts = [a for a in user_attempts if str(a.get("simulation_id")) == simulation_id]
+            sim_attempt_ids = {str(a.get("id")) for a in sim_attempts}
+            sim_chats = [c for c in user_chats if str(c.get("attempt_id")) in sim_attempt_ids]
+            sim_chat_ids = {str(c.get("id")) for c in sim_chats}
+            sim_grades = [g for g in user_grades if str(g.get("simulation_chat_id")) in sim_chat_ids]
+            
+            # Calculate per-simulation scores using the same logic as overall
+            sim_attempt_scores: List[float] = []
+            sim_chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
+            for chat in sim_chats:
+                attempt_id = str(chat.get("attempt_id"))
+                if attempt_id not in sim_chats_by_attempt:
+                    sim_chats_by_attempt[attempt_id] = []
+                sim_chats_by_attempt[attempt_id].append(chat)
+            
+            for attempt in sim_attempts:
+                attempt_id = str(attempt.get("id"))
+                attempt_chats = sim_chats_by_attempt.get(attempt_id, [])
+                
+                # Get simulation to find total expected chats
+                simulation = next((s for s in simulations if str(s.get("id")) == simulation_id), None)
+                total_expected = len(simulation.get("scenario_ids", [])) if simulation else len(attempt_chats)
+                
+                if total_expected == 0:
+                    continue
+                
+                # Count completed chats
+                completed_chats = [c for c in attempt_chats if bool(c.get("completed"))]
+                
+                # If no chats are completed, skip this attempt
+                if len(completed_chats) == 0:
+                    continue
+                
+                # Calculate total score including zeros for ALL expected chats
+                total_score = 0.0
+                
+                # For each expected chat, find if it exists and has a grade
+                for i in range(total_expected):
+                    if i < len(attempt_chats) and bool(attempt_chats[i].get("completed")):
+                        # Find grade for this chat
+                        chat_id = str(attempt_chats[i].get("id"))
+                        grade = next((g for g in sim_grades if str(g.get("simulation_chat_id")) == chat_id), None)
+                        if grade:
+                            total_score += float(grade.get("score", 0))
+                        # If no grade exists, add 0 (implicit)
+                    # If chat doesn't exist or is not completed, add 0 (implicit)
+                
+                # Calculate average score for this attempt
+                attempt_avg_score = total_score / total_expected
+                
+                # Normalize by rubric points
+                if attempt_chats:
+                    # Use the first chat's rubric (all chats in an attempt should have the same rubric)
+                    first_chat = attempt_chats[0]
+                    grade = next((g for g in sim_grades if str(g.get("simulation_chat_id")) == str(first_chat.get("id"))), None)
+                    if grade:
+                        rubric = rubric_by_id.get(str(grade.get("rubric_id")))
+                        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
+                        normalized_attempt_score = (attempt_avg_score / max(rubric_points, 1.0)) * 100.0
+                        sim_attempt_scores.append(normalized_attempt_score)
+            
+            # Calculate per-simulation metrics
+            sim_avg_score = sum(sim_attempt_scores) / len(sim_attempt_scores) if sim_attempt_scores else 0.0
+            sim_highest_score = max(sim_attempt_scores) if sim_attempt_scores else 0.0
+            
+            # Calculate other per-simulation metrics
+            sim_completed_sessions = sum(1 for c in sim_chats if bool(c.get("completed")))
+            sim_total_sessions = len(sim_chats)
+            sim_completion_percentage = (sim_completed_sessions / sim_total_sessions * 100.0) if sim_total_sessions > 0 else 0.0
+            
+            # First attempt pass rate for this simulation
+            sim_first_attempts = [a for a in sim_attempts]
+            sim_first_attempt = min(sim_first_attempts, key=lambda a: str(a.get("created_at"))) if sim_first_attempts else None
+            sim_first_attempt_passed = False
+            if sim_first_attempt:
+                first_attempt_id = str(sim_first_attempt.get("id"))
+                first_attempt_chats = [c for c in sim_chats if str(c.get("attempt_id")) == first_attempt_id]
+                first_attempt_chat_ids = {str(c.get("id")) for c in first_attempt_chats}
+                first_attempt_grades = [g for g in sim_grades if str(g.get("simulation_chat_id")) in first_attempt_chat_ids]
+                sim_first_attempt_passed = any(bool(g.get("passed")) for g in first_attempt_grades)
+            
+            sim_first_attempt_pass_rate = 100.0 if sim_first_attempt_passed else 0.0
+            
+            # Time spent for this simulation
+            sim_time_spent_seconds = 0.0
+            for chat in sim_chats:
+                created_at = chat.get("created_at")
+                completed_at = chat.get("completed_at")
+                if created_at and completed_at:
+                    try:
+                        start = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+                        end = datetime.fromisoformat(str(completed_at).replace("Z", "+00:00"))
+                        diff = (end - start).total_seconds()
+                        sim_time_spent_seconds += max(0.0, diff)
+                    except Exception:
+                        pass
+            sim_time_spent_minutes = sim_time_spent_seconds / 60.0
+            
+            # Messages per session for this simulation
+            sim_messages_counts = [messages_by_chat.get(str(chat.get("id")), 0) for chat in sim_chats]
+            sim_messages_per_session = (sum(sim_messages_counts) / len(sim_messages_counts)) if sim_messages_counts else 0.0
+            
+            # Session efficiency for this simulation
+            sim_avg_minutes = (sim_time_spent_minutes / max(sim_total_sessions, 1)) if sim_total_sessions > 0 else sim_time_spent_minutes
+            sim_session_efficiency = max(0.0, min(100.0, sim_avg_score * (1.0 - min(1.0, sim_avg_minutes / 120.0))))
+            
+            # Store per-simulation metrics
+            simulation_metrics[simulation_id] = {
+                "averageScore": sim_avg_score,
+                "highestScore": sim_highest_score,
+                "completionPercentage": sim_completion_percentage,
+                "firstAttemptPassRate": sim_first_attempt_pass_rate,
+                "timeSpent": sim_time_spent_minutes,
+                "messagesPerSession": sim_messages_per_session,
+                "sessionEfficiency": sim_session_efficiency,
+                "totalAttempts": len(sim_attempts),
+            }
+
         # Risk assessment
         thresholds = {
             "averageScore": {"danger": 70, "warning": 80},
@@ -401,7 +822,7 @@ async def post_analytics_reports(
             "firstAttemptPassRate": {"danger": 70, "warning": 80},
             "highestScore": {"danger": 80, "warning": 85},
             "messagesPerSession": {"danger": 5, "warning": 8},
-            "personaResponseTimes": {"danger": 10, "warning": 5},
+            "personaResponseTimes": {"danger": 600, "warning": 300},
             "sessionEfficiency": {"danger": 70, "warning": 80},
             "stagnationRate": {"danger": 30, "warning": 20},
             "timeSpent": {"danger": 120, "warning": 90},
@@ -427,7 +848,7 @@ async def post_analytics_reports(
             "firstAttemptPassRate": band(first_attempt_pass_rate, "firstAttemptPassRate"),
             "highestScore": band(highest_score, "highestScore"),
             "messagesPerSession": band(messages_per_session, "messagesPerSession"),
-            "personaResponseTimes": band(persona_response_seconds / 60.0, "personaResponseTimes", invert=True),
+            "personaResponseTimes": band(persona_response_seconds, "personaResponseTimes", invert=True),
             "sessionEfficiency": band(session_efficiency, "sessionEfficiency"),
             "stagnationRate": band(stagnation_rate, "stagnationRate", invert=True),
             "timeSpent": band(time_spent_minutes, "timeSpent", invert=True),
@@ -451,11 +872,12 @@ async def post_analytics_reports(
             "firstAttemptPassRate": int(round(first_attempt_pass_rate)),
             "highestScore": int(round(highest_score)),
             "messagesPerSession": int(round(messages_per_session)),
-            "personaResponseTimes": int(round(persona_response_seconds / 60.0)),
+            "personaResponseTimes": int(round(persona_response_seconds)),
             "sessionEfficiency": int(round(session_efficiency)),
             "stagnationRate": int(round(stagnation_rate)),
             "timeSpent": int(round(time_spent_minutes)),
             "totalAttempts": len(user_attempts),
+            "perfectScoreCount": perfect_score_count,
             "riskLevel": risk_level,
             "riskDetails": {
                 "dangerCount": danger_count,
@@ -470,6 +892,7 @@ async def post_analytics_reports(
             "personasTested": list({pid for pid in user_persona_ids}),
             "scenarioIds": list({sid for sid in user_scenario_ids}),
             "simulationIds": user_simulation_ids,
+            "simulationMetrics": simulation_metrics,
             # hover details fully server-backed
             "hover": {
                 "scoreStats": {
@@ -491,9 +914,9 @@ async def post_analytics_reports(
                 "completionStats": completion_stats,
                 "firstAttemptStats": first_attempt_stats,
                 "personaResponseStats": {
-                    "meanSeconds": 0,
-                    "medianSeconds": 0,
-                    "samples": 0,
+                    "meanSeconds": int(round(sum(user_response_times) / len(user_response_times))) if user_response_times else 0,
+                    "medianSeconds": int(round(sorted(user_response_times)[len(user_response_times) // 2])) if user_response_times else 0,
+                    "samples": len(user_response_times),
                 },
                 "efficiencyStats": {
                     "avgScorePercent": int(round(avg_score)),
@@ -508,675 +931,24 @@ async def post_analytics_reports(
             },
         })
 
-    return rows
-
-@router.post("/history")
-async def post_analytics_history(
-    filters: AnalyticsFilters, session: Session = Depends(get_session)
-) -> Dict[str, Any]:
-    """
-    Return the minimal data needed for the history page.
-    """
-    base = fetch_analytics_base(session, filters)
-
-    attempts = base.get("attempts", []) or []
-    chats = base.get("chats", []) or []
-    grades = base.get("grades", []) or []
-    simulations = base.get("simulations", []) or []
-    scenarios = base.get("scenarios", []) or []
-    profiles = base.get("profiles", []) or []
-    rubrics = base.get("rubrics", []) or []
-
-    # Index helpers
-    sims_by_id: Dict[str, Dict[str, Any]] = {str(s.get("id")): s for s in simulations}
-    scen_by_id: Dict[str, Dict[str, Any]] = {str(s.get("id")): s for s in scenarios}
-    prof_by_id: Dict[str, Dict[str, Any]] = {str(p.get("id")): p for p in profiles}
-    rubric_by_id: Dict[str, Dict[str, Any]] = {str(r.get("id")): r for r in rubrics}
-
-    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
-    for c in chats:
-        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
-        arr.append(c)
-
-    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
-    for g in grades:
-        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
-        arr.append(g)
-
-    # Build persona name/color map for scenarios' persona_ids
-    persona_ids: List[str] = []
-    for sc in scenarios:
-        pid = sc.get("persona_id")
-        if pid:
-            persona_ids.append(str(pid))
-    uniq_persona_ids = list({pid for pid in persona_ids})
-
-    persona_by_id: Dict[str, Dict[str, Any]] = {}
-    if uniq_persona_ids:
-        # Fetch only referenced personas
-        try:
-            placeholders = ",".join([f"'{pid}'" for pid in uniq_persona_ids])
-            q = text(f"select id, name, color from personas where id in ({placeholders})")
-            res = session.execute(q)
-            for row in res:
-                # row may be tuple-like or mapping
-                try:
-                    pid = str(row[0])
-                    persona_by_id[pid] = {"id": pid, "name": row[1], "color": row[2]}
-                except Exception:
-                    m = getattr(row, "_mapping", None)
-                    if m:
-                        pid = str(m.get("id"))
-                        persona_by_id[pid] = {
-                            "id": pid,
-                            "name": m.get("name"),
-                            "color": m.get("color"),
-                        }
-        except Exception:
-            persona_by_id = {}
-
-    rows: List[Dict[str, Any]] = []
-    for a in attempts:
-        aid = str(a.get("id"))
-        pid = str(a.get("profile_id")) if a.get("profile_id") else ""
-        sid = str(a.get("simulation_id"))
-        sim = sims_by_id.get(sid, {})
-        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
-        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-        attempt_chats = chats_by_attempt.get(aid, [])
-
-        # scenarios array for row
-        row_chats: List[Dict[str, Any]] = []
-        for c in attempt_chats:
-            completed = bool(c.get("completed")) or bool(c.get("completed_at"))
-            row_chats.append({
-                "id": str(c.get("id")),
-                "attemptId": aid,
-                "scenarioId": str(c.get("scenario_id")) if c.get("scenario_id") else None,
-                "createdAt": str(c.get("created_at") or ""),
-                "completedAt": str(c.get("completed_at")) if c.get("completed_at") else None,
-                "completed": completed,
-            })
-
-        # interactionIds expected from simulation.scenario_ids
-        interaction_ids = [str(x) for x in (sim.get("scenario_ids") or [])]
-
-        # completed with rubric count
-        completed_with_rubric = 0
-        total_score_points = 0.0
-        for c in attempt_chats:
-            completed = bool(c.get("completed")) or bool(c.get("completed_at"))
-            if not completed:
-                continue
-            gid = str(c.get("id"))
-            g_list = grades_by_chat.get(gid, [])
-            if g_list:
-                completed_with_rubric += 1
-                # take the latest grade if timestamps exist, else first
-                try:
-                    g_sorted = sorted(
-                        g_list,
-                        key=lambda gg: str(gg.get("created_at") or ""),
-                    )
-                    g = g_sorted[-1]
-                except Exception:
-                    g = g_list[0]
-                total_score_points += float(g.get("score", 0.0))
-
-        total_expected = len(interaction_ids) if interaction_ids else len(attempt_chats)
-        avg_score_points = (total_score_points / max(1, total_expected))
-        score_percent = int(round((avg_score_points / max(1.0, rubric_points)) * 100.0))
-
-        # Completion flags
-        completed_chats_count = sum(
-            1 for c in attempt_chats if bool(c.get("completed")) or bool(c.get("completed_at"))
-        )
-        all_chats_completed = total_expected > 0 and completed_chats_count == total_expected
-        is_incomplete = all_chats_completed and completed_with_rubric == 0
-
-        # personas tested (names/colors) from scenarios
-        persona_names: List[str] = []
-        for c in attempt_chats:
-            sid_sc = str(c.get("scenario_id")) if c.get("scenario_id") else None
-            if not sid_sc:
-                continue
-            sc = scen_by_id.get(sid_sc)
-            if not sc:
-                continue
-            pers_id = str(sc.get("persona_id")) if sc.get("persona_id") else None
-            if not pers_id:
-                continue
-            pers = persona_by_id.get(pers_id)
-            if pers and pers.get("name"):
-                persona_names.append(str(pers.get("name")))
-        personas_tested = list({n for n in persona_names})
-
-        # root scenario ids for filtering
-        root_scenario_ids = []
-        seen_root = set()
-        for c in attempt_chats:
-            sid_sc = str(c.get("scenario_id")) if c.get("scenario_id") else None
-            if not sid_sc:
-                continue
-            sc = scen_by_id.get(sid_sc)
-            if not sc:
-                continue
-            root_id = str(sc.get("parent_id")) if sc.get("parent_id") else str(sc.get("id"))
-            if root_id not in seen_root:
-                seen_root.add(root_id)
-                root_scenario_ids.append(root_id)
-
-        prof = prof_by_id.get(pid, {})
-        full_name = f"{prof.get('first_name','')} {prof.get('last_name','')}".strip()
-
-        rows.append({
-            "id": aid,
-            "profileId": pid,
-            "profileName": full_name,
-            "simulationId": sid,
-            "simulationTitle": str(sim.get("title") or "Simulation"),
-            "createdAt": str(a.get("created_at") or ""),
-            "archived": bool(a.get("archived", False)),
-            "infiniteMode": bool(a.get("infinite_mode", False)),
-            "infiniteModeTimeLimit": a.get("infinite_mode_time_limit"),
-            "scenarios": row_chats,
-            "interactionIds": interaction_ids,
-            "completedWithRubricCount": completed_with_rubric,
-            "totalExpected": total_expected,
-            "scorePercent": score_percent,
-            "isPractice": bool(sim.get("practice_simulation", False)),
-            "rootScenarioIds": root_scenario_ids,
-            "personasTested": personas_tested,
-            "isIncomplete": is_incomplete,
-        })
-
-    # Build options for filters on client
-    from typing import Set
-    profile_options: List[Dict[str, Any]] = []
-    seen_prof: Set[str] = set()
-    for r in rows:
-        pid_opt = r.get("profileId")
-        pid = str(pid_opt) if pid_opt else None
-        if pid and pid not in seen_prof:
-            seen_prof.add(pid)
-            profile_options.append({"id": pid, "name": r.get("profileName", "")})
-
-    simulation_options: List[Dict[str, Any]] = []
-    seen_sim: Set[str] = set()
-    for r in rows:
-        sim_id_opt = r.get("simulationId")
-        sim_id = str(sim_id_opt) if sim_id_opt else None
-        if sim_id and sim_id not in seen_sim:
-            seen_sim.add(sim_id)
-            simulation_options.append({"id": sim_id, "title": r.get("simulationTitle", "Simulation")})
-
-    # Root scenarios from base
-    root_scenarios = []
-    seen_rs = set()
-    for sc in scenarios:
-        rid = str(sc.get("parent_id")) if sc.get("parent_id") else str(sc.get("id"))
-        if rid in seen_rs:
-            continue
-        seen_rs.add(rid)
-        # Find the representative name (parent's name if parent exists)
-        name = None
-        if sc.get("parent_id"):
-            parent = scen_by_id.get(str(sc.get("parent_id")))
-            name = parent.get("name") if parent else sc.get("name")
-        else:
-            name = sc.get("name")
-        root_scenarios.append({"id": rid, "name": name or "Scenario"})
+    # Get cohort simulation IDs following client-side filtering logic
+    cohort_simulation_ids: List[str] = []
+    if filters.cohortIds:
+        # When cohortIds are provided: get simulation IDs from those cohorts
+        for cohort in cohorts:
+            if str(cohort.get("id")) in filters.cohortIds:
+                cohort_simulation_ids.extend([
+                    str(sim_id) for sim_id in cohort.get("simulation_ids", [])
+                    if str(sim_id) != "RAY"  # Exclude placeholder
+                ])
+        # Remove duplicates
+        cohort_simulation_ids = list(set(cohort_simulation_ids))
+    else:
+        # When no cohortIds: get all simulation IDs from filtered simulations
+        cohort_simulation_ids = [str(s.get("id")) for s in simulations]
 
     return {
         "rows": rows,
-        "profiles": profile_options,
-        "simulations": simulation_options,
-        "rootScenarios": root_scenarios,
+        "cohortSimulationIds": cohort_simulation_ids
     }
 
-
-@router.post("/home")
-async def post_analytics_home(
-    filters: AnalyticsFilters, session: Session = Depends(get_session)
-) -> List[Dict[str, Any]]:
-    """
-    Compute per-simulation progress rows for the Home page.
-
-    Response rows provide counts to render progress bars without requiring
-    client-side analytics filtering.
-    """
-    base = fetch_analytics_base(session, filters)
-
-    profiles: List[Dict[str, Any]] = base.get("profiles", [])
-    attempts: List[Dict[str, Any]] = base.get("attempts", [])
-    chats: List[Dict[str, Any]] = base.get("chats", [])
-    grades: List[Dict[str, Any]] = base.get("grades", [])
-    simulations: List[Dict[str, Any]] = base.get("simulations", [])
-    rubrics: List[Dict[str, Any]] = base.get("rubrics", [])
-    cohorts: List[Dict[str, Any]] = base.get("cohorts", [])
-
-    rubric_by_id = {str(r.get("id")): r for r in rubrics}
-
-    # Index: chats by attempt; grades by chat
-    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
-    for c in chats:
-        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
-        arr.append(c)
-
-    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
-    for g in grades:
-        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
-        arr.append(g)
-
-    # Cohort membership: for each simulation, union of profile_ids of cohorts that include it
-    cohort_profile_ids_by_sim: Dict[str, List[str]] = {}
-    cohort_ids_by_sim: Dict[str, List[str]] = {}
-    cohort_titles_by_sim: Dict[str, List[str]] = {}
-    for c in cohorts:
-        sim_ids = [str(sid) for sid in (c.get("simulation_ids") or [])]
-        profile_ids = [str(pid) for pid in (c.get("profile_ids") or [])]
-        for sid in sim_ids:
-            cohort_profile_ids_by_sim.setdefault(sid, [])
-            cohort_profile_ids_by_sim[sid].extend(profile_ids)
-            cohort_ids_by_sim.setdefault(sid, []).append(str(c.get("id")))
-            title = c.get("title") or c.get("name") or ""
-            cohort_titles_by_sim.setdefault(sid, []).append(str(title))
-
-    # Fallback: if a simulation has no cohort, consider all distinct profiles in base
-    all_profile_ids = [str(p.get("id")) for p in profiles]
-
-    rows: List[Dict[str, Any]] = []
-    for sim in simulations:
-        sid = str(sim.get("id"))
-        title = str(sim.get("title") or "Simulation")
-
-        cohort_member_ids = cohort_profile_ids_by_sim.get(sid)
-        member_ids = (
-            [pid for pid in cohort_member_ids if pid]
-            if cohort_member_ids and len(cohort_member_ids) > 0
-            else all_profile_ids
-        )
-        # Ensure uniqueness
-        unique_member_ids = list({pid for pid in member_ids if pid})
-
-        # Group attempts by profile for this simulation
-        user_attempts_by_profile: Dict[str, List[Dict[str, Any]]] = {}
-        for att in attempts:
-            if str(att.get("simulation_id")) != sid:
-                continue
-            pid = str(att.get("profile_id") or "")
-            if not pid:
-                continue
-            arr = user_attempts_by_profile.setdefault(pid, [])
-            arr.append(att)
-
-        # For each profile, derive pass/in-progress via best attempt average vs rubric pass
-        passed_members: List[str] = []
-        in_progress_members: List[str] = []
-
-        # Pass threshold per rubric
-        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
-        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-        pass_points = float(rubric.get("pass_points", 70)) if rubric else 70.0
-        pass_threshold = (pass_points / max(rubric_points, 1.0)) * 100.0
-
-        for pid in unique_member_ids:
-            atts = user_attempts_by_profile.get(pid, [])
-            if not atts:
-                continue  # no attempts => handled in not_started
-
-            # Build attempt average scores over its chats' grades
-            best_avg_norm = 0.0
-            for att in atts:
-                chats_for_att = chats_by_attempt.get(str(att.get("id")), [])
-                # Collect grades for chats
-                scores: List[float] = []
-                for ch in chats_for_att:
-                    gid = str(ch.get("id"))
-                    for g in grades_by_chat.get(gid, []):
-                        score = float(g.get("score", 0.0))
-                        norm = (score / max(rubric_points, 1.0)) * 100.0
-                        scores.append(norm)
-                if scores:
-                    avg = sum(scores) / len(scores)
-                    if avg > best_avg_norm:
-                        best_avg_norm = avg
-
-            if best_avg_norm >= pass_threshold:
-                passed_members.append(pid)
-            else:
-                # Has attempts but hasn't met threshold
-                in_progress_members.append(pid)
-
-        total_members = len(unique_member_ids)
-        passed_count = len(passed_members)
-        in_progress_count = len(in_progress_members)
-        not_started_count = max(0, total_members - passed_count - in_progress_count)
-
-        rows.append({
-            "simulation_id": sid,
-            "simulation_title": title,
-            "cohort_ids": cohort_ids_by_sim.get(sid, []),
-            "cohort_titles": cohort_titles_by_sim.get(sid, []),
-            "total_members": total_members,
-            "passed_count": passed_count,
-            "in_progress_count": in_progress_count,
-            "not_started_count": not_started_count,
-            "passed_members": passed_members,
-            "in_progress_members": in_progress_members,
-        })
-
-    return rows
-
-
-@router.post("/practice")
-async def post_analytics_practice(
-    filters: AnalyticsFilters, session: Session = Depends(get_session)
-) -> List[Dict[str, Any]]:
-    """
-    Compute per-practice-simulation rows for the Practice page for a given profile.
-
-    Each row contains the simulation id/title, the user's highest normalized score
-    across attempts, and whether the user has passed based on the rubric threshold.
-    """
-    base = fetch_analytics_base(session, filters)
-
-    attempts: List[Dict[str, Any]] = base.get("attempts", []) or []
-    chats: List[Dict[str, Any]] = base.get("chats", []) or []
-    grades: List[Dict[str, Any]] = base.get("grades", []) or []
-    simulations: List[Dict[str, Any]] = base.get("simulations", []) or []
-    rubrics: List[Dict[str, Any]] = base.get("rubrics", []) or []
-
-    rubric_by_id: Dict[str, Dict[str, Any]] = {str(r.get("id")): r for r in rubrics}
-
-    # Index helpers
-    chats_by_attempt: Dict[str, List[Dict[str, Any]]] = {}
-    for c in chats:
-        arr = chats_by_attempt.setdefault(str(c.get("attempt_id")), [])
-        arr.append(c)
-
-    grades_by_chat: Dict[str, List[Dict[str, Any]]] = {}
-    for g in grades:
-        arr = grades_by_chat.setdefault(str(g.get("simulation_chat_id")), [])
-        arr.append(g)
-
-    profile_id: Optional[str] = None
-    try:
-        pid = getattr(filters, "profileId", None)
-        if pid:
-            profile_id = str(pid)
-    except Exception:
-        profile_id = None
-
-    rows: List[Dict[str, Any]] = []
-    for sim in simulations:
-        # Only practice simulations
-        if not bool(sim.get("practice_simulation", False)):
-            continue
-
-        sid = str(sim.get("id"))
-        title = str(sim.get("title") or "Simulation")
-
-        highest_norm_percent = 0.0
-
-        # If no profile provided, return zeros (client can still render cards)
-        if profile_id:
-            # All attempts by this profile for this simulation
-            user_attempts = [
-                a for a in attempts
-                if str(a.get("simulation_id")) == sid and str(a.get("profile_id") or "") == profile_id
-            ]
-
-            # For each attempt, compute average normalized score across its chats' grades
-            for att in user_attempts:
-                att_id = str(att.get("id"))
-                att_chats = chats_by_attempt.get(att_id, [])
-                rubric = rubric_by_id.get(str(sim.get("rubric_id")))
-                rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-
-                scores: List[float] = []
-                for ch in att_chats:
-                    gid = str(ch.get("id"))
-                    for g in grades_by_chat.get(gid, []):
-                        score = float(g.get("score", 0.0))
-                        norm = (score / max(rubric_points, 1.0)) * 100.0
-                        scores.append(norm)
-
-                if scores:
-                    avg = sum(scores) / len(scores)
-                    if avg > highest_norm_percent:
-                        highest_norm_percent = avg
-
-        # Pass threshold per rubric
-        rubric = rubric_by_id.get(str(sim.get("rubric_id")))
-        rubric_points = float(rubric.get("points", 100)) if rubric else 100.0
-        pass_points = float(rubric.get("pass_points", 70)) if rubric else 70.0
-        pass_threshold = (pass_points / max(rubric_points, 1.0)) * 100.0
-
-        has_passed = highest_norm_percent >= pass_threshold and highest_norm_percent > 0.0
-
-        rows.append({
-            "simulation_id": sid,
-            "simulation_title": title,
-            "highest_score": int(round(highest_norm_percent)),
-            "has_passed": bool(has_passed),
-        })
-
-    return rows
-
-
-class DashboardFunctionCall(BaseModel):
-    name: str
-    args: Dict[str, Any] = Field(default_factory=dict)
-
-
-class DashboardRequest(BaseModel):
-    filters: AnalyticsFilters
-    functions: List[DashboardFunctionCall]
-
-
-@router.post("/dashboard")
-async def post_analytics_dashboard(
-    req: DashboardRequest, session: Session = Depends(get_session)
-) -> Dict[str, Any]:
-    """Run requested analytics dashboard functions server-side and return JSON results.
-
-    Body schema:
-    {
-      "filters": AnalyticsFilters,
-      "functions": [ { name: string, args?: object }, ... ]
-    }
-    """
-    base = fetch_analytics_base(session, req.filters)
-
-    # Helper: convert list[dict] to list[SimpleNamespace] so utils can use attribute access
-    def to_objs(items: List[Dict[str, Any]]) -> List[SimpleNamespace]:
-        return [SimpleNamespace(**(i or {})) for i in (items or [])]
-
-    # Core entities
-    filtered = dashboard_utils.FilteredData(
-        attempts=cast(List[SimulationAttempts], to_objs(base.get("attempts", []))),
-        chats=cast(List[SimulationChats], to_objs(base.get("chats", []))),
-        grades=cast(List[SimulationChatGrades], to_objs(base.get("grades", []))),
-        simulations=cast(List[Simulations], to_objs(base.get("simulations", []))),
-        scenarios=cast(List[Scenarios], to_objs(base.get("scenarios", []))),
-        profiles=cast(List[Profiles], to_objs(base.get("profiles", []))),
-        feedbacks=cast(List[SimulationChatFeedbacks], to_objs(base.get("feedbacks", []))),
-        cohorts=cast(List[Cohorts], to_objs(base.get("cohorts", []))),
-        personas=cast(List[Personas], []),  # filled below
-        messages=cast(List[SimulationMessages], to_objs(base.get("messages", []))),
-    )
-
-    rubrics = to_objs(base.get("rubrics", []))
-    standards = to_objs(base.get("standards", []))
-    standard_groups = to_objs(base.get("standardGroups", []))
-
-    # Optionally fetch personas referenced by scenarios
-    try:
-        persona_ids: List[str] = []
-        for scen in base.get("scenarios", []) or []:
-            pid = scen.get("persona_id")
-            if pid:
-                persona_ids.append(str(pid))
-        if persona_ids:
-            placeholders = ",".join([f"'{pid}'" for pid in {"".join([])} or persona_ids])
-            q = text(f"select id, name, color from personas where id in ({placeholders})")
-            res = session.execute(q)
-            fetched: List[Dict[str, Any]] = []
-            for row in res:
-                try:
-                    fetched.append({"id": str(row[0]), "name": row[1], "color": row[2]})
-                except Exception:
-                    m = getattr(row, "_mapping", None)
-                    if m:
-                        fetched.append({"id": str(m.get("id")), "name": m.get("name"), "color": m.get("color")})
-            filtered.personas = cast(List[Personas], to_objs(fetched))
-    except Exception:
-        filtered.personas = []
-
-    # Optionally fetch parameters and parameter_items when needed
-    parameters: List[Parameters] = []
-    parameter_items: List[ParameterItems] = []
-    if any(fc.name in [
-        "calculateScenarioAttributeBreakdown",
-        "calculateScenarioPerformance",
-        "calculateSimulationComposition",
-    ] for fc in req.functions):
-        try:
-            res = session.execute(text("select id, name, description, numerical, active, default_parameter from parameters"))
-            params_rows: List[Dict[str, Any]] = []
-            for row in res:
-                try:
-                    params_rows.append({
-                        "id": str(row[0]),
-                        "name": row[1],
-                        "description": row[2],
-                        "numerical": bool(row[3]),
-                        "active": bool(row[4]),
-                        "default_parameter": bool(row[5]),
-                    })
-                except Exception:
-                    m = getattr(row, "_mapping", None)
-                    if m:
-                        params_rows.append({
-                            "id": str(m.get("id")),
-                            "name": m.get("name"),
-                            "description": m.get("description"),
-                            "numerical": bool(m.get("numerical")),
-                            "active": bool(m.get("active")),
-                            "default_parameter": bool(m.get("default_parameter")),
-                        })
-            parameters = cast(List[Parameters], to_objs(params_rows))
-
-            res2 = session.execute(text("select id, name, description, value, parameter_id, default_item from parameter_items"))
-            items_rows: List[Dict[str, Any]] = []
-            for row in res2:
-                try:
-                    items_rows.append({
-                        "id": str(row[0]),
-                        "name": row[1],
-                        "description": row[2],
-                        "value": row[3],
-                        "parameter_id": str(row[4]) if row[4] else None,
-                        "default_item": bool(row[5]),
-                    })
-                except Exception:
-                    m = getattr(row, "_mapping", None)
-                    if m:
-                        items_rows.append({
-                            "id": str(m.get("id")),
-                            "name": m.get("name"),
-                            "description": m.get("description"),
-                            "value": m.get("value"),
-                            "parameter_id": str(m.get("parameter_id")) if m.get("parameter_id") else None,
-                            "default_item": bool(m.get("default_item")),
-                        })
-            parameter_items = cast(List[ParameterItems], to_objs(items_rows))
-        except Exception:
-            parameters = []
-            parameter_items = []
-
-    # Dispatcher
-    def call_function(fc: DashboardFunctionCall) -> Any:
-        name = fc.name
-        args = fc.args or {}
-        # Normalize aliases (camelCase -> snake for our function names)
-        mapping = {
-            # Header
-            "calculateAverageScore": lambda: dashboard_utils.calculate_average_score(filtered, cast(List[Rubrics], rubrics)),
-            "calculateCompletionPercentage": lambda: dashboard_utils.calculate_completion_percentage(filtered),
-            "calculateFirstAttemptPassRate": lambda: dashboard_utils.calculate_first_attempt_pass_rate(filtered),
-            "calculateHighestScore": lambda: dashboard_utils.calculate_highest_score(filtered, cast(List[Rubrics], rubrics)),
-            "calculateUserSimulationPerformance": lambda: dashboard_utils.calculate_user_simulation_performance(
-                filtered, cast(List[Rubrics], rubrics), str(args.get("profileId", "")), str(args.get("simulationId", ""))
-            ),
-            "calculateUserPerformanceBySimulation": lambda: dashboard_utils.calculate_user_performance_by_simulation(
-                filtered, cast(List[Rubrics], rubrics), str(args.get("profileId", ""))
-            ),
-            "calculateMessagesPerSession": lambda: dashboard_utils.calculate_messages_per_session(filtered.messages, filtered),
-            "calculatePersonaResponseTimes": lambda: dashboard_utils.calculate_persona_response_times(filtered.messages, filtered),
-            "calculateSessionEfficiency": lambda: dashboard_utils.calculate_session_efficiency(filtered, cast(List[Rubrics], rubrics)),
-            "calculateStagnationRate": lambda: dashboard_utils.calculate_stagnation_rate(filtered, cast(List[Rubrics], rubrics)),
-            "calculateTimeSpent": lambda: dashboard_utils.calculate_time_spent(filtered),
-            "calculateTotalAttempts": lambda: dashboard_utils.calculate_total_attempts(filtered),
-
-            # Footer
-            "calculateScenarioAttributeBreakdown": lambda: dashboard_utils.calculate_scenario_attribute_breakdown(
-                filtered,
-                cast(List[Rubrics], rubrics),
-                parameter_items,
-                cast(Parameters, next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None)),
-            ),
-            "calculateScenarioPerformance": lambda: dashboard_utils.calculate_scenario_performance(
-                filtered,
-                cast(List[Rubrics], rubrics),
-                parameter_items,
-                cast(Parameters, next((p for p in parameters if str(p.id) == str(args.get("selectedParameterId"))), None)),
-            ),
-            "calculateSimulationComposition": lambda: dashboard_utils.calculate_simulation_composition(
-                filtered, parameters, parameter_items, args.get("config", None)
-            ),
-            "calculateScenarioPerformanceWithinSimulation": lambda: dashboard_utils.calculate_scenario_performance_within_simulation(
-                filtered,
-                cast(List[Rubrics], rubrics),
-                next((s for s in filtered.simulations if str(s.id) == str(args.get("selectedSimulationId"))), None),
-                args.get("thresholds", {"danger": 60, "warning": 75, "success": 85}),
-            ),
-            "calculateSimulationPerformance": lambda: dashboard_utils.calculate_simulation_performance(filtered, cast(List[Rubrics], rubrics)),
-
-            # Primary
-            "calculateAttemptImprovement": lambda: dashboard_utils.calculate_attempt_improvement(
-                filtered, cast(List[Rubrics], rubrics), args.get("selectedSimulationIds", [])
-            ),
-            "calculatePlatformGrowth": lambda: dashboard_utils.calculate_platform_growth(filtered, cast(List[Rubrics], rubrics)),
-            "calculatePersonaPerformance": lambda: dashboard_utils.calculate_persona_performance(
-                filtered, cast(List[Rubrics], rubrics), filtered.personas, filtered.scenarios, args.get("selectedSimulationIds", [])
-            ),
-
-            # Secondary
-            "calculateCohortPerformance": lambda: dashboard_utils.calculate_cohort_performance(
-                filtered, cast(List[Rubrics], rubrics), args.get("thresholds", {"danger": 60, "warning": 75, "success": 85}), args.get("selectedSimulationIds", [])
-            ),
-            "calculateSkillPerformance": lambda: dashboard_utils.calculate_skill_performance(
-                filtered, cast(List[Standards], standards), cast(List[StandardGroups], standard_groups), cast(List[Rubrics], rubrics), args.get("selectedRubricIds", [])
-            ),
-            "calculateRubricHeatmap": lambda: dashboard_utils.calculate_rubric_heatmap(
-                filtered, cast(List[Standards], standards), cast(List[StandardGroups], standard_groups), cast(List[Rubrics], rubrics), args.get("selectedRubricIds", [])
-            ),
-        }
-
-        fn: Optional[Any] = mapping.get(name)
-        if not fn:
-            raise ValueError(f"Unknown function name: {name}")
-        result = fn()
-        return result
-
-    results: Dict[str, Any] = {}
-    for fc in req.functions:
-        try:
-            results[fc.name] = call_function(fc)
-        except Exception as e:
-            logger.exception("analytics.dashboard.function_failed", extra={"function": fc.name})
-            results[fc.name] = {"error": str(e)}
-
-    return {"results": results}

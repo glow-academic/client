@@ -41,19 +41,19 @@ with base_entities as (
   cross join simulations s
   where s.active = true and (
     (
+      -- When cohortIds are provided: only include profiles who are members of those cohorts
       array_length('{cohort_ids_arr}'::uuid[], 1) > 0
-      and (
-        exists (
-          select 1 from cohorts c
-          where c.id = any('{cohort_ids_arr}'::uuid[]) and p.id = any(c.profile_ids)
-        )
-        or exists (
-          select 1 from cohorts c
-          where c.id = any('{cohort_ids_arr}'::uuid[]) and s.id = any(c.simulation_ids)
-        )
+      and exists (
+        select 1 from cohorts c
+        where c.id = any('{cohort_ids_arr}'::uuid[]) and p.id = any(c.profile_ids)
+      )
+      and exists (
+        select 1 from cohorts c
+        where c.id = any('{cohort_ids_arr}'::uuid[]) and s.id = any(c.simulation_ids)
       )
     )
     or (
+      -- When no cohortIds: use role-based filtering
       (array_length('{cohort_ids_arr}'::uuid[], 1) is null or array_length('{cohort_ids_arr}'::uuid[], 1) = 0)
       and (
         array_length('{roles_arr}'::text[], 1) is null or array_length('{roles_arr}'::text[], 1) = 0
@@ -129,7 +129,10 @@ filtered_standards as (
   select distinct s.* from standards s where s.standard_group_id in (select id from filtered_standard_groups)
 ),
 filtered_profiles as (
-  select distinct p.* from profiles p where p.id in (select distinct profile_id from filtered_attempts)
+  select distinct p.* from profiles p 
+  where exists (
+    select 1 from base_entities be where be.profile_id = p.id
+  )
 ),
 derived_cohorts as (
   select c.* from cohorts c

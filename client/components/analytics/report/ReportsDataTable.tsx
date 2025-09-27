@@ -10,7 +10,6 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -25,7 +24,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   HoverCard,
   HoverCardContent,
@@ -88,7 +86,6 @@ export function ReportsDataTable({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -136,8 +133,8 @@ export function ReportsDataTable({
       ];
     } else if (key === "personaResponseTimes" && h?.personaResponseStats) {
       bullets = [
-        `Mean: ${Math.round(h.personaResponseStats.meanSeconds / 60)}m`,
-        `Median: ${Math.round(h.personaResponseStats.medianSeconds / 60)}m`,
+        `Mean: ${h.personaResponseStats.meanSeconds}s`,
+        `Median: ${h.personaResponseStats.medianSeconds}s`,
         `Samples: ${h.personaResponseStats.samples}`,
       ];
     } else if (key === "sessionEfficiency" && h?.efficiencyStats) {
@@ -271,9 +268,6 @@ export function ReportsDataTable({
           </TableBody>
         </Table>
       </div>
-
-      {/* Pagination */}
-      <DataTablePagination table={table} />
     </div>
   );
 }

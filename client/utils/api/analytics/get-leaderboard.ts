@@ -29,6 +29,7 @@ export interface LeaderboardRow {
   most_improved_percent?: number;
   improvement_rate_per_day?: number;
   perfect_score_count?: number;
+  persona_response_seconds?: number;
 }
 
 export async function getLeaderboard(
