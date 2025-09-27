@@ -7,86 +7,190 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { Profile, SimulationAttempt, SimulationChat } from "@/types";
+import type { FilteredData } from "@/utils/analytics/filtering";
+// No queries; all data comes from filteredData
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 // Enhanced types for the data table
-interface EnhancedAttempt {
-  id: string;
-  profileId: string | null;
-  simulationId: string;
-  createdAt: string;
-  archived: boolean;
-  infiniteMode?: boolean;
-  infiniteModeTimeLimit?: number | null;
-  scenarios: Array<{
-    id: string;
-    attemptId: string;
-    scenarioId: string;
-    createdAt: string;
-    completedAt: string | null;
-    completed: boolean;
-  }>;
+interface EnhancedAttempt extends SimulationAttempt {
+  scenarios: SimulationChat[];
   personasTested: string[];
   interactionIds: string[];
-  completedWithRubricCount?: number;
-  totalExpected?: number;
-  scorePercent?: number;
-  isPractice?: boolean;
-  rootScenarioIds?: string[];
-  isIncomplete?: boolean;
 }
 
 // Component to use the columns with filtered data
 export function useHistoryColumns({
+  filteredData,
   showExport: _showExport = true,
   showArchive = false,
   allSameProfile = false,
-  precomputedAttempts,
-  precomputedProfileOptions,
-  precomputedSimulationOptions,
-  precomputedScenarioOptions,
 }: {
+  filteredData: FilteredData | null;
   showExport: boolean;
   showArchive: boolean;
   allSameProfile?: boolean;
-  precomputedAttempts?: EnhancedAttempt[];
-  precomputedProfileOptions?: {
-    value: string;
-    label: string;
-    icon?: unknown;
-  }[];
-  precomputedSimulationOptions?: { value: string; label: string }[];
-  precomputedScenarioOptions?: { value: string; label: string }[];
 }) {
-  // Server-precomputed data is provided via props; avoid client recomputation.
+  // Use centralized datasets from filteredData
+  const personas = filteredData?.personas;
+  const rubrics = filteredData?.rubrics;
+
+  // Map persona name -> hex color
+  const personaColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (personas && personas.length > 0) {
+      for (const persona of personas) {
+        if (persona?.name && persona?.color) {
+          map[persona.name] = persona.color;
+        }
+      }
+    }
+    return map;
+  }, [personas]);
+
+  // Color utilities
+  const getBadgeColors = useCallback(
+    (
+      inputHex?: string
+    ): {
+      bg: string;
+      border: string;
+      text: string;
+    } => {
+      const normalizeHexInline = (hex?: string): string | null => {
+        if (!hex) return null;
+        let clean = hex.replace("#", "");
+        if (clean.length === 3) {
+          clean = clean
+            .split("")
+            .map((c) => c + c)
+            .join("");
+        }
+        if (clean.length !== 6) return null;
+        return `#${clean.toUpperCase()}`;
+      };
+
+      const normalized = normalizeHexInline(inputHex) ?? "#9CA3AF"; // gray-400 fallback
+      // Inline helpers to avoid changing dependencies
+      const hexToRgbInline = (hex: string) => {
+        const clean = hex.replace("#", "");
+        return {
+          r: parseInt(clean.substring(0, 2), 16),
+          g: parseInt(clean.substring(2, 4), 16),
+          b: parseInt(clean.substring(4, 6), 16),
+        };
+      };
+      const rgbToHexInline = (r: number, g: number, b: number) => {
+        const toHex = (v: number) => v.toString(16).padStart(2, "0");
+        return `#${toHex(Math.max(0, Math.min(255, Math.round(r))))}${toHex(
+          Math.max(0, Math.min(255, Math.round(g)))
+        )}${toHex(Math.max(0, Math.min(255, Math.round(b))))}`.toUpperCase();
+      };
+      const mixWithWhiteInline = (hex: string, weight: number) => {
+        const base = hexToRgbInline(hex);
+        const white = { r: 255, g: 255, b: 255 };
+        const r = base.r * (1 - weight) + white.r * weight;
+        const g = base.g * (1 - weight) + white.g * weight;
+        const b = base.b * (1 - weight) + white.b * weight;
+        return rgbToHexInline(r, g, b);
+      };
+      const getLuminanceInline = (hex: string) => {
+        const { r, g, b } = hexToRgbInline(hex);
+        return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      };
+
+      const bg = mixWithWhiteInline(normalized, 0.88); // very light background
+      const border = mixWithWhiteInline(normalized, 0.7); // light border closer to original outline
+      const text =
+        getLuminanceInline(normalized) > 0.75 ? "#111827" : normalized; // readable text
+      return { bg, border, text };
+    },
+    []
+  );
 
   // Create user options for profile names - only if not all attempts have the same profile
   const profileOptions = useMemo(() => {
-    if (precomputedProfileOptions) return precomputedProfileOptions;
-    return [];
-  }, [precomputedProfileOptions]);
+    if (!filteredData?.profiles || allSameProfile) return [];
+    return filteredData.profiles.map((profile: Profile) => ({
+      value: profile.id,
+      label: profile.firstName + " " + profile.lastName,
+      icon: null,
+    }));
+  }, [filteredData?.profiles, allSameProfile]);
 
-  // No rubric filtering on client; server provides scorePercent
+  // Filter valid rubrics based on simulations
+  const validRubrics = useMemo(() => {
+    if (!rubrics || !filteredData?.simulations) return [];
+    return rubrics.filter((r) =>
+      filteredData.simulations.some((s) => s.rubricId === r.id)
+    );
+  }, [rubrics, filteredData?.simulations]);
 
   // Create enhanced attempts data from filtered data
   const enhancedAttempts = useMemo(() => {
-    if (precomputedAttempts) return precomputedAttempts;
-    return [];
-  }, [precomputedAttempts]);
+    if (!filteredData || !personas) return [];
+
+    return filteredData.attempts.map(
+      (attempt: SimulationAttempt): EnhancedAttempt => {
+        const attemptChats = filteredData.chats.filter(
+          (chat) => chat.attemptId === attempt.id
+        );
+
+        // Get personas from all scenarios in the chats
+        const personasTested = [
+          ...new Set(
+            attemptChats.map((chat) => {
+              const scenario = filteredData.scenarios.find(
+                (s) => s.id === chat.scenarioId
+              );
+              if (scenario) {
+                const scenarioAgent = personas.find(
+                  (a) => a.id === scenario.personaId
+                );
+                return scenarioAgent?.name || "Unknown Persona";
+              }
+              return "Unknown Persona";
+            })
+          ),
+        ].filter((name) => name !== "Unknown Persona");
+
+        const simulation = filteredData.simulations.find(
+          (s) => s.id === attempt.simulationId
+        );
+
+        return {
+          ...attempt,
+          scenarios: attemptChats,
+          personasTested,
+          interactionIds: simulation?.scenarioIds || [],
+        };
+      }
+    );
+  }, [filteredData, personas]);
 
   // Create scenario options for filtering
   const scenarioOptions = useMemo(() => {
-    if (precomputedScenarioOptions) return precomputedScenarioOptions;
-    return [];
-  }, [precomputedScenarioOptions]);
+    if (!filteredData?.scenarios) return [];
+    // Only show root scenarios (parentId is null) in the facet options
+    const rootScenarios = filteredData.scenarios.filter(
+      (scenario) => !scenario.parentId
+    );
+    return rootScenarios.map((scenario) => ({
+      value: scenario.id,
+      label: scenario.name,
+    }));
+  }, [filteredData?.scenarios]);
 
   // Create simulation options for filtering
   const simulationOptions = useMemo(() => {
-    if (precomputedSimulationOptions) return precomputedSimulationOptions;
-    return [];
-  }, [precomputedSimulationOptions]);
+    if (!filteredData?.simulations) return [];
+    return filteredData.simulations.map((simulation) => ({
+      value: simulation.id,
+      label: simulation.title,
+    }));
+  }, [filteredData?.simulations]);
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -109,11 +213,26 @@ export function useHistoryColumns({
             return true;
           }
 
-          // Search in simulation title (from options)
-          const simOption = simulationOptions.find(
-            (s) => s.value === attempt.simulationId
+          // Search in simulation title
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === attempt.simulationId
           );
-          if (simOption?.label.toLowerCase().includes(searchValue)) {
+          if (simulation?.title.toLowerCase().includes(searchValue)) {
+            return true;
+          }
+
+          // Search in scenario names
+          const scenarioNames = attempt.scenarios.map((chat) => {
+            const scenario = filteredData?.scenarios?.find(
+              (s) => s.id === chat.scenarioId
+            );
+            return scenario?.name || "";
+          });
+          if (
+            scenarioNames.some((name) =>
+              name.toLowerCase().includes(searchValue)
+            )
+          ) {
             return true;
           }
 
@@ -211,14 +330,14 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
-          const simulation = simulationOptions.find(
-            (s) => s.value === row.getValue("simulationId")
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === row.getValue("simulationId")
           );
           const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
           return (
             <div className="flex items-center space-x-1">
               <span className="max-w-[500px] truncate font-medium">
-                {simulation?.label || "Unknown Simulation"}
+                {simulation?.title || "Unknown Simulation"}
               </span>
               {isInfinite && (
                 <InfinityIcon className="h-3 w-3 text-muted-foreground" />
@@ -244,20 +363,19 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
-          const preCompleted = (row.original as EnhancedAttempt)
-            .completedWithRubricCount;
-          const preTotal = (row.original as EnhancedAttempt).totalExpected;
           const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
-          // Prefer precomputed
-          const completedWithRubricCount =
-            typeof preCompleted === "number" ? preCompleted : 0;
-          const totalChats =
-            typeof preTotal === "number"
-              ? preTotal
-              : interactionIds?.length || chatsArray.length || 0;
+          // Count only chats that are completed AND have a corresponding rubric/grade
+          const completedWithRubricCount = chatsArray.filter((chat) => {
+            if (!chat.completed) return false;
+            const grade = filteredData?.grades?.find(
+              (g) => g.simulationChatId === chat.id
+            );
+            return Boolean(grade);
+          }).length;
+          const totalChats = interactionIds?.length || chatsArray.length || 0;
 
           return (
             <div className="text-center">
@@ -276,27 +394,48 @@ export function useHistoryColumns({
         },
         enableSorting: true,
         accessorFn: (row: EnhancedAttempt) => {
-          const preCompleted = (row as EnhancedAttempt)
-            .completedWithRubricCount;
-          const preTotal = (row as EnhancedAttempt).totalExpected;
-          const completedWithRubricCount =
-            typeof preCompleted === "number" ? preCompleted : 0;
-          const totalChats = typeof preTotal === "number" ? preTotal : 0;
+          const chats = row.scenarios;
+          const interactionIds = row.interactionIds;
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          // Only count chats that are completed AND have a corresponding rubric/grade
+          const completedWithRubricCount = chatsArray.filter((chat) => {
+            if (!chat.completed) return false;
+            const grade = filteredData?.grades?.find(
+              (g) => g.simulationChatId === chat.id
+            );
+            return Boolean(grade);
+          }).length;
+          const totalChats = interactionIds?.length || chatsArray.length || 0;
           return totalChats > 0 ? completedWithRubricCount / totalChats : 0;
         },
         filterFn: (row, _id, value) => {
           if (!value || value.length === 0) return true;
 
-          // Prefer precomputed root scenario ids if available
-          const preRootIds = (row.original as EnhancedAttempt).rootScenarioIds;
-          if (Array.isArray(preRootIds) && preRootIds.length > 0) {
-            return value.some((scenarioId: string) =>
-              preRootIds.includes(scenarioId)
-            );
-          }
+          // Use original chats because accessorFn changes the accessor value
+          const chats = (row.original as EnhancedAttempt)
+            .scenarios as SimulationChat[];
 
-          // No precomputed mapping available, do not exclude
-          return true;
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+
+          // Build list of root scenario ids for the attempt's chats
+          // If a chat's scenario has a parent, use the parentId; otherwise use its own id
+          const attemptRootScenarioIds = chatsArray
+            .map((chat) => {
+              const scenario = filteredData?.scenarios?.find(
+                (s) => s.id === chat.scenarioId
+              );
+              if (!scenario) return undefined;
+              return (scenario.parentId as string | null) || scenario.id;
+            })
+            .filter(Boolean) as string[];
+          const hasSelectedScenario = value.some((scenarioId: string) =>
+            attemptRootScenarioIds.includes(scenarioId)
+          );
+
+          return hasSelectedScenario;
         },
       },
       // Agents tested column
@@ -314,11 +453,24 @@ export function useHistoryColumns({
 
           return (
             <div className="flex flex-wrap gap-1">
-              {personasTested.map((agentName, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {agentName}
-                </Badge>
-              ))}
+              {personasTested.map((agentName, index) => {
+                const baseHex = personaColorMap[agentName] ?? "#9CA3AF"; // gray-400 fallback
+                const { bg, border, text } = getBadgeColors(baseHex);
+                return (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="text-xs"
+                    style={{
+                      backgroundColor: bg,
+                      borderColor: border,
+                      color: text,
+                    }}
+                  >
+                    {agentName}
+                  </Badge>
+                );
+              })}
             </div>
           );
         },
@@ -338,19 +490,92 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Score" />
         ),
         accessorFn: (row: EnhancedAttempt) => {
-          const prePercent = (row as EnhancedAttempt).scorePercent;
-          return typeof prePercent === "number" ? prePercent : 0;
+          const chats = row.scenarios;
+          const interactionIds = row.interactionIds;
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) return 0;
+
+          // Get total expected chats (same logic as scenarios column)
+          const totalExpected =
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) return 0;
+
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
+
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          // Calculate average: total score / total expected chats
+          return totalScore / totalExpected;
         },
         cell: ({ row }) => {
-          const isIncomplete = (row.original as EnhancedAttempt).isIncomplete;
-          if (isIncomplete) {
-            return <div className="text-red-500 font-medium">Incomplete</div>;
+          const chats = row.original.scenarios;
+          const interactionIds = row.original.interactionIds;
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) {
+            return <div className="text-muted-foreground">No chats</div>;
           }
-          const prePercent = (row.original as EnhancedAttempt).scorePercent;
-          if (typeof prePercent !== "number") {
+
+          // Get total expected chats (same logic as scenarios column)
+          const totalExpected =
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) {
+            return <div className="text-muted-foreground">No chats</div>;
+          }
+
+          // Count completed chats
+          const completedChats = chatsArray.filter((chat) => chat.completed);
+
+          // If no chats are completed, show Not graded
+          if (completedChats.length === 0) {
             return <div className="text-muted-foreground">Not graded</div>;
           }
-          const scorePercent = prePercent;
+
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
+
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          const averageScore = totalScore / totalExpected;
+
+          // Calculate percentage based on rubric total points
+          // Find the rubric for this simulation
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === row.original.simulationId
+          );
+          const rubric = validRubrics.find(
+            (r) => r.id === simulation?.rubricId
+          );
+
+          // Calculate percentage using rubric total points, fallback to 100 if not found
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (averageScore / rubricTotalPoints) * 100
+          );
 
           return (
             <div className="text-center">
@@ -371,24 +596,59 @@ export function useHistoryColumns({
         },
         enableSorting: true,
         filterFn: (row, _, value) => {
-          // Prefer precomputed flags and percent
-          const preIsIncomplete = (row.original as EnhancedAttempt)
-            .isIncomplete;
-          if (preIsIncomplete) {
-            return value.includes("incomplete");
-          }
-          const prePercent = (row.original as EnhancedAttempt).scorePercent;
-          if (typeof prePercent === "number") {
-            if (prePercent >= 80) {
-              return value.includes("excellent");
-            } else if (prePercent >= 70) {
-              return value.includes("good");
-            } else {
-              return value.includes("needs-improvement");
-            }
+          const chats = row.getValue("scenarios") as SimulationChat[];
+          const interactionIds = (row.original as EnhancedAttempt)
+            .interactionIds;
+
+          // Ensure chats is an array
+          const chatsArray = Array.isArray(chats) ? chats : [];
+          if (chatsArray.length === 0) {
+            return value.includes("not-graded");
           }
 
-          return value.includes("not-graded");
+          // Get total expected chats (same logic as scenarios column)
+          const totalExpected =
+            interactionIds?.length || chatsArray.length || 0;
+          if (totalExpected === 0) {
+            return value.includes("not-graded");
+          }
+
+          // Calculate total score including zeros for ALL expected chats
+          let totalScore = 0;
+
+          // For each expected chat, find if it exists and has a grade
+          for (let i = 0; i < totalExpected; i++) {
+            const expectedChat = chatsArray[i];
+            if (expectedChat && expectedChat.completed) {
+              const grade = filteredData?.grades?.find(
+                (grade) => grade.simulationChatId === expectedChat.id
+              );
+              totalScore += grade?.score || 0;
+            }
+            // If chat doesn't exist or is not completed, add 0 (implicit)
+          }
+
+          const averageScore = totalScore / totalExpected;
+
+          // Calculate percentage based on rubric total points
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === row.original.simulationId
+          );
+          const rubric = validRubrics.find(
+            (r) => r.id === simulation?.rubricId
+          );
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (averageScore / rubricTotalPoints) * 100
+          );
+
+          if (scorePercent >= 80) {
+            return value.includes("excellent");
+          } else if (scorePercent >= 70) {
+            return value.includes("good");
+          } else {
+            return value.includes("needs-improvement");
+          }
         },
       },
       // Actions column
@@ -396,9 +656,19 @@ export function useHistoryColumns({
         id: "actions",
         cell: ({ row }) => {
           const attempt = row.original;
-          const isIncomplete =
-            (attempt as EnhancedAttempt).isIncomplete || false;
-          const isPractice = (attempt as EnhancedAttempt).isPractice || false;
+
+          // With the new scoring logic, we don't need to track grades separately
+          // since we now include zeros for missing grades in the average calculation
+
+          // Determine if this is practice mode based on simulation
+          const simulation = filteredData?.simulations?.find(
+            (s) => s.id === attempt.simulationId
+          );
+          const isPractice = Boolean(simulation?.practiceSimulation);
+
+          // With the new scoring logic, we don't need the isIncomplete flag
+          // since we now include zeros for missing grades
+          const isIncomplete = false;
 
           return (
             <DataTableRowActions
@@ -432,7 +702,15 @@ export function useHistoryColumns({
     ];
 
     return attemptColumns;
-  }, [profileOptions, showArchive, allSameProfile, simulationOptions]);
+  }, [
+    profileOptions,
+    filteredData,
+    validRubrics,
+    personaColorMap,
+    getBadgeColors,
+    showArchive,
+    allSameProfile,
+  ]);
 
   // Use enhanced attempts data
   const data: unknown[] = enhancedAttempts || [];
