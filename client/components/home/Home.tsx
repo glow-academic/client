@@ -677,8 +677,8 @@ export default function Home() {
                   isArchived: item.archived,
                   showView: item.showView,
                   showContinue: item.showContinue,
-                  practiceSimulation: false, // Default to false - can be determined from simulation data if needed
-                  passPct: 70, // Default pass percentage threshold
+                  practiceSimulation: item.practiceSimulation,
+                  passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
                 }))
               : []
           }

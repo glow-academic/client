@@ -693,6 +693,13 @@ export const AttemptHistoryRowSchema = z.object({
 
   scorePercent: z.number().nullable(),
 
+  // Rubric / pass info for UI
+  rubricId: z.string().nullable(),
+  rubricPoints: z.number().nullable(),
+  rubricPassPoints: z.number().nullable(),
+  passPct: z.number().nullable(),
+  practiceSimulation: z.boolean(),
+
   showContinue: z.boolean(),
   showView: z.boolean(),
 
