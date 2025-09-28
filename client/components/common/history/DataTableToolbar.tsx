@@ -21,6 +21,15 @@ export interface DataTableToolbarProps<TData> {
   showArchive?: boolean;
   selectedAttempts?: string[];
   onBulkArchive?: (archive: boolean) => Promise<void>;
+  cohortData?: Array<{
+    name: string;
+    passed: boolean;
+    simulations: Array<{
+      name: string;
+      score: number;
+      passed: boolean;
+    }>;
+  }>;
 }
 
 export function DataTableToolbar<TData>({
@@ -34,6 +43,7 @@ export function DataTableToolbar<TData>({
   showArchive = false,
   selectedAttempts = [],
   onBulkArchive,
+  cohortData = [],
 }: DataTableToolbarProps<TData>) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -147,6 +157,7 @@ export function DataTableToolbar<TData>({
               <SingleProfileCertificateButton
                 table={table}
                 profileOptions={profileOptions}
+                cohortData={cohortData}
               />
             </>
           )}

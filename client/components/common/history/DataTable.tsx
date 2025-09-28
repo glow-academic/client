@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  useUpdateSimulationAttempts,
-} from "@/lib/api/hooks/simulation_attempts";
+import { useUpdateSimulationAttempts } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -64,6 +62,15 @@ export interface DataTableProps<TData, TValue> {
   showAll?: boolean;
   startDate?: Date | undefined;
   endDate?: Date | undefined;
+  cohortData?: Array<{
+    name: string;
+    passed: boolean;
+    simulations: Array<{
+      name: string;
+      score: number;
+      passed: boolean;
+    }>;
+  }>;
 }
 
 export function DataTable<TData, TValue>({
@@ -77,6 +84,7 @@ export function DataTable<TData, TValue>({
   showAll = false,
   startDate: _startDate,
   endDate: _endDate,
+  cohortData = [],
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -306,6 +314,7 @@ export function DataTable<TData, TValue>({
         showArchive={showArchive}
         selectedAttempts={selectedAttempts}
         onBulkArchive={handleBulkArchive}
+        cohortData={cohortData}
       />
       <div className="rounded-md border">
         <Table>

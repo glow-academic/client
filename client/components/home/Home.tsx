@@ -16,7 +16,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useAnalyticsHomeOverview } from "@/lib/api/hooks/analytics";
+import {
+  useAnalyticsAttemptHistory,
+  useAnalyticsHomeOverview,
+} from "@/lib/api/hooks/analytics";
 import { log } from "@/utils/logger";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -26,7 +29,10 @@ import { toast } from "sonner";
 import SimulationProgress, {
   ViewMode,
 } from "../common/cohort/SimulationProgress";
-import SimulationHistory from "../common/history/SimulationHistory";
+import SimulationHistory, {
+  convertAnalyticsDataToHistoryData,
+  HistoryDataItem,
+} from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
@@ -57,6 +63,28 @@ export default function Home() {
         effectiveProfile?.role !== "instructional" &&
         effectiveProfile?.id && { profileId: effectiveProfile.id }),
     });
+
+  // Fetch history data for the current user
+  const { data: historyData, isLoading: isHistoryLoading } =
+    useAnalyticsAttemptHistory({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
+        | "general"
+        | "practice"
+        | "archived"
+      )[],
+      // Only show current user's history
+      profileId: effectiveProfile?.id,
+    });
+
+  // Convert analytics data to history format
+  const historyItems: HistoryDataItem[] = useMemo(() => {
+    if (!historyData?.rows) return [];
+    return convertAnalyticsDataToHistoryData(historyData.rows);
+  }, [historyData?.rows]);
 
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
@@ -275,7 +303,7 @@ export default function Home() {
   // const isLoading = isFilteredDataLoading;
 
   // Optional guard before rendering main body
-  if (isHomeOverviewLoading) {
+  if (isHomeOverviewLoading || isHistoryLoading) {
     return (
       <div className="container mx-auto p-4 space-y-8">
         {/* Header skeleton */}
@@ -639,9 +667,11 @@ export default function Home() {
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
+          data={historyItems}
           showExport={true}
           showArchive={false}
           singleProfile={true}
+          isLoading={isHistoryLoading}
         />
       </div>
     </div>
