@@ -11,6 +11,8 @@ import {
   CohortPerformanceResponseSchema,
   GrowthDataResponse,
   GrowthDataResponseSchema,
+  HomeOverviewResponse,
+  HomeOverviewResponseSchema,
   MetricResponse,
   MetricResponseSchema,
   PersonaPerformanceFilters,
@@ -346,5 +348,16 @@ export const analyticsRepo = {
       filters
     );
     return SimulationPerformanceDataSchema.parse(result);
+  },
+
+  // Home Analytics
+  async getHomeOverview(
+    filters: AnalyticsFilters
+  ): Promise<HomeOverviewResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_home_overview_fn",
+      filters
+    );
+    return HomeOverviewResponseSchema.parse(result);
   },
 };

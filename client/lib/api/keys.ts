@@ -288,6 +288,13 @@ export const analyticsSimulationPerformanceKeys = {
   list: (filters?: unknown) =>
     [...analyticsSimulationPerformanceKeys.all, { filters }] as const,
 };
+
+// Home Analytics Keys
+export const analyticsHomeOverviewKeys = {
+  all: ["analytics:home:overview"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsHomeOverviewKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

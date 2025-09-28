@@ -231,3 +231,6 @@ END $$;
 \i app/analytics/footer/simulation_composition.sql
 \i app/analytics/footer/simulation_performance.sql
 \i app/analytics/footer/scenario_stats.sql
+
+-- Home Analytics Functions
+\i app/analytics/home/analytics_home_overview.sql

@@ -634,3 +634,47 @@ export type ScenarioFact = z.infer<typeof ScenarioFactSchema>;
 export type SimulationPerformanceData = z.infer<
   typeof SimulationPerformanceDataSchema
 >;
+
+// Home Analytics Types
+
+// TA View Types
+export const HomeSimulationSchema = z.object({
+  simulationId: z.string(),
+  cohortIds: z.array(z.string()),
+  highestScore: z.number(),
+  hasPassed: z.boolean(),
+});
+
+export const HomeTaViewSchema = z.object({
+  mode: z.literal("ta"),
+  simulations: z.array(HomeSimulationSchema),
+});
+
+// Instructor/Admin View Types
+export const HomeSimulationCohortSchema = z.object({
+  simulationId: z.string(),
+  cohortId: z.string(),
+  passedProfileIds: z.array(z.string()),
+  inProgressProfileIds: z.array(z.string()),
+});
+
+export const HomeInstructorViewSchema = z.object({
+  mode: z.literal("instructor"),
+  bySimulationCohort: z.array(HomeSimulationCohortSchema),
+});
+
+// Union type for the response
+export const HomeOverviewResponseSchema = z.union([
+  HomeTaViewSchema,
+  HomeInstructorViewSchema,
+  z.object({
+    mode: z.literal("empty"),
+  }),
+]);
+
+// Type exports for home analytics
+export type HomeSimulation = z.infer<typeof HomeSimulationSchema>;
+export type HomeTaView = z.infer<typeof HomeTaViewSchema>;
+export type HomeSimulationCohort = z.infer<typeof HomeSimulationCohortSchema>;
+export type HomeInstructorView = z.infer<typeof HomeInstructorViewSchema>;
+export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;

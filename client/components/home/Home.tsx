@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
+import { useAnalyticsHomeOverview } from "@/lib/api/hooks/analytics";
 import { log } from "@/utils/logger";
 
-import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -42,6 +43,13 @@ const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   // Main filtered data for progress visualization - no profileId for admin/superadmin
   const { data: filteredData } = useFilteredAnalyticsData({
@@ -57,6 +65,26 @@ export default function Home() {
   const { data: historyFilteredData } = useFilteredAnalyticsData({
     ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
   });
+
+  // New optimized home overview analytics
+  const { data: homeOverview, isLoading: isHomeOverviewLoading } =
+    useAnalyticsHomeOverview({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
+        | "general"
+        | "practice"
+        | "archived"
+      )[],
+      // Pass profileId for TA view, omit for instructor/admin view
+      ...(effectiveProfile?.role !== "admin" &&
+        effectiveProfile?.role !== "superadmin" &&
+        effectiveProfile?.role !== "instructional" &&
+        effectiveProfile?.id && { profileId: effectiveProfile.id }),
+    });
+
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
 
@@ -78,6 +106,29 @@ export default function Home() {
   // Use rubrics from filtered data
   const rubrics = filteredData?.rubrics;
 
+  // --- lookups from filteredData (safe fallbacks) ---
+  const simById = useMemo(() => {
+    const arr = filteredData?.simulations ?? [];
+    return new Map(arr.map((s) => [s.id, s]));
+  }, [filteredData?.simulations]);
+
+  const cohortById = useMemo(() => {
+    const arr = filteredData?.cohorts ?? [];
+    return new Map(arr.map((c) => [c.id, c]));
+  }, [filteredData?.cohorts]);
+
+  const rubricById = useMemo(() => {
+    const arr = filteredData?.rubrics ?? rubrics ?? [];
+    return new Map(arr.map((r) => [r.id, r]));
+  }, [filteredData?.rubrics, rubrics]);
+
+  const cohortMembersMap = useMemo(() => {
+    const arr = filteredData?.cohorts ?? [];
+    return new Map<string, string[]>(
+      arr.map((c) => [c.id, c.profileIds ?? []])
+    );
+  }, [filteredData?.cohorts]);
+
   // Removed heavy `cohortsForDisplay` computation; filtering is handled by `filteredCohorts` below.
 
   // Note: available cohorts should be derived from actual cohort availability, not
@@ -88,28 +139,6 @@ export default function Home() {
     if (!filteredData?.cohorts) return [];
     return filteredData.cohorts;
   }, [filteredData?.cohorts]);
-
-  // Use profiles from filtered data (already filtered by analytics context)
-  const cohortProfiles = useMemo(() => {
-    if (!filteredData?.profiles) return [];
-    return filteredData.profiles;
-  }, [filteredData?.profiles]);
-
-  // Use data from filtered data (already filtered by analytics context)
-  const attempts = useMemo(() => {
-    if (!filteredData?.attempts) return [];
-    return filteredData.attempts;
-  }, [filteredData?.attempts]);
-
-  const chats = useMemo(() => {
-    if (!filteredData?.chats) return [];
-    return filteredData.chats;
-  }, [filteredData?.chats]);
-
-  const grades = useMemo(() => {
-    if (!filteredData?.grades) return [];
-    return filteredData.grades;
-  }, [filteredData?.grades]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -254,400 +283,190 @@ export default function Home() {
     ]
   );
 
-  // Note: attempts and grades can be empty/undefined when no simulations have been started yet
-  const safeAttempts = useMemo(() => attempts || [], [attempts]);
-  const safeGrades = useMemo(() => grades || [], [grades]);
-
-  // Data processing logic
-  const processedCohortData = useMemo(() => {
-    // Debug logging to help identify missing data
-    if (!filteredCohorts) {
-      return [];
-    }
-    if (!filteredData?.simulations) {
-      return [];
-    }
-    if (!cohortProfiles) {
-      return [];
-    }
-
-    return filteredCohorts.map((cohort) => {
-      // Get simulations for this specific cohort (and exclude default/practice ones)
-      const cohortSimulations = filteredData.simulations.filter((sim) =>
-        cohort.simulationIds?.includes(sim.id)
-      );
-
-      // Get the profiles of members in this cohort
-      const cohortMembers = cohortProfiles.filter((p) =>
-        cohort.profileIds?.includes(p.id)
-      );
-
-      // For each simulation, calculate progress based on user role
-      const simulationsWithProgress = cohortSimulations.map((simulation) => {
-        if (shouldShowAll) {
-          // Instructor/Admin view: Show progress for all cohort members
-          const cohortAttempts = safeAttempts.filter(
-            (att) =>
-              att.profileId &&
-              cohort.profileIds?.includes(att.profileId) &&
-              att.simulationId === simulation.id
-          );
-
-          const cohortAttemptIds = cohortAttempts.map((att) => att.id);
-          const cohortChats = chats?.filter((c) =>
-            cohortAttemptIds.includes(c.attemptId)
-          );
-
-          // Filter grades by date range if dates are provided
-          const cohortGrades = safeGrades.filter((g) =>
-            cohortChats?.some((c) => c.id === g.simulationChatId)
-          );
-
-          // Calculate progress based on each user's best attempt for this simulation
-          // This prevents counting multiple attempts per user which was causing >100% progress
-          const userBestAttempts = new Map<
-            string,
-            { passed: boolean; score: number; attemptId: string }
-          >();
-
-          // Group attempts by user and calculate best score for each user
-          cohortAttempts.forEach((attempt) => {
-            const attemptChats =
-              cohortChats?.filter((c) => c.attemptId === attempt.id) || [];
-
-            // Get total expected chats (same logic as scenarios column)
-            const totalExpected =
-              simulation.scenarioIds?.length || attemptChats.length || 0;
-
-            if (totalExpected === 0) {
-              return; // Skip this attempt if no expected chats
-            }
-
-            // Count completed chats
-            const completedChats = attemptChats.filter(
-              (chat) => chat.completed
-            );
-
-            // If no chats are completed, skip this attempt (will show as 0 score)
-            if (completedChats.length === 0) {
-              return;
-            }
-
-            // Calculate total score including zeros for ALL expected chats
-            let totalScore = 0;
-
-            // For each expected chat, find if it exists and has a grade
-            for (let i = 0; i < totalExpected; i++) {
-              const expectedChat = attemptChats[i];
-              if (expectedChat && expectedChat.completed) {
-                const grade = cohortGrades.find(
-                  (grade) => grade.simulationChatId === expectedChat.id
-                );
-                totalScore += grade?.score || 0;
-              }
-              // If chat doesn't exist or is not completed, add 0 (implicit)
-            }
-
-            const averageScore = totalScore / totalExpected;
-
-            // Get rubric to determine pass threshold
-            const rubric = rubrics?.find((r) => r.id === simulation.rubricId);
-            const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
-            const passed = averageScore >= passThreshold;
-
-            const existing = userBestAttempts.get(attempt.profileId!);
-            if (!existing || averageScore > existing.score) {
-              userBestAttempts.set(attempt.profileId!, {
-                passed,
-                score: averageScore,
-                attemptId: attempt.id,
-              });
-            }
-          });
-
-          // Count users based on their best attempts
-          const passedCount = Array.from(userBestAttempts.values()).filter(
-            (attempt) => attempt.passed
-          ).length;
-          const inProgressCount = Array.from(userBestAttempts.values()).filter(
-            (attempt) => !attempt.passed
-          ).length;
-          const notStartedCount =
-            cohortMembers.length - passedCount - inProgressCount;
-
-          return {
-            ...simulation,
-            progress: {
-              totalMembers: cohortMembers.length,
-              passedCount,
-              inProgressCount,
-              notStartedCount: Math.max(0, notStartedCount),
-              passedMembers:
-                Array.from(userBestAttempts.entries())
-                  .filter(([_, attempt]) => attempt.passed)
-                  .map(([profileId, _]) => profileId) || [],
-              inProgressMembers:
-                Array.from(userBestAttempts.entries())
-                  .filter(([_, attempt]) => !attempt.passed)
-                  .map(([profileId, _]) => profileId) || [],
-            },
-          };
-        } else {
-          // TA view: Show individual progress
-          if (!effectiveProfile?.id) {
-            // No profile ID available, show empty progress
-            return {
-              ...simulation,
-              progress: {
-                totalMembers: 1,
-                passedCount: 0,
-                inProgressCount: 0,
-                notStartedCount: 1,
-                passedMembers: [],
-                inProgressMembers: [],
-              },
-            };
-          }
-
-          // Find TA's attempts for this simulation
-          const taAttempts = safeAttempts.filter(
-            (att) =>
-              att.profileId === effectiveProfile.id! &&
-              att.simulationId === simulation.id
-          );
-
-          const taProgress = {
-            totalAttempts: taAttempts.length,
-            passedCount: 0,
-            inProgressCount: 0,
-            notStartedCount: taAttempts.length === 0 ? 1 : 0,
-            passedMembers: [] as string[],
-            inProgressMembers: [] as string[],
-          };
-
-          if (taAttempts.length > 0) {
-            const taAttemptIds = taAttempts.map((att) => att.id);
-
-            // Find chats and grades related to these attempts
-            const taChats = chats?.filter((c) =>
-              taAttemptIds.includes(c.attemptId)
-            );
-            const taGrades = safeGrades.filter((g) =>
-              taChats?.some((c) => c.id === g.simulationChatId)
-            );
-
-            // Calculate best attempt based on new scoring logic
-            let bestAverageScore = 0;
-            let hasPassed = false;
-
-            taAttempts.forEach((attempt) => {
-              const attemptChats =
-                taChats?.filter((c) => c.attemptId === attempt.id) || [];
-
-              // Get total expected chats (same logic as scenarios column)
-              const totalExpected =
-                simulation.scenarioIds?.length || attemptChats.length || 0;
-
-              if (totalExpected === 0) {
-                return; // Skip this attempt if no expected chats
-              }
-
-              // Count completed chats
-              const completedChats = attemptChats.filter(
-                (chat) => chat.completed
-              );
-
-              // If no chats are completed, skip this attempt (will show as 0 score)
-              if (completedChats.length === 0) {
-                return;
-              }
-
-              // Calculate total score including zeros for ALL expected chats
-              let totalScore = 0;
-
-              // For each expected chat, find if it exists and has a grade
-              for (let i = 0; i < totalExpected; i++) {
-                const expectedChat = attemptChats[i];
-                if (expectedChat && expectedChat.completed) {
-                  const grade = taGrades.find(
-                    (grade) => grade.simulationChatId === expectedChat.id
-                  );
-                  totalScore += grade?.score || 0;
-                }
-                // If chat doesn't exist or is not completed, add 0 (implicit)
-              }
-
-              const averageScore = totalScore / totalExpected;
-
-              if (averageScore > bestAverageScore) {
-                bestAverageScore = averageScore;
-
-                // Get rubric to determine pass threshold
-                const rubric = rubrics?.find(
-                  (r) => r.id === simulation.rubricId
-                );
-                const passThreshold = rubric?.passPoints || 70; // Default to 70% if no rubric
-                hasPassed = averageScore >= passThreshold;
-              }
-            });
-
-            if (hasPassed) {
-              taProgress.passedCount = 1;
-              taProgress.passedMembers = [effectiveProfile.id!];
-            } else {
-              taProgress.inProgressCount = 1;
-              taProgress.inProgressMembers = [effectiveProfile.id!];
-            }
-          }
-
-          return {
-            ...simulation,
-            progress: {
-              totalMembers: 1, // Individual TA view
-              passedCount: taProgress.passedCount,
-              inProgressCount: taProgress.inProgressCount,
-              notStartedCount: taProgress.notStartedCount,
-              passedMembers: taProgress.passedMembers,
-              inProgressMembers: taProgress.inProgressMembers,
-            },
-          };
-        }
-      });
-
-      return {
-        cohort,
-        cohortMembers,
-        simulations: simulationsWithProgress,
-      };
-    });
-  }, [
-    filteredCohorts,
-    filteredData?.simulations,
-    cohortProfiles,
-    safeAttempts,
-    chats,
-    safeGrades,
-    effectiveProfile,
-    shouldShowAll,
-    rubrics,
-  ]);
-
-  // Enhanced simulation data with completion status and rubric data (deduplicated)
+  // NEW: build enhancedSimulations directly from server payload (with client lookups)
   const enhancedSimulations = useMemo(() => {
-    if (!processedCohortData || !rubrics) return [];
+    if (!homeOverview || homeOverview.mode === "empty") return [];
 
-    const perfBySim = effectiveProfile?.id
-      ? calculateUserPerformanceBySimulation(
-          filteredData!,
-          rubrics,
-          effectiveProfile.id
-        )
-      : {};
+    // helper: format cohort names
+    const fmtCohortNames = (cohortIds: string[]) => {
+      const cohorts = cohortIds
+        .map((id) => cohortById.get(id))
+        .filter(Boolean) as Array<{ title: string }>;
+      return formatCohortNames(cohorts);
+    };
 
-    // Create a map to deduplicate simulations by ID
-    const simulationMap = new Map<
-      string,
-      {
-        simulation: (typeof processedCohortData)[0]["simulations"][0];
-        cohorts: Array<{ title: string }>;
-        progress: (typeof processedCohortData)[0]["simulations"][0]["progress"];
-      }
-    >();
+    // TA view → one record per simulation (your schema already gives highestScore + hasPassed)
+    if (homeOverview.mode === "ta") {
+      return (homeOverview.simulations ?? [])
+        .map((row) => {
+          const sim = simById.get(row.simulationId);
+          if (!sim) return null;
 
-    // Process all simulations and group by simulation ID
-    processedCohortData.forEach((data) => {
-      data.simulations.forEach((simulation) => {
-        const existing = simulationMap.get(simulation.id);
+          const rubric = rubricById.get(sim.rubricId);
+          const passRate =
+            rubric && rubric.points > 0
+              ? Math.round((rubric.passPoints / rubric.points) * 100)
+              : 0;
 
-        if (existing) {
-          // Add this cohort to the existing simulation
-          existing.cohorts.push(data.cohort);
-          // Merge progress data (for instructor view, sum the progress)
-          if (shouldShowAll) {
-            existing.progress.totalMembers += simulation.progress.totalMembers;
-            existing.progress.passedCount += simulation.progress.passedCount;
-            existing.progress.inProgressCount +=
-              simulation.progress.inProgressCount;
-            existing.progress.notStartedCount +=
-              simulation.progress.notStartedCount;
-            existing.progress.passedMembers.push(
-              ...simulation.progress.passedMembers
-            );
-            existing.progress.inProgressMembers.push(
-              ...simulation.progress.inProgressMembers
-            );
-          }
-        } else {
-          // First occurrence of this simulation
-          simulationMap.set(simulation.id, {
-            simulation,
-            cohorts: [data.cohort],
-            progress: { ...simulation.progress },
-          });
+          const cohorts = (row.cohortIds ?? [])
+            .map((id) => cohortById.get(id))
+            .filter(Boolean) as Array<{
+            id: string;
+            title: string;
+            description: string | null;
+          }>;
+
+          const cohort = cohorts[0] ?? {
+            id: "",
+            title: "",
+            description: null as string | null,
+          };
+
+          return {
+            ...sim,
+            cohort,
+            cohorts,
+            cohortNames: fmtCohortNames(row.cohortIds ?? []),
+            rubric,
+            passRate,
+            hasPassed: row.hasPassed,
+            highestScore: row.highestScore ?? 0,
+            progress: {
+              totalMembers: 1,
+              passedCount: row.hasPassed ? 1 : 0,
+              inProgressCount: row.hasPassed ? 0 : 1,
+              notStartedCount: 0,
+              passedMembers:
+                row.hasPassed && effectiveProfile?.id
+                  ? [effectiveProfile.id]
+                  : [],
+              inProgressMembers:
+                !row.hasPassed && effectiveProfile?.id
+                  ? [effectiveProfile.id]
+                  : [],
+            },
+            rubricData: {
+              attempts: [],
+              highestScore: row.highestScore ?? 0,
+            },
+          };
+        })
+        .filter(Boolean);
+    }
+
+    // Instructor/Admin → aggregate by simulation across cohorts
+    if (homeOverview.mode === "instructor") {
+      // group rows by simulationId
+      const bySim = new Map<
+        string,
+        {
+          simulation: NonNullable<typeof filteredData>["simulations"][0];
+          cohorts: { id: string; title: string; description: string | null }[];
+          passedMembers: string[];
+          inProgressMembers: string[];
+          totalMembers: number;
         }
-      });
-    });
+      >();
 
-    // Convert map back to array and enhance with rubric data
-    return Array.from(simulationMap.values()).map(
-      ({ simulation, cohorts, progress }) => {
-        const rubric = rubrics.find((r) => r.id === simulation.rubricId);
+      for (const row of homeOverview.bySimulationCohort ?? []) {
+        const sim = simById.get(row.simulationId);
+        if (!sim) continue;
+
+        const cohort = cohortById.get(row.cohortId);
+        if (!cohort) continue;
+
+        const bucket = bySim.get(row.simulationId) ?? {
+          simulation: sim,
+          cohorts: [],
+          passedMembers: [],
+          inProgressMembers: [],
+          totalMembers: 0,
+        };
+
+        // accumulate cohort + membership
+        if (!bucket.cohorts.find((c) => c.id === cohort.id)) {
+          bucket.cohorts.push(cohort);
+        }
+
+        const cohortMembers = cohortMembersMap.get(cohort.id) ?? [];
+        bucket.totalMembers += cohortMembers.length;
+
+        bucket.passedMembers.push(...row.passedProfileIds);
+        bucket.inProgressMembers.push(...row.inProgressProfileIds);
+
+        bySim.set(row.simulationId, bucket);
+      }
+
+      // build final records per simulation
+      const results = Array.from(bySim.values()).map((bucket) => {
+        const sim = bucket.simulation;
+        const rubric = rubricById.get(sim.rubricId);
         const passRate =
           rubric && rubric.points > 0
             ? Math.round((rubric.passPoints / rubric.points) * 100)
             : 0;
 
-        // Default to user's performance
-        const perf = perfBySim[simulation.id];
-        let hasPassed = perf?.passed ?? false;
-        const highestScore = perf?.highestScorePercent ?? 0;
+        const passedSet = new Set(bucket.passedMembers);
+        const inProgSet = new Set(bucket.inProgressMembers);
 
-        // For instructor view, check if ALL members have passed
-        if (shouldShowAll) {
-          const passedMembers = progress.passedMembers;
-          const totalMembers = progress.totalMembers;
-          hasPassed =
-            passedMembers.length > 0 && passedMembers.length >= totalMembers;
-        }
+        const passedCount = passedSet.size;
+        const inProgressCount = inProgSet.size;
+        const notStartedCount = Math.max(
+          0,
+          bucket.totalMembers - passedCount - inProgressCount
+        );
+
+        const cohort = bucket.cohorts[0] ?? {
+          id: "",
+          title: "",
+          description: null as string | null,
+        };
+
+        // hasPassed for instructor cards = everyone in the cohorts passed
+        const hasPassed =
+          bucket.totalMembers > 0 && passedCount >= bucket.totalMembers;
 
         return {
-          ...simulation,
-          cohort: cohorts[0] || { title: "", id: "", description: null }, // Keep first cohort for backward compatibility
-          cohorts, // Add all cohorts
-          cohortNames: formatCohortNames(cohorts), // Add formatted cohort names
-          progress,
+          ...sim,
+          cohort,
+          cohorts: bucket.cohorts,
+          cohortNames: formatCohortNames(bucket.cohorts),
           rubric,
           passRate,
           hasPassed,
-          highestScore,
+          highestScore: 0, // not defined for instructor rollup
+          progress: {
+            totalMembers: bucket.totalMembers,
+            passedCount,
+            inProgressCount,
+            notStartedCount,
+            passedMembers: Array.from(passedSet),
+            inProgressMembers: Array.from(inProgSet),
+          },
           rubricData: {
             attempts: [],
-            highestScore,
+            highestScore: 0,
           },
-        } as typeof simulation & {
-          cohort: { id: string; title: string; description: string | null };
-          cohorts: Array<{ title: string }>;
-          cohortNames: string;
-          progress: typeof progress;
-          rubric?: typeof rubric;
-          passRate?: number;
-          hasPassed?: boolean;
-          highestScore?: number;
-          rubricData: { attempts: never[]; highestScore: number };
         };
-      }
-    );
+      });
+
+      return results;
+    }
+
+    return [];
   }, [
-    processedCohortData,
-    rubrics,
-    shouldShowAll,
+    homeOverview,
+    simById,
+    cohortById,
+    rubricById,
+    cohortMembersMap,
     effectiveProfile?.id,
-    filteredData,
   ]);
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
     return enhancedSimulations.sort((a, b) => {
+      if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
       if (a.hasPassed !== b.hasPassed) {
         return a.hasPassed ? 1 : -1;
@@ -664,6 +483,7 @@ export default function Home() {
 
     // Use the deduplicated simulations for progress data
     return enhancedSimulations.sort((a, b) => {
+      if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
       const aCompleted = a.progress.passedCount >= a.progress.totalMembers;
       const bCompleted = b.progress.passedCount >= b.progress.totalMembers;
@@ -702,6 +522,108 @@ export default function Home() {
 
   // Loading state
   // const isLoading = isFilteredDataLoading;
+
+  // Optional guard before rendering main body
+  if (isHomeOverviewLoading) {
+    return (
+      <div className="container mx-auto p-4 space-y-8">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+        </div>
+
+        {/* Progress Visualization Section skeleton */}
+        <div className="space-y-6">
+          <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-32" />
+                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <Skeleton className="h-2 w-1/2 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Assignments List Section skeleton */}
+        <div className="space-y-4">
+          {/* Header with navigation skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </div>
+          </div>
+
+          {/* Carousel container skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Card
+                key={i}
+                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="text-right space-y-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Dots indicator skeleton */}
+          <div className="flex justify-center space-x-2 mt-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="w-2 h-2 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        {/* History Section skeleton */}
+        <div className="mt-12 space-y-4">
+          <Skeleton className="h-6 w-32" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+              >
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!effectiveProfile) {
     return (
@@ -843,13 +765,15 @@ export default function Home() {
       {/* Progress Visualization Section - All progress bars grouped together */}
       <div className="space-y-6">
         <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
-          {sortedProgressData.map((sim) => (
-            <SimulationProgress
-              key={sim.id}
-              simulation={sim}
-              isTAView={!shouldShowAll}
-            />
-          ))}
+          {sortedProgressData.map((sim) =>
+            sim ? (
+              <SimulationProgress
+                key={sim.id}
+                simulation={sim}
+                isTAView={!shouldShowAll}
+              />
+            ) : null
+          )}
         </div>
       </div>
 
@@ -891,18 +815,20 @@ export default function Home() {
 
           {/* Carousel container */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleSimulations.map((sim) => (
-              <SimulationCard
-                key={sim.id}
-                simulation={sim}
-                type="cohort"
-                onStartSimulation={handleStartSimulation}
-                loadingSimulation={loadingSimulation}
-                effectiveProfile={effectiveProfile}
-                scenarios={[]} // Not needed for cohort simulations
-                personas={[]} // Not needed for cohort simulations
-              />
-            ))}
+            {visibleSimulations.map((sim) =>
+              sim ? (
+                <SimulationCard
+                  key={sim.id}
+                  simulation={sim}
+                  type="cohort"
+                  onStartSimulation={handleStartSimulation}
+                  loadingSimulation={loadingSimulation}
+                  effectiveProfile={effectiveProfile}
+                  scenarios={[]} // Not needed for cohort simulations
+                  personas={[]} // Not needed for cohort simulations
+                />
+              ) : null
+            )}
           </div>
 
           {/* Dots indicator */}

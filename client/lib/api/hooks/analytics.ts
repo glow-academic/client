@@ -4,6 +4,7 @@ import {
   AttemptImprovementResponseSchema,
   CohortPerformanceResponseSchema,
   GrowthDataResponseSchema,
+  HomeOverviewResponseSchema,
   MetricResponseSchema,
   PersonaPerformanceFilters,
   PersonaPerformanceResponseSchema,
@@ -25,6 +26,7 @@ import {
   analyticsFirstAttemptPassRateKeys,
   analyticsGrowthDataKeys,
   analyticsHighestScoreKeys,
+  analyticsHomeOverviewKeys,
   analyticsImprovementPerDayKeys,
   analyticsMessagesPerSessionKeys,
   analyticsPerfectScoresKeys,
@@ -498,6 +500,25 @@ export function useAnalyticsSimulationPerformance(
         }
       );
       return SimulationPerformanceDataSchema.parse(res);
+    },
+  });
+}
+
+// Home Analytics Hooks
+
+export function useAnalyticsHomeOverview(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsHomeOverviewKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/home/overview", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return HomeOverviewResponseSchema.parse(res);
     },
   });
 }
