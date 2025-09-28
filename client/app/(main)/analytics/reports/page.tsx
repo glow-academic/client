@@ -4,8 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-import Reports from "@/components/analytics/report/Reports";
 
+import ReportsPage from "@/components/analytics/report/ReportsPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,10 +13,10 @@ export const metadata: Metadata = {
   description: `Reports in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-export default function ReportsPage() {
+export default function ReportsFullPage() {
   return (
     <div className="space-y-6">
-      <Reports />
+      <ReportsPage />
     </div>
   );
 }

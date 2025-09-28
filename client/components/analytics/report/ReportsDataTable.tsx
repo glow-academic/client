@@ -29,13 +29,125 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { TAPerformanceData } from "@/hooks/use-report-columns";
 import { ReportsDataTableToolbar } from "./ReportsDataTableToolbar";
 
+// Import ReportsDataItem from Reports.tsx
+interface ReportsDataItem {
+  // Core identifiers
+  profile_id: string;
+  profileName: string;
+  profileAlias: string;
+  scenario_id?: string;
+  simulation_id?: string;
+
+  // The 10 core metrics with pre-computed values, thresholds, and hover data
+  averageScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      mean: number;
+      median: number;
+      mode: number;
+    };
+  };
+
+  completionPercentage: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      completed: number;
+      total: number;
+      percent: number;
+    };
+  };
+
+  firstAttemptPassRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      passed: number;
+      total: number;
+      percent: number;
+    };
+  };
+
+  highestScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      top: number[];
+    };
+  };
+
+  messagesPerSession: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      mean: number;
+      median: number;
+      count: number;
+    };
+  };
+
+  personaResponseTimes: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      meanSeconds: number;
+      medianSeconds: number;
+      samples: number;
+    };
+  };
+
+  sessionEfficiency: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      avgScorePercent: number;
+      avgMinutes: number;
+      efficiency: number;
+    };
+  };
+
+  stagnationRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      tracked: number;
+      stagnant: number;
+      ratePercent: number;
+    };
+  };
+
+  timeSpent: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      avgSessionMinutes: number;
+      avgChatMinutes: number;
+      avgOverallMinutes: number;
+    };
+  };
+
+  totalAttempts: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+  };
+}
+
 export interface ReportsDataTableProps {
-  columns: ColumnDef<TAPerformanceData>[];
-  data: TAPerformanceData[];
-  personaOptions: { value: string; label: string }[];
+  columns: ColumnDef<ReportsDataItem>[];
+  data: ReportsDataItem[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   simulations: Array<{ id: string; title: string }>;
@@ -46,7 +158,6 @@ export interface ReportsDataTableProps {
 export function ReportsDataTable({
   columns,
   data,
-  personaOptions,
   scenarioOptions,
   simulationOptions,
   simulations,
@@ -94,66 +205,80 @@ export function ReportsDataTable({
   const renderWithHover = (
     key: string,
     content: React.ReactNode,
-    taId: string
+    profileId: string
   ) => {
-    const ta = data.find((d) => d.id === taId);
-    const h = ta?.hover;
+    const item = data.find((d) => d.profile_id === profileId);
     let bullets: string[] = [];
-    if (key === "averageScore" && h?.scoreStats) {
+
+    if (key === "averageScore" && item?.averageScore?.hover) {
+      const h = item.averageScore.hover;
       bullets = [
-        `Mean: ${h.scoreStats.mean}%`,
-        `Median: ${h.scoreStats.median}%`,
-        `Mode: ${h.scoreStats.mode}%`,
+        `Mean: ${h.mean}%`,
+        `Median: ${h.median}%`,
+        `Mode: ${h.mode}%`,
       ];
-    } else if (key === "highestScore" && h?.scoreStats?.top) {
-      bullets = h.scoreStats.top.length
-        ? h.scoreStats.top.map((v, i) => `${i + 1}. ${v}%`)
+    } else if (key === "highestScore" && item?.highestScore?.hover) {
+      const h = item.highestScore.hover;
+      bullets = h.top.length
+        ? h.top.map((v, i) => `${i + 1}. ${v}%`)
         : ["No scores available"];
-    } else if (key === "timeSpent" && h?.timeStats) {
+    } else if (key === "timeSpent" && item?.timeSpent?.hover) {
+      const h = item.timeSpent.hover;
       bullets = [
-        `Avg session: ${h.timeStats.avgSessionMinutes}m`,
-        `Avg chat: ${h.timeStats.avgChatMinutes}m`,
-        `Avg time spent: ${h.timeStats.avgOverallMinutes}m`,
+        `Avg session: ${h.avgSessionMinutes}m`,
+        `Avg chat: ${h.avgChatMinutes}m`,
+        `Avg time spent: ${h.avgOverallMinutes}m`,
       ];
-    } else if (key === "messagesPerSession" && h?.messageStats) {
+    } else if (
+      key === "messagesPerSession" &&
+      item?.messagesPerSession?.hover
+    ) {
+      const h = item.messagesPerSession.hover;
       bullets = [
-        `Mean msgs/chat: ${h.messageStats.mean}`,
-        `Median msgs/chat: ${h.messageStats.median}`,
-        `Chats counted: ${h.messageStats.count}`,
+        `Mean msgs/chat: ${h.mean}`,
+        `Median msgs/chat: ${h.median}`,
+        `Chats counted: ${h.count}`,
       ];
-    } else if (key === "completionPercentage" && h?.completionStats) {
+    } else if (
+      key === "completionPercentage" &&
+      item?.completionPercentage?.hover
+    ) {
+      const h = item.completionPercentage.hover;
+      bullets = [`Completed: ${h.completed}/${h.total}`, `Rate: ${h.percent}%`];
+    } else if (
+      key === "firstAttemptPassRate" &&
+      item?.firstAttemptPassRate?.hover
+    ) {
+      const h = item.firstAttemptPassRate.hover;
+      bullets = [`First-pass: ${h.passed}/${h.total}`, `Rate: ${h.percent}%`];
+    } else if (
+      key === "personaResponseTimes" &&
+      item?.personaResponseTimes?.hover
+    ) {
+      const h = item.personaResponseTimes.hover;
       bullets = [
-        `Completed: ${h.completionStats.completed}/${h.completionStats.total}`,
-        `Rate: ${h.completionStats.percent}%`,
+        `Mean: ${h.meanSeconds}s`,
+        `Median: ${h.medianSeconds}s`,
+        `Samples: ${h.samples}`,
       ];
-    } else if (key === "firstAttemptPassRate" && h?.firstAttemptStats) {
+    } else if (key === "sessionEfficiency" && item?.sessionEfficiency?.hover) {
+      const h = item.sessionEfficiency.hover;
       bullets = [
-        `First-pass: ${h.firstAttemptStats.passed}/${h.firstAttemptStats.total}`,
-        `Rate: ${h.firstAttemptStats.percent}%`,
+        `Avg score: ${h.avgScorePercent}%`,
+        `Avg time: ${h.avgMinutes}m`,
+        `Efficiency: ${h.efficiency}`,
       ];
-    } else if (key === "personaResponseTimes" && h?.personaResponseStats) {
+    } else if (key === "stagnationRate" && item?.stagnationRate?.hover) {
+      const h = item.stagnationRate.hover;
       bullets = [
-        `Mean: ${h.personaResponseStats.meanSeconds}s`,
-        `Median: ${h.personaResponseStats.medianSeconds}s`,
-        `Samples: ${h.personaResponseStats.samples}`,
+        `Tracked: ${h.tracked}`,
+        `Stagnant: ${h.stagnant}`,
+        `Rate: ${h.ratePercent}%`,
       ];
-    } else if (key === "sessionEfficiency" && h?.efficiencyStats) {
+    } else if (key === "totalAttempts" && item?.totalAttempts) {
       bullets = [
-        `Avg score: ${h.efficiencyStats.avgScorePercent}%`,
-        `Avg time: ${h.efficiencyStats.avgMinutes}m`,
-        `Efficiency: ${h.efficiencyStats.efficiency}`,
-      ];
-    } else if (key === "stagnationRate" && h?.stagnationStats) {
-      bullets = [
-        `Tracked: ${h.stagnationStats.tracked}`,
-        `Stagnant: ${h.stagnationStats.stagnant}`,
-        `Rate: ${h.stagnationStats.ratePercent}%`,
-      ];
-    } else if (key === "totalAttempts") {
-      bullets = [
-        `Attempts: ${ta?.totalAttempts ?? 0}`,
-        `Unique sims: ${(ta?.simulationIds ?? []).length}`,
-        `Mean/Sim: ${((ta?.totalAttempts ?? 0) / Math.max(1, (ta?.simulationIds ?? []).length)).toFixed(2)}`,
+        `Attempts: ${item.totalAttempts.value}`,
+        `Formatted: ${item.totalAttempts.formattedValue}`,
       ];
     }
     return (
@@ -181,7 +306,6 @@ export function ReportsDataTable({
     <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
-        personaOptions={personaOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
         simulations={simulations}
@@ -220,7 +344,7 @@ export function ReportsDataTable({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => onViewReport(row.original.id)}
+                  onClick={() => onViewReport(row.original.profile_id)}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const key = cell.column.id;
@@ -248,7 +372,11 @@ export function ReportsDataTable({
                         }`}
                       >
                         {shouldHover
-                          ? renderWithHover(key, content, row.original.id)
+                          ? renderWithHover(
+                              key,
+                              content,
+                              row.original.profile_id
+                            )
                           : content}
                       </TableCell>
                     );

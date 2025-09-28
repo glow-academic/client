@@ -8,11 +8,110 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TAPerformanceData } from "@/hooks/use-report-columns";
+// Import ReportsDataItem type
+interface ReportsDataItem {
+  profile_id: string;
+  profileName: string;
+  profileAlias: string;
+  scenario_id?: string;
+  simulation_id?: string;
+  averageScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      mean: number;
+      median: number;
+      mode: number;
+    };
+  };
+  completionPercentage: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      completed: number;
+      total: number;
+      percent: number;
+    };
+  };
+  firstAttemptPassRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      passed: number;
+      total: number;
+      percent: number;
+    };
+  };
+  highestScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      top: number[];
+    };
+  };
+  messagesPerSession: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      mean: number;
+      median: number;
+      count: number;
+    };
+  };
+  personaResponseTimes: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      meanSeconds: number;
+      medianSeconds: number;
+      samples: number;
+    };
+  };
+  sessionEfficiency: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      avgScorePercent: number;
+      avgMinutes: number;
+      efficiency: number;
+    };
+  };
+  stagnationRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      tracked: number;
+      stagnant: number;
+      ratePercent: number;
+    };
+  };
+  timeSpent: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+    hover: {
+      avgSessionMinutes: number;
+      avgChatMinutes: number;
+      avgOverallMinutes: number;
+    };
+  };
+  totalAttempts: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number };
+  };
+}
 
 export interface ReportsDataTableToolbarProps {
-  table: Table<TAPerformanceData>;
-  personaOptions: { value: string; label: string }[];
+  table: Table<ReportsDataItem>;
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   simulations: Array<{ id: string; title: string }>;
@@ -21,7 +120,6 @@ export interface ReportsDataTableToolbarProps {
 
 export function ReportsDataTableToolbar({
   table,
-  personaOptions,
   scenarioOptions,
   simulationOptions,
   simulations,
@@ -30,7 +128,7 @@ export function ReportsDataTableToolbar({
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const firstNameColumn = table.getColumn("firstName");
+  const profileNameColumn = table.getColumn("profileName");
   // Cohort filter removed (handled at top-level)
   // Role filter removed; handled at a higher level
 
@@ -39,42 +137,29 @@ export function ReportsDataTableToolbar({
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
         <div className="mb-2">
           <Input
-            placeholder="Search TAs by name or alias..."
-            value={(firstNameColumn?.getFilterValue() as string) ?? ""}
+            placeholder="Search profiles by name or alias..."
+            value={(profileNameColumn?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              firstNameColumn?.setFilterValue(event.target.value)
+              profileNameColumn?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Role filter removed */}
-
-          {/* Cohort filter removed */}
-
-          {/* Persona Filter */}
-          {personaOptions.length > 0 && table.getColumn("personasTested") && (
-            <DataTableFacetedFilter
-              column={table.getColumn("personasTested")!}
-              title="Persona"
-              options={personaOptions}
-            />
-          )}
-
           {/* Scenario Filter */}
-          {scenarioOptions.length > 0 && table.getColumn("scenarioIds") && (
+          {scenarioOptions.length > 0 && table.getColumn("scenario_id") && (
             <DataTableFacetedFilter
-              column={table.getColumn("scenarioIds")!}
+              column={table.getColumn("scenario_id")!}
               title="Scenario"
               options={scenarioOptions}
             />
           )}
 
           {/* Simulation Filter */}
-          {simulationOptions.length > 0 && table.getColumn("simulationIds") && (
+          {simulationOptions.length > 0 && table.getColumn("simulation_id") && (
             <DataTableFacetedFilter
-              column={table.getColumn("simulationIds")!}
+              column={table.getColumn("simulation_id")!}
               title="Simulation"
               options={simulationOptions}
             />

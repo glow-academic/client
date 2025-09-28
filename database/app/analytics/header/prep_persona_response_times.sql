@@ -47,9 +47,11 @@ cur AS (
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
-           'profileId', f.profile_id::text,
-           'date',      to_char(date_trunc('day', f.chat_created_at),'YYYY-MM-DD'),
-           'value',     x::int
+           'profileId',    f.profile_id::text,
+           'date',         to_char(date_trunc('day', f.chat_created_at),'YYYY-MM-DD'),
+           'value',        x::int,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
          ) ORDER BY f.profile_id, f.chat_created_at) AS payload
   FROM filt f, LATERAL unnest(f.message_time_taken_seconds) AS x
 )

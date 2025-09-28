@@ -12,8 +12,22 @@ import {
   useAnalyticsTimeSpent,
   useAnalyticsTotalAttempts,
 } from "@/lib/api/hooks/analytics";
+import type { RowFilter } from "@/utils/analytics/metric-recompute-utils";
+import {
+  recomputeAttemptsSummary,
+  recomputeAverageScoreSummary,
+  recomputeCompletionSummary,
+  recomputeEfficiencySummary,
+  recomputeFirstPassSummary,
+  recomputeMessagesSummary,
+  recomputePersonaRTSummary,
+  recomputeStagnationSummary,
+  recomputeTimeSummary,
+  recomputeTopScores,
+} from "@/utils/analytics/metric-recompute-utils";
+import { useMemo } from "react";
 
-export type HeaderMetrics = {
+export type HeaderMetricsWithRowFilter = {
   averageScore: MetricResponse | undefined;
   completionPercentage: MetricResponse | undefined;
   firstAttemptPassRate: MetricResponse | undefined;
@@ -26,8 +40,29 @@ export type HeaderMetrics = {
   totalAttempts: MetricResponse | undefined;
 };
 
-export function useHeaderMetrics(filters: AnalyticsFilters) {
-  // Use the individual hooks directly instead of trying to access queryFn
+export type RecomputedSummaries = {
+  averageScore: ReturnType<typeof recomputeAverageScoreSummary> | undefined;
+  completionPercentage:
+    | ReturnType<typeof recomputeCompletionSummary>
+    | undefined;
+  firstAttemptPassRate:
+    | ReturnType<typeof recomputeFirstPassSummary>
+    | undefined;
+  highestScoreTop: ReturnType<typeof recomputeTopScores> | undefined;
+  messagesPerSession: ReturnType<typeof recomputeMessagesSummary> | undefined;
+  personaResponseTimes:
+    | ReturnType<typeof recomputePersonaRTSummary>
+    | undefined;
+  sessionEfficiency: ReturnType<typeof recomputeEfficiencySummary> | undefined;
+  stagnationRate: ReturnType<typeof recomputeStagnationSummary> | undefined;
+  timeSpent: ReturnType<typeof recomputeTimeSummary> | undefined;
+  totalAttempts: ReturnType<typeof recomputeAttemptsSummary> | undefined;
+};
+
+export function useHeaderMetrics(
+  filters: AnalyticsFilters,
+  rowFilter?: RowFilter
+) {
   const averageScore = useAnalyticsAverageScore(filters);
   const completionPercentage = useAnalyticsCompletionPercentage(filters);
   const firstAttemptPassRate = useAnalyticsFirstAttemptPassRate(filters);
@@ -65,7 +100,56 @@ export function useHeaderMetrics(filters: AnalyticsFilters) {
     totalAttempts,
   ].some((q) => q.isError);
 
-  const data: HeaderMetrics = {
+  // Recomputed summaries constrained by current row filter
+  const summaries: RecomputedSummaries = useMemo(
+    () => ({
+      averageScore: averageScore.data
+        ? recomputeAverageScoreSummary(averageScore.data, rowFilter)
+        : undefined,
+      completionPercentage: completionPercentage.data
+        ? recomputeCompletionSummary(completionPercentage.data, rowFilter)
+        : undefined,
+      firstAttemptPassRate: firstAttemptPassRate.data
+        ? recomputeFirstPassSummary(firstAttemptPassRate.data, rowFilter)
+        : undefined,
+      highestScoreTop: highestScore.data
+        ? recomputeTopScores(highestScore.data, rowFilter, 3)
+        : undefined,
+      messagesPerSession: messagesPerSession.data
+        ? recomputeMessagesSummary(messagesPerSession.data, rowFilter)
+        : undefined,
+      personaResponseTimes: personaResponseTimes.data
+        ? recomputePersonaRTSummary(personaResponseTimes.data, rowFilter)
+        : undefined,
+      sessionEfficiency: sessionEfficiency.data
+        ? recomputeEfficiencySummary(sessionEfficiency.data, rowFilter)
+        : undefined,
+      stagnationRate: stagnationRate.data
+        ? recomputeStagnationSummary(stagnationRate.data, rowFilter)
+        : undefined,
+      timeSpent: timeSpent.data
+        ? recomputeTimeSummary(timeSpent.data, rowFilter)
+        : undefined,
+      totalAttempts: totalAttempts.data
+        ? recomputeAttemptsSummary(totalAttempts.data, rowFilter)
+        : undefined,
+    }),
+    [
+      rowFilter,
+      averageScore.data,
+      completionPercentage.data,
+      firstAttemptPassRate.data,
+      highestScore.data,
+      messagesPerSession.data,
+      personaResponseTimes.data,
+      sessionEfficiency.data,
+      stagnationRate.data,
+      timeSpent.data,
+      totalAttempts.data,
+    ]
+  );
+
+  const raw: HeaderMetricsWithRowFilter = {
     averageScore: averageScore.data,
     completionPercentage: completionPercentage.data,
     firstAttemptPassRate: firstAttemptPassRate.data,
@@ -78,5 +162,10 @@ export function useHeaderMetrics(filters: AnalyticsFilters) {
     totalAttempts: totalAttempts.data,
   };
 
-  return { data, isLoading, isError };
+  return {
+    isLoading,
+    isError,
+    raw,
+    summaries, // <- use these for your header/hover cards tied to the current row selection
+  };
 }

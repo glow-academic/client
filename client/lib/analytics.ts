@@ -37,6 +37,7 @@ export const DataPointSchema = z.object({
   value: z.number().optional(),
   attemptId: z.string().optional(),
   simulationId: z.string().optional(),
+  scenarioId: z.string().optional(),
   count: z.number().optional(),
 });
 

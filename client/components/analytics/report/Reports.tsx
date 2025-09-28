@@ -1,140 +1,173 @@
 /**
  * Reports.tsx
- * Server-backed reports table using analytics hooks
+ * Reports table using comprehensive bare data type following fast/dumb UI principle
  */
 "use client";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { ColumnDef, Row, Table } from "@tanstack/react-table";
+import { Clock, MessageCircle, Target, Timer } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { useAnalytics } from "@/contexts/analytics-context";
-import { useHeaderMetrics } from "@/hooks/use-header-metrics";
-import {
-  TAPerformanceData,
-  useReportColumns,
-} from "@/hooks/use-report-columns";
-import type { AnalyticsFilters } from "@/lib/analytics";
-import { useProfiles } from "@/lib/api/hooks/profiles";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import {
-  buildRowsFromMetrics,
-  finalizeRow,
-} from "@/utils/analytics/build-report-rows";
+import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Scenario, Simulation } from "@/types";
 import { ReportsDataTable } from "./ReportsDataTable";
 
-type PartialRow = {
-  id: string;
-  averageScore?: number;
-  completionPercentage?: number;
-  firstAttemptPassRate?: number;
-  highestScore?: number;
-  messagesPerSession?: number;
-  personaResponseTimes?: number;
-  sessionEfficiency?: number;
-  stagnationRate?: number;
-  timeSpent?: number;
-  totalAttempts?: number;
-};
+// Complete reports data type - follows fast/dumb UI principle with inline hover data and thresholds
+interface ReportsDataItem {
+  // Core identifiers
+  profile_id: string;
+  profileName: string;
+  profileAlias: string;
+  scenario_id?: string; // Used for filter construction like history
+  simulation_id?: string; // Used for filter construction like history
 
-export default function Reports() {
+  // The 10 core metrics with pre-computed values, thresholds, and hover data
+  averageScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Mean: X%, Median: Y%, Mode: Z%
+    hover: {
+      mean: number;
+      median: number;
+      mode: number;
+    };
+  };
+
+  completionPercentage: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Completed: X/Y, Rate: Z%
+    hover: {
+      completed: number;
+      total: number;
+      percent: number;
+    };
+  };
+
+  firstAttemptPassRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: First-pass: X/Y, Rate: Z%
+    hover: {
+      passed: number;
+      total: number;
+      percent: number;
+    };
+  };
+
+  highestScore: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: 1. X%, 2. Y%, 3. Z% (top scores)
+    hover: {
+      top: number[]; // Shows top scores list
+    };
+  };
+
+  messagesPerSession: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Mean msgs/chat: X, Median msgs/chat: Y, Chats counted: Z
+    hover: {
+      mean: number;
+      median: number;
+      count: number;
+    };
+  };
+
+  personaResponseTimes: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Mean: Xs, Median: Ys, Samples: Z
+    hover: {
+      meanSeconds: number;
+      medianSeconds: number;
+      samples: number;
+    };
+  };
+
+  sessionEfficiency: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Avg score: X%, Avg time: Ym, Efficiency: Z
+    hover: {
+      avgScorePercent: number;
+      avgMinutes: number;
+      efficiency: number;
+    };
+  };
+
+  stagnationRate: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Tracked: X, Stagnant: Y, Rate: Z%
+    hover: {
+      tracked: number;
+      stagnant: number;
+      ratePercent: number;
+    };
+  };
+
+  timeSpent: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Avg session: Xm, Avg chat: Ym, Avg time spent: Zm
+    hover: {
+      avgSessionMinutes: number;
+      avgChatMinutes: number;
+      avgOverallMinutes: number;
+    };
+  };
+
+  totalAttempts: {
+    value: number;
+    formattedValue: string;
+    thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
+    // Hover shows: Attempts: X, Unique sims: Y, Mean/Sim: Z
+    // Note: totalAttempts hover is computed from the main data, not stored separately
+  };
+}
+
+interface ReportsInterface {
+  data: ReportsDataItem[];
+  isLoading: boolean;
+  isError: boolean;
+  allScenarios: Scenario[];
+  allSimulations: Simulation[];
+}
+
+export default function Reports({
+  data,
+  isLoading,
+  isError,
+  allScenarios,
+  allSimulations,
+}: ReportsInterface) {
   const router = useRouter();
-  const params = useSearchParams();
-  const selectedProfileId = params.get("profileId") || undefined; // optional way to filter by one TA
 
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
   };
 
-  const {
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-  } = useAnalytics();
+  // Create scenario and simulation options from the data
+  const scenarioOptions = allScenarios.map((scenario) => ({
+    value: scenario.id,
+    label: scenario.name,
+  }));
 
-  // Build the shared filters (do NOT set profileId here to get everyone's points)
-  const filters: AnalyticsFilters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles as unknown as string[],
-      simulationFilters,
-      // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
-    }),
-    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]
-  );
-
-  // Load the 10 metric payloads
-  const { data: metrics, isLoading, isError } = useHeaderMetrics(filters);
-
-  // Fold metrics → per-profile numbers
-  const partialMap = useMemo(() => {
-    if (!metrics) return new Map<string, PartialRow>();
-    return buildRowsFromMetrics({
-      averageScore: metrics.averageScore,
-      completionPercentage: metrics.completionPercentage,
-      firstAttemptPassRate: metrics.firstAttemptPassRate,
-      highestScore: metrics.highestScore,
-      messagesPerSession: metrics.messagesPerSession,
-      personaResponseTimes: metrics.personaResponseTimes,
-      sessionEfficiency: metrics.sessionEfficiency,
-      stagnationRate: metrics.stagnationRate,
-      timeSpent: metrics.timeSpent,
-      totalAttempts: metrics.totalAttempts,
-    });
-  }, [metrics]);
-
-  // Optional: narrow to a single profile if you want the grid scoped via URL (?profileId=…)
-  const narrowedIds = useMemo(() => {
-    const all = Array.from(partialMap.keys());
-    return selectedProfileId
-      ? all.filter((id) => id === selectedProfileId)
-      : all;
-  }, [partialMap, selectedProfileId]);
-
-  // Use batched profiles query instead of individual useProfile calls
-  const { data: profiles = [] } = useProfiles();
-
-  // Create a map for quick profile lookup
-  const profileMap = useMemo(() => {
-    const map = new Map<
-      string,
-      { firstName?: string; lastName?: string; username?: string }
-    >();
-    profiles.forEach((profile) => {
-      map.set(profile.id, {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        username: profile.alias, // Use alias instead of username
-      });
-    });
-    return map;
-  }, [profiles]);
-
-  // Hydrate name fields per id
-  const rows: TAPerformanceData[] = useMemo(() => {
-    return narrowedIds.map((id) => {
-      const base = partialMap.get(id)!;
-      const profile = profileMap.get(id) ?? null;
-      return finalizeRow(base, profile);
-    });
-  }, [narrowedIds, partialMap, profileMap]);
-
-  const { data: allSimulations = [] } = useSimulations();
-
-  // Your table expects options; build from data the same way you did before
-  const personaOptions = useMemo(() => [], []);
-  const scenarioOptions = useMemo(() => [], []);
-  const simulationOptions = useMemo(() => [], []);
-
-  const { columns } = useReportColumns({
-    showExport: true,
-    onViewReport: handleViewReport,
-    personaOptions,
-    scenarioOptions,
-    simulationOptions,
-  });
+  const simulationOptions = allSimulations.map((simulation) => ({
+    value: simulation.id,
+    label: simulation.title,
+  }));
 
   if (isLoading) {
     return (
@@ -160,12 +193,348 @@ export default function Reports() {
     );
   }
 
+  // Create comprehensive columns matching useReportColumns pattern
+  const columns: ColumnDef<ReportsDataItem>[] = [
+    // Select column - only show if showExport is true
+    ...(true
+      ? [
+          {
+            id: "select",
+            header: ({ table }: { table: Table<ReportsDataItem> }) => (
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && "indeterminate")
+                }
+                onCheckedChange={(value: boolean | "indeterminate") =>
+                  table.toggleAllPageRowsSelected(!!value)
+                }
+                aria-label="Select all"
+                className="mr-2"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ),
+            cell: ({ row }: { row: Row<ReportsDataItem> }) => (
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value: boolean | "indeterminate") =>
+                  row.toggleSelected(!!value)
+                }
+                aria-label="Select row"
+                className="mr-2"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+          },
+        ]
+      : []),
+
+    // Name column
+    {
+      accessorKey: "profileName",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Name" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <div
+            className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0"
+            onClick={() => handleViewReport(item.profile_id)}
+            title="Click to view detailed report"
+          >
+            <div className="flex flex-col items-start">
+              <span className="text-xs font-medium">{item.profileName}</span>
+              <span className="text-xs text-muted-foreground">
+                {item.profileAlias}
+              </span>
+            </div>
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Average Score column
+    {
+      accessorKey: "averageScore",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Avg Score" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.averageScore.value >= 85) return "bg-green-50";
+          if (item.averageScore.value >= 75) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.averageScore.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Highest Score column
+    {
+      accessorKey: "highestScore",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Highest" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.highestScore.value >= 90) return "bg-green-50";
+          if (item.highestScore.value >= 80) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.highestScore.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Completion Percentage column
+    {
+      accessorKey: "completionPercentage",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Completion" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.completionPercentage.value >= 85) return "bg-green-50";
+          if (item.completionPercentage.value >= 75) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.completionPercentage.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // First Attempt Pass Rate column
+    {
+      accessorKey: "firstAttemptPassRate",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="First Pass" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.firstAttemptPassRate.value >= 85) return "bg-green-50";
+          if (item.firstAttemptPassRate.value >= 75) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.firstAttemptPassRate.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Messages Per Session column
+    {
+      accessorKey: "messagesPerSession",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Msgs/Sess" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.messagesPerSession.value >= 12) return "bg-green-50";
+          if (item.messagesPerSession.value >= 8) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+          >
+            <MessageCircle className="h-2.5 w-2.5" />
+            {item.messagesPerSession.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Persona Response Times column
+    {
+      accessorKey: "personaResponseTimes",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Response Time" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.personaResponseTimes.value <= 180) return "bg-green-50"; // 3 minutes in seconds
+          if (item.personaResponseTimes.value <= 300) return "bg-yellow-50"; // 5 minutes in seconds
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+          >
+            <Clock className="h-2.5 w-2.5" />
+            {item.personaResponseTimes.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Session Efficiency column
+    {
+      accessorKey: "sessionEfficiency",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Efficiency" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.sessionEfficiency.value >= 85) return "bg-green-50";
+          if (item.sessionEfficiency.value >= 75) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.sessionEfficiency.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Stagnation Rate column
+    {
+      accessorKey: "stagnationRate",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Stagnation" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.stagnationRate.value <= 15) return "bg-green-50";
+          if (item.stagnationRate.value <= 25) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium ${getBackgroundColor()}`}
+          >
+            {item.stagnationRate.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Time Spent column
+    {
+      accessorKey: "timeSpent",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Time Spent" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.timeSpent.value <= 60) return "bg-green-50";
+          if (item.timeSpent.value <= 90) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+          >
+            <Timer className="h-2.5 w-2.5" />
+            {item.timeSpent.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Total Attempts column
+    {
+      accessorKey: "totalAttempts",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Attempts" />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        const getBackgroundColor = () => {
+          if (item.totalAttempts.value >= 8) return "bg-green-50";
+          if (item.totalAttempts.value >= 5) return "bg-yellow-50";
+          return "bg-red-50";
+        };
+        return (
+          <div
+            className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${getBackgroundColor()}`}
+          >
+            <Target className="h-2.5 w-2.5" />
+            {item.totalAttempts.formattedValue}
+          </div>
+        );
+      },
+      enableSorting: true,
+    },
+
+    // Hidden columns for filtering
+    {
+      accessorKey: "scenario_id",
+      header: "Scenario ID",
+      cell: () => null,
+      enableSorting: false,
+      enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        const item = row.original;
+        if (!value || value.length === 0) return true;
+        return item.scenario_id ? value.includes(item.scenario_id) : false;
+      },
+    },
+    {
+      accessorKey: "simulation_id",
+      header: "Simulation ID",
+      cell: () => null,
+      enableSorting: false,
+      enableHiding: false,
+      enableColumnFilter: true,
+      filterFn: (row, _, value) => {
+        const item = row.original;
+        if (!value || value.length === 0) return true;
+        return item.simulation_id ? value.includes(item.simulation_id) : false;
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <ReportsDataTable
         columns={columns}
-        data={rows}
-        personaOptions={personaOptions}
+        data={data}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
         simulations={allSimulations}

@@ -168,5 +168,6 @@ SELECT jsonb_build_object(
       ),
       '[]'::jsonb
     )
-);
+)
+FROM final_rows fr;
 $$;

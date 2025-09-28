@@ -43,10 +43,12 @@ cur AS (
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
-           'profileId', profile_id::text,
-           'date',      to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
-           'attemptId', attempt_id::text,
-           'value',     1
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'attemptId',    attempt_id::text,
+           'value',        1,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
          ) ORDER BY profile_id, attempt_id) AS payload
   FROM filt
 )
