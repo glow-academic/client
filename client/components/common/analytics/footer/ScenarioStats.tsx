@@ -1,11 +1,11 @@
 /**
  * ScenarioStats.tsx
  * This component displays the scenario stats for the personas with bar charts.
- * Updated to use new "facts + pre-agg" pattern for fast client-side filtering.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,24 +32,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AnalyticsFilters } from "@/lib/analytics";
-import { useAnalyticsScenarioStats } from "@/lib/api/hooks/analytics";
+import type { NumericAttemptFact, NumericScenarioFact } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { buildScenarioNumericBars } from "@/utils/client-aggregators";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  Tooltip as RTooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+type Parameter = {
+  id: string;
+  name: string;
+  numerical: boolean;
+  active: boolean;
+};
+
 export interface ScenarioStatsProps {
-  filters: AnalyticsFilters;
+  validNumericParameterIds: string[];
+  numericAttemptFacts: NumericAttemptFact[];
+  numericScenarioFacts: NumericScenarioFact[];
+  allParameters: Parameter[]; // from client cache
+  isLoading: boolean;
+  isError: boolean;
+  actionableInsight?: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -57,138 +68,171 @@ export interface ScenarioStatsProps {
   };
 }
 
-interface MetricOption {
-  id: string; // parameterId
-  name: string;
-  description: string;
-}
-
 export default function ScenarioStats({
-  filters,
+  validNumericParameterIds,
+  numericAttemptFacts,
+  numericScenarioFacts,
+  allParameters,
+  isLoading,
+  isError,
+  actionableInsight,
   thresholds,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
-  const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Use new analytics hook
-  const { data, isLoading, isError } = useAnalyticsScenarioStats(filters);
-
-  // Get available numerical parameters from server response
-  const numericalParameters = useMemo(
-    () => data?.numericalParameters || [],
-    [data?.numericalParameters]
+  const metricOptions = useMemo(
+    () =>
+      allParameters
+        .filter(
+          (p) =>
+            p.numerical && p.active && validNumericParameterIds.includes(p.id)
+        )
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: `Performance by ${p.name.toLowerCase()} value`,
+        })),
+    [allParameters, validNumericParameterIds]
   );
 
-  // Set default selected parameter if none selected and we have numerical parameters
-  const selectedParameter = useMemo(() => {
-    if (!selectedParameterId && numericalParameters.length > 0) {
-      const firstParameter = numericalParameters[0];
-      if (firstParameter) {
-        setSelectedParameterId(firstParameter.id);
-        return firstParameter;
-      }
-    }
-    return numericalParameters.find((p) => p.id === selectedParameterId);
-  }, [selectedParameterId, numericalParameters]);
+  const activeParamId = useMemo(
+    () => selectedParameterId || metricOptions[0]?.id || "",
+    [selectedParameterId, metricOptions]
+  );
 
-  // Generate metric options from numerical parameters
-  const METRIC_OPTIONS: MetricOption[] = useMemo(() => {
-    return numericalParameters.map((parameter) => ({
-      id: parameter.id,
-      name: parameter.name,
-      description: `Performance by ${parameter.name.toLowerCase()} value`,
-    }));
-  }, [numericalParameters]);
-
-  // Calculate performance data using new aggregator
-  const aggregatedPerformanceData = useMemo(() => {
-    if (!data || !selectedParameter) {
-      return data?.performanceData || [];
-    }
-
-    return buildScenarioNumericBars(
-      data.numericAttemptFacts,
-      selectedParameter.id
+  // Build chart rows + scenarioCount using facts
+  const chartRows = useMemo(() => {
+    const facts = numericAttemptFacts.filter(
+      (f) => f.parameterId === activeParamId
     );
-  }, [data, selectedParameter]);
+    const byLevel = new Map<
+      string,
+      {
+        label: string;
+        value: number;
+        sumScore: number;
+        sumW: number;
+        attempts: number;
+      }
+    >();
+    for (const f of facts) {
+      const k = f.levelLabel;
+      const acc = byLevel.get(k) ?? {
+        label: f.levelLabel,
+        value: f.levelValue,
+        sumScore: 0,
+        sumW: 0,
+        attempts: 0,
+      };
+      acc.sumScore += f.score * f.attempts;
+      acc.sumW += f.attempts;
+      acc.attempts += f.attempts;
+      byLevel.set(k, acc);
+    }
 
-  // Use server-provided correlation data
-  const correlationData = data?.correlationData || {
-    correlation: 0,
-    pValue: 1,
-  };
+    // scenario counts per level
+    const scen = numericScenarioFacts.filter(
+      (s) => s.parameterId === activeParamId
+    );
+    const scenCountByLevel = new Map<string, number>();
+    for (const s of scen) {
+      scenCountByLevel.set(
+        s.levelLabel,
+        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1
+      );
+    }
 
-  // Handle loading and error states
+    return [...byLevel.values()]
+      .sort((a, b) => a.value - b.value)
+      .map((r) => ({
+        metricLevel: r.label,
+        avgScore: r.sumW ? Math.round(r.sumScore / r.sumW) : 0,
+        scenarioCount: scenCountByLevel.get(r.label) ?? 0,
+        totalAttempts: r.attempts,
+      }));
+  }, [numericAttemptFacts, numericScenarioFacts, activeParamId]);
+
+  // Weighted Pearson correlation between levelValue and score using attempt counts as weights
+  const { correlation, pValue } = useMemo(() => {
+    const rows = numericAttemptFacts.filter(
+      (f) => f.parameterId === activeParamId
+    );
+    if (rows.length === 0) return { correlation: 0, pValue: 1 };
+
+    let wSum = 0,
+      xSum = 0,
+      ySum = 0,
+      xxSum = 0,
+      yySum = 0,
+      xySum = 0;
+    let nEff = 0; // effective df count (distinct groups)
+    const groups = new Set<string>();
+
+    for (const r of rows) {
+      const w = Math.max(1, r.attempts);
+      const x = r.levelValue;
+      const y = r.score;
+      wSum += w;
+      xSum += w * x;
+      ySum += w * y;
+      xxSum += w * x * x;
+      yySum += w * y * y;
+      xySum += w * x * y;
+      groups.add(r.levelLabel);
+    }
+    nEff = groups.size;
+
+    const cov = xySum - (xSum * ySum) / wSum;
+    const varX = xxSum - (xSum * xSum) / wSum;
+    const varY = yySum - (ySum * ySum) / wSum;
+    const r = varX <= 0 || varY <= 0 ? 0 : cov / Math.sqrt(varX * varY);
+
+    // approximate two-sided p-value via t distribution with nEff-2 dof
+    const df = Math.max(1, nEff - 2);
+    const t = Math.abs(r) * Math.sqrt(df / Math.max(1e-9, 1 - r * r));
+    // simple survival approx using Student's t CDF ~ not exact; fine for UI hint
+    const p = approxTPValue(t, df);
+    return { correlation: r, pValue: p };
+  }, [numericAttemptFacts, activeParamId]);
+
+  const status = useMemo(() => {
+    if (chartRows.length === 0) return "neutral";
+    const avg =
+      chartRows.reduce((s, r) => s + r.avgScore, 0) / chartRows.length;
+    if (avg >= thresholds.success) return "success";
+    if (avg >= thresholds.warning) return "warning";
+    return "danger";
+  }, [chartRows, thresholds]);
+
+  const selected = metricOptions.find((m) => m.id === activeParamId);
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle>Scenario Stats</CardTitle>
-          <CardDescription>
-            Loading scenario performance data...
-          </CardDescription>
+          <CardTitle>Scenario Performance Analysis</CardTitle>
+          <CardDescription>Loading scenario data...</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
+        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
+          Loading...
         </CardContent>
       </Card>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle>Scenario Stats</CardTitle>
-          <CardDescription>
-            Error loading scenario performance data
-          </CardDescription>
+          <CardTitle>Scenario Performance Analysis</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-destructive">Failed to load data</div>
+        <CardContent className="flex-1 flex items-center justify-center text-destructive">
+          Failed to load scenario data
         </CardContent>
       </Card>
     );
   }
-
-  const { correlation, pValue } = correlationData;
-
-  const selectedMetricOption = METRIC_OPTIONS.find(
-    (m) => m.id === selectedParameterId
-  );
-
-  // Generate insight text
-  const getInsightText = () => {
-    const metricName = selectedMetricOption?.name.toLowerCase() || "metric";
-    if (correlation > 0.3) {
-      return `Higher ${metricName} tends to correlate with better performance.`;
-    } else if (correlation < -0.3) {
-      return `Higher ${metricName} tends to correlate with worse performance.`;
-    } else {
-      return `No clear relationship between ${metricName} and performance.`;
-    }
-  };
-
-  // Calculate threshold status based on correlation and performance
-  const getThresholdStatus = () => {
-    if (aggregatedPerformanceData.length === 0) return "neutral";
-
-    // Calculate average performance across all metric levels
-    const avgPerformance =
-      aggregatedPerformanceData.reduce((sum, item) => sum + item.avgScore, 0) /
-      aggregatedPerformanceData.length;
-
-    // Consider both average performance and correlation strength
-    const performanceThreshold = avgPerformance >= thresholds.success;
-    const correlationThreshold = Math.abs(correlation) >= 0.3;
-
-    if (performanceThreshold && correlationThreshold) return "success";
-    if (avgPerformance >= thresholds.warning || Math.abs(correlation) >= 0.2)
-      return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
 
   return (
     <TooltipProvider>
@@ -196,11 +240,11 @@ export default function ScenarioStats({
         <div
           data-testid="status-indicator"
           className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
+            status === "success"
               ? "bg-green-500"
-              : thresholdStatus === "warning"
+              : status === "warning"
                 ? "bg-yellow-500"
-                : thresholdStatus === "danger"
+                : status === "danger"
                   ? "bg-red-500"
                   : "bg-gray-400"
           }`}
@@ -217,104 +261,42 @@ export default function ScenarioStats({
               </CardDescription>
             </div>
 
-            {/* Metric Picker */}
-            <div className="flex items-center gap-2">
-              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={pickerOpen}
-                    className="w-48 justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {selectedMetricOption?.name || "Select Parameter"}
-                      </span>
-                    </div>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-0">
-                  <Command>
-                    <CommandInput placeholder="Search parameters..." />
-                    <CommandEmpty>No parameter found.</CommandEmpty>
-                    <CommandGroup>
-                      {METRIC_OPTIONS.map((metric) => (
-                        <CommandItem
-                          key={metric.id}
-                          value={metric.id}
-                          onSelect={() => {
-                            setSelectedParameterId(metric.id);
-                            setPickerOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedParameterId === metric.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          <div>
-                            <div className="font-medium">{metric.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {metric.description}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
+            <MetricPicker
+              options={metricOptions}
+              value={activeParamId}
+              onChange={setSelectedParameterId}
+            />
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6 flex-1 flex flex-col">
-          {/* Bar Chart */}
           <div className="flex-1 min-h-[300px] h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={aggregatedPerformanceData}
+                data={chartRows}
                 margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  dataKey="metricLevel"
-                  name={selectedMetricOption?.name || "Parameter Level"}
-                  fontSize={12}
-                  tickFormatter={(value) => value.toString()}
-                />
+                <XAxis dataKey="metricLevel" fontSize={12} />
                 <YAxis
                   fontSize={12}
                   domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
+                  tickFormatter={(v) => `${v}%`}
                 />
-                <RechartsTooltip
+                <RTooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "6px",
                   }}
-                  formatter={(value: number, _name: string) => [
-                    `${value}%`,
-                    "Average Score",
-                  ]}
+                  formatter={(v: number) => [`${v}%`, "Average Score"]}
                   labelFormatter={(label) => {
-                    const dataPoint = aggregatedPerformanceData.find(
-                      (item) => item.metricLevel === label
-                    );
-                    const metricName =
-                      selectedMetricOption?.name || "Parameter";
-                    return `${metricName} Level ${label} (${dataPoint?.scenarioCount || 0} scenarios)`;
+                    const dp = chartRows.find((x) => x.metricLevel === label);
+                    return `${selected?.name || "Parameter"} Level ${label} (${dp?.scenarioCount || 0} scenarios)`;
                   }}
                 />
                 <Bar
                   dataKey="avgScore"
-                  fill="#3b82f6"
                   name="Average Score"
                   radius={[4, 4, 0, 0]}
                 />
@@ -322,13 +304,8 @@ export default function ScenarioStats({
             </ResponsiveContainer>
           </div>
 
-          {/* X-axis Label and Correlation */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground font-medium">
-              {selectedMetricOption?.name || "Parameter Level"}
-            </div>
-
-            {/* Correlation Component */}
+          {/* Correlation */}
+          <div className="flex items-center justify-end">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
@@ -346,15 +323,93 @@ export default function ScenarioStats({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="w-64 p-3">
-                <p className="text-sm">{getInsightText()}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Pearson correlation coefficient with p-value significance test
+                <p className="text-sm">
+                  Relationship between the numeric parameter level and average
+                  score (weighted by attempts).
                 </p>
               </TooltipContent>
             </Tooltip>
           </div>
+
+          {/* Actionable Insights */}
+          {actionableInsight && (
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                {actionableInsight}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </TooltipProvider>
   );
+}
+
+function MetricPicker({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: string; name: string; description: string }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.id === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-48 justify-between"
+        >
+          <span className="truncate">
+            {selected?.name || "Select Parameter"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-0">
+        <Command>
+          <CommandInput placeholder="Search parameters..." />
+          <CommandEmpty>No parameter found.</CommandEmpty>
+          <CommandGroup>
+            {options.map((m) => (
+              <CommandItem
+                key={m.id}
+                value={m.id}
+                onSelect={() => {
+                  onChange(m.id);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === m.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div>
+                  <div className="font-medium">{m.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {m.description}
+                  </div>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** quick t-dist tail approximation for p-value (two-sided) */
+function approxTPValue(t: number, df: number) {
+  // simple logistic-ish approximation (good enough for UI)
+  const x = Math.log1p((t * t) / df);
+  const pOneSide = 1 / (1 + Math.exp(1.2 + 1.4 * x));
+  return Math.min(1, 2 * pOneSide);
 }

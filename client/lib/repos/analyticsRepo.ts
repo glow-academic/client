@@ -22,14 +22,14 @@ import {
   PracticeOverviewResponseSchema,
   RubricHeatmapResponse,
   RubricHeatmapResponseSchema,
-  ScenarioPerformanceData,
-  ScenarioPerformanceDataSchema,
-  ScenarioStatsData,
-  ScenarioStatsDataSchema,
-  SimulationCompositionData,
-  SimulationCompositionDataSchema,
-  SimulationPerformanceData,
-  SimulationPerformanceDataSchema,
+  ScenarioPerformanceResponse,
+  ScenarioPerformanceResponseSchema,
+  ScenarioStatsResponse,
+  ScenarioStatsResponseSchema,
+  SimulationCompositionResponse,
+  SimulationCompositionResponseSchema,
+  SimulationPerformanceResponse,
+  SimulationPerformanceResponseSchema,
   SkillPerformanceResponse,
   SkillPerformanceResponseSchema,
 } from "../analytics";
@@ -271,65 +271,43 @@ export const analyticsRepo = {
 
   // Footer Analytics (4 new metrics)
   async getScenarioPerformance(
-    filters: AnalyticsFilters,
-    parameterId?: string,
-    simulationIds?: string[]
-  ): Promise<ScenarioPerformanceData> {
-    const parameterIdParam = parameterId
-      ? sql`${parameterId}::uuid`
-      : sql`NULL`;
-    const simulationIdsParam =
-      simulationIds && simulationIds.length > 0
-        ? toUuidArray(simulationIds) || sql`NULL`
-        : sql`NULL`;
-
+    filters: AnalyticsFilters
+  ): Promise<ScenarioPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_scenario_performance_fn",
-      filters,
-      [parameterIdParam, simulationIdsParam]
+      filters
     );
-    return ScenarioPerformanceDataSchema.parse(result);
+    return ScenarioPerformanceResponseSchema.parse(result);
   },
 
   async getScenarioStats(
-    filters: AnalyticsFilters,
-    parameterId?: string,
-    simulationIds?: string[]
-  ): Promise<ScenarioStatsData> {
-    const parameterIdParam = parameterId
-      ? sql`${parameterId}::uuid`
-      : sql`NULL`;
-    const simulationIdsParam =
-      simulationIds && simulationIds.length > 0
-        ? toUuidArray(simulationIds) || sql`NULL`
-        : sql`NULL`;
-
+    filters: AnalyticsFilters
+  ): Promise<ScenarioStatsResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_scenario_stats_fn",
-      filters,
-      [parameterIdParam, simulationIdsParam]
+      filters
     );
-    return ScenarioStatsDataSchema.parse(result);
+    return ScenarioStatsResponseSchema.parse(result);
   },
 
   async getSimulationComposition(
     filters: AnalyticsFilters
-  ): Promise<SimulationCompositionData> {
+  ): Promise<SimulationCompositionResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_simulation_composition_fn",
       filters
     );
-    return SimulationCompositionDataSchema.parse(result);
+    return SimulationCompositionResponseSchema.parse(result);
   },
 
   async getSimulationPerformance(
     filters: AnalyticsFilters
-  ): Promise<SimulationPerformanceData> {
+  ): Promise<SimulationPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_simulation_performance_fn",
       filters
     );
-    return SimulationPerformanceDataSchema.parse(result);
+    return SimulationPerformanceResponseSchema.parse(result);
   },
 
   // Home Analytics

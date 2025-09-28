@@ -1,11 +1,26 @@
--- Simulation Composition -------------------------------------------------------
+-- Simulation Composition (RAW)
+-- Params: start, end, cohortIds, roles, simulationFilters, profileId
+-- Returns:
+-- {
+--   validSimulationIds: string[],
+--   simulationFacts: [{
+--     simulationId, title, avgScore, completionRate, totalAttempts, scenarioCount
+--   }],
+--   simulationParameterFactsCategorical: [{
+--     simulationId, parameterId, parameterItemId, scenarioCount
+--   }],
+--   simulationParameterFactsNumeric: [{
+--     simulationId, parameterId, avgLevel, levelLabel, scenarioCount
+--   }],
+--   hasData: boolean
+-- }
 CREATE OR REPLACE FUNCTION analytics_simulation_composition_fn(
-  p_start         timestamptz,
-  p_end           timestamptz,
-  p_cohort_ids    uuid[],
-  p_roles         profile_role[],
-  p_sim_filters   text[],
-  p_profile_id    uuid
+  p_start        timestamptz,
+  p_end          timestamptz,
+  p_cohort_ids   uuid[],
+  p_roles        profile_role[],
+  p_sim_filters  text[],
+  p_profile_id   uuid
 ) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
 WITH base AS (
@@ -22,101 +37,126 @@ WITH base AS (
         ))
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
--- summary per simulation
+-- sims and scenarios that actually appear in the filtered window
+sim_seen AS (
+  SELECT DISTINCT b.simulation_id
+  FROM base b
+  WHERE b.simulation_id IS NOT NULL
+),
+scen_seen AS (
+  SELECT DISTINCT b.scenario_id
+  FROM base b
+  WHERE b.scenario_id IS NOT NULL
+),
+-- per-simulation performance facts (from attempts)
 sim_summary AS (
   SELECT
     b.simulation_id,
-    AVG(b.grade_percent)::float AS avg_score,
-    (100.0*AVG((b.passed)::int))::float AS completion_rate,
-    COUNT(*)::int AS attempts
+    AVG(b.grade_percent)::float                      AS avg_score,
+    (100.0 * AVG((b.passed)::int))::float           AS completion_rate,
+    COUNT(*)::int                                   AS attempts
   FROM base b
   WHERE b.grade_percent IS NOT NULL
   GROUP BY b.simulation_id
 ),
--- scenario counts per simulation
-sim_scenarios AS (
-  SELECT s.id AS simulation_id, array_length(s.scenario_ids, 1) AS scenario_count
+-- scenario count per simulation restricted to scenarios seen in this window
+sim_scenarios_seen AS (
+  SELECT s.id AS simulation_id,
+         COUNT(DISTINCT sc.id)::int AS scenario_count
   FROM simulations s
-  WHERE s.active = TRUE
-),
--- parameter breakdown per simulation (categorical)
-sim_param_items AS (
-  SELECT s.id AS simulation_id, p.name AS parameter_name, pi.name AS parameter_value,
-         FALSE AS is_numerical, COUNT(DISTINCT sc.id)::int AS cnt
-  FROM simulations s
-  JOIN scenarios sc ON sc.id = ANY(s.scenario_ids)
-  JOIN parameter_items pi ON pi.id = ANY(sc.parameter_item_ids)
-  JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = FALSE
+  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN scen_seen ss ON ss.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE
-  GROUP BY s.id, p.name, pi.name
+  GROUP BY s.id
 ),
--- numerical summaries per simulation (avg value across scenarios)
-sim_param_nums AS (
-  SELECT s.id AS simulation_id, p.name AS parameter_name,
-         to_char(AVG(pi.value::numeric),'FM999D0') AS parameter_value,
-         TRUE AS is_numerical, COUNT(DISTINCT sc.id)::int AS cnt
+-- categorical parameter composition per simulation (count of scenarios having the item)
+sim_param_items_seen AS (
+  SELECT
+    s.id AS simulation_id,
+    p.id AS parameter_id,
+    pi.id AS parameter_item_id,
+    COUNT(DISTINCT sc.id)::int AS cnt
   FROM simulations s
-  JOIN scenarios sc ON sc.id = ANY(s.scenario_ids)
-  JOIN parameter_items pi ON pi.id = ANY(sc.parameter_item_ids)
-  JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = TRUE
+  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN scen_seen ss      ON ss.scenario_id = sc.id
+  JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
+  JOIN parameters p       ON p.id = pi.parameter_id AND p.numerical = FALSE
   WHERE s.active = TRUE AND sc.active = TRUE
-  GROUP BY s.id, p.name
+  GROUP BY s.id, p.id, pi.id
 ),
-sim_params AS (
-  SELECT * FROM sim_param_items
-  UNION ALL
-  SELECT * FROM sim_param_nums
-),
--- base response bits
-sims AS (
-  SELECT s.id::text AS id, s.title
+-- numeric parameter composition per simulation (avg across scenarios seen)
+sim_param_nums_seen AS (
+  SELECT
+    s.id AS simulation_id,
+    p.id AS parameter_id,
+    AVG(pi.value::numeric) AS avg_level,
+    COUNT(DISTINCT sc.id)::int AS cnt
   FROM simulations s
+  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN scen_seen ss      ON ss.scenario_id = sc.id
+  JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
+  JOIN parameters p       ON p.id = pi.parameter_id AND p.numerical = TRUE
+  WHERE s.active = TRUE AND sc.active = TRUE
+  GROUP BY s.id, p.id
+),
+-- ids list for quick client filtering
+valid_sim_ids AS (
+  SELECT jsonb_agg(DISTINCT b.simulation_id::text ORDER BY b.simulation_id::text) AS payload
+  FROM base b
+  WHERE b.simulation_id IS NOT NULL
+),
+-- per-sim rolled facts for list & sorting
+simulation_facts AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'simulationId',  s.id::text,
+             'title',         s.title,
+             'avgScore',      COALESCE(ROUND(ss.avg_score), 0)::int,
+             'completionRate',COALESCE(ROUND(ss.completion_rate), 0)::int,
+             'totalAttempts', COALESCE(ss.attempts, 0),
+             'scenarioCount', COALESCE(sc_seen.scenario_count, 0)
+           )
+           ORDER BY s.title
+         ) AS payload
+  FROM simulations s
+  LEFT JOIN sim_summary       ss      ON ss.simulation_id = s.id
+  LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
   WHERE s.active = TRUE
+    AND s.id IN (SELECT simulation_id FROM sim_seen)
 ),
-preconfig AS (
-  SELECT 'percentile'::text AS method, 25::int AS top_pct, 25::int AS bottom_pct
+-- categorical composition facts
+param_facts_cat AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'simulationId',     simulation_id::text,
+             'parameterId',      parameter_id::text,
+             'parameterItemId',  parameter_item_id::text,
+             'scenarioCount',    cnt
+           )
+         ) AS payload
+  FROM sim_param_items_seen
 ),
-status AS (
-  SELECT CASE
-    WHEN (SELECT COUNT(*) FROM sim_summary) = 0 THEN 'neutral'
-    WHEN (SELECT AVG(avg_score) FROM sim_summary) >= 80 THEN 'success'
-    WHEN (SELECT AVG(avg_score) FROM sim_summary) >= 60 THEN 'warning'
-    ELSE 'danger'
-  END AS st
+-- numeric composition facts
+param_facts_num AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'simulationId',  simulation_id::text,
+             'parameterId',   parameter_id::text,
+             'avgLevel',      avg_level,
+             'levelLabel',    CASE
+                                WHEN avg_level = floor(avg_level) THEN (avg_level::int)::text
+                                ELSE to_char(avg_level, 'FM999D0')
+                              END,
+             'scenarioCount', cnt
+           )
+         ) AS payload
+  FROM sim_param_nums_seen
 )
 SELECT jsonb_build_object(
-  'config', jsonb_build_object('method','percentile','topPercentage',25,'bottomPercentage',25),
-  'highPerforming', '[]'::jsonb,  -- client builds from facts and config
-  'lowPerforming',  '[]'::jsonb,
-  'highPerformingCount', 0,
-  'lowPerformingCount',  0,
-  'highPerformingDetails', '[]'::jsonb,
-  'lowPerformingDetails',  '[]'::jsonb,
-  -- FACTS for client recompute:
-  'simulationFacts', COALESCE((
-      SELECT jsonb_agg(jsonb_build_object(
-        'simulationId', s.id::text,
-        'title',        s.title,
-        'avgScore',     COALESCE(ROUND(ss.avg_score), 0)::int,
-        'completionRate', COALESCE(ROUND(ss.completion_rate), 0)::int,
-        'totalAttempts', COALESCE(ss.attempts,0),
-        'scenarioCount', COALESCE(sc.scenario_count,0)
-      ) ORDER BY s.title)
-      FROM sims s
-      LEFT JOIN sim_summary ss ON ss.simulation_id = s.id::uuid
-      LEFT JOIN sim_scenarios sc ON sc.simulation_id = s.id::uuid
-    ), '[]'::jsonb),
-  'simulationParameterFacts', COALESCE((
-      SELECT jsonb_agg(jsonb_build_object(
-        'simulationId', simulation_id::text,
-        'parameterName', parameter_name,
-        'parameterValue', parameter_value,
-        'isNumerical', is_numerical,
-        'count', cnt
-      ))
-      FROM sim_params
-    ), '[]'::jsonb),
-  'performanceStatus', (SELECT st FROM status),
-  'hasData', EXISTS (SELECT 1 FROM sim_summary)
+  'validSimulationIds',                 COALESCE((SELECT payload FROM valid_sim_ids), '[]'::jsonb),
+  'simulationFacts',                    COALESCE((SELECT payload FROM simulation_facts), '[]'::jsonb),
+  'simulationParameterFactsCategorical',COALESCE((SELECT payload FROM param_facts_cat), '[]'::jsonb),
+  'simulationParameterFactsNumeric',    COALESCE((SELECT payload FROM param_facts_num), '[]'::jsonb),
+  'hasData',                            EXISTS (SELECT 1 FROM sim_summary)
 );
 $$;

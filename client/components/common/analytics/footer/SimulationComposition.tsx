@@ -30,17 +30,75 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AnalyticsFilters } from "@/lib/analytics";
-import { useAnalyticsSimulationComposition } from "@/lib/api/hooks/analytics";
-import { buildSimulationComposition } from "@/utils/client-aggregators";
+import type {
+  SimulationFact,
+  SimulationParameterFactCategorical,
+  SimulationParameterFactNumeric,
+} from "@/lib/analytics";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import SimulationCompositionPicker, {
-  SimulationCompositionConfig,
-} from "../SimulationCompositionPicker";
+
+type Parameter = {
+  id: string;
+  name: string;
+  numerical: boolean;
+  active: boolean;
+};
+
+type ParameterItem = {
+  id: string;
+  parameterId: string;
+  name: string;
+  description?: string | null;
+  value?: string | null;
+};
+
+type Simulation = {
+  id: string;
+  title: string;
+  timeLimit?: number | null;
+};
+
+type SimulationCompositionConfig = {
+  method: "percentile" | "quartile" | "standard_deviation";
+  topPercentage: number;
+  bottomPercentage: number;
+  description: string;
+};
+
+type HighLowPerforming = {
+  name: string;
+  value: number;
+  icon: string;
+  color: string;
+  description: string;
+  significance: "high" | "medium" | "low" | "none";
+};
+
+type __SimulationDetail = {
+  id: string;
+  title: string;
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+  scenarioCount: number;
+  parameterBreakdown: {
+    parameterName: string;
+    parameterValue: string;
+    isNumerical: boolean;
+  }[];
+};
 
 export interface SimulationCompositionProps {
-  filters: AnalyticsFilters;
+  simulationFacts: SimulationFact[];
+  simulationParameterFactsCategorical: SimulationParameterFactCategorical[];
+  simulationParameterFactsNumeric: SimulationParameterFactNumeric[];
+  allSimulations: Simulation[];
+  allParameters: Parameter[];
+  allParameterItems: ParameterItem[];
+  isLoading: boolean;
+  isError: boolean;
+  actionableInsight?: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -49,10 +107,17 @@ export interface SimulationCompositionProps {
 }
 
 export default function SimulationComposition({
-  filters,
+  simulationFacts,
+  simulationParameterFactsCategorical,
+  simulationParameterFactsNumeric,
+  allSimulations: _allSimulations,
+  allParameters,
+  allParameterItems,
+  isLoading,
+  isError,
+  actionableInsight,
   thresholds,
 }: SimulationCompositionProps) {
-  // Configuration state
   const [config, setConfig] = useState<SimulationCompositionConfig>({
     method: "percentile",
     topPercentage: 25,
@@ -60,32 +125,153 @@ export default function SimulationComposition({
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
 
-  // Fetch analytics data using the new hook
+  // Compute high and low performing simulations based on config
   const {
-    data: analyticsData,
-    isLoading,
-    error,
-  } = useAnalyticsSimulationComposition(filters);
-
-  // Calculate simulation composition data using client aggregator
-  const simulationComposition = useMemo(() => {
-    if (!analyticsData) {
+    highPerforming,
+    lowPerforming,
+    highPerformingDetails,
+    lowPerformingDetails,
+  } = useMemo(() => {
+    if (simulationFacts.length === 0) {
       return {
         highPerforming: [],
         lowPerforming: [],
-        highPerformingCount: 0,
-        lowPerformingCount: 0,
         highPerformingDetails: [],
         lowPerformingDetails: [],
       };
     }
 
-    return buildSimulationComposition(
-      analyticsData.simulationFacts,
-      analyticsData.simulationParameterFacts,
-      config
+    // Sort simulations by average score
+    const sortedSims = [...simulationFacts].sort(
+      (a, b) => b.avgScore - a.avgScore
     );
-  }, [analyticsData, config]);
+
+    let topCount: number;
+    let bottomCount: number;
+
+    switch (config.method) {
+      case "percentile":
+        topCount = Math.max(
+          1,
+          Math.floor((config.topPercentage / 100) * sortedSims.length)
+        );
+        bottomCount = Math.max(
+          1,
+          Math.floor((config.bottomPercentage / 100) * sortedSims.length)
+        );
+        break;
+      case "quartile":
+        topCount = Math.max(1, Math.floor(sortedSims.length / 4));
+        bottomCount = Math.max(1, Math.floor(sortedSims.length / 4));
+        break;
+      case "standard_deviation":
+        const avgScore =
+          sortedSims.reduce((sum, sim) => sum + sim.avgScore, 0) /
+          sortedSims.length;
+        const variance =
+          sortedSims.reduce(
+            (sum, sim) => sum + Math.pow(sim.avgScore - avgScore, 2),
+            0
+          ) / sortedSims.length;
+        const stdDev = Math.sqrt(variance);
+        topCount = sortedSims.filter(
+          (sim) => sim.avgScore >= avgScore + stdDev
+        ).length;
+        bottomCount = sortedSims.filter(
+          (sim) => sim.avgScore <= avgScore - stdDev
+        ).length;
+        break;
+      default:
+        topCount = 1;
+        bottomCount = 1;
+    }
+
+    const topSims = sortedSims.slice(0, topCount);
+    const bottomSims = sortedSims.slice(-bottomCount);
+
+    // Build parameter composition for high performers
+    const highPerforming = buildParameterComposition(
+      topSims,
+      simulationParameterFactsCategorical,
+      simulationParameterFactsNumeric,
+      allParameters,
+      allParameterItems
+    );
+
+    // Build parameter composition for low performers
+    const lowPerforming = buildParameterComposition(
+      bottomSims,
+      simulationParameterFactsCategorical,
+      simulationParameterFactsNumeric,
+      allParameters,
+      allParameterItems
+    );
+
+    // Build detailed simulation information
+    const highPerformingDetails = topSims.map((sim) => ({
+      id: sim.simulationId,
+      title: sim.title,
+      avgScore: sim.avgScore,
+      completionRate: sim.completionRate,
+      totalAttempts: sim.totalAttempts,
+      scenarioCount: sim.scenarioCount,
+      parameterBreakdown: buildParameterBreakdown(
+        sim.simulationId,
+        simulationParameterFactsCategorical,
+        simulationParameterFactsNumeric,
+        allParameters,
+        allParameterItems
+      ),
+    }));
+
+    const lowPerformingDetails = bottomSims.map((sim) => ({
+      id: sim.simulationId,
+      title: sim.title,
+      avgScore: sim.avgScore,
+      completionRate: sim.completionRate,
+      totalAttempts: sim.totalAttempts,
+      scenarioCount: sim.scenarioCount,
+      parameterBreakdown: buildParameterBreakdown(
+        sim.simulationId,
+        simulationParameterFactsCategorical,
+        simulationParameterFactsNumeric,
+        allParameters,
+        allParameterItems
+      ),
+    }));
+
+    return {
+      highPerforming,
+      lowPerforming,
+      highPerformingDetails,
+      lowPerformingDetails,
+    };
+  }, [
+    simulationFacts,
+    config,
+    simulationParameterFactsCategorical,
+    simulationParameterFactsNumeric,
+    allParameters,
+    allParameterItems,
+  ]);
+
+  // Compute threshold status
+  const getThresholdStatus = () => {
+    if (simulationFacts.length === 0) return "neutral";
+
+    const avgScore =
+      simulationFacts.reduce((sum, sim) => sum + sim.avgScore, 0) /
+      simulationFacts.length;
+    const avgCompletion =
+      simulationFacts.reduce((sum, sim) => sum + sim.completionRate, 0) /
+      simulationFacts.length;
+
+    if (avgScore >= thresholds.success && avgCompletion >= 80) return "success";
+    if (avgScore >= thresholds.warning || avgCompletion >= 70) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
 
   // Get method label for dialog titles
   const getMethodLabel = (isHigh: boolean) => {
@@ -103,115 +289,43 @@ export default function SimulationComposition({
     }
   };
 
-  // Get insight text
-  const getInsightText = (isHigh: boolean) => {
-    const data = isHigh
-      ? simulationComposition.highPerforming
-      : simulationComposition.lowPerforming;
-    if (data.length === 0) return "No significant patterns identified.";
-
-    const topAttribute = data[0];
-    if (!topAttribute) return "No significant patterns identified.";
-
-    const methodLabel = getMethodLabel(isHigh);
-
-    // Handle fallback case (no significant differences)
-    if (topAttribute.significance === "none" || !topAttribute.significance) {
-      return `${methodLabel} performing simulations show ${topAttribute.name.toLowerCase()} as one of the most common characteristics. This may indicate typical simulation composition rather than performance correlation.`;
-    }
-
-    const significanceText =
-      topAttribute.significance === "high"
-        ? "strongly"
-        : topAttribute.significance === "medium"
-          ? "moderately"
-          : "slightly";
-
-    // For high performing simulations, the presence of these attributes suggests they contribute to success
-    // For low performing simulations, the presence of these attributes suggests they may hinder success
-    const impactDirection = isHigh ? "contribute to" : "hinder";
-
-    return `${methodLabel} performing simulations ${significanceText} tend to have more ${topAttribute.name}, suggesting that ${topAttribute.description} may ${impactDirection} better outcomes.`;
-  };
-
-  // Check if we have any data at all
-  const hasAnyData =
-    simulationComposition.highPerforming.length > 0 ||
-    simulationComposition.lowPerforming.length > 0 ||
-    (simulationComposition.highPerformingCount ?? 0) > 0 ||
-    (simulationComposition.lowPerformingCount ?? 0) > 0;
-
-  // Calculate threshold status based on performance differences
-  const getThresholdStatus = () => {
-    if (!hasAnyData) return "neutral";
-    if (analyticsData?.performanceStatus)
-      return analyticsData.performanceStatus;
-
-    // Calculate average performance of high vs low performing simulations
-    const highPerformingAvg =
-      simulationComposition.highPerformingDetails.reduce(
-        (sum, sim) => sum + sim.avgScore,
-        0
-      ) / Math.max(simulationComposition.highPerformingDetails.length, 1);
-
-    const lowPerformingAvg =
-      simulationComposition.lowPerformingDetails.reduce(
-        (sum, sim) => sum + sim.avgScore,
-        0
-      ) / Math.max(simulationComposition.lowPerformingDetails.length, 1);
-
-    const performanceGap = highPerformingAvg - lowPerformingAvg;
-
-    // Determine status based on performance gap and overall performance
-    if (
-      performanceGap >= thresholds.success &&
-      highPerformingAvg >= thresholds.success
-    )
-      return "success";
-    if (
-      performanceGap >= thresholds.warning ||
-      highPerformingAvg >= thresholds.warning
-    )
-      return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
-
-  // Show loading state
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="h-5 w-5" />
             Simulation Composition
           </CardTitle>
           <CardDescription>High vs low performing simulations</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-center text-muted-foreground">
-            Loading simulation composition data...
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">
+              Loading simulation composition...
+            </p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Show error state
-  if (error) {
+  if (isError) {
     return (
       <Card className="w-full h-full flex flex-col">
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="h-5 w-5" />
             Simulation Composition
           </CardTitle>
           <CardDescription>High vs low performing simulations</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-center text-red-500">
-            Error loading simulation composition data
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Failed to load simulation composition data.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -221,6 +335,7 @@ export default function SimulationComposition({
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
+        data-testid="status-indicator"
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
           thresholdStatus === "success"
             ? "bg-green-500"
@@ -248,12 +363,11 @@ export default function SimulationComposition({
           />
         </div>
       </CardHeader>
-
       <CardContent className="space-y-4 flex-1 flex flex-col">
         {/* Show fallback message if no meaningful differences found */}
-        {simulationComposition.highPerforming.length === 0 &&
-          simulationComposition.lowPerforming.length === 0 &&
-          (simulationComposition.highPerformingCount ?? 0) > 0 && (
+        {highPerforming.length === 0 &&
+          lowPerforming.length === 0 &&
+          simulationFacts.length > 0 && (
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <p className="text-sm text-muted-foreground mb-2">
                 No significant differences found between high and low performing
@@ -278,10 +392,9 @@ export default function SimulationComposition({
                       {getMethodLabel(true)}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {simulationComposition.highPerformingCount} simulations
+                      {highPerformingDetails.length} simulations
                     </p>
                   </div>
-
                   <div className="overflow-x-auto flex-1">
                     <Table className="w-full">
                       <TableHeader>
@@ -295,21 +408,19 @@ export default function SimulationComposition({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {simulationComposition.highPerforming
-                          .slice(0, 8)
-                          .map((item, index) => (
-                            <TableRow key={`high-${index}`}>
-                              <TableCell className="p-2 text-xs">
-                                <div className="flex items-center gap-1">
-                                  <span>{item.icon}</span>
-                                  <span className="truncate">{item.name}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-2 text-xs text-center font-mono">
-                                {item.value}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                        {highPerforming.slice(0, 8).map((item, index) => (
+                          <TableRow key={`high-${index}`}>
+                            <TableCell className="p-2 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span>{item.icon}</span>
+                                <span className="truncate">{item.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="p-2 text-xs text-center font-mono">
+                              {item.value}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -330,63 +441,53 @@ export default function SimulationComposition({
                   {/* Simulation List */}
                   <div className="space-y-3">
                     <h4 className="font-medium">
-                      Simulations (
-                      {simulationComposition.highPerformingDetails.length})
+                      Simulations ({highPerformingDetails.length})
                     </h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {simulationComposition.highPerformingDetails.map(
-                        (sim) => (
-                          <div
-                            key={sim.id}
-                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-medium text-sm">{sim.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {sim.totalAttempts} attempts •{" "}
-                                {sim.scenarioCount} scenarios
-                              </p>
-                              {/* Parameter breakdown */}
-                              {sim.parameterBreakdown.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {sim.parameterBreakdown
-                                    .slice(0, 3)
-                                    .map((param, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
-                                      >
-                                        {param.parameterName}:{" "}
-                                        {param.parameterValue}
-                                      </span>
-                                    ))}
-                                  {sim.parameterBreakdown.length > 3 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      +{sim.parameterBreakdown.length - 3} more
+                      {highPerformingDetails.map((sim) => (
+                        <div
+                          key={sim.id}
+                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{sim.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
+                              scenarios
+                            </p>
+                            {/* Parameter breakdown */}
+                            {sim.parameterBreakdown.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {sim.parameterBreakdown
+                                  .slice(0, 3)
+                                  .map((param, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
+                                    >
+                                      {param.parameterName}:{" "}
+                                      {param.parameterValue}
                                     </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">
-                                {sim.avgScore}% avg
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {sim.completionRate}% completion
-                              </p>
-                            </div>
+                                  ))}
+                                {sim.parameterBreakdown.length > 3 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{sim.parameterBreakdown.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )
-                      )}
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {sim.avgScore}% avg
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sim.completionRate}% completion
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-
-                  {/* Insight */}
-                  <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                    <p className="text-sm text-green-800 dark:text-green-200">
-                      {getInsightText(true)}
-                    </p>
                   </div>
                 </div>
               </DialogContent>
@@ -402,10 +503,9 @@ export default function SimulationComposition({
                       {getMethodLabel(false)}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {simulationComposition.lowPerformingCount} simulations
+                      {lowPerformingDetails.length} simulations
                     </p>
                   </div>
-
                   <div className="overflow-x-auto flex-1">
                     <Table className="w-full">
                       <TableHeader>
@@ -419,21 +519,19 @@ export default function SimulationComposition({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {simulationComposition.lowPerforming
-                          .slice(0, 8)
-                          .map((item, index) => (
-                            <TableRow key={`low-${index}`}>
-                              <TableCell className="p-2 text-xs">
-                                <div className="flex items-center gap-1">
-                                  <span>{item.icon}</span>
-                                  <span className="truncate">{item.name}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-2 text-xs text-center font-mono">
-                                {item.value}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                        {lowPerforming.slice(0, 8).map((item, index) => (
+                          <TableRow key={`low-${index}`}>
+                            <TableCell className="p-2 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span>{item.icon}</span>
+                                <span className="truncate">{item.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="p-2 text-xs text-center font-mono">
+                              {item.value}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -454,11 +552,10 @@ export default function SimulationComposition({
                   {/* Simulation List */}
                   <div className="space-y-3">
                     <h4 className="font-medium">
-                      Simulations (
-                      {simulationComposition.lowPerformingDetails.length})
+                      Simulations ({lowPerformingDetails.length})
                     </h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {simulationComposition.lowPerformingDetails.map((sim) => (
+                      {lowPerformingDetails.map((sim) => (
                         <div
                           key={sim.id}
                           className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
@@ -503,19 +600,218 @@ export default function SimulationComposition({
                       ))}
                     </div>
                   </div>
-
-                  {/* Insight */}
-                  <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
-                    <p className="text-sm text-red-800 dark:text-red-200">
-                      {getInsightText(false)}
-                    </p>
-                  </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         </div>
+
+        {/* Actionable Insights */}
+        {actionableInsight && (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+// Helper function to build parameter composition
+function buildParameterComposition(
+  simulations: SimulationFact[],
+  categoricalFacts: SimulationParameterFactCategorical[],
+  numericFacts: SimulationParameterFactNumeric[],
+  allParameters: Parameter[],
+  allParameterItems: ParameterItem[]
+): HighLowPerforming[] {
+  const parameterCounts = new Map<
+    string,
+    {
+      count: number;
+      name: string;
+      icon: string;
+      color: string;
+      description: string;
+    }
+  >();
+
+  // Process categorical parameters
+  for (const fact of categoricalFacts) {
+    if (simulations.some((sim) => sim.simulationId === fact.simulationId)) {
+      const parameter = allParameters.find((p) => p.id === fact.parameterId);
+      const parameterItem = allParameterItems.find(
+        (pi) => pi.id === fact.parameterItemId
+      );
+
+      if (parameter && parameterItem) {
+        const key = `${parameter.name}:${parameterItem.name}`;
+        const existing = parameterCounts.get(key);
+        if (existing) {
+          existing.count += fact.scenarioCount;
+        } else {
+          parameterCounts.set(key, {
+            count: fact.scenarioCount,
+            name: parameterItem.name,
+            icon: parameterItem.description || "📊",
+            color: parameterItem.value || "#888888",
+            description: "",
+          });
+        }
+      }
+    }
+  }
+
+  // Process numeric parameters
+  for (const fact of numericFacts) {
+    if (simulations.some((sim) => sim.simulationId === fact.simulationId)) {
+      const parameter = allParameters.find((p) => p.id === fact.parameterId);
+
+      if (parameter) {
+        const key = `${parameter.name}:${fact.levelLabel}`;
+        const existing = parameterCounts.get(key);
+        if (existing) {
+          existing.count += fact.scenarioCount;
+        } else {
+          parameterCounts.set(key, {
+            count: fact.scenarioCount,
+            name: `${parameter.name} ${fact.levelLabel}`,
+            icon: "📈",
+            color: "#3b82f6",
+            description: "",
+          });
+        }
+      }
+    }
+  }
+
+  // Convert to array and sort by count
+  return Array.from(parameterCounts.entries())
+    .map(([_key, data]) => ({
+      name: data.name,
+      value: data.count,
+      icon: data.icon,
+      color: data.color,
+      description: data.description,
+      significance:
+        data.count > 5
+          ? "high"
+          : data.count > 2
+            ? "medium"
+            : ("low" as "high" | "medium" | "low" | "none"),
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+}
+
+// Helper function to build parameter breakdown for a simulation
+function buildParameterBreakdown(
+  simulationId: string,
+  categoricalFacts: SimulationParameterFactCategorical[],
+  numericFacts: SimulationParameterFactNumeric[],
+  allParameters: Parameter[],
+  allParameterItems: ParameterItem[]
+): { parameterName: string; parameterValue: string; isNumerical: boolean }[] {
+  const breakdown: {
+    parameterName: string;
+    parameterValue: string;
+    isNumerical: boolean;
+  }[] = [];
+
+  // Add categorical parameters
+  for (const fact of categoricalFacts) {
+    if (fact.simulationId === simulationId) {
+      const parameter = allParameters.find((p) => p.id === fact.parameterId);
+      const parameterItem = allParameterItems.find(
+        (pi) => pi.id === fact.parameterItemId
+      );
+
+      if (parameter && parameterItem) {
+        breakdown.push({
+          parameterName: parameter.name,
+          parameterValue: parameterItem.name,
+          isNumerical: false,
+        });
+      }
+    }
+  }
+
+  // Add numeric parameters
+  for (const fact of numericFacts) {
+    if (fact.simulationId === simulationId) {
+      const parameter = allParameters.find((p) => p.id === fact.parameterId);
+
+      if (parameter) {
+        breakdown.push({
+          parameterName: parameter.name,
+          parameterValue: fact.levelLabel,
+          isNumerical: true,
+        });
+      }
+    }
+  }
+
+  return breakdown;
+}
+
+// Configuration picker component
+function SimulationCompositionPicker({
+  currentConfig,
+  onConfigChange,
+}: {
+  currentConfig: SimulationCompositionConfig;
+  onConfigChange: (config: SimulationCompositionConfig) => void;
+}) {
+  const configs: SimulationCompositionConfig[] = [
+    {
+      method: "percentile",
+      topPercentage: 25,
+      bottomPercentage: 25,
+      description: "Top 25% vs Bottom 25% - Best vs Worst",
+    },
+    {
+      method: "percentile",
+      topPercentage: 10,
+      bottomPercentage: 10,
+      description: "Top 10% vs Bottom 10% - Elite vs Struggling",
+    },
+    {
+      method: "quartile",
+      topPercentage: 25,
+      bottomPercentage: 25,
+      description: "Q1 vs Q4 - Quartile Analysis",
+    },
+    {
+      method: "standard_deviation",
+      topPercentage: 0,
+      bottomPercentage: 0,
+      description: "Above 1σ vs Below 1σ - Statistical Analysis",
+    },
+  ];
+
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        value={configs.findIndex(
+          (c) =>
+            c.method === currentConfig.method &&
+            c.topPercentage === currentConfig.topPercentage &&
+            c.bottomPercentage === currentConfig.bottomPercentage
+        )}
+        onChange={(e) => {
+          const selectedConfig = configs[parseInt(e.target.value)];
+          if (selectedConfig) {
+            onConfigChange(selectedConfig);
+          }
+        }}
+        className="text-xs border rounded px-2 py-1 bg-background"
+      >
+        {configs.map((config, index) => (
+          <option key={index} value={index}>
+            {config.description}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

@@ -146,7 +146,6 @@ export default function RubricHeatmap({
 
   const thresholdStatus = getThresholdStatus();
 
-
   // Show loading state
   if (isLoading) {
     return (

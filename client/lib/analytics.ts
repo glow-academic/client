@@ -449,6 +449,7 @@ export const ScenarioAttributeAttemptFactSchema = z.object({
   parameterId: z.string(),
   parameterItemId: z.string(),
   date: z.string(), // "MM/DD"
+  timestamp: z.number(),
   avgScore: z.number(),
   attempts: z.number(),
   passedAttempts: z.number(),
@@ -460,40 +461,8 @@ export const ScenarioAttributeScenarioFactSchema = z.object({
   scenarioId: z.string(),
 });
 
-export const ScenarioPerformanceDataSchema = z.object({
-  attributeElements: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      displayName: z.string(),
-      icon: z.string(),
-      color: z.string(),
-      count: z.number(),
-      percentage: z.number(),
-      avgScore: z.number(),
-      completionRate: z.number(),
-      totalAttempts: z.number(),
-      trendData: z.array(
-        z.object({
-          date: z.string(),
-          score: z.number(),
-          timestamp: z.number(),
-        })
-      ),
-      insight: z.string(),
-    })
-  ),
-  availableParameters: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string(),
-      numerical: z.boolean().refine((v) => v === false),
-      active: z.boolean(),
-    })
-  ),
-  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
-  hasData: z.boolean(),
+export const ScenarioPerformanceResponseSchema = z.object({
+  validParameterIds: z.array(z.string()),
   attributeAttemptFacts: z.array(ScenarioAttributeAttemptFactSchema),
   attributeScenarioFacts: z.array(ScenarioAttributeScenarioFactSchema),
 });
@@ -501,116 +470,59 @@ export const ScenarioPerformanceDataSchema = z.object({
 // Scenario Stats (Numerical Parameters) Types
 export const NumericAttemptFactSchema = z.object({
   parameterId: z.string(),
-  level: z.string(), // "1","2","2.5",...
+  levelLabel: z.string(),
+  levelValue: z.number(),
   score: z.number(),
   attempts: z.number(),
 });
 
-export const ScenarioStatsDataSchema = z.object({
-  numericalParameters: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      numerical: z.literal(true),
-      active: z.boolean(),
-    })
-  ),
-  performanceData: z.array(
-    z.object({
-      metricLevel: z.string(),
-      avgScore: z.number(),
-      scenarioCount: z.number(),
-      totalAttempts: z.number(),
-      rubricPoints: z.number(),
-    })
-  ),
-  correlationData: z.object({ correlation: z.number(), pValue: z.number() }),
-  numericAttemptFacts: z.array(NumericAttemptFactSchema),
+export const NumericScenarioFactSchema = z.object({
+  parameterId: z.string(),
+  scenarioId: z.string(),
+  levelLabel: z.string(),
+  levelValue: z.number(),
 });
 
-// Simulation Composition Types
+export const ScenarioStatsResponseSchema = z.object({
+  validNumericParameterIds: z.array(z.string()),
+  numericAttemptFacts: z.array(NumericAttemptFactSchema),
+  numericScenarioFacts: z.array(NumericScenarioFactSchema),
+});
+
+// Simulation Composition Types (Raw Data)
 export const SimulationFactSchema = z.object({
   simulationId: z.string(),
   title: z.string(),
-  avgScore: z.number(),
-  completionRate: z.number(),
+  avgScore: z.number(), // int %
+  completionRate: z.number(), // int %
   totalAttempts: z.number(),
-  scenarioCount: z.number(),
+  scenarioCount: z.number(), // scenarios *seen* in window for this sim
 });
 
-export const SimulationParamFactSchema = z.object({
+export const SimulationParameterFactCategoricalSchema = z.object({
   simulationId: z.string(),
-  parameterName: z.string(),
-  parameterValue: z.string(),
-  isNumerical: z.boolean(),
-  count: z.number(),
+  parameterId: z.string(),
+  parameterItemId: z.string(),
+  scenarioCount: z.number(), // how many scenarios in this sim have this item
 });
 
-export const SimulationCompositionDataSchema = z.object({
-  config: z.object({
-    method: z.enum(["percentile", "quartile", "standard_deviation"]),
-    topPercentage: z.number(),
-    bottomPercentage: z.number(),
-  }),
-  highPerforming: z.array(
-    z.object({
-      name: z.string(),
-      value: z.number(),
-      icon: z.string(),
-      color: z.string(),
-      description: z.string(),
-      significance: z.enum(["high", "medium", "low", "none"]),
-    })
-  ),
-  lowPerforming: z.array(
-    z.object({
-      name: z.string(),
-      value: z.number(),
-      icon: z.string(),
-      color: z.string(),
-      description: z.string(),
-      significance: z.enum(["high", "medium", "low", "none"]),
-    })
-  ),
-  highPerformingCount: z.number(),
-  lowPerformingCount: z.number(),
-  highPerformingDetails: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      avgScore: z.number(),
-      completionRate: z.number(),
-      totalAttempts: z.number(),
-      scenarioCount: z.number(),
-      parameterBreakdown: z.array(
-        z.object({
-          parameterName: z.string(),
-          parameterValue: z.string(),
-          isNumerical: z.boolean(),
-        })
-      ),
-    })
-  ),
-  lowPerformingDetails: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      avgScore: z.number(),
-      completionRate: z.number(),
-      totalAttempts: z.number(),
-      scenarioCount: z.number(),
-      parameterBreakdown: z.array(
-        z.object({
-          parameterName: z.string(),
-          parameterValue: z.string(),
-          isNumerical: z.boolean(),
-        })
-      ),
-    })
-  ),
+export const SimulationParameterFactNumericSchema = z.object({
+  simulationId: z.string(),
+  parameterId: z.string(),
+  avgLevel: z.number(), // numeric mean over scenarios in this sim
+  levelLabel: z.string(), // "3" or "3.5" (rounded to 1)
+  scenarioCount: z.number(), // scenarios contributing to avg
+});
+
+export const SimulationCompositionResponseSchema = z.object({
+  validSimulationIds: z.array(z.string()),
   simulationFacts: z.array(SimulationFactSchema),
-  simulationParameterFacts: z.array(SimulationParamFactSchema),
-  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  simulationParameterFactsCategorical: z.array(
+    SimulationParameterFactCategoricalSchema
+  ),
+  simulationParameterFactsNumeric: z.array(
+    SimulationParameterFactNumericSchema
+  ),
   hasData: z.boolean(),
 });
 
@@ -625,34 +537,8 @@ export const ScenarioFactSchema = z.object({
   completedAttempts: z.number(),
 });
 
-export const SimulationPerformanceDataSchema = z.object({
-  validSimulations: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      scenarioIds: z.array(z.string()).optional(),
-    })
-  ),
-  selectedSimulation: z
-    .object({
-      id: z.string(),
-      title: z.string(),
-      scenarioIds: z.array(z.string()).optional(),
-    })
-    .nullable(),
-  scenarioPerformanceData: z.array(
-    z.object({
-      scenarioId: z.string(),
-      scenarioName: z.string(),
-      avgScore: z.number(),
-      successRate: z.number(),
-      performanceChange: z.number(),
-      totalAttempts: z.number(),
-      completedAttempts: z.number(),
-      color: z.string(),
-    })
-  ),
-  insights: z.string().nullable(),
+export const SimulationPerformanceResponseSchema = z.object({
+  validSimulationIds: z.array(z.string()),
   scenarioFacts: z.array(ScenarioFactSchema),
 });
 
@@ -663,27 +549,28 @@ export type ScenarioAttributeAttemptFact = z.infer<
 export type ScenarioAttributeScenarioFact = z.infer<
   typeof ScenarioAttributeScenarioFactSchema
 >;
-export type ScenarioPerformanceData = z.infer<
-  typeof ScenarioPerformanceDataSchema
+export type ScenarioPerformanceResponse = z.infer<
+  typeof ScenarioPerformanceResponseSchema
 >;
 
 export type NumericAttemptFact = z.infer<typeof NumericAttemptFactSchema>;
-export type ScenarioStatsData = z.infer<typeof ScenarioStatsDataSchema>;
+export type NumericScenarioFact = z.infer<typeof NumericScenarioFactSchema>;
+export type ScenarioStatsResponse = z.infer<typeof ScenarioStatsResponseSchema>;
 
 export type SimulationFact = z.infer<typeof SimulationFactSchema>;
-export type SimulationParamFact = z.infer<typeof SimulationParamFactSchema>;
-export type SimulationCompositionData = z.infer<
-  typeof SimulationCompositionDataSchema
+export type SimulationParameterFactCategorical = z.infer<
+  typeof SimulationParameterFactCategoricalSchema
 >;
-export type SimulationCompositionConfig = {
-  method: "percentile" | "quartile" | "standard_deviation";
-  topPercentage: number;
-  bottomPercentage: number;
-};
+export type SimulationParameterFactNumeric = z.infer<
+  typeof SimulationParameterFactNumericSchema
+>;
+export type SimulationCompositionResponse = z.infer<
+  typeof SimulationCompositionResponseSchema
+>;
 
 export type ScenarioFact = z.infer<typeof ScenarioFactSchema>;
-export type SimulationPerformanceData = z.infer<
-  typeof SimulationPerformanceDataSchema
+export type SimulationPerformanceResponse = z.infer<
+  typeof SimulationPerformanceResponseSchema
 >;
 
 // Home Analytics Types
@@ -977,8 +864,7 @@ export function computeSkillPerformanceStatus(
 
   // Calculate average skill performance across all skills
   const avgSkillPerformance =
-    radarData.reduce((sum, skill) => sum + skill.value, 0) /
-    radarData.length;
+    radarData.reduce((sum, skill) => sum + skill.value, 0) / radarData.length;
 
   if (avgSkillPerformance >= thresholds.success) return "success";
   if (avgSkillPerformance >= thresholds.warning) return "warning";
@@ -1026,10 +912,10 @@ export function computeRubricHeatmapActionableInsight(
           const correlation = cell.correlation;
           const rowGroup = matrix.standardGroups?.[i];
           const colGroup = matrix.standardGroups?.[j];
-          
+
           if (rowGroup && colGroup) {
             const pair = `${rowGroup.shortName} ↔ ${colGroup.shortName}`;
-            
+
             if (correlation > strongestPositive.correlation) {
               strongestPositive = { correlation, pair };
             }
@@ -1052,4 +938,172 @@ export function computeRubricHeatmapActionableInsight(
   }
 
   return null;
+}
+
+/**
+ * Compute actionable insights for scenario performance data
+ */
+export function computeScenarioPerformanceActionableInsight(
+  attributeAttemptFacts: ScenarioAttributeAttemptFact[]
+): string | null {
+  if (attributeAttemptFacts.length === 0) return null;
+
+  // Find the parameter item with the highest average score
+  const byParameterItem = new Map<
+    string,
+    { totalScore: number; totalAttempts: number }
+  >();
+
+  for (const fact of attributeAttemptFacts) {
+    const key = fact.parameterItemId;
+    const current = byParameterItem.get(key) || {
+      totalScore: 0,
+      totalAttempts: 0,
+    };
+    current.totalScore += fact.avgScore * fact.attempts;
+    current.totalAttempts += fact.attempts;
+    byParameterItem.set(key, current);
+  }
+
+  let bestItem = { id: "", score: 0 };
+  for (const [id, data] of byParameterItem.entries()) {
+    const avgScore =
+      data.totalAttempts > 0 ? data.totalScore / data.totalAttempts : 0;
+    if (avgScore > bestItem.score) {
+      bestItem = { id, score: avgScore };
+    }
+  }
+
+  if (bestItem.score > 0) {
+    return `Top performing attribute achieves ${Math.round(bestItem.score)}% average score. Consider expanding similar scenarios.`;
+  }
+
+  return null;
+}
+
+/**
+ * Compute actionable insights for scenario stats data
+ */
+export function computeScenarioStatsActionableInsight(
+  numericAttemptFacts: NumericAttemptFact[]
+): string | null {
+  if (numericAttemptFacts.length === 0) return null;
+
+  // Calculate correlation between level value and score
+  let totalCorrelation = 0;
+  let correlationCount = 0;
+
+  // Group by parameter to calculate correlation for each
+  const byParameter = new Map<string, NumericAttemptFact[]>();
+  for (const fact of numericAttemptFacts) {
+    const existing = byParameter.get(fact.parameterId) || [];
+    existing.push(fact);
+    byParameter.set(fact.parameterId, existing);
+  }
+
+  for (const facts of byParameter.values()) {
+    if (facts.length < 2) continue;
+
+    // Simple correlation calculation
+    const n = facts.length;
+    const sumX = facts.reduce((s, f) => s + f.levelValue, 0);
+    const sumY = facts.reduce((s, f) => s + f.score, 0);
+    const sumXY = facts.reduce((s, f) => s + f.levelValue * f.score, 0);
+    const sumXX = facts.reduce((s, f) => s + f.levelValue * f.levelValue, 0);
+    const sumYY = facts.reduce((s, f) => s + f.score * f.score, 0);
+
+    const correlation =
+      (n * sumXY - sumX * sumY) /
+      Math.sqrt((n * sumXX - sumX * sumX) * (n * sumYY - sumY * sumY));
+
+    if (!isNaN(correlation)) {
+      totalCorrelation += Math.abs(correlation);
+      correlationCount++;
+    }
+  }
+
+  if (correlationCount > 0) {
+    const avgCorrelation = totalCorrelation / correlationCount;
+    if (avgCorrelation > 0.7) {
+      return `Strong correlation (${avgCorrelation.toFixed(2)}) between parameter levels and performance. Consider adjusting difficulty curves.`;
+    } else if (avgCorrelation > 0.5) {
+      return `Moderate correlation (${avgCorrelation.toFixed(2)}) between parameter levels and performance. Review level progression.`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Compute actionable insights for simulation performance data
+ */
+export function computeSimulationPerformanceActionableInsight(
+  scenarioFacts: ScenarioFact[]
+): string | null {
+  if (scenarioFacts.length === 0) return null;
+
+  // Find the best and worst performing scenarios
+  const sortedByScore = scenarioFacts.sort((a, b) => b.avgScore - a.avgScore);
+  const best = sortedByScore[0];
+  const worst = sortedByScore[sortedByScore.length - 1];
+
+  if (best && worst && best.avgScore > worst.avgScore) {
+    const scoreDiff = best.avgScore - worst.avgScore;
+    if (scoreDiff > 20) {
+      return `Performance gap of ${Math.round(scoreDiff)}% between best (${best.scenarioName}) and worst (${worst.scenarioName}) scenarios. Consider rebalancing difficulty.`;
+    }
+  }
+
+  // Check for low success rates
+  const lowSuccess = scenarioFacts.filter((s) => s.successRate < 50);
+  if (lowSuccess.length > 0) {
+    return `${lowSuccess.length} scenario(s) have success rates below 50%. Review these scenarios for potential improvements.`;
+  }
+
+  return null;
+}
+
+// Simulation Composition Utility Functions
+export function computeSimulationCompositionActionableInsight(
+  simulationFacts: SimulationFact[]
+): string | null {
+  if (!simulationFacts || simulationFacts.length === 0) {
+    return null;
+  }
+
+  // Calculate performance statistics
+  const avgScore =
+    simulationFacts.reduce((sum, sim) => sum + sim.avgScore, 0) /
+    simulationFacts.length;
+  const avgCompletion =
+    simulationFacts.reduce((sum, sim) => sum + sim.completionRate, 0) /
+    simulationFacts.length;
+
+  // Find top and bottom performers
+  const sortedByScore = [...simulationFacts].sort(
+    (a, b) => b.avgScore - a.avgScore
+  );
+  const topPerformer = sortedByScore[0];
+  const bottomPerformer = sortedByScore[sortedByScore.length - 1];
+
+  // Performance gap analysis
+  const performanceGap = topPerformer.avgScore - bottomPerformer.avgScore;
+
+  if (performanceGap > 30) {
+    return `Significant performance gap (${performanceGap.toFixed(0)}%) between top performer "${topPerformer.title}" (${topPerformer.avgScore}%) and bottom performer "${bottomPerformer.title}" (${bottomPerformer.avgScore}%). Consider analyzing composition differences.`;
+  }
+
+  if (avgScore < 60) {
+    return `Overall performance is below 60% (${avgScore.toFixed(0)}%). Focus on improving simulation composition and scenario design.`;
+  }
+
+  if (avgCompletion < 70) {
+    return `Completion rate is low (${avgCompletion.toFixed(0)}%). Consider adjusting simulation difficulty or providing better guidance.`;
+  }
+
+  if (avgScore >= 80 && avgCompletion >= 80) {
+    return `Strong performance across simulations (${avgScore.toFixed(0)}% avg score, ${avgCompletion.toFixed(0)}% completion). Current composition appears effective.`;
+  }
+
+  return `Moderate performance (${avgScore.toFixed(0)}% avg score, ${avgCompletion.toFixed(0)}% completion). Consider analyzing top performers for optimization opportunities.`;
 }

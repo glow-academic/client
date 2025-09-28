@@ -18,6 +18,10 @@ import {
   computePersonaActionableInsight,
   computePersonaPerformanceStatus,
   computeRubricHeatmapActionableInsight,
+  computeScenarioPerformanceActionableInsight,
+  computeScenarioStatsActionableInsight,
+  computeSimulationCompositionActionableInsight,
+  computeSimulationPerformanceActionableInsight,
   computeSkillPerformanceActionableInsight,
   computeTrendAnalysis,
   MetricResponse,
@@ -36,12 +40,18 @@ import {
   useAnalyticsPersonaPerformance,
   useAnalyticsPersonaResponseTimes,
   useAnalyticsRubricHeatmap,
+  useAnalyticsScenarioPerformance,
+  useAnalyticsScenarioStats,
   useAnalyticsSessionEfficiency,
+  useAnalyticsSimulationComposition,
+  useAnalyticsSimulationPerformance,
   useAnalyticsSkillPerformance,
   useAnalyticsStagnationRate,
   useAnalyticsTimeSpent,
   useAnalyticsTotalAttempts,
 } from "@/lib/api/hooks/analytics";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParameters } from "@/lib/api/hooks/parameters";
 import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -177,6 +187,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
   // Fetch all simulations and rubrics
   const { data: allSimulations = [] } = useSimulations();
   const { data: allRubrics = [] } = useRubrics();
+  const { data: allParameters = [] } = useParameters();
+  const { data: allParameterItems = [] } = useParameterItems();
 
   // Fetch rubric heatmap data
   const {
@@ -203,6 +215,31 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading: skillPerformanceLoading,
     isError: skillPerformanceError,
   } = useAnalyticsSkillPerformance(filters, true);
+
+  // Footer Analytics Data Fetching
+  const {
+    data: scenarioPerformanceData,
+    isLoading: scenarioPerformanceLoading,
+    isError: scenarioPerformanceError,
+  } = useAnalyticsScenarioPerformance(filters, true);
+
+  const {
+    data: scenarioStatsData,
+    isLoading: scenarioStatsLoading,
+    isError: scenarioStatsError,
+  } = useAnalyticsScenarioStats(filters, true);
+
+  const {
+    data: simulationPerformanceData,
+    isLoading: simulationPerformanceLoading,
+    isError: simulationPerformanceError,
+  } = useAnalyticsSimulationPerformance(filters, true);
+
+  const {
+    data: simulationCompositionData,
+    isLoading: simulationCompositionLoading,
+    isError: simulationCompositionError,
+  } = useAnalyticsSimulationComposition(filters, true);
 
   // Fetch history data for the dashboard
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -596,7 +633,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       validSimulationIdsSet.has(sim.id)
     );
 
-    const actionableInsight = computeAttemptImprovementActionableInsight(chartData);
+    const actionableInsight =
+      computeAttemptImprovementActionableInsight(chartData);
 
     return {
       chartData,
@@ -631,7 +669,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       validSimulationIdsSet.has(sim.id)
     );
 
-    const actionableInsight = computeCohortPerformanceActionableInsight(cohortData);
+    const actionableInsight =
+      computeCohortPerformanceActionableInsight(cohortData);
 
     return {
       cohortData,
@@ -667,12 +706,136 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     const activePackage = packages[0]; // Use first package for insight calculation
     const radarData = activePackage?.radarData || [];
-    const actionableInsight = computeSkillPerformanceActionableInsight(radarData);
+    const actionableInsight =
+      computeSkillPerformanceActionableInsight(radarData);
 
     return {
       packages,
       availableRubrics,
       hasDataAvailable: packages.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  // Process footer analytics data
+  const scenarioPerformanceProcessed = (() => {
+    if (!scenarioPerformanceData) {
+      return {
+        validParameterIds: [],
+        attributeAttemptFacts: [],
+        attributeScenarioFacts: [],
+        hasDataAvailable: false,
+        actionableInsight: null,
+      };
+    }
+
+    const validParameterIds = scenarioPerformanceData.validParameterIds || [];
+    const attributeAttemptFacts =
+      scenarioPerformanceData.attributeAttemptFacts || [];
+    const attributeScenarioFacts =
+      scenarioPerformanceData.attributeScenarioFacts || [];
+
+    const actionableInsight = computeScenarioPerformanceActionableInsight(
+      attributeAttemptFacts
+    );
+
+    return {
+      validParameterIds,
+      attributeAttemptFacts,
+      attributeScenarioFacts,
+      hasDataAvailable: attributeAttemptFacts.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  const scenarioStatsProcessed = (() => {
+    if (!scenarioStatsData) {
+      return {
+        validNumericParameterIds: [],
+        numericAttemptFacts: [],
+        numericScenarioFacts: [],
+        hasDataAvailable: false,
+        actionableInsight: null,
+      };
+    }
+
+    const validNumericParameterIds =
+      scenarioStatsData.validNumericParameterIds || [];
+    const numericAttemptFacts = scenarioStatsData.numericAttemptFacts || [];
+    const numericScenarioFacts = scenarioStatsData.numericScenarioFacts || [];
+
+    const actionableInsight =
+      computeScenarioStatsActionableInsight(numericAttemptFacts);
+
+    return {
+      validNumericParameterIds,
+      numericAttemptFacts,
+      numericScenarioFacts,
+      hasDataAvailable: numericAttemptFacts.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  const simulationPerformanceProcessed = (() => {
+    if (!simulationPerformanceData) {
+      return {
+        validSimulationIds: [],
+        scenarioFacts: [],
+        hasDataAvailable: false,
+        actionableInsight: null,
+      };
+    }
+
+    const validSimulationIds =
+      simulationPerformanceData.validSimulationIds || [];
+    const scenarioFacts = simulationPerformanceData.scenarioFacts || [];
+
+    const actionableInsight =
+      computeSimulationPerformanceActionableInsight(scenarioFacts);
+
+    return {
+      validSimulationIds,
+      scenarioFacts,
+      hasDataAvailable: scenarioFacts.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  const simulationCompositionProcessed = (() => {
+    if (!simulationCompositionData) {
+      return {
+        simulationFacts: [],
+        simulationParameterFactsCategorical: [],
+        simulationParameterFactsNumeric: [],
+        availableSimulations: [],
+        hasDataAvailable: false,
+        actionableInsight: null,
+      };
+    }
+
+    const validSimulationIds =
+      simulationCompositionData.validSimulationIds || [];
+    const simulationFacts = simulationCompositionData.simulationFacts || [];
+    const simulationParameterFactsCategorical =
+      simulationCompositionData.simulationParameterFactsCategorical || [];
+    const simulationParameterFactsNumeric =
+      simulationCompositionData.simulationParameterFactsNumeric || [];
+
+    // Filter simulations by valid IDs
+    const validSimulationIdsSet = new Set(validSimulationIds);
+    const availableSimulations = allSimulations.filter((sim) =>
+      validSimulationIdsSet.has(sim.id)
+    );
+
+    const actionableInsight =
+      computeSimulationCompositionActionableInsight(simulationFacts);
+
+    return {
+      simulationFacts,
+      simulationParameterFactsCategorical,
+      simulationParameterFactsNumeric,
+      availableSimulations,
+      hasDataAvailable: simulationFacts.length > 0,
       actionableInsight,
     };
   })();
@@ -864,24 +1027,27 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const leftFooterComponents = [
     <ScenarioPerformance
       key="scenario-performance"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      validParameterIds={scenarioPerformanceProcessed.validParameterIds}
+      attributeAttemptFacts={scenarioPerformanceProcessed.attributeAttemptFacts}
+      attributeScenarioFacts={
+        scenarioPerformanceProcessed.attributeScenarioFacts
+      }
+      allParameters={allParameters}
+      allParameterItems={allParameterItems}
+      isLoading={scenarioPerformanceLoading}
+      isError={scenarioPerformanceError}
+      actionableInsight={scenarioPerformanceProcessed.actionableInsight}
       thresholds={thresholds}
     />,
     <ScenarioStats
       key="scenario-stats"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      validNumericParameterIds={scenarioStatsProcessed.validNumericParameterIds}
+      numericAttemptFacts={scenarioStatsProcessed.numericAttemptFacts}
+      numericScenarioFacts={scenarioStatsProcessed.numericScenarioFacts}
+      allParameters={allParameters}
+      isLoading={scenarioStatsLoading}
+      isError={scenarioStatsError}
+      actionableInsight={scenarioStatsProcessed.actionableInsight}
       thresholds={thresholds}
     />,
   ];
@@ -889,24 +1055,29 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const rightFooterComponents = [
     <SimulationPerformance
       key="simulation-performance"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      validSimulationIds={simulationPerformanceProcessed.validSimulationIds}
+      scenarioFacts={simulationPerformanceProcessed.scenarioFacts}
+      allSimulations={allSimulations}
+      isLoading={simulationPerformanceLoading}
+      isError={simulationPerformanceError}
+      actionableInsight={simulationPerformanceProcessed.actionableInsight}
       thresholds={thresholds}
     />,
     <SimulationComposition
       key="simulation-composition"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      simulationFacts={simulationCompositionProcessed.simulationFacts}
+      simulationParameterFactsCategorical={
+        simulationCompositionProcessed.simulationParameterFactsCategorical
+      }
+      simulationParameterFactsNumeric={
+        simulationCompositionProcessed.simulationParameterFactsNumeric
+      }
+      allSimulations={simulationCompositionProcessed.availableSimulations}
+      allParameters={allParameters}
+      allParameterItems={allParameterItems}
+      isLoading={simulationCompositionLoading}
+      isError={simulationCompositionError}
+      actionableInsight={simulationCompositionProcessed.actionableInsight}
       thresholds={thresholds}
     />,
   ];

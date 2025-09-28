@@ -2,7 +2,6 @@
  * ScenarioPerformance.tsx
  * This component displays scenario attribute breakdown with performance metrics.
  * Shows what percentage of scenarios use each specific attribute and their performance.
- * Updated to use new "facts + pre-agg" pattern for fast client-side filtering.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -36,10 +35,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { AnalyticsFilters } from "@/lib/analytics";
-import { useAnalyticsScenarioPerformance } from "@/lib/api/hooks/analytics";
+import type {
+  ScenarioAttributeAttemptFact,
+  ScenarioAttributeScenarioFact,
+} from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { buildScenarioAttributeElements } from "@/utils/client-aggregators";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -55,8 +55,44 @@ import {
   YAxis,
 } from "recharts";
 
+type Parameter = {
+  id: string;
+  name: string;
+  numerical: boolean;
+  active: boolean;
+  description?: string | null;
+};
+type ParameterItem = {
+  id: string;
+  parameterId: string;
+  name: string;
+  description?: string | null;
+  value?: string | null;
+};
+
+type AttributeElement = {
+  id: string;
+  name: string;
+  displayName: string;
+  icon: string;
+  color: string;
+  count: number;
+  percentage: number;
+  avgScore: number;
+  completionRate: number;
+  totalAttempts: number;
+  trendData: { date: string; score: number; timestamp: number }[];
+};
+
 export interface ScenarioPerformanceProps {
-  filters: AnalyticsFilters;
+  validParameterIds: string[];
+  attributeAttemptFacts: ScenarioAttributeAttemptFact[];
+  attributeScenarioFacts: ScenarioAttributeScenarioFact[];
+  allParameters: Parameter[]; // from client cache
+  allParameterItems: ParameterItem[]; // from client cache
+  isLoading: boolean;
+  isError: boolean;
+  actionableInsight?: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -64,137 +100,158 @@ export interface ScenarioPerformanceProps {
   };
 }
 
-interface ParameterOption {
-  id: string; // parameterId
-  name: string;
-  description: string;
-}
-
 export default function ScenarioPerformance({
-  filters,
+  validParameterIds,
+  attributeAttemptFacts,
+  attributeScenarioFacts,
+  allParameters,
+  allParameterItems,
+  isLoading,
+  isError,
+  actionableInsight,
   thresholds,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
-  const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Use new analytics hook
-  const { data, isLoading, isError } = useAnalyticsScenarioPerformance(filters);
+  const parameterOptions = useMemo(() => {
+    return allParameters
+      .filter(
+        (p) => !p.numerical && p.active && validParameterIds.includes(p.id)
+      )
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: `Performance by ${p.name.toLowerCase()} value`,
+      }));
+  }, [allParameters, validParameterIds]);
 
-  // Get available parameters from server response
-  const availableParameters = useMemo(
-    () => data?.availableParameters || [],
-    [data?.availableParameters]
+  // pick default
+  const activeParameterId = useMemo(() => {
+    return selectedParameterId || parameterOptions[0]?.id || "";
+  }, [selectedParameterId, parameterOptions]);
+
+  const itemsForParameter = useMemo(
+    () =>
+      allParameterItems.filter(
+        (it) =>
+          it.parameterId === activeParameterId &&
+          attributeScenarioFacts.some((f) => f.parameterItemId === it.id)
+      ),
+    [allParameterItems, attributeScenarioFacts, activeParameterId]
   );
 
-  // Set default selected parameter if none selected and we have parameters
-  const selectedParameter = useMemo(() => {
-    if (!selectedParameterId && availableParameters.length > 0) {
-      const firstParameter = availableParameters[0];
-      if (firstParameter) {
-        setSelectedParameterId(firstParameter.id);
-        return firstParameter;
-      }
-    }
-    return availableParameters.find((p) => p.id === selectedParameterId);
-  }, [selectedParameterId, availableParameters]);
-
-  // Generate parameter options from available parameters
-  const PARAMETER_OPTIONS: ParameterOption[] = useMemo(() => {
-    return availableParameters.map((parameter) => ({
-      id: parameter.id,
-      name: parameter.name,
-      description: parameter.description,
-    }));
-  }, [availableParameters]);
-
-  // Build parameter items metadata for aggregator
-  const parameterItemsMeta = useMemo(() => {
-    const meta: Record<
-      string,
-      { name: string; icon?: string; color?: string }
-    > = {};
-    // This would need to be populated from parameter items data
-    // For now, using default values
-    return meta;
-  }, []);
-
-  // Calculate attribute breakdown using new aggregator
-  const attributeElements = useMemo(() => {
-    if (!data || !selectedParameter) {
-      return data?.attributeElements || [];
-    }
-
-    return buildScenarioAttributeElements(
-      data.attributeAttemptFacts,
-      data.attributeScenarioFacts,
-      parameterItemsMeta,
-      selectedParameter.id
+  const totalScenariosForParam = useMemo(() => {
+    const set = new Set(
+      attributeScenarioFacts
+        .filter((f) => f.parameterId === activeParameterId)
+        .map((f) => f.scenarioId)
     );
-  }, [data, selectedParameter, parameterItemsMeta]);
+    return set.size || 1; // avoid /0
+  }, [attributeScenarioFacts, activeParameterId]);
 
-  // Use server-provided status or calculate from elements
-  const thresholdStatus =
-    data?.performanceStatus ||
-    (() => {
-      if (attributeElements.length === 0) return "neutral";
+  const elements: AttributeElement[] = useMemo(() => {
+    return itemsForParameter.map((it) => {
+      const scen = attributeScenarioFacts.filter(
+        (f) => f.parameterItemId === it.id
+      );
+      const scenCount = new Set(scen.map((s) => s.scenarioId)).size;
 
-      // Calculate average performance across all attributes
-      const avgPerformance =
-        attributeElements.reduce((sum, element) => sum + element.avgScore, 0) /
-        attributeElements.length;
+      const attempts = attributeAttemptFacts.filter(
+        (f) => f.parameterItemId === it.id
+      );
+      const totalAttempts = attempts.reduce((s, a) => s + a.attempts, 0);
+      const passed = attempts.reduce((s, a) => s + a.passedAttempts, 0);
+      const avgScoreWeighted =
+        totalAttempts > 0
+          ? Math.round(
+              attempts.reduce((s, a) => s + a.avgScore * a.attempts, 0) /
+                totalAttempts
+            )
+          : 0;
+      const completionRate =
+        totalAttempts > 0 ? Math.round((100 * passed) / totalAttempts) : 0;
 
-      if (avgPerformance >= thresholds.success) return "success";
-      if (avgPerformance >= thresholds.warning) return "warning";
-      return "danger";
-    })();
+      const trendData = attempts
+        .slice()
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map((a) => ({
+          date: a.date,
+          score: a.avgScore,
+          timestamp: a.timestamp,
+        }));
 
-  // Handle loading and error states
+      return {
+        id: `param-item-${it.id}`,
+        name: it.name,
+        displayName: it.name,
+        icon: it.description ?? "",
+        color: it.value || "#888888",
+        count: scenCount,
+        percentage:
+          Math.round((1000 * scenCount) / totalScenariosForParam) / 10, // 1 decimal
+        avgScore: avgScoreWeighted,
+        completionRate,
+        totalAttempts,
+        trendData,
+      };
+    });
+  }, [
+    itemsForParameter,
+    attributeAttemptFacts,
+    attributeScenarioFacts,
+    totalScenariosForParam,
+  ]);
+
+  const avgPerf = elements.length
+    ? elements.reduce((s, e) => s + e.avgScore, 0) / elements.length
+    : 0;
+  const status =
+    elements.length === 0
+      ? "neutral"
+      : avgPerf >= thresholds.success
+        ? "success"
+        : avgPerf >= thresholds.warning
+          ? "warning"
+          : "danger";
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle>Scenario Performance</CardTitle>
-          <CardDescription>
-            Loading scenario attribute breakdown...
-          </CardDescription>
+          <CardTitle>Scenario Attribute Breakdown</CardTitle>
+          <CardDescription>Loading scenario data...</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
+        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
+          Loading...
         </CardContent>
       </Card>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle>Scenario Performance</CardTitle>
-          <CardDescription>
-            Error loading scenario attribute breakdown
-          </CardDescription>
+          <CardTitle>Scenario Attribute Breakdown</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center">
-          <div className="text-destructive">Failed to load data</div>
+        <CardContent className="flex-1 flex items-center justify-center text-destructive">
+          Failed to load scenario data
         </CardContent>
       </Card>
     );
   }
-
-  const selectedParameterOption = PARAMETER_OPTIONS.find(
-    (p) => p.id === selectedParameterId
-  );
 
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
         data-testid="status-indicator"
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-          thresholdStatus === "success"
+          status === "success"
             ? "bg-green-500"
-            : thresholdStatus === "warning"
+            : status === "warning"
               ? "bg-yellow-500"
-              : thresholdStatus === "danger"
+              : status === "danger"
                 ? "bg-red-500"
                 : "bg-gray-400"
         }`}
@@ -212,68 +269,21 @@ export default function ScenarioPerformance({
           </div>
 
           {/* Parameter Picker */}
-          <div className="flex items-center gap-2">
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={pickerOpen}
-                  className="w-48 justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <span>
-                      {selectedParameterOption?.name || "Select Parameter"}
-                    </span>
-                  </div>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <Command>
-                  <CommandInput placeholder="Search parameters..." />
-                  <CommandEmpty>No parameter found.</CommandEmpty>
-                  <CommandGroup>
-                    {PARAMETER_OPTIONS.map((parameter) => (
-                      <CommandItem
-                        key={parameter.id}
-                        value={parameter.id}
-                        onSelect={() => {
-                          setSelectedParameterId(parameter.id);
-                          setPickerOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedParameterId === parameter.id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        <div>
-                          <div className="font-medium">{parameter.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {parameter.description}
-                          </div>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <ParamPicker
+            options={parameterOptions}
+            value={activeParameterId}
+            onChange={setSelectedParameterId}
+          />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Pie Chart */}
+        {/* Pie */}
         <div className="flex-1 min-h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={attributeElements}
+                data={elements}
                 dataKey="percentage"
                 nameKey="name"
                 cx="50%"
@@ -282,8 +292,8 @@ export default function ScenarioPerformance({
                 innerRadius={60}
                 paddingAngle={2}
               >
-                {attributeElements.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {elements.map((e, i) => (
+                  <Cell key={i} fill={e.color} />
                 ))}
               </Pie>
               <Tooltip
@@ -292,14 +302,11 @@ export default function ScenarioPerformance({
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "6px",
                 }}
-                formatter={(value: number, name: string, _props: unknown) => {
-                  const element = attributeElements.find(
-                    (e) => e.name === name
-                  );
+                formatter={(value: number, name: string) => {
+                  const element = elements.find((e) => e.name === name);
                   if (!element) return [value, name];
-
                   return [
-                    <div key="tooltip" className="space-y-2">
+                    <div key="t" className="space-y-2">
                       <div className="font-medium">
                         {element.icon} {element.displayName}
                       </div>
@@ -321,8 +328,8 @@ export default function ScenarioPerformance({
                 height={80}
                 content={({ payload }) => (
                   <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                    {payload?.map((entry, index) => {
-                      const element = attributeElements[index];
+                    {payload?.map((entry: { value: string }, idx: number) => {
+                      const element = elements[idx];
                       if (!element) return null;
                       return (
                         <Dialog key={entry.value}>
@@ -333,71 +340,51 @@ export default function ScenarioPerformance({
                             </span>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl">
-                            <DialogDescription hidden>
-                              This chart shows the scenario performance over
-                              time.
-                            </DialogDescription>
                             <DialogHeader>
                               <DialogTitle className="flex items-center gap-2">
                                 <span className="text-lg">{element.icon}</span>
                                 {element.displayName} Performance
                               </DialogTitle>
-                              <DialogDescription>
-                                Detailed performance analysis for{" "}
-                                {element.displayName}{" "}
-                                {selectedParameter?.name.toLowerCase()}
+                              <DialogDescription hidden>
+                                Daily trend
                               </DialogDescription>
                             </DialogHeader>
-                            <div className="space-y-6">
-                              {/* Performance Trend Chart */}
-                              {element.trendData.length > 0 && (
-                                <div className="h-64">
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <LineChart data={element.trendData}>
-                                      <XAxis
-                                        dataKey="date"
-                                        className="text-xs"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={60}
-                                      />
-                                      <YAxis className="text-xs" />
-                                      <Tooltip
-                                        contentStyle={{
-                                          backgroundColor:
-                                            "hsl(var(--background))",
-                                          border:
-                                            "1px solid hsl(var(--border))",
-                                          borderRadius: "6px",
-                                        }}
-                                        formatter={(value: number) => [
-                                          `${value}%`,
-                                          "Score",
-                                        ]}
-                                      />
-                                      <Line
-                                        type="monotone"
-                                        dataKey="score"
-                                        stroke={element.color}
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                        name="Score"
-                                      />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              )}
 
-                              {/* Actionable Insights */}
-                              <div className="p-3 bg-muted rounded-lg">
-                                <p className="text-sm text-muted-foreground">
-                                  {element.insight}
-                                </p>
+                            {element.trendData.length > 0 && (
+                              <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={element.trendData}>
+                                    <XAxis
+                                      dataKey="date"
+                                      className="text-xs"
+                                      angle={-45}
+                                      textAnchor="end"
+                                      height={60}
+                                    />
+                                    <YAxis className="text-xs" />
+                                    <Tooltip
+                                      contentStyle={{
+                                        backgroundColor:
+                                          "hsl(var(--background))",
+                                        border: "1px solid hsl(var(--border))",
+                                        borderRadius: "6px",
+                                      }}
+                                      formatter={(v: number) => [
+                                        `${v}%`,
+                                        "Score",
+                                      ]}
+                                    />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="score"
+                                      stroke={element.color}
+                                      strokeWidth={2}
+                                      dot={{ r: 4 }}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
                               </div>
-                            </div>
+                            )}
                           </DialogContent>
                         </Dialog>
                       );
@@ -408,7 +395,75 @@ export default function ScenarioPerformance({
             </PieChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Actionable Insights */}
+        {actionableInsight && (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function ParamPicker({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: string; name: string; description: string }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.id === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-48 justify-between"
+        >
+          <span className="truncate">
+            {selected?.name || "Select Parameter"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-0">
+        <Command>
+          <CommandInput placeholder="Search parameters..." />
+          <CommandEmpty>No parameter found.</CommandEmpty>
+          <CommandGroup>
+            {options.map((p) => (
+              <CommandItem
+                key={p.id}
+                value={p.id}
+                onSelect={() => {
+                  onChange(p.id);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === p.id ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div>
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.description}
+                  </div>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -9,10 +9,10 @@ import {
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponseSchema,
   RubricHeatmapResponseSchema,
-  ScenarioPerformanceDataSchema,
-  ScenarioStatsDataSchema,
-  SimulationCompositionDataSchema,
-  SimulationPerformanceDataSchema,
+  ScenarioPerformanceResponseSchema,
+  ScenarioStatsResponseSchema,
+  SimulationCompositionResponseSchema,
+  SimulationPerformanceResponseSchema,
   SkillPerformanceResponseSchema,
 } from "@/lib/analytics";
 import { api } from "@/lib/api/fetcher";
@@ -439,7 +439,7 @@ export function useAnalyticsScenarioPerformance(
           body: JSON.stringify(filters),
         }
       );
-      return ScenarioPerformanceDataSchema.parse(res);
+      return ScenarioPerformanceResponseSchema.parse(res);
     },
   });
 }
@@ -459,7 +459,7 @@ export function useAnalyticsScenarioStats(
           body: JSON.stringify(filters),
         }
       );
-      return ScenarioStatsDataSchema.parse(res);
+      return ScenarioStatsResponseSchema.parse(res);
     },
   });
 }
@@ -479,7 +479,7 @@ export function useAnalyticsSimulationComposition(
           body: JSON.stringify(filters),
         }
       );
-      return SimulationCompositionDataSchema.parse(res);
+      return SimulationCompositionResponseSchema.parse(res);
     },
   });
 }
@@ -499,7 +499,7 @@ export function useAnalyticsSimulationPerformance(
           body: JSON.stringify(filters),
         }
       );
-      return SimulationPerformanceDataSchema.parse(res);
+      return SimulationPerformanceResponseSchema.parse(res);
     },
   });
 }
