@@ -1,6 +1,7 @@
 /**
  * Growth.tsx
- * This component displays the growth for the personas.
+ * Fast and dumb UI component for displaying growth analytics.
+ * All data processing is handled externally via props.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -14,9 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { AnalyticsFilters } from "@/lib/analytics";
+import type { GrowthDataResponse, GrowthMetric } from "@/lib/analytics";
 import { attachFormatters } from "@/lib/analyticsAdapters";
-import { useAnalyticsGrowthData } from "@/lib/api/hooks/analytics";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -29,54 +29,84 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import GrowthPicker, { type GrowthMetric } from "../GrowthPicker";
+import GrowthPicker from "../GrowthPicker";
+
+// Type for metrics with formatter functions
+type GrowthMetricWithFormatter = GrowthMetric & {
+  formatter: (value: number) => string;
+};
+
 export interface GrowthProps {
-  filters: AnalyticsFilters;
+  chartData: GrowthDataResponse["chartData"];
+  availableMetrics: GrowthMetric[];
+  windowAverages: GrowthDataResponse["windowAverages"];
+  hasDataAvailable: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  actionableInsight: string | null;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
 }
 
-export default function Growth({ filters }: GrowthProps) {
+export default function Growth({
+  chartData,
+  availableMetrics,
+  windowAverages,
+  hasDataAvailable: _hasDataAvailable,
+  isLoading,
+  isError,
+  actionableInsight,
+  thresholds,
+}: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
 
-  // Fetch growth data using the hook
-  const { data: rawData, isLoading, error } = useAnalyticsGrowthData(filters);
-
-  // Transform data to include formatter functions
-  const data = rawData ? attachFormatters(rawData) : undefined;
-
-  const chartData = useMemo(
-    () => (data?.["chartData"] as unknown[]) ?? [],
-    [data]
-  );
-  const availableMetrics = useMemo(
-    () => (data?.["availableMetrics"] ?? []) as GrowthMetric[],
-    [data]
-  );
+  // Transform availableMetrics to include formatter functions
+  const metricsWithFormatters = useMemo(() => {
+    const result = attachFormatters({ availableMetrics });
+    return result["availableMetrics"] as GrowthMetricWithFormatter[];
+  }, [availableMetrics]);
 
   // Ensure at least one metric is always selected
   useEffect(() => {
     if (
       selectedMetrics.length === 0 &&
-      availableMetrics.length > 0 &&
-      availableMetrics[0]
+      metricsWithFormatters.length > 0 &&
+      metricsWithFormatters[0]
     ) {
-      setSelectedMetrics([availableMetrics[0].id]);
+      setSelectedMetrics([metricsWithFormatters[0].id]);
     }
-  }, [selectedMetrics.length, availableMetrics]);
+  }, [selectedMetrics.length, metricsWithFormatters]);
 
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
-    return availableMetrics.filter((metric) =>
+    return metricsWithFormatters.filter((metric) =>
       selectedMetrics.includes(metric.id)
     );
-  }, [availableMetrics, selectedMetrics]);
+  }, [metricsWithFormatters, selectedMetrics]);
 
-  // Use server-provided growth status, fallback to local calculation if needed
-  const thresholdStatus = data?.["growthStatus"] ?? "neutral";
+  // Calculate threshold status based on window averages
+  const getThresholdStatus = () => {
+    if (
+      !windowAverages?.averageScore?.last ||
+      !windowAverages?.averageScore?.prev
+    ) {
+      return "neutral";
+    }
 
-  // Use server-provided actionable insight
-  const insight = data?.["actionableInsight"] ?? null;
+    const improvement =
+      windowAverages.averageScore.last - windowAverages.averageScore.prev;
+
+    if (improvement >= thresholds.success) return "success";
+    if (improvement >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
 
   if (isLoading) {
     return (
@@ -92,7 +122,7 @@ export default function Growth({ filters }: GrowthProps) {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
@@ -131,7 +161,7 @@ export default function Growth({ filters }: GrowthProps) {
             </CardDescription>
           </div>
           <GrowthPicker
-            availableMetrics={availableMetrics}
+            availableMetrics={metricsWithFormatters}
             selectedMetrics={selectedMetrics}
             onMetricsChange={setSelectedMetrics}
           />
@@ -158,7 +188,7 @@ export default function Growth({ filters }: GrowthProps) {
                   textAnchor="end"
                   height={60}
                 />
-                <YAxis className="text-xs" domain={[0, "auto"]} />
+                <YAxis className="text-xs" domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
@@ -166,7 +196,9 @@ export default function Growth({ filters }: GrowthProps) {
                     borderRadius: "6px",
                   }}
                   formatter={(value: number, name: string) => {
-                    const metric = availableMetrics.find((m) => m.id === name);
+                    const metric = metricsWithFormatters.find(
+                      (m) => m.id === name
+                    );
                     const formattedValue = metric?.formatter
                       ? metric.formatter(value)
                       : `${value}%`;
@@ -190,9 +222,11 @@ export default function Growth({ filters }: GrowthProps) {
           </div>
 
           {/* Actionable Insights */}
-          {insight && (
+          {actionableInsight && (
             <div className="p-3 bg-muted rounded-lg mt-2">
-              <p className="text-sm text-muted-foreground">{String(insight)}</p>
+              <p className="text-sm text-muted-foreground">
+                {actionableInsight}
+              </p>
             </div>
           )}
         </div>

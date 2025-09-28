@@ -12,6 +12,7 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   computeCurrent,
+  computeGrowthActionableInsight,
   computeTrendAnalysis,
   MetricResponse,
   TrendData,
@@ -21,6 +22,7 @@ import {
   useAnalyticsAverageScore,
   useAnalyticsCompletionPercentage,
   useAnalyticsFirstAttemptPassRate,
+  useAnalyticsGrowthData,
   useAnalyticsHighestScore,
   useAnalyticsMessagesPerSession,
   useAnalyticsPersonaResponseTimes,
@@ -148,6 +150,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading: totalAttemptsLoading,
     isError: totalAttemptsError,
   } = useAnalyticsTotalAttempts(filters, true);
+  const {
+    data: growthData,
+    isLoading: growthLoading,
+    isError: growthError,
+  } = useAnalyticsGrowthData(filters, true);
 
   // Fetch history data for the dashboard
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -421,6 +428,31 @@ export default function Dashboard({ profileId }: DashboardProps) {
     "Total attempts"
   );
 
+  // Process growth data
+  const growthProcessed = (() => {
+    if (!growthData) {
+      return {
+        chartData: [],
+        availableMetrics: [],
+        windowAverages: { averageScore: { n: 7, last: null, prev: null } },
+        hasDataAvailable: false,
+        actionableInsight: null,
+      };
+    }
+
+    const windowAverages = growthData.windowAverages || {
+      averageScore: { n: 7, last: null, prev: null },
+    };
+
+    return {
+      chartData: growthData.chartData || [],
+      availableMetrics: growthData.availableMetrics || [],
+      windowAverages,
+      hasDataAvailable: growthData.chartData && growthData.chartData.length > 0,
+      actionableInsight: computeGrowthActionableInsight(windowAverages),
+    };
+  })();
+
   const headerComponents = [
     <AverageScore
       key="average-score"
@@ -527,14 +559,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const primaryComponents = [
     <Growth
       key="growth"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-        profileId,
-      }}
+      chartData={growthProcessed.chartData}
+      availableMetrics={growthProcessed.availableMetrics}
+      windowAverages={growthProcessed.windowAverages}
+      hasDataAvailable={growthProcessed.hasDataAvailable}
+      isLoading={growthLoading}
+      isError={growthError}
+      actionableInsight={growthProcessed.actionableInsight}
+      thresholds={thresholds}
     />,
     <PersonaPerformance
       key="persona-performance"

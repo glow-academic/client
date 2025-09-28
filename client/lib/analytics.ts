@@ -118,11 +118,20 @@ export const GrowthMetricSchema = z.object({
   formatterId: z.enum(["percent", "int", "sec", "min"]),
 });
 
+export const GrowthWindowAverageSchema = z.object({
+  n: z.number(),
+  last: z.number().nullable(),
+  prev: z.number().nullable(),
+});
+
+export const GrowthWindowAveragesSchema = z.object({
+  averageScore: GrowthWindowAverageSchema,
+});
+
 export const GrowthDataResponseSchema = z.object({
   chartData: z.array(GrowthDataPointSchema),
   availableMetrics: z.array(GrowthMetricSchema),
-  growthStatus: z.enum(["success", "warning", "danger", "neutral"]),
-  actionableInsight: z.string().nullable(),
+  windowAverages: GrowthWindowAveragesSchema,
 });
 
 // Persona Performance Types
@@ -173,6 +182,8 @@ export type RubricHeatmapResponse = z.infer<typeof RubricHeatmapResponseSchema>;
 
 export type GrowthDataPoint = z.infer<typeof GrowthDataPointSchema>;
 export type GrowthMetric = z.infer<typeof GrowthMetricSchema>;
+export type GrowthWindowAverage = z.infer<typeof GrowthWindowAverageSchema>;
+export type GrowthWindowAverages = z.infer<typeof GrowthWindowAveragesSchema>;
 export type GrowthDataResponse = z.infer<typeof GrowthDataResponseSchema>;
 
 export type PersonaTrendData = z.infer<typeof PersonaTrendDataSchema>;
@@ -797,3 +808,28 @@ export type AttemptHistoryRow = z.infer<typeof AttemptHistoryRowSchema>;
 export type AttemptHistoryResponse = z.infer<
   typeof AttemptHistoryResponseSchema
 >;
+
+// Growth Analytics Utilities
+export function computeGrowthActionableInsight(
+  windowAverages: GrowthWindowAverages
+): string | null {
+  if (
+    !windowAverages?.averageScore?.last ||
+    !windowAverages?.averageScore?.prev
+  ) {
+    return null;
+  }
+
+  const improvement =
+    windowAverages.averageScore.last - windowAverages.averageScore.prev;
+
+  if (improvement < -5) {
+    return `Average score has declined by ${Math.abs(improvement).toFixed(1)}% in the last ${windowAverages.averageScore.n} days. Consider additional training support.`;
+  }
+
+  if (improvement > 5) {
+    return `Average score has improved by ${improvement.toFixed(1)}% in the last ${windowAverages.averageScore.n} days. Great progress!`;
+  }
+
+  return null;
+}
