@@ -26,16 +26,23 @@ WITH base AS (
         ))
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
+-- Default rubric if the client forgot to send one
+rubric_choice AS (
+  SELECT COALESCE(
+    p_rubric_id,
+    (SELECT id FROM rubrics WHERE default_rubric LIMIT 1),
+    (SELECT id FROM rubrics WHERE active LIMIT 1)
+  ) AS rubric_id
+),
 -- Link latest grades in base to rubric and feedback rows per standard
+-- Optimized: only compute latest grades for chats in the filtered window
 latest_grade_per_chat AS (
-  SELECT scg.*
+  SELECT DISTINCT ON (scg.simulation_chat_id)
+         scg.id, scg.simulation_chat_id, scg.rubric_id, scg.created_at
   FROM simulation_chat_grades scg
-  JOIN (
-    SELECT simulation_chat_id, MAX(created_at) AS max_created
-    FROM simulation_chat_grades
-    GROUP BY simulation_chat_id
-  ) t ON t.simulation_chat_id = scg.simulation_chat_id AND t.max_created = scg.created_at
-  WHERE scg.rubric_id = p_rubric_id
+  JOIN base b ON b.chat_id = scg.simulation_chat_id
+  JOIN rubric_choice rc ON rc.rubric_id = scg.rubric_id
+  ORDER BY scg.simulation_chat_id, scg.created_at DESC
 ),
 fb AS (
   SELECT
@@ -71,7 +78,7 @@ per_profile_group AS (
 groups AS (
   SELECT sg.id, sg.name, sg.short_name, sg.rubric_id
   FROM standard_groups sg
-  WHERE sg.rubric_id = p_rubric_id
+  JOIN rubric_choice rc ON rc.rubric_id = sg.rubric_id
   ORDER BY sg.name
 ),
 -- Pairwise join on the same set of profiles to compute corr & n
@@ -83,38 +90,43 @@ pairs AS (
 corrs AS (
   SELECT
     p.g1, p.g2,
-    COUNT(*)::int                       AS n,
-    corr(a.pct, b.pct)                  AS r
+    -- count only rows where both pct are non-null (what corr uses)
+    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL)::int AS n,
+    corr(a.pct, b.pct) AS r
   FROM pairs p
   JOIN per_profile_group a ON a.standard_group_id = p.g1
   JOIN per_profile_group b ON b.standard_group_id = p.g2
-  AND a.profile_id = b.profile_id
+                          AND a.profile_id = b.profile_id
   GROUP BY p.g1, p.g2
 ),
 enriched AS (
   SELECT
     c.g1, c.g2, c.n,
-    COALESCE(c.r, 0.0) AS r,
-    analytics_p_value_from_r_n(c.r, c.n) AS p_value,
+    -- turn NaN into 0 (or NULL if you prefer)
+    CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
+    CASE
+      WHEN c.r = c.r AND c.n >= 3 THEN analytics_p_value_from_r_n(c.r, c.n)
+      ELSE NULL
+    END AS p_value,
     CASE
       WHEN c.n IS NULL OR c.n < 3 THEN 'No Data'
-      WHEN ABS(c.r) >= 0.7 THEN 'Strong'
-      WHEN ABS(c.r) >= 0.4 THEN 'Moderate'
-      WHEN ABS(c.r) >  0.0 THEN 'Weak'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN 'Strong'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN 'Moderate'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >  0.0 THEN 'Weak'
       ELSE 'No Data'
     END AS strength,
     CASE
       WHEN c.n IS NULL OR c.n < 3 THEN '#e5e7eb'
-      WHEN c.r >= 0.0 THEN
+      WHEN (CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.0 THEN
         CASE
-          WHEN ABS(c.r) >= 0.7 THEN '#10b981'
-          WHEN ABS(c.r) >= 0.4 THEN '#34d399'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#10b981'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#34d399'
           ELSE '#a7f3d0'
         END
       ELSE
         CASE
-          WHEN ABS(c.r) >= 0.7 THEN '#ef4444'
-          WHEN ABS(c.r) >= 0.4 THEN '#f87171'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#ef4444'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#f87171'
           ELSE '#fecaca'
         END
     END AS color
@@ -128,8 +140,8 @@ matrix_json AS (
       jsonb_agg(jsonb_build_object(
         'correlation', COALESCE(e.r, 0.0),
         'pValue',      e.p_value,
-        'color',       e.color,
-        'strength',    e.strength,
+        'color',       COALESCE(e.color, '#e5e7eb'),
+        'strength',    COALESCE(e.strength, 'No Data'),
         'dataPoints',  COALESCE(e.n, 0)
       ) ORDER BY g2.name) AS row_json
     FROM groups g1

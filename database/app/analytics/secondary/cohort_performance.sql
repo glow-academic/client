@@ -83,19 +83,17 @@ cohort_agg AS (
     (100.0 * AVG(passed_any))::float                             AS pass_rate_attempts,
     AVG(ca.avg_grade_attempt)::float                              AS avg_percentage_score,
     cl.simulation_ids,
-    -- derive a single rubric mode for points (optional)
-    (SELECT r.points
-       FROM analytics a
-       JOIN rubrics r ON r.id::uuid = a.rubric_id
-      WHERE a.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
-      GROUP BY r.id, r.points
+    -- derive a single rubric mode for points (using MV columns directly)
+    (SELECT a2.rubric_points
+       FROM analytics a2
+      WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
+      GROUP BY a2.rubric_id, a2.rubric_points
       ORDER BY COUNT(*) DESC
       LIMIT 1)                                                    AS rubric_points,
-    (SELECT r.pass_points
-       FROM analytics a
-       JOIN rubrics r ON r.id::uuid = a.rubric_id
-      WHERE a.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
-      GROUP BY r.id, r.pass_points
+    (SELECT a2.rubric_pass_points
+       FROM analytics a2
+      WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
+      GROUP BY a2.rubric_id, a2.rubric_pass_points
       ORDER BY COUNT(*) DESC
       LIMIT 1)                                                    AS rubric_pass_points
   FROM cohort_list cl
@@ -110,14 +108,14 @@ cohort_rows AS (
              'passRate',              ROUND(COALESCE(pass_rate_attempts,0))::int,
              'avgPercentageScore',    ROUND(COALESCE(avg_percentage_score,0))::int,
              'totalStudents',         GREATEST(total_students_declared, total_students_seen),
-             'passedStudents',        (SELECT COUNT(DISTINCT profile_id)
-                                       FROM filt_x
-                                       WHERE c_id = cohort_id
-                                       GROUP BY profile_id
-                                       HAVING MAX((passed)::int) = 1)  -- "at least one pass"
-                                       -- If you truly need "passed ALL quizzes", replace with logic that
-                                       -- checks pass on every simulation in the cohort.
-                                       ::int,
+             'passedStudents',        (SELECT COUNT(*)
+                                       FROM (
+                                         SELECT 1
+                                         FROM filt_x fx2
+                                         WHERE fx2.c_id = cohort_id
+                                         GROUP BY fx2.profile_id
+                                         HAVING MAX((fx2.passed)::int) = 1
+                                       ) s),  -- "at least one pass"
              'totalAttempts',         COALESCE(total_attempts,0),
              'passedAttempts',        COALESCE(passed_attempts,0),
              'rubricPoints',          COALESCE(rubric_points, 0),

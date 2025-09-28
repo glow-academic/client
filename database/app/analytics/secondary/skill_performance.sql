@@ -1,6 +1,4 @@
 -- Skill Performance Analytics Function
--- Parameters: start, end, cohortIds, roles, simulationFilters, profileId, rubricId (optional)
--- Returns: SkillPerformanceData JSON
 CREATE OR REPLACE FUNCTION analytics_skill_performance_fn(
   p_start           timestamptz,
   p_end             timestamptz,
@@ -8,7 +6,7 @@ CREATE OR REPLACE FUNCTION analytics_skill_performance_fn(
   p_roles           profile_role[],
   p_sim_filters     text[],
   p_profile_id      uuid,
-  p_rubric_id       uuid
+  p_rubric_id       uuid          -- nullable ok
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -27,19 +25,19 @@ WITH filt AS (
         ))
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
--- choose rubric: explicit param, otherwise default_rubric or first active
+-- choose rubric: explicit param, else default_rubric, else first active
 rubric_choice AS (
-  SELECT
-    COALESCE(p_rubric_id,
-             (SELECT id FROM rubrics WHERE default_rubric = true LIMIT 1),
-             (SELECT id FROM rubrics WHERE active = true LIMIT 1)
-    ) AS rubric_id
+  SELECT COALESCE(
+           p_rubric_id,
+           (SELECT id FROM rubrics WHERE default_rubric = true LIMIT 1),
+           (SELECT id FROM rubrics WHERE active = true LIMIT 1)
+         ) AS rubric_id
 ),
--- latest grade per chat with grade_id so we can join feedback rows
+-- latest grade per chat (keep grade_id for joining feedback)
 latest_grade AS (
   SELECT DISTINCT ON (scg.simulation_chat_id)
-         scg.id                         AS grade_id,
-         scg.simulation_chat_id         AS chat_id,
+         scg.id                  AS grade_id,
+         scg.simulation_chat_id  AS chat_id,
          scg.rubric_id,
          scg.created_at
   FROM simulation_chat_grades scg
@@ -48,57 +46,63 @@ latest_grade AS (
 -- feedback rows for chosen rubric + filtered chats
 fb AS (
   SELECT
-    scf.simulation_chat_feedback_id,
+    scf.id               AS feedback_id,  -- <- was simulation_chat_feedback_id
     scf.standard_id,
-    scf.total::float AS earned
+    f.simulation_id,                      -- <- include for per-simulation facts
+    scf.total::numeric  AS earned
   FROM latest_grade lg
-  JOIN filt f ON f.chat_id = lg.chat_id
-  JOIN (SELECT rubric_id FROM rubric_choice) rc ON rc.rubric_id = lg.rubric_id
-  JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.grade_id
+  JOIN filt f                   ON f.chat_id = lg.chat_id
+  JOIN rubric_choice rc         ON rc.rubric_id = lg.rubric_id
+  JOIN simulation_chat_feedbacks scf
+       ON scf.simulation_chat_grade_id = lg.grade_id
 ),
 -- standards + groups for the chosen rubric
 st AS (
-  SELECT s.id AS standard_id, s.points, sg.id AS group_id, sg.name AS group_name
+  SELECT
+    s.id              AS standard_id,
+    s.points::numeric AS points,
+    sg.id             AS group_id,
+    sg.name           AS group_name
   FROM standards s
   JOIN standard_groups sg ON sg.id = s.standard_group_id
-  JOIN rubric_choice rc ON rc.rubric_id = sg.rubric_id
+  JOIN rubric_choice rc   ON rc.rubric_id = sg.rubric_id
 ),
--- aggregate to standard-group
+-- aggregate across ALL filtered chats (by group)
 group_scores AS (
   SELECT
     st.group_id,
     st.group_name,
-    SUM(fb.earned)                      AS score,
-    SUM(st.points)::float               AS points
+    SUM(fb.earned)                 AS score,
+    SUM(st.points)                 AS points   -- inner join => points replicate per graded row
   FROM st
-  LEFT JOIN fb ON fb.standard_id = st.standard_id
+  JOIN fb ON fb.standard_id = st.standard_id
   GROUP BY st.group_id, st.group_name
 ),
--- Per-simulation group scores for facts
+-- per-simulation group facts
 group_scores_sim AS (
   SELECT
     st.group_id,
     st.group_name,
-    f.simulation_id,
-    SUM(fb.earned)        AS score,
-    SUM(st.points)::float AS points
+    fb.simulation_id,
+    SUM(fb.earned)                 AS score,
+    SUM(st.points)                 AS points
   FROM st
-  LEFT JOIN fb f  ON f.standard_id = st.standard_id
-  LEFT JOIN fb fb ON fb.standard_id = st.standard_id
-  GROUP BY st.group_id, st.group_name, f.simulation_id
+  JOIN fb ON fb.standard_id = st.standard_id
+  GROUP BY st.group_id, st.group_name, fb.simulation_id
 ),
 radar AS (
-  SELECT jsonb_agg(
-           jsonb_build_object(
-             'metric',   group_name,
-             'value',    CASE WHEN points > 0 THEN LEAST(1.0, GREATEST(0.0, score/points)) ELSE 0 END,
-             'fullMark', 1,
-             'score',    COALESCE(score,0),
-             'points',   COALESCE(points,0)
-           )
-           ORDER BY group_name
-         ) AS payload,
-         AVG(CASE WHEN points > 0 THEN score/points ELSE NULL END) AS avg_ratio
+  SELECT
+    jsonb_agg(
+      jsonb_build_object(
+        'metric',   group_name,
+        'value',    CASE WHEN points > 0 THEN LEAST(1.0, GREATEST(0.0, score/points)) ELSE 0 END,
+        'fullMark', 1,
+        'score',    COALESCE(score,0),
+        'points',   COALESCE(points,0)
+      )
+      ORDER BY group_name
+    ) AS payload,
+    AVG(NULLIF(score/NULLIF(points,0), NULL)) AS avg_ratio
   FROM group_scores
 ),
 available_rubrics AS (
@@ -131,11 +135,9 @@ status AS (
   SELECT
     CASE
       WHEN (SELECT payload FROM radar) IS NULL THEN 'neutral'
-      ELSE CASE
-        WHEN (SELECT avg_ratio FROM radar) >= 0.85 THEN 'success'
-        WHEN (SELECT avg_ratio FROM radar) >= 0.70 THEN 'warning'
-        ELSE 'danger'
-      END
+      WHEN COALESCE((SELECT avg_ratio FROM radar),0) >= 0.85 THEN 'success'
+      WHEN COALESCE((SELECT avg_ratio FROM radar),0) >= 0.70 THEN 'warning'
+      ELSE 'danger'
     END AS skill_status
 )
 SELECT jsonb_build_object(

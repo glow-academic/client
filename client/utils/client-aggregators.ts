@@ -410,15 +410,15 @@ export function buildSimulationComposition(
     const hiCut = pct(100 - config.topPercentage),
       loCut = pct(config.bottomPercentage);
     for (const s of simFacts) {
-      if (s.avgScore >= hiCut) hiSet.add(s.simulationId);
-      if (s.avgScore <= loCut) loSet.add(s.simulationId);
+      if (hiCut !== undefined && s.avgScore >= hiCut) hiSet.add(s.simulationId);
+      if (loCut !== undefined && s.avgScore <= loCut) loSet.add(s.simulationId);
     }
   } else if (config.method === "quartile") {
     const q1 = pct(25),
       q3 = pct(75);
     for (const s of simFacts) {
-      if (s.avgScore >= q3) hiSet.add(s.simulationId);
-      if (s.avgScore <= q1) loSet.add(s.simulationId);
+      if (q3 !== undefined && s.avgScore >= q3) hiSet.add(s.simulationId);
+      if (q1 !== undefined && s.avgScore <= q1) loSet.add(s.simulationId);
     }
   } else {
     const mean = simFacts.reduce((s, x) => s + x.avgScore, 0) / simFacts.length;
@@ -528,8 +528,7 @@ export function buildSimulationScenarioBars(
       };
     });
   // simple insight:
-  const top = rows[0],
-    bot = rows[rows.length - 1];
+  const top = rows[0];
   const avg = rows.length
     ? Math.round(rows.reduce((s, x) => s + x.avgScore, 0) / rows.length)
     : 0;

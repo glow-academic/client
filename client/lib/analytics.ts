@@ -155,7 +155,11 @@ export const PersonaPerformanceResponseSchema = z.object({
 
 // Extended Analytics Filters for Primary Functions
 export const RubricHeatmapFiltersSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z.string().uuid(),
+  rubricId: z
+    .string()
+    .regex(
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    ),
 });
 
 export const PersonaPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({

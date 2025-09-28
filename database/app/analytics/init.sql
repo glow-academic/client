@@ -104,6 +104,11 @@ SELECT
     ELSE (lg.score >= r.pass_points)
   END                           AS passed,
   lg.time_taken_seconds         AS time_taken_seconds,  -- from latest grade (seconds)
+  
+  -- Rubric information (from latest grade)
+  lg.rubric_id                  AS rubric_id,
+  r.points                      AS rubric_points,
+  r.pass_points                 AS rubric_pass_points,
 
   -- Completion (intuitive flag you requested)
   (sc.completed
@@ -220,3 +225,9 @@ END $$;
 \i app/analytics/secondary/attempt_improvement.sql
 \i app/analytics/secondary/cohort_performance.sql
 \i app/analytics/secondary/skill_performance.sql
+
+-- Footer Analytics Functions
+\i app/analytics/footer/scenario_performance.sql
+\i app/analytics/footer/simulation_composition.sql
+\i app/analytics/footer/simulation_performance.sql
+\i app/analytics/footer/scenario_stats.sql

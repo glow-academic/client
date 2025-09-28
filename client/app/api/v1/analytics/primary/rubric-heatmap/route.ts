@@ -5,7 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const RubricHeatmapRequestSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z.string().uuid(),
+  rubricId: z
+    .string()
+    .regex(
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+    ),
 });
 
 export async function POST(req: NextRequest) {

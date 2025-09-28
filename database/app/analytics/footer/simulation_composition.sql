@@ -97,8 +97,8 @@ SELECT jsonb_build_object(
       SELECT jsonb_agg(jsonb_build_object(
         'simulationId', s.id::text,
         'title',        s.title,
-        'avgScore',     ROUND(ss.avg_score)::int,
-        'completionRate', ROUND(ss.completion_rate)::int,
+        'avgScore',     COALESCE(ROUND(ss.avg_score), 0)::int,
+        'completionRate', COALESCE(ROUND(ss.completion_rate), 0)::int,
         'totalAttempts', COALESCE(ss.attempts,0),
         'scenarioCount', COALESCE(sc.scenario_count,0)
       ) ORDER BY s.title)

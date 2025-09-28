@@ -110,7 +110,7 @@ pie_rows AS (
                                 FROM attempt_daily ad
                                 WHERE ad.parameter_item_id = sc.parameter_item_id
                               ), '[]'::jsonb),
-             'insight',     NULL
+             'insight',     ''
            )
            ORDER BY cm.item_name
          ) AS payload
@@ -121,6 +121,20 @@ pie_rows AS (
     SELECT DISTINCT parameter_item_id, item_name, icon, color
     FROM cat_map
   ) cm ON cm.parameter_item_id = sc.parameter_item_id
+),
+-- NEW CTE that produces exactly one row for attributeScenarioFacts
+attribute_scenario_facts AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'parameterId',      parameter_id::text,
+             'parameterItemId',  parameter_item_id::text,
+             'scenarioId',       scenario_id::text
+           )
+         ) AS payload
+  FROM (
+    SELECT DISTINCT parameter_id, parameter_item_id, scenario_id
+    FROM cat_map
+  ) d
 ),
 status AS (
   SELECT
@@ -157,14 +171,6 @@ SELECT jsonb_build_object(
                                   ))
                                   FROM attempt_daily
                                 ), '[]'::jsonb),
-  'attributeScenarioFacts', COALESCE((
-                                  SELECT jsonb_agg(jsonb_build_object(
-                                    'parameterId', parameter_id::text,
-                                    'parameterItemId', parameter_item_id::text,
-                                    'scenarioId', scenario_id::text
-                                  ))
-                                  FROM cat_map
-                                  GROUP BY parameter_id, parameter_item_id, scenario_id
-                                ), '[]'::jsonb)
+  'attributeScenarioFacts', COALESCE((SELECT payload FROM attribute_scenario_facts), '[]'::jsonb)
 );
 $$;
