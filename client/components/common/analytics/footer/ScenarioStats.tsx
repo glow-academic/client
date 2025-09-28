@@ -54,7 +54,6 @@ type Parameter = {
 };
 
 export interface ScenarioStatsProps {
-  validNumericParameterIds: string[];
   numericAttemptFacts: NumericAttemptFact[];
   numericScenarioFacts: NumericScenarioFact[];
   allParameters: Parameter[]; // from client cache
@@ -69,7 +68,6 @@ export interface ScenarioStatsProps {
 }
 
 export default function ScenarioStats({
-  validNumericParameterIds,
   numericAttemptFacts,
   numericScenarioFacts,
   allParameters,
@@ -83,16 +81,13 @@ export default function ScenarioStats({
   const metricOptions = useMemo(
     () =>
       allParameters
-        .filter(
-          (p) =>
-            p.numerical && p.active && validNumericParameterIds.includes(p.id)
-        )
+        .filter((p) => p.numerical && p.active)
         .map((p) => ({
           id: p.id,
           name: p.name,
           description: `Performance by ${p.name.toLowerCase()} value`,
         })),
-    [allParameters, validNumericParameterIds]
+    [allParameters]
   );
 
   const activeParamId = useMemo(

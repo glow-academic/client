@@ -721,9 +721,10 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const scenarioPerformanceProcessed = (() => {
     if (!scenarioPerformanceData) {
       return {
-        validParameterIds: [],
         attributeAttemptFacts: [],
         attributeScenarioFacts: [],
+        availableParameters: [],
+        availableParameterItems: [],
         hasDataAvailable: false,
         actionableInsight: null,
       };
@@ -735,14 +736,26 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const attributeScenarioFacts =
       scenarioPerformanceData.attributeScenarioFacts || [];
 
+    // Filter parameters and parameter items by valid IDs
+    const validParameterIdsSet = new Set(validParameterIds);
+    const availableParameters = allParameters.filter((param) =>
+      validParameterIdsSet.has(param.id)
+    );
+
+    // Filter parameter items that belong to valid parameters
+    const availableParameterItems = allParameterItems.filter((item) =>
+      validParameterIdsSet.has(item.parameterId)
+    );
+
     const actionableInsight = computeScenarioPerformanceActionableInsight(
       attributeAttemptFacts
     );
 
     return {
-      validParameterIds,
       attributeAttemptFacts,
       attributeScenarioFacts,
+      availableParameters,
+      availableParameterItems,
       hasDataAvailable: attributeAttemptFacts.length > 0,
       actionableInsight,
     };
@@ -751,9 +764,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const scenarioStatsProcessed = (() => {
     if (!scenarioStatsData) {
       return {
-        validNumericParameterIds: [],
         numericAttemptFacts: [],
         numericScenarioFacts: [],
+        availableParameters: [],
         hasDataAvailable: false,
         actionableInsight: null,
       };
@@ -764,13 +777,19 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const numericAttemptFacts = scenarioStatsData.numericAttemptFacts || [];
     const numericScenarioFacts = scenarioStatsData.numericScenarioFacts || [];
 
+    // Filter parameters by valid numeric parameter IDs
+    const validNumericParameterIdsSet = new Set(validNumericParameterIds);
+    const availableParameters = allParameters.filter((param) =>
+      validNumericParameterIdsSet.has(param.id)
+    );
+
     const actionableInsight =
       computeScenarioStatsActionableInsight(numericAttemptFacts);
 
     return {
-      validNumericParameterIds,
       numericAttemptFacts,
       numericScenarioFacts,
+      availableParameters,
       hasDataAvailable: numericAttemptFacts.length > 0,
       actionableInsight,
     };
@@ -808,6 +827,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
         simulationParameterFactsCategorical: [],
         simulationParameterFactsNumeric: [],
         availableSimulations: [],
+        availableParameters: [],
+        availableParameterItems: [],
         hasDataAvailable: false,
         actionableInsight: null,
       };
@@ -827,6 +848,23 @@ export default function Dashboard({ profileId }: DashboardProps) {
       validSimulationIdsSet.has(sim.id)
     );
 
+    // Get all parameter IDs that appear in the facts
+    const parameterIds = new Set<string>();
+    simulationParameterFactsCategorical.forEach((fact) =>
+      parameterIds.add(fact.parameterId)
+    );
+    simulationParameterFactsNumeric.forEach((fact) =>
+      parameterIds.add(fact.parameterId)
+    );
+
+    // Filter parameters and parameter items by the IDs that appear in facts
+    const availableParameters = allParameters.filter((param) =>
+      parameterIds.has(param.id)
+    );
+    const availableParameterItems = allParameterItems.filter((item) =>
+      parameterIds.has(item.parameterId)
+    );
+
     const actionableInsight =
       computeSimulationCompositionActionableInsight(simulationFacts);
 
@@ -835,6 +873,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       simulationParameterFactsCategorical,
       simulationParameterFactsNumeric,
       availableSimulations,
+      availableParameters,
+      availableParameterItems,
       hasDataAvailable: simulationFacts.length > 0,
       actionableInsight,
     };
@@ -1027,13 +1067,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const leftFooterComponents = [
     <ScenarioPerformance
       key="scenario-performance"
-      validParameterIds={scenarioPerformanceProcessed.validParameterIds}
       attributeAttemptFacts={scenarioPerformanceProcessed.attributeAttemptFacts}
       attributeScenarioFacts={
         scenarioPerformanceProcessed.attributeScenarioFacts
       }
-      allParameters={allParameters}
-      allParameterItems={allParameterItems}
+      allParameters={scenarioPerformanceProcessed.availableParameters}
+      allParameterItems={scenarioPerformanceProcessed.availableParameterItems}
       isLoading={scenarioPerformanceLoading}
       isError={scenarioPerformanceError}
       actionableInsight={scenarioPerformanceProcessed.actionableInsight}
@@ -1041,10 +1080,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
     />,
     <ScenarioStats
       key="scenario-stats"
-      validNumericParameterIds={scenarioStatsProcessed.validNumericParameterIds}
       numericAttemptFacts={scenarioStatsProcessed.numericAttemptFacts}
       numericScenarioFacts={scenarioStatsProcessed.numericScenarioFacts}
-      allParameters={allParameters}
+      allParameters={scenarioStatsProcessed.availableParameters}
       isLoading={scenarioStatsLoading}
       isError={scenarioStatsError}
       actionableInsight={scenarioStatsProcessed.actionableInsight}
@@ -1073,8 +1111,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
         simulationCompositionProcessed.simulationParameterFactsNumeric
       }
       allSimulations={simulationCompositionProcessed.availableSimulations}
-      allParameters={allParameters}
-      allParameterItems={allParameterItems}
+      allParameters={simulationCompositionProcessed.availableParameters}
+      allParameterItems={simulationCompositionProcessed.availableParameterItems}
       isLoading={simulationCompositionLoading}
       isError={simulationCompositionError}
       actionableInsight={simulationCompositionProcessed.actionableInsight}

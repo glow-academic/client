@@ -35,29 +35,9 @@ import type {
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
 } from "@/lib/analytics";
+import { Parameter, ParameterItem, Simulation } from "@/types";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-
-type Parameter = {
-  id: string;
-  name: string;
-  numerical: boolean;
-  active: boolean;
-};
-
-type ParameterItem = {
-  id: string;
-  parameterId: string;
-  name: string;
-  description?: string | null;
-  value?: string | null;
-};
-
-type Simulation = {
-  id: string;
-  title: string;
-  timeLimit?: number | null;
-};
 
 type SimulationCompositionConfig = {
   method: "percentile" | "quartile" | "standard_deviation";
@@ -75,20 +55,6 @@ type HighLowPerforming = {
   significance: "high" | "medium" | "low" | "none";
 };
 
-type __SimulationDetail = {
-  id: string;
-  title: string;
-  avgScore: number;
-  completionRate: number;
-  totalAttempts: number;
-  scenarioCount: number;
-  parameterBreakdown: {
-    parameterName: string;
-    parameterValue: string;
-    isNumerical: boolean;
-  }[];
-};
-
 export interface SimulationCompositionProps {
   simulationFacts: SimulationFact[];
   simulationParameterFactsCategorical: SimulationParameterFactCategorical[];
@@ -102,7 +68,7 @@ export interface SimulationCompositionProps {
   thresholds: {
     danger: number;
     warning: number;
-    success: number;
+    success: number; 
   };
 }
 

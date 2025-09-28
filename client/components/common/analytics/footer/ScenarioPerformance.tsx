@@ -85,7 +85,6 @@ type AttributeElement = {
 };
 
 export interface ScenarioPerformanceProps {
-  validParameterIds: string[];
   attributeAttemptFacts: ScenarioAttributeAttemptFact[];
   attributeScenarioFacts: ScenarioAttributeScenarioFact[];
   allParameters: Parameter[]; // from client cache
@@ -101,7 +100,6 @@ export interface ScenarioPerformanceProps {
 }
 
 export default function ScenarioPerformance({
-  validParameterIds,
   attributeAttemptFacts,
   attributeScenarioFacts,
   allParameters,
@@ -115,15 +113,13 @@ export default function ScenarioPerformance({
 
   const parameterOptions = useMemo(() => {
     return allParameters
-      .filter(
-        (p) => !p.numerical && p.active && validParameterIds.includes(p.id)
-      )
+      .filter((p) => !p.numerical && p.active)
       .map((p) => ({
         id: p.id,
         name: p.name,
         description: `Performance by ${p.name.toLowerCase()} value`,
       }));
-  }, [allParameters, validParameterIds]);
+  }, [allParameters]);
 
   // pick default
   const activeParameterId = useMemo(() => {
