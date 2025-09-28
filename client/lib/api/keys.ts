@@ -244,6 +244,25 @@ export const analyticsPersonaPerformanceKeys = {
   list: (filters?: unknown) =>
     [...analyticsPersonaPerformanceKeys.all, { filters }] as const,
 };
+
+// Secondary Analytics Keys
+export const analyticsAttemptImprovementKeys = {
+  all: ["analytics:secondary:attempt-improvement"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsAttemptImprovementKeys.all, { filters }] as const,
+};
+
+export const analyticsCohortPerformanceKeys = {
+  all: ["analytics:secondary:cohort-performance"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsCohortPerformanceKeys.all, { filters }] as const,
+};
+
+export const analyticsSkillPerformanceKeys = {
+  all: ["analytics:secondary:skill-performance"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsSkillPerformanceKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

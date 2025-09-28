@@ -4,6 +4,11 @@ import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
   AnalyticsFilters,
+  AttemptImprovementFilters,
+  AttemptImprovementResponse,
+  AttemptImprovementResponseSchema,
+  CohortPerformanceResponse,
+  CohortPerformanceResponseSchema,
   GrowthDataResponse,
   GrowthDataResponseSchema,
   MetricResponse,
@@ -14,6 +19,9 @@ import {
   RubricHeatmapFilters,
   RubricHeatmapResponse,
   RubricHeatmapResponseSchema,
+  SkillPerformanceFilters,
+  SkillPerformanceResponse,
+  SkillPerformanceResponseSchema,
 } from "../analytics";
 
 // Types from Drizzle materialized view
@@ -225,5 +233,47 @@ export const analyticsRepo = {
       [simulationIdsParam]
     );
     return PersonaPerformanceResponseSchema.parse(result);
+  },
+
+  // Secondary Analytics (3 complex metrics)
+  async getAttemptImprovement(
+    filters: AttemptImprovementFilters
+  ): Promise<AttemptImprovementResponse> {
+    const simulationIdsParam =
+      filters.simulationIds && filters.simulationIds.length > 0
+        ? toUuidArray(filters.simulationIds) || sql`NULL`
+        : sql`NULL`;
+
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_attempt_improvement_fn",
+      filters,
+      [simulationIdsParam]
+    );
+    return AttemptImprovementResponseSchema.parse(result);
+  },
+
+  async getCohortPerformance(
+    filters: AnalyticsFilters
+  ): Promise<CohortPerformanceResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_cohort_performance_fn",
+      filters
+    );
+    return CohortPerformanceResponseSchema.parse(result);
+  },
+
+  async getSkillPerformance(
+    filters: SkillPerformanceFilters
+  ): Promise<SkillPerformanceResponse> {
+    const rubricIdParam = filters.rubricId
+      ? sql`${filters.rubricId}::uuid`
+      : sql`NULL`;
+
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_skill_performance_fn",
+      filters,
+      [rubricIdParam]
+    );
+    return SkillPerformanceResponseSchema.parse(result);
   },
 };

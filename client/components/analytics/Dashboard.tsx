@@ -230,7 +230,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
     />,
     <AttemptImprovement
       key="attempt-improvement"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+        profileId,
+      }}
       thresholds={thresholds}
     />,
     <SkillPerformance

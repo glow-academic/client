@@ -215,3 +215,8 @@ END $$;
 \i app/analytics/primary/rubric_heatmap.sql
 \i app/analytics/primary/growth_data.sql
 \i app/analytics/primary/persona_performance.sql
+
+-- Secondary Analytics Functions
+\i app/analytics/secondary/attempt_improvement.sql
+\i app/analytics/secondary/cohort_performance.sql
+\i app/analytics/secondary/skill_performance.sql

@@ -1,8 +1,6 @@
 /**
  * AttemptImprovement.tsx
- * This component displays the attempt improvement for the personas.
- * @AshokSaravanan222 & @siladiea
- * 07/23/2025
+ * Server-typed version using useAnalyticsAttemptImprovement + Zod schemas
  */
 "use client";
 
@@ -18,10 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { getSimulationsWithValidAttemptData } from "@/utils/analytics/filtering";
-import { calculateAttemptImprovement } from "@/utils/analytics/primary";
-
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -36,8 +30,18 @@ import {
   YAxis,
 } from "recharts";
 
+// ✅ typed analytics
+import {
+  type AnalyticsFilters,
+  type AttemptImprovementData,
+  type AttemptImprovementResponse,
+} from "@/lib/analytics";
+import { useAnalyticsAttemptImprovement } from "@/lib/api/hooks/analytics";
+import { useSimulations } from "@/lib/api/hooks/simulations";
+import { buildAttemptImprovementChart } from "@/utils/client-aggregators";
+
 export interface AttemptImprovementProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -46,74 +50,93 @@ export interface AttemptImprovementProps {
 }
 
 export default function AttemptImprovement({
-  filteredData,
+  filters,
   thresholds,
 }: AttemptImprovementProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
     []
   );
 
-  const rubrics = filteredData?.rubrics;
+  // Build base filters without simulationIds for the API call
+  const baseFilters: AnalyticsFilters = useMemo(() => {
+    return { ...filters };
+  }, [filters]);
 
-  // Calculate attempt improvement data
-  const improvementData = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return [];
-    }
+  // Call the server hook (Zod-validated) - no simulationIds in the query
+  const { data, isLoading, isError, error } = useAnalyticsAttemptImprovement(
+    baseFilters,
+    true // enable
+  );
 
-    return calculateAttemptImprovement(
-      filteredData,
-      rubrics,
-      selectedSimulations.map((s) => s.id)
+  // Get all simulations for the picker
+  const { data: simulations } = useSimulations();
+
+  // Use client-side aggregation with facts
+  const improvementData: AttemptImprovementData[] = useMemo(() => {
+    if (!data?.facts) return data?.chartData ?? [];
+
+    const selectedSimulationIds =
+      selectedSimulations.length > 0
+        ? selectedSimulations.map((s) => s.id)
+        : undefined;
+
+    return buildAttemptImprovementChart(data.facts, selectedSimulationIds);
+  }, [data?.facts, data?.chartData, selectedSimulations]);
+
+  // Filter simulations to only include those with attempt data from the server
+  const pickerSimulations: Simulation[] = useMemo(() => {
+    if (!simulations || !data) return [];
+
+    // Get the IDs of simulations that have attempt data
+    const availableSimulationIds = new Set(
+      (data as AttemptImprovementResponse).availableSimulations?.map(
+        (s) => s.id
+      ) ?? []
     );
-  }, [filteredData, rubrics, selectedSimulations]);
 
-  // Get actionable insights
+    // Filter the full simulations list to only include those with data
+    return simulations
+      .filter((s) => availableSimulationIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        timeLimit: s.timeLimit ?? 0,
+        active: s.active,
+        description: s.description,
+        defaultSimulation: s.defaultSimulation,
+        practiceSimulation: s.practiceSimulation,
+        scenarioIds: s.scenarioIds,
+        updatedAt: s.updatedAt,
+      }));
+  }, [simulations, data]);
+
+  // Insights (unchanged)
   const getActionableInsights = () => {
     if (improvementData.length < 2) return null;
-
-    // Get first and last attempts to check improvement
-    const firstAttempt = improvementData[0];
-    const lastAttempt = improvementData[improvementData.length - 1];
-
-    if (!firstAttempt || !lastAttempt) return null;
-
-    const firstScore = firstAttempt["Average Score"];
-    const lastScore = lastAttempt["Average Score"];
-
-    if (typeof firstScore !== "number" || typeof lastScore !== "number")
-      return null;
-
-    const scoreImprovement = lastScore - firstScore;
-
-    if (scoreImprovement > 5) {
-      return `Users improve by ${scoreImprovement}% on average between attempts. Consider advancing to more challenging scenarios.`;
-    } else if (scoreImprovement < -5) {
-      return `Performance declined by ${Math.abs(scoreImprovement)}% between attempts. Review training approach.`;
+    const first = improvementData[0];
+    const last = improvementData[improvementData.length - 1];
+    const a = first?.["Average Score"];
+    const b = last?.["Average Score"];
+    if (typeof a !== "number" || typeof b !== "number") return null;
+    const delta = b - a;
+    if (delta > 5) {
+      return `Users improve by ${delta}% on average between attempts. Consider advancing to more challenging scenarios.`;
+    } else if (delta < -5) {
+      return `Performance declined by ${Math.abs(delta)}% between attempts. Review training approach.`;
     }
-
     return null;
   };
 
-  // Calculate threshold status based on improvement data
   const getThresholdStatus = () => {
-    if (improvementData.length < 2) return "neutral";
-
-    const firstAttempt = improvementData[0];
-    const lastAttempt = improvementData[improvementData.length - 1];
-
-    if (!firstAttempt || !lastAttempt) return "neutral";
-
-    const firstScore = firstAttempt["Average Score"];
-    const lastScore = lastAttempt["Average Score"];
-
-    if (typeof firstScore !== "number" || typeof lastScore !== "number")
-      return "neutral";
-
-    const scoreImprovement = lastScore - firstScore;
-
-    if (scoreImprovement >= thresholds.success) return "success";
-    if (scoreImprovement >= thresholds.warning) return "warning";
+    if (improvementData.length < 2) return "neutral" as const;
+    const first = improvementData[0];
+    const last = improvementData[improvementData.length - 1];
+    const a = first?.["Average Score"];
+    const b = last?.["Average Score"];
+    if (typeof a !== "number" || typeof b !== "number") return "neutral";
+    const delta = b - a;
+    if (delta >= thresholds.success) return "success";
+    if (delta >= thresholds.warning) return "warning";
     return "danger";
   };
 
@@ -144,16 +167,7 @@ export default function AttemptImprovement({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              filteredData && rubrics
-                ? getSimulationsWithValidAttemptData(filteredData, rubrics).map(
-                    (s) => ({
-                      ...s,
-                      timeLimit: s.timeLimit ?? 0,
-                    })
-                  )
-                : []
-            }
+            simulations={pickerSimulations}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}
@@ -165,80 +179,100 @@ export default function AttemptImprovement({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
-        <div className="space-y-3 h-full flex flex-col">
-          {/* Composed Chart with Secondary Y-Axis for Time */}
-          <div className="flex-1 w-full min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={improvementData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="attempt" className="text-xs" />
-                <YAxis
-                  className="text-xs"
-                  dx={0}
-                  label={{
-                    value: "Score & Pass Rate (%)",
-                    angle: -90,
-                    dx: -10,
-                  }}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  className="text-xs"
-                  dx={0}
-                  label={{
-                    value: "Time (minutes)",
-                    angle: 90,
-                    dx: 10,
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "black",
-                    border: "1px solid black",
-                    color: "white",
-                    borderRadius: "6px",
-                  }}
-                  formatter={(value: number, name: string) => [
-                    name === "Average Time" ? `${value} min` : `${value}%`,
-                    name,
-                  ]}
-                />
-                <Legend />
-                <Bar
-                  dataKey="Average Score"
-                  fill="hsl(120, 70%, 50%)"
-                  name="Average Score"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="Pass Rate"
-                  fill="hsl(280, 70%, 50%)"
-                  name="Pass Rate"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Average Time"
-                  stroke="hsl(200, 70%, 50%)"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(200, 70%, 50%)", strokeWidth: 2, r: 4 }}
-                  yAxisId="right"
-                  name="Average Time"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+        {isLoading && (
+          <div className="h-full grid place-items-center text-sm text-muted-foreground">
+            Loading attempt improvement…
           </div>
+        )}
+        {isError && (
+          <div className="h-full grid place-items-center text-sm text-red-500">
+            Failed to load. {error instanceof Error ? error.message : "Error"}
+          </div>
+        )}
+        {!isLoading && !isError && improvementData.length === 0 && (
+          <div className="h-full grid place-items-center text-sm text-muted-foreground">
+            No attempt data for the selected filters.
+          </div>
+        )}
 
-          {/* Actionable Insights */}
-          {getActionableInsights() && (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                {getActionableInsights()}
-              </p>
+        {!isLoading && !isError && improvementData.length > 0 && (
+          <div className="space-y-3 h-full flex flex-col">
+            <div className="flex-1 w-full min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={improvementData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis dataKey="attempt" className="text-xs" />
+                  <YAxis
+                    className="text-xs"
+                    dx={0}
+                    label={{
+                      value: "Score & Pass Rate (%)",
+                      angle: -90,
+                      dx: -10,
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    className="text-xs"
+                    dx={0}
+                    label={{
+                      value: "Time (minutes)",
+                      angle: 90,
+                      dx: 10,
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "black",
+                      border: "1px solid black",
+                      color: "white",
+                      borderRadius: "6px",
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === "Average Time" ? `${value} min` : `${value}%`,
+                      name,
+                    ]}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="Average Score"
+                    fill="hsl(120, 70%, 50%)"
+                    name="Average Score"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="Pass Rate"
+                    fill="hsl(280, 70%, 50%)"
+                    name="Pass Rate"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Average Time"
+                    stroke="hsl(200, 70%, 50%)"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(200, 70%, 50%)", strokeWidth: 2, r: 4 }}
+                    yAxisId="right"
+                    name="Average Time"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
             </div>
-          )}
-        </div>
+
+            {(() => {
+              const insight = getActionableInsights();
+              return insight ? (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">{insight}</p>
+                </div>
+              ) : null;
+            })()}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

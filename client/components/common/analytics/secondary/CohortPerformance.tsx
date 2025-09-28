@@ -26,9 +26,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { getSimulationsWithValidData } from "@/utils/analytics/filtering";
-import { calculateCohortPerformance } from "@/utils/analytics/secondary";
+import { type AnalyticsFilters } from "@/lib/analytics";
+import { useAnalyticsCohortPerformance } from "@/lib/api/hooks/analytics";
+import { buildCohortRows, buildDailySeries } from "@/utils/client-aggregators";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -42,7 +42,7 @@ import {
 } from "recharts";
 
 export interface CohortPerformanceProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   profileId: string | undefined;
   thresholds: {
     danger: number;
@@ -52,7 +52,7 @@ export interface CohortPerformanceProps {
 }
 
 export default function CohortPerformance({
-  filteredData,
+  filters,
   profileId,
   thresholds,
 }: CohortPerformanceProps) {
@@ -60,25 +60,40 @@ export default function CohortPerformance({
     []
   );
 
-  const rubrics = filteredData?.rubrics;
-
   const isSingleProfileMode = profileId !== undefined;
 
-  // Use the utility function to calculate cohort performance
+  // Call the server hook
+  const { data } = useAnalyticsCohortPerformance(
+    filters,
+    true // enable
+  );
+
+  // Use client-side aggregation with facts
   const cohortPerformanceResult = useMemo(() => {
-    if (!filteredData || !rubrics) {
-      return null;
-    }
+    if (!data) return null;
 
-    const result = calculateCohortPerformance(
-      filteredData,
-      rubrics,
-      thresholds,
-      selectedSimulations.map((s) => s.id)
-    );
+    const selectedSimulationIds =
+      selectedSimulations.length > 0
+        ? selectedSimulations.map((s) => s.id)
+        : undefined;
 
-    return result;
-  }, [filteredData, rubrics, thresholds, selectedSimulations]);
+    const cohortData = data.cohortFacts
+      ? buildCohortRows(data.cohortFacts, selectedSimulationIds)
+      : data.cohortData;
+
+    const dailyData =
+      data.dailyFacts && selectedSimulationIds
+        ? buildDailySeries(data.dailyFacts, selectedSimulationIds)
+        : data.dailyData;
+
+    return {
+      cohortData,
+      dailyData,
+      insights: data.insights,
+      performanceStatus: data.performanceStatus,
+      hasData: data.hasData,
+    };
+  }, [data, selectedSimulations]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
@@ -125,14 +140,17 @@ export default function CohortPerformance({
           </div>
           <SimulationPicker
             simulations={
-              filteredData && rubrics
-                ? getSimulationsWithValidData(filteredData, rubrics).map(
-                    (s) => ({
-                      ...s,
-                      timeLimit: s.timeLimit || undefined,
-                    })
-                  )
-                : []
+              data?.availableSimulations?.map((s) => ({
+                id: s.id,
+                title: s.name,
+                timeLimit: s.timeLimit ?? undefined,
+                active: true,
+                description: "",
+                defaultSimulation: false,
+                practiceSimulation: false,
+                scenarioIds: [],
+                updatedAt: new Date().toISOString(),
+              })) ?? []
             }
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}

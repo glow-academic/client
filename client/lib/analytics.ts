@@ -248,3 +248,141 @@ export function computeCurrent(
       return 0;
   }
 }
+
+// Secondary Analytics Types
+
+// Attempt Improvement Types
+export const AttemptImprovementDataSchema = z.object({
+  attempt: z.string(),
+  "Average Score": z.number(),
+  "Average Time": z.number(),
+  "Pass Rate": z.number(),
+});
+
+export const AttemptImprovementFactSchema = z.object({
+  simulationId: z.string(),
+  attemptNo: z.number(),
+  avgGrade: z.number(),
+  avgMinutes: z.number(),
+  passRate: z.number(),
+});
+
+export const AttemptImprovementResponseSchema = z.object({
+  chartData: z.array(AttemptImprovementDataSchema),
+  availableSimulations: z.array(SimulationSchema),
+  improvementStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  actionableInsight: z.string().nullable(),
+  facts: z.array(AttemptImprovementFactSchema),
+});
+
+// Cohort Performance Types
+export const CohortDataSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  passRate: z.number(),
+  avgPercentageScore: z.number(),
+  totalStudents: z.number(),
+  passedStudents: z.number(),
+  totalAttempts: z.number(),
+  passedAttempts: z.number(),
+  rubricPoints: z.number(),
+  rubricPassPoints: z.number(),
+  availableSimulations: z.number(),
+  color: z.string(),
+});
+
+export const DailyDataSchema = z.object({
+  date: z.string(),
+  avgScore: z.number(),
+});
+
+export const CohortFactSchema = z.object({
+  cohortId: z.string(),
+  simulationId: z.string(),
+  passRate: z.number(),
+  avgScore: z.number(),
+  attempts: z.number(),
+});
+
+export const CohortDailyFactSchema = z.object({
+  date: z.string(),
+  simulationId: z.string(),
+  avgScore: z.number(),
+});
+
+export const CohortPerformanceResponseSchema = z.object({
+  cohortData: z.array(CohortDataSchema),
+  dailyData: z.array(DailyDataSchema),
+  availableSimulations: z.array(SimulationSchema),
+  insights: z.string().nullable(),
+  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  hasData: z.boolean(),
+  cohortFacts: z.array(CohortFactSchema),
+  dailyFacts: z.array(CohortDailyFactSchema).optional(),
+});
+
+// Skill Performance Types
+export const SkillRadarDataSchema = z.object({
+  metric: z.string(),
+  value: z.number(),
+  fullMark: z.number(),
+  score: z.number(),
+  points: z.number(),
+});
+
+export const SkillGroupFactSchema = z.object({
+  groupId: z.string(),
+  groupName: z.string(),
+  simulationId: z.string(),
+  score: z.number(),
+  points: z.number(),
+});
+
+export const SkillPerformanceResponseSchema = z.object({
+  radarData: z.array(SkillRadarDataSchema),
+  availableRubrics: z.array(RubricSchema),
+  skillStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  hasData: z.boolean(),
+  groupFacts: z.array(SkillGroupFactSchema),
+});
+
+// Extended Analytics Filters for Secondary Functions
+export const AttemptImprovementFiltersSchema = AnalyticsFiltersSchema.extend({
+  simulationIds: z.array(z.string().uuid()).optional(),
+});
+
+export const SkillPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
+  rubricId: z.string().uuid().optional(),
+});
+
+// Type exports
+export type AttemptImprovementData = z.infer<
+  typeof AttemptImprovementDataSchema
+>;
+export type AttemptImprovementFact = z.infer<
+  typeof AttemptImprovementFactSchema
+>;
+export type AttemptImprovementResponse = z.infer<
+  typeof AttemptImprovementResponseSchema
+>;
+
+export type CohortData = z.infer<typeof CohortDataSchema>;
+export type DailyData = z.infer<typeof DailyDataSchema>;
+export type CohortFact = z.infer<typeof CohortFactSchema>;
+export type CohortDailyFact = z.infer<typeof CohortDailyFactSchema>;
+export type CohortPerformanceResponse = z.infer<
+  typeof CohortPerformanceResponseSchema
+>;
+
+export type SkillRadarData = z.infer<typeof SkillRadarDataSchema>;
+export type SkillGroupFact = z.infer<typeof SkillGroupFactSchema>;
+export type SkillPerformanceResponse = z.infer<
+  typeof SkillPerformanceResponseSchema
+>;
+
+export type AttemptImprovementFilters = z.infer<
+  typeof AttemptImprovementFiltersSchema
+>;
+export type SkillPerformanceFilters = z.infer<
+  typeof SkillPerformanceFiltersSchema
+>;

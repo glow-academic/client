@@ -1,15 +1,22 @@
 import {
   AnalyticsFilters,
+  AttemptImprovementFilters,
+  AttemptImprovementResponseSchema,
+  CohortPerformanceResponseSchema,
   GrowthDataResponseSchema,
   MetricResponseSchema,
   PersonaPerformanceFilters,
   PersonaPerformanceResponseSchema,
   RubricHeatmapFilters,
   RubricHeatmapResponseSchema,
+  SkillPerformanceFilters,
+  SkillPerformanceResponseSchema,
 } from "@/lib/analytics";
 import { api } from "@/lib/api/fetcher";
 import {
+  analyticsAttemptImprovementKeys,
   analyticsAverageScoreKeys,
+  analyticsCohortPerformanceKeys,
   analyticsCompletionPercentageKeys,
   analyticsFirstAttemptPassRateKeys,
   analyticsGrowthDataKeys,
@@ -22,6 +29,7 @@ import {
   analyticsQuickestPassKeys,
   analyticsRubricHeatmapKeys,
   analyticsSessionEfficiencyKeys,
+  analyticsSkillPerformanceKeys,
   analyticsStagnationRateKeys,
   analyticsTimeSpentKeys,
   analyticsTotalAttemptsKeys,
@@ -338,6 +346,68 @@ export function useAnalyticsPersonaPerformance(
         }
       );
       return PersonaPerformanceResponseSchema.parse(res);
+    },
+  });
+}
+
+// Secondary Analytics Hooks (3 complex metrics)
+
+export function useAnalyticsAttemptImprovement(
+  filters: AttemptImprovementFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsAttemptImprovementKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/secondary/attempt-improvement",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return AttemptImprovementResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsCohortPerformance(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsCohortPerformanceKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/secondary/cohort-performance",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return CohortPerformanceResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsSkillPerformance(
+  filters: SkillPerformanceFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsSkillPerformanceKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/secondary/skill-performance",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return SkillPerformanceResponseSchema.parse(res);
     },
   });
 }
