@@ -1,7 +1,6 @@
 import {
   AnalyticsFilters,
   AttemptHistoryResponseSchema,
-  AttemptImprovementFilters,
   AttemptImprovementResponseSchema,
   CohortPerformanceResponseSchema,
   GrowthDataResponseSchema,
@@ -14,7 +13,6 @@ import {
   ScenarioStatsDataSchema,
   SimulationCompositionDataSchema,
   SimulationPerformanceDataSchema,
-  SkillPerformanceFilters,
   SkillPerformanceResponseSchema,
 } from "@/lib/analytics";
 import { api } from "@/lib/api/fetcher";
@@ -365,7 +363,7 @@ export function useAnalyticsPersonaPerformance(
 // Secondary Analytics Hooks (3 complex metrics)
 
 export function useAnalyticsAttemptImprovement(
-  filters: AttemptImprovementFilters,
+  filters: AnalyticsFilters,
   enabled = true
 ) {
   return useQuery({
@@ -405,7 +403,7 @@ export function useAnalyticsCohortPerformance(
 }
 
 export function useAnalyticsSkillPerformance(
-  filters: SkillPerformanceFilters,
+  filters: AnalyticsFilters,
   enabled = true
 ) {
   return useQuery({

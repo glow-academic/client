@@ -1,9 +1,3 @@
-/**
- * SkillPerformance.tsx
- * This component displays the skill performance for the personas.
- * @AshokSaravanan222 & @siladiea
- * 07/23/2025
- */
 "use client";
 
 import {
@@ -17,13 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  type AnalyticsFilters,
-  type SkillPerformanceResponse,
-} from "@/lib/analytics";
-import { useAnalyticsSkillPerformance } from "@/lib/api/hooks/analytics";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   PolarAngleAxis,
@@ -35,8 +23,33 @@ import {
   Tooltip,
 } from "recharts";
 
+type RadarDatum = {
+  metric: string;
+  value: number;
+  fullMark: number;
+  score: number;
+  points: number;
+};
+type GroupFact = {
+  groupId: string;
+  groupName: string;
+  simulationId: string;
+  score: number;
+  points: number;
+};
+type Package = {
+  rubricId: string;
+  radarData: RadarDatum[];
+  groupFacts: GroupFact[];
+};
+
 export interface SkillPerformanceProps {
-  filters: AnalyticsFilters;
+  packages: Package[];
+  /** All rubrics from client cache/store */
+  allRubrics: Rubric[];
+  isLoading: boolean;
+  isError: boolean;
+  actionableInsight?: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -45,55 +58,37 @@ export interface SkillPerformanceProps {
 }
 
 export default function SkillPerformance({
-  filters,
+  packages,
+  allRubrics,
+  isLoading,
+  isError,
+  actionableInsight,
   thresholds,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
-  // Get all rubrics from the database
-  const { data: allRubrics = [], isLoading: isLoadingRubrics } = useRubrics();
+  const pickerRubrics = useMemo(() => allRubrics, [allRubrics]);
 
-  // Call the server hook
-  const { data, isLoading } = useAnalyticsSkillPerformance(
-    { ...filters, rubricId: selectedRubrics[0]?.id },
-    true // enable
-  ) as { data: SkillPerformanceResponse | undefined; isLoading: boolean };
+  // Default to first valid rubric if none selected
+  const activeRubricId = useMemo(() => {
+    if (selectedRubrics.length > 0) return selectedRubrics[0]!.id;
+    return pickerRubrics[0]?.id;
+  }, [selectedRubrics, pickerRubrics]);
 
-  // Filter available rubrics based on what the server returned
-  const availableRubrics = useMemo(() => {
-    if (!data?.availableRubrics || !allRubrics.length) return [];
-
-    // Create a set of available rubric IDs from the server response
-    const availableRubricIds = new Set(data.availableRubrics.map((r) => r.id));
-
-    // Filter all rubrics to only include those that are available according to the server
-    return allRubrics.filter((rubric) => availableRubricIds.has(rubric.id));
-  }, [data?.availableRubrics, allRubrics]);
-
-  // Use client-side aggregation with facts
-  const skillPerformanceResult = useMemo(() => {
-    if (!data) return null;
-
-    // For now, we'll use the server data directly since we don't have simulation filtering for skills
-    // In the future, we could add simulation filtering to skill performance
-    return {
-      radarData: data.radarData,
-      skillStatus: data.skillStatus,
-      hasData: data.hasData,
-    };
-  }, [data]);
+  const activePackage = useMemo(
+    () => packages.find((p) => p.rubricId === activeRubricId),
+    [packages, activeRubricId]
+  );
 
   // Calculate threshold status based on skill performance data
   const getThresholdStatus = () => {
-    if (!skillPerformanceResult || !skillPerformanceResult.hasData)
+    if (!activePackage?.radarData || activePackage.radarData.length === 0)
       return "neutral";
 
     // Calculate average skill performance across all skills
     const avgSkillPerformance =
-      skillPerformanceResult.radarData.reduce(
-        (sum, skill) => sum + skill.value,
-        0
-      ) / skillPerformanceResult.radarData.length;
+      activePackage.radarData.reduce((sum, skill) => sum + skill.value, 0) /
+      activePackage.radarData.length;
 
     if (avgSkillPerformance >= thresholds.success) return "success";
     if (avgSkillPerformance >= thresholds.warning) return "warning";
@@ -102,48 +97,28 @@ export default function SkillPerformance({
 
   const thresholdStatus = getThresholdStatus();
 
-  // Show loading state
-  if (isLoading || isLoadingRubrics) {
+  if (isLoading) {
     return (
-      <Card className="w-full h-full flex flex-col relative">
-        <div
-          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            thresholdStatus === "success"
-              ? "bg-green-500"
-              : thresholdStatus === "warning"
-                ? "bg-yellow-500"
-                : thresholdStatus === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-          }`}
-        />
+      <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Skill Performance
-              </CardTitle>
-              <CardDescription>
-                Performance across key teaching competencies
-              </CardDescription>
-            </div>
-            {availableRubrics.length > 0 && (
-              <RubricPicker
-                rubrics={availableRubrics}
-                placeholder="Filter by rubric..."
-                onSelect={setSelectedRubrics}
-                selectedRubrics={selectedRubrics}
-                buttonClassName="w-48"
-              />
-            )}
-          </div>
+          <CardTitle>Skill Performance</CardTitle>
+          <CardDescription>Loading skill data...</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading skill data...
-          </div>
+        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
+          Loading...
+        </CardContent>
+      </Card>
+    );
+  }
+  if (isError) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Skill Performance</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center text-destructive">
+          Failed to load skill data
         </CardContent>
       </Card>
     );
@@ -173,12 +148,16 @@ export default function SkillPerformance({
               Performance across key teaching competencies
             </CardDescription>
           </div>
-          {availableRubrics.length > 0 && (
+          {pickerRubrics.length > 0 && (
             <RubricPicker
-              rubrics={availableRubrics}
+              rubrics={pickerRubrics}
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
-              selectedRubrics={selectedRubrics}
+              selectedRubrics={
+                selectedRubrics.length
+                  ? selectedRubrics
+                  : pickerRubrics.slice(0, 1)
+              }
               buttonClassName="w-48"
             />
           )}
@@ -188,50 +167,36 @@ export default function SkillPerformance({
         <div className="h-96 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
-              data={skillPerformanceResult?.radarData ?? []}
-              margin={{ top: 60, right: 30, bottom: 10, left: 30 }} // Move chart higher by increasing top margin, reducing bottom
+              data={activePackage?.radarData ?? []}
+              margin={{ top: 60, right: 30, bottom: 10, left: 30 }}
             >
               <PolarAngleAxis
                 dataKey="metric"
-                // Custom tick function to angle labels with their radar points and prevent cutoff
                 tick={({ payload, x, y }) => {
-                  // Get the index of this tick in the data array
                   const dataIndex =
-                    skillPerformanceResult?.radarData?.findIndex(
+                    activePackage?.radarData?.findIndex(
                       (item) => item.metric === payload.value
                     ) ?? 0;
-                  const totalItems =
-                    skillPerformanceResult?.radarData?.length ?? 1;
-
-                  // Calculate the angle for this tick (radar charts start from top and go clockwise)
+                  const totalItems = activePackage?.radarData?.length ?? 1;
                   const angle = (dataIndex * 360) / totalItems;
 
-                  // Calculate the angle for proper text positioning
-                  // Radar charts start from the top (0°) and go clockwise
                   let textAnchor = "middle";
                   let rotation = 0;
 
-                  // Determine text anchor and rotation to center text around the point
-                  // The key is to use "middle" anchor and adjust the rotation to point outward
                   if (angle >= 0 && angle <= 90) {
-                    // Top-right quadrant - rotate to point outward
                     textAnchor = "middle";
                     rotation = angle;
                   } else if (angle > 90 && angle <= 180) {
-                    // Bottom-right quadrant - rotate to point outward and flip text upright
                     textAnchor = "middle";
                     rotation = angle + 180;
                   } else if (angle > 180 && angle <= 270) {
-                    // Bottom-left quadrant - rotate to point outward and flip text upright
                     textAnchor = "middle";
                     rotation = angle + 180;
                   } else {
-                    // Top-left quadrant - rotate to point outward
                     textAnchor = "middle";
                     rotation = angle;
                   }
 
-                  // Only render if we have valid coordinates
                   if (x === undefined || y === undefined) {
                     return <g />;
                   }
@@ -241,11 +206,7 @@ export default function SkillPerformance({
                       <text
                         x={0}
                         y={0}
-                        dy={
-                          angle > 90 && angle <= 270
-                            ? 10 // Bottom right or left
-                            : -10 // Top right or left
-                        }
+                        dy={angle > 90 && angle <= 270 ? 10 : -10}
                         textAnchor={textAnchor}
                         fill="hsl(var(--muted-foreground))"
                         fontSize={11}
@@ -295,6 +256,13 @@ export default function SkillPerformance({
             </RadarChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Actionable Insights */}
+        {actionableInsight && (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

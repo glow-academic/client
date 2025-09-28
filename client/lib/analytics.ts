@@ -327,10 +327,8 @@ export const AttemptImprovementFactSchema = z.object({
 
 export const AttemptImprovementResponseSchema = z.object({
   chartData: z.array(AttemptImprovementDataSchema),
-  availableSimulations: z.array(SimulationSchema),
-  improvementStatus: z.enum(["success", "warning", "danger", "neutral"]),
-  actionableInsight: z.string().nullable(),
   facts: z.array(AttemptImprovementFactSchema),
+  validSimulationIds: z.array(z.string()),
 });
 
 // Cohort Performance Types
@@ -345,8 +343,6 @@ export const CohortDataSchema = z.object({
   passedAttempts: z.number(),
   rubricPoints: z.number(),
   rubricPassPoints: z.number(),
-  availableSimulations: z.number(),
-  color: z.string(),
 });
 
 export const DailyDataSchema = z.object({
@@ -371,12 +367,9 @@ export const CohortDailyFactSchema = z.object({
 export const CohortPerformanceResponseSchema = z.object({
   cohortData: z.array(CohortDataSchema),
   dailyData: z.array(DailyDataSchema),
-  availableSimulations: z.array(SimulationSchema),
-  insights: z.string().nullable(),
-  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
-  hasData: z.boolean(),
   cohortFacts: z.array(CohortFactSchema),
-  dailyFacts: z.array(CohortDailyFactSchema).optional(),
+  dailyFacts: z.array(CohortDailyFactSchema),
+  validSimulationIds: z.array(z.string()),
 });
 
 // Skill Performance Types
@@ -396,12 +389,15 @@ export const SkillGroupFactSchema = z.object({
   points: z.number(),
 });
 
-export const SkillPerformanceResponseSchema = z.object({
+export const SkillPackageSchema = z.object({
+  rubricId: z.string(),
   radarData: z.array(SkillRadarDataSchema),
-  availableRubrics: z.array(RubricSchema),
-  skillStatus: z.enum(["success", "warning", "danger", "neutral"]),
-  hasData: z.boolean(),
   groupFacts: z.array(SkillGroupFactSchema),
+});
+
+export const SkillPerformanceResponseSchema = z.object({
+  packages: z.array(SkillPackageSchema),
+  validRubricIds: z.array(z.string()),
 });
 
 // Extended Analytics Filters for Secondary Functions
@@ -434,6 +430,7 @@ export type CohortPerformanceResponse = z.infer<
 
 export type SkillRadarData = z.infer<typeof SkillRadarDataSchema>;
 export type SkillGroupFact = z.infer<typeof SkillGroupFactSchema>;
+export type SkillPackage = z.infer<typeof SkillPackageSchema>;
 export type SkillPerformanceResponse = z.infer<
   typeof SkillPerformanceResponseSchema
 >;
@@ -880,6 +877,178 @@ export function computePersonaActionableInsight(
     return "Performance has improved significantly. Consider advancing to more challenging scenarios.";
   } else if (improvement < -5) {
     return "Performance has declined. Review training approach for this persona type.";
+  }
+
+  return null;
+}
+
+// Attempt Improvement Analytics Utilities
+export function computeAttemptImprovementStatus(
+  chartData: AttemptImprovementData[],
+  thresholds: { danger: number; warning: number; success: number }
+): "success" | "warning" | "danger" | "neutral" {
+  if (chartData.length < 2) return "neutral";
+
+  const firstAttempt = chartData[0];
+  const lastAttempt = chartData[chartData.length - 1];
+
+  if (!firstAttempt || !lastAttempt) return "neutral";
+
+  const firstScore = firstAttempt["Average Score"];
+  const lastScore = lastAttempt["Average Score"];
+
+  if (typeof firstScore !== "number" || typeof lastScore !== "number")
+    return "neutral";
+
+  const scoreImprovement = lastScore - firstScore;
+
+  if (scoreImprovement >= thresholds.success) return "success";
+  if (scoreImprovement >= thresholds.warning) return "warning";
+  return "danger";
+}
+
+export function computeAttemptImprovementActionableInsight(
+  chartData: AttemptImprovementData[]
+): string | null {
+  if (chartData.length < 2) return null;
+
+  const firstAttempt = chartData[0];
+  const lastAttempt = chartData[chartData.length - 1];
+
+  if (!firstAttempt || !lastAttempt) return null;
+
+  const firstScore = firstAttempt["Average Score"];
+  const lastScore = lastAttempt["Average Score"];
+
+  if (typeof firstScore !== "number" || typeof lastScore !== "number")
+    return null;
+
+  const scoreImprovement = lastScore - firstScore;
+
+  if (scoreImprovement > 5) {
+    return `Users improve by ${scoreImprovement}% on average between attempts. Consider advancing to more challenging scenarios.`;
+  } else if (scoreImprovement < -5) {
+    return `Performance declined by ${Math.abs(scoreImprovement)}% between attempts. Review training approach.`;
+  }
+
+  return null;
+}
+
+// Cohort Performance Analytics Utilities
+export function computeCohortPerformanceStatus(
+  cohortData: CohortData[],
+  thresholds: { danger: number; warning: number; success: number }
+): "success" | "warning" | "danger" | "neutral" {
+  if (cohortData.length === 0) return "neutral";
+
+  // Calculate average pass rate across all cohorts
+  const avgPassRate =
+    cohortData.reduce((sum, cohort) => sum + cohort.passRate, 0) /
+    cohortData.length;
+
+  if (avgPassRate >= thresholds.success) return "success";
+  if (avgPassRate >= thresholds.warning) return "warning";
+  return "danger";
+}
+
+export function computeCohortPerformanceActionableInsight(
+  cohortData: CohortData[]
+): string | null {
+  if (cohortData.length === 0) return null;
+
+  // Find the best performing cohort
+  const bestCohort = cohortData.reduce((best, current) =>
+    current.passRate > best.passRate ? current : best
+  );
+
+  if (bestCohort.passRate > 0) {
+    return `Top cohort: ${bestCohort.name} • Avg pass rate ${Math.round(bestCohort.passRate)}%.`;
+  }
+
+  return null;
+}
+
+// Skill Performance Analytics Utilities
+export function computeSkillPerformanceStatus(
+  radarData: SkillRadarData[],
+  thresholds: { danger: number; warning: number; success: number }
+): "success" | "warning" | "danger" | "neutral" {
+  if (radarData.length === 0) return "neutral";
+
+  // Calculate average skill performance across all skills
+  const avgSkillPerformance =
+    radarData.reduce((sum, skill) => sum + skill.value, 0) /
+    radarData.length;
+
+  if (avgSkillPerformance >= thresholds.success) return "success";
+  if (avgSkillPerformance >= thresholds.warning) return "warning";
+  return "danger";
+}
+
+export function computeSkillPerformanceActionableInsight(
+  radarData: SkillRadarData[]
+): string | null {
+  if (radarData.length === 0) return null;
+
+  // Find the weakest skill
+  const weakestSkill = radarData.reduce((weakest, current) =>
+    current.value < weakest.value ? current : weakest
+  );
+
+  if (weakestSkill.value < 0.5) {
+    return `Focus on improving ${weakestSkill.metric} - currently at ${Math.round(weakestSkill.value * 100)}% proficiency.`;
+  }
+
+  return null;
+}
+
+/**
+ * Compute actionable insights for rubric heatmap data
+ */
+export function computeRubricHeatmapActionableInsight(
+  matrices: RubricMatrixPackage[]
+): string | null {
+  if (matrices.length === 0) return null;
+
+  // Use the first matrix for insight calculation
+  const matrix = matrices[0];
+  if (!matrix || !matrix.hasData) return null;
+
+  // Find the strongest positive and negative correlations
+  let strongestPositive = { correlation: 0, pair: "" };
+  let strongestNegative = { correlation: 0, pair: "" };
+
+  for (let i = 0; i < matrix.matrix.length; i++) {
+    for (let j = 0; j < matrix.matrix[i]!.length; j++) {
+      if (i !== j) {
+        const cell = matrix.matrix[i]![j];
+        if (cell && cell.dataPoints > 0) {
+          const correlation = cell.correlation;
+          const rowGroup = matrix.standardGroups?.[i];
+          const colGroup = matrix.standardGroups?.[j];
+          
+          if (rowGroup && colGroup) {
+            const pair = `${rowGroup.shortName} ↔ ${colGroup.shortName}`;
+            
+            if (correlation > strongestPositive.correlation) {
+              strongestPositive = { correlation, pair };
+            }
+            if (correlation < strongestNegative.correlation) {
+              strongestNegative = { correlation, pair };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Generate insights based on correlation patterns
+  if (strongestPositive.correlation > 0.7) {
+    return `Strong positive correlation (${strongestPositive.correlation.toFixed(2)}) between ${strongestPositive.pair}. These skills develop together.`;
+  } else if (strongestNegative.correlation < -0.7) {
+    return `Strong negative correlation (${strongestNegative.correlation.toFixed(2)}) between ${strongestNegative.pair}. These skills may compete for attention.`;
+  } else if (strongestPositive.correlation > 0.5) {
+    return `Moderate positive correlation (${strongestPositive.correlation.toFixed(2)}) between ${strongestPositive.pair}. Consider integrated learning approaches.`;
   }
 
   return null;

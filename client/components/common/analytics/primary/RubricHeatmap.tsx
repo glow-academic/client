@@ -49,6 +49,7 @@ export interface RubricHeatmapProps {
   hasDataAvailable: boolean;
   isLoading: boolean;
   isError: boolean;
+  actionableInsight?: string | null | undefined;
   thresholds: {
     danger: number;
     warning: number;
@@ -62,6 +63,7 @@ export default function RubricHeatmap({
   hasDataAvailable,
   isLoading,
   isError,
+  actionableInsight,
   thresholds,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<RubricPickerType[]>(
@@ -143,6 +145,7 @@ export default function RubricHeatmap({
   };
 
   const thresholdStatus = getThresholdStatus();
+
 
   // Show loading state
   if (isLoading) {
@@ -433,6 +436,15 @@ export default function RubricHeatmap({
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
                 {deferredMatrix.insights}
+              </p>
+            </div>
+          )}
+
+          {/* Actionable Insights */}
+          {actionableInsight && (
+            <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
+              <p className="text-xs text-muted-foreground">
+                {actionableInsight}
               </p>
             </div>
           )}

@@ -6,7 +6,6 @@ import {
   AnalyticsFilters,
   AttemptHistoryResponse,
   AttemptHistoryResponseSchema,
-  AttemptImprovementFilters,
   AttemptImprovementResponse,
   AttemptImprovementResponseSchema,
   CohortPerformanceResponse,
@@ -31,7 +30,6 @@ import {
   SimulationCompositionDataSchema,
   SimulationPerformanceData,
   SimulationPerformanceDataSchema,
-  SkillPerformanceFilters,
   SkillPerformanceResponse,
   SkillPerformanceResponseSchema,
 } from "../analytics";
@@ -242,17 +240,11 @@ export const analyticsRepo = {
 
   // Secondary Analytics (3 complex metrics)
   async getAttemptImprovement(
-    filters: AttemptImprovementFilters
+    filters: AnalyticsFilters
   ): Promise<AttemptImprovementResponse> {
-    const simulationIdsParam =
-      filters.simulationIds && filters.simulationIds.length > 0
-        ? toUuidArray(filters.simulationIds) || sql`NULL`
-        : sql`NULL`;
-
     const result = await executePrimaryFunction<unknown>(
       "analytics_attempt_improvement_fn",
-      filters,
-      [simulationIdsParam]
+      filters
     );
     return AttemptImprovementResponseSchema.parse(result);
   },
@@ -268,16 +260,11 @@ export const analyticsRepo = {
   },
 
   async getSkillPerformance(
-    filters: SkillPerformanceFilters
+    filters: AnalyticsFilters
   ): Promise<SkillPerformanceResponse> {
-    const rubricIdParam = filters.rubricId
-      ? sql`${filters.rubricId}::uuid`
-      : sql`NULL`;
-
     const result = await executePrimaryFunction<unknown>(
       "analytics_skill_performance_fn",
-      filters,
-      [rubricIdParam]
+      filters
     );
     return SkillPerformanceResponseSchema.parse(result);
   },

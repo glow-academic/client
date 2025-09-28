@@ -11,17 +11,23 @@ import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
+  computeAttemptImprovementActionableInsight,
+  computeCohortPerformanceActionableInsight,
   computeCurrent,
   computeGrowthActionableInsight,
   computePersonaActionableInsight,
   computePersonaPerformanceStatus,
+  computeRubricHeatmapActionableInsight,
+  computeSkillPerformanceActionableInsight,
   computeTrendAnalysis,
   MetricResponse,
   TrendData,
 } from "@/lib/analytics";
 import {
   useAnalyticsAttemptHistory,
+  useAnalyticsAttemptImprovement,
   useAnalyticsAverageScore,
+  useAnalyticsCohortPerformance,
   useAnalyticsCompletionPercentage,
   useAnalyticsFirstAttemptPassRate,
   useAnalyticsGrowthData,
@@ -31,6 +37,7 @@ import {
   useAnalyticsPersonaResponseTimes,
   useAnalyticsRubricHeatmap,
   useAnalyticsSessionEfficiency,
+  useAnalyticsSkillPerformance,
   useAnalyticsStagnationRate,
   useAnalyticsTimeSpent,
   useAnalyticsTotalAttempts,
@@ -177,6 +184,25 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading: rubricHeatmapLoading,
     isError: rubricHeatmapError,
   } = useAnalyticsRubricHeatmap(filters, true);
+
+  // Fetch secondary analytics data
+  const {
+    data: attemptImprovementData,
+    isLoading: attemptImprovementLoading,
+    isError: attemptImprovementError,
+  } = useAnalyticsAttemptImprovement(filters, true);
+
+  const {
+    data: cohortPerformanceData,
+    isLoading: cohortPerformanceLoading,
+    isError: cohortPerformanceError,
+  } = useAnalyticsCohortPerformance(filters, true);
+
+  const {
+    data: skillPerformanceData,
+    isLoading: skillPerformanceLoading,
+    isError: skillPerformanceError,
+  } = useAnalyticsSkillPerformance(filters, true);
 
   // Fetch history data for the dashboard
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -537,10 +563,117 @@ export default function Dashboard({ profileId }: DashboardProps) {
       validRubricIdsSet.has(rubric.id)
     );
 
+    const matrices = rubricHeatmapData.matrices || [];
+    const actionableInsight = computeRubricHeatmapActionableInsight(matrices);
+
     return {
-      matrices: rubricHeatmapData.matrices || [],
+      matrices,
       availableRubrics,
-      hasDataAvailable: (rubricHeatmapData.matrices || []).length > 0,
+      hasDataAvailable: matrices.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  // Process attempt improvement data
+  const attemptImprovementProcessed = (() => {
+    if (!attemptImprovementData) {
+      return {
+        chartData: [],
+        facts: [],
+        validSimulationIds: [],
+        hasDataAvailable: false,
+        performanceStatus: "neutral" as const,
+        actionableInsight: null,
+      };
+    }
+
+    const chartData = attemptImprovementData.chartData || [];
+
+    // Filter simulations by validSimulationIds
+    const validSimulationIds = attemptImprovementData.validSimulationIds || [];
+    const validSimulationIdsSet = new Set(validSimulationIds);
+    const availableSimulations = allSimulations.filter((sim) =>
+      validSimulationIdsSet.has(sim.id)
+    );
+
+    const actionableInsight = computeAttemptImprovementActionableInsight(chartData);
+
+    return {
+      chartData,
+      facts: attemptImprovementData.facts || [],
+      availableSimulations,
+      hasDataAvailable: chartData.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  // Process cohort performance data
+  const cohortPerformanceProcessed = (() => {
+    if (!cohortPerformanceData) {
+      return {
+        cohortData: [],
+        dailyData: [],
+        cohortFacts: [],
+        dailyFacts: [],
+        validSimulationIds: [],
+        hasDataAvailable: false,
+        performanceStatus: "neutral" as const,
+        actionableInsight: null,
+      };
+    }
+
+    const cohortData = cohortPerformanceData.cohortData || [];
+
+    // Filter simulations by validSimulationIds
+    const validSimulationIds = cohortPerformanceData.validSimulationIds || [];
+    const validSimulationIdsSet = new Set(validSimulationIds);
+    const availableSimulations = allSimulations.filter((sim) =>
+      validSimulationIdsSet.has(sim.id)
+    );
+
+    const actionableInsight = computeCohortPerformanceActionableInsight(cohortData);
+
+    return {
+      cohortData,
+      dailyData: cohortPerformanceData.dailyData || [],
+      cohortFacts: cohortPerformanceData.cohortFacts || [],
+      dailyFacts: cohortPerformanceData.dailyFacts || [],
+      availableSimulations,
+      hasDataAvailable: cohortData.length > 0,
+      actionableInsight,
+    };
+  })();
+
+  // Process skill performance data
+  const skillPerformanceProcessed = (() => {
+    if (!skillPerformanceData) {
+      return {
+        packages: [],
+        validRubricIds: [],
+        hasDataAvailable: false,
+        performanceStatus: "neutral" as const,
+        actionableInsight: null,
+      };
+    }
+
+    const packages = skillPerformanceData.packages || [];
+
+    // Filter rubrics by validRubricIds
+    const validRubricIds = skillPerformanceData.validRubricIds || [];
+    const validRubricIdsSet = new Set(validRubricIds);
+    const availableRubrics = allRubrics.filter((rubric) =>
+      validRubricIdsSet.has(rubric.id)
+    );
+
+    const activePackage = packages[0]; // Use first package for insight calculation
+    const radarData = activePackage?.radarData || [];
+    const actionableInsight = computeSkillPerformanceActionableInsight(radarData);
+
+    return {
+      packages,
+      availableRubrics,
+      hasDataAvailable: packages.length > 0,
+      actionableInsight,
     };
   })();
 
@@ -678,6 +811,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       hasDataAvailable={rubricHeatmapProcessed.hasDataAvailable}
       isLoading={rubricHeatmapLoading}
       isError={rubricHeatmapError}
+      actionableInsight={rubricHeatmapProcessed.actionableInsight}
       thresholds={thresholds}
     />,
   ];
@@ -685,39 +819,44 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const secondaryComponents = [
     <CohortPerformance
       key="cohort-performance"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-        profileId,
-      }}
-      thresholds={thresholds}
+      cohortData={cohortPerformanceProcessed.cohortData}
+      dailyData={cohortPerformanceProcessed.dailyData}
+      cohortFacts={cohortPerformanceProcessed.cohortFacts}
+      dailyFacts={cohortPerformanceProcessed.dailyFacts}
+      allSimulations={(
+        cohortPerformanceProcessed.availableSimulations || []
+      ).map((sim) => ({
+        ...sim,
+        timeLimit: sim.timeLimit ?? undefined,
+      }))}
+      isLoading={cohortPerformanceLoading}
+      isError={cohortPerformanceError}
       profileId={profileId}
+      actionableInsight={cohortPerformanceProcessed.actionableInsight}
+      thresholds={thresholds}
     />,
     <AttemptImprovement
       key="attempt-improvement"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-        profileId,
-      }}
+      chartData={attemptImprovementProcessed.chartData}
+      facts={attemptImprovementProcessed.facts}
+      allSimulations={(
+        attemptImprovementProcessed.availableSimulations || []
+      ).map((sim) => ({
+        ...sim,
+        timeLimit: sim.timeLimit ?? undefined,
+      }))}
+      isLoading={attemptImprovementLoading}
+      isError={attemptImprovementError}
+      actionableInsight={attemptImprovementProcessed.actionableInsight}
       thresholds={thresholds}
     />,
     <SkillPerformance
       key="skill-performance"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-        profileId,
-      }}
+      packages={skillPerformanceProcessed.packages}
+      allRubrics={skillPerformanceProcessed.availableRubrics || []}
+      isLoading={skillPerformanceLoading}
+      isError={skillPerformanceError}
+      actionableInsight={skillPerformanceProcessed.actionableInsight}
       thresholds={thresholds}
     />,
   ];

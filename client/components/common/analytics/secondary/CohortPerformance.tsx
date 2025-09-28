@@ -1,14 +1,8 @@
-/**
- * CohortPerformance.tsx
- * This component displays the cohort performance for the personas.
- * @AshokSaravanan222 & @siladiea
- * 07/23/2025
- */
 "use client";
 
 import {
   SimulationPicker,
-  type Simulation,
+  type Simulation as SimulationPickerType,
 } from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
@@ -17,19 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-import { type AnalyticsFilters } from "@/lib/analytics";
-import { useAnalyticsCohortPerformance } from "@/lib/api/hooks/analytics";
-import { buildCohortRows, buildDailySeries } from "@/utils/client-aggregators";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   CartesianGrid,
@@ -41,9 +23,40 @@ import {
   YAxis,
 } from "recharts";
 
+type CohortRow = {
+  id: string;
+  name: string;
+  passRate: number;
+  avgPercentageScore: number;
+  totalStudents: number;
+  passedStudents: number;
+  totalAttempts: number;
+  passedAttempts: number;
+  rubricPoints: number;
+  rubricPassPoints: number;
+};
+type DailyRow = { date: string; avgScore: number };
+type CohortFact = {
+  cohortId: string;
+  simulationId: string;
+  passRate: number;
+  avgScore: number;
+  attempts: number;
+};
+type DailyFact = { date: string; simulationId: string; avgScore: number };
+
 export interface CohortPerformanceProps {
-  filters: AnalyticsFilters;
-  profileId: string | undefined;
+  cohortData: CohortRow[];
+  dailyData: DailyRow[];
+  cohortFacts: CohortFact[];
+  dailyFacts: DailyFact[];
+  /** All simulations from client cache/store */
+  allSimulations: SimulationPickerType[];
+  isLoading: boolean;
+  isError: boolean;
+  /** If rendering for a single learner detail view */
+  profileId?: string | undefined;
+  actionableInsight?: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -52,60 +65,109 @@ export interface CohortPerformanceProps {
 }
 
 export default function CohortPerformance({
-  filters,
+  cohortData,
+  dailyData,
+  cohortFacts,
+  dailyFacts,
+  allSimulations,
+  isLoading,
+  isError,
   profileId,
+  actionableInsight,
   thresholds,
 }: CohortPerformanceProps) {
-  const [selectedSimulations, setSelectedSimulations] = useState<Simulation[]>(
-    []
-  );
+  const [selected, setSelected] = useState<SimulationPickerType[]>([]);
+  const isSingleProfileMode = !!profileId;
 
-  const isSingleProfileMode = profileId !== undefined;
+  const pickerOptions = useMemo(() => allSimulations, [allSimulations]);
 
-  // Call the server hook
-  const { data } = useAnalyticsCohortPerformance(
-    filters,
-    true // enable
-  );
+  // Recompute cohort metrics from selected sims using cohortFacts (attempt-weighted)
+  const displayCohorts = useMemo<CohortRow[]>(() => {
+    if (!selected.length) return cohortData;
+    const sel = new Set(selected.map((s) => s.id));
+    const byCohort = new Map<
+      string,
+      {
+        name: string;
+        totalStudents: number;
+        passedStudents: number;
+        rubricPoints: number;
+        rubricPassPoints: number;
+        wPass: number;
+        wScore: number;
+        w: number;
+        totalAttempts: number;
+        passedAttempts: number;
+      }
+    >();
 
-  // Use client-side aggregation with facts
-  const cohortPerformanceResult = useMemo(() => {
-    if (!data) return null;
+    cohortData.forEach((c) =>
+      byCohort.set(c.id, {
+        name: c.name,
+        totalStudents: c.totalStudents,
+        passedStudents: c.passedStudents,
+        rubricPoints: c.rubricPoints,
+        rubricPassPoints: c.rubricPassPoints,
+        wPass: 0,
+        wScore: 0,
+        w: 0,
+        totalAttempts: 0,
+        passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
+      })
+    );
 
-    const selectedSimulationIds =
-      selectedSimulations.length > 0
-        ? selectedSimulations.map((s) => s.id)
-        : undefined;
+    cohortFacts.forEach((f) => {
+      if (!sel.has(f.simulationId)) return;
+      const acc = byCohort.get(f.cohortId);
+      if (!acc) return;
+      acc.wPass += f.passRate * f.attempts;
+      acc.wScore += f.avgScore * f.attempts;
+      acc.w += f.attempts;
+      acc.totalAttempts += f.attempts;
+    });
 
-    const cohortData = data.cohortFacts
-      ? buildCohortRows(data.cohortFacts, selectedSimulationIds)
-      : data.cohortData;
+    return [...byCohort.entries()].map(([id, a]) => ({
+      id,
+      name: a.name,
+      passRate: a.w ? Math.round(a.wPass / a.w) : 0,
+      avgPercentageScore: a.w ? Math.round(a.wScore / a.w) : 0,
+      totalStudents: a.totalStudents,
+      passedStudents: a.passedStudents,
+      totalAttempts: a.totalAttempts,
+      passedAttempts: a.passedAttempts,
+      rubricPoints: a.rubricPoints,
+      rubricPassPoints: a.rubricPassPoints,
+    }));
+  }, [selected, cohortData, cohortFacts]);
 
-    const dailyData =
-      data.dailyFacts && selectedSimulationIds
-        ? buildDailySeries(data.dailyFacts, selectedSimulationIds)
-        : data.dailyData;
-
-    return {
-      cohortData,
-      dailyData,
-      insights: data.insights,
-      performanceStatus: data.performanceStatus,
-      hasData: data.hasData,
-    };
-  }, [data, selectedSimulations]);
+  // Daily series (filter via dailyFacts if sims picked)
+  const displayDaily = useMemo<DailyRow[]>(() => {
+    if (!selected.length) return dailyData;
+    const sel = new Set(selected.map((s) => s.id));
+    const byDay = new Map<string, { sum: number; n: number }>();
+    dailyFacts.forEach((d) => {
+      if (!sel.has(d.simulationId)) return;
+      const acc = byDay.get(d.date) ?? { sum: 0, n: 0 };
+      acc.sum += d.avgScore;
+      acc.n += 1;
+      byDay.set(d.date, acc);
+    });
+    return [...byDay.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({
+        date,
+        avgScore: Math.round(v.sum / Math.max(1, v.n)),
+      }));
+  }, [selected, dailyData, dailyFacts]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
-    if (!cohortPerformanceResult || !cohortPerformanceResult.hasData)
-      return "neutral";
+    if (displayCohorts.length === 0) return "neutral";
 
     // Calculate average pass rate across all cohorts
     const avgPassRate =
-      cohortPerformanceResult.cohortData.reduce(
-        (sum, cohort) => sum + cohort.passRate,
-        0
-      ) / cohortPerformanceResult.cohortData.length;
+      displayCohorts.reduce((sum, cohort) => sum + cohort.passRate, 0) /
+      displayCohorts.length;
 
     if (avgPassRate >= thresholds.success) return "success";
     if (avgPassRate >= thresholds.warning) return "warning";
@@ -113,6 +175,33 @@ export default function CohortPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Cohort Performance</CardTitle>
+          <CardDescription>Loading cohort data...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
+          Loading...
+        </CardContent>
+      </Card>
+    );
+  }
+  if (isError) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Cohort Performance</CardTitle>
+          <CardDescription>Error loading data</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center text-destructive">
+          Failed to load cohort data
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -139,163 +228,121 @@ export default function CohortPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={
-              data?.availableSimulations?.map((s) => ({
-                id: s.id,
-                title: s.name,
-                timeLimit: s.timeLimit ?? undefined,
-                active: true,
-                description: "",
-                defaultSimulation: false,
-                practiceSimulation: false,
-                scenarioIds: [],
-                updatedAt: new Date().toISOString(),
-              })) ?? []
-            }
+            simulations={pickerOptions}
             placeholder="Filter by simulation..."
-            onSelect={setSelectedSimulations}
-            selectedSimulations={selectedSimulations}
-            hideSelectedChips={true}
+            onSelect={setSelected}
+            selectedSimulations={selected}
+            hideSelectedChips
             showLabel={false}
-            showPracticeSimulations={true}
+            showPracticeSimulations
           />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-3">
-        <div className="space-y-4">
-          {/* Cohort Details Dialog */}
-          {cohortPerformanceResult?.cohortData.map((cohort) => {
-            // Calculate pass rate percentage
-            const passRatePercentage =
-              cohort.totalStudents > 0
-                ? (cohort.passedStudents /
-                    (isSingleProfileMode ? 1 : cohort.totalStudents)) *
-                  100
-                : 0;
+      <CardContent className="flex-1 overflow-auto p-3 space-y-3">
+        {displayCohorts.map((cohort) => {
+          const passRatePct = cohort.totalStudents
+            ? (cohort.passedStudents /
+                (isSingleProfileMode ? 1 : cohort.totalStudents)) *
+              100
+            : 0;
 
-            // Determine background color based on pass rate
-            let bgColor: string;
-            if (passRatePercentage === 0) {
-              bgColor = "#ef4444"; // Red for 0%
-            } else if (passRatePercentage >= thresholds.success) {
-              bgColor = "#22c55e"; // Green for success
-            } else if (passRatePercentage >= thresholds.warning) {
-              bgColor = "#eab308"; // Yellow for warning
-            } else {
-              bgColor = "#ef4444"; // Red for danger
-            }
+          // Determine background color based on pass rate
+          let bgColor: string;
+          if (passRatePct === 0) {
+            bgColor = "#ef4444"; // Red for 0%
+          } else if (passRatePct >= 85) {
+            bgColor = "#22c55e"; // Green for success
+          } else if (passRatePct >= 75) {
+            bgColor = "#eab308"; // Yellow for warning
+          } else {
+            bgColor = "#ef4444"; // Red for danger
+          }
 
-            return (
-              <Dialog key={cohort.id}>
-                <DialogTrigger asChild>
-                  <div className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden">
-                    {/* Progress bar background */}
-                    <div
-                      className="absolute inset-0 opacity-10"
-                      style={{ backgroundColor: bgColor }}
-                    />
+          return (
+            <div
+              key={cohort.id}
+              className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
+            >
+              {/* Progress bar background */}
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{ backgroundColor: bgColor }}
+              />
 
-                    {/* Progress bar fill */}
-                    <div
-                      className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
-                      style={{
-                        backgroundColor: bgColor,
-                        width: `${Math.max(passRatePercentage, 1)}%`, // Minimum 1% width for visibility
-                      }}
-                    />
+              {/* Progress bar fill */}
+              <div
+                className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
+                style={{
+                  backgroundColor: bgColor,
+                  width: `${Math.max(passRatePct, 1)}%`, // Minimum 1% width for visibility
+                }}
+              />
 
-                    <div className="flex items-center justify-between relative z-10">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">
-                          {cohort.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {isSingleProfileMode
-                            ? `${passRatePercentage.toFixed(2)}% pass rate for `
-                            : `${passRatePercentage.toFixed(2)}% of students pass `}
-                          {cohort.rubricPoints > 0
-                            ? cohort.availableSimulations
-                            : 0}{" "}
-                          quiz
-                          {cohort.rubricPoints > 0
-                            ? cohort.availableSimulations !== 1
-                              ? "zes"
-                              : ""
-                            : "zes"}
-                          {cohort.rubricPoints > 0 && (
-                            <>
-                              {" "}
-                              with a{" "}
-                              {Math.round(
-                                (cohort.rubricPassPoints /
-                                  cohort.rubricPoints) *
-                                  100
-                              )}
-                              % or better
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      <TrendingUp className="h-3 w-3 text-muted-foreground ml-2 flex-shrink-0" />
-                    </div>
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{cohort.name} Performance Details</DialogTitle>
-                    <DialogDescription hidden>
-                      Daily pass rate trends and insights
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-6">
-                    {/* Daily Performance Line Chart */}
-                    {cohortPerformanceResult?.dailyData.length > 0 && (
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={cohortPerformanceResult.dailyData}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              className="stroke-muted"
-                            />
-                            <XAxis dataKey="date" className="text-xs" />
-                            <YAxis domain={[0, 100]} className="text-xs" />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--background))",
-                                border: "1px solid hsl(var(--border))",
-                                borderRadius: "6px",
-                              }}
-                              formatter={(value: number) => [
-                                `${value}%`,
-                                "Average Score",
-                              ]}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="avgScore"
-                              stroke="#3b82f6"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm truncate">
+                    {cohort.name}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {isSingleProfileMode
+                      ? `${passRatePct.toFixed(2)}% pass rate for `
+                      : `${passRatePct.toFixed(2)}% of students pass `}
+                    {cohort.rubricPoints > 0 ? cohort.rubricPoints : 0} quiz
+                    {cohort.rubricPoints > 0
+                      ? cohort.rubricPoints !== 1
+                        ? "zes"
+                        : ""
+                      : "zes"}
+                    {cohort.rubricPoints > 0 && (
+                      <>
+                        {" "}
+                        with a{" "}
+                        {Math.round(
+                          (cohort.rubricPassPoints / cohort.rubricPoints) * 100
+                        )}
+                        % or better
+                      </>
                     )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
 
-                    {/* Actionable Insights */}
-                    {cohortPerformanceResult?.insights && (
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
-                          {cohortPerformanceResult.insights}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            );
-          })}
-        </div>
+        {/* Daily trend */}
+        {displayDaily.length > 0 && (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={displayDaily}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis domain={[0, 100]} className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                  formatter={(value: number) => [`${value}%`, "Average Score"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="avgScore"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Actionable Insights */}
+        {actionableInsight && (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
