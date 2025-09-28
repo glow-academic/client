@@ -22,6 +22,7 @@ import {
   type SkillPerformanceResponse,
 } from "@/lib/analytics";
 import { useAnalyticsSkillPerformance } from "@/lib/api/hooks/analytics";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -49,11 +50,25 @@ export default function SkillPerformance({
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
 
+  // Get all rubrics from the database
+  const { data: allRubrics = [], isLoading: isLoadingRubrics } = useRubrics();
+
   // Call the server hook
   const { data, isLoading } = useAnalyticsSkillPerformance(
     { ...filters, rubricId: selectedRubrics[0]?.id },
     true // enable
   ) as { data: SkillPerformanceResponse | undefined; isLoading: boolean };
+
+  // Filter available rubrics based on what the server returned
+  const availableRubrics = useMemo(() => {
+    if (!data?.availableRubrics || !allRubrics.length) return [];
+
+    // Create a set of available rubric IDs from the server response
+    const availableRubricIds = new Set(data.availableRubrics.map((r) => r.id));
+
+    // Filter all rubrics to only include those that are available according to the server
+    return allRubrics.filter((rubric) => availableRubricIds.has(rubric.id));
+  }, [data?.availableRubrics, allRubrics]);
 
   // Use client-side aggregation with facts
   const skillPerformanceResult = useMemo(() => {
@@ -88,7 +103,7 @@ export default function SkillPerformance({
   const thresholdStatus = getThresholdStatus();
 
   // Show loading state
-  if (isLoading) {
+  if (isLoading || isLoadingRubrics) {
     return (
       <Card className="w-full h-full flex flex-col relative">
         <div
@@ -113,15 +128,9 @@ export default function SkillPerformance({
                 Performance across key teaching competencies
               </CardDescription>
             </div>
-            {data?.availableRubrics && data.availableRubrics.length > 0 && (
+            {availableRubrics.length > 0 && (
               <RubricPicker
-                rubrics={data.availableRubrics.map((r: any) => ({
-                  id: r.id,
-                  name: r.name,
-                  description: r.description ?? "",
-                  points: r.points,
-                  active: r.active,
-                }))}
+                rubrics={availableRubrics}
                 placeholder="Filter by rubric..."
                 onSelect={setSelectedRubrics}
                 selectedRubrics={selectedRubrics}
@@ -164,15 +173,9 @@ export default function SkillPerformance({
               Performance across key teaching competencies
             </CardDescription>
           </div>
-          {data?.availableRubrics && data.availableRubrics.length > 0 && (
+          {availableRubrics.length > 0 && (
             <RubricPicker
-              rubrics={data.availableRubrics.map((r: any) => ({
-                id: r.id,
-                name: r.name,
-                description: r.description ?? "",
-                points: r.points,
-                active: r.active,
-              }))}
+              rubrics={availableRubrics}
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
               selectedRubrics={selectedRubrics}

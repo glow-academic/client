@@ -30,8 +30,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateSimulationComposition } from "@/utils/analytics/footer";
+import { AnalyticsFilters } from "@/lib/analytics";
+import { useAnalyticsSimulationComposition } from "@/lib/api/hooks/analytics";
+import { buildSimulationComposition } from "@/utils/client-aggregators";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
@@ -39,7 +40,7 @@ import SimulationCompositionPicker, {
 } from "../SimulationCompositionPicker";
 
 export interface SimulationCompositionProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -48,7 +49,7 @@ export interface SimulationCompositionProps {
 }
 
 export default function SimulationComposition({
-  filteredData,
+  filters,
   thresholds,
 }: SimulationCompositionProps) {
   // Configuration state
@@ -59,21 +60,16 @@ export default function SimulationComposition({
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
 
-  // Use centralized datasets from filteredData
-  const scenarios = filteredData?.scenarios;
-  const personas = filteredData?.personas;
-  const parameters = filteredData?.parameters;
-  const parameterItems = filteredData?.parameterItems;
+  // Fetch analytics data using the new hook
+  const {
+    data: analyticsData,
+    isLoading,
+    error,
+  } = useAnalyticsSimulationComposition(filters);
 
-  // Calculate simulation composition data using utility function
+  // Calculate simulation composition data using client aggregator
   const simulationComposition = useMemo(() => {
-    if (
-      !filteredData ||
-      !scenarios ||
-      !personas ||
-      !parameters ||
-      !parameterItems
-    ) {
+    if (!analyticsData) {
       return {
         highPerforming: [],
         lowPerforming: [],
@@ -84,13 +80,12 @@ export default function SimulationComposition({
       };
     }
 
-    return calculateSimulationComposition(
-      filteredData,
-      parameters,
-      parameterItems,
+    return buildSimulationComposition(
+      analyticsData.simulationFacts,
+      analyticsData.simulationParameterFacts,
       config
     );
-  }, [filteredData, scenarios, personas, parameters, parameterItems, config]);
+  }, [analyticsData, config]);
 
   // Get method label for dialog titles
   const getMethodLabel = (isHigh: boolean) => {
@@ -149,6 +144,8 @@ export default function SimulationComposition({
   // Calculate threshold status based on performance differences
   const getThresholdStatus = () => {
     if (!hasAnyData) return "neutral";
+    if (analyticsData?.performanceStatus)
+      return analyticsData.performanceStatus;
 
     // Calculate average performance of high vs low performing simulations
     const highPerformingAvg =
@@ -180,6 +177,46 @@ export default function SimulationComposition({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Simulation Composition
+          </CardTitle>
+          <CardDescription>High vs low performing simulations</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            Loading simulation composition data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Simulation Composition
+          </CardTitle>
+          <CardDescription>High vs low performing simulations</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center text-red-500">
+            Error loading simulation composition data
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">

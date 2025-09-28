@@ -224,7 +224,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const secondaryComponents = [
     <CohortPerformance
       key="cohort-performance"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+        profileId,
+      }}
       thresholds={thresholds}
       profileId={profileId}
     />,
@@ -242,7 +249,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
     />,
     <SkillPerformance
       key="skill-performance"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(), 
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+        profileId,
+      }}
       thresholds={thresholds}
     />,
   ];
@@ -250,12 +264,24 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const leftFooterComponents = [
     <ScenarioPerformance
       key="scenario-performance"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <ScenarioStats
       key="scenario-stats"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
   ];
@@ -263,12 +289,24 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const rightFooterComponents = [
     <SimulationPerformance
       key="simulation-performance"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
     <SimulationComposition
       key="simulation-composition"
-      filteredData={filteredData}
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+      }}
       thresholds={thresholds}
     />,
   ];

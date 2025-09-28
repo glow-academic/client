@@ -386,3 +386,247 @@ export type AttemptImprovementFilters = z.infer<
 export type SkillPerformanceFilters = z.infer<
   typeof SkillPerformanceFiltersSchema
 >;
+
+// Footer Analytics Types
+
+// Scenario Performance (Categorical Parameters) Types
+export const ScenarioAttributeAttemptFactSchema = z.object({
+  parameterId: z.string(),
+  parameterItemId: z.string(),
+  date: z.string(), // "MM/DD"
+  avgScore: z.number(),
+  attempts: z.number(),
+  passedAttempts: z.number(),
+});
+
+export const ScenarioAttributeScenarioFactSchema = z.object({
+  parameterId: z.string(),
+  parameterItemId: z.string(),
+  scenarioId: z.string(),
+});
+
+export const ScenarioPerformanceDataSchema = z.object({
+  attributeElements: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      displayName: z.string(),
+      icon: z.string(),
+      color: z.string(),
+      count: z.number(),
+      percentage: z.number(),
+      avgScore: z.number(),
+      completionRate: z.number(),
+      totalAttempts: z.number(),
+      trendData: z.array(
+        z.object({
+          date: z.string(),
+          score: z.number(),
+          timestamp: z.number(),
+        })
+      ),
+      insight: z.string(),
+    })
+  ),
+  availableParameters: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(),
+      numerical: z.boolean().refine((v) => v === false),
+      active: z.boolean(),
+    })
+  ),
+  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  hasData: z.boolean(),
+  attributeAttemptFacts: z.array(ScenarioAttributeAttemptFactSchema),
+  attributeScenarioFacts: z.array(ScenarioAttributeScenarioFactSchema),
+});
+
+// Scenario Stats (Numerical Parameters) Types
+export const NumericAttemptFactSchema = z.object({
+  parameterId: z.string(),
+  level: z.string(), // "1","2","2.5",...
+  score: z.number(),
+  attempts: z.number(),
+});
+
+export const ScenarioStatsDataSchema = z.object({
+  numericalParameters: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      numerical: z.literal(true),
+      active: z.boolean(),
+    })
+  ),
+  performanceData: z.array(
+    z.object({
+      metricLevel: z.string(),
+      avgScore: z.number(),
+      scenarioCount: z.number(),
+      totalAttempts: z.number(),
+      rubricPoints: z.number(),
+    })
+  ),
+  correlationData: z.object({ correlation: z.number(), pValue: z.number() }),
+  numericAttemptFacts: z.array(NumericAttemptFactSchema),
+});
+
+// Simulation Composition Types
+export const SimulationFactSchema = z.object({
+  simulationId: z.string(),
+  title: z.string(),
+  avgScore: z.number(),
+  completionRate: z.number(),
+  totalAttempts: z.number(),
+  scenarioCount: z.number(),
+});
+
+export const SimulationParamFactSchema = z.object({
+  simulationId: z.string(),
+  parameterName: z.string(),
+  parameterValue: z.string(),
+  isNumerical: z.boolean(),
+  count: z.number(),
+});
+
+export const SimulationCompositionDataSchema = z.object({
+  config: z.object({
+    method: z.enum(["percentile", "quartile", "standard_deviation"]),
+    topPercentage: z.number(),
+    bottomPercentage: z.number(),
+  }),
+  highPerforming: z.array(
+    z.object({
+      name: z.string(),
+      value: z.number(),
+      icon: z.string(),
+      color: z.string(),
+      description: z.string(),
+      significance: z.enum(["high", "medium", "low", "none"]),
+    })
+  ),
+  lowPerforming: z.array(
+    z.object({
+      name: z.string(),
+      value: z.number(),
+      icon: z.string(),
+      color: z.string(),
+      description: z.string(),
+      significance: z.enum(["high", "medium", "low", "none"]),
+    })
+  ),
+  highPerformingCount: z.number(),
+  lowPerformingCount: z.number(),
+  highPerformingDetails: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      avgScore: z.number(),
+      completionRate: z.number(),
+      totalAttempts: z.number(),
+      scenarioCount: z.number(),
+      parameterBreakdown: z.array(
+        z.object({
+          parameterName: z.string(),
+          parameterValue: z.string(),
+          isNumerical: z.boolean(),
+        })
+      ),
+    })
+  ),
+  lowPerformingDetails: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      avgScore: z.number(),
+      completionRate: z.number(),
+      totalAttempts: z.number(),
+      scenarioCount: z.number(),
+      parameterBreakdown: z.array(
+        z.object({
+          parameterName: z.string(),
+          parameterValue: z.string(),
+          isNumerical: z.boolean(),
+        })
+      ),
+    })
+  ),
+  simulationFacts: z.array(SimulationFactSchema),
+  simulationParameterFacts: z.array(SimulationParamFactSchema),
+  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
+  hasData: z.boolean(),
+});
+
+// Simulation Performance Types
+export const ScenarioFactSchema = z.object({
+  simulationId: z.string(),
+  scenarioId: z.string(),
+  scenarioName: z.string(),
+  avgScore: z.number(),
+  successRate: z.number(),
+  totalAttempts: z.number(),
+  completedAttempts: z.number(),
+});
+
+export const SimulationPerformanceDataSchema = z.object({
+  validSimulations: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      scenarioIds: z.array(z.string()).optional(),
+    })
+  ),
+  selectedSimulation: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      scenarioIds: z.array(z.string()).optional(),
+    })
+    .nullable(),
+  scenarioPerformanceData: z.array(
+    z.object({
+      scenarioId: z.string(),
+      scenarioName: z.string(),
+      avgScore: z.number(),
+      successRate: z.number(),
+      performanceChange: z.number(),
+      totalAttempts: z.number(),
+      completedAttempts: z.number(),
+      color: z.string(),
+    })
+  ),
+  insights: z.string().nullable(),
+  scenarioFacts: z.array(ScenarioFactSchema),
+});
+
+// Type exports for footer analytics
+export type ScenarioAttributeAttemptFact = z.infer<
+  typeof ScenarioAttributeAttemptFactSchema
+>;
+export type ScenarioAttributeScenarioFact = z.infer<
+  typeof ScenarioAttributeScenarioFactSchema
+>;
+export type ScenarioPerformanceData = z.infer<
+  typeof ScenarioPerformanceDataSchema
+>;
+
+export type NumericAttemptFact = z.infer<typeof NumericAttemptFactSchema>;
+export type ScenarioStatsData = z.infer<typeof ScenarioStatsDataSchema>;
+
+export type SimulationFact = z.infer<typeof SimulationFactSchema>;
+export type SimulationParamFact = z.infer<typeof SimulationParamFactSchema>;
+export type SimulationCompositionData = z.infer<
+  typeof SimulationCompositionDataSchema
+>;
+export type SimulationCompositionConfig = {
+  method: "percentile" | "quartile" | "standard_deviation";
+  topPercentage: number;
+  bottomPercentage: number;
+};
+
+export type ScenarioFact = z.infer<typeof ScenarioFactSchema>;
+export type SimulationPerformanceData = z.infer<
+  typeof SimulationPerformanceDataSchema
+>;

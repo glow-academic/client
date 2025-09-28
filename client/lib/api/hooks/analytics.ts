@@ -9,6 +9,10 @@ import {
   PersonaPerformanceResponseSchema,
   RubricHeatmapFilters,
   RubricHeatmapResponseSchema,
+  ScenarioPerformanceDataSchema,
+  ScenarioStatsDataSchema,
+  SimulationCompositionDataSchema,
+  SimulationPerformanceDataSchema,
   SkillPerformanceFilters,
   SkillPerformanceResponseSchema,
 } from "@/lib/analytics";
@@ -28,7 +32,11 @@ import {
   analyticsPersonaResponseTimesKeys,
   analyticsQuickestPassKeys,
   analyticsRubricHeatmapKeys,
+  analyticsScenarioPerformanceKeys,
+  analyticsScenarioStatsKeys,
   analyticsSessionEfficiencyKeys,
+  analyticsSimulationCompositionKeys,
+  analyticsSimulationPerformanceKeys,
   analyticsSkillPerformanceKeys,
   analyticsStagnationRateKeys,
   analyticsTimeSpentKeys,
@@ -408,6 +416,88 @@ export function useAnalyticsSkillPerformance(
         }
       );
       return SkillPerformanceResponseSchema.parse(res);
+    },
+  });
+}
+
+// Footer Analytics Hooks (4 new metrics)
+
+export function useAnalyticsScenarioPerformance(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsScenarioPerformanceKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/footer/scenario-performance",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return ScenarioPerformanceDataSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsScenarioStats(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsScenarioStatsKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/footer/scenario-stats",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return ScenarioStatsDataSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsSimulationComposition(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsSimulationCompositionKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/footer/simulation-composition",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return SimulationCompositionDataSchema.parse(res);
+    },
+  });
+}
+
+export function useAnalyticsSimulationPerformance(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsSimulationPerformanceKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>(
+        "/api/v1/analytics/footer/simulation-performance",
+        {
+          method: "POST",
+          body: JSON.stringify(filters),
+        }
+      );
+      return SimulationPerformanceDataSchema.parse(res);
     },
   });
 }

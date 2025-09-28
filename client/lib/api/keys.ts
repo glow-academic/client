@@ -263,6 +263,31 @@ export const analyticsSkillPerformanceKeys = {
   list: (filters?: unknown) =>
     [...analyticsSkillPerformanceKeys.all, { filters }] as const,
 };
+
+// Footer Analytics Keys
+export const analyticsScenarioPerformanceKeys = {
+  all: ["analytics:footer:scenario-performance"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsScenarioPerformanceKeys.all, { filters }] as const,
+};
+
+export const analyticsScenarioStatsKeys = {
+  all: ["analytics:footer:scenario-stats"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsScenarioStatsKeys.all, { filters }] as const,
+};
+
+export const analyticsSimulationCompositionKeys = {
+  all: ["analytics:footer:simulation-composition"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsSimulationCompositionKeys.all, { filters }] as const,
+};
+
+export const analyticsSimulationPerformanceKeys = {
+  all: ["analytics:footer:simulation-performance"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsSimulationPerformanceKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

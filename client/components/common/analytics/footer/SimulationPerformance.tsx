@@ -26,11 +26,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { AnalyticsFilters } from "@/lib/analytics";
+import { useAnalyticsSimulationPerformance } from "@/lib/api/hooks/analytics";
 import { cn } from "@/lib/utils";
-import { Simulation } from "@/types";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { getSimulationsWithValidData } from "@/utils/analytics/filtering";
-import { calculateScenarioPerformanceWithinSimulation } from "@/utils/analytics/footer";
+import { buildSimulationScenarioBars } from "@/utils/client-aggregators";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -44,7 +43,7 @@ import {
 } from "recharts";
 
 export interface SimulationPerformanceProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -53,58 +52,64 @@ export interface SimulationPerformanceProps {
 }
 
 export default function SimulationPerformance({
-  filteredData,
+  filters,
   thresholds,
 }: SimulationPerformanceProps) {
-  const [selectedSimulation, setSelectedSimulation] =
-    useState<Simulation | null>(null);
+  const [selectedSimulationId, setSelectedSimulationId] = useState<
+    string | null
+  >(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const scenarios = filteredData?.scenarios;
-  const rubrics = filteredData?.rubrics;
+  // Fetch analytics data using the new hook
+  const {
+    data: analyticsData,
+    isLoading,
+    error,
+  } = useAnalyticsSimulationPerformance(filters);
+
   // Get simulations with valid data for this component
   const validSimulations = useMemo(() => {
-    if (!filteredData || !rubrics) return [];
-    return getSimulationsWithValidData(filteredData, rubrics);
-  }, [filteredData, rubrics]);
+    if (!analyticsData) return [];
+    return analyticsData.validSimulations || [];
+  }, [analyticsData]);
 
   // Auto-select simulation if enabled and available
   useMemo(() => {
     if (validSimulations.length > 0) {
       // If no simulation is selected, select the first one
-      if (!selectedSimulation) {
+      if (!selectedSimulationId) {
         const firstSimulation = validSimulations[0];
         if (firstSimulation) {
-          setSelectedSimulation(firstSimulation);
+          setSelectedSimulationId(firstSimulation.id);
         }
       } else {
         // If selected simulation is no longer available, select the first available one
         const isStillAvailable = validSimulations.some(
-          (sim) => sim.id === selectedSimulation.id
+          (sim) => sim.id === selectedSimulationId
         );
         if (!isStillAvailable) {
           const firstSimulation = validSimulations[0];
           if (firstSimulation) {
-            setSelectedSimulation(firstSimulation);
+            setSelectedSimulationId(firstSimulation.id);
           }
         }
       }
     }
-  }, [validSimulations, selectedSimulation]);
+  }, [validSimulations, selectedSimulationId]);
 
-  // Calculate scenario performance data for selected simulation using utility function
+  // Calculate scenario performance data for selected simulation using client aggregator
   const scenarioPerformanceData = useMemo(() => {
-    if (!selectedSimulation || !scenarios || !filteredData || !rubrics) {
+    if (!selectedSimulationId || !analyticsData) {
       return [];
     }
 
-    return calculateScenarioPerformanceWithinSimulation(
-      filteredData,
-      rubrics,
-      selectedSimulation,
+    const result = buildSimulationScenarioBars(
+      analyticsData.scenarioFacts,
+      selectedSimulationId,
       thresholds
     );
-  }, [selectedSimulation, filteredData, rubrics, thresholds, scenarios]);
+    return result.rows;
+  }, [selectedSimulationId, analyticsData, thresholds]);
 
   // Calculate insights
   const insights = useMemo(() => {
@@ -112,16 +117,18 @@ export default function SimulationPerformance({
       return "No scenario data available for analysis.";
     }
 
-    const totalChange = scenarioPerformanceData.reduce(
-      (sum, scenario) => sum + scenario.performanceChange,
-      0
-    );
-    const avgChange = Math.round(totalChange / scenarioPerformanceData.length);
+    // Use insights from the client aggregator if available
+    if (analyticsData && selectedSimulationId) {
+      const result = buildSimulationScenarioBars(
+        analyticsData.scenarioFacts,
+        selectedSimulationId,
+        thresholds
+      );
+      return result.insights;
+    }
 
-    // Generate insights
+    // Fallback insight generation
     const topPerformer = scenarioPerformanceData[0];
-    const bottomPerformer =
-      scenarioPerformanceData[scenarioPerformanceData.length - 1];
     const avgScore = Math.round(
       scenarioPerformanceData.reduce(
         (sum, scenario) => sum + scenario.avgScore,
@@ -129,17 +136,13 @@ export default function SimulationPerformance({
       ) / scenarioPerformanceData.length
     );
 
-    let insightText = "";
-    if (avgChange > 5) {
-      insightText = `Scenarios show strong improvement (+${avgChange}%). ${topPerformer?.scenarioName || "Unknown"} leads with ${topPerformer?.avgScore || 0}% average score.`;
-    } else if (avgChange < -5) {
-      insightText = `Performance declined by ${Math.abs(avgChange)}%. Focus on ${bottomPerformer?.scenarioName || "Unknown"} (${bottomPerformer?.avgScore || 0}%) for improvement.`;
-    } else {
-      insightText = `Stable performance with ${avgScore}% average. ${topPerformer?.scenarioName || "Unknown"} excels at ${topPerformer?.avgScore || 0}%.`;
-    }
-
-    return insightText;
-  }, [scenarioPerformanceData]);
+    return `Stable performance with ${avgScore}% average. ${topPerformer?.scenarioName || "Unknown"} excels at ${topPerformer?.avgScore || 0}%.`;
+  }, [
+    scenarioPerformanceData,
+    analyticsData,
+    selectedSimulationId,
+    thresholds,
+  ]);
 
   // Calculate threshold status based on scenario performance
   const getThresholdStatus = () => {
@@ -167,6 +170,50 @@ export default function SimulationPerformance({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Simulation Performance
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Performance trends for scenarios within simulations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            Loading simulation performance data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Simulation Performance
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Performance trends for scenarios within simulations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center text-red-500">
+            Error loading simulation performance data
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -204,8 +251,10 @@ export default function SimulationPerformance({
                   className="w-48 justify-between text-sm h-8"
                 >
                   <span className="truncate text-left">
-                    {selectedSimulation
-                      ? selectedSimulation.title
+                    {selectedSimulationId
+                      ? validSimulations.find(
+                          (s) => s.id === selectedSimulationId
+                        )?.title
                       : "Select simulation..."}
                   </span>
                   <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
@@ -221,14 +270,14 @@ export default function SimulationPerformance({
                         key={simulation.id}
                         value={simulation.id}
                         onSelect={() => {
-                          setSelectedSimulation(simulation);
+                          setSelectedSimulationId(simulation.id);
                           setPickerOpen(false);
                         }}
                       >
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4 shrink-0",
-                            selectedSimulation?.id === simulation.id
+                            selectedSimulationId === simulation.id
                               ? "opacity-100"
                               : "opacity-0"
                           )}

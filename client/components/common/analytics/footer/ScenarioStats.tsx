@@ -1,6 +1,7 @@
 /**
  * ScenarioStats.tsx
  * This component displays the scenario stats for the personas with bar charts.
+ * Updated to use new "facts + pre-agg" pattern for fast client-side filtering.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -31,9 +32,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AnalyticsFilters } from "@/lib/analytics";
+import { useAnalyticsScenarioStats } from "@/lib/api/hooks/analytics";
 import { cn } from "@/lib/utils";
-import type { FilteredData } from "@/utils/analytics/filtering";
-import { calculateScenarioPerformance } from "@/utils/analytics/footer";
+import { buildScenarioNumericBars } from "@/utils/client-aggregators";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -47,7 +49,7 @@ import {
 } from "recharts";
 
 export interface ScenarioStatsProps {
-  filteredData: FilteredData | null;
+  filters: AnalyticsFilters;
   thresholds: {
     danger: number;
     warning: number;
@@ -62,21 +64,20 @@ interface MetricOption {
 }
 
 export default function ScenarioStats({
-  filteredData,
+  filters,
   thresholds,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // Use centralized datasets from filteredData
-  const parameters = filteredData?.parameters;
-  const parameterItems = filteredData?.parameterItems;
-  const rubrics = filteredData?.rubrics;
+  // Use new analytics hook
+  const { data, isLoading, isError } = useAnalyticsScenarioStats(filters);
 
-  // Get numerical parameters only
-  const numericalParameters = useMemo(() => {
-    return parameters?.filter((p) => p.numerical && p.active) || [];
-  }, [parameters]);
+  // Get available numerical parameters from server response
+  const numericalParameters = useMemo(
+    () => data?.numericalParameters || [],
+    [data?.numericalParameters]
+  );
 
   // Set default selected parameter if none selected and we have numerical parameters
   const selectedParameter = useMemo(() => {
@@ -99,23 +100,56 @@ export default function ScenarioStats({
     }));
   }, [numericalParameters]);
 
-  // Calculate performance data using utility function
-  const { performanceData: aggregatedPerformanceData, correlationData } =
-    useMemo(() => {
-      if (!filteredData || !parameterItems || !selectedParameter || !rubrics) {
-        return {
-          performanceData: [],
-          correlationData: { correlation: 0, pValue: 1 },
-        };
-      }
+  // Calculate performance data using new aggregator
+  const aggregatedPerformanceData = useMemo(() => {
+    if (!data || !selectedParameter) {
+      return data?.performanceData || [];
+    }
 
-      return calculateScenarioPerformance(
-        filteredData,
-        rubrics,
-        parameterItems,
-        selectedParameter
-      );
-    }, [filteredData, parameterItems, selectedParameter, rubrics]);
+    return buildScenarioNumericBars(
+      data.numericAttemptFacts,
+      selectedParameter.id
+    );
+  }, [data, selectedParameter]);
+
+  // Use server-provided correlation data
+  const correlationData = data?.correlationData || {
+    correlation: 0,
+    pValue: 1,
+  };
+
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Scenario Stats</CardTitle>
+          <CardDescription>
+            Loading scenario performance data...
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Scenario Stats</CardTitle>
+          <CardDescription>
+            Error loading scenario performance data
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">Failed to load data</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const { correlation, pValue } = correlationData;
 
