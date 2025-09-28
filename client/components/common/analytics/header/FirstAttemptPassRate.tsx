@@ -1,8 +1,7 @@
 /**
  * FirstAttemptPassRate.tsx
- * Displays the first attempt pass rate metric using analytics endpoint.
- * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
- * 07/23/2025
+ * Fast and dumb UI component for displaying first attempt pass rate metric.
+ * All data processing is handled externally via props.
  */
 "use client";
 
@@ -15,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Award } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -26,13 +25,15 @@ import {
   YAxis,
 } from "recharts";
 
-import { computeCurrent, MetricResponse, TrendData, AnalyticsFilters } from "@/lib/analytics";
-import {
-  useAnalyticsFirstAttemptPassRate,
-} from "@/lib/api/hooks/analytics";
+import { TrendData } from "@/lib/analytics";
 
 export interface FirstAttemptPassRateProps {
-  filters: AnalyticsFilters;
+  firstAttemptPassRate: number;
+  passRateTrend: TrendData[];
+  hasDataAvailable: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  trendAnalysis: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -74,79 +75,25 @@ const COLOR_CONFIGS = {
 };
 
 export default function FirstAttemptPassRate({
-  filters,
+  firstAttemptPassRate,
+  passRateTrend,
+  hasDataAvailable,
+  isLoading,
+  isError,
+  trendAnalysis,
   thresholds,
 }: FirstAttemptPassRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 1) Fetch data from analytics API
-  const { data, isLoading, isError } = useAnalyticsFirstAttemptPassRate(
-    filters,
-    true
-  );
-
-  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
-  const { firstAttemptPassRate, passRateTrend, hasDataAvailable } =
-    useMemo(() => {
-      const resp = data as MetricResponse | undefined;
-      if (!resp) {
-        return {
-          firstAttemptPassRate: 0,
-          passRateTrend: [] as TrendData[],
-          hasDataAvailable: false,
-        };
-      }
-
-      // Use all data points for aggregate view (rate -> percent)
-      const points = resp.dataPoints;
-      const current = computeCurrent(resp.method, points); // for 'rate', returns 0..100
-
-      return {
-        firstAttemptPassRate: Number.isFinite(current) ? current : 0,
-        passRateTrend: resp.trendData ?? [],
-        hasDataAvailable: !!resp.hasData && points.length > 0,
-      };
-    }, [data]);
-
-  // 3) Color config
-  const colorConfig = useMemo(() => {
+  // Color config based on score and thresholds
+  const colorConfig = (() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (firstAttemptPassRate < thresholds.danger) return COLOR_CONFIGS.danger;
     if (firstAttemptPassRate < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  }, [firstAttemptPassRate, thresholds, hasDataAvailable]);
+  })();
 
-  // 4) Trend insight (lightweight)
-  const trendAnalysis = useMemo(() => {
-    if (!hasDataAvailable || (passRateTrend?.length ?? 0) < 2) return null;
-
-    const recentData = passRateTrend.slice(-3);
-    const earlierData = passRateTrend.slice(0, 3);
-    if (!recentData.length || !earlierData.length) return null;
-
-    const recentAvg =
-      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
-      recentData.length;
-    const earlierAvg =
-      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
-      earlierData.length;
-
-    const change = recentAvg - earlierAvg;
-    const changePercent =
-      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-    if (Math.abs(changePercent) < 1) return null;
-
-    const period =
-      passRateTrend.length <= 7
-        ? "3 days"
-        : passRateTrend.length <= 14
-          ? "1 week"
-          : "1 month";
-    const direction = changePercent > 0 ? "increased" : "decreased";
-    return `First attempt pass rate ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  }, [hasDataAvailable, passRateTrend]);
-
-  // 5) UI states
+  // UI states
   if (isLoading) {
     return (
       <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
@@ -177,7 +124,7 @@ export default function FirstAttemptPassRate({
     );
   }
 
-  // 6) Render
+  // Render
   return (
     <>
       <Card

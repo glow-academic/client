@@ -253,6 +253,42 @@ export function computeCurrent(
   }
 }
 
+// Utility function to compute trend analysis
+export function computeTrendAnalysis(
+  trendData: TrendData[],
+  metricName: string
+): string | null {
+  if (!trendData || trendData.length < 2) return null;
+
+  const recentData = trendData.slice(-3);
+  const earlierData = trendData.slice(0, 3);
+
+  if (!recentData.length || !earlierData.length) return null;
+
+  const recentAvg =
+    recentData.reduce((sum: number, d: TrendData) => sum + (d.value ?? 0), 0) /
+    recentData.length;
+  const earlierAvg =
+    earlierData.reduce((sum: number, d: TrendData) => sum + (d.value ?? 0), 0) /
+    earlierData.length;
+
+  const change = recentAvg - earlierAvg;
+  const changePercent =
+    earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
+
+  if (Math.abs(changePercent) < 1) return null;
+
+  const period =
+    trendData.length <= 7
+      ? "3 days"
+      : trendData.length <= 14
+        ? "1 week"
+        : "1 month";
+  const direction = changePercent > 0 ? "increased" : "decreased";
+
+  return `${metricName} ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
+}
+
 // Secondary Analytics Types
 
 // Attempt Improvement Types

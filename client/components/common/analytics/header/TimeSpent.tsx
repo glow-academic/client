@@ -1,8 +1,7 @@
 /**
  * TimeSpent.tsx
- * Displays the time spent metric using analytics endpoint.
- * @AshokSaravanan222 & @siladiea — integrated for dataPoints/method API
- * 07/23/2025
+ * Fast and dumb UI component for displaying time spent metric.
+ * All data processing is handled externally via props.
  */
 "use client";
 
@@ -15,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Timer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -26,16 +25,15 @@ import {
   YAxis,
 } from "recharts";
 
-import {
-  AnalyticsFilters,
-  computeCurrent,
-  MetricResponse,
-  TrendData,
-} from "@/lib/analytics";
-import { useAnalyticsTimeSpent } from "@/lib/api/hooks/analytics";
+import { TrendData } from "@/lib/analytics";
 
 export interface TimeSpentProps {
-  filters: AnalyticsFilters;
+  totalTimeSpent: number;
+  timeSpentTrend: TrendData[];
+  hasDataAvailable: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  trendAnalysis: string | null;
   thresholds: {
     danger: number;
     warning: number;
@@ -80,71 +78,24 @@ const COLOR_CONFIGS = {
   },
 };
 
-export default function TimeSpent({ filters, thresholds }: TimeSpentProps) {
+export default function TimeSpent({
+  totalTimeSpent,
+  timeSpentTrend,
+  hasDataAvailable,
+  isLoading,
+  isError,
+  trendAnalysis,
+  thresholds,
+}: TimeSpentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // 1) Fetch data from analytics API
-  const { data, isLoading, isError } = useAnalyticsTimeSpent(filters, true);
-
-  // 2) Derive values from MetricResponse (method + dataPoints + trendData)
-  const { totalTimeSpent, timeSpentTrend, hasDataAvailable } = useMemo(() => {
-    const resp = data as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        totalTimeSpent: 0,
-        timeSpentTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    // Use all data points for aggregate view
-    const points = resp.dataPoints;
-    const current = computeCurrent(resp["method"], points); // returns number for avg/sum, etc.
-
-    return {
-      totalTimeSpent: Number.isFinite(current) ? Math.round(current) : 0,
-      timeSpentTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  }, [data]);
-
-  // 3) Color config
-  const colorConfig = useMemo(() => {
+  // Color config based on score and thresholds
+  const colorConfig = (() => {
     if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
     if (totalTimeSpent < thresholds.danger) return COLOR_CONFIGS.danger;
     if (totalTimeSpent < thresholds.warning) return COLOR_CONFIGS.warning;
     return COLOR_CONFIGS.success;
-  }, [totalTimeSpent, thresholds, hasDataAvailable]);
-
-  // 4) Trend insight (lightweight)
-  const trendAnalysis = useMemo(() => {
-    if (!hasDataAvailable || (timeSpentTrend?.length ?? 0) < 2) return null;
-
-    const recentData = timeSpentTrend.slice(-3);
-    const earlierData = timeSpentTrend.slice(0, 3);
-    if (!recentData.length || !earlierData.length) return null;
-
-    const recentAvg =
-      recentData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
-      recentData.length;
-    const earlierAvg =
-      earlierData.reduce((s: number, d: TrendData) => s + (d.value ?? 0), 0) /
-      earlierData.length;
-
-    const change = recentAvg - earlierAvg;
-    const changePercent =
-      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-    if (Math.abs(changePercent) < 1) return null;
-
-    const period =
-      timeSpentTrend.length <= 7
-        ? "3 days"
-        : timeSpentTrend.length <= 14
-          ? "1 week"
-          : "1 month";
-    const direction = changePercent > 0 ? "increased" : "decreased";
-    return `Time spent ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
-  }, [hasDataAvailable, timeSpentTrend]);
+  })();
 
   // Format time for display
   const formatTime = (seconds: number) => {
@@ -164,7 +115,7 @@ export default function TimeSpent({ filters, thresholds }: TimeSpentProps) {
     return `${hours}h ${minutes}m`;
   };
 
-  // 5) UI states
+  // UI states
   if (isLoading) {
     return (
       <Card className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 animate-pulse">
@@ -193,7 +144,7 @@ export default function TimeSpent({ filters, thresholds }: TimeSpentProps) {
     );
   }
 
-  // 6) Render
+  // Render
   return (
     <>
       <Card

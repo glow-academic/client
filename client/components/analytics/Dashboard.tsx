@@ -10,8 +10,25 @@
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { computeCurrent, MetricResponse, TrendData } from "@/lib/analytics";
-import { useAnalyticsAverageScore } from "@/lib/api/hooks/analytics";
+import {
+  computeCurrent,
+  computeTrendAnalysis,
+  MetricResponse,
+  TrendData,
+} from "@/lib/analytics";
+import {
+  useAnalyticsAttemptHistory,
+  useAnalyticsAverageScore,
+  useAnalyticsCompletionPercentage,
+  useAnalyticsFirstAttemptPassRate,
+  useAnalyticsHighestScore,
+  useAnalyticsMessagesPerSession,
+  useAnalyticsPersonaResponseTimes,
+  useAnalyticsSessionEfficiency,
+  useAnalyticsStagnationRate,
+  useAnalyticsTimeSpent,
+  useAnalyticsTotalAttempts,
+} from "@/lib/api/hooks/analytics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -81,11 +98,77 @@ export default function Dashboard({ profileId }: DashboardProps) {
   };
 
   // Fetch data and process it inline
-  const { data, isLoading, isError } = useAnalyticsAverageScore(filters, true);
+  const {
+    data: averageScoreData,
+    isLoading: averageScoreLoading,
+    isError: averageScoreError,
+  } = useAnalyticsAverageScore(filters, true);
+  const {
+    data: completionData,
+    isLoading: completionLoading,
+    isError: completionError,
+  } = useAnalyticsCompletionPercentage(filters, true);
+  const {
+    data: passRateData,
+    isLoading: passRateLoading,
+    isError: passRateError,
+  } = useAnalyticsFirstAttemptPassRate(filters, true);
+  const {
+    data: highestScoreData,
+    isLoading: highestScoreLoading,
+    isError: highestScoreError,
+  } = useAnalyticsHighestScore(filters, true);
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    isError: messagesError,
+  } = useAnalyticsMessagesPerSession(filters, true);
+  const {
+    data: responseTimeData,
+    isLoading: responseTimeLoading,
+    isError: responseTimeError,
+  } = useAnalyticsPersonaResponseTimes(filters, true);
+  const {
+    data: sessionEfficiencyData,
+    isLoading: sessionEfficiencyLoading,
+    isError: sessionEfficiencyError,
+  } = useAnalyticsSessionEfficiency(filters, true);
+  const {
+    data: stagnationRateData,
+    isLoading: stagnationRateLoading,
+    isError: stagnationRateError,
+  } = useAnalyticsStagnationRate(filters, true);
+  const {
+    data: timeSpentData,
+    isLoading: timeSpentLoading,
+    isError: timeSpentError,
+  } = useAnalyticsTimeSpent(filters, true);
+  const {
+    data: totalAttemptsData,
+    isLoading: totalAttemptsLoading,
+    isError: totalAttemptsError,
+  } = useAnalyticsTotalAttempts(filters, true);
+
+  // Fetch history data for the dashboard
+  const { data: historyData, isLoading: isHistoryLoading } =
+    useAnalyticsAttemptHistory({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
+        | "general"
+        | "practice"
+        | "archived"
+      )[],
+      // For dashboard, show all users' history (no profileId filter)
+      // unless it's a specific profile view
+      ...(profileId && { profileId }),
+    });
 
   // Process the data inline
-  const averageScoreData = (() => {
-    const resp = data as MetricResponse | undefined;
+  const averageScoreProcessed = (() => {
+    const resp = averageScoreData as MetricResponse | undefined;
     if (!resp) {
       return {
         averageScore: 0,
@@ -105,153 +188,338 @@ export default function Dashboard({ profileId }: DashboardProps) {
     };
   })();
 
-  // Trend analysis
-  const trendAnalysis = (() => {
-    if (
-      !averageScoreData.hasDataAvailable ||
-      (averageScoreData.scoreTrend?.length ?? 0) < 2
-    )
-      return null;
+  // Process completion percentage data
+  const completionProcessed = (() => {
+    const resp = completionData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        completionPercentage: 0,
+        completionTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
 
-    const recentData = averageScoreData.scoreTrend.slice(-3);
-    const earlierData = averageScoreData.scoreTrend.slice(0, 3);
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
 
-    if (!recentData.length || !earlierData.length) return null;
-
-    const recentAvg =
-      recentData.reduce(
-        (sum: number, d: TrendData) => sum + (d.value ?? 0),
-        0
-      ) / recentData.length;
-    const earlierAvg =
-      earlierData.reduce(
-        (sum: number, d: TrendData) => sum + (d.value ?? 0),
-        0
-      ) / earlierData.length;
-
-    const change = recentAvg - earlierAvg;
-    const changePercent =
-      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
-    if (Math.abs(changePercent) < 1) return null;
-
-    const period =
-      averageScoreData.scoreTrend.length <= 7
-        ? "3 days"
-        : averageScoreData.scoreTrend.length <= 14
-          ? "1 week"
-          : "1 month";
-    const direction = changePercent > 0 ? "increased" : "decreased";
-    return `Average score ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
+    return {
+      completionPercentage: Number.isFinite(current) ? current : 0,
+      completionTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
   })();
+
+  // Process first attempt pass rate data
+  const passRateProcessed = (() => {
+    const resp = passRateData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        firstAttemptPassRate: 0,
+        passRateTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      firstAttemptPassRate: Number.isFinite(current) ? current : 0,
+      passRateTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process highest score data
+  const highestScoreProcessed = (() => {
+    const resp = highestScoreData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        highestScore: 0,
+        scoreTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      highestScore: Number.isFinite(current) ? current : 0,
+      scoreTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process messages per session data
+  const messagesProcessed = (() => {
+    const resp = messagesData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        averageMessagesPerSession: 0,
+        messagesTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      averageMessagesPerSession: Number.isFinite(current)
+        ? Math.round(current)
+        : 0,
+      messagesTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process persona response times data
+  const responseTimeProcessed = (() => {
+    const resp = responseTimeData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        averageResponseTime: 0,
+        responseTimeTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      averageResponseTime: Number.isFinite(current) ? Math.round(current) : 0,
+      responseTimeTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process session efficiency data
+  const sessionEfficiencyProcessed = (() => {
+    const resp = sessionEfficiencyData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        sessionEfficiency: 0,
+        efficiencyTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      sessionEfficiency: Number.isFinite(current) ? current : 0,
+      efficiencyTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process stagnation rate data
+  const stagnationRateProcessed = (() => {
+    const resp = stagnationRateData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        stagnationRate: 0,
+        stagnationTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      stagnationRate: Number.isFinite(current) ? current : 0,
+      stagnationTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process time spent data
+  const timeSpentProcessed = (() => {
+    const resp = timeSpentData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        totalTimeSpent: 0,
+        timeSpentTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      totalTimeSpent: Number.isFinite(current) ? Math.round(current) : 0,
+      timeSpentTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Process total attempts data
+  const totalAttemptsProcessed = (() => {
+    const resp = totalAttemptsData as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        totalAttempts: 0,
+        attemptsTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      totalAttempts: Number.isFinite(current) ? Math.round(current) : 0,
+      attemptsTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Trend analysis using utility function
+  const averageScoreTrendAnalysis = computeTrendAnalysis(
+    averageScoreProcessed.scoreTrend,
+    "Average score"
+  );
+  const completionTrendAnalysis = computeTrendAnalysis(
+    completionProcessed.completionTrend,
+    "Completion percentage"
+  );
+  const passRateTrendAnalysis = computeTrendAnalysis(
+    passRateProcessed.passRateTrend,
+    "First attempt pass rate"
+  );
+  const highestScoreTrendAnalysis = computeTrendAnalysis(
+    highestScoreProcessed.scoreTrend,
+    "Highest score"
+  );
+  const messagesTrendAnalysis = computeTrendAnalysis(
+    messagesProcessed.messagesTrend,
+    "Messages per session"
+  );
+  const responseTimeTrendAnalysis = computeTrendAnalysis(
+    responseTimeProcessed.responseTimeTrend,
+    "Response time"
+  );
+  const sessionEfficiencyTrendAnalysis = computeTrendAnalysis(
+    sessionEfficiencyProcessed.efficiencyTrend,
+    "Session efficiency"
+  );
+  const stagnationRateTrendAnalysis = computeTrendAnalysis(
+    stagnationRateProcessed.stagnationTrend,
+    "Stagnation rate"
+  );
+  const timeSpentTrendAnalysis = computeTrendAnalysis(
+    timeSpentProcessed.timeSpentTrend,
+    "Time spent"
+  );
+  const totalAttemptsTrendAnalysis = computeTrendAnalysis(
+    totalAttemptsProcessed.attemptsTrend,
+    "Total attempts"
+  );
 
   const headerComponents = [
     <AverageScore
       key="average-score"
-      averageScore={averageScoreData.averageScore}
-      scoreTrend={averageScoreData.scoreTrend}
-      hasDataAvailable={averageScoreData.hasDataAvailable}
-      isLoading={isLoading}
-      isError={isError}
-      trendAnalysis={trendAnalysis}
+      averageScore={averageScoreProcessed.averageScore}
+      scoreTrend={averageScoreProcessed.scoreTrend}
+      hasDataAvailable={averageScoreProcessed.hasDataAvailable}
+      isLoading={averageScoreLoading}
+      isError={averageScoreError}
+      trendAnalysis={averageScoreTrendAnalysis}
       thresholds={thresholds}
     />,
     <CompletionPercentage
       key="completion-percentage"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      completionPercentage={completionProcessed.completionPercentage}
+      completionTrend={completionProcessed.completionTrend}
+      hasDataAvailable={completionProcessed.hasDataAvailable}
+      isLoading={completionLoading}
+      isError={completionError}
+      trendAnalysis={completionTrendAnalysis}
       thresholds={thresholds}
     />,
     <FirstAttemptPassRate
       key="first-attempt-pass-rate"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      firstAttemptPassRate={passRateProcessed.firstAttemptPassRate}
+      passRateTrend={passRateProcessed.passRateTrend}
+      hasDataAvailable={passRateProcessed.hasDataAvailable}
+      isLoading={passRateLoading}
+      isError={passRateError}
+      trendAnalysis={passRateTrendAnalysis}
       thresholds={thresholds}
     />,
     <HighestScore
       key="highest-score"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      highestScore={highestScoreProcessed.highestScore}
+      scoreTrend={highestScoreProcessed.scoreTrend}
+      hasDataAvailable={highestScoreProcessed.hasDataAvailable}
+      isLoading={highestScoreLoading}
+      isError={highestScoreError}
+      trendAnalysis={highestScoreTrendAnalysis}
       thresholds={thresholds}
     />,
     <MessagesPerSession
       key="messages-per-session"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      averageMessagesPerSession={messagesProcessed.averageMessagesPerSession}
+      messagesTrend={messagesProcessed.messagesTrend}
+      hasDataAvailable={messagesProcessed.hasDataAvailable}
+      isLoading={messagesLoading}
+      isError={messagesError}
+      trendAnalysis={messagesTrendAnalysis}
       thresholds={thresholds}
     />,
     <PersonaResponseTimes
       key="persona-response-times"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      averageResponseTime={responseTimeProcessed.averageResponseTime}
+      responseTimeTrend={responseTimeProcessed.responseTimeTrend}
+      hasDataAvailable={responseTimeProcessed.hasDataAvailable}
+      isLoading={responseTimeLoading}
+      isError={responseTimeError}
+      trendAnalysis={responseTimeTrendAnalysis}
       thresholds={thresholds}
     />,
     <SessionEfficiency
       key="session-efficiency"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      sessionEfficiency={sessionEfficiencyProcessed.sessionEfficiency}
+      efficiencyTrend={sessionEfficiencyProcessed.efficiencyTrend}
+      hasDataAvailable={sessionEfficiencyProcessed.hasDataAvailable}
+      isLoading={sessionEfficiencyLoading}
+      isError={sessionEfficiencyError}
+      trendAnalysis={sessionEfficiencyTrendAnalysis}
       thresholds={thresholds}
     />,
     <StagnationRate
       key="stagnation-rate"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      stagnationRate={stagnationRateProcessed.stagnationRate}
+      stagnationTrend={stagnationRateProcessed.stagnationTrend}
+      hasDataAvailable={stagnationRateProcessed.hasDataAvailable}
+      isLoading={stagnationRateLoading}
+      isError={stagnationRateError}
+      trendAnalysis={stagnationRateTrendAnalysis}
       thresholds={thresholds}
     />,
     <TimeSpent
       key="time-spent"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      totalTimeSpent={timeSpentProcessed.totalTimeSpent}
+      timeSpentTrend={timeSpentProcessed.timeSpentTrend}
+      hasDataAvailable={timeSpentProcessed.hasDataAvailable}
+      isLoading={timeSpentLoading}
+      isError={timeSpentError}
+      trendAnalysis={timeSpentTrendAnalysis}
       thresholds={thresholds}
     />,
     <TotalAttempts
       key="total-attempts"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      totalAttempts={totalAttemptsProcessed.totalAttempts}
+      attemptsTrend={totalAttemptsProcessed.attemptsTrend}
+      hasDataAvailable={totalAttemptsProcessed.hasDataAvailable}
+      isLoading={totalAttemptsLoading}
+      isError={totalAttemptsError}
+      trendAnalysis={totalAttemptsTrendAnalysis}
       thresholds={thresholds}
     />,
   ];
@@ -805,9 +1073,34 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
+        data={
+          historyData?.rows
+            ? historyData.rows.map((item) => ({
+                attemptId: item.attemptId,
+                date: new Date(item.attemptDate),
+                profileId: item.profileId,
+                profileName: item.profileName,
+                simulationName: item.simulationTitle,
+                numScenarios: item.expectedCount,
+                numScenariosCompleted: item.completedCount,
+                infiniteMode: item.infiniteMode,
+                personaNames: item.personaNames,
+                personaColors: item.personaColors,
+                score: item.scorePercent,
+                simulation_id: item.simulationId,
+                scenario_ids: item.scenarioIds,
+                isArchived: item.archived,
+                showView: item.showView,
+                showContinue: item.showContinue,
+                practiceSimulation: item.practiceSimulation || false,
+                passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
+              }))
+            : []
+        }
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}
+        isLoading={isHistoryLoading}
       />
     </div>
   );
