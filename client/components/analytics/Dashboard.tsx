@@ -10,7 +10,6 @@
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -41,11 +40,6 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   const { effectiveProfile } = useProfile();
-
-  // Use centralized filtering hook
-  const { data: filteredData, isLoading } = useFilteredAnalyticsData({
-    ...(profileId && { profileId }),
-  });
 
   const {
     startDate,
@@ -389,18 +383,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
     effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -747,7 +729,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
       )}
 
       <SimulationHistory
-        filteredData={filteredData}
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}

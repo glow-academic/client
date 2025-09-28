@@ -25,7 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { Persona, Profile, Scenario, Simulation } from "@/types";
+import { Persona, Profile, Scenario } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
@@ -51,13 +51,17 @@ const generateGradientFromHex = (hexColor: string): string => {
 };
 
 export interface SimulationCardProps {
-  simulation: Simulation & {
-    cohort?: { title: string };
-    rubric?: { points: number; passPoints: number } | undefined;
-    passRate?: number;
-    hasPassed?: boolean;
-    highestScore?: number;
-  };
+  id: string;
+  timeLimit?: number;
+  numSessions: number;
+  highestScore?: number;
+  simulationTitle: string;
+  simulationDescription: string;
+  rubric_id?: string;
+  color?: string;
+  icon?: string;
+  hasPassed?: boolean;
+  passRate?: number;
   type: "default" | "cohort";
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
@@ -67,13 +71,21 @@ export interface SimulationCardProps {
 }
 
 export default function SimulationCard({
-  simulation,
+  id,
+  timeLimit,
+  numSessions,
+  highestScore,
+  simulationTitle,
+  simulationDescription,
+  rubric_id,
+  color,
+  icon,
+  hasPassed,
+  passRate,
   type,
   onStartSimulation,
   loadingSimulation,
   effectiveProfile,
-  scenarios,
-  personas,
 }: SimulationCardProps) {
   const { activeProfile } = useProfile();
   const isEmulatingAnother = Boolean(
@@ -81,38 +93,23 @@ export default function SimulationCard({
       activeProfile?.id &&
       effectiveProfile.id !== activeProfile.id
   );
-  const validScenarioIds =
-    simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-
-  // Default simulation-specific data
-  const interaction =
-    type === "default"
-      ? scenarios?.find((i: Scenario) => i.id === validScenarioIds[0])
-      : null;
-  const persona = interaction
-    ? personas?.find((a: Persona) => a.id === interaction.personaId)
-    : null;
 
   // Get persona configuration and icon based on persona data
   const IconComponent =
-    type === "default"
-      ? persona
-        ? getPersonaIconComponent(persona.icon)
-        : User
-      : Users;
+    type === "default" ? (icon ? getPersonaIconComponent(icon) : User) : Users;
 
   // Determine gradient class based on completion status and persona color
   const getGradientClass = () => {
-    if (simulation.hasPassed && type !== "default") {
+    if (hasPassed && type !== "default") {
       return "from-green-500 to-green-600";
     }
-    if (type === "default" && persona?.color) {
-      // Use the persona's actual color from database to generate gradient
-      const gradientStyle = generateGradientFromHex(persona.color);
+    if (type === "default" && color) {
+      // Use the provided color to generate gradient
+      const gradientStyle = generateGradientFromHex(color);
       return gradientStyle;
     }
     return type === "default"
-      ? persona?.color || "from-blue-500 to-purple-600"
+      ? color || "from-blue-500 to-purple-600"
       : "from-blue-500 to-purple-600";
   };
 
@@ -121,7 +118,7 @@ export default function SimulationCard({
   const backgroundGradient =
     type === "default"
       ? "from-gray-900 to-gray-600"
-      : simulation.hasPassed
+      : hasPassed
         ? "from-green-900 to-green-600"
         : "from-blue-900 to-purple-600";
 
@@ -194,14 +191,12 @@ export default function SimulationCard({
                     </DialogDescription>
                     <DialogHeader>
                       <DialogTitle>
-                        Grading Rubric: {simulation.title}
-                        {simulation.passRate &&
-                          simulation.passRate > 0 &&
-                          ` (${simulation.passRate}% to pass)`}
+                        Grading Rubric: {simulationTitle}
+                        {passRate && passRate > 0 && ` (${passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
-                    {simulation.rubricId ? (
-                      <TableRubric rubricId={simulation.rubricId} />
+                    {rubric_id ? (
+                      <TableRubric rubricId={rubric_id} />
                     ) : (
                       <p className="text-sm text-gray-500">
                         No rubric is associated with this simulation.
@@ -238,10 +233,10 @@ export default function SimulationCard({
               className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
               data-testid="simulation-title"
             >
-              {simulation.title}
+              {simulationTitle}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
-              {simulation.description}
+              {simulationDescription}
             </p>
           </div>
 
@@ -251,9 +246,7 @@ export default function SimulationCard({
               data-testid="simulation-duration"
             >
               <Timer className="h-3 w-3 mr-1" />
-              <span>
-                {simulation.timeLimit ? `${simulation.timeLimit}` : "∞"} min
-              </span>
+              <span>{timeLimit ? `${timeLimit}` : "∞"} min</span>
             </div>
             <div className="flex items-center">
               {type === "default" ? (
@@ -264,19 +257,19 @@ export default function SimulationCard({
               <span>
                 {type === "default"
                   ? "1 session"
-                  : `${validScenarioIds.length} session${validScenarioIds.length !== 1 ? "s" : ""}`}
+                  : `${numSessions} session${numSessions !== 1 ? "s" : ""}`}
               </span>
             </div>
             {effectiveProfile?.role !== "guest" &&
-              simulation.highestScore !== undefined &&
-              simulation.highestScore !== null &&
-              simulation.highestScore > 0 && (
+              highestScore !== undefined &&
+              highestScore !== null &&
+              highestScore > 0 && (
                 <div className="flex items-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center">
                         <Info className="h-3 w-3 mr-1" />
-                        <span>{simulation.highestScore}%</span>
+                        <span>{highestScore}%</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -297,13 +290,13 @@ export default function SimulationCard({
                     onClick={() => {
                       window.dispatchEvent(
                         new CustomEvent("simulationButtonPressed", {
-                          detail: { simulationId: simulation.id },
+                          detail: { simulationId: id },
                         })
                       );
-                      onStartSimulation(simulation.id);
+                      onStartSimulation(id);
                     }}
                     disabled
-                    data-testid={`start-simulation-${simulation.id}`}
+                    data-testid={`start-simulation-${id}`}
                     className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 cursor-not-allowed opacity-70 ${
                       typeof gradientClass === "string" &&
                       !gradientClass.startsWith("linear-gradient")
@@ -330,15 +323,15 @@ export default function SimulationCard({
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent("simulationButtonPressed", {
-                    detail: { simulationId: simulation.id },
+                    detail: { simulationId: id },
                   })
                 );
-                onStartSimulation(simulation.id);
+                onStartSimulation(id);
               }}
               disabled={loadingSimulation !== null}
-              data-testid={`start-simulation-${simulation.id}`}
+              data-testid={`start-simulation-${id}`}
               className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-                loadingSimulation === simulation.id
+                loadingSimulation === id
                   ? "animate-pulse cursor-not-allowed"
                   : "hover:scale-105 cursor-pointer"
               } disabled:opacity-70 ${
@@ -354,11 +347,11 @@ export default function SimulationCard({
                   }),
               }}
             >
-              {loadingSimulation === simulation.id
+              {loadingSimulation === id
                 ? "Starting..."
                 : type === "default"
                   ? "Start Simulation"
-                  : simulation.hasPassed
+                  : hasPassed
                     ? "Completed Simulations"
                     : "Start Simulations"}
             </button>

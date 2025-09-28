@@ -1,4 +1,4 @@
-import { Persona, Profile, Scenario, Simulation } from "@/types";
+import { Profile, Simulation } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "../common/simulation/SimulationCard";
@@ -8,8 +8,6 @@ interface PracticeZoneProps {
   profile: Profile | null;
   onStartSimulation: (simulationId: string) => void;
   loadingSimulation: string | null;
-  scenarios: Scenario[];
-  personas: Persona[];
 }
 
 export default function PracticeZone({
@@ -17,8 +15,6 @@ export default function PracticeZone({
   profile,
   onStartSimulation,
   loadingSimulation,
-  scenarios,
-  personas,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -89,13 +85,21 @@ export default function PracticeZone({
             profile && (
               <SimulationCard
                 key={simulation.id}
-                simulation={simulation}
+                id={simulation.id}
+                timeLimit={simulation.timeLimit}
+                numSessions={1}
+                highestScore={simulation.highestScore}
+                simulationTitle={simulation.title}
+                simulationDescription={simulation.description}
+                rubric_id={simulation.rubricId}
+                color={simulation.color}
+                icon={simulation.icon}
+                hasPassed={simulation.hasPassed}
+                passRate={simulation.passRate}
                 type="default"
                 onStartSimulation={onStartSimulation}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
-                scenarios={scenarios}
-                personas={personas}
               />
             )
         )}

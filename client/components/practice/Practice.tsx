@@ -349,8 +349,6 @@ export default function Practice() {
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}
-          scenarios={filteredData?.scenarios ?? []}
-          personas={filteredData?.personas ?? []}
         />
         {/* History Section for non-guests */}
         {effectiveProfile?.role !== "guest" && (

@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
 import { useAnalyticsHomeOverview } from "@/lib/api/hooks/analytics";
 import { log } from "@/utils/logger";
 
@@ -50,21 +49,6 @@ export default function Home() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-
-  // Main filtered data for progress visualization - no profileId for admin/superadmin
-  const { data: filteredData } = useFilteredAnalyticsData({
-    // Only pass profileId for non-admin users so admins can see all TA progress
-    ...(effectiveProfile?.id &&
-      effectiveProfile?.role !== "admin" &&
-      effectiveProfile?.role !== "superadmin" && {
-        profileId: effectiveProfile.id,
-      }),
-  });
-
-  // Separate filtered data for history section - always include profileId for current user
-  const { data: historyFilteredData } = useFilteredAnalyticsData({
-    ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
-  });
 
   // New optimized home overview analytics
   const { data: homeOverview, isLoading: isHomeOverviewLoading } =
@@ -819,13 +803,24 @@ export default function Home() {
               sim ? (
                 <SimulationCard
                   key={sim.id}
-                  simulation={sim}
+                  id={sim.id}
+                  timeLimit={sim.timeLimit}
+                  numSessions={
+                    sim.scenarioIds?.filter((id: string) => id !== "RAY")
+                      .length || 0
+                  }
+                  highestScore={sim.highestScore}
+                  simulationTitle={sim.title}
+                  simulationDescription={sim.description}
+                  rubric_id={sim.rubricId}
+                  color={sim.color}
+                  icon={sim.icon}
+                  hasPassed={sim.hasPassed}
+                  passRate={sim.passRate}
                   type="cohort"
                   onStartSimulation={handleStartSimulation}
                   loadingSimulation={loadingSimulation}
                   effectiveProfile={effectiveProfile}
-                  scenarios={[]} // Not needed for cohort simulations
-                  personas={[]} // Not needed for cohort simulations
                 />
               ) : null
             )}
@@ -853,7 +848,6 @@ export default function Home() {
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
-          filteredData={historyFilteredData}
           showExport={true}
           showArchive={false}
           singleProfile={true}
