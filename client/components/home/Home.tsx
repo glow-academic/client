@@ -23,22 +23,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import SimulationProgress from "../common/cohort/SimulationProgress";
+import SimulationProgress, {
+  ViewMode,
+} from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
-
-// Utility function to format cohort names with proper comma handling
-const formatCohortNames = (cohorts: Array<{ title: string }>): string => {
-  if (cohorts.length === 0) return "";
-  if (cohorts.length === 1) return cohorts[0]?.title || "";
-  if (cohorts.length === 2)
-    return `${cohorts[0]?.title || ""} and ${cohorts[1]?.title || ""}`;
-
-  const firstCohorts = cohorts.slice(0, -2).map((c) => c?.title || "");
-  const lastTwo = cohorts.slice(-2).map((c) => c?.title || "");
-
-  return `${firstCohorts.join(", ")}, ${lastTwo[0]}, and ${lastTwo[1]}`;
-};
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
@@ -80,49 +69,6 @@ export default function Home() {
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
-
-  // Determine if we should show all data (instructor view) or filtered (TA view)
-  const shouldShowAll =
-    effectiveProfile?.role === "instructional" ||
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin";
-
-  // Use rubrics from filtered data
-  const rubrics = filteredData?.rubrics;
-
-  // --- lookups from filteredData (safe fallbacks) ---
-  const simById = useMemo(() => {
-    const arr = filteredData?.simulations ?? [];
-    return new Map(arr.map((s) => [s.id, s]));
-  }, [filteredData?.simulations]);
-
-  const cohortById = useMemo(() => {
-    const arr = filteredData?.cohorts ?? [];
-    return new Map(arr.map((c) => [c.id, c]));
-  }, [filteredData?.cohorts]);
-
-  const rubricById = useMemo(() => {
-    const arr = filteredData?.rubrics ?? rubrics ?? [];
-    return new Map(arr.map((r) => [r.id, r]));
-  }, [filteredData?.rubrics, rubrics]);
-
-  const cohortMembersMap = useMemo(() => {
-    const arr = filteredData?.cohorts ?? [];
-    return new Map<string, string[]>(
-      arr.map((c) => [c.id, c.profileIds ?? []])
-    );
-  }, [filteredData?.cohorts]);
-
-  // Removed heavy `cohortsForDisplay` computation; filtering is handled by `filteredCohorts` below.
-
-  // Note: available cohorts should be derived from actual cohort availability, not
-  // heavy computed data (attempts/chats/grades). Use `filteredCohorts` downstream.
-
-  // Use cohorts from filtered data (already filtered by analytics context)
-  const filteredCohorts = useMemo(() => {
-    if (!filteredData?.cohorts) return [];
-    return filteredData.cohorts;
-  }, [filteredData?.cohorts]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -267,219 +213,38 @@ export default function Home() {
     ]
   );
 
-  // NEW: build enhancedSimulations directly from server payload (with client lookups)
-  const enhancedSimulations = useMemo(() => {
-    if (!homeOverview || homeOverview.mode === "empty") return [];
-
-    // helper: format cohort names
-    const fmtCohortNames = (cohortIds: string[]) => {
-      const cohorts = cohortIds
-        .map((id) => cohortById.get(id))
-        .filter(Boolean) as Array<{ title: string }>;
-      return formatCohortNames(cohorts);
-    };
-
-    // TA view → one record per simulation (your schema already gives highestScore + hasPassed)
-    if (homeOverview.mode === "ta") {
-      return (homeOverview.simulations ?? [])
-        .map((row) => {
-          const sim = simById.get(row.simulationId);
-          if (!sim) return null;
-
-          const rubric = rubricById.get(sim.rubricId);
-          const passRate =
-            rubric && rubric.points > 0
-              ? Math.round((rubric.passPoints / rubric.points) * 100)
-              : 0;
-
-          const cohorts = (row.cohortIds ?? [])
-            .map((id) => cohortById.get(id))
-            .filter(Boolean) as Array<{
-            id: string;
-            title: string;
-            description: string | null;
-          }>;
-
-          const cohort = cohorts[0] ?? {
-            id: "",
-            title: "",
-            description: null as string | null,
-          };
-
-          return {
-            ...sim,
-            cohort,
-            cohorts,
-            cohortNames: fmtCohortNames(row.cohortIds ?? []),
-            rubric,
-            passRate,
-            hasPassed: row.hasPassed,
-            highestScore: row.highestScore ?? 0,
-            progress: {
-              totalMembers: 1,
-              passedCount: row.hasPassed ? 1 : 0,
-              inProgressCount: row.hasPassed ? 0 : 1,
-              notStartedCount: 0,
-              passedMembers:
-                row.hasPassed && effectiveProfile?.id
-                  ? [effectiveProfile.id]
-                  : [],
-              inProgressMembers:
-                !row.hasPassed && effectiveProfile?.id
-                  ? [effectiveProfile.id]
-                  : [],
-            },
-            rubricData: {
-              attempts: [],
-              highestScore: row.highestScore ?? 0,
-            },
-          };
-        })
-        .filter(Boolean);
-    }
-
-    // Instructor/Admin → aggregate by simulation across cohorts
-    if (homeOverview.mode === "instructor") {
-      // group rows by simulationId
-      const bySim = new Map<
-        string,
-        {
-          simulation: NonNullable<typeof filteredData>["simulations"][0];
-          cohorts: { id: string; title: string; description: string | null }[];
-          passedMembers: string[];
-          inProgressMembers: string[];
-          totalMembers: number;
-        }
-      >();
-
-      for (const row of homeOverview.bySimulationCohort ?? []) {
-        const sim = simById.get(row.simulationId);
-        if (!sim) continue;
-
-        const cohort = cohortById.get(row.cohortId);
-        if (!cohort) continue;
-
-        const bucket = bySim.get(row.simulationId) ?? {
-          simulation: sim,
-          cohorts: [],
-          passedMembers: [],
-          inProgressMembers: [],
-          totalMembers: 0,
-        };
-
-        // accumulate cohort + membership
-        if (!bucket.cohorts.find((c) => c.id === cohort.id)) {
-          bucket.cohorts.push(cohort);
-        }
-
-        const cohortMembers = cohortMembersMap.get(cohort.id) ?? [];
-        bucket.totalMembers += cohortMembers.length;
-
-        bucket.passedMembers.push(...row.passedProfileIds);
-        bucket.inProgressMembers.push(...row.inProgressProfileIds);
-
-        bySim.set(row.simulationId, bucket);
-      }
-
-      // build final records per simulation
-      const results = Array.from(bySim.values()).map((bucket) => {
-        const sim = bucket.simulation;
-        const rubric = rubricById.get(sim.rubricId);
-        const passRate =
-          rubric && rubric.points > 0
-            ? Math.round((rubric.passPoints / rubric.points) * 100)
-            : 0;
-
-        const passedSet = new Set(bucket.passedMembers);
-        const inProgSet = new Set(bucket.inProgressMembers);
-
-        const passedCount = passedSet.size;
-        const inProgressCount = inProgSet.size;
-        const notStartedCount = Math.max(
-          0,
-          bucket.totalMembers - passedCount - inProgressCount
-        );
-
-        const cohort = bucket.cohorts[0] ?? {
-          id: "",
-          title: "",
-          description: null as string | null,
-        };
-
-        // hasPassed for instructor cards = everyone in the cohorts passed
-        const hasPassed =
-          bucket.totalMembers > 0 && passedCount >= bucket.totalMembers;
-
-        return {
-          ...sim,
-          cohort,
-          cohorts: bucket.cohorts,
-          cohortNames: formatCohortNames(bucket.cohorts),
-          rubric,
-          passRate,
-          hasPassed,
-          highestScore: 0, // not defined for instructor rollup
-          progress: {
-            totalMembers: bucket.totalMembers,
-            passedCount,
-            inProgressCount,
-            notStartedCount,
-            passedMembers: Array.from(passedSet),
-            inProgressMembers: Array.from(inProgSet),
-          },
-          rubricData: {
-            attempts: [],
-            highestScore: 0,
-          },
-        };
-      });
-
-      return results;
-    }
-
-    return [];
-  }, [
-    homeOverview,
-    simById,
-    cohortById,
-    rubricById,
-    cohortMembersMap,
-    effectiveProfile?.id,
-  ]);
+  // Use data directly from the hook
+  const simulationItems = useMemo(() => {
+    return homeOverview?.items ?? [];
+  }, [homeOverview?.items]);
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
-    return enhancedSimulations.sort((a, b) => {
+    return simulationItems.sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
       if (a.hasPassed !== b.hasPassed) {
         return a.hasPassed ? 1 : -1;
       }
 
-      // Then sort by cohort title
-      return a.cohort.title.localeCompare(b.cohort.title);
+      // Then sort by cohort name
+      return (a.cohortName || "").localeCompare(b.cohortName || "");
     });
-  }, [enhancedSimulations]);
+  }, [simulationItems]);
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    if (!enhancedSimulations) return [];
-
-    // Use the deduplicated simulations for progress data
-    return enhancedSimulations.sort((a, b) => {
+    return simulationItems.sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
-      const aCompleted = a.progress.passedCount >= a.progress.totalMembers;
-      const bCompleted = b.progress.passedCount >= b.progress.totalMembers;
-
-      if (aCompleted !== bCompleted) {
-        return aCompleted ? 1 : -1;
+      if (a.hasPassed !== b.hasPassed) {
+        return a.hasPassed ? 1 : -1;
       }
 
-      // Then sort by first cohort title
-      return a.cohort.title.localeCompare(b.cohort.title);
+      // Then sort by cohort name
+      return (a.cohortName || "").localeCompare(b.cohortName || "");
     });
-  }, [enhancedSimulations]);
+  }, [simulationItems]);
 
   // Carousel logic
   const maxVisible = 3;
@@ -723,13 +488,13 @@ export default function Home() {
     );
   }
 
-  if (!filteredCohorts.length) {
+  if (!simulationItems.length) {
     return (
       <div className="container mx-auto p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">No Cohorts Available</h1>
+          <h1 className="text-2xl font-bold mb-4">No Simulations Available</h1>
           <p className="text-gray-600">
-            There are no cohorts assigned to you. Please contact an
+            There are no simulations assigned to you. Please contact an
             administrator.
           </p>
         </div>
@@ -749,12 +514,27 @@ export default function Home() {
       {/* Progress Visualization Section - All progress bars grouped together */}
       <div className="space-y-6">
         <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
-          {sortedProgressData.map((sim) =>
-            sim ? (
+          {sortedProgressData.map((item) =>
+            item ? (
               <SimulationProgress
-                key={sim.id}
-                simulation={sim}
-                isTAView={!shouldShowAll}
+                key={item.id}
+                viewMode={
+                  item.viewMode === "ta" ? ViewMode.TA : ViewMode.INSTRUCTIONAL
+                }
+                {...(item.cohortName && { cohortName: item.cohortName })}
+                simulationName={item.simulationName}
+                status={item.status || "not-started"}
+                completionPct={item.completionPct || 0}
+                {...(item.passedCount !== null && {
+                  passedCount: item.passedCount,
+                })}
+                {...(item.inProgressCount !== null && {
+                  inProgressCount: item.inProgressCount,
+                })}
+                {...(item.notStartedCount !== null && {
+                  notStartedCount: item.notStartedCount,
+                })}
+                {...(item.passPct !== null && { passPct: item.passPct })}
               />
             ) : null
           )}
@@ -799,24 +579,27 @@ export default function Home() {
 
           {/* Carousel container */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleSimulations.map((sim) =>
-              sim ? (
+            {visibleSimulations.map((item) =>
+              item ? (
                 <SimulationCard
-                  key={sim.id}
-                  id={sim.id}
-                  timeLimit={sim.timeLimit}
-                  numSessions={
-                    sim.scenarioIds?.filter((id: string) => id !== "RAY")
-                      .length || 0
-                  }
-                  highestScore={sim.highestScore}
-                  simulationTitle={sim.title}
-                  simulationDescription={sim.description}
-                  rubric_id={sim.rubricId}
-                  color={sim.color}
-                  icon={sim.icon}
-                  hasPassed={sim.hasPassed}
-                  passRate={sim.passRate}
+                  key={item.id}
+                  id={item.id}
+                  {...(item.timeLimit !== null && {
+                    timeLimit: item.timeLimit,
+                  })}
+                  numSessions={item.numSessions || 1}
+                  {...(item.highestScore !== null && {
+                    highestScore: item.highestScore,
+                  })}
+                  simulationTitle={item.simulationTitle}
+                  simulationDescription={item.simulationDescription || ""}
+                  {...(item.rubric_id && { rubric_id: item.rubric_id })}
+                  {...(item.color && { color: item.color })}
+                  {...(item.icon && { icon: item.icon })}
+                  {...(item.hasPassed !== null && {
+                    hasPassed: item.hasPassed,
+                  })}
+                  {...(item.passRate !== null && { passRate: item.passRate })}
                   type="cohort"
                   onStartSimulation={handleStartSimulation}
                   loadingSimulation={loadingSimulation}

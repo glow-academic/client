@@ -25,7 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { Persona, Profile, Scenario } from "@/types";
+import { Profile } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";
@@ -66,8 +66,6 @@ export interface SimulationCardProps {
   onStartSimulation: (id: string) => void;
   loadingSimulation: string | null;
   effectiveProfile: Profile;
-  scenarios?: Scenario[];
-  personas?: Persona[];
 }
 
 export default function SimulationCard({

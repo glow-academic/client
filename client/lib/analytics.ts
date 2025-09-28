@@ -637,76 +637,69 @@ export type SimulationPerformanceData = z.infer<
 
 // Home Analytics Types
 
-// TA View Types
-export const HomeSimulationSchema = z.object({
-  simulationId: z.string(),
-  cohortIds: z.array(z.string()),
-  highestScore: z.number(),
-  hasPassed: z.boolean(),
+// Home Simulation Item Schema (matches SQL function output)
+export const HomeSimulationItemSchema = z.object({
+  viewMode: z.enum(["ta", "instructional"]),
+  id: z.string(),
+  simulationTitle: z.string(),
+  simulationDescription: z.string().nullable(),
+  simulationName: z.string(), // alias for simulationTitle
+  timeLimit: z.number().nullable(),
+  numSessions: z.number(),
+  highestScore: z.number().nullable(),
+  rubric_id: z.string().nullable(),
+  color: z.string().nullable(),
+  icon: z.string().nullable(),
+  hasPassed: z.boolean().nullable(),
+  passRate: z.number().nullable(),
+  status: z.enum(["passed", "in-progress", "not-started"]).nullable(),
+  completionPct: z.number().nullable(),
+  passedCount: z.number().nullable(),
+  inProgressCount: z.number().nullable(),
+  notStartedCount: z.number().nullable(),
+  passPct: z.number().nullable(),
+  cohortName: z.string().nullable(),
 });
 
-export const HomeTaViewSchema = z.object({
-  mode: z.literal("ta"),
-  simulations: z.array(HomeSimulationSchema),
+// Home Overview Response Schema (matches SQL function output)
+export const HomeOverviewResponseSchema = z.object({
+  mode: z.enum(["ta", "instructional", "empty"]),
+  hasData: z.boolean(),
+  items: z.array(HomeSimulationItemSchema),
 });
-
-// Instructor/Admin View Types
-export const HomeSimulationCohortSchema = z.object({
-  simulationId: z.string(),
-  cohortId: z.string(),
-  passedProfileIds: z.array(z.string()),
-  inProgressProfileIds: z.array(z.string()),
-});
-
-export const HomeInstructorViewSchema = z.object({
-  mode: z.literal("instructor"),
-  bySimulationCohort: z.array(HomeSimulationCohortSchema),
-});
-
-// Union type for the response
-export const HomeOverviewResponseSchema = z.union([
-  HomeTaViewSchema,
-  HomeInstructorViewSchema,
-  z.object({
-    mode: z.literal("empty"),
-  }),
-]);
 
 // Type exports for home analytics
-export type HomeSimulation = z.infer<typeof HomeSimulationSchema>;
-export type HomeTaView = z.infer<typeof HomeTaViewSchema>;
-export type HomeSimulationCohort = z.infer<typeof HomeSimulationCohortSchema>;
-export type HomeInstructorView = z.infer<typeof HomeInstructorViewSchema>;
+export type HomeSimulationItem = z.infer<typeof HomeSimulationItemSchema>;
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
 
 // New UI-Ready Attempt History Types
 export const AttemptHistoryRowSchema = z.object({
-    attemptId: z.string(),
-    simulationId: z.string(),
-    scenarioIds: z.array(z.string()),
-  
-    profileId: z.string(),
-    profileName: z.string(),
-    simulationTitle: z.string(),
-    attemptDate: z.string(),
-    lastActivityAt: z.string(),
-  
-    personaIds: z.array(z.string()),
-    personaNames: z.array(z.string()),
-    personaColors: z.array(z.string()),
-  
-    completedCount: z.number(),
-    expectedCount: z.number().nullable(),
-  
-    scorePercent: z.number().nullable(),
-  
-    showContinue: z.boolean(),
-    showView: z.boolean(),
-  
-    infiniteMode: z.boolean(),
-    infiniteModeTimeLimit: z.number().nullable(),
-    archived: z.boolean(),
-  });
+  attemptId: z.string(),
+  simulationId: z.string(),
+  scenarioIds: z.array(z.string()),
+
+  profileId: z.string(),
+  profileName: z.string(),
+  simulationTitle: z.string(),
+  attemptDate: z.string(),
+  lastActivityAt: z.string(),
+
+  personaIds: z.array(z.string()),
+  personaNames: z.array(z.string()),
+  personaColors: z.array(z.string()),
+
+  completedCount: z.number(),
+  expectedCount: z.number().nullable(),
+
+  scorePercent: z.number().nullable(),
+
+  showContinue: z.boolean(),
+  showView: z.boolean(),
+
+  infiniteMode: z.boolean(),
+  infiniteModeTimeLimit: z.number().nullable(),
+  archived: z.boolean(),
+});
 
 // Attempt History Response Schema (Legacy)
 export const AttemptHistoryResponseSchema = z.object({
