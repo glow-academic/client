@@ -16,16 +16,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -33,27 +23,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { log } from "@/utils/logger";
-import {
-  Infinity,
-  Map as MapIcon,
-  Plus,
-  SlidersHorizontal,
-  Upload,
-} from "lucide-react";
+import { Plus, SlidersHorizontal, Upload } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
-import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
@@ -61,9 +38,8 @@ import ChatWidget from "@/components/common/home/ChatWidget";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
-import { ParameterSelector } from "@/components/common/scenario/ParameterSelector";
-import { PersonaPicker } from "@/components/common/scenario/PersonaPicker";
 import TATour from "@/components/home/TATour";
+import { PracticeCustomizeDialog } from "@/components/practice/PracticeCustomizeDialog";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -75,21 +51,7 @@ import { TourProvider } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useBreadcrumbs } from "@/hooks/use-breadcrumbs";
 import { useUpdateDocument } from "@/lib/api/hooks/documents";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { usePersonas } from "@/lib/api/hooks/personas";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
-import { useCreateSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
-import { useCreateSimulationChat } from "@/lib/api/hooks/simulation_chats";
 import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import type {
-  Parameter,
-  ParameterItem,
-  Persona,
-  Scenario,
-  Simulation,
-} from "@/types";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
 import { getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
@@ -176,40 +138,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   // Practice customize dialog state
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [isStartingAttempt, setIsStartingAttempt] = useState(false);
-  const [isInfiniteMode, setIsInfiniteMode] = useState(false);
-  const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
-  const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
-  const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
-    undefined
-  );
-  const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
-    string[]
-  >([]);
-
-  // Data for customize dialog
-  const { data: simulations = [] } = useSimulations();
-  const { data: scenarios = [] } = useScenarios();
-  const { data: personas = [] } = usePersonas();
-  const { data: parameters = [] } = useParameters();
-  const { data: parameterItems = [] } = useParameterItems();
 
   const { mutate: updateDocument } = useUpdateDocument();
-  const createSimulationAttemptMutation = useCreateSimulationAttempt();
-  const createSimulationChatMutation = useCreateSimulationChat();
-
-  // Only allow customizing non-default parameters and non-default items
-  const customParameters = React.useMemo(() => {
-    return (parameters as Parameter[]).filter(
-      (p) => p.defaultParameter === false
-    );
-  }, [parameters]);
-  const customParameterItems = React.useMemo(() => {
-    // Use ONLY default items, but only for the non-default parameters
-    const customParamIds = new Set(customParameters.map((p) => p.id));
-    return (parameterItems as ParameterItem[]).filter(
-      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
-    );
-  }, [parameterItems, customParameters]);
 
   // Upload functions
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -813,312 +743,87 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
           {/* Practice Customize Dialog */}
-          <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Customize Practice</DialogTitle>
-                <DialogDescription hidden>
-                  Create a custom attempt. Use Infinite Mode to keep practicing
-                  a single practice simulation repeatedly, or configure a
-                  one-off practice scenario.
-                </DialogDescription>
-              </DialogHeader>
+          <PracticeCustomizeDialog
+            open={customizeOpen}
+            onClose={() => setCustomizeOpen(false)}
+            onStartAttempt={async (params) => {
+              if (params.timeLimit) {
+                // Infinite mode - use WebSocket
+                if (!isConnected) {
+                  toast.error(
+                    "WebSocket not connected. Please refresh the page."
+                  );
+                  return;
+                }
+                const profileIdForEmit =
+                  effectiveProfile?.role === "guest"
+                    ? ""
+                    : String(effectiveProfile?.id || "");
+                toast.loading("Starting simulation...", {
+                  dismissible: true,
+                });
+                emitStartSimulation({
+                  simulation_id: params.simulationId,
+                  profile_id: profileIdForEmit,
+                  infinite: true,
+                  infinite_time_limit: params.timeLimit,
+                });
+                setCustomizeOpen(false);
+              } else {
+                // Custom one-off scenario
+                setIsStartingAttempt(true);
+                const startToastId = toast.loading(
+                  "Creating practice scenario...",
+                  {
+                    dismissible: true,
+                  }
+                ) as unknown as string;
 
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    {isInfiniteMode ? (
-                      <Label htmlFor="infinite-mode" className="mb-0">
-                        <Infinity />
-                        Infinite Mode
-                      </Label>
-                    ) : (
-                      <Label htmlFor="infinite-mode" className="mb-0">
-                        <MapIcon />
-                        Scenario Mode
-                      </Label>
-                    )}
-                    <Switch
-                      id="infinite-mode"
-                      checked={isInfiniteMode}
-                      onCheckedChange={setIsInfiniteMode}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {isInfiniteMode
-                      ? "Practice one simulation continuously."
-                      : "Practice one scenario with a specific persona and parameter set."}
-                  </p>
-                </div>
+                try {
+                  const result = await createPracticeScenario({
+                    personaId: params.personaId!,
+                    parameterItemIds: params.parameterItemIds || [],
+                    profileId: effectiveProfile?.id || "",
+                  });
 
-                {isInfiniteMode ? (
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <SimulationPicker
-                        simulations={(simulations as Simulation[])
-                          .filter((sim) => sim.practiceSimulation === true)
-                          .map((sim) => ({
-                            ...sim,
-                            timeLimit: sim.timeLimit || undefined,
-                          }))}
-                        label="Start Simulation"
-                        placeholder="Choose a practice simulation"
-                        description="Select a practice simulation to start in infinite mode."
-                        onSelect={(selectedSims) => {
-                          if (selectedSims.length > 0) {
-                            setSelectedSimulationId(selectedSims[0]!.id);
-                          } else {
-                            setSelectedSimulationId("");
-                          }
-                        }}
-                        selectedSimulations={
-                          selectedSimulationId
-                            ? (simulations as Simulation[])
-                                .filter(
-                                  (sim) => sim.id === selectedSimulationId
-                                )
-                                .map((sim) => ({
-                                  ...sim,
-                                  timeLimit: sim.timeLimit || undefined,
-                                }))
-                            : []
-                        }
-                        showPracticeSimulations={true}
-                        showOnlyActive={false}
-                        hideSelectedChips={true}
-                        showLabel={true}
-                        singleSelect={true}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="infinite-time-limit">
-                        Time Limit (minutes)
-                      </Label>
-                      <Input
-                        id="infinite-time-limit"
-                        type="number"
-                        min={1}
-                        required
-                        placeholder="e.g. 15"
-                        value={infiniteTimeLimit}
-                        onChange={(e) => setInfiniteTimeLimit(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid gap-6">
-                    <div className="grid gap-2">
-                      <PersonaPicker
-                        personas={personas as Persona[]}
-                        onSelect={(p) => setSelectedPersona(p)}
-                        selectedPersona={selectedPersona}
-                        label="Persona"
-                        description="Choose who you'll practice with."
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <ParameterSelector
-                        parameters={customParameters}
-                        parameterItems={customParameterItems}
-                        selectedParameterItemIds={selectedParameterItemIds}
-                        onParameterItemIdsChange={setSelectedParameterItemIds}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+                  if (result.success && result.scenario) {
+                    toast.success("Practice scenario created!", {
+                      id: startToastId,
+                      dismissible: true,
+                    });
+                    // Navigate to practice page to start the scenario
+                    router.push("/practice");
+                  } else {
+                    throw new Error(
+                      result.message || "Failed to create practice scenario"
+                    );
+                  }
+                } catch (error) {
+                  log.error("practice.session.error", {
+                    message: "Error starting practice session",
+                    error,
+                    context: { function: "onStartAttempt" },
+                  });
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to start practice session",
+                    {
+                      id: "start-attempt",
+                      dismissible: true,
+                    }
+                  );
+                } finally {
+                  setIsStartingAttempt(false);
+                  setCustomizeOpen(false);
+                }
+              }
+            }}
+            isStartingAttempt={isStartingAttempt}
+            effectiveProfile={effectiveProfile!}
+            activeProfile={activeProfile!}
+          />
 
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setCustomizeOpen(false)}
-                >
-                  Cancel
-                </Button>
-                {effectiveProfile?.id !== activeProfile?.id ? (
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button className="cursor-not-allowed opacity-70">
-                        Unavailable
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        You cannot start simulations on behalf of another user.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Button
-                    disabled={isStartingAttempt}
-                    onClick={async () => {
-                      try {
-                        if (isInfiniteMode) {
-                          if (!selectedSimulationId) {
-                            toast.error("Select a simulation to start");
-                            return;
-                          }
-                          setIsStartingAttempt(true);
-                          const sim = (simulations as Simulation[]).find(
-                            (s) => s.id === selectedSimulationId
-                          );
-                          if (!sim) {
-                            toast.error("Simulation not found");
-                            setIsStartingAttempt(false);
-                            return;
-                          }
-                          if (
-                            !infiniteTimeLimit ||
-                            parseInt(infiniteTimeLimit, 10) <= 0
-                          ) {
-                            toast.error(
-                              "Please provide a positive time limit for infinite mode"
-                            );
-                            setIsStartingAttempt(false);
-                            return;
-                          }
-                          // Start via WebSocket start_simulation with infinite flag
-                          if (!isConnected) {
-                            toast.error(
-                              "WebSocket not connected. Please refresh the page."
-                            );
-                            setIsStartingAttempt(false);
-                            return;
-                          }
-                          const profileIdForEmit =
-                            effectiveProfile?.role === "guest"
-                              ? ""
-                              : String(effectiveProfile?.id || "");
-                          toast.loading("Starting simulation...", {
-                            dismissible: true,
-                          });
-                          emitStartSimulation({
-                            simulation_id: sim.id,
-                            profile_id: profileIdForEmit,
-                            infinite: true,
-                            infinite_time_limit: infiniteTimeLimit
-                              ? parseInt(infiniteTimeLimit, 10)
-                              : null,
-                          });
-                          setCustomizeOpen(false);
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-
-                        // Custom one-off scenario
-                        if (!selectedPersona) {
-                          toast.error("Select a persona");
-                          return;
-                        }
-
-                        // Toast loading state lifecycle
-                        const startToastId = toast.loading(
-                          "Creating practice scenario...",
-                          {
-                            dismissible: true,
-                          }
-                        ) as unknown as string;
-                        setIsStartingAttempt(true);
-
-                        // Use centralized server logic to create practice scenario
-                        const result = await createPracticeScenario({
-                          personaId: selectedPersona.id,
-                          parameterItemIds: selectedParameterItemIds || [],
-                          profileId: effectiveProfile?.id || null,
-                        });
-
-                        if (!result.success || !result.scenario) {
-                          toast.error("Failed to create practice scenario", {
-                            id: startToastId,
-                          });
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-
-                        toast.loading("Creating attempt...", {
-                          description: "Starting your practice session",
-                          id: startToastId,
-                          dismissible: true,
-                        });
-
-                        // Find base default practice scenario for this persona
-                        const baseScenario = (scenarios as Scenario[]).find(
-                          (s) =>
-                            s.personaId === selectedPersona.id &&
-                            s.defaultScenario === true &&
-                            s.practiceScenario === true
-                        );
-
-                        // Find simulation that includes the base scenario (prefer default+practice)
-                        const targetSimulation =
-                          (simulations as Simulation[]).find(
-                            (sim) =>
-                              (sim.scenarioIds || []).includes(
-                                baseScenario?.id || ""
-                              ) &&
-                              sim.defaultSimulation === true &&
-                              sim.practiceSimulation === true
-                          ) ||
-                          (simulations as Simulation[]).find((sim) =>
-                            (sim.scenarioIds || []).includes(
-                              baseScenario?.id || ""
-                            )
-                          );
-
-                        if (!targetSimulation) {
-                          toast.error(
-                            "No practice simulation found for persona"
-                          );
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-
-                        const attempt =
-                          await createSimulationAttemptMutation.mutateAsync({
-                            simulationId: targetSimulation.id,
-                            profileId: effectiveProfile?.id,
-                            infiniteMode: false,
-                          });
-                        if (!attempt || !attempt.id) {
-                          toast.error("Failed to create attempt");
-                          setIsStartingAttempt(false);
-                          return;
-                        }
-                        const attemptIdCreated = attempt.id;
-
-                        await createSimulationChatMutation.mutateAsync({
-                          title: result.scenario.name,
-                          scenarioId: result.scenario.id,
-                          attemptId: attemptIdCreated,
-                          completed: false,
-                        });
-
-                        setCustomizeOpen(false);
-                        toast.success("Simulation started", {
-                          id: startToastId,
-                        });
-                        router.push(`/practice/a/${attemptIdCreated}`);
-                      } catch (err) {
-                        log.error("simulation.attempt.create.failed", {
-                          message: "Failed to create attempt",
-                          error: err,
-                          context: { component: "MainLayoutContent" },
-                        });
-                        toast.error("Failed to create attempt");
-                        setIsStartingAttempt(false);
-                      }
-                    }}
-                  >
-                    {isStartingAttempt
-                      ? "Starting..."
-                      : effectiveProfile?.id !== activeProfile?.id
-                        ? "Unavailable"
-                        : "Start"}
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
           {/* Confirm End All Dialog */}
           <AlertDialog
             open={confirmEndAllOpen}
