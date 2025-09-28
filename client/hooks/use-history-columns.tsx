@@ -19,6 +19,14 @@ interface EnhancedAttempt extends SimulationAttempt {
   scenarios: SimulationChat[];
   personasTested: string[];
   interactionIds: string[];
+  // Database-driven fields
+  __scorePercent?: number | null;
+  __scenarioRootIds?: string[];
+  __profileName?: string;
+  __simulationTitle?: string;
+  __personaColors?: string[];
+  __showContinue?: boolean;
+  __showView?: boolean;
 }
 
 // Component to use the columns with filtered data
@@ -33,7 +41,7 @@ export function useHistoryColumns({
   showArchive: boolean;
   allSameProfile?: boolean;
 }) {
-  // Use centralized datasets from filteredData
+  // Use centralized datasets from filteredData (legacy support)
   const personas = filteredData?.personas;
   const rubrics = filteredData?.rubrics;
 
@@ -296,6 +304,18 @@ export function useHistoryColumns({
                 column: Column<EnhancedAttempt, unknown>;
               }) => <DataTableColumnHeader column={column} title="Name" />,
               cell: ({ row }: { row: Row<EnhancedAttempt> }) => {
+                // Use pre-computed profile name from database if available
+                const profileName = (row.original as EnhancedAttempt)
+                  .__profileName;
+                if (profileName) {
+                  return (
+                    <div className="flex items-center">
+                      <span>{profileName}</span>
+                    </div>
+                  );
+                }
+
+                // Fallback to profile options lookup (legacy support)
                 const profileOption = profileOptions.find(
                   (profile) => profile.value === row.getValue("profileId")
                 );
@@ -330,10 +350,28 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
+          // Use pre-computed simulation title from database if available
+          const simulationTitle = (row.original as EnhancedAttempt)
+            .__simulationTitle;
+          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
+
+          if (simulationTitle) {
+            return (
+              <div className="flex items-center space-x-1">
+                <span className="max-w-[500px] truncate font-medium">
+                  {simulationTitle}
+                </span>
+                {isInfinite && (
+                  <InfinityIcon className="h-3 w-3 text-muted-foreground" />
+                )}
+              </div>
+            );
+          }
+
+          // Fallback to simulation lookup (legacy support)
           const simulation = filteredData?.simulations?.find(
             (s) => s.id === row.getValue("simulationId")
           );
-          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
           return (
             <div className="flex items-center space-x-1">
               <span className="max-w-[500px] truncate font-medium">
@@ -361,9 +399,41 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
+          // Use pre-computed counts from database if available
+          const scenarios = row.original.scenarios as {
+            completedCount?: number;
+            expectedCount?: number | null;
+          };
+          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
+
+          if (
+            scenarios &&
+            typeof scenarios === "object" &&
+            "completedCount" in scenarios &&
+            "expectedCount" in scenarios
+          ) {
+            const completedCount = scenarios.completedCount;
+            const expectedCount = scenarios.expectedCount;
+
+            return (
+              <div className="text-center">
+                <span className="font-medium inline-flex items-center gap-1">
+                  {completedCount}
+                  <span>/</span>
+                  {isInfinite ? (
+                    <InfinityIcon className="h-3 w-3 text-muted-foreground" />
+                  ) : (
+                    <span>{expectedCount}</span>
+                  )}
+                </span>
+                <div className="text-xs text-muted-foreground">completed</div>
+              </div>
+            );
+          }
+
+          // Fallback to legacy computation
           const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
-          const isInfinite = (row.original as EnhancedAttempt).infiniteMode;
 
           // Ensure chats is an array
           const chatsArray = Array.isArray(chats) ? chats : [];
@@ -446,6 +516,8 @@ export function useHistoryColumns({
         ),
         cell: ({ row }) => {
           const personasTested = row.getValue("personasTested") as string[];
+          const personaColors = (row.original as EnhancedAttempt)
+            .__personaColors;
 
           if (!personasTested || personasTested.length === 0) {
             return <span className="text-muted-foreground">None</span>;
@@ -454,7 +526,11 @@ export function useHistoryColumns({
           return (
             <div className="flex flex-wrap gap-1">
               {personasTested.map((agentName, index) => {
-                const baseHex = personaColorMap[agentName] ?? "#9CA3AF"; // gray-400 fallback
+                // Use pre-computed colors from database if available
+                const baseHex =
+                  personaColors?.[index] ||
+                  personaColorMap[agentName] ||
+                  "#9CA3AF"; // gray-400 fallback
                 const { bg, border, text } = getBadgeColors(baseHex);
                 return (
                   <Badge
@@ -490,6 +566,13 @@ export function useHistoryColumns({
           <DataTableColumnHeader column={column} title="Score" />
         ),
         accessorFn: (row: EnhancedAttempt) => {
+          // Use pre-computed score from database if available
+          const scorePercent = (row as EnhancedAttempt).__scorePercent;
+          if (scorePercent !== undefined) {
+            return scorePercent;
+          }
+
+          // Fallback to legacy computation
           const chats = row.scenarios;
           const interactionIds = row.interactionIds;
 
@@ -521,6 +604,33 @@ export function useHistoryColumns({
           return totalScore / totalExpected;
         },
         cell: ({ row }) => {
+          // Use pre-computed score from database if available
+          const dbScorePercent = (row.original as EnhancedAttempt)
+            .__scorePercent;
+          if (dbScorePercent !== undefined) {
+            if (dbScorePercent === null) {
+              return <div className="text-muted-foreground">Not graded</div>;
+            }
+
+            return (
+              <div className="text-center">
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-semibold ${
+                    dbScorePercent >= 80
+                      ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                      : dbScorePercent >= 70
+                        ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+                        : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                  }`}
+                >
+                  {dbScorePercent}%
+                </Badge>
+              </div>
+            );
+          }
+
+          // Fallback to legacy computation
           const chats = row.original.scenarios;
           const interactionIds = row.original.interactionIds;
 
@@ -573,7 +683,7 @@ export function useHistoryColumns({
 
           // Calculate percentage using rubric total points, fallback to 100 if not found
           const rubricTotalPoints = rubric?.points || 100;
-          const scorePercent = Math.round(
+          const computedScorePercent = Math.round(
             (averageScore / rubricTotalPoints) * 100
           );
 
@@ -582,14 +692,14 @@ export function useHistoryColumns({
               <Badge
                 variant="outline"
                 className={`text-xs font-semibold ${
-                  scorePercent >= 80
+                  computedScorePercent >= 80
                     ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                    : scorePercent >= 70
+                    : computedScorePercent >= 70
                       ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
                       : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
                 }`}
               >
-                {scorePercent}%
+                {computedScorePercent}%
               </Badge>
             </div>
           );
@@ -657,8 +767,9 @@ export function useHistoryColumns({
         cell: ({ row }) => {
           const attempt = row.original;
 
-          // With the new scoring logic, we don't need to track grades separately
-          // since we now include zeros for missing grades in the average calculation
+          // Use pre-computed action flags from database if available
+          // const _showContinue = (attempt as EnhancedAttempt).__showContinue;
+          // const _showView = (attempt as EnhancedAttempt).__showView;
 
           // Determine if this is practice mode based on simulation
           const simulation = filteredData?.simulations?.find(

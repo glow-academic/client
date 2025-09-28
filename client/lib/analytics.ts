@@ -679,25 +679,36 @@ export type HomeSimulationCohort = z.infer<typeof HomeSimulationCohortSchema>;
 export type HomeInstructorView = z.infer<typeof HomeInstructorViewSchema>;
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
 
-// History Analytics Types
-
-// Attempt History Row Schema
+// New UI-Ready Attempt History Types
 export const AttemptHistoryRowSchema = z.object({
-  attemptId: z.string(),
-  simulationIds: z.array(z.string()),
-  scenarioIds: z.array(z.string()),
-  personaIds: z.array(z.string()),
-  personaColors: z.array(z.string()),
-  avgGradePercent: z.number(), // 0–100 (rounded)
-  totalScorePoints: z.number(), // sum over graded chats
-  completedCount: z.number(), // completed chats in attempt
-  expectedCount: z.number().nullable(), // null when infinite mode
-  infiniteMode: z.boolean(),
-  infiniteModeTimeLimit: z.number().nullable(),
-  lastActivityAt: z.string(), // ISO-like string
-});
+    attemptId: z.string(),
+    simulationId: z.string(),
+    scenarioIds: z.array(z.string()),
+  
+    profileId: z.string(),
+    profileName: z.string(),
+    simulationTitle: z.string(),
+    attemptDate: z.string(),
+    lastActivityAt: z.string(),
+  
+    personaIds: z.array(z.string()),
+    personaNames: z.array(z.string()),
+    personaColors: z.array(z.string()),
+  
+    completedCount: z.number(),
+    expectedCount: z.number().nullable(),
+  
+    scorePercent: z.number().nullable(),
+  
+    showContinue: z.boolean(),
+    showView: z.boolean(),
+  
+    infiniteMode: z.boolean(),
+    infiniteModeTimeLimit: z.number().nullable(),
+    archived: z.boolean(),
+  });
 
-// Attempt History Response Schema
+// Attempt History Response Schema (Legacy)
 export const AttemptHistoryResponseSchema = z.object({
   hasData: z.boolean(),
   rows: z.array(AttemptHistoryRowSchema),
