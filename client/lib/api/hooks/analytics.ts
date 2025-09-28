@@ -7,10 +7,8 @@ import {
   GrowthDataResponseSchema,
   HomeOverviewResponseSchema,
   MetricResponseSchema,
-  PersonaPerformanceFilters,
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponseSchema,
-  RubricHeatmapFilters,
   RubricHeatmapResponseSchema,
   ScenarioPerformanceDataSchema,
   ScenarioStatsDataSchema,
@@ -308,7 +306,7 @@ export function useAnalyticsQuickestPass(
 // Primary Analytics Hooks (3 complex metrics)
 
 export function useAnalyticsRubricHeatmap(
-  filters: RubricHeatmapFilters,
+  filters: AnalyticsFilters,
   enabled = true
 ) {
   return useQuery({
@@ -345,7 +343,7 @@ export function useAnalyticsGrowthData(
 }
 
 export function useAnalyticsPersonaPerformance(
-  filters: PersonaPerformanceFilters,
+  filters: AnalyticsFilters,
   enabled = true
 ) {
   return useQuery({

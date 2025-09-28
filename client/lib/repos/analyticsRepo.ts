@@ -21,7 +21,6 @@ import {
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponse,
   PracticeOverviewResponseSchema,
-  RubricHeatmapFilters,
   RubricHeatmapResponse,
   RubricHeatmapResponseSchema,
   ScenarioPerformanceData,
@@ -214,12 +213,11 @@ export const analyticsRepo = {
 
   // Primary Analytics (3 complex metrics)
   async getRubricHeatmap(
-    filters: RubricHeatmapFilters
+    filters: AnalyticsFilters
   ): Promise<RubricHeatmapResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_rubric_heatmap_fn",
-      filters,
-      [sql`${filters.rubricId}::uuid`]
+      filters
     );
     return RubricHeatmapResponseSchema.parse(result);
   },

@@ -85,13 +85,37 @@ export const RubricSchema = z.object({
   active: z.boolean(),
 });
 
-export const RubricHeatmapResponseSchema = z.object({
-  matrix: z.array(z.array(RubricHeatmapCellSchema)),
-  standardGroups: z.array(StandardGroupSchema),
-  availableRubrics: z.array(RubricSchema),
+// Per-rubric matrix package
+export const RubricMatrixPackageSchema = z.object({
+  rubricId: z.string().uuid(),
+  standardGroups: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      shortName: z.string().nullable(),
+      rubricId: z.string().uuid(),
+    })
+  ),
+  matrix: z.array(
+    z.array(
+      z.object({
+        rubricId: z.string().uuid(),
+        correlation: z.number(),
+        pValue: z.number().nullable(),
+        color: z.string(),
+        strength: z.string(),
+        dataPoints: z.number(),
+      })
+    )
+  ),
   insights: z.string().nullable(),
-  correlationStatus: z.enum(["success", "warning", "danger", "neutral"]),
   hasData: z.boolean(),
+});
+
+// Multi-rubric response
+export const RubricHeatmapResponseSchema = z.object({
+  matrices: z.array(RubricMatrixPackageSchema),
+  validRubricIds: z.array(z.string().uuid()),
 });
 
 // Growth Data Types
@@ -164,18 +188,9 @@ export const PersonaPerformanceResponseSchema = z.object({
   personaColors: z.record(z.string(), z.string()),
 });
 
-// Extended Analytics Filters for Primary Functions
-export const RubricHeatmapFiltersSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z
-    .string()
-    .regex(
-      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-    ),
-});
-
 export type RubricHeatmapCell = z.infer<typeof RubricHeatmapCellSchema>;
 export type StandardGroup = z.infer<typeof StandardGroupSchema>;
-export type Rubric = z.infer<typeof RubricSchema>;
+export type RubricMatrixPackage = z.infer<typeof RubricMatrixPackageSchema>;
 export type RubricHeatmapResponse = z.infer<typeof RubricHeatmapResponseSchema>;
 
 export type GrowthDataPoint = z.infer<typeof GrowthDataPointSchema>;
@@ -191,8 +206,6 @@ export type PersonaPerformanceData = z.infer<
 export type PersonaPerformanceResponse = z.infer<
   typeof PersonaPerformanceResponseSchema
 >;
-
-export type RubricHeatmapFilters = z.infer<typeof RubricHeatmapFiltersSchema>;
 
 // Narrow what can be used as "valueField" and "keyField" so indexing is safe
 type ValueField = "value" | "count";

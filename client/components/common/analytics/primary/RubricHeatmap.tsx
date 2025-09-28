@@ -1,6 +1,6 @@
 /**
  * RubricHeatmap.tsx
- * Server-driven rubric heatmap using analytics endpoint.
+ * Multi-rubric heatmap component that displays correlation matrices for selected rubrics.
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -31,120 +31,142 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { RubricMatrixPackage } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { Rubric } from "@/types";
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
-import type { AnalyticsFilters, RubricHeatmapFilters } from "@/lib/analytics";
-import { useAnalyticsRubricHeatmap } from "@/lib/api/hooks/analytics";
-
 export interface RubricHeatmapProps {
-  filters: AnalyticsFilters;
+  matrices: RubricMatrixPackage[];
+  availableRubrics: Rubric[];
+  hasDataAvailable: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  thresholds: {
+    danger: number;
+    warning: number;
+    success: number;
+  };
 }
 
-export default function RubricHeatmap({ filters }: RubricHeatmapProps) {
-  // We keep an array for compatibility with your RubricPicker API,
-  // but only the FIRST rubric is sent to the server (schema requires a single rubricId).
+export default function RubricHeatmap({
+  matrices,
+  availableRubrics,
+  hasDataAvailable,
+  isLoading,
+  isError,
+  thresholds,
+}: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<RubricPickerType[]>(
     []
   );
 
-  // Build request filters with a single rubricId
-  // We don't know the default rubric until the query returns availableRubrics,
-  // so we'll pass a placeholder here and re-run when we have one.
-  const [rubricId, setRubricId] = useState<string | null>(null);
-
-  const rubricFilters: RubricHeatmapFilters | null = useMemo(() => {
-    if (!rubricId) return null;
-    return { ...filters, rubricId };
-  }, [filters, rubricId]);
-
-  const enabled = !!rubricFilters;
-  const { data, isLoading, error } = useAnalyticsRubricHeatmap(
-    rubricFilters!,
-    enabled
-  );
-
-  // When server returns the list, set a default rubric if we don't have one.
-  useEffect(() => {
-    if (!rubricId && data?.availableRubrics?.length) {
-      const first = data.availableRubrics[0];
-      if (first) {
-        setRubricId(first.id);
-        setSelectedRubrics([
-          {
-            id: first.id,
-            name: first.name,
-            ...(first.description && { description: first.description }),
-            points: first.points,
-            active: first.active,
-          },
-        ]);
-      }
-    }
-  }, [rubricId, data?.availableRubrics]);
-
-  // Keep rubricId in sync with the first selection
-  useEffect(() => {
-    const first = selectedRubrics[0];
-    if (first && first.id !== rubricId) {
-      setRubricId(first.id);
-    }
-    if (!first && data?.availableRubrics?.[0]) {
-      setRubricId(data.availableRubrics[0].id);
-    }
-  }, [selectedRubrics, rubricId, data?.availableRubrics]);
-
-  // Hover perf: identical to your original
+  // State to track hovered cell for highlighting
   const [hoveredCell, setHoveredCell] = useState<{
     row: number | null;
     col: number | null;
-  }>({
-    row: null,
-    col: null,
-  });
+  }>({ row: null, col: null });
+
+  // Transform availableRubrics to RubricPickerType format
+  const rubricPickerOptions = useMemo<RubricPickerType[]>(
+    () =>
+      availableRubrics.map((r) => ({
+        ...r,
+      })),
+    [availableRubrics]
+  );
+
+  // Filter matrices by selected rubrics
+  const filteredMatrices = useMemo(() => {
+    if (selectedRubrics.length === 0) return matrices;
+    const selectedIds = new Set(selectedRubrics.map((r) => r.id));
+    return matrices.filter((matrix) => selectedIds.has(matrix.rubricId));
+  }, [matrices, selectedRubrics]);
+
+  // Use the first matrix for display (or show all if none selected)
+  const displayMatrix = filteredMatrices[0];
+
+  // Defer heavy result propagation to avoid blocking interactions/scroll
+  const deferredMatrix = useDeferredValue(displayMatrix);
+
+  // Throttle hover updates to once per animation frame to reduce rerenders
   const hoverRAF = useRef<number | null>(null);
   const setHoveredThrottled = useCallback((row: number, col: number) => {
-    if (hoverRAF.current !== null) cancelAnimationFrame(hoverRAF.current);
+    if (hoverRAF.current !== null) {
+      cancelAnimationFrame(hoverRAF.current);
+    }
     hoverRAF.current = requestAnimationFrame(() => {
       setHoveredCell({ row, col });
       hoverRAF.current = null;
     });
   }, []);
 
-  // Defer heavy result
-  const deferred = useDeferredValue(data);
+  // Calculate threshold status based on correlation matrix data
+  const getThresholdStatus = () => {
+    if (!deferredMatrix) return "neutral";
+    if (!deferredMatrix.hasData) return "neutral";
 
-  // Traffic light directly from server
-  const thresholdStatus = deferred?.correlationStatus ?? "neutral";
+    // Calculate average correlation strength across all non-diagonal cells
+    let totalCorrelation = 0;
+    let correlationCount = 0;
 
-  // Picker options from server
-  const pickerRubrics: RubricPickerType[] = useMemo(
-    () =>
-      (deferred?.availableRubrics ?? []).map((r) => ({
-        id: r.id,
-        name: r.name,
-        ...(r.description && { description: r.description }),
-        points: r.points,
-        active: r.active,
-      })),
-    [deferred?.availableRubrics]
-  );
+    for (let i = 0; i < deferredMatrix.matrix.length; i++) {
+      for (let j = 0; j < deferredMatrix.matrix[i]!.length; j++) {
+        if (i !== j) {
+          // Skip diagonal cells (self-correlation)
+          const cell = deferredMatrix.matrix[i]![j];
+          if (cell && cell.dataPoints > 0) {
+            totalCorrelation += Math.abs(cell.correlation);
+            correlationCount++;
+          }
+        }
+      }
+    }
 
-  // Loading / error states
-  if (!rubricId || isLoading) {
+    if (correlationCount === 0) return "neutral";
+
+    const avgCorrelationStrength = totalCorrelation / correlationCount;
+
+    // Convert correlation strength to a 0-100 scale for threshold comparison
+    const correlationScore = avgCorrelationStrength * 100;
+
+    if (correlationScore >= thresholds.success) return "success";
+    if (correlationScore >= thresholds.warning) return "warning";
+    return "danger";
+  };
+
+  const thresholdStatus = getThresholdStatus();
+
+  // Show loading state
+  if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col relative">
-        <StatusDot status={thresholdStatus} />
+        <div
+          className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+            thresholdStatus === "success"
+              ? "bg-green-500"
+              : thresholdStatus === "warning"
+                ? "bg-yellow-500"
+                : thresholdStatus === "danger"
+                  ? "bg-red-500"
+                  : "bg-gray-400"
+          }`}
+        />
         <CardHeader className="pb-3">
-          <TitleBlock />
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4" />
+            Skill Area Correlation Matrix
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Statistical correlation between skill areas (standard groups)
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center flex-1 p-3">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -156,15 +178,16 @@ export default function RubricHeatmap({ filters }: RubricHeatmapProps) {
     );
   }
 
-  if (error) {
+  // Show error state
+  if (isError) {
     return (
-      <Card className="w-full h-full flex flex-col relative">
-        <StatusDot status="danger" />
-        <CardHeader className="pb-3">
-          <TitleBlock />
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle>Skill Area Correlation Matrix</CardTitle>
+          <CardDescription>Error loading correlation data</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center flex-1 p-3">
-          <div className="text-destructive text-sm">
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">
             Failed to load correlation data
           </div>
         </CardContent>
@@ -172,152 +195,216 @@ export default function RubricHeatmap({ filters }: RubricHeatmapProps) {
     );
   }
 
-  const groups = deferred?.standardGroups ?? [];
-  const matrix = deferred?.matrix ?? [];
-  const hasData = deferred?.hasData ?? false;
+  // Show no data state
+  if (!hasDataAvailable || !deferredMatrix) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Skill Area Correlation Matrix
+          </CardTitle>
+          <CardDescription>
+            Statistical correlation between skill areas (standard groups)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">
+            No data available for the selected period
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col relative gap-0">
-      <StatusDot status={thresholdStatus} />
+      <div
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
+          thresholdStatus === "success"
+            ? "bg-green-500"
+            : thresholdStatus === "warning"
+              ? "bg-yellow-500"
+              : thresholdStatus === "danger"
+                ? "bg-red-500"
+                : "bg-gray-400"
+        }`}
+      />
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <TitleBlock />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4" />
+              Skill Area Correlation Matrix
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Correlation between skill areas (standard groups)
+            </CardDescription>
           </div>
           <RubricPicker
-            rubrics={pickerRubrics}
-            placeholder="Choose rubric..."
-            onSelect={(items) => {
-              // treat as single-select: keep only the first chosen item
-              setSelectedRubrics(items.slice(0, 1));
-            }}
+            rubrics={rubricPickerOptions}
+            placeholder="Filter by rubric..."
+            onSelect={setSelectedRubrics}
             selectedRubrics={selectedRubrics}
-            // If your RubricPicker supports single-select mode, pass a prop here instead.
           />
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <div className="space-y-3 flex flex-col items-center h-full">
-          {/* Matrix */}
+          {/* Correlation Matrix Table for a more compact, square layout */}
           <TooltipProvider delayDuration={150}>
             <div className="overflow-x-auto flex-1">
               <Table className="w-auto border-collapse h-full">
                 <TableHeader>
                   <TableRow>
+                    {/* The first empty cell for alignment */}
                     <TableHead className="p-1 w-12"></TableHead>
-                    {groups.map((g, colIndex) => (
-                      <TableHead
-                        key={g.id}
-                        className={cn(
-                          "p-1 h-30 w-24 relative",
-                          hoveredCell.col === colIndex && "bg-muted"
-                        )}
-                      >
-                        <div
-                          className="absolute bottom-2 left-1/2 -translate-x-1/2"
-                          style={{ writingMode: "vertical-rl" }}
+                    {(deferredMatrix.standardGroups || []).map(
+                      (group, colIndex) => (
+                        <TableHead
+                          key={group.id}
+                          className={cn(
+                            "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
+                            hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
+                          )}
                         >
-                          <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                            {g.shortName ?? g.name}
-                          </span>
-                        </div>
-                      </TableHead>
-                    ))}
+                          {/* Rotated Label */}
+                          <div
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                            style={{ writingMode: "vertical-rl" }}
+                          >
+                            <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                              {group.shortName}
+                            </span>
+                          </div>
+                        </TableHead>
+                      )
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groups.map((g, rowIndex) => (
-                    <TableRow
-                      key={g.id}
-                      onMouseLeave={() =>
-                        setHoveredCell({ row: null, col: null })
-                      }
-                    >
-                      <TableCell
-                        className={cn(
-                          "font-medium text-xs p-1 text-right text-muted-foreground",
-                          hoveredCell.row === rowIndex && "bg-muted"
-                        )}
+                  {(deferredMatrix.standardGroups || []).map(
+                    (group, rowIndex) => (
+                      <TableRow
+                        key={group.id}
+                        onMouseLeave={() =>
+                          setHoveredCell({ row: null, col: null })
+                        }
                       >
-                        {g.shortName ?? g.name}
-                      </TableCell>
-
-                      {groups.map((cg, colIndex) => {
-                        const cell = matrix?.[rowIndex]?.[colIndex];
-                        if (!cell)
-                          return <TableCell key={colIndex} className="p-1" />;
-
-                        const totalCells = groups.length * groups.length;
-                        const enableTooltips = totalCells <= 1200;
-
-                        const chip = (
-                          <div
-                            className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
-                            style={{ backgroundColor: cell.color }}
-                          >
-                            <span
-                              className={cn(
-                                "font-semibold",
-                                Math.abs(cell.correlation) >= 0.7
-                                  ? "text-white"
-                                  : "text-gray-800"
-                              )}
-                            >
-                              {cell.correlation.toFixed(2)}
-                            </span>
-                          </div>
-                        );
-
-                        return (
-                          <TableCell
-                            key={colIndex}
-                            className="text-center p-1 w-20"
-                            onMouseEnter={() =>
-                              setHoveredThrottled(rowIndex, colIndex)
+                        {/* This is now the row header, not part of the grid */}
+                        <TableCell
+                          className={cn(
+                            "font-medium text-xs p-1 text-right text-muted-foreground",
+                            hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
+                          )}
+                        >
+                          {group.shortName}
+                        </TableCell>
+                        {(deferredMatrix.standardGroups || []).map(
+                          (colGroup, colIndex) => {
+                            const cell =
+                              deferredMatrix.matrix?.[rowIndex]?.[colIndex];
+                            if (!cell) {
+                              return (
+                                <TableCell key={colIndex} className="p-1" />
+                              );
                             }
-                          >
-                            {enableTooltips ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>{chip}</TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{`${g.shortName ?? g.name} ↔ ${cg.shortName ?? cg.name}`}</p>
-                                  <p>
-                                    Pearson r: {cell.correlation > 0 ? "+" : ""}
-                                    {cell.correlation.toFixed(2)}
-                                  </p>
-                                  <p>
-                                    p-value:{" "}
-                                    {cell.pValue === null
-                                      ? "n/a"
-                                      : Number.isFinite(cell.pValue)
-                                        ? cell.pValue.toFixed(3)
-                                        : "n/a"}
-                                  </p>
-                                  <p>Data points: {cell.dataPoints}</p>
-                                  <p>Strength: {cell.strength}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              chip
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
+
+                            // Disable tooltips for very large matrices to reduce DOM weight
+                            const totalCells =
+                              (deferredMatrix.standardGroups?.length || 0) *
+                              (deferredMatrix.standardGroups?.length || 0);
+                            const enableTooltips = totalCells <= 1200; // 35x35
+
+                            return (
+                              <TableCell
+                                key={colIndex}
+                                className="text-center p-1 w-20"
+                                onMouseEnter={() =>
+                                  setHoveredThrottled(rowIndex, colIndex)
+                                }
+                              >
+                                {enableTooltips ? (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
+                                        style={{ backgroundColor: cell.color }}
+                                      >
+                                        <span
+                                          className={cn(
+                                            "font-semibold",
+                                            Math.abs(cell.correlation) >= 0.7
+                                              ? "text-white"
+                                              : "text-gray-800"
+                                          )}
+                                        >
+                                          {cell.correlation.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{`${group.shortName} ↔ ${colGroup.shortName}`}</p>
+                                      <p>
+                                        Pearson r:{" "}
+                                        {cell.correlation > 0 ? "+" : ""}
+                                        {cell.correlation.toFixed(2)}
+                                      </p>
+                                      <p>
+                                        p-value:{" "}
+                                        {cell.pValue?.toFixed(3) || "N/A"}
+                                      </p>
+                                      <p>Data points: {cell.dataPoints}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
+                                  <div
+                                    className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    style={{ backgroundColor: cell.color }}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "font-semibold",
+                                        Math.abs(cell.correlation) >= 0.7
+                                          ? "text-white"
+                                          : "text-gray-800"
+                                      )}
+                                    >
+                                      {cell.correlation.toFixed(2)}
+                                    </span>
+                                  </div>
+                                )}
+                              </TableCell>
+                            );
+                          }
+                        )}
+                      </TableRow>
+                    )
+                  )}
                 </TableBody>
               </Table>
             </div>
           </TooltipProvider>
 
-          {/* Legend + Info */}
+          {/* Legend and Correlation Info */}
           <div className="flex items-center justify-between text-xs text-muted-foreground flex-shrink-0 w-full">
+            {/* Legend */}
             <div className="flex items-center gap-3">
-              <LegendDot label="Strong Positive" className="bg-green-500" />
-              <LegendDot label="Strong Negative" className="bg-red-500" />
-              <LegendDot label="Weak/No Correlation" className="bg-gray-300" />
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span>Strong Positive</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <span>Strong Negative</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-300" />
+                <span>Weak/No Correlation</span>
+              </div>
             </div>
 
+            {/* Correlation Info */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
@@ -330,79 +417,38 @@ export default function RubricHeatmap({ filters }: RubricHeatmapProps) {
               </TooltipTrigger>
               <TooltipContent className="w-64 p-3">
                 <p className="text-sm">
-                  Pearson correlation matrix of skill areas (standard groups).
+                  Pearson correlation coefficient matrix showing relationships
+                  between skill areas.
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  r ∈ [-1, 1]; p-values indicate statistical significance.
+                  Values range from -1 (perfect negative) to +1 (perfect
+                  positive). P-values indicate statistical significance.
                 </p>
               </TooltipContent>
             </Tooltip>
           </div>
 
-          {/* Insights */}
-          {deferred?.insights && (
+          {/* Actionable Insights */}
+          {deferredMatrix.insights && (
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
-                {deferred.insights}
+                {deferredMatrix.insights}
               </p>
             </div>
           )}
 
-          {/* No data */}
-          {deferred && !hasData && (
+          {/* No Data Message */}
+          {deferredMatrix && !deferredMatrix.hasData && (
             <div className="p-3 bg-muted/50 rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">
-                No correlation data available yet. Once sessions generate
-                feedback across multiple skill areas, correlations will appear
-                here.
+                No correlation data available. The matrix shows the structure of
+                skill areas, but correlations will appear once students complete
+                simulations with feedback across multiple skill areas.
               </p>
             </div>
           )}
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-/* ---------- tiny UI helpers ---------- */
-
-function StatusDot({
-  status,
-}: {
-  status: "success" | "warning" | "danger" | "neutral";
-}) {
-  return (
-    <div
-      className={cn(
-        "absolute top-2 right-2 w-2 h-2 rounded-full",
-        status === "success" && "bg-green-500",
-        status === "warning" && "bg-yellow-500",
-        status === "danger" && "bg-red-500",
-        status === "neutral" && "bg-gray-400"
-      )}
-    />
-  );
-}
-
-function TitleBlock() {
-  return (
-    <>
-      <CardTitle className="flex items-center gap-2 text-base">
-        <TrendingUp className="h-4 w-4" />
-        Skill Area Correlation Matrix
-      </CardTitle>
-      <CardDescription className="text-xs">
-        Statistical correlation between skill areas (standard groups)
-      </CardDescription>
-    </>
-  );
-}
-
-function LegendDot({ label, className }: { label: string; className: string }) {
-  return (
-    <div className="flex items-center gap-1">
-      <div className={cn("w-2 h-2 rounded-full", className)} />
-      <span>{label}</span>
-    </div>
   );
 }

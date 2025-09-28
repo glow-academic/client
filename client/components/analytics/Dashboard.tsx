@@ -29,11 +29,13 @@ import {
   useAnalyticsMessagesPerSession,
   useAnalyticsPersonaPerformance,
   useAnalyticsPersonaResponseTimes,
+  useAnalyticsRubricHeatmap,
   useAnalyticsSessionEfficiency,
   useAnalyticsStagnationRate,
   useAnalyticsTimeSpent,
   useAnalyticsTotalAttempts,
 } from "@/lib/api/hooks/analytics";
+import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -165,8 +167,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isError: personaError,
   } = useAnalyticsPersonaPerformance(filters, true);
 
-  // Fetch all simulations
+  // Fetch all simulations and rubrics
   const { data: allSimulations = [] } = useSimulations();
+  const { data: allRubrics = [] } = useRubrics();
+
+  // Fetch rubric heatmap data
+  const {
+    data: rubricHeatmapData,
+    isLoading: rubricHeatmapLoading,
+    isError: rubricHeatmapError,
+  } = useAnalyticsRubricHeatmap(filters, true);
 
   // Fetch history data for the dashboard
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -510,6 +520,30 @@ export default function Dashboard({ profileId }: DashboardProps) {
     };
   })();
 
+  // Process rubric heatmap data
+  const rubricHeatmapProcessed = (() => {
+    if (!rubricHeatmapData) {
+      return {
+        matrices: [],
+        availableRubrics: [],
+        hasDataAvailable: false,
+      };
+    }
+
+    // Filter rubrics by validRubricIds
+    const validRubricIds = rubricHeatmapData.validRubricIds || [];
+    const validRubricIdsSet = new Set(validRubricIds);
+    const availableRubrics = allRubrics.filter((rubric) =>
+      validRubricIdsSet.has(rubric.id)
+    );
+
+    return {
+      matrices: rubricHeatmapData.matrices || [],
+      availableRubrics,
+      hasDataAvailable: (rubricHeatmapData.matrices || []).length > 0,
+    };
+  })();
+
   const headerComponents = [
     <AverageScore
       key="average-score"
@@ -639,13 +673,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     />,
     <RubricHeatmap
       key="rubric-heatmap"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      matrices={rubricHeatmapProcessed.matrices}
+      availableRubrics={rubricHeatmapProcessed.availableRubrics}
+      hasDataAvailable={rubricHeatmapProcessed.hasDataAvailable}
+      isLoading={rubricHeatmapLoading}
+      isError={rubricHeatmapError}
+      thresholds={thresholds}
     />,
   ];
 
