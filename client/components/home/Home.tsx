@@ -29,10 +29,7 @@ import { toast } from "sonner";
 import SimulationProgress, {
   ViewMode,
 } from "../common/cohort/SimulationProgress";
-import SimulationHistory, {
-  convertAnalyticsDataToHistoryData,
-  HistoryDataItem,
-} from "../common/history/SimulationHistory";
+import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
@@ -79,12 +76,6 @@ export default function Home() {
       // Only show current user's history
       profileId: effectiveProfile?.id,
     });
-
-  // Convert analytics data to history format
-  const historyItems: HistoryDataItem[] = useMemo(() => {
-    if (!historyData?.rows) return [];
-    return convertAnalyticsDataToHistoryData(historyData.rows);
-  }, [historyData?.rows]);
 
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
@@ -667,7 +658,30 @@ export default function Home() {
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
-          data={historyItems}
+          data={
+            historyData?.rows
+              ? historyData.rows.map((item) => ({
+                  attemptId: item.attemptId,
+                  date: new Date(item.attemptDate),
+                  profileId: item.profileId,
+                  profileName: item.profileName,
+                  simulationName: item.simulationTitle,
+                  numScenarios: item.expectedCount,
+                  numScenariosCompleted: item.completedCount,
+                  infiniteMode: item.infiniteMode,
+                  personaNames: item.personaNames,
+                  personaColors: item.personaColors,
+                  score: item.scorePercent,
+                  simulation_id: item.simulationId,
+                  scenario_ids: item.scenarioIds,
+                  isArchived: item.archived,
+                  showView: item.showView,
+                  showContinue: item.showContinue,
+                  practiceSimulation: false, // Default to false - can be determined from simulation data if needed
+                  passPct: 70, // Default pass percentage threshold
+                }))
+              : []
+          }
           showExport={true}
           showArchive={false}
           singleProfile={true}

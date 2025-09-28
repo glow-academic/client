@@ -12,7 +12,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { AttemptHistoryRow } from "@/lib/analytics";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
 import * as React from "react";
@@ -40,32 +39,6 @@ export interface HistoryDataItem {
   showContinue: boolean;
   practiceSimulation?: boolean; // Needed for routing to /practice/ vs /home/
   passPct: number; // Pass percentage threshold for this simulation
-}
-
-// Helper function to convert analytics data to the new format
-export function convertAnalyticsDataToHistoryData(
-  analyticsData: AttemptHistoryRow[]
-): HistoryDataItem[] {
-  return analyticsData.map((item) => ({
-    attemptId: item.attemptId,
-    date: new Date(item.attemptDate),
-    profileId: item.profileId,
-    profileName: item.profileName,
-    simulationName: item.simulationTitle,
-    numScenarios: item.expectedCount,
-    numScenariosCompleted: item.completedCount,
-    infiniteMode: item.infiniteMode,
-    personaNames: item.personaNames,
-    personaColors: item.personaColors,
-    score: item.scorePercent,
-    simulation_id: item.simulationId,
-    scenario_ids: item.scenarioIds,
-    isArchived: item.archived,
-    showView: item.showView,
-    showContinue: item.showContinue,
-    practiceSimulation: false, // Default to false - can be determined from simulation data if needed
-    passPct: 70, // Default pass percentage threshold
-  }));
 }
 
 export interface SimulationHistoryProps {
