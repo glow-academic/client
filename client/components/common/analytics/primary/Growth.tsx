@@ -55,7 +55,7 @@ export default function Growth({
   chartData,
   availableMetrics,
   windowAverages,
-  hasDataAvailable: _hasDataAvailable,
+  hasDataAvailable,
   isLoading,
   isError,
   actionableInsight,
@@ -91,6 +91,8 @@ export default function Growth({
 
   // Calculate threshold status based on window averages
   const getThresholdStatus = () => {
+    if (!hasDataAvailable) return "neutral";
+
     if (
       !windowAverages?.averageScore?.last ||
       !windowAverages?.averageScore?.prev
@@ -131,6 +133,27 @@ export default function Growth({
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-destructive">Failed to load growth data</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasDataAvailable) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Platform Growth
+          </CardTitle>
+          <CardDescription>
+            Platform-wide performance metrics over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">
+            No data available for the selected period
+          </div>
         </CardContent>
       </Card>
     );

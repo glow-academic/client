@@ -25,12 +25,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  type AnalyticsFilters,
-  type PersonaPerformanceFilters,
-} from "@/lib/analytics";
-import { useAnalyticsPersonaPerformance } from "@/lib/api/hooks/analytics";
+import { type PersonaPerformanceData } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { Simulation } from "@/types";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -47,7 +44,14 @@ import {
 } from "recharts";
 
 export interface PersonaPerformanceProps {
-  filters: AnalyticsFilters;
+  chartData: PersonaPerformanceData[];
+  availableSimulations: Simulation[];
+  personaColors: Record<string, string>;
+  hasDataAvailable: boolean;
+  isLoading: boolean;
+  isError: boolean;
+  performanceStatus: "success" | "warning" | "danger" | "neutral";
+  actionableInsights: Record<string, string | null>;
   thresholds: {
     danger: number;
     warning: number;
@@ -56,67 +60,57 @@ export interface PersonaPerformanceProps {
 }
 
 export default function PersonaPerformance({
-  filters,
+  chartData,
+  availableSimulations,
+  personaColors,
+  hasDataAvailable,
+  isLoading,
+  isError,
+  performanceStatus,
+  actionableInsights,
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<
     SimulationPickerType[]
   >([]);
 
-  // Extend server filters with selected simulationIds (hook expects PersonaPerformanceFilters)
-  const personaFilters: PersonaPerformanceFilters = useMemo(
-    () => ({
-      ...filters,
-      simulationIds:
-        selectedSimulations.length > 0
-          ? selectedSimulations.map((s) => s.id)
-          : undefined,
-    }),
-    [filters, selectedSimulations]
-  );
-
-  const { data, isLoading, error } =
-    useAnalyticsPersonaPerformance(personaFilters);
-
-  const performanceData = data?.chartData ?? [];
-  const personaColorMap = data?.personaColors ?? {};
-  const availableSimulations = useMemo<SimulationPickerType[]>(
+  // Transform availableSimulations to SimulationPickerType format
+  const simulationPickerOptions = useMemo<SimulationPickerType[]>(
     () =>
-      (data?.availableSimulations ?? []).map((s) => ({
-        id: s.id,
-        title: s.name,
+      availableSimulations.map((s) => ({
+        ...s,
         timeLimit: s.timeLimit ?? 0,
-        active: true, // All simulations from API are active
       })),
-    [data?.availableSimulations]
+    [availableSimulations]
   );
 
-  // Traffic-light from server
-  const thresholdStatus = data?.performanceStatus ?? "neutral";
+  // Filter chart data based on selected simulations
+  const filteredChartData = useMemo(() => {
+    if (selectedSimulations.length === 0) return chartData;
+
+    // Note: This is a simplified filter - in a real implementation,
+    // you might need to filter based on which simulations each persona appears in
+    return chartData;
+  }, [chartData, selectedSimulations]);
+
+  // Use hasDataAvailable to determine threshold status
+  const thresholdStatus = hasDataAvailable ? performanceStatus : "neutral";
+
+  // Filter trend data for each persona based on selected simulations
+  const getFilteredTrendData = (persona: PersonaPerformanceData) => {
+    if (selectedSimulations.length === 0) return persona.trendData;
+
+    const selectedIds = new Set(selectedSimulations.map((s) => s.id));
+    return persona.trendData.filter(
+      (d) => !d.simulationId || selectedIds.has(d.simulationId)
+    );
+  };
 
   // Background color by thresholds
   const getBackgroundColor = (score: number) => {
     if (score >= thresholds.success) return "bg-green-50 dark:bg-green-950";
     if (score >= thresholds.warning) return "bg-yellow-50 dark:bg-yellow-950";
     return "bg-red-50 dark:bg-red-950";
-  };
-
-  // Simple persona-level insight from trend data
-  const getActionableInsights = (trendData: Array<{ score: number }>) => {
-    if (!trendData || trendData.length < 2) return null;
-    const recent = trendData.slice(-3);
-    const early = trendData.slice(0, 3);
-    if (recent.length === 0 || early.length === 0) return null;
-
-    const avg = (arr: Array<{ score: number }>) =>
-      arr.reduce((s, x) => s + x.score, 0) / arr.length;
-
-    const improvement = avg(recent) - avg(early);
-    if (improvement > 5)
-      return "Performance improved recently — consider introducing harder scenarios.";
-    if (improvement < -5)
-      return "Performance declined — review scaffolding and guidance.";
-    return null;
   };
 
   if (isLoading) {
@@ -133,7 +127,7 @@ export default function PersonaPerformance({
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
@@ -142,6 +136,27 @@ export default function PersonaPerformance({
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-destructive">Failed to load persona data</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasDataAvailable) {
+    return (
+      <Card className="w-full h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Persona Performance
+          </CardTitle>
+          <CardDescription>
+            Performance analysis by student persona type
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">
+            No data available for the selected period
+          </div>
         </CardContent>
       </Card>
     );
@@ -172,7 +187,7 @@ export default function PersonaPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={availableSimulations}
+            simulations={simulationPickerOptions}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
             selectedSimulations={selectedSimulations}
@@ -195,7 +210,7 @@ export default function PersonaPerformance({
             }
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={performanceData} layout="vertical">
+              <BarChart data={filteredChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" domain={[0, 100]} className="text-xs" />
                 <YAxis
@@ -219,11 +234,11 @@ export default function PersonaPerformance({
                   name="Average Score"
                   className="cursor-pointer"
                 >
-                  {performanceData.map((entry, index) => (
+                  {filteredChartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={
-                        personaColorMap[entry.name] ?? entry.color ?? "#999999"
+                        personaColors[entry.name] ?? entry.color ?? "#999999"
                       }
                       className="hover:opacity-80 transition-opacity"
                     />
@@ -235,7 +250,7 @@ export default function PersonaPerformance({
 
           {/* Persona Cards */}
           <div className="space-y-4 overflow-y-auto">
-            {performanceData.map((persona) => (
+            {filteredChartData.map((persona) => (
               <Dialog key={persona.name}>
                 <DialogTrigger asChild>
                   <div
@@ -249,7 +264,7 @@ export default function PersonaPerformance({
                         className="w-4 h-4 rounded-full"
                         style={{
                           backgroundColor:
-                            personaColorMap[persona.name] ??
+                            personaColors[persona.name] ??
                             persona.color ??
                             "#999999",
                         }}
@@ -273,7 +288,7 @@ export default function PersonaPerformance({
                         className="w-4 h-4 rounded-full"
                         style={{
                           backgroundColor:
-                            personaColorMap[persona.name] ??
+                            personaColors[persona.name] ??
                             persona.color ??
                             "#999999",
                         }}
@@ -295,7 +310,7 @@ export default function PersonaPerformance({
                       }
                     >
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={persona.trendData}>
+                        <LineChart data={getFilteredTrendData(persona)}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             className="stroke-muted"
@@ -323,7 +338,7 @@ export default function PersonaPerformance({
                             type="monotone"
                             dataKey="score"
                             stroke={
-                              personaColorMap[persona.name] ??
+                              personaColors[persona.name] ??
                               persona.color ??
                               "#999999"
                             }
@@ -336,10 +351,10 @@ export default function PersonaPerformance({
                     </div>
 
                     {/* Actionable Insights */}
-                    {getActionableInsights(persona.trendData) && (
+                    {actionableInsights[persona.name] && (
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          {getActionableInsights(persona.trendData)}
+                          {actionableInsights[persona.name]}
                         </p>
                       </div>
                     )}

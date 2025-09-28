@@ -13,6 +13,8 @@ import { useProfile } from "@/contexts/profile-context";
 import {
   computeCurrent,
   computeGrowthActionableInsight,
+  computePersonaActionableInsight,
+  computePersonaPerformanceStatus,
   computeTrendAnalysis,
   MetricResponse,
   TrendData,
@@ -25,12 +27,14 @@ import {
   useAnalyticsGrowthData,
   useAnalyticsHighestScore,
   useAnalyticsMessagesPerSession,
+  useAnalyticsPersonaPerformance,
   useAnalyticsPersonaResponseTimes,
   useAnalyticsSessionEfficiency,
   useAnalyticsStagnationRate,
   useAnalyticsTimeSpent,
   useAnalyticsTotalAttempts,
 } from "@/lib/api/hooks/analytics";
+import { useSimulations } from "@/lib/api/hooks/simulations";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -155,6 +159,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
     isLoading: growthLoading,
     isError: growthError,
   } = useAnalyticsGrowthData(filters, true);
+  const {
+    data: personaData,
+    isLoading: personaLoading,
+    isError: personaError,
+  } = useAnalyticsPersonaPerformance(filters, true);
+
+  // Fetch all simulations
+  const { data: allSimulations = [] } = useSimulations();
 
   // Fetch history data for the dashboard
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -453,6 +465,51 @@ export default function Dashboard({ profileId }: DashboardProps) {
     };
   })();
 
+  // Process persona performance data
+  const personaProcessed = (() => {
+    if (!personaData) {
+      return {
+        chartData: [],
+        availableSimulations: [],
+        validSimulationIds: [],
+        personaColors: {},
+        hasDataAvailable: false,
+        performanceStatus: "neutral" as const,
+        actionableInsights: {},
+      };
+    }
+
+    const chartData = personaData.chartData || [];
+    const performanceStatus = computePersonaPerformanceStatus(
+      chartData,
+      thresholds
+    );
+
+    // Compute actionable insights for each persona
+    const actionableInsights: Record<string, string | null> = {};
+    chartData.forEach((persona) => {
+      actionableInsights[persona.name] = computePersonaActionableInsight(
+        persona.trendData
+      );
+    });
+
+    // Filter simulations by validSimulationIds
+    const validSimulationIds = personaData.validSimulationIds || [];
+    const validSimulationIdsSet = new Set(validSimulationIds);
+    const availableSimulations = allSimulations.filter((sim) =>
+      validSimulationIdsSet.has(sim.id)
+    );
+
+    return {
+      chartData,
+      availableSimulations,
+      personaColors: personaData.personaColors || {},
+      hasDataAvailable: chartData.length > 0,
+      performanceStatus,
+      actionableInsights,
+    };
+  })();
+
   const headerComponents = [
     <AverageScore
       key="average-score"
@@ -570,13 +627,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
     />,
     <PersonaPerformance
       key="persona-performance"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      chartData={personaProcessed.chartData}
+      availableSimulations={personaProcessed.availableSimulations}
+      personaColors={personaProcessed.personaColors}
+      hasDataAvailable={personaProcessed.hasDataAvailable}
+      isLoading={personaLoading}
+      isError={personaError}
+      performanceStatus={personaProcessed.performanceStatus}
+      actionableInsights={personaProcessed.actionableInsights}
       thresholds={thresholds}
     />,
     <RubricHeatmap

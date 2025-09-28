@@ -139,6 +139,7 @@ export const PersonaTrendDataSchema = z.object({
   date: z.string(),
   score: z.number(),
   timestamp: z.number(),
+  simulationId: z.string().uuid().optional(),
 });
 
 export const PersonaPerformanceDataSchema = z.object({
@@ -146,6 +147,7 @@ export const PersonaPerformanceDataSchema = z.object({
   score: z.number(),
   sessions: z.number(),
   color: z.string(),
+  simulationIds: z.array(z.string()).optional(),
   trendData: z.array(PersonaTrendDataSchema),
 });
 
@@ -153,13 +155,13 @@ export const SimulationSchema = z.object({
   id: z.string(),
   name: z.string(),
   timeLimit: z.number().nullable(),
+  practice: z.boolean().optional(),
 });
 
 export const PersonaPerformanceResponseSchema = z.object({
   chartData: z.array(PersonaPerformanceDataSchema),
-  availableSimulations: z.array(SimulationSchema),
+  validSimulationIds: z.array(z.string()),
   personaColors: z.record(z.string(), z.string()),
-  performanceStatus: z.enum(["success", "warning", "danger", "neutral"]),
 });
 
 // Extended Analytics Filters for Primary Functions
@@ -169,10 +171,6 @@ export const RubricHeatmapFiltersSchema = AnalyticsFiltersSchema.extend({
     .regex(
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
     ),
-});
-
-export const PersonaPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
-  simulationIds: z.array(z.string().uuid()).optional(),
 });
 
 export type RubricHeatmapCell = z.infer<typeof RubricHeatmapCellSchema>;
@@ -190,15 +188,11 @@ export type PersonaTrendData = z.infer<typeof PersonaTrendDataSchema>;
 export type PersonaPerformanceData = z.infer<
   typeof PersonaPerformanceDataSchema
 >;
-export type Simulation = z.infer<typeof SimulationSchema>;
 export type PersonaPerformanceResponse = z.infer<
   typeof PersonaPerformanceResponseSchema
 >;
 
 export type RubricHeatmapFilters = z.infer<typeof RubricHeatmapFiltersSchema>;
-export type PersonaPerformanceFilters = z.infer<
-  typeof PersonaPerformanceFiltersSchema
->;
 
 // Narrow what can be used as "valueField" and "keyField" so indexing is safe
 type ValueField = "value" | "count";
@@ -829,6 +823,50 @@ export function computeGrowthActionableInsight(
 
   if (improvement > 5) {
     return `Average score has improved by ${improvement.toFixed(1)}% in the last ${windowAverages.averageScore.n} days. Great progress!`;
+  }
+
+  return null;
+}
+
+// Persona Performance Analytics Utilities
+export function computePersonaPerformanceStatus(
+  chartData: PersonaPerformanceData[],
+  thresholds: { danger: number; warning: number; success: number }
+): "success" | "warning" | "danger" | "neutral" {
+  if (chartData.length === 0) return "neutral";
+
+  // Calculate average score across all personas
+  const avgScore =
+    chartData.reduce((sum, persona) => sum + persona.score, 0) /
+    chartData.length;
+
+  if (avgScore >= thresholds.success) return "success";
+  if (avgScore >= thresholds.warning) return "warning";
+  return "danger";
+}
+
+export function computePersonaActionableInsight(
+  trendData: PersonaTrendData[]
+): string | null {
+  if (trendData.length < 2) return null;
+
+  const recentScores = trendData.slice(-3);
+  const earlierScores = trendData.slice(0, 3);
+
+  if (recentScores.length === 0 || earlierScores.length === 0) return null;
+
+  const recentAvg =
+    recentScores.reduce((sum, item) => sum + item.score, 0) /
+    recentScores.length;
+  const earlierAvg =
+    earlierScores.reduce((sum, item) => sum + item.score, 0) /
+    earlierScores.length;
+  const improvement = recentAvg - earlierAvg;
+
+  if (improvement > 5) {
+    return "Performance has improved significantly. Consider advancing to more challenging scenarios.";
+  } else if (improvement < -5) {
+    return "Performance has declined. Review training approach for this persona type.";
   }
 
   return null;

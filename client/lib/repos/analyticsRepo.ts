@@ -17,7 +17,6 @@ import {
   HomeOverviewResponseSchema,
   MetricResponse,
   MetricResponseSchema,
-  PersonaPerformanceFilters,
   PersonaPerformanceResponse,
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponse,
@@ -234,17 +233,11 @@ export const analyticsRepo = {
   },
 
   async getPersonaPerformance(
-    filters: PersonaPerformanceFilters
+    filters: AnalyticsFilters
   ): Promise<PersonaPerformanceResponse> {
-    const simulationIdsParam =
-      filters.simulationIds && filters.simulationIds.length > 0
-        ? toUuidArray(filters.simulationIds) || sql`NULL`
-        : sql`NULL`;
-
     const result = await executePrimaryFunction<unknown>(
       "analytics_persona_performance_fn",
-      filters,
-      [simulationIdsParam]
+      filters
     );
     return PersonaPerformanceResponseSchema.parse(result);
   },
