@@ -108,12 +108,6 @@ activity_by_profile_sim AS (
   FROM filt
   GROUP BY profile_id, simulation_id
 ),
--- ---------------- Total chats by simulation (for Instructional numSessions)
-sim_total_chats AS (
-  SELECT simulation_id, COUNT(DISTINCT chat_id) AS total_chats
-  FROM filt
-  GROUP BY simulation_id
-),
 
 /* ========================== TA VIEW ========================== */
 ta_sim_space AS (
@@ -135,7 +129,7 @@ ta_rows AS (
       'simulationDescription', s.simulation_description,
       'simulationName',        s.simulation_title,   -- alias kept for your client
       'timeLimit',             s.time_limit,
-      'numSessions',           COALESCE(aps.chats, 0),                          -- user’s chats for this sim
+      'numSessions',           s.num_scenarios,                                 -- NEW: mirror scenarios count
       'highestScore',          (
                                  SELECT ROUND(MAX(ap.avg_score_completed))::int
                                  FROM attempt_progress ap
@@ -146,7 +140,9 @@ ta_rows AS (
       'color',                 spm.color,
       'icon',                  spm.icon,
       'hasPassed',             COALESCE(aps.any_passed, false),
-      'passRate',              NULL,                                           -- TA view: leave NULL
+      'passRate',              CASE WHEN s.rubric_points > 0
+                                    THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
+                                    ELSE NULL END,                             -- NEW: always provide passRate
       'status',                CASE
                                  WHEN COALESCE(aps.any_passed,false) THEN 'passed'
                                  WHEN COALESCE(aps.chats,0) > 0       THEN 'in-progress'
@@ -215,17 +211,35 @@ inst_rows AS (
       'simulationDescription', s.simulation_description,
       'simulationName',        s.simulation_title,      -- alias
       'timeLimit',             s.time_limit,
-      'numSessions',           COALESCE(stc.total_chats, 0),                    -- total chats across members
+      'numSessions',           s.num_scenarios,                                -- NEW: mirror scenarios count
       'highestScore',          NULL,                                             -- instructional: unset
       'rubric_id',             s.rubric_id::text,
       'color',                 spm.color,
       'icon',                  spm.icon,
-      'hasPassed',             NULL,                                             -- instructional: unset
-      'passRate',              CASE WHEN ic.total_members > 0
-                                    THEN ROUND(100.0 * ic.passed_count::numeric / ic.total_members)::int
-                                    ELSE 0 END,
-      'status',                'not-started',                                    -- instructional: N/A -> default
-      'completionPct',         NULL,                                             -- instructional: N/A
+      'hasPassed',             CASE
+                                 WHEN COALESCE(ic.total_members,0) > 0
+                                      AND COALESCE(ic.passed_count,0) = ic.total_members
+                                 THEN true ELSE false END,                      -- NEW: all members passed?
+      'passRate',              CASE WHEN s.rubric_points > 0
+                                    THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
+                                    ELSE NULL END,                             -- NEW: rubric pass %
+      'status',                CASE
+                                 WHEN COALESCE(ic.total_members,0) > 0
+                                      AND COALESCE(ic.passed_count,0) = ic.total_members
+                                   THEN 'passed'
+                                 WHEN COALESCE(ic.passed_count,0) > 0
+                                      OR COALESCE(ic.in_progress_count,0) > 0
+                                   THEN 'in-progress'
+                                 ELSE 'not-started'
+                               END,                                             -- NEW: computed status
+      'completionPct',         CASE
+                                 WHEN COALESCE(ic.total_members,0) > 0
+                                 THEN ROUND(
+                                   100.0 * (COALESCE(ic.passed_count,0) + COALESCE(ic.in_progress_count,0))::numeric
+                                   / ic.total_members
+                                 )::int
+                                 ELSE 0
+                               END,                                             -- NEW: completion percentage
       'passedCount',           COALESCE(ic.passed_count, 0),
       'inProgressCount',       COALESCE(ic.in_progress_count, 0),
       'notStartedCount',       GREATEST(COALESCE(ic.total_members,0)
@@ -236,7 +250,6 @@ inst_rows AS (
     ) AS item
   FROM sim_meta s
   JOIN inst_counts ic            ON ic.simulation_id = s.simulation_id
-  LEFT JOIN sim_total_chats stc  ON stc.simulation_id = s.simulation_id
   LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
   WHERE p_profile_id IS NULL
     AND s.sim_kind_ok

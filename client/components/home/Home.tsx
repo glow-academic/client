@@ -223,7 +223,8 @@ export default function Home() {
     return simulationItems.sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
-      if (a.hasPassed !== b.hasPassed) {
+      // Keep behavior identical to OLD: completed (hasPassed=true) at the end
+      if (!!a.hasPassed !== !!b.hasPassed) {
         return a.hasPassed ? 1 : -1;
       }
 
@@ -237,7 +238,8 @@ export default function Home() {
     return simulationItems.sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
-      if (a.hasPassed !== b.hasPassed) {
+      // Keep behavior identical to OLD: completed (hasPassed=true) at the end
+      if (!!a.hasPassed !== !!b.hasPassed) {
         return a.hasPassed ? 1 : -1;
       }
 
@@ -525,16 +527,18 @@ export default function Home() {
                 simulationName={item.simulationName}
                 status={item.status || "not-started"}
                 completionPct={item.completionPct || 0}
-                {...(item.passedCount !== null && {
+                {...(typeof item.passedCount === "number" && {
                   passedCount: item.passedCount,
                 })}
-                {...(item.inProgressCount !== null && {
+                {...(typeof item.inProgressCount === "number" && {
                   inProgressCount: item.inProgressCount,
                 })}
-                {...(item.notStartedCount !== null && {
+                {...(typeof item.notStartedCount === "number" && {
                   notStartedCount: item.notStartedCount,
                 })}
-                {...(item.passPct !== null && { passPct: item.passPct })}
+                {...(typeof item.passPct === "number" && {
+                  passPct: item.passPct,
+                })}
               />
             ) : null
           )}
@@ -584,11 +588,13 @@ export default function Home() {
                 <SimulationCard
                   key={item.id}
                   id={item.id}
-                  {...(item.timeLimit !== null && {
+                  {...(typeof item.timeLimit === "number" && {
                     timeLimit: item.timeLimit,
                   })}
-                  numSessions={item.numSessions || 1}
-                  {...(item.highestScore !== null && {
+                  numSessions={
+                    typeof item.numSessions === "number" ? item.numSessions : 1
+                  }
+                  {...(typeof item.highestScore === "number" && {
                     highestScore: item.highestScore,
                   })}
                   simulationTitle={item.simulationTitle}
@@ -596,10 +602,12 @@ export default function Home() {
                   {...(item.rubric_id && { rubric_id: item.rubric_id })}
                   {...(item.color && { color: item.color })}
                   {...(item.icon && { icon: item.icon })}
-                  {...(item.hasPassed !== null && {
+                  {...(typeof item.hasPassed === "boolean" && {
                     hasPassed: item.hasPassed,
                   })}
-                  {...(item.passRate !== null && { passRate: item.passRate })}
+                  {...(typeof item.passRate === "number" && {
+                    passRate: item.passRate,
+                  })}
                   type="cohort"
                   onStartSimulation={handleStartSimulation}
                   loadingSimulation={loadingSimulation}
