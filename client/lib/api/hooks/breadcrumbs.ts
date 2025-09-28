@@ -25,7 +25,7 @@ export function useResolveBreadcrumb() {
         });
 
         const response = await api<ResolveBreadcrumbResponse>(
-          "/api/v1/breadcrumbs/resolve",
+          "/api/v1/breadcrumbs",
           {
             method: "POST",
             body: JSON.stringify({ id, context }),

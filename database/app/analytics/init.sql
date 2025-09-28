@@ -234,3 +234,6 @@ END $$;
 
 -- Home Analytics Functions
 \i app/analytics/home/analytics_home_overview.sql
+
+-- History Analytics Functions
+\i app/analytics/history/attempt_history.sql

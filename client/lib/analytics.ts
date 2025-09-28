@@ -678,3 +678,33 @@ export type HomeTaView = z.infer<typeof HomeTaViewSchema>;
 export type HomeSimulationCohort = z.infer<typeof HomeSimulationCohortSchema>;
 export type HomeInstructorView = z.infer<typeof HomeInstructorViewSchema>;
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
+
+// History Analytics Types
+
+// Attempt History Row Schema
+export const AttemptHistoryRowSchema = z.object({
+  attemptId: z.string(),
+  simulationIds: z.array(z.string()),
+  scenarioIds: z.array(z.string()),
+  personaIds: z.array(z.string()),
+  personaColors: z.array(z.string()),
+  avgGradePercent: z.number(), // 0–100 (rounded)
+  totalScorePoints: z.number(), // sum over graded chats
+  completedCount: z.number(), // completed chats in attempt
+  expectedCount: z.number().nullable(), // null when infinite mode
+  infiniteMode: z.boolean(),
+  infiniteModeTimeLimit: z.number().nullable(),
+  lastActivityAt: z.string(), // ISO-like string
+});
+
+// Attempt History Response Schema
+export const AttemptHistoryResponseSchema = z.object({
+  hasData: z.boolean(),
+  rows: z.array(AttemptHistoryRowSchema),
+});
+
+// Type exports for history analytics
+export type AttemptHistoryRow = z.infer<typeof AttemptHistoryRowSchema>;
+export type AttemptHistoryResponse = z.infer<
+  typeof AttemptHistoryResponseSchema
+>;

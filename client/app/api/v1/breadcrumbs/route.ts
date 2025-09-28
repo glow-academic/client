@@ -98,7 +98,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
   } catch (error) {
-    log.error("api.breadcrumbs.resolve.fetch_name.failed", {
+    log.error("api.breadcrumbs.fetch_name.failed", {
       message: `Error fetching name for ${context} ID ${id}`,
       error,
       context: { function: "fetchNameForId", contextType: context, id },
@@ -154,7 +154,7 @@ export async function POST(req: Request): Promise<Response> {
       return { name } as ResolveBreadcrumbResponse;
     },
     (e: unknown) =>
-      log.error("api.breadcrumbs.resolve.failed", {
+      log.error("api.breadcrumbs.failed", {
         message: "Failed to resolve breadcrumb",
         subject: { entityType: "breadcrumb", entityId: id },
         context: { id, context },

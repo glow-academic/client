@@ -295,6 +295,13 @@ export const analyticsHomeOverviewKeys = {
   list: (filters?: unknown) =>
     [...analyticsHomeOverviewKeys.all, { filters }] as const,
 };
+
+// History Analytics Keys
+export const analyticsAttemptHistoryKeys = {
+  all: ["analytics:history:attempt-history"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsAttemptHistoryKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

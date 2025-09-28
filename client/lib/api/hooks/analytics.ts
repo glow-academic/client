@@ -1,5 +1,6 @@
 import {
   AnalyticsFilters,
+  AttemptHistoryResponseSchema,
   AttemptImprovementFilters,
   AttemptImprovementResponseSchema,
   CohortPerformanceResponseSchema,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/analytics";
 import { api } from "@/lib/api/fetcher";
 import {
+  analyticsAttemptHistoryKeys,
   analyticsAttemptImprovementKeys,
   analyticsAverageScoreKeys,
   analyticsCohortPerformanceKeys,
@@ -514,11 +516,30 @@ export function useAnalyticsHomeOverview(
     queryKey: analyticsHomeOverviewKeys.list(filters),
     enabled,
     queryFn: async () => {
-      const res = await api<unknown>("/api/v1/analytics/home/overview", {
+      const res = await api<unknown>("/api/v1/analytics/home", {
         method: "POST",
         body: JSON.stringify(filters),
       });
       return HomeOverviewResponseSchema.parse(res);
+    },
+  });
+}
+
+// History Analytics Hooks
+
+export function useAnalyticsAttemptHistory(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsAttemptHistoryKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/history", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return AttemptHistoryResponseSchema.parse(res);
     },
   });
 }

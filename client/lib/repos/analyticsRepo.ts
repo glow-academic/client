@@ -4,6 +4,8 @@ import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
   AnalyticsFilters,
+  AttemptHistoryResponse,
+  AttemptHistoryResponseSchema,
   AttemptImprovementFilters,
   AttemptImprovementResponse,
   AttemptImprovementResponseSchema,
@@ -359,5 +361,16 @@ export const analyticsRepo = {
       filters
     );
     return HomeOverviewResponseSchema.parse(result);
+  },
+
+  // History Analytics
+  async getAttemptHistory(
+    filters: AnalyticsFilters
+  ): Promise<AttemptHistoryResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_attempt_history_fn",
+      filters
+    );
+    return AttemptHistoryResponseSchema.parse(result);
   },
 };
