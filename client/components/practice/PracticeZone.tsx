@@ -1,10 +1,11 @@
-import { Profile, Simulation } from "@/types";
+import { PracticeSimulationItem } from "@/lib/analytics";
+import { Profile } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 interface PracticeZoneProps {
-  simulations: Simulation[];
+  simulations: PracticeSimulationItem[];
   profile: Profile | null;
   onStartSimulation: (simulationId: string) => void;
   loadingSimulation: string | null;
@@ -86,16 +87,26 @@ export default function PracticeZone({
               <SimulationCard
                 key={simulation.id}
                 id={simulation.id}
-                timeLimit={simulation.timeLimit}
-                numSessions={1}
-                highestScore={simulation.highestScore}
-                simulationTitle={simulation.title}
-                simulationDescription={simulation.description}
-                rubric_id={simulation.rubricId}
-                color={simulation.color}
-                icon={simulation.icon}
-                hasPassed={simulation.hasPassed}
-                passRate={simulation.passRate}
+                {...(typeof simulation.timeLimit === "number" && {
+                  timeLimit: simulation.timeLimit,
+                })}
+                numSessions={simulation.numSessions}
+                {...(typeof simulation.highestScore === "number" && {
+                  highestScore: simulation.highestScore,
+                })}
+                simulationTitle={simulation.simulationTitle}
+                simulationDescription={simulation.simulationDescription || ""}
+                {...(simulation.rubric_id && {
+                  rubric_id: simulation.rubric_id,
+                })}
+                {...(simulation.color && { color: simulation.color })}
+                {...(simulation.icon && { icon: simulation.icon })}
+                {...(typeof simulation.hasPassed === "boolean" && {
+                  hasPassed: simulation.hasPassed,
+                })}
+                {...(typeof simulation.passRate === "number" && {
+                  passRate: simulation.passRate,
+                })}
                 type="default"
                 onStartSimulation={onStartSimulation}
                 loadingSimulation={loadingSimulation}

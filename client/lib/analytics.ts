@@ -672,6 +672,48 @@ export const HomeOverviewResponseSchema = z.object({
 export type HomeSimulationItem = z.infer<typeof HomeSimulationItemSchema>;
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
 
+// Practice Analytics Types
+
+// Practice Simulation Item Schema (matches SQL function output)
+export const PracticeSimulationItemSchema = z.object({
+  viewMode: z.enum(["practice"]),
+  id: z.string(),
+  simulationTitle: z.string(),
+  simulationDescription: z.string().nullable(),
+  simulationName: z.string(),
+  timeLimit: z.number().nullable().optional(),
+  numSessions: z.number(),
+  highestScore: z.number().nullable().optional(),
+  rubric_id: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  hasPassed: z.boolean().nullable().optional(),
+  passRate: z.number().nullable().optional(),
+  status: z.enum(["not-started", "in-progress", "passed"]),
+  completionPct: z.number(),
+  // Fields that are null for practice (cohort-specific)
+  passedCount: z.number().nullable().optional(),
+  inProgressCount: z.number().nullable().optional(),
+  notStartedCount: z.number().nullable().optional(),
+  passPct: z.number().nullable().optional(),
+  cohortName: z.string().nullable().optional(),
+});
+
+// Practice Overview Response Schema (matches SQL function output)
+export const PracticeOverviewResponseSchema = z.object({
+  mode: z.enum(["practice"]),
+  hasData: z.boolean(),
+  items: z.array(PracticeSimulationItemSchema),
+});
+
+// Type exports for practice analytics
+export type PracticeSimulationItem = z.infer<
+  typeof PracticeSimulationItemSchema
+>;
+export type PracticeOverviewResponse = z.infer<
+  typeof PracticeOverviewResponseSchema
+>;
+
 // New UI-Ready Attempt History Types
 export const AttemptHistoryRowSchema = z.object({
   attemptId: z.string(),

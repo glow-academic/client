@@ -20,6 +20,8 @@ import {
   PersonaPerformanceFilters,
   PersonaPerformanceResponse,
   PersonaPerformanceResponseSchema,
+  PracticeOverviewResponse,
+  PracticeOverviewResponseSchema,
   RubricHeatmapFilters,
   RubricHeatmapResponse,
   RubricHeatmapResponseSchema,
@@ -372,5 +374,16 @@ export const analyticsRepo = {
       filters
     );
     return AttemptHistoryResponseSchema.parse(result);
+  },
+
+  // Practice Analytics
+  async getPracticeOverview(
+    filters: AnalyticsFilters
+  ): Promise<PracticeOverviewResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_practice_overview_fn",
+      filters
+    );
+    return PracticeOverviewResponseSchema.parse(result);
   },
 };

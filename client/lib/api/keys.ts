@@ -296,6 +296,13 @@ export const analyticsHomeOverviewKeys = {
     [...analyticsHomeOverviewKeys.all, { filters }] as const,
 };
 
+// Practice Analytics Keys
+export const analyticsPracticeOverviewKeys = {
+  all: ["analytics:practice:overview"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsPracticeOverviewKeys.all, { filters }] as const,
+};
+
 // History Analytics Keys
 export const analyticsAttemptHistoryKeys = {
   all: ["analytics:history:attempt-history"] as const,

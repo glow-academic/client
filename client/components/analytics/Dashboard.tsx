@@ -10,6 +10,8 @@
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import { computeCurrent, MetricResponse, TrendData } from "@/lib/analytics";
+import { useAnalyticsAverageScore } from "@/lib/api/hooks/analytics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -70,16 +72,87 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
+  const filters = {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    cohortIds: selectedCohortIds,
+    roles: selectedRoles,
+    simulationFilters,
+  };
+
+  // Fetch data and process it inline
+  const { data, isLoading, isError } = useAnalyticsAverageScore(filters, true);
+
+  // Process the data inline
+  const averageScoreData = (() => {
+    const resp = data as MetricResponse | undefined;
+    if (!resp) {
+      return {
+        averageScore: 0,
+        scoreTrend: [] as TrendData[],
+        hasDataAvailable: false,
+      };
+    }
+
+    // Use all data points for aggregate view
+    const points = resp.dataPoints;
+    const current = computeCurrent(resp.method, points);
+
+    return {
+      averageScore: Number.isFinite(current) ? current : 0,
+      scoreTrend: resp.trendData ?? [],
+      hasDataAvailable: !!resp.hasData && points.length > 0,
+    };
+  })();
+
+  // Trend analysis
+  const trendAnalysis = (() => {
+    if (
+      !averageScoreData.hasDataAvailable ||
+      (averageScoreData.scoreTrend?.length ?? 0) < 2
+    )
+      return null;
+
+    const recentData = averageScoreData.scoreTrend.slice(-3);
+    const earlierData = averageScoreData.scoreTrend.slice(0, 3);
+
+    if (!recentData.length || !earlierData.length) return null;
+
+    const recentAvg =
+      recentData.reduce(
+        (sum: number, d: TrendData) => sum + (d.value ?? 0),
+        0
+      ) / recentData.length;
+    const earlierAvg =
+      earlierData.reduce(
+        (sum: number, d: TrendData) => sum + (d.value ?? 0),
+        0
+      ) / earlierData.length;
+
+    const change = recentAvg - earlierAvg;
+    const changePercent =
+      earlierAvg > 0 ? Math.round((change / earlierAvg) * 100) : 0;
+    if (Math.abs(changePercent) < 1) return null;
+
+    const period =
+      averageScoreData.scoreTrend.length <= 7
+        ? "3 days"
+        : averageScoreData.scoreTrend.length <= 14
+          ? "1 week"
+          : "1 month";
+    const direction = changePercent > 0 ? "increased" : "decreased";
+    return `Average score ${direction} ${Math.abs(changePercent)}% over the past ${period}`;
+  })();
+
   const headerComponents = [
     <AverageScore
       key="average-score"
-      filters={{
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        cohortIds: selectedCohortIds,
-        roles: selectedRoles,
-        simulationFilters,
-      }}
+      averageScore={averageScoreData.averageScore}
+      scoreTrend={averageScoreData.scoreTrend}
+      hasDataAvailable={averageScoreData.hasDataAvailable}
+      isLoading={isLoading}
+      isError={isError}
+      trendAnalysis={trendAnalysis}
       thresholds={thresholds}
     />,
     <CompletionPercentage
@@ -184,14 +257,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
   ];
 
   const primaryComponents = [
-    <Growth key="growth" filters={{
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters,
-      profileId,
-    }} />,
+    <Growth
+      key="growth"
+      filters={{
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        cohortIds: selectedCohortIds,
+        roles: selectedRoles,
+        simulationFilters,
+        profileId,
+      }}
+    />,
     <PersonaPerformance
       key="persona-performance"
       filters={{
@@ -244,7 +320,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     <SkillPerformance
       key="skill-performance"
       filters={{
-        startDate: startDate.toISOString(), 
+        startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         cohortIds: selectedCohortIds,
         roles: selectedRoles,

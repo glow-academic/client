@@ -21,10 +21,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useFilteredAnalyticsData } from "@/hooks/use-filtered-analytics-data";
-import { calculateUserPerformanceBySimulation } from "@/utils/analytics/header";
-import type { HistoryResponse } from "@/utils/api/analytics/get-history";
-import { getAnalyticsHistory } from "@/utils/api/analytics/get-history";
+import {
+  useAnalyticsAttemptHistory,
+  useAnalyticsPracticeOverview,
+} from "@/lib/api/hooks/analytics";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
@@ -43,12 +43,6 @@ export default function Practice() {
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
-
-  const { data: filteredData } = useFilteredAnalyticsData({
-    ...(effectiveProfile?.id && { profileId: effectiveProfile.id }),
-  });
-
-  // Server-backed history for SimulationHistory (no filteredData usage)
   const {
     startDate,
     endDate,
@@ -56,68 +50,43 @@ export default function Practice() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-  const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const baseFilters = {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          cohortIds: selectedCohortIds,
-          roles: selectedRoles as unknown as string[],
-          simulationFilters,
-        } as const;
-        const json = await getAnalyticsHistory({
-          ...baseFilters,
-          ...(effectiveProfile?.id
-            ? { profileId: String(effectiveProfile.id) }
-            : {}),
-        });
-        if (!cancelled) setHistoryData(json ?? null);
-      } catch {
-        if (!cancelled)
-          setHistoryData({
-            rows: [],
-            profiles: [],
-            simulations: [],
-            rootScenarios: [],
-          } as unknown as HistoryResponse);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    startDate,
-    endDate,
-    selectedCohortIds,
-    selectedRoles,
-    simulationFilters,
-    effectiveProfile?.id,
-  ]);
-  const enhancedPracticeSimulations = useMemo(() => {
-    const sims = filteredData?.simulations ?? [];
-    const rubrics = filteredData?.rubrics ?? [];
-    if (!effectiveProfile?.id) return sims.filter((s) => s.practiceSimulation);
 
-    const perfBySim = calculateUserPerformanceBySimulation(
-      filteredData!,
-      rubrics,
-      effectiveProfile.id
-    );
+  // New optimized practice overview analytics
+  const { data: practiceOverview, isLoading: isPracticeOverviewLoading } =
+    useAnalyticsPracticeOverview({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
+        | "general"
+        | "practice"
+        | "archived"
+      )[],
+      // Always pass profileId for practice (personal view)
+      profileId: effectiveProfile?.id,
+    });
 
-    return sims
-      .filter((s) => s.practiceSimulation)
-      .map((simulation) => {
-        const perf = perfBySim[simulation.id];
-        return {
-          ...simulation,
-          highestScore: perf?.highestScorePercent ?? 0,
-          hasPassed: perf?.passed ?? false,
-        };
-      });
-  }, [filteredData, effectiveProfile?.id]);
+  // Fetch history data for the current user
+  const { data: historyData, isLoading: isHistoryLoading } =
+    useAnalyticsAttemptHistory({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
+        | "general"
+        | "practice"
+        | "archived"
+      )[],
+      // Only show current user's history
+      profileId: effectiveProfile?.id,
+    });
+
+  // Use data directly from the hook
+  const simulationItems = useMemo(() => {
+    return practiceOverview?.items ?? [];
+  }, [practiceOverview?.items]);
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
@@ -266,6 +235,80 @@ export default function Practice() {
   );
 
   // Loading state
+  if (isPracticeOverviewLoading || isHistoryLoading) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 space-y-12">
+        {/* Header skeleton */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between space-y-2">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+        </div>
+
+        {/* Practice Zone skeleton */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card
+                key={i}
+                className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg"
+              >
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="text-right space-y-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-10" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* History Section skeleton - only show if not guest */}
+        <div className="space-y-2">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center space-x-4 p-3 rounded-lg border bg-gray-50 dark:bg-gray-800"
+                >
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <Skeleton className="h-2 w-1/3 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-4 w-12" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!effectiveProfile) {
     return (
       <div className="container mx-auto p-4 md:p-6 space-y-12">
@@ -345,7 +388,7 @@ export default function Practice() {
     <TooltipProvider>
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         <PracticeZone
-          simulations={enhancedPracticeSimulations}
+          simulations={simulationItems}
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}
@@ -354,78 +397,34 @@ export default function Practice() {
         {effectiveProfile?.role !== "guest" && (
           <div className="space-y-2">
             <SimulationHistory
-              filteredData={
-                historyData
-                  ? {
-                      attempts: historyData.rows.map((row) => ({
-                        ...row,
-                        infiniteMode: row.infiniteMode ?? false,
-                        infiniteModeTimeLimit:
-                          row.infiniteModeTimeLimit ?? null,
-                      })),
-                      chats: [],
-                      grades: [],
-                      feedbacks: [],
-                      messages: [],
-                      simulations: historyData.simulations.map((sim) => ({
-                        ...sim,
-                        updatedAt: new Date().toISOString(),
-                        createdAt: new Date().toISOString(),
-                        active: true,
-                        description: "",
-                        timeLimit: null,
-                        scenarioIds: [],
-                        rubricId: "",
-                        defaultSimulation: false,
-                        practiceSimulation: false,
-                      })),
-                      scenarios: historyData.rootScenarios.map((scenario) => ({
-                        ...scenario,
-                        generated: false,
-                        updatedAt: new Date().toISOString(),
-                        createdAt: new Date().toISOString(),
-                        active: true,
-                        description: "",
-                        personaId: null,
-                        parameterItemIds: null,
-                        documentIds: null,
-                        defaultScenario: false,
-                        practiceScenario: false,
-                        parentId: null,
-                      })),
-                      profiles: historyData.profiles.map((profile) => ({
-                        id: profile.id,
-                        updatedAt: new Date().toISOString(),
-                        userId: null,
-                        lastLogin: new Date().toISOString(),
-                        firstName: profile.name,
-                        lastName: "",
-                        alias: profile.name,
-                        viewedIntro: false,
-                        viewedChat: false,
-                        createdAt: new Date().toISOString(),
-                        role: "guest" as const,
-                        defaultProfile: false,
-                        active: true,
-                        lastActive: null,
-                        reqPerDay: 0,
-                        reqUsed: 0,
-                        reqResetDate: new Date().toISOString(),
-                      })),
-                      personas: [],
-                      rubrics: [],
-                      cohorts: [],
-                      parameters: [],
-                      agents: [],
-                      standardGroups: [],
-                      standards: [],
-                      parameterItems: [],
-                    }
-                  : null
+              data={
+                historyData?.rows
+                  ? historyData.rows.map((item) => ({
+                      attemptId: item.attemptId,
+                      date: new Date(item.attemptDate),
+                      profileId: item.profileId,
+                      profileName: item.profileName,
+                      simulationName: item.simulationTitle,
+                      numScenarios: item.expectedCount,
+                      numScenariosCompleted: item.completedCount,
+                      infiniteMode: item.infiniteMode,
+                      personaNames: item.personaNames,
+                      personaColors: item.personaColors,
+                      score: item.scorePercent,
+                      simulation_id: item.simulationId,
+                      scenario_ids: item.scenarioIds,
+                      isArchived: item.archived,
+                      showView: item.showView,
+                      showContinue: item.showContinue,
+                      practiceSimulation: item.practiceSimulation || false,
+                      passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
+                    }))
+                  : []
               }
               showExport={false}
               showArchive={false}
               singleProfile={true}
+              isLoading={isHistoryLoading}
             />
           </div>
         )}

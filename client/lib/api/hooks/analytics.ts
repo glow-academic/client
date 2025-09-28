@@ -9,6 +9,7 @@ import {
   MetricResponseSchema,
   PersonaPerformanceFilters,
   PersonaPerformanceResponseSchema,
+  PracticeOverviewResponseSchema,
   RubricHeatmapFilters,
   RubricHeatmapResponseSchema,
   ScenarioPerformanceDataSchema,
@@ -34,6 +35,7 @@ import {
   analyticsPerfectScoresKeys,
   analyticsPersonaPerformanceKeys,
   analyticsPersonaResponseTimesKeys,
+  analyticsPracticeOverviewKeys,
   analyticsQuickestPassKeys,
   analyticsRubricHeatmapKeys,
   analyticsScenarioPerformanceKeys,
@@ -521,6 +523,25 @@ export function useAnalyticsHomeOverview(
         body: JSON.stringify(filters),
       });
       return HomeOverviewResponseSchema.parse(res);
+    },
+  });
+}
+
+// Practice Analytics Hooks
+
+export function useAnalyticsPracticeOverview(
+  filters: AnalyticsFilters,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: analyticsPracticeOverviewKeys.list(filters),
+    enabled,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/practice", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return PracticeOverviewResponseSchema.parse(res);
     },
   });
 }
