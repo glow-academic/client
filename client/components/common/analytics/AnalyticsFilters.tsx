@@ -61,7 +61,11 @@ export function AnalyticsFilters({
 
   // Stable spinner that respects pending mutation, in-flight queries, and a min duration
   const [spinning, setSpinning] = useState(false);
+  const [requestStop, setRequestStop] = useState(false);
   const spinStartRef = useRef<number | null>(null);
+  const iconRef = useRef<
+    (SVGSVGElement & { __fallbackStop?: NodeJS.Timeout | undefined }) | null
+  >(null);
   const MIN_SPIN_MS = 600; // prevent flicker (tweak to taste)
   const SETTLE_DELAY_MS = 150; // brief cushion after last fetch
 
@@ -104,8 +108,23 @@ export function AnalyticsFilters({
       const waitMs = Math.max(0, MIN_SPIN_MS - elapsed) + SETTLE_DELAY_MS;
 
       const t = setTimeout(() => {
-        setSpinning(false);
-        spinStartRef.current = null;
+        // DEFER stopping to the next animationiteration
+        setRequestStop(true);
+
+        // safety fallback: if no iteration fires (tab hidden, etc.), stop anyway
+        const fallback = setTimeout(() => {
+          setSpinning(false);
+          setRequestStop(false);
+          spinStartRef.current = null;
+        }, 1200); // a bit > one spin period
+
+        // store fallback timer id on the ref so we can clear it when iteration happens
+        if (iconRef.current?.__fallbackStop) {
+          clearTimeout(iconRef.current.__fallbackStop);
+        }
+        if (iconRef.current) {
+          iconRef.current.__fallbackStop = fallback;
+        }
       }, waitMs);
 
       return () => clearTimeout(t);
@@ -254,8 +273,23 @@ export function AnalyticsFilters({
           title="Refresh analytics data"
         >
           <RefreshCw
+            ref={iconRef}
             aria-hidden
-            className={`h-4 w-4 will-change-transform ${spinning ? "animate-spin" : ""}`}
+            onAnimationIteration={() => {
+              if (requestStop) {
+                // clear fallback
+                if (iconRef.current?.__fallbackStop) {
+                  clearTimeout(iconRef.current.__fallbackStop);
+                  iconRef.current.__fallbackStop = undefined;
+                }
+                setSpinning(false); // remove animate-spin at a lap boundary
+                setRequestStop(false);
+                spinStartRef.current = null;
+              }
+            }}
+            className={`h-4 w-4 will-change-transform ${
+              spinning ? "animate-spin" : ""
+            }`}
           />
         </Button>
       </div>
