@@ -29,7 +29,7 @@ avg_score AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_average_score_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 pass_rate AS (
   SELECT s.d, x.value::int, x.count::int
@@ -38,7 +38,7 @@ pass_rate AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_first_attempt_pass_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 completion AS (
   SELECT s.d, x.value::int, x.count::int
@@ -47,7 +47,7 @@ completion AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_completion_percentage_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 msgs AS (
   SELECT s.d, x.value::int, x.count::int
@@ -56,7 +56,7 @@ msgs AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_messages_per_session_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 resp AS (
   SELECT s.d, x.value::int, x.count::int
@@ -65,7 +65,7 @@ resp AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_persona_response_times_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 eff AS (
   SELECT s.d, x.value::int, x.count::int
@@ -74,7 +74,7 @@ eff AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_session_efficiency_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 stagn AS (
   SELECT s.d, x.value::int, x.count::int
@@ -83,7 +83,7 @@ stagn AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_stagnation_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 time_spent AS (
   SELECT s.d, x.value::int, x.count::int
@@ -92,7 +92,7 @@ time_spent AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_time_spent_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 attempts AS (
   SELECT s.d, x.value::int, x.count::int
@@ -101,14 +101,14 @@ attempts AS (
     SELECT * FROM jsonb_to_recordset(
       (SELECT analytics_total_attempts_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
     ) AS t(date text, value int, count int)
-  ) x ON x.date = to_char(s.d, 'MM/DD')
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 
 -- 3) UI-ready chart rows (one row per day, all metrics as flat fields)
 chart AS (
   SELECT jsonb_agg(
            jsonb_build_object(
-             'date', to_char(s.d,'MM/DD'),
+             'date', to_char(s.d,'YYYY-MM-DD'),
              'averageScore',         COALESCE(a.value, 0),
              'passRate',             COALESCE(p.value, 0),
              'completionRate',       COALESCE(c.value, 0),

@@ -14,15 +14,21 @@ LANGUAGE sql STABLE AS $$
 WITH base AS (
   SELECT *
   FROM analytics a
-  WHERE a.chat_created_at >= p_start
-    AND a.chat_created_at <  p_end
-    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
-    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
-    AND (p_sim_filters IS NULL OR (
-          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
-          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-          ('archived' = ANY (p_sim_filters) AND a.is_archived)
-        ))
+  WHERE a.chat_created_at > p_start
+    AND a.chat_created_at < GREATEST(p_end, now())
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
+    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+    AND (
+      p_sim_filters IS NULL
+      OR cardinality(p_sim_filters) > 0
+    )
+    AND (
+      p_sim_filters IS NULL OR (
+        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
+        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+        ('archived' = ANY (p_sim_filters) AND a.is_archived)
+      )
+    )
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
 -- Latest grade chosen per chat (whatever rubric it used)
@@ -56,51 +62,51 @@ fb AS (
   JOIN standard_groups sg
     ON sg.id = st.standard_group_id
 ),
--- Aggregate to per-profile, per-(rubric, group) percentage
-per_profile_group AS (
+-- per grade × (rubric, group) percentage
+per_grade_group AS (
   SELECT
-    profile_id,
-    rubric_id,
-    standard_group_id,
-    standard_group_name,
-    MIN(short_name) AS short_name,
-    100.0 * SUM(earned) / NULLIF(SUM(possible),0) AS pct
-  FROM fb
-  GROUP BY profile_id, rubric_id, standard_group_id, standard_group_name
+    lg.simulation_chat_id AS chat_id,
+    st.rubric_id,
+    st.group_id,
+    st.group_name,
+    100.0 * SUM(fb.earned) / NULLIF(SUM(st.points),0) AS pct
+  FROM latest_grade_per_chat lg
+  JOIN simulation_chat_feedbacks fb ON fb.simulation_chat_grade_id = lg.id
+  JOIN standards s   ON s.id = fb.standard_id
+  JOIN standard_groups st ON st.id = s.standard_group_id AND st.rubric_id = lg.rubric_id
+  GROUP BY lg.simulation_chat_id, st.rubric_id, st.group_id, st.group_name
+),
+-- only chats that have both groups present for a pair
+pairs AS (
+  SELECT g1.rubric_id, g1.group_id AS g1, g2.group_id AS g2
+  FROM (SELECT DISTINCT rubric_id, group_id FROM per_grade_group) g1
+  JOIN (SELECT DISTINCT rubric_id, group_id FROM per_grade_group) g2
+    ON g2.rubric_id = g1.rubric_id
+),
+corrs AS (
+  SELECT
+    p.rubric_id, p.g1, p.g2,
+    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL)::int AS n,
+    corr(a.pct, b.pct) AS r
+  FROM pairs p
+  JOIN per_grade_group a ON a.rubric_id = p.rubric_id AND a.group_id = p.g1
+  JOIN per_grade_group b ON b.rubric_id = p.rubric_id AND b.group_id = p.g2
+   AND a.chat_id = b.chat_id                    -- correlate within the same grade/session
+  GROUP BY p.rubric_id, p.g1, p.g2
 ),
 -- Only groups that actually appear for a rubric
 groups AS (
   SELECT DISTINCT
-    ppg.rubric_id,
+    pgg.rubric_id,
     sg.id,
     sg.name,
     sg.short_name
-  FROM per_profile_group ppg
-  JOIN standard_groups sg ON sg.id = ppg.standard_group_id
-  ORDER BY ppg.rubric_id, sg.name
+  FROM per_grade_group pgg
+  JOIN standard_groups sg ON sg.id = pgg.group_id
+  ORDER BY pgg.rubric_id, sg.name
 ),
 valid_rubrics AS (
   SELECT DISTINCT rubric_id FROM groups
-),
--- Pair grid per rubric
-pairs AS (
-  SELECT g1.rubric_id, g1.id AS g1, g2.id AS g2
-  FROM groups g1
-  JOIN groups g2 ON g2.rubric_id = g1.rubric_id
-),
-corrs AS (
-  SELECT
-    p.rubric_id,
-    p.g1, p.g2,
-    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL)::int AS n,
-    corr(a.pct, b.pct) AS r
-  FROM pairs p
-  JOIN per_profile_group a
-    ON a.rubric_id = p.rubric_id AND a.standard_group_id = p.g1
-  JOIN per_profile_group b
-    ON b.rubric_id = p.rubric_id AND b.standard_group_id = p.g2
-   AND a.profile_id = b.profile_id
-  GROUP BY p.rubric_id, p.g1, p.g2
 ),
 enriched AS (
   SELECT

@@ -15,15 +15,21 @@ LANGUAGE sql STABLE AS $$
 WITH filt AS (
   SELECT *
   FROM analytics a
-  WHERE a.chat_created_at >= p_start
-    AND a.chat_created_at <  p_end
-    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
-    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
-    AND (p_sim_filters IS NULL OR (
-          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
-          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-          ('archived' = ANY (p_sim_filters) AND a.is_archived)
-        ))
+  WHERE a.chat_created_at > p_start
+    AND a.chat_created_at < GREATEST(p_end, now())
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
+    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+    AND (
+      p_sim_filters IS NULL
+      OR cardinality(p_sim_filters) > 0
+    )
+    AND (
+      p_sim_filters IS NULL OR (
+        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
+        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+        ('archived' = ANY (p_sim_filters) AND a.is_archived)
+      )
+    )
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
 -- Only personas that actually appear in the filtered rows
@@ -56,16 +62,29 @@ persona_sim_ids AS (
   FROM filt f
   GROUP BY f.persona_id
 ),
--- Daily trend per persona *and simulation*
+-- latest grade per chat (same chat may have multiple grades; we want each event)
+grade_events AS (
+  SELECT
+    scg.id                AS grade_id,
+    b.persona_id,
+    b.simulation_id,
+    b.chat_id,
+    scg.created_at        AS grade_at,
+    (CASE WHEN r.points > 0 THEN (scg.score::numeric / r.points::numeric) * 100.0 END) AS pct
+  FROM simulation_chat_grades scg
+  JOIN analytics b ON b.chat_id = scg.simulation_chat_id
+  JOIN rubrics r   ON r.id = scg.rubric_id
+  WHERE b.chat_id IN (SELECT chat_id FROM filt)  -- keep same filters
+),
 trend AS (
   SELECT
-    f.persona_id,
-    f.simulation_id,
-    to_char(date_trunc('day', f.chat_created_at),'MM/DD') AS date,
-    AVG(f.grade_percent)::float AS score,
-    EXTRACT(EPOCH FROM date_trunc('day', f.chat_created_at))::bigint AS ts
-  FROM filt f
-  GROUP BY f.persona_id, f.simulation_id, date_trunc('day', f.chat_created_at)
+    g.persona_id,
+    g.simulation_id,
+    to_char(date_trunc('day', g.grade_at),'YYYY-MM-DD') AS date,
+    g.pct::float                                        AS score,
+    (EXTRACT(EPOCH FROM g.grade_at)*1000)::bigint       AS ts
+  FROM grade_events g
+  WHERE g.pct IS NOT NULL
 ),
 chart AS (
   SELECT jsonb_agg(

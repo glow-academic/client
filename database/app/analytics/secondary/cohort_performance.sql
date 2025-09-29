@@ -21,15 +21,21 @@ LANGUAGE sql STABLE AS $$
 WITH filt AS (
   SELECT *
   FROM analytics a
-  WHERE a.chat_created_at >= p_start
-    AND a.chat_created_at <  p_end
-    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
-    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
-    AND (p_sim_filters IS NULL OR (
-          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
-          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-          ('archived' = ANY (p_sim_filters) AND a.is_archived)
-        ))
+  WHERE a.chat_created_at > p_start
+    AND a.chat_created_at < GREATEST(p_end, now())
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
+    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+    AND (
+      p_sim_filters IS NULL
+      OR cardinality(p_sim_filters) > 0
+    )
+    AND (
+      p_sim_filters IS NULL OR (
+        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
+        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+        ('archived' = ANY (p_sim_filters) AND a.is_archived)
+      )
+    )
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
 filt_x AS (
@@ -41,6 +47,50 @@ cohort_list AS (
   SELECT DISTINCT c.id, c.title, c.profile_ids, c.simulation_ids
   FROM cohorts c
   JOIN (SELECT DISTINCT c_id FROM filt_x) fx ON fx.c_id = c.id
+),
+-- which sims to consider per cohort (intersect with filtered sims seen in filt_x)
+cohort_required AS (
+  SELECT cl.id AS cohort_id,
+         ARRAY(
+           SELECT DISTINCT s FROM unnest(cl.simulation_ids) s
+           WHERE EXISTS (SELECT 1 FROM filt_x fx WHERE fx.c_id = cl.id AND fx.simulation_id = s)
+         ) AS sim_ids
+  FROM cohort_list cl
+),
+-- per profile × cohort: which simulations they passed at least once
+student_passes AS (
+  SELECT
+    fx.c_id        AS cohort_id,
+    fx.profile_id,
+    fx.simulation_id,
+    MAX((fx.passed)::int)::int AS passed_any
+  FROM filt_x fx
+  GROUP BY fx.c_id, fx.profile_id, fx.simulation_id
+),
+-- student has passed ALL required sims for that cohort
+students_passed_all AS (
+  SELECT
+    sp.cohort_id,
+    sp.profile_id,
+    CASE
+      WHEN cr.sim_ids IS NULL OR cardinality(cr.sim_ids)=0 THEN 0
+      ELSE (
+        SELECT CASE
+                 WHEN COUNT(*) = cardinality(cr.sim_ids) THEN 1 ELSE 0
+               END
+        FROM unnest(cr.sim_ids) s
+        JOIN LATERAL (
+          SELECT 1 FROM student_passes sp2
+          WHERE sp2.cohort_id = sp.cohort_id
+            AND sp2.profile_id = sp.profile_id
+            AND sp2.simulation_id = s
+            AND sp2.passed_any = 1
+          LIMIT 1
+        ) ok ON true
+      )
+    END AS passed_all
+  FROM (SELECT DISTINCT cohort_id, profile_id FROM student_passes) sp
+  JOIN cohort_required cr ON cr.cohort_id = sp.cohort_id
 ),
 -- attempt-level per cohort
 cohort_attempts AS (
@@ -84,6 +134,8 @@ cohort_agg AS (
     SUM(passed_any)::int                         AS passed_attempts,
     (100.0 * AVG(passed_any))::float             AS pass_rate_attempts,
     AVG(ca.avg_grade_attempt)::float             AS avg_percentage_score,
+    (SELECT COUNT(*) FROM students_passed_all spa WHERE spa.cohort_id = cl.id AND spa.passed_all = 1) AS passed_students,
+    (SELECT COUNT(DISTINCT profile_id) FROM filt_x WHERE c_id = cl.id) AS total_students_seen,
     (SELECT a2.rubric_points
        FROM analytics a2
       WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
@@ -105,7 +157,10 @@ cohort_rows AS (
            jsonb_build_object(
              'id',                 cohort_id::text,
              'name',               cohort_name,
-             'passRate',           ROUND(COALESCE(pass_rate_attempts,0))::int,
+             'passRate',           ROUND(COALESCE(
+               (100.0 * NULLIF(passed_students,0) / NULLIF(total_students_seen,0))::float, 
+               pass_rate_attempts
+             ))::int,
              'avgPercentageScore', ROUND(COALESCE(avg_percentage_score,0))::int,
              'totalStudents',      GREATEST(total_students_declared, total_students_seen),
              'passedStudents',     (SELECT COUNT(*) FROM (
