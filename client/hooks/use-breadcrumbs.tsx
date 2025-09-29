@@ -390,7 +390,8 @@ export function useBreadcrumbs(pathname: string) {
     };
 
     generateBreadcrumbs();
-  }, [pathname, resolveBreadcrumb]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   return { breadcrumbs, isLoading };
 }

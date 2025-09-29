@@ -12,7 +12,13 @@ import { getEarliestAttemptDate } from "@/utils/attempt/get-earliest-attempt-dat
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useProfile } from "./profile-context";
 
 export type SimulationFilter = "practice" | "general" | "archived";
@@ -66,6 +72,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       return earliestAttemptDate;
     }
     // Fallback to 30 days ago if no attempts available
+    // Use a stable reference to prevent infinite loops
     return subDays(new Date(), 30);
   }, [earliestAttemptDate]);
 
@@ -118,40 +125,51 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     return simulationFilters;
   }, [isPracticePage, isHomePage, isTALeaderboardPage, simulationFilters]);
 
-  const setDateRange = (start: Date, end: Date) => {
+  const setDateRange = useCallback((start: Date, end: Date) => {
     setStartDate(start);
     setEndDate(end);
     setHasUserSetDateRange(true); // Mark that the user has set the date range
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setStartDate(earliestDate);
     setEndDate(new Date());
     setSelectedCohortIds([]);
     setSelectedRoles([]);
     setSimulationFilters(["general"]);
     setHasUserSetDateRange(false); // Reset user-set date range
-  };
+  }, [earliestDate]);
 
   const hasActiveFilters = selectedCohortIds.length > 0;
 
-  const value: AnalyticsContextType = {
-    startDate,
-    endDate,
-    setDateRange,
-    selectedCohortIds,
-    setSelectedCohortIds,
-    selectedRoles:
-      selectedRoles === effectiveRoles ? selectedRoles : effectiveRoles,
-    setSelectedRoles,
-    simulationFilters:
-      simulationFilters === effectiveSimulationFilters
-        ? simulationFilters
-        : effectiveSimulationFilters,
-    setSimulationFilters,
-    clearFilters,
-    hasActiveFilters,
-  };
+  const value: AnalyticsContextType = useMemo(
+    () => ({
+      startDate,
+      endDate,
+      setDateRange,
+      selectedCohortIds,
+      setSelectedCohortIds,
+      selectedRoles: effectiveRoles,
+      setSelectedRoles,
+      simulationFilters: effectiveSimulationFilters,
+      setSimulationFilters,
+      clearFilters,
+      hasActiveFilters,
+    }),
+    [
+      startDate,
+      endDate,
+      setDateRange,
+      selectedCohortIds,
+      setSelectedCohortIds,
+      effectiveRoles,
+      setSelectedRoles,
+      effectiveSimulationFilters,
+      setSimulationFilters,
+      clearFilters,
+      hasActiveFilters,
+    ]
+  );
 
   return (
     <AnalyticsContext.Provider value={value}>

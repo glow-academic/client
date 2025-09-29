@@ -2,15 +2,8 @@ import { AnalyticsFiltersSchema } from "@/lib/analytics";
 import { analyticsRepo } from "@/lib/repos/analyticsRepo";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
-const RubricHeatmapRequestSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z
-    .string()
-    .regex(
-      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
-    ),
-});
+const RubricHeatmapRequestSchema = AnalyticsFiltersSchema;
 
 export async function POST(req: NextRequest) {
   try {

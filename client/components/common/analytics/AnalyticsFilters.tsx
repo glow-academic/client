@@ -113,7 +113,8 @@ export function AnalyticsFilters({
         setSelectedRoles(validRoles);
       }
     }
-  }, [selectedCohortIds, selectedRoles, setSelectedRoles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCohortIds, selectedRoles]);
 
   const handleCohortSelect = (cohorts: CohortPickerCohort[]) => {
     setSelectedCohortIds(cohorts.map((c) => c.id));
