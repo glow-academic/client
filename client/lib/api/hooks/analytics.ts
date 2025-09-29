@@ -46,15 +46,26 @@ import {
 } from "@/lib/api/keys";
 import { useQuery } from "@tanstack/react-query";
 
+// Type for analytics hook options
+type AnalyticsHookOptions = {
+  enabled?: boolean;
+  staleTime?: number;
+};
+
 // Header Analytics Hooks (10 metrics)
 
 export function useAnalyticsAverageScore(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsAverageScoreKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/header/average-score", {
         method: "POST",
@@ -67,11 +78,16 @@ export function useAnalyticsAverageScore(
 
 export function useAnalyticsCompletionPercentage(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsCompletionPercentageKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/completion-percentage",
@@ -87,11 +103,16 @@ export function useAnalyticsCompletionPercentage(
 
 export function useAnalyticsFirstAttemptPassRate(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsFirstAttemptPassRateKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/first-attempt-pass-rate",
@@ -107,11 +128,16 @@ export function useAnalyticsFirstAttemptPassRate(
 
 export function useAnalyticsHighestScore(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsHighestScoreKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/header/highest-score", {
         method: "POST",
@@ -124,11 +150,16 @@ export function useAnalyticsHighestScore(
 
 export function useAnalyticsMessagesPerSession(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsMessagesPerSessionKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/messages-per-session",
@@ -144,11 +175,16 @@ export function useAnalyticsMessagesPerSession(
 
 export function useAnalyticsPersonaResponseTimes(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsPersonaResponseTimesKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/persona-response-times",
@@ -164,11 +200,16 @@ export function useAnalyticsPersonaResponseTimes(
 
 export function useAnalyticsSessionEfficiency(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsSessionEfficiencyKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/session-efficiency",
@@ -184,11 +225,16 @@ export function useAnalyticsSessionEfficiency(
 
 export function useAnalyticsStagnationRate(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsStagnationRateKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/stagnation-rate",
@@ -204,11 +250,16 @@ export function useAnalyticsStagnationRate(
 
 export function useAnalyticsTimeSpent(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsTimeSpentKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/header/time-spent", {
         method: "POST",
@@ -221,11 +272,16 @@ export function useAnalyticsTimeSpent(
 
 export function useAnalyticsTotalAttempts(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsTotalAttemptsKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/total-attempts",
@@ -243,11 +299,16 @@ export function useAnalyticsTotalAttempts(
 
 export function useAnalyticsImprovementPerDay(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsImprovementPerDayKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/leaderboard/improvement-per-day",
@@ -263,11 +324,16 @@ export function useAnalyticsImprovementPerDay(
 
 export function useAnalyticsPerfectScores(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsPerfectScoresKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/leaderboard/perfect-scores",
@@ -283,11 +349,16 @@ export function useAnalyticsPerfectScores(
 
 export function useAnalyticsQuickestPass(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsQuickestPassKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/leaderboard/quickest-pass",
@@ -305,11 +376,16 @@ export function useAnalyticsQuickestPass(
 
 export function useAnalyticsRubricHeatmap(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsRubricHeatmapKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/primary/rubric-heatmap",
@@ -325,11 +401,16 @@ export function useAnalyticsRubricHeatmap(
 
 export function useAnalyticsGrowthData(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsGrowthDataKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/primary/growth-data", {
         method: "POST",
@@ -342,11 +423,16 @@ export function useAnalyticsGrowthData(
 
 export function useAnalyticsPersonaPerformance(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsPersonaPerformanceKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/primary/persona-performance",
@@ -364,11 +450,16 @@ export function useAnalyticsPersonaPerformance(
 
 export function useAnalyticsAttemptImprovement(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsAttemptImprovementKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/secondary/attempt-improvement",
@@ -384,11 +475,16 @@ export function useAnalyticsAttemptImprovement(
 
 export function useAnalyticsCohortPerformance(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsCohortPerformanceKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/secondary/cohort-performance",
@@ -404,11 +500,16 @@ export function useAnalyticsCohortPerformance(
 
 export function useAnalyticsSkillPerformance(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsSkillPerformanceKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/secondary/skill-performance",
@@ -426,11 +527,16 @@ export function useAnalyticsSkillPerformance(
 
 export function useAnalyticsScenarioPerformance(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsScenarioPerformanceKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/footer/scenario-performance",
@@ -446,11 +552,16 @@ export function useAnalyticsScenarioPerformance(
 
 export function useAnalyticsScenarioStats(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsScenarioStatsKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/footer/scenario-stats",
@@ -466,11 +577,16 @@ export function useAnalyticsScenarioStats(
 
 export function useAnalyticsSimulationComposition(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsSimulationCompositionKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/footer/simulation-composition",
@@ -486,11 +602,16 @@ export function useAnalyticsSimulationComposition(
 
 export function useAnalyticsSimulationPerformance(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsSimulationPerformanceKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/footer/simulation-performance",
@@ -508,11 +629,16 @@ export function useAnalyticsSimulationPerformance(
 
 export function useAnalyticsHomeOverview(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsHomeOverviewKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/home", {
         method: "POST",
@@ -527,11 +653,16 @@ export function useAnalyticsHomeOverview(
 
 export function useAnalyticsPracticeOverview(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsPracticeOverviewKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/practice", {
         method: "POST",
@@ -546,11 +677,16 @@ export function useAnalyticsPracticeOverview(
 
 export function useAnalyticsAttemptHistory(
   filters: AnalyticsFilters,
-  enabled = true
+  options: AnalyticsHookOptions | boolean = true
 ) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
   return useQuery({
     queryKey: analyticsAttemptHistoryKeys.list(filters),
-    enabled,
+    ...queryOptions,
     queryFn: async () => {
       const res = await api<unknown>("/api/v1/analytics/history", {
         method: "POST",

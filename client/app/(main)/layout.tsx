@@ -899,7 +899,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             </AlertDialogContent>
           </AlertDialog>
           {/* Upload classification dialog */}
-          <UploadClassificationDialog
+          {showUploadDialog && <UploadClassificationDialog
             open={showUploadDialog}
             files={pendingFiles}
             onClose={() => {
@@ -928,7 +928,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             onRemoveFile={(fileName) =>
               setPendingFiles((prev) => prev.filter((f) => f.name !== fileName))
             }
-          />
+          />}
           <div
             className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
               shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""

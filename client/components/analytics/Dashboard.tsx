@@ -55,7 +55,7 @@ import { useParameters } from "@/lib/api/hooks/parameters";
 import { useRubrics } from "@/lib/api/hooks/rubrics";
 import { useSimulations } from "@/lib/api/hooks/simulations";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
 import ScenarioStats from "../common/analytics/footer/ScenarioStats";
 import SimulationComposition from "../common/analytics/footer/SimulationComposition";
@@ -114,75 +114,87 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
-  const filters = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: selectedCohortIds,
-    roles: selectedRoles,
-    simulationFilters,
-  };
+  const filters = useMemo(
+    () => ({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters,
+    }),
+    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]
+  );
+
+  // Stable React Query options to prevent unnecessary refetches
+  const rqOpts = useMemo(
+    () => ({
+      enabled: true,
+      staleTime: 60_000,
+    }),
+    []
+  );
 
   // Fetch data and process it inline
   const {
     data: averageScoreData,
     isLoading: averageScoreLoading,
     isError: averageScoreError,
-  } = useAnalyticsAverageScore(filters, true);
+  } = useAnalyticsAverageScore(filters, rqOpts);
   const {
     data: completionData,
     isLoading: completionLoading,
     isError: completionError,
-  } = useAnalyticsCompletionPercentage(filters, true);
+  } = useAnalyticsCompletionPercentage(filters, rqOpts);
   const {
     data: passRateData,
     isLoading: passRateLoading,
     isError: passRateError,
-  } = useAnalyticsFirstAttemptPassRate(filters, true);
+  } = useAnalyticsFirstAttemptPassRate(filters, rqOpts);
   const {
     data: highestScoreData,
     isLoading: highestScoreLoading,
     isError: highestScoreError,
-  } = useAnalyticsHighestScore(filters, true);
+  } = useAnalyticsHighestScore(filters, rqOpts);
   const {
     data: messagesData,
     isLoading: messagesLoading,
     isError: messagesError,
-  } = useAnalyticsMessagesPerSession(filters, true);
+  } = useAnalyticsMessagesPerSession(filters, rqOpts);
   const {
     data: responseTimeData,
     isLoading: responseTimeLoading,
     isError: responseTimeError,
-  } = useAnalyticsPersonaResponseTimes(filters, true);
+  } = useAnalyticsPersonaResponseTimes(filters, rqOpts);
   const {
     data: sessionEfficiencyData,
     isLoading: sessionEfficiencyLoading,
     isError: sessionEfficiencyError,
-  } = useAnalyticsSessionEfficiency(filters, true);
+  } = useAnalyticsSessionEfficiency(filters, rqOpts);
   const {
     data: stagnationRateData,
     isLoading: stagnationRateLoading,
     isError: stagnationRateError,
-  } = useAnalyticsStagnationRate(filters, true);
+  } = useAnalyticsStagnationRate(filters, rqOpts);
   const {
     data: timeSpentData,
     isLoading: timeSpentLoading,
     isError: timeSpentError,
-  } = useAnalyticsTimeSpent(filters, true);
+  } = useAnalyticsTimeSpent(filters, rqOpts);
   const {
     data: totalAttemptsData,
     isLoading: totalAttemptsLoading,
     isError: totalAttemptsError,
-  } = useAnalyticsTotalAttempts(filters, true);
+  } = useAnalyticsTotalAttempts(filters, rqOpts);
   const {
     data: growthData,
     isLoading: growthLoading,
     isError: growthError,
-  } = useAnalyticsGrowthData(filters, true);
+  } = useAnalyticsGrowthData(filters, rqOpts);
   const {
     data: personaData,
     isLoading: personaLoading,
     isError: personaError,
-  } = useAnalyticsPersonaPerformance(filters, true);
+  } = useAnalyticsPersonaPerformance(filters, rqOpts);
 
   // Fetch all simulations and rubrics
   const { data: allSimulations = [] } = useSimulations();
@@ -195,55 +207,55 @@ export default function Dashboard({ profileId }: DashboardProps) {
     data: rubricHeatmapData,
     isLoading: rubricHeatmapLoading,
     isError: rubricHeatmapError,
-  } = useAnalyticsRubricHeatmap(filters, true);
+  } = useAnalyticsRubricHeatmap(filters, rqOpts);
 
   // Fetch secondary analytics data
   const {
     data: attemptImprovementData,
     isLoading: attemptImprovementLoading,
     isError: attemptImprovementError,
-  } = useAnalyticsAttemptImprovement(filters, true);
+  } = useAnalyticsAttemptImprovement(filters, rqOpts);
 
   const {
     data: cohortPerformanceData,
     isLoading: cohortPerformanceLoading,
     isError: cohortPerformanceError,
-  } = useAnalyticsCohortPerformance(filters, true);
+  } = useAnalyticsCohortPerformance(filters, rqOpts);
 
   const {
     data: skillPerformanceData,
     isLoading: skillPerformanceLoading,
     isError: skillPerformanceError,
-  } = useAnalyticsSkillPerformance(filters, true);
+  } = useAnalyticsSkillPerformance(filters, rqOpts);
 
   // Footer Analytics Data Fetching
   const {
     data: scenarioPerformanceData,
     isLoading: scenarioPerformanceLoading,
     isError: scenarioPerformanceError,
-  } = useAnalyticsScenarioPerformance(filters, true);
+  } = useAnalyticsScenarioPerformance(filters, rqOpts);
 
   const {
     data: scenarioStatsData,
     isLoading: scenarioStatsLoading,
     isError: scenarioStatsError,
-  } = useAnalyticsScenarioStats(filters, true);
+  } = useAnalyticsScenarioStats(filters, rqOpts);
 
   const {
     data: simulationPerformanceData,
     isLoading: simulationPerformanceLoading,
     isError: simulationPerformanceError,
-  } = useAnalyticsSimulationPerformance(filters, true);
+  } = useAnalyticsSimulationPerformance(filters, rqOpts);
 
   const {
     data: simulationCompositionData,
     isLoading: simulationCompositionLoading,
     isError: simulationCompositionError,
-  } = useAnalyticsSimulationComposition(filters, true);
+  } = useAnalyticsSimulationComposition(filters, rqOpts);
 
   // Fetch history data for the dashboard
-  const { data: historyData, isLoading: isHistoryLoading } =
-    useAnalyticsAttemptHistory({
+  const historyFilters = useMemo(
+    () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: selectedCohortIds,
@@ -256,7 +268,19 @@ export default function Dashboard({ profileId }: DashboardProps) {
       // For dashboard, show all users' history (no profileId filter)
       // unless it's a specific profile view
       ...(profileId && { profileId }),
-    });
+    }),
+    [
+      startDate,
+      endDate,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+      profileId,
+    ]
+  );
+
+  const { data: historyData, isLoading: isHistoryLoading } =
+    useAnalyticsAttemptHistory(historyFilters, rqOpts);
 
   // Process the data inline
   const averageScoreProcessed = (() => {

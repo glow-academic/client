@@ -8,11 +8,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    log.info("analytics.footer.simulation-composition", {
-      message: "Fetching simulation composition analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getSimulationComposition(filters);
 
     return NextResponse.json(result);

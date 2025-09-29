@@ -8,11 +8,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    log.info("analytics.practice", {
-      message: "Fetching practice overview analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getPracticeOverview(filters);
 
     return NextResponse.json(result);

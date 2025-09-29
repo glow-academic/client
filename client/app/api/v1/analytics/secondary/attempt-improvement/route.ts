@@ -13,11 +13,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AttemptImprovementFiltersSchema.parse(body);
 
-    log.info("analytics.secondary.attempt-improvement", {
-      message: "Fetching attempt improvement analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getAttemptImprovement(filters);
 
     return NextResponse.json(result);

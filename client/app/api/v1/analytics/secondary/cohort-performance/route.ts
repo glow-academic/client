@@ -8,11 +8,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    log.info("analytics.secondary.cohort-performance", {
-      message: "Fetching cohort performance analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getCohortPerformance(filters);
 
     return NextResponse.json(result);

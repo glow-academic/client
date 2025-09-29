@@ -13,11 +13,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = PersonaPerformanceRequestSchema.parse(body);
 
-    log.info("analytics.primary.persona-performance", {
-      message: "Fetching persona performance analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getPersonaPerformance(filters);
 
     return NextResponse.json(result);

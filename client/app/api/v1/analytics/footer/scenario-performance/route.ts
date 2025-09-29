@@ -14,11 +14,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = ScenarioPerformanceFiltersSchema.parse(body);
 
-    log.info("analytics.footer.scenario-performance", {
-      message: "Fetching scenario performance analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getScenarioPerformance(
       filters,
       filters.parameterId,

@@ -14,11 +14,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = ScenarioStatsFiltersSchema.parse(body);
 
-    log.info("analytics.footer.scenario-stats", {
-      message: "Fetching scenario stats analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getScenarioStats(
       filters,
       filters.parameterId,

@@ -13,11 +13,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = SkillPerformanceFiltersSchema.parse(body);
 
-    log.info("analytics.secondary.skill-performance", {
-      message: "Fetching skill performance analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getSkillPerformance(filters);
 
     return NextResponse.json(result);

@@ -8,11 +8,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    log.info("analytics.history", {
-      message: "Fetching attempt history analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getAttemptHistory(filters);
 
     return NextResponse.json(result);

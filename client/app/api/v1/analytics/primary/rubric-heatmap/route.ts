@@ -10,11 +10,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = RubricHeatmapRequestSchema.parse(body);
 
-    log.info("analytics.primary.rubric-heatmap", {
-      message: "Fetching rubric heatmap analytics",
-      context: { filters },
-    });
-
     const result = await analyticsRepo.getRubricHeatmap(filters);
 
     return NextResponse.json(result);

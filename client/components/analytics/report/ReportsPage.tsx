@@ -5,6 +5,8 @@
  * 06/08/2025
  */
 
+"use client";
+
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useHeaderMetrics } from "@/hooks/use-header-metrics";
 import { computeCurrent, type DataPoint } from "@/lib/analytics";
