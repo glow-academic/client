@@ -237,3 +237,6 @@ END $$;
 
 -- History Analytics Functions
 \i app/analytics/history/attempt_history.sql
+
+-- Practice Analytics Functions
+\i app/analytics/practice/analytics_practice_overview.sql

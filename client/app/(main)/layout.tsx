@@ -743,7 +743,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
           {/* Practice Customize Dialog */}
-          <PracticeCustomizeDialog
+          {customizeOpen && <PracticeCustomizeDialog
             open={customizeOpen}
             onClose={() => setCustomizeOpen(false)}
             onStartAttempt={async (params) => {
@@ -822,7 +822,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             isStartingAttempt={isStartingAttempt}
             effectiveProfile={effectiveProfile!}
             activeProfile={activeProfile!}
-          />
+          />}
 
           {/* Confirm End All Dialog */}
           <AlertDialog
