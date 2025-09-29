@@ -105,16 +105,14 @@ attempt_joined AS (
 persona_labels AS (
   SELECT
     aj.attempt_id,
-    COALESCE(
-      ARRAY_AGG(DISTINCT per.name  ORDER BY per.name),
-      ARRAY[]::text[]
-    ) AS persona_names,
-    COALESCE(
-      ARRAY_AGG(DISTINCT per.color ORDER BY per.name),
-      ARRAY[]::text[]
-    ) AS persona_colors
+    COALESCE(ARRAY_AGG(px.name  ORDER BY px.name),  ARRAY[]::text[]) AS persona_names,
+    COALESCE(ARRAY_AGG(px.color ORDER BY px.name),  ARRAY[]::text[]) AS persona_colors
   FROM attempt_joined aj
-  LEFT JOIN personas per ON per.id = ANY (aj.persona_ids_distinct)
+  LEFT JOIN LATERAL (
+    SELECT DISTINCT per.name, per.color
+    FROM unnest(aj.persona_ids_distinct) AS pid
+    JOIN personas per ON per.id = pid
+  ) AS px ON true
   GROUP BY aj.attempt_id
 ),
 -- Final shaping with scoring semantics
