@@ -3,6 +3,6 @@
 .mypy_cache/
 .pytest_cache/
 
-history/backup6_7/
+history/*.sql
 .venv/
 dump.rdb
