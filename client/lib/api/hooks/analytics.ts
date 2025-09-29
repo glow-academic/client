@@ -33,6 +33,7 @@ import {
   analyticsPersonaResponseTimesKeys,
   analyticsPracticeOverviewKeys,
   analyticsQuickestPassKeys,
+  analyticsRefreshKeys,
   analyticsRubricHeatmapKeys,
   analyticsScenarioPerformanceKeys,
   analyticsScenarioStatsKeys,
@@ -44,7 +45,8 @@ import {
   analyticsTimeSpentKeys,
   analyticsTotalAttemptsKeys,
 } from "@/lib/api/keys";
-import { useQuery } from "@tanstack/react-query";
+import { log } from "@/utils/logger";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Type for analytics hook options
 type AnalyticsHookOptions = {
@@ -693,6 +695,60 @@ export function useAnalyticsAttemptHistory(
         body: JSON.stringify(filters),
       });
       return AttemptHistoryResponseSchema.parse(res);
+    },
+  });
+}
+
+// Refresh Analytics Hook
+export function useRefreshAnalytics() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: analyticsRefreshKeys.all,
+    mutationFn: async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      try {
+        const res = await api<{
+          success: boolean;
+          message: string;
+          status: string;
+        }>("/api/v1/analytics/refresh", {
+          method: "POST",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      // Invalidate all analytics queries to refresh the data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("analytics:");
+        },
+      });
+    },
+    onError: (error) => {
+      log.error("analytics.refresh.hook.failed", {
+        message: "Failed to refresh analytics in hook",
+        error,
+        context: { function: "useRefreshAnalytics" },
+      });
+    },
+    // Ensure mutation doesn't get cancelled
+    retry: false,
+    // Don't allow concurrent mutations
+    networkMode: "online",
+    // Ensure mutation state is properly managed
+    gcTime: 0, // Don't cache mutation results
+    meta: {
+      errorMessage: "Failed to refresh analytics data",
     },
   });
 }

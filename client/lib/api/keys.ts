@@ -309,6 +309,11 @@ export const analyticsAttemptHistoryKeys = {
   list: (filters?: unknown) =>
     [...analyticsAttemptHistoryKeys.all, { filters }] as const,
 };
+
+// Refresh Analytics Keys
+export const analyticsRefreshKeys = {
+  all: ["analytics:refresh"] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

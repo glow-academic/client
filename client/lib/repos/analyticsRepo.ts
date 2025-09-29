@@ -342,4 +342,12 @@ export const analyticsRepo = {
     );
     return PracticeOverviewResponseSchema.parse(result);
   },
+
+  // Refresh materialized view
+  async refreshMaterializedView(): Promise<void> {
+    const db = await getDb();
+
+    // Use CONCURRENTLY to avoid blocking reads during refresh
+    await db.execute(sql`REFRESH MATERIALIZED VIEW CONCURRENTLY analytics`);
+  },
 };

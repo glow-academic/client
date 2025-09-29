@@ -7,19 +7,24 @@
 
 "use client";
 
+import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import {
   CohortPicker,
   Cohort as CohortPickerCohort,
 } from "@/components/common/cohort/CohortPicker";
 import { RolePicker } from "@/components/common/profile/RolePicker";
+import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-// import { Label } from "@/components/ui/label";
-import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
+import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
 import { useCohorts } from "@/lib/api/hooks/cohorts";
 import type { ProfileRole } from "@/types";
-import { useEffect, useState } from "react";
+import { log } from "@/utils/logger";
+import { useIsFetching } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
+import { toast } from "sonner";
 
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
@@ -43,6 +48,71 @@ export function AnalyticsFilters({
   } = useAnalytics();
 
   const { data: cohorts = [] } = useCohorts();
+  const { mutate: refreshAnalytics, isPending: isRefreshing } =
+    useRefreshAnalytics();
+
+  // Count all in-flight analytics queries (after invalidation)
+  const isFetchingAnalytics = useIsFetching({
+    predicate: (q) => {
+      const k = q.queryKey?.[0];
+      return typeof k === "string" && k.startsWith("analytics:");
+    },
+  });
+
+  // Stable spinner that respects pending mutation, in-flight queries, and a min duration
+  const [spinning, setSpinning] = useState(false);
+  const spinStartRef = useRef<number | null>(null);
+  const MIN_SPIN_MS = 600; // prevent flicker (tweak to taste)
+  const SETTLE_DELAY_MS = 150; // brief cushion after last fetch
+
+  // Start immediately on click to avoid a 1-frame delay
+  const handleRefresh = () => {
+    if (!spinning) {
+      setSpinning(true);
+      spinStartRef.current = performance.now();
+    }
+
+    refreshAnalytics(undefined, {
+      onError: (error) => {
+        log.error("analytics.refresh.component.failed", {
+          message: "Failed to refresh analytics data",
+          error,
+          context: { component: "AnalyticsFilters", function: "handleRefresh" },
+        });
+        toast.error("Failed to refresh analytics data");
+      },
+    });
+  };
+
+  // Keep spinning while either the mutation is pending OR analytics queries are fetching.
+  // When both are done, ensure we've spun for at least MIN_SPIN_MS, then stop with a small settle delay.
+  useEffect(() => {
+    const active = isRefreshing || isFetchingAnalytics > 0;
+
+    if (active) {
+      if (!spinning) {
+        setSpinning(true);
+        spinStartRef.current = performance.now();
+      }
+      return; // keep spinning
+    }
+
+    // we're "idle" now; enforce minimum spin duration + small settle delay
+    if (spinning) {
+      const startedAt = spinStartRef.current ?? performance.now();
+      const elapsed = performance.now() - startedAt;
+      const waitMs = Math.max(0, MIN_SPIN_MS - elapsed) + SETTLE_DELAY_MS;
+
+      const t = setTimeout(() => {
+        setSpinning(false);
+        spinStartRef.current = null;
+      }, waitMs);
+
+      return () => clearTimeout(t);
+    }
+
+    return undefined;
+  }, [isRefreshing, isFetchingAnalytics, spinning]);
 
   // Local UI state to distinguish between "empty (all)" and "specific selections"
   const [practiceSelected, setPracticeSelected] = useState<SimulationFilter[]>(
@@ -174,6 +244,20 @@ export function AnalyticsFilters({
           setDateRange={handleDateRangeChange}
           className="w-auto"
         />
+
+        {/* Refresh Button */}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          title="Refresh analytics data"
+        >
+          <RefreshCw
+            aria-hidden
+            className={`h-4 w-4 will-change-transform ${spinning ? "animate-spin" : ""}`}
+          />
+        </Button>
       </div>
     </div>
   );
