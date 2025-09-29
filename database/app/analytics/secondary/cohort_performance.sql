@@ -134,8 +134,9 @@ cohort_agg AS (
     SUM(passed_any)::int                         AS passed_attempts,
     (100.0 * AVG(passed_any))::float             AS pass_rate_attempts,
     AVG(ca.avg_grade_attempt)::float             AS avg_percentage_score,
-    (SELECT COUNT(*) FROM students_passed_all spa WHERE spa.cohort_id = cl.id AND spa.passed_all = 1) AS passed_students,
-    (SELECT COUNT(DISTINCT profile_id) FROM filt_x WHERE c_id = cl.id) AS total_students_seen,
+    (SELECT COUNT(*) FROM students_passed_all spa
+      WHERE spa.cohort_id = cl.id AND spa.passed_all = 1) AS passed_students,
+    /*  ⬆️ removed the second total_students_seen here */
     (SELECT a2.rubric_points
        FROM analytics a2
       WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)

@@ -51,17 +51,22 @@ latest_grade AS (
   FROM simulation_chat_grades scg
   ORDER BY scg.simulation_chat_id, scg.rubric_id, scg.created_at DESC
 ),
+
+-- feedback rows joined to latest grade + filtered analytics
 fb AS (
   SELECT
     scf.id              AS feedback_id,
     scf.standard_id,
     lg.rubric_id,
+    lg.grade_id,
+    lg.chat_id,
     f.simulation_id,
     scf.total::numeric  AS earned
   FROM latest_grade lg
   JOIN filt f ON f.chat_id = lg.chat_id
   JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.grade_id
 ),
+
 st AS (
   SELECT
     s.id              AS standard_id,
@@ -72,47 +77,71 @@ st AS (
   FROM standards s
   JOIN standard_groups sg ON sg.id = s.standard_group_id
 ),
+
 -- 1) per grade × group totals
 per_grade_group AS (
   SELECT
-    lg.rubric_id,
+    fb.rubric_id,
     st.group_id,
     st.group_name,
     fb.simulation_id,
-    lg.grade_id,
+    fb.grade_id,
     SUM(fb.earned) AS score,
     SUM(st.points) AS points
-  FROM latest_grade lg
-  JOIN fb ON fb.simulation_id = lg.chat_id    -- keep your join shape consistent with latest_grade
-  JOIN st ON st.standard_id = fb.standard_id AND st.rubric_id = lg.rubric_id
-  GROUP BY lg.rubric_id, st.group_id, st.group_name, fb.simulation_id, lg.grade_id
+  FROM fb
+  JOIN st ON st.standard_id = fb.standard_id AND st.rubric_id = fb.rubric_id
+  GROUP BY fb.rubric_id, st.group_id, st.group_name, fb.simulation_id, fb.grade_id
 ),
--- 2) convert to per-grade percentage
+
+-- 2) per-grade percentage
 per_grade_pct AS (
   SELECT
     rubric_id, group_id, group_name, simulation_id, grade_id,
     CASE WHEN points > 0 THEN 100.0 * score / points ELSE NULL END AS pct
   FROM per_grade_group
 ),
--- 3) radar = avg of per-grade pct
+
+-- 3) pre-aggregate for radar (avg pct per rubric × group)
+radar_rows AS (
+  SELECT
+    pg.rubric_id,
+    pg.group_name,
+    AVG(pp.pct) AS avg_pct
+  FROM per_grade_group pg
+  JOIN per_grade_pct pp USING (rubric_id, group_id, group_name, simulation_id, grade_id)
+  GROUP BY pg.rubric_id, pg.group_name
+),
+
 radar_per_rubric AS (
   SELECT
     rubric_id,
     jsonb_agg(
       jsonb_build_object(
         'metric',   group_name,
-        'value',    GREATEST(0, LEAST(1, AVG(pct)/100.0)),
-        'fullMark', 1,
-        'score',    COALESCE(SUM(score),0),   -- optional, or drop if misleading
-        'points',   COALESCE(SUM(points),0)
+        'value',    GREATEST(0, LEAST(1, COALESCE(avg_pct,0)/100.0)),
+        'fullMark', 1
       )
       ORDER BY group_name
     ) AS radar
-  FROM per_grade_group
-  JOIN per_grade_pct USING (rubric_id, group_id, group_name, simulation_id, grade_id)
+  FROM radar_rows
   GROUP BY rubric_id
 ),
--- 4) facts by (group, simulation) still fine, but consider reporting avg pct too
+
+-- 4) pre-aggregate facts by (rubric, group, simulation)
+group_stats AS (
+  SELECT
+    pg.rubric_id,
+    pg.group_id,
+    pg.group_name,
+    pg.simulation_id,
+    SUM(pg.score)  AS score_sum,
+    SUM(pg.points) AS points_sum,
+    ROUND(AVG(pp.pct))::int AS avg_pct
+  FROM per_grade_group pg
+  JOIN per_grade_pct pp USING (rubric_id, group_id, group_name, simulation_id, grade_id)
+  GROUP BY pg.rubric_id, pg.group_id, pg.group_name, pg.simulation_id
+),
+
 facts_per_rubric AS (
   SELECT
     rubric_id,
@@ -121,13 +150,13 @@ facts_per_rubric AS (
         'groupId',      group_id::text,
         'groupName',    group_name,
         'simulationId', simulation_id::text,
-        'score',        COALESCE(SUM(score),0),
-        'points',       COALESCE(SUM(points),0),
-        'avgPct',       ROUND(AVG(pct))::int
+        'score',        COALESCE(score_sum,0),
+        'points',       COALESCE(points_sum,0),
+        'avgPct',       COALESCE(avg_pct,0)
       )
+      ORDER BY group_name, simulation_id
     ) AS facts
-  FROM per_grade_group
-  JOIN per_grade_pct USING (rubric_id, group_id, group_name, simulation_id, grade_id)
+  FROM group_stats
   GROUP BY rubric_id
 ),
 valid_rubrics AS (

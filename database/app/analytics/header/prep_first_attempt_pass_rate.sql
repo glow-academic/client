@@ -46,8 +46,14 @@ first_attempts AS (
   ORDER BY profile_id, simulation_id, attempt_created_at
 ),
 first_pass AS (
-  SELECT fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at,
-         BOOL_OR(f.passed) AS passed
+  SELECT
+    fa.profile_id,
+    fa.simulation_id,
+    fa.attempt_id,
+    fa.attempt_created_at,
+    BOOL_OR(f.passed)                                  AS passed,
+    -- choose a representative scenario for the attempt (earliest chat)
+    (ARRAY_AGG(f.scenario_id ORDER BY f.chat_created_at))[1] AS scenario_id
   FROM first_attempts fa
   JOIN filt f USING (attempt_id)
   GROUP BY fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at

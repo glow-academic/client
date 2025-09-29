@@ -66,15 +66,19 @@ fb AS (
 per_grade_group AS (
   SELECT
     lg.simulation_chat_id AS chat_id,
-    st.rubric_id,
-    st.group_id,
-    st.group_name,
-    100.0 * SUM(fb.earned) / NULLIF(SUM(st.points),0) AS pct
+    sg.rubric_id,
+    sg.id   AS group_id,
+    sg.name AS group_name,
+    100.0 * SUM(scf.total)::numeric / NULLIF(SUM(s.points)::numeric, 0) AS pct
   FROM latest_grade_per_chat lg
-  JOIN simulation_chat_feedbacks fb ON fb.simulation_chat_grade_id = lg.id
-  JOIN standards s   ON s.id = fb.standard_id
-  JOIN standard_groups st ON st.id = s.standard_group_id AND st.rubric_id = lg.rubric_id
-  GROUP BY lg.simulation_chat_id, st.rubric_id, st.group_id, st.group_name
+  JOIN simulation_chat_feedbacks scf
+    ON scf.simulation_chat_grade_id = lg.id
+  JOIN standards s
+    ON s.id = scf.standard_id
+  JOIN standard_groups sg
+    ON sg.id = s.standard_group_id
+   AND sg.rubric_id = lg.rubric_id
+  GROUP BY lg.simulation_chat_id, sg.rubric_id, sg.id, sg.name
 ),
 -- only chats that have both groups present for a pair
 pairs AS (
