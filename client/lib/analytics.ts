@@ -164,7 +164,7 @@ export const PersonaTrendDataSchema = z.object({
   date: z.string(),
   score: z.number().nullable(),
   timestamp: z.number(),
-  simulationId: z.string().uuid().optional(),
+  simulationId: z.string().optional(),
 });
 
 export const PersonaPerformanceDataSchema = z.object({
@@ -403,11 +403,11 @@ export const SkillPerformanceResponseSchema = z.object({
 
 // Extended Analytics Filters for Secondary Functions
 export const AttemptImprovementFiltersSchema = AnalyticsFiltersSchema.extend({
-  simulationIds: z.array(z.string().uuid()).optional(),
+  simulationIds: z.array(z.string()).optional(),
 });
 
 export const SkillPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z.string().uuid().optional(),
+  rubricId: z.string().optional(),
 });
 
 // Type exports
