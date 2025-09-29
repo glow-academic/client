@@ -659,25 +659,25 @@ export default function Home() {
       <div className="mt-12">
         <SimulationHistory
           data={
-            historyData?.rows
-              ? historyData.rows.map((item) => ({
+            historyData
+              ? historyData.map((item) => ({
                   attemptId: item.attemptId,
-                  date: new Date(item.attemptDate),
+                  date: new Date(item.date),
                   profileId: item.profileId,
                   profileName: item.profileName,
-                  simulationName: item.simulationTitle,
-                  numScenarios: item.expectedCount,
-                  numScenariosCompleted: item.completedCount,
+                  simulationName: item.simulationName,
+                  numScenarios: item.numScenarios,
+                  numScenariosCompleted: item.numScenariosCompleted,
                   infiniteMode: item.infiniteMode,
                   personaNames: item.personaNames,
                   personaColors: item.personaColors,
-                  score: item.scorePercent,
-                  simulation_id: item.simulationId,
-                  scenario_ids: item.scenarioIds,
-                  isArchived: item.archived,
+                  score: item.score,
+                  simulation_id: item.simulation_id,
+                  scenario_ids: item.scenario_ids,
+                  isArchived: item.isArchived,
                   showView: item.showView,
                   showContinue: item.showContinue,
-                  practiceSimulation: item.practiceSimulation || false,
+                  practiceSimulation: item.practiceSimulation,
                   passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
                 }))
               : []

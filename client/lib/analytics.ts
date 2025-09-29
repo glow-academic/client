@@ -656,44 +656,27 @@ export type PracticeOverviewResponse = z.infer<
 // New UI-Ready Attempt History Types
 export const AttemptHistoryRowSchema = z.object({
   attemptId: z.string(),
-  simulationId: z.string(),
-  scenarioIds: z.array(z.string()),
-
+  date: z.string(),
   profileId: z.string(),
   profileName: z.string(),
-  simulationTitle: z.string(),
-  attemptDate: z.string(),
-  lastActivityAt: z.string(),
-
-  personaIds: z.array(z.string()),
+  simulationName: z.string(),
+  numScenarios: z.number().nullable(),
+  numScenariosCompleted: z.number(),
+  infiniteMode: z.boolean(),
   personaNames: z.array(z.string()),
   personaColors: z.array(z.string()),
-
-  completedCount: z.number(),
-  expectedCount: z.number().nullable(),
-
-  scorePercent: z.number().nullable(),
-
-  // Rubric / pass info for UI
-  rubricId: z.string().nullable(),
-  rubricPoints: z.number().nullable(),
-  rubricPassPoints: z.number().nullable(),
-  passPct: z.number().nullable(),
-  practiceSimulation: z.boolean(),
-
-  showContinue: z.boolean(),
+  score: z.number().nullable(),
+  simulation_id: z.string(),
+  scenario_ids: z.array(z.string()),
+  isArchived: z.boolean(),
   showView: z.boolean(),
-
-  infiniteMode: z.boolean(),
-  infiniteModeTimeLimit: z.number().nullable(),
-  archived: z.boolean(),
+  showContinue: z.boolean(),
+  practiceSimulation: z.boolean(),
+  passPct: z.number().nullable(),
 });
 
-// Attempt History Response Schema (Legacy)
-export const AttemptHistoryResponseSchema = z.object({
-  hasData: z.boolean(),
-  rows: z.array(AttemptHistoryRowSchema),
-});
+// Attempt History Response Schema - now expects array directly
+export const AttemptHistoryResponseSchema = z.array(AttemptHistoryRowSchema);
 
 // Type exports for history analytics
 export type AttemptHistoryRow = z.infer<typeof AttemptHistoryRowSchema>;
