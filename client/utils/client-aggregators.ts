@@ -9,9 +9,8 @@ import {
   ScenarioAttributeAttemptFact,
   ScenarioAttributeScenarioFact,
   ScenarioFact,
-  SimulationCompositionConfig,
   SimulationFact,
-  SimulationParamFact,
+  SimulationParameterFactCategorical,
   SkillGroupFact,
   SkillRadarData,
 } from "@/lib/analytics";
@@ -211,8 +210,6 @@ export function buildRadar(
       metric: g.name,
       value: g.points > 0 ? Math.min(1, Math.max(0, g.score / g.points)) : 0,
       fullMark: 1,
-      score: g.score,
-      points: g.points,
     }));
 }
 
@@ -365,13 +362,13 @@ export function buildScenarioNumericBars(
   const rows = facts.filter((f) => f.parameterId === parameterId);
   return rows
     .sort((a, b) => {
-      const ai = Number(a.level);
-      const bi = Number(b.level);
+      const ai = Number(a.levelLabel);
+      const bi = Number(b.levelLabel);
       if (!Number.isNaN(ai) && !Number.isNaN(bi)) return ai - bi;
-      return a.level.localeCompare(b.level);
+      return a.levelLabel.localeCompare(b.levelLabel);
     })
     .map((r) => ({
-      metricLevel: r.level,
+      metricLevel: r.levelLabel,
       avgScore: r.score,
       scenarioCount: 0, // fill if you ship a scenario coverage fact
       totalAttempts: r.attempts,
@@ -382,8 +379,12 @@ export function buildScenarioNumericBars(
 // Simulation Composition Aggregators
 export function buildSimulationComposition(
   simFacts: SimulationFact[],
-  paramFacts: SimulationParamFact[],
-  config: SimulationCompositionConfig
+  paramFacts: SimulationParameterFactCategorical[],
+  config: {
+    method: "percentile" | "quartile" | "standardDeviation";
+    topPercentage?: number;
+    bottomPercentage?: number;
+  }
 ) {
   if (!simFacts.length)
     return {
@@ -407,8 +408,8 @@ export function buildSimulationComposition(
   const hiSet = new Set<string>(),
     loSet = new Set<string>();
   if (config.method === "percentile") {
-    const hiCut = pct(100 - config.topPercentage),
-      loCut = pct(config.bottomPercentage);
+    const hiCut = pct(100 - (config.topPercentage ?? 20)),
+      loCut = pct(config.bottomPercentage ?? 20);
     for (const s of simFacts) {
       if (hiCut !== undefined && s.avgScore >= hiCut) hiSet.add(s.simulationId);
       if (loCut !== undefined && s.avgScore <= loCut) loSet.add(s.simulationId);
@@ -439,13 +440,13 @@ export function buildSimulationComposition(
       { name: string; value: number; isNum: boolean }
     >();
     for (const p of pf) {
-      const key = `${p.parameterName}:${p.parameterValue}:${p.isNumerical ? "num" : "cat"}`;
+      const key = `${p.parameterId}:${p.parameterItemId}:cat`;
       const cur = counts.get(key) ?? {
-        name: `${p.parameterName}: ${p.parameterValue}`,
+        name: `${p.parameterId}: ${p.parameterItemId}`,
         value: 0,
-        isNum: p.isNumerical,
+        isNum: false,
       };
-      cur.value += p.count;
+      cur.value += p.scenarioCount;
       counts.set(key, cur);
     }
     const rows = [...counts.values()]
@@ -477,12 +478,12 @@ export function buildSimulationComposition(
         scenarioCount: s.scenarioCount,
         parameterBreakdown: paramFacts
           .filter((p) => p.simulationId === s.simulationId)
-          .sort((a, b) => b.count - a.count)
+          .sort((a, b) => b.scenarioCount - a.scenarioCount)
           .slice(0, 6)
           .map((p) => ({
-            parameterName: p.parameterName,
-            parameterValue: p.parameterValue,
-            isNumerical: p.isNumerical,
+            parameterName: p.parameterId,
+            parameterValue: p.parameterItemId,
+            isNumerical: false,
           })),
       }));
     return { rows, details, count: set.size };

@@ -14,11 +14,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = ScenarioStatsFiltersSchema.parse(body);
 
-    const result = await analyticsRepo.getScenarioStats(
-      filters,
-      filters.parameterId,
-      filters.simulationIds
-    );
+    const result = await analyticsRepo.getScenarioStats(filters);
 
     return NextResponse.json(result);
   } catch (error) {

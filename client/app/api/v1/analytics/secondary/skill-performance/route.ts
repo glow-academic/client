@@ -2,16 +2,11 @@ import { AnalyticsFiltersSchema } from "@/lib/analytics";
 import { analyticsRepo } from "@/lib/repos/analyticsRepo";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-const SkillPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z.string().uuid().optional(),
-});
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const filters = SkillPerformanceFiltersSchema.parse(body);
+    const filters = AnalyticsFiltersSchema.parse(body);
 
     const result = await analyticsRepo.getSkillPerformance(filters);
 

@@ -378,8 +378,6 @@ export const SkillRadarDataSchema = z.object({
   metric: z.string(),
   value: z.number(),
   fullMark: z.number(),
-  score: z.number(),
-  points: z.number(),
 });
 
 export const SkillGroupFactSchema = z.object({

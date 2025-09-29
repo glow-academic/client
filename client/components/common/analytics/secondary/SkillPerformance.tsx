@@ -27,8 +27,6 @@ type RadarDatum = {
   metric: string;
   value: number;
   fullMark: number;
-  score: number;
-  points: number;
 };
 type GroupFact = {
   groupId: string;
