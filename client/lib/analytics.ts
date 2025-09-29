@@ -88,19 +88,19 @@ export const RubricSchema = z.object({
 
 // Per-rubric matrix package
 export const RubricMatrixPackageSchema = z.object({
-  rubricId: z.string().uuid(),
+  rubricId: z.string(),
   standardGroups: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
       shortName: z.string().nullable(),
-      rubricId: z.string().uuid(),
+      rubricId: z.string(),
     })
   ),
   matrix: z.array(
     z.array(
       z.object({
-        rubricId: z.string().uuid(),
+        rubricId: z.string(),
         correlation: z.number(),
         pValue: z.number().nullable(),
         color: z.string(),
@@ -116,7 +116,7 @@ export const RubricMatrixPackageSchema = z.object({
 // Multi-rubric response
 export const RubricHeatmapResponseSchema = z.object({
   matrices: z.array(RubricMatrixPackageSchema),
-  validRubricIds: z.array(z.string().uuid()),
+  validRubricIds: z.array(z.string()),
 });
 
 // Growth Data Types
@@ -162,7 +162,7 @@ export const GrowthDataResponseSchema = z.object({
 // Persona Performance Types
 export const PersonaTrendDataSchema = z.object({
   date: z.string(),
-  score: z.number(),
+  score: z.number().nullable(),
   timestamp: z.number(),
   simulationId: z.string().uuid().optional(),
 });
@@ -754,10 +754,10 @@ export function computePersonaActionableInsight(
   if (recentScores.length === 0 || earlierScores.length === 0) return null;
 
   const recentAvg =
-    recentScores.reduce((sum, item) => sum + item.score, 0) /
+    recentScores.reduce((sum, item) => sum + (item.score ?? 0), 0) /
     recentScores.length;
   const earlierAvg =
-    earlierScores.reduce((sum, item) => sum + item.score, 0) /
+    earlierScores.reduce((sum, item) => sum + (item.score ?? 0), 0) /
     earlierScores.length;
   const improvement = recentAvg - earlierAvg;
 
@@ -1088,10 +1088,12 @@ export function computeSimulationCompositionActionableInsight(
   const bottomPerformer = sortedByScore[sortedByScore.length - 1];
 
   // Performance gap analysis
-  const performanceGap = topPerformer.avgScore - bottomPerformer.avgScore;
+  if (topPerformer && bottomPerformer) {
+    const performanceGap = topPerformer.avgScore - bottomPerformer.avgScore;
 
-  if (performanceGap > 30) {
-    return `Significant performance gap (${performanceGap.toFixed(0)}%) between top performer "${topPerformer.title}" (${topPerformer.avgScore}%) and bottom performer "${bottomPerformer.title}" (${bottomPerformer.avgScore}%). Consider analyzing composition differences.`;
+    if (performanceGap > 30) {
+      return `Significant performance gap (${performanceGap.toFixed(0)}%) between top performer "${topPerformer.title}" (${topPerformer.avgScore}%) and bottom performer "${bottomPerformer.title}" (${bottomPerformer.avgScore}%). Consider analyzing composition differences.`;
+    }
   }
 
   if (avgScore < 60) {

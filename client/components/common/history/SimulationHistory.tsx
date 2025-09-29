@@ -465,7 +465,16 @@ export default function SimulationHistory({
               isPractice={item.practiceSimulation || false}
               infiniteMode={item.infiniteMode}
               infiniteModeTimeLimit={null} // Can be determined server-side if needed
-              attemptCreatedAt={item.date.toISOString()}
+              attemptCreatedAt={(() => {
+                try {
+                  const date = new Date(item.date);
+                  return isNaN(date.getTime())
+                    ? new Date().toISOString()
+                    : date.toISOString();
+                } catch {
+                  return new Date().toISOString();
+                }
+              })()}
               archived={item.isArchived}
               showArchive={showArchive}
             />

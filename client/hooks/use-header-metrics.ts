@@ -61,18 +61,31 @@ export type RecomputedSummaries = {
 
 export function useHeaderMetrics(
   filters: AnalyticsFilters,
-  rowFilter?: RowFilter
+  rowFilter?: RowFilter,
+  options: { enabled?: boolean; staleTime?: number } = {
+    enabled: true,
+    staleTime: 60_000,
+  }
 ) {
-  const averageScore = useAnalyticsAverageScore(filters);
-  const completionPercentage = useAnalyticsCompletionPercentage(filters);
-  const firstAttemptPassRate = useAnalyticsFirstAttemptPassRate(filters);
-  const highestScore = useAnalyticsHighestScore(filters);
-  const messagesPerSession = useAnalyticsMessagesPerSession(filters);
-  const personaResponseTimes = useAnalyticsPersonaResponseTimes(filters);
-  const sessionEfficiency = useAnalyticsSessionEfficiency(filters);
-  const stagnationRate = useAnalyticsStagnationRate(filters);
-  const timeSpent = useAnalyticsTimeSpent(filters);
-  const totalAttempts = useAnalyticsTotalAttempts(filters);
+  const averageScore = useAnalyticsAverageScore(filters, options);
+  const completionPercentage = useAnalyticsCompletionPercentage(
+    filters,
+    options
+  );
+  const firstAttemptPassRate = useAnalyticsFirstAttemptPassRate(
+    filters,
+    options
+  );
+  const highestScore = useAnalyticsHighestScore(filters, options);
+  const messagesPerSession = useAnalyticsMessagesPerSession(filters, options);
+  const personaResponseTimes = useAnalyticsPersonaResponseTimes(
+    filters,
+    options
+  );
+  const sessionEfficiency = useAnalyticsSessionEfficiency(filters, options);
+  const stagnationRate = useAnalyticsStagnationRate(filters, options);
+  const timeSpent = useAnalyticsTimeSpent(filters, options);
+  const totalAttempts = useAnalyticsTotalAttempts(filters, options);
 
   const isLoading = [
     averageScore,
