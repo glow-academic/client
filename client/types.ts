@@ -51,12 +51,12 @@ export type SimulationChatCrowdsourcedFeedback = InferSelectModel<typeof schema.
 export type NewSimulationChatCrowdsourcedFeedback = InferInsertModel<typeof schema.simulationChatCrowdsourcedFeedbacks>;
 export type SimulationCrowdsourcedMessage = InferSelectModel<typeof schema.simulationCrowdsourcedMessages>;
 export type NewSimulationCrowdsourcedMessage = InferInsertModel<typeof schema.simulationCrowdsourcedMessages>;
+export type Cohort = InferSelectModel<typeof schema.cohorts>;
+export type NewCohort = InferInsertModel<typeof schema.cohorts>;
 export type Document = InferSelectModel<typeof schema.documents>;
 export type NewDocument = InferInsertModel<typeof schema.documents>;
 export type Provider = InferSelectModel<typeof schema.providers>;
 export type NewProvider = InferInsertModel<typeof schema.providers>;
-export type Cohort = InferSelectModel<typeof schema.cohorts>;
-export type NewCohort = InferInsertModel<typeof schema.cohorts>;
 
 export type AssistantMessageType = (typeof schema.assistantMessageType.enumValues)[number];
 export type AssistantToolType = (typeof schema.assistantToolType.enumValues)[number];

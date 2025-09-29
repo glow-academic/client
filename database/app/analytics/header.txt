@@ -1,0 +1,703 @@
+-- Average Score Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_average_score_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    avg(grade_percent)::float AS value,
+    count(*)::int AS count
+  FROM filt
+  WHERE grade_percent IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(grade_percent))::int AS current_value,
+         count(*) > 0                   AS has_data
+  FROM filt
+  WHERE grade_percent IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        grade_percent,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+  WHERE grade_percent IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Completion Percentage Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_completion_percentage_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    (100.0 * avg((completed)::int))::float AS value,
+    count(*)::int AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(100.0 * avg((completed)::int))::int AS current_value,
+         count(*) > 0                               AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        (completed)::int,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',   -- frontend: avg(value) -> rate [0..1] then *100
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- First Attempt Pass Rate Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: "First attempt" = earliest chat_created_at per (profile_id, simulation_id) within the filtered range
+
+CREATE OR REPLACE FUNCTION analytics_first_attempt_pass_rate_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+firsts AS (
+  SELECT DISTINCT ON (profile_id, simulation_id)
+         *
+  FROM filt
+  ORDER BY profile_id, simulation_id, chat_created_at
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    (100.0 * avg((passed)::int))::float AS value,
+    count(*)::int AS count
+  FROM firsts
+  WHERE passed IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(100.0 * avg((passed)::int))::int AS current_value,
+         count(*) > 0                             AS has_data
+  FROM firsts
+  WHERE passed IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        (passed)::int,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM firsts
+  WHERE passed IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Highest Score Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_highest_score_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    max(grade_percent)::float AS value,
+    count(*)::int           AS count
+  FROM filt
+  WHERE grade_percent IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT COALESCE(round(max(grade_percent))::int, 0) AS current_value,
+         count(grade_percent) > 0                    AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        grade_percent,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, grade_percent DESC, chat_created_at) AS payload
+  FROM filt
+  WHERE grade_percent IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    (SELECT has_data FROM cur),
+  'method',     'max',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Messages per Session Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_messages_per_session_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    avg(num_messages_total)::float AS value,
+    count(*)::int                 AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(num_messages_total))::int AS current_value,
+         count(*) > 0                         AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        num_messages_total,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Persona Response Times Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses message_time_taken_seconds (int[]) and averages all deltas
+-- count = number of deltas aggregated that day
+
+CREATE OR REPLACE FUNCTION analytics_persona_response_times_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+flat AS (
+  SELECT date_trunc('day', chat_created_at) AS d, x AS delta
+  FROM filt, LATERAL unnest(message_time_taken_seconds) AS x
+),
+by_day AS (
+  SELECT to_char(d, 'MM/DD') AS date,
+         avg(delta)::float   AS value,
+         count(*)::int       AS count
+  FROM flat
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(delta))::int AS current_value,
+         count(*) > 0           AS has_data
+  FROM flat
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(date_trunc('day', f.chat_created_at),'YYYY-MM-DD'),
+           'value',        x::int,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, f.chat_created_at) AS payload
+  FROM filt f, LATERAL unnest(f.message_time_taken_seconds) AS x
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Session Efficiency Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Define per-session efficiency as:
+-- eff = LEAST(100, GREATEST(0, grade_percent / NULLIF(time_taken_seconds,0) * 300))
+-- i.e., 100% if you score 100 in ≤ 300s, scales down with more time
+
+CREATE OR REPLACE FUNCTION analytics_session_efficiency_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+eff AS (
+  SELECT *,
+    CASE
+      WHEN grade_percent IS NULL OR time_taken_seconds IS NULL OR time_taken_seconds = 0
+        THEN NULL
+      ELSE LEAST(100.0, GREATEST(0.0, (grade_percent / time_taken_seconds) * 300.0))
+    END AS eff_value
+  FROM filt
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    avg(eff_value)::float AS value,
+    count(*)::int         AS count
+  FROM eff
+  WHERE eff_value IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(eff_value))::int AS current_value,
+         count(eff_value) > 0        AS has_data
+  FROM eff
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        eff_value,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM eff
+  WHERE eff_value IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Stagnation Rate Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Define "stagnated" as either:
+-- - not completed AND no grade, OR
+-- - max per-message delta ≥ 120s (long stall), OR
+-- - total messages ≤ 2
+
+CREATE OR REPLACE FUNCTION analytics_stagnation_rate_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+flags AS (
+  SELECT
+    *,
+    (
+      (NOT completed AND grade_percent IS NULL)
+      OR (COALESCE((SELECT max(v) FROM unnest(message_time_taken_seconds) v), 0) >= 120)
+      OR (num_messages_total <= 2)
+    ) AS stagnated
+  FROM filt
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    (100.0 * avg((stagnated)::int))::float AS value,
+    count(*)::int                           AS count
+  FROM flags
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(100.0 * avg((stagnated)::int))::int AS current_value,
+         count(*) > 0                               AS has_data
+  FROM flags
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        (stagnated)::int,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM flags
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Time Spent Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_time_spent_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    sum(time_taken_seconds)::float AS value,
+    count(*)::int                AS count
+  FROM filt
+  WHERE time_taken_seconds IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT COALESCE(round(sum(time_taken_seconds))::int, 0) AS current_value,
+         count(time_taken_seconds) > 0                    AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        time_taken_seconds,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+  WHERE time_taken_seconds IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    (SELECT has_data FROM cur),
+  'method',     'sum',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Total Attempts Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Counts distinct attempt_id overall and per day (distinct per day as well)
+
+CREATE OR REPLACE FUNCTION analytics_total_attempts_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at <  p_end
+    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
+    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
+    AND (p_sim_filters IS NULL OR (
+          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
+          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+          ('archived' = ANY (p_sim_filters) AND a.is_archived)
+        ))
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    count(DISTINCT attempt_id)::int AS value,
+    count(DISTINCT attempt_id)::int AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT count(DISTINCT attempt_id)::int AS current_value,
+         count(*) > 0                    AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'attemptId',    attempt_id::text,
+           'value',        1,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, attempt_id) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'countDistinct',
+  'keyField',   'attemptId',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', value,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;

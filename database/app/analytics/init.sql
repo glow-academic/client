@@ -26,14 +26,43 @@ latest_grade AS (
   FROM simulation_chat_grades
   ORDER BY simulation_chat_id, created_at DESC
 ),
+-- only ACTIVE simulations
+active_sims AS (
+  SELECT * FROM simulations WHERE active = TRUE
+),
+-- only ACTIVE scenarios
+active_scenarios AS (
+  SELECT * FROM scenarios WHERE active = TRUE
+),
+-- expand cohorts; we'll filter active where needed
+cohorts_expanded AS (
+  SELECT c.id, c.active, c.simulation_ids, c.profile_ids
+  FROM cohorts c
+),
+-- sims -> active cohorts (like your old cohorts_by_sim but active-only)
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
          ARRAY(
            SELECT DISTINCT c.id
-           FROM cohorts c
-           WHERE s.id = ANY(c.simulation_ids)
+           FROM cohorts_expanded c
+           WHERE c.active = TRUE AND s.id = ANY (c.simulation_ids)
          ) AS cohort_ids
-  FROM simulations s
+  FROM active_sims s
+),
+-- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
+profile_cohorts_for_sim AS (
+  SELECT
+    sa.id AS attempt_id,
+    sa.profile_id,
+    sa.simulation_id,
+    ARRAY(
+      SELECT c.id
+      FROM cohorts_expanded c
+      WHERE c.active = TRUE
+        AND sa.simulation_id = ANY (c.simulation_ids)
+        AND sa.profile_id    = ANY (c.profile_ids)
+    ) AS profile_cohort_ids
+  FROM simulation_attempts sa
 ),
 -- Message counts per chat (total + by type)
 message_counts AS (
@@ -46,91 +75,88 @@ message_counts AS (
   GROUP BY sm.chat_id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
+-- Only measure persona "response → user query" gaps
 message_deltas AS (
   SELECT
     m.chat_id,
-    GREATEST(
-      EXTRACT(EPOCH FROM (
-        m.created_at
-        - COALESCE(
-            LAG(COALESCE(m.updated_at, m.created_at))
-              OVER (PARTITION BY m.chat_id ORDER BY m.created_at),
-            sc.created_at
-          )
-      ))::int,
-      0
-    ) AS delta_seconds,
+    -- only response -> query gaps
+    CASE
+      WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'
+       AND m.type = 'query'
+      THEN GREATEST(
+             EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at))
+               OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::int, 0)
+      ELSE NULL
+    END AS delta_seconds,
     m.created_at
   FROM simulation_messages m
-  JOIN simulation_chats sc ON sc.id = m.chat_id
+  JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
-         ARRAY_AGG(delta_seconds ORDER BY created_at)::int[] AS message_time_taken_seconds
+         ARRAY_REMOVE(array_agg(delta_seconds ORDER BY created_at), NULL) AS message_time_taken_seconds
   FROM message_deltas
   GROUP BY chat_id
 )
 SELECT
-  -- Row grain: one row per chat
+  -- *** original columns kept in the same order as your "Old def" ***
   sc.id                         AS chat_id,
   sc.attempt_id                 AS attempt_id,
   sa.profile_id                 AS profile_id,
   sa.simulation_id              AS simulation_id,
 
-  -- Scenarios (root + leaf)
-  rm.root_scenario_id           AS scenario_id,         -- root
-  rm.leaf_scenario_id           AS leaf_scenario_id,    -- leaf used in the chat
+  rm.root_scenario_id           AS scenario_id,
+  rm.leaf_scenario_id           AS leaf_scenario_id,
 
-  -- Persona (from the scenario used by this chat)
   s.persona_id                  AS persona_id,
   p.color                       AS persona_color,
 
-  -- Filter-ready flags/fields
   sim.practice_simulation       AS is_practice,
   sa.archived                   AS is_archived,
   (NOT sim.practice_simulation AND NOT sa.archived) AS is_general,
   pr.role                       AS profile_role,
-  cbs.cohort_ids                AS cohort_ids,          -- uuid[] (nullable)
+  cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
   sc.completed_at               AS chat_completed_at,
 
-  -- Grades (latest only)
   CASE
     WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL
-    ELSE (lg.score / r.points) * 100.0
-  END                           AS grade_percent,       -- 0..100, NULL if no grade
+    ELSE (lg.score / r.points::numeric) * 100.0
+  END                           AS grade_percent,
   CASE
     WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL
-    ELSE (lg.score >= r.pass_points)
+    ELSE (lg.score >= r.pass_points::numeric)
   END                           AS passed,
-  lg.time_taken_seconds         AS time_taken_seconds,  -- from latest grade (seconds)
-  
-  -- Rubric information (from latest grade)
+  lg.time_taken_seconds         AS time_taken_seconds,
+
   lg.rubric_id                  AS rubric_id,
   r.points                      AS rubric_points,
   r.pass_points                 AS rubric_pass_points,
 
-  -- Completion (intuitive flag you requested)
-  (sc.completed
-   OR sc.completed_at IS NOT NULL
-   OR lg.simulation_chat_id IS NOT NULL) AS completed,
+  (sc.completed OR sc.completed_at IS NOT NULL OR lg.simulation_chat_id IS NOT NULL)
+                               AS completed,
 
-  -- Messages: counts and per-message deltas
-  COALESCE(mc.num_messages_total, 0)        AS num_messages_total,
-  COALESCE(mc.num_query_messages, 0)        AS num_query_messages,
-  COALESCE(mc.num_response_messages, 0)     AS num_response_messages,
-  COALESCE(mda.message_time_taken_seconds, '{}') AS message_time_taken_seconds
+  COALESCE(mc.num_messages_total, 0)            AS num_messages_total,
+  COALESCE(mc.num_query_messages, 0)            AS num_query_messages,
+  COALESCE(mc.num_response_messages, 0)         AS num_response_messages,
+  COALESCE(mda.message_time_taken_seconds, '{}') AS message_time_taken_seconds,
 
+  -- *** new trailing columns (safe append) ***
+  sa.created_at                 AS attempt_created_at, -- use for date filters like TS did
+  pcs.profile_cohort_ids        AS profile_cohort_ids, -- cohortIds "true membership"
+  COALESCE(array_length(sim.scenario_ids, 1), 0) AS sim_scenario_count, -- simulation's expected scenario count
+  lg.created_at                 AS grade_created_at -- grade creation time for stagnation metric
 FROM simulation_chats sc
-JOIN simulation_attempts sa ON sa.id = sc.attempt_id
-JOIN simulations sim       ON sim.id = sa.simulation_id
-JOIN profiles    pr        ON pr.id  = sa.profile_id
-JOIN scenarios   s         ON s.id   = sc.scenario_id            -- leaf scenario used
-JOIN root_map    rm        ON rm.leaf_scenario_id = s.id
-LEFT JOIN personas p       ON p.id  = s.persona_id
-LEFT JOIN latest_grade lg  ON lg.simulation_chat_id = sc.id
-LEFT JOIN rubrics r        ON r.id  = lg.rubric_id
-LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id
+JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
+JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
+JOIN profiles pr              ON pr.id = sa.profile_id
+JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
+JOIN root_map rm              ON rm.leaf_scenario_id = s.id
+LEFT JOIN personas p          ON p.id = s.persona_id
+LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
+LEFT JOIN rubrics r           ON r.id = lg.rubric_id
+LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
+LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
 WITH NO DATA;
@@ -177,6 +203,12 @@ CREATE INDEX IF NOT EXISTS analytics_passed_idx
 
 CREATE INDEX IF NOT EXISTS analytics_time_taken_idx
   ON analytics (time_taken_seconds);
+
+-- New: for cohort-mode membership & attempt-date filters
+CREATE INDEX IF NOT EXISTS analytics_profile_cohort_ids_gin
+  ON analytics USING GIN (profile_cohort_ids);
+CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
+  ON analytics (attempt_created_at);
 
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$
