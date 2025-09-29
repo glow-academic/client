@@ -1,4 +1,4 @@
--- Attempt History (UI-ready) — OLD computation semantics preserved + rubric pass threshold
+-- Attempt History (UI-ready) — Returns HistoryDataItem[] for new UI
 CREATE OR REPLACE FUNCTION analytics_attempt_history_fn(
   p_start           timestamptz,
   p_end             timestamptz,
@@ -10,164 +10,189 @@ CREATE OR REPLACE FUNCTION analytics_attempt_history_fn(
 LANGUAGE sql
 STABLE
 AS $$
-WITH filt AS (
-  SELECT *
-  FROM analytics a
-  WHERE a.chat_created_at >= p_start
-    AND a.chat_created_at <  p_end
-    AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
-    AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
-    AND (p_sim_filters IS NULL OR (
-          ('general'  = ANY (p_sim_filters) AND a.is_general) OR
-          ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-          ('archived' = ANY (p_sim_filters) AND a.is_archived)
-        ))
-    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
-),
-attempts_in_scope AS (
-  SELECT DISTINCT f.attempt_id, f.simulation_id
-  FROM filt f
-),
-expected AS (
+WITH params AS (
   SELECT
-    ascp.attempt_id,
-    ascp.simulation_id,
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    GREATEST(p_end, now())                     AS end_at
+),
+-- Base filter using ATTEMPT DATE per GLOW rule #3
+base AS (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  WHERE a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (cardinality(pr.roles) = 0 OR a.profile_role = ANY (pr.roles))
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+    -- practice/general on simulations:
+    AND (
+      ('general'  = ANY (pr.sim_filters) AND a.is_general)
+      OR
+      ('practice' = ANY (pr.sim_filters) AND a.is_practice)
+    )
+    -- archived on attempts:
+    AND (
+      CASE
+        WHEN 'archived' = ANY (pr.sim_filters)
+             AND ( 'general' = ANY (pr.sim_filters) OR 'practice' = ANY (pr.sim_filters) )
+          THEN TRUE                    -- allow both archived and non-archived
+        WHEN 'archived' = ANY (pr.sim_filters)
+          THEN a.is_archived           -- only archived
+        ELSE NOT a.is_archived         -- only non-archived
+      END
+    )
+),
+-- Cohort scoping: when cohorts passed, require BOTH sim-in-cohort and profile-in-cohort-for-sim
+cohort_scoped AS (
+  SELECT b.*
+  FROM base b
+  CROSS JOIN params pr
+  WHERE
+    cardinality(pr.cohort_ids) = 0
+    OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+),
+-- Attempt-level aggregates
+attempt_rollup AS (
+  SELECT
+    a.attempt_id,
+    a.simulation_id,
+    MIN(a.attempt_created_at) AS attempt_date,  -- UI "date"
+    MIN(a.chat_created_at)    AS first_chat_at, -- kept for tie-breaks if needed
+    MAX(a.chat_created_at)    AS last_activity_at,
+    -- completion counted only when completed AND graded (latest-grade exists)
+    COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
+    -- denom for score:
+    MAX(a.sim_scenario_count) AS sim_scenario_count,
+    BOOL_OR(a.is_practice AND EXISTS (SELECT 1)) AS has_any, -- dummy to let us aggregate
+    -- sum of grade percents with zero-fill semantics:
+    SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
+    -- infinite mode detection later (from attempts table join)
+    array_agg(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct,
+    array_agg(DISTINCT a.leaf_scenario_id) FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen
+  FROM cohort_scoped a
+  GROUP BY a.attempt_id, a.simulation_id
+),
+-- Join attempt + sim + rubric + profile + attempt flags
+attempt_joined AS (
+  SELECT
+    ar.*,
     sa.profile_id,
-    sa.archived                           AS attempt_archived,
+    sa.archived                         AS is_archived,
     sa.infinite_mode,
     sa.infinite_mode_time_limit,
-    CASE
-      WHEN sa.infinite_mode THEN NULL
-      ELSE COALESCE(array_length(s.scenario_ids, 1), 0)
-    END                                   AS expected_count,
-    s.title                               AS simulation_title,
-    s.scenario_ids                        AS scenario_ids_assigned,
-    s.practice_simulation                 AS practice_simulation,
-    s.rubric_id                           AS rubric_id,
-    r.points                              AS rubric_points,
-    r.pass_points                         AS rubric_pass_points,
+    s.title                             AS simulation_name,
+    s.scenario_ids                      AS scenario_ids_assigned,
+    s.practice_simulation               AS practice_simulation,
+    r.id                                AS rubric_id,
+    r.points                            AS rubric_points,
+    r.pass_points                       AS rubric_pass_points,
     CASE
       WHEN r.points IS NULL OR r.points = 0 THEN NULL
       ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
-    END                                   AS pass_pct
-  FROM attempts_in_scope ascp
-  JOIN simulation_attempts sa ON sa.id = ascp.attempt_id
-  JOIN simulations        s  ON s.id  = ascp.simulation_id
+    END                                 AS pass_pct,
+    (p.first_name || ' ' || p.last_name) AS profile_name
+  FROM attempt_rollup ar
+  JOIN simulation_attempts sa ON sa.id = ar.attempt_id
+  JOIN simulations        s  ON s.id  = ar.simulation_id
   LEFT JOIN rubrics       r  ON r.id  = s.rubric_id
+  JOIN profiles           p  ON p.id  = sa.profile_id
 ),
-per_attempt AS (
+-- Persona names/colors for display (distinct, stable order by name)
+persona_labels AS (
   SELECT
-    f.attempt_id,
-    MIN(f.chat_created_at) AS first_chat_at,
-    MAX(f.chat_created_at) AS last_activity_at,
-    COUNT(*)               AS total_chats_in_attempt,
-    -- OLD: completed + graded only
-    COUNT(*) FILTER (WHERE f.completed AND f.grade_percent IS NOT NULL) AS completed_with_grade,
-    -- Sum with zeros for missing grades
-    SUM(COALESCE(f.grade_percent, 0)) AS sum_grade_percent_zero_fill
-  FROM filt f
-  GROUP BY f.attempt_id
+    aj.attempt_id,
+    COALESCE(
+      ARRAY_AGG(DISTINCT per.name  ORDER BY per.name),
+      ARRAY[]::text[]
+    ) AS persona_names,
+    COALESCE(
+      ARRAY_AGG(DISTINCT per.color ORDER BY per.name),
+      ARRAY[]::text[]
+    ) AS persona_colors
+  FROM attempt_joined aj
+  LEFT JOIN personas per ON per.id = ANY (aj.persona_ids_distinct)
+  GROUP BY aj.attempt_id
 ),
-joined AS (
-  SELECT
-    e.attempt_id,
-    e.simulation_id,
-    e.simulation_title,
-    e.profile_id,
-    (pr.first_name || ' ' || pr.last_name) AS profile_name,
-    e.expected_count,
-    e.infinite_mode,
-    e.infinite_mode_time_limit,
-    e.attempt_archived,
-    e.scenario_ids_assigned,
-    e.practice_simulation,
-    e.rubric_id,
-    e.rubric_points,
-    e.rubric_pass_points,
-    e.pass_pct,
-
-    p.first_chat_at,
-    p.last_activity_at,
-    p.total_chats_in_attempt,
-    p.completed_with_grade,
-    p.sum_grade_percent_zero_fill
-  FROM expected e
-  JOIN per_attempt p ON p.attempt_id = e.attempt_id
-  JOIN profiles  pr  ON pr.id = e.profile_id
-),
+-- Final shaping with scoring semantics
 final_rows AS (
   SELECT
-    j.*,
+    aj.attempt_id,
+    aj.simulation_id,
+    aj.profile_id,
+    aj.profile_name,
+    aj.simulation_name,
+    aj.scenario_ids_assigned,
+    aj.is_archived,
+    aj.practice_simulation,
+    aj.pass_pct,
+    aj.infinite_mode,
+    aj.infinite_mode_time_limit,
+    aj.attempt_date,
+    -- numScenarios / numScenariosCompleted
     CASE
-      WHEN j.infinite_mode THEN GREATEST(j.total_chats_in_attempt, 1)
-      ELSE COALESCE(j.expected_count, 0)
-    END AS denom_for_score,
+      WHEN aj.infinite_mode THEN NULL
+      ELSE COALESCE(aj.sim_scenario_count, 0)
+    END AS num_scenarios,
+    COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
+    -- scoring: average percent with zero-fill over expected denom
     CASE
-      WHEN j.completed_with_grade = 0 THEN NULL
-      ELSE ROUND(
-             j.sum_grade_percent_zero_fill
-             / NULLIF(
-                 CASE
-                   WHEN j.infinite_mode THEN GREATEST(j.total_chats_in_attempt, 1)
-                   ELSE COALESCE(j.expected_count, 0)
-                 END, 0
-               )
-           )::int
-    END AS score_percent_old_semantics
-  FROM joined j
+      WHEN aj.infinite_mode THEN
+        -- denom is number of chats realized in attempt; protect against 0
+        CASE GREATEST(array_length(aj.leaf_scenarios_seen, 1), 0)
+          WHEN 0 THEN NULL
+          ELSE ROUND( aj.sum_grade_percent_zero_fill
+                      / GREATEST(array_length(aj.leaf_scenarios_seen, 1), 1) )::int
+        END
+      ELSE
+        CASE COALESCE(aj.sim_scenario_count, 0)
+          WHEN 0 THEN NULL
+          ELSE
+            CASE
+              WHEN aj.completed_with_grade = 0 THEN NULL
+              ELSE ROUND( aj.sum_grade_percent_zero_fill
+                          / NULLIF(aj.sim_scenario_count, 0) )::int
+            END
+        END
+    END AS score_percent,
+    -- buttons
+    (NOT aj.is_archived)                                 AS show_view,
+    (NOT aj.is_archived) AND (
+      aj.infinite_mode
+      OR (aj.sim_scenario_count IS NOT NULL
+          AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
+    )                                                    AS show_continue
+  FROM attempt_joined aj
 )
-SELECT jsonb_build_object(
-  'hasData', EXISTS(SELECT 1 FROM final_rows),
-  'rows',
-    COALESCE(
-      jsonb_agg(
-        jsonb_build_object(
-          -- ids for filtering
-          'attemptId',               fr.attempt_id::text,
-          'simulationId',            fr.simulation_id::text,
-          'scenarioIds',             fr.scenario_ids_assigned,
-
-          -- who/what/when
-          'profileId',               fr.profile_id::text,
-          'profileName',             fr.profile_name,
-          'simulationTitle',         fr.simulation_title,
-          'attemptDate',             to_char(fr.first_chat_at, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
-          'lastActivityAt',          to_char(fr.last_activity_at, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
-
-          -- personas (optional to fill later)
-          'personaIds',              ARRAY[]::uuid[],
-          'personaNames',            ARRAY[]::text[],
-          'personaColors',           ARRAY[]::text[],
-
-          -- completion + score (OLD semantics)
-          'completedCount',          COALESCE(fr.completed_with_grade, 0),
-          'expectedCount',           fr.expected_count,           -- NULL => infinite
-          'scorePercent',            fr.score_percent_old_semantics,
-
-          -- rubric / pass info for UI
-          'rubricId',                fr.rubric_id::text,
-          'rubricPoints',            fr.rubric_points,
-          'rubricPassPoints',        fr.rubric_pass_points,
-          'passPct',                 fr.pass_pct,                  -- 👈 feed this to UI instead of hard-coded 70
-          'practiceSimulation',      COALESCE(fr.practice_simulation, false),
-
-          -- actions
-          'showContinue',            (NOT fr.attempt_archived) AND (
-                                        fr.infinite_mode
-                                        OR (fr.expected_count IS NOT NULL
-                                            AND COALESCE(fr.completed_with_grade,0) < fr.expected_count)
-                                      ),
-          'showView',                (NOT fr.attempt_archived),
-
-          -- attempt meta
-          'infiniteMode',            COALESCE(fr.infinite_mode, false),
-          'infiniteModeTimeLimit',   fr.infinite_mode_time_limit,
-          'archived',                fr.attempt_archived
-        )
-        ORDER BY fr.last_activity_at DESC
-      ),
-      '[]'::jsonb
+SELECT COALESCE(
+  jsonb_agg(
+    jsonb_build_object(
+      'attemptId',             fr.attempt_id::text,
+      'date',                  to_char(fr.attempt_date, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
+      'profileId',             fr.profile_id::text,
+      'profileName',           fr.profile_name,
+      'simulationName',        fr.simulation_name,
+      'numScenarios',          fr.num_scenarios,
+      'numScenariosCompleted', fr.num_scenarios_completed,
+      'infiniteMode',          fr.infinite_mode,
+      'personaNames',          COALESCE(pl.persona_names, ARRAY[]::text[]),
+      'personaColors',         COALESCE(pl.persona_colors, ARRAY[]::text[]),
+      'score',                 fr.score_percent,
+      'simulation_id',         fr.simulation_id::text,
+      'scenario_ids',          COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
+      'isArchived',            fr.is_archived,
+      'showView',              fr.show_view,
+      'showContinue',          fr.show_continue,
+      'practiceSimulation',    COALESCE(fr.practice_simulation, false),
+      'passPct',               fr.pass_pct
     )
+    ORDER BY fr.attempt_date DESC, fr.attempt_id
+  ),
+  '[]'::jsonb
 )
-FROM final_rows fr;
+FROM final_rows fr
+LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id;
 $$;
