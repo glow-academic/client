@@ -579,6 +579,9 @@ export const cohorts = [
   },
 ];
 
+// MIGRATIONS MOCK DATA
+export const migrations = [];
+
 // VERIFICATIONTOKEN MOCK DATA
 export const verificationToken = [
   {
