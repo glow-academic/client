@@ -48,20 +48,6 @@ sim_persona_meta AS (
   LEFT JOIN personas p ON p.id = sm.persona_id
   GROUP BY sm.simulation_id
 ),
--- ---------------- Cohort membership exploded & filtered by cohorts/roles
-cohort_membership AS (
-  SELECT
-    c.id    AS cohort_id,
-    c.title AS cohort_title,
-    sids.simulation_id,
-    pids.profile_id
-  FROM cohorts c
-  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
-  JOIN LATERAL unnest(c.profile_ids)    AS pids(profile_id)    ON TRUE
-  LEFT JOIN profiles pr ON pr.id = pids.profile_id
-  WHERE (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
-    AND (p_roles      IS NULL OR pr.role = ANY (p_roles))
-),
 -- ---------------- Analytics slice (time/roles/sim kind/selected cohorts)
 filt AS (
   SELECT a.*
@@ -78,35 +64,96 @@ filt AS (
     )
     AND (p_cohort_ids IS NULL OR a.cohort_ids && p_cohort_ids)
 ),
--- ---------------- Per-attempt progression + recency
-attempt_progress AS (
+
+-- ---------------- Expected scenarios per simulation
+sim_expected AS (
+  SELECT s.id AS simulation_id,
+         COALESCE(cardinality(s.scenario_ids),0) AS expected_scenarios
+  FROM simulations s
+),
+
+-- ---------------- Per attempt: sum percent over completed root scenarios; zeros for missing
+attempt_scores AS (
+  SELECT
+    ap.attempt_id,
+    ap.profile_id,
+    ap.simulation_id,
+    COALESCE(SUM(ap.grade_percent) FILTER (WHERE ap.completed), 0)::numeric AS sum_completed_pct,
+    se.expected_scenarios
+  FROM filt ap           -- ap here = analytics rows (1 per chat)
+  JOIN sim_expected se ON se.simulation_id = ap.simulation_id
+  GROUP BY ap.attempt_id, ap.profile_id, ap.simulation_id, se.expected_scenarios
+),
+
+-- ---------------- Average across expected scenarios (missing = 0)
+attempt_avg AS (
   SELECT
     attempt_id,
     profile_id,
     simulation_id,
-    COUNT(DISTINCT scenario_id) FILTER (WHERE completed) AS completed_root_scenarios,
-    AVG(grade_percent) FILTER (WHERE completed)          AS avg_score_completed,
-    BOOL_OR(passed)                                      AS any_passed_attempt,
-    MAX(chat_created_at)                                 AS last_time
-  FROM filt
-  GROUP BY attempt_id, profile_id, simulation_id
+    CASE WHEN expected_scenarios > 0
+         THEN (sum_completed_pct / expected_scenarios)
+         ELSE 0 END AS avg_pct_over_expected
+  FROM attempt_scores
 ),
-latest_attempt_per_profile_sim AS (
+
+-- ---------------- Best attempt per (profile, simulation)
+best_user_sim AS (
   SELECT DISTINCT ON (profile_id, simulation_id)
-         profile_id, simulation_id, attempt_id,
-         completed_root_scenarios, any_passed_attempt, last_time
-  FROM attempt_progress
-  ORDER BY profile_id, simulation_id, last_time DESC
+         profile_id, simulation_id, avg_pct_over_expected
+  FROM attempt_avg
+  ORDER BY profile_id, simulation_id, avg_pct_over_expected DESC
 ),
--- ---------------- Activity by (profile, simulation) to derive status + num sessions
-activity_by_profile_sim AS (
+
+-- ---------------- Pass threshold per simulation
+sim_pass_pct AS (
+  SELECT s.id AS simulation_id,
+         CASE WHEN r.points > 0
+              THEN (r.pass_points::numeric / r.points::numeric) * 100.0
+              ELSE 70 END AS pass_pct
+  FROM simulations s
+  JOIN rubrics r ON r.id = s.rubric_id
+),
+
+-- ---------------- Compute per user status using best attempt & threshold
+user_sim_status AS (
   SELECT
-    profile_id,
-    simulation_id,
-    COUNT(DISTINCT chat_id) AS chats,
-    BOOL_OR(passed)         AS any_passed
-  FROM filt
-  GROUP BY profile_id, simulation_id
+    b.profile_id,
+    b.simulation_id,
+    b.avg_pct_over_expected,
+    sp.pass_pct,
+    (b.avg_pct_over_expected >= sp.pass_pct) AS passed,
+    -- count any activity for in-progress / not-started
+    COALESCE(abps.chats,0) AS chats
+  FROM best_user_sim b
+  JOIN sim_pass_pct sp ON sp.simulation_id = b.simulation_id
+  LEFT JOIN (
+    SELECT profile_id, simulation_id, COUNT(DISTINCT chat_id) AS chats
+    FROM filt GROUP BY profile_id, simulation_id
+  ) abps ON abps.profile_id = b.profile_id AND abps.simulation_id = b.simulation_id
+),
+
+-- ---------------- Cohort-simulation pairs (includes empty cohorts)
+cohort_sim AS (
+  SELECT c.id AS cohort_id, c.title AS cohort_title, sids.simulation_id
+  FROM cohorts c
+  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
+  WHERE (p_cohort_ids IS NULL OR c.id = ANY(p_cohort_ids))
+),
+
+-- ---------------- Cohort membership exploded & filtered by cohorts/roles
+cohort_membership AS (
+  SELECT
+    c.id    AS cohort_id,
+    c.title AS cohort_title,
+    sids.simulation_id,
+    pids.profile_id
+  FROM cohorts c
+  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
+  JOIN LATERAL unnest(c.profile_ids)    AS pids(profile_id)    ON TRUE
+  LEFT JOIN profiles pr ON pr.id = pids.profile_id
+  WHERE (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
+    AND (p_roles      IS NULL OR pr.role = ANY (p_roles))
 ),
 
 /* ========================== TA VIEW ========================== */
@@ -116,9 +163,9 @@ ta_sim_space AS (
   FROM cohort_membership m
   WHERE p_profile_id IS NOT NULL AND m.profile_id = p_profile_id
   UNION
-  SELECT DISTINCT f.simulation_id
-  FROM filt f
-  WHERE p_profile_id IS NOT NULL AND f.profile_id = p_profile_id
+  SELECT DISTINCT uss.simulation_id
+  FROM user_sim_status uss
+  WHERE p_profile_id IS NOT NULL AND uss.profile_id = p_profile_id
 ),
 ta_rows AS (
   SELECT
@@ -131,32 +178,39 @@ ta_rows AS (
       'timeLimit',             s.time_limit,
       'numSessions',           s.num_scenarios,                                 -- NEW: mirror scenarios count
       'highestScore',          (
-                                 SELECT ROUND(MAX(ap.avg_score_completed))::int
-                                 FROM attempt_progress ap
-                                 WHERE ap.profile_id = p_profile_id
-                                   AND ap.simulation_id = s.simulation_id
+                                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
+                                 FROM user_sim_status uss
+                                 WHERE uss.profile_id = p_profile_id
+                                   AND uss.simulation_id = s.simulation_id
                                ),
       'rubric_id',             s.rubric_id::text,
       'color',                 spm.color,
       'icon',                  spm.icon,
-      'hasPassed',             COALESCE(aps.any_passed, false),
+      'hasPassed',             (
+                                 SELECT COALESCE(uss.passed, false)
+                                 FROM user_sim_status uss
+                                 WHERE uss.profile_id = p_profile_id
+                                   AND uss.simulation_id = s.simulation_id
+                               ),
       'passRate',              CASE WHEN s.rubric_points > 0
                                     THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
                                     ELSE NULL END,                             -- NEW: always provide passRate
-      'status',                CASE
-                                 WHEN COALESCE(aps.any_passed,false) THEN 'passed'
-                                 WHEN COALESCE(aps.chats,0) > 0       THEN 'in-progress'
-                                 ELSE 'not-started'
-                               END,
-      'completionPct',         COALESCE((
-                                 SELECT ROUND(
-                                          100.0 * lap.completed_root_scenarios::numeric
-                                          / GREATEST(s.num_scenarios,1)
-                                        )::int
-                                 FROM latest_attempt_per_profile_sim lap
-                                 WHERE lap.profile_id = p_profile_id
-                                   AND lap.simulation_id = s.simulation_id
-                               ), 0),
+      'status',                (
+                                 SELECT CASE
+                                           WHEN COALESCE(uss.passed, false) THEN 'passed'
+                                           WHEN COALESCE(uss.chats, 0) > 0 THEN 'in-progress'
+                                           ELSE 'not-started'
+                                         END
+                                 FROM user_sim_status uss
+                                 WHERE uss.profile_id = p_profile_id
+                                   AND uss.simulation_id = s.simulation_id
+                               ),
+      'completionPct',         (
+                                 SELECT ROUND(GREATEST(0, LEAST(100, uss.avg_pct_over_expected)))::int
+                                 FROM user_sim_status uss
+                                 WHERE uss.profile_id = p_profile_id
+                                   AND uss.simulation_id = s.simulation_id
+                               ),
       'passedCount',           NULL,
       'inProgressCount',       NULL,
       'notStartedCount',       NULL,
@@ -167,13 +221,25 @@ ta_rows AS (
                                  SELECT (ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title))[1]
                                  FROM cohort_membership c
                                  WHERE c.simulation_id = s.simulation_id AND c.profile_id = p_profile_id
+                               ),
+      'cohortNames',           (
+                                 SELECT CASE
+                                           WHEN array_length(titles,1) IS NULL OR array_length(titles,1)=0 THEN NULL
+                                           WHEN array_length(titles,1)=1 THEN titles[1]
+                                           WHEN array_length(titles,1)=2 THEN titles[1] || ' and ' || titles[2]
+                                           ELSE array_to_string(titles[1:array_length(titles,1)-2], ', ')
+                                                || ', ' || titles[array_length(titles,1)-1]
+                                                || ', and ' || titles[array_length(titles,1)]
+                                         END
+                                 FROM (
+                                   SELECT ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title) AS titles
+                                   FROM cohort_membership c
+                                   WHERE c.simulation_id = s.simulation_id AND c.profile_id = p_profile_id
+                                 ) x
                                )
     ) AS item
   FROM sim_meta s
   LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
-  LEFT JOIN activity_by_profile_sim aps
-         ON aps.profile_id = p_profile_id
-        AND aps.simulation_id = s.simulation_id
   WHERE p_profile_id IS NOT NULL
     AND s.sim_kind_ok
     AND EXISTS (SELECT 1 FROM ta_sim_space t WHERE t.simulation_id = s.simulation_id)
@@ -190,39 +256,68 @@ ta_payload AS (
 /* ======================= INSTRUCTIONAL VIEW ======================= */
 inst_counts AS (
   -- counts by simulation over cohort members (filtered by p_cohort_ids/p_roles)
+  -- includes empty cohorts
   SELECT
-    m.simulation_id,
-    COUNT(DISTINCT m.profile_id) AS total_members,
-    COUNT(DISTINCT CASE WHEN aps.any_passed THEN m.profile_id END) AS passed_count,
-    COUNT(DISTINCT CASE WHEN NOT aps.any_passed AND aps.chats > 0 THEN m.profile_id END)
-      AS in_progress_count
-  FROM cohort_membership m
-  LEFT JOIN activity_by_profile_sim aps
-    ON aps.profile_id   = m.profile_id
-   AND aps.simulation_id = m.simulation_id
-  GROUP BY m.simulation_id
+    cs.simulation_id,
+    COUNT(DISTINCT cm.profile_id) AS total_members,
+    COUNT(DISTINCT CASE WHEN uss.passed THEN cm.profile_id END) AS passed_count,
+    COUNT(DISTINCT CASE WHEN (NOT uss.passed) AND uss.chats > 0 THEN cm.profile_id END) AS in_progress_count
+  FROM cohort_sim cs
+  LEFT JOIN cohort_membership cm
+    ON cm.cohort_id = cs.cohort_id AND cm.simulation_id = cs.simulation_id
+  LEFT JOIN user_sim_status uss
+    ON uss.profile_id = cm.profile_id AND uss.simulation_id = cs.simulation_id
+  GROUP BY cs.simulation_id
 ),
 inst_rows AS (
+  WITH inst_cohorts AS (
+    SELECT
+      cs.simulation_id,
+      ARRAY_AGG(DISTINCT cs.cohort_title ORDER BY cs.cohort_title) AS titles
+    FROM cohort_sim cs
+    GROUP BY cs.simulation_id
+  ),
+  inst_cohort_names AS (
+    SELECT
+      ic.simulation_id,
+      ic.titles,
+      /* First title (or NULL) for single-line subtitle */
+      CASE
+        WHEN array_length(ic.titles, 1) >= 1 THEN ic.titles[1]
+        ELSE NULL
+      END AS cohort_name,
+      /* Pretty format: "A", "A and B", "A, B, and C" */
+      CASE
+        WHEN array_length(ic.titles, 1) IS NULL OR array_length(ic.titles, 1) = 0 THEN NULL
+        WHEN array_length(ic.titles, 1) = 1 THEN ic.titles[1]
+        WHEN array_length(ic.titles, 1) = 2 THEN ic.titles[1] || ' and ' || ic.titles[2]
+        ELSE
+          array_to_string(ic.titles[1:array_length(ic.titles,1)-2], ', ')
+          || ', ' || ic.titles[array_length(ic.titles,1)-1]
+          || ', and ' || ic.titles[array_length(ic.titles,1)]
+      END AS cohort_names
+    FROM inst_cohorts ic
+  )
   SELECT
     jsonb_build_object(
       'viewMode',              'instructional',
       'id',                    s.simulation_id::text,
       'simulationTitle',       s.simulation_title,
       'simulationDescription', s.simulation_description,
-      'simulationName',        s.simulation_title,      -- alias
+      'simulationName',        s.simulation_title,
       'timeLimit',             s.time_limit,
-      'numSessions',           s.num_scenarios,                                -- NEW: mirror scenarios count
-      'highestScore',          NULL,                                             -- instructional: unset
+      'numSessions',           s.num_scenarios,
+      'highestScore',          NULL,
       'rubric_id',             s.rubric_id::text,
       'color',                 spm.color,
       'icon',                  spm.icon,
       'hasPassed',             CASE
                                  WHEN COALESCE(ic.total_members,0) > 0
                                       AND COALESCE(ic.passed_count,0) = ic.total_members
-                                 THEN true ELSE false END,                      -- NEW: all members passed?
+                                 THEN true ELSE false END,
       'passRate',              CASE WHEN s.rubric_points > 0
                                     THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
-                                    ELSE NULL END,                             -- NEW: rubric pass %
+                                    ELSE NULL END,
       'status',                CASE
                                  WHEN COALESCE(ic.total_members,0) > 0
                                       AND COALESCE(ic.passed_count,0) = ic.total_members
@@ -231,7 +326,7 @@ inst_rows AS (
                                       OR COALESCE(ic.in_progress_count,0) > 0
                                    THEN 'in-progress'
                                  ELSE 'not-started'
-                               END,                                             -- NEW: computed status
+                               END,
       'completionPct',         CASE
                                  WHEN COALESCE(ic.total_members,0) > 0
                                  THEN ROUND(
@@ -239,18 +334,21 @@ inst_rows AS (
                                    / ic.total_members
                                  )::int
                                  ELSE 0
-                               END,                                             -- NEW: completion percentage
+                               END,
       'passedCount',           COALESCE(ic.passed_count, 0),
       'inProgressCount',       COALESCE(ic.in_progress_count, 0),
       'notStartedCount',       GREATEST(COALESCE(ic.total_members,0)
                                   - COALESCE(ic.passed_count,0)
                                   - COALESCE(ic.in_progress_count,0), 0),
-      'passPct',               NULL,                                             -- TA-only field
-      'cohortName',            NULL                                              -- could be many; leave NULL
+      'passPct',               NULL,
+      /* NEW: single-line & pretty variants */
+      'cohortName',            icn.cohort_name,
+      'cohortNames',           icn.cohort_names
     ) AS item
   FROM sim_meta s
   JOIN inst_counts ic            ON ic.simulation_id = s.simulation_id
   LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
+  LEFT JOIN inst_cohort_names icn ON icn.simulation_id = s.simulation_id
   WHERE p_profile_id IS NULL
     AND s.sim_kind_ok
 ),

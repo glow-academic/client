@@ -239,7 +239,7 @@ export default function Home() {
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
-    return simulationItems.sort((a, b) => {
+    return [...simulationItems].sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
       // Keep behavior identical to OLD: completed (hasPassed=true) at the end
@@ -247,14 +247,16 @@ export default function Home() {
         return a.hasPassed ? 1 : -1;
       }
 
-      // Then sort by cohort name
-      return (a.cohortName || "").localeCompare(b.cohortName || "");
+      // Then sort by cohort name (fallback to simulation title)
+      return (a.cohortName || a.simulationTitle || "").localeCompare(
+        b.cohortName || b.simulationTitle || ""
+      );
     });
   }, [simulationItems]);
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    return simulationItems.sort((a, b) => {
+    return [...simulationItems].sort((a, b) => {
       if (!a || !b) return 0;
       // First sort by completion status (non-completed first)
       // Keep behavior identical to OLD: completed (hasPassed=true) at the end
@@ -262,8 +264,10 @@ export default function Home() {
         return a.hasPassed ? 1 : -1;
       }
 
-      // Then sort by cohort name
-      return (a.cohortName || "").localeCompare(b.cohortName || "");
+      // Then sort by cohort name (fallback to simulation title)
+      return (a.cohortName || a.simulationTitle || "").localeCompare(
+        b.cohortName || b.simulationTitle || ""
+      );
     });
   }, [simulationItems]);
 
@@ -543,6 +547,8 @@ export default function Home() {
                   item.viewMode === "ta" ? ViewMode.TA : ViewMode.INSTRUCTIONAL
                 }
                 {...(item.cohortName && { cohortName: item.cohortName })}
+                {...(item.cohortNames &&
+                  !item.cohortName && { cohortName: item.cohortNames })}
                 simulationName={item.simulationName}
                 status={item.status || "not-started"}
                 completionPct={item.completionPct || 0}
