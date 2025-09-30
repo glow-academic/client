@@ -23,7 +23,7 @@ interface ReportsDataItem {
 
   // The 10 core metrics with pre-computed values, thresholds, and hover data
   averageScore: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Mean: X%, Median: Y%, Mode: Z%
@@ -35,7 +35,7 @@ interface ReportsDataItem {
   };
 
   completionPercentage: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Completed: X/Y, Rate: Z%
@@ -47,7 +47,7 @@ interface ReportsDataItem {
   };
 
   firstAttemptPassRate: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: First-pass: X/Y, Rate: Z%
@@ -59,7 +59,7 @@ interface ReportsDataItem {
   };
 
   highestScore: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: 1. X%, 2. Y%, 3. Z% (top scores)
@@ -69,7 +69,7 @@ interface ReportsDataItem {
   };
 
   messagesPerSession: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Mean msgs/chat: X, Median msgs/chat: Y, Chats counted: Z
@@ -81,7 +81,7 @@ interface ReportsDataItem {
   };
 
   personaResponseTimes: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Mean: Xs, Median: Ys, Samples: Z
@@ -93,7 +93,7 @@ interface ReportsDataItem {
   };
 
   sessionEfficiency: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Avg score: X%, Avg time: Ym, Efficiency: Z
@@ -105,7 +105,7 @@ interface ReportsDataItem {
   };
 
   stagnationRate: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Tracked: X, Stagnant: Y, Rate: Z%
@@ -117,7 +117,7 @@ interface ReportsDataItem {
   };
 
   timeSpent: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Avg session: Xm, Avg chat: Ym, Avg time spent: Zm
@@ -129,7 +129,7 @@ interface ReportsDataItem {
   };
 
   totalAttempts: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number }; // 0-100 scale for color determination
     // Hover shows: Attempts: X, Unique sims: Y, Mean/Sim: Z
@@ -259,15 +259,18 @@ export default function Reports({
 
     // Average Score column
     {
-      accessorKey: "averageScore",
+      id: "averageScore",
+      accessorFn: (row) => row.averageScore.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Avg Score" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.averageScore.value;
         const getBackgroundColor = () => {
-          if (item.averageScore.value >= 85) return "bg-green-50";
-          if (item.averageScore.value >= 75) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 85) return "bg-green-50";
+          if (v >= 75) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -279,19 +282,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.averageScore.value ?? -Infinity;
+        const bv = b.original.averageScore.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Highest Score column
     {
-      accessorKey: "highestScore",
+      id: "highestScore",
+      accessorFn: (row) => row.highestScore.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Highest" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.highestScore.value;
         const getBackgroundColor = () => {
-          if (item.highestScore.value >= 90) return "bg-green-50";
-          if (item.highestScore.value >= 80) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 90) return "bg-green-50";
+          if (v >= 80) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -303,19 +314,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.highestScore.value ?? -Infinity;
+        const bv = b.original.highestScore.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Completion Percentage column
     {
-      accessorKey: "completionPercentage",
+      id: "completionPercentage",
+      accessorFn: (row) => row.completionPercentage.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Completion" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.completionPercentage.value;
         const getBackgroundColor = () => {
-          if (item.completionPercentage.value >= 85) return "bg-green-50";
-          if (item.completionPercentage.value >= 75) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 85) return "bg-green-50";
+          if (v >= 75) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -327,19 +346,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // First Attempt Pass Rate column
     {
-      accessorKey: "firstAttemptPassRate",
+      id: "firstAttemptPassRate",
+      accessorFn: (row) => row.firstAttemptPassRate.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="First Pass" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.firstAttemptPassRate.value;
         const getBackgroundColor = () => {
-          if (item.firstAttemptPassRate.value >= 85) return "bg-green-50";
-          if (item.firstAttemptPassRate.value >= 75) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 85) return "bg-green-50";
+          if (v >= 75) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -351,19 +378,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.firstAttemptPassRate.value ?? -Infinity;
+        const bv = b.original.firstAttemptPassRate.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Messages Per Session column
     {
-      accessorKey: "messagesPerSession",
+      id: "messagesPerSession",
+      accessorFn: (row) => row.messagesPerSession.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Msgs/Sess" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.messagesPerSession.value;
         const getBackgroundColor = () => {
-          if (item.messagesPerSession.value >= 12) return "bg-green-50";
-          if (item.messagesPerSession.value >= 8) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 12) return "bg-green-50";
+          if (v >= 8) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -376,19 +411,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Persona Response Times column
     {
-      accessorKey: "personaResponseTimes",
+      id: "personaResponseTimes",
+      accessorFn: (row) => row.personaResponseTimes.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Response Time" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.personaResponseTimes.value;
         const getBackgroundColor = () => {
-          if (item.personaResponseTimes.value <= 180) return "bg-green-50"; // 3 minutes in seconds
-          if (item.personaResponseTimes.value <= 300) return "bg-yellow-50"; // 5 minutes in seconds
+          if (v == null) return "bg-gray-50";
+          if (v <= 180) return "bg-green-50"; // 3 minutes in seconds
+          if (v <= 300) return "bg-yellow-50"; // 5 minutes in seconds
           return "bg-red-50";
         };
         return (
@@ -401,19 +444,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Session Efficiency column
     {
-      accessorKey: "sessionEfficiency",
+      id: "sessionEfficiency",
+      accessorFn: (row) => row.sessionEfficiency.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Efficiency" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.sessionEfficiency.value;
         const getBackgroundColor = () => {
-          if (item.sessionEfficiency.value >= 85) return "bg-green-50";
-          if (item.sessionEfficiency.value >= 75) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 85) return "bg-green-50";
+          if (v >= 75) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -425,19 +476,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Stagnation Rate column
     {
-      accessorKey: "stagnationRate",
+      id: "stagnationRate",
+      accessorFn: (row) => row.stagnationRate.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Stagnation" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.stagnationRate.value;
         const getBackgroundColor = () => {
-          if (item.stagnationRate.value <= 15) return "bg-green-50";
-          if (item.stagnationRate.value <= 25) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v <= 15) return "bg-green-50";
+          if (v <= 25) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -449,19 +508,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Time Spent column
     {
-      accessorKey: "timeSpent",
+      id: "timeSpent",
+      accessorFn: (row) => row.timeSpent.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Time Spent" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.timeSpent.value;
         const getBackgroundColor = () => {
-          if (item.timeSpent.value <= 60) return "bg-green-50";
-          if (item.timeSpent.value <= 90) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v <= 60) return "bg-green-50";
+          if (v <= 90) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -474,19 +541,27 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Total Attempts column
     {
-      accessorKey: "totalAttempts",
+      id: "totalAttempts",
+      accessorFn: (row) => row.totalAttempts.value,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Attempts" />
       ),
       cell: ({ row }) => {
         const item = row.original;
+        const v = item.totalAttempts.value;
         const getBackgroundColor = () => {
-          if (item.totalAttempts.value >= 8) return "bg-green-50";
-          if (item.totalAttempts.value >= 5) return "bg-yellow-50";
+          if (v == null) return "bg-gray-50";
+          if (v >= 8) return "bg-green-50";
+          if (v >= 5) return "bg-yellow-50";
           return "bg-red-50";
         };
         return (
@@ -499,6 +574,11 @@ export default function Reports({
         );
       },
       enableSorting: true,
+      sortingFn: (a, b) => {
+        const av = a.original.totalAttempts.value ?? -Infinity;
+        const bv = b.original.totalAttempts.value ?? -Infinity;
+        return av === bv ? 0 : av < bv ? -1 : 1;
+      },
     },
 
     // Hidden columns for filtering

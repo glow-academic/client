@@ -42,7 +42,7 @@ interface ReportsDataItem {
 
   // The 10 core metrics with pre-computed values, thresholds, and hover data
   averageScore: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -53,7 +53,7 @@ interface ReportsDataItem {
   };
 
   completionPercentage: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -64,7 +64,7 @@ interface ReportsDataItem {
   };
 
   firstAttemptPassRate: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -75,7 +75,7 @@ interface ReportsDataItem {
   };
 
   highestScore: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -84,7 +84,7 @@ interface ReportsDataItem {
   };
 
   messagesPerSession: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -95,7 +95,7 @@ interface ReportsDataItem {
   };
 
   personaResponseTimes: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -106,7 +106,7 @@ interface ReportsDataItem {
   };
 
   sessionEfficiency: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -117,7 +117,7 @@ interface ReportsDataItem {
   };
 
   stagnationRate: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -128,7 +128,7 @@ interface ReportsDataItem {
   };
 
   timeSpent: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
     hover: {
@@ -139,7 +139,7 @@ interface ReportsDataItem {
   };
 
   totalAttempts: {
-    value: number;
+    value: number | null; // null for N/A values
     formattedValue: string;
     thresholds: { gray: number; red: number; yellow: number; green: number };
   };
