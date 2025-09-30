@@ -1,7 +1,11 @@
 __pycache__/
 **/__pycache__/
 
-uploads/
+uploads/*
+!uploads/57d963bc-f6f9-4fd4-b7b5-cdb822f4778a.pdf
+!uploads/d0c11111-2222-3333-4444-444444444444.pdf
+!uploads/d0c22222-3333-4444-5555-555555555555.pdf
+!uploads/edfab767-8ff1-4418-ad8f-22cec348b76c.pdf
 audio/
 cache/
 sketches/
