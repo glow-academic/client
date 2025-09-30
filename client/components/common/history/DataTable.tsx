@@ -296,6 +296,14 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      columnVisibility: {
+        search: false,
+        profileId: false,
+        simulationId: false,
+        scenarios: false,
+      },
+    },
   });
 
   return (

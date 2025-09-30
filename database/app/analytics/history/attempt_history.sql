@@ -164,6 +164,20 @@ final_rows AS (
           AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
     )                                                    AS show_continue
   FROM attempt_joined aj
+),
+-- Scenario names for display
+scenario_names AS (
+  SELECT
+    fr.attempt_id,
+    COALESCE(
+      (
+        SELECT array_agg(s.name ORDER BY s.name)
+        FROM unnest(fr.scenario_ids_assigned) sid
+        JOIN scenarios s ON s.id = sid
+      ),
+      ARRAY[]::text[]
+    ) AS names
+  FROM final_rows fr
 )
 SELECT COALESCE(
   jsonb_agg(
@@ -181,6 +195,7 @@ SELECT COALESCE(
       'score',                 fr.score_percent,
       'simulation_id',         fr.simulation_id::text,
       'scenario_ids',          COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
+      'scenario_titles',       COALESCE(sn.names, ARRAY[]::text[]),
       'isArchived',            fr.is_archived,
       'showView',              fr.show_view,
       'showContinue',          fr.show_continue,
@@ -192,5 +207,6 @@ SELECT COALESCE(
   '[]'::jsonb
 )
 FROM final_rows fr
-LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id;
+LEFT JOIN persona_labels pl ON pl.attempt_id = fr.attempt_id
+LEFT JOIN scenario_names sn ON sn.attempt_id = fr.attempt_id;
 $$;
