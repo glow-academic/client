@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
+  AttemptHistoryRow,
   computeAttemptImprovementActionableInsight,
   computeCohortPerformanceActionableInsight,
   computeCurrent,
@@ -1579,6 +1580,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
                 numScenarios: item.numScenarios,
                 numScenariosCompleted: item.numScenariosCompleted,
                 infiniteMode: item.infiniteMode,
+                infiniteModeTimeLimit: (item as AttemptHistoryRow)
+                  .infiniteModeTimeLimit,
                 personaNames: item.personaNames,
                 personaColors: item.personaColors,
                 scenario_titles: item.scenario_titles,

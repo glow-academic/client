@@ -669,6 +669,7 @@ export const AttemptHistoryRowSchema = z.object({
   numScenarios: z.number().nullable(),
   numScenariosCompleted: z.number(),
   infiniteMode: z.boolean(),
+  infiniteModeTimeLimit: z.number().nullable(),
   personaNames: z.array(z.string()),
   personaColors: z.array(z.string()),
   score: z.number().nullable(),

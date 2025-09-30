@@ -408,6 +408,7 @@ export default function Practice() {
                       numScenarios: item.numScenarios,
                       numScenariosCompleted: item.numScenariosCompleted,
                       infiniteMode: item.infiniteMode,
+                      infiniteModeTimeLimit: item.infiniteModeTimeLimit,
                       personaNames: item.personaNames,
                       personaColors: item.personaColors,
                       score: item.score,

@@ -30,6 +30,7 @@ export interface HistoryDataItem {
   numScenarios: number | null; // nullable for infinite mode
   numScenariosCompleted: number;
   infiniteMode: boolean;
+  infiniteModeTimeLimit: number | null; // nullable for infinite mode time limit
   personaNames: string[];
   personaColors: string[];
   score: number | null; // nullable
@@ -487,12 +488,11 @@ export default function SimulationHistory({
               id={item.attemptId}
               profileId={item.profileId}
               simulationId={item.simulation_id}
-              scenarios={[]} // You might need to pass scenario data here
+              scenarios={[]} // No need to pass scenarios anymore
               interactionIds={item.scenario_ids}
-              isIncomplete={false} // Based on your logic
               isPractice={item.practiceSimulation || false}
               infiniteMode={item.infiniteMode}
-              infiniteModeTimeLimit={null} // Can be determined server-side if needed
+              infiniteModeTimeLimit={item.infiniteModeTimeLimit ?? null}
               attemptCreatedAt={(() => {
                 try {
                   const date = new Date(item.date);
@@ -503,6 +503,8 @@ export default function SimulationHistory({
                   return new Date().toISOString();
                 }
               })()}
+              canView={item.showView}
+              canContinue={item.showContinue}
               archived={item.isArchived}
               showArchive={showArchive}
             />

@@ -715,6 +715,7 @@ export default function Home() {
                   numScenarios: item.numScenarios,
                   numScenariosCompleted: item.numScenariosCompleted,
                   infiniteMode: item.infiniteMode,
+                  infiniteModeTimeLimit: item.infiniteModeTimeLimit,
                   personaNames: item.personaNames,
                   personaColors: item.personaColors,
                   scenario_titles: item.scenario_titles,

@@ -235,6 +235,7 @@ SELECT COALESCE(
       'numScenarios',          fr.num_scenarios,
       'numScenariosCompleted', fr.num_scenarios_completed,
       'infiniteMode',          fr.infinite_mode,
+      'infiniteModeTimeLimit', fr.infinite_mode_time_limit,
       'personaNames',          COALESCE(pl.persona_names, ARRAY[]::text[]),
       'personaColors',         COALESCE(pl.persona_colors, ARRAY[]::text[]),
       'score',                 fr.score_percent,
