@@ -628,14 +628,20 @@ export const PracticeSimulationItemSchema = z.object({
   icon: z.string().nullable().optional(),
   hasPassed: z.boolean().nullable().optional(),
   passRate: z.number().nullable().optional(),
-  status: z.enum(["not-started", "in-progress", "passed"]),
-  completionPct: z.number(),
+  status: z
+    .enum(["not-started", "in-progress", "passed"])
+    .nullable()
+    .optional(),
+  completionPct: z.number().nullable().optional(),
   // Fields that are null for practice (cohort-specific)
   passedCount: z.number().nullable().optional(),
   inProgressCount: z.number().nullable().optional(),
   notStartedCount: z.number().nullable().optional(),
   passPct: z.number().nullable().optional(),
   cohortName: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+  lastActivityTs: z.string().nullable().optional(),
+  hasActivity: z.boolean().nullable().optional(),
 });
 
 // Practice Overview Response Schema (matches SQL function output)

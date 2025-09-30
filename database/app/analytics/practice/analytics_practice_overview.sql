@@ -2,10 +2,10 @@
 CREATE OR REPLACE FUNCTION analytics_practice_overview_fn(
   p_start      timestamptz,
   p_end        timestamptz,
-  p_cohort_ids uuid[],          -- not used for practice
-  p_roles      profile_role[],  -- not used for practice
-  p_sim_filters text[],         -- not used for practice
-  p_profile_id uuid             -- required: whose practice view is this?
+  p_cohort_ids uuid[],
+  p_roles      profile_role[],
+  p_sim_filters text[],
+  p_profile_id uuid
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -17,19 +17,19 @@ sim_meta AS (
     s.id                            AS simulation_id,
     s.title                         AS simulation_title,
     s.description                   AS simulation_description,
-    /* force infinite-time in payload */
-    NULL::int                       AS time_limit,
+    NULL::int                       AS time_limit,                -- ∞
     s.rubric_id,
     COALESCE(cardinality(s.scenario_ids),0) AS num_scenarios,
     r.points                        AS rubric_points,
-    r.pass_points                   AS rubric_pass_points
+    r.pass_points                   AS rubric_pass_points,
+    s.updated_at                    AS updated_at                 -- keep for ordering
   FROM simulations s
   JOIN rubrics r ON r.id = s.rubric_id
   WHERE s.active = TRUE
     AND s.practice_simulation = TRUE
 ),
 
--- 2) Representative persona color/icon from scenarios for each sim
+-- 2) Persona color/icon
 sim_persona_meta AS (
   SELECT
     sm.simulation_id,
@@ -50,31 +50,29 @@ sim_persona_meta AS (
   GROUP BY sm.simulation_id
 ),
 
--- 3) Analytics slice for THIS user, practice only, time-bounded
-filt AS (
+-- 3) All-time analytics slice (for highestScore/status - lifetime data)
+filt_all AS (
   SELECT a.*
   FROM analytics a
   WHERE a.profile_id = p_profile_id
     AND a.is_practice = TRUE
-    AND a.chat_created_at >= p_start
-    AND a.chat_created_at <  p_end
 ),
 
--- 4) Per-attempt progression for this user
+-- 4) Per-attempt progression (completed-only average - lifetime data)
 attempt_progress AS (
   SELECT
     attempt_id,
     profile_id,
     simulation_id,
     COUNT(DISTINCT scenario_id) FILTER (WHERE completed) AS completed_root_scenarios,
-    AVG(grade_percent) FILTER (WHERE completed)          AS avg_score_completed,
+    AVG(grade_percent) FILTER (WHERE completed)          AS avg_score_completed,  -- lifetime best
     BOOL_OR(passed)                                      AS any_passed_attempt,
     MAX(chat_created_at)                                 AS last_time
-  FROM filt
+  FROM filt_all
   GROUP BY attempt_id, profile_id, simulation_id
 ),
 
--- 5) Latest attempt per (profile, simulation)
+-- 5) Latest attempt per (profile, simulation) for completionPct
 latest_attempt_per_profile_sim AS (
   SELECT DISTINCT ON (profile_id, simulation_id)
          profile_id, simulation_id, attempt_id,
@@ -83,18 +81,29 @@ latest_attempt_per_profile_sim AS (
   ORDER BY profile_id, simulation_id, last_time DESC
 ),
 
--- 6) Activity by (profile, simulation) for status/chats
+-- 6) Activity by (profile, simulation) - lifetime data
 activity_by_profile_sim AS (
   SELECT
     profile_id,
     simulation_id,
     COUNT(DISTINCT chat_id) AS chats,
     BOOL_OR(passed)         AS any_passed
-  FROM filt
+  FROM filt_all
   GROUP BY profile_id, simulation_id
 ),
 
--- 7) Final rows: all practice sims, enriched with user's progress
+-- 7) Pass threshold (unchanged)
+sim_pass_pct AS (
+  SELECT s.id AS simulation_id,
+         CASE WHEN r.points > 0
+              THEN (r.pass_points::numeric / r.points::numeric) * 100.0
+              ELSE 70 END AS pass_pct
+  FROM simulations s
+  JOIN rubrics r ON r.id = s.rubric_id
+  WHERE s.practice_simulation = TRUE AND s.active = TRUE
+),
+
+-- 8) Final items
 rows AS (
   SELECT
     jsonb_build_object(
@@ -103,28 +112,42 @@ rows AS (
       'simulationTitle',       sm.simulation_title,
       'simulationDescription', sm.simulation_description,
       'simulationName',        sm.simulation_title,
-      'timeLimit',             NULL,                                  -- always null for practice
-      'numSessions',           sm.num_scenarios,                       -- mirror scenarios count
+      'timeLimit',             NULL,
+      'numSessions',           sm.num_scenarios,
+      /* LIFETIME highest score: best completed-only attempt (no COALESCE to 0) */
       'highestScore',          (
                                  SELECT ROUND(MAX(ap.avg_score_completed))::int
                                  FROM attempt_progress ap
-                                 WHERE ap.profile_id   = p_profile_id
+                                 WHERE ap.profile_id = p_profile_id
                                    AND ap.simulation_id = sm.simulation_id
                                ),
       'rubric_id',             sm.rubric_id::text,
       'color',                 spm.color,
       'icon',                  spm.icon,
-      'hasPassed',             COALESCE(aps.any_passed, false),
+      'hasPassed',             COALESCE((
+                                 SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                                 FROM attempt_progress ap
+                                 JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
+                                 WHERE ap.profile_id = p_profile_id AND ap.simulation_id = sm.simulation_id
+                                 GROUP BY spp.pass_pct
+                               ), false),
       'passRate',              CASE
                                  WHEN sm.rubric_points > 0
                                    THEN ROUND(100.0 * sm.rubric_pass_points::numeric / sm.rubric_points)::int
                                  ELSE NULL
                                END,
       'status',                CASE
-                                 WHEN COALESCE(aps.any_passed,false) THEN 'passed'
-                                 WHEN COALESCE(aps.chats,0) > 0      THEN 'in-progress'
+                                 WHEN COALESCE((
+                                        SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                                        FROM attempt_progress ap
+                                        JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
+                                        WHERE ap.profile_id = p_profile_id AND ap.simulation_id = sm.simulation_id
+                                        GROUP BY spp.pass_pct
+                                      ), false) THEN 'passed'
+                                 WHEN COALESCE(aps.chats, 0) > 0 THEN 'in-progress'
                                  ELSE 'not-started'
                                END,
+      /* keep completionPct tied to the latest attempt vs. scenario count */
       'completionPct',         COALESCE((
                                  SELECT ROUND(
                                           100.0 * lap.completed_root_scenarios::numeric
@@ -134,13 +157,18 @@ rows AS (
                                  WHERE lap.profile_id   = p_profile_id
                                    AND lap.simulation_id = sm.simulation_id
                                ), 0),
-
-      -- fields that made sense only for cohorts are omitted or null
       'passedCount',           NULL,
       'inProgressCount',       NULL,
       'notStartedCount',       NULL,
       'passPct',               NULL,
-      'cohortName',            NULL
+      'cohortName',            NULL,
+      'updatedAt',             sm.updated_at,
+      /* NEW: expose for ordering & UI helpers */
+      'lastActivityTs',        (
+                                 SELECT MAX(ap.last_time) FROM attempt_progress ap
+                                 WHERE ap.profile_id = p_profile_id AND ap.simulation_id = sm.simulation_id
+                               ),
+      'hasActivity',           (COALESCE(aps.chats,0) > 0)
     ) AS item
   FROM sim_meta sm
   LEFT JOIN sim_persona_meta spm
@@ -153,6 +181,18 @@ rows AS (
 SELECT jsonb_build_object(
          'mode',    'practice',
          'hasData', EXISTS(SELECT 1 FROM rows),
-         'items',   COALESCE((SELECT jsonb_agg(item ORDER BY (item->>'simulationTitle')) FROM rows), '[]'::jsonb)
+         'items',
+           COALESCE((
+             SELECT jsonb_agg(item
+               ORDER BY
+                 /* General first */
+                 ((item->>'simulationTitle') ILIKE 'general%') DESC,
+                 /* then most-recently practiced (lifetime activity) */
+                 (item->>'lastActivityTs')::timestamptz DESC NULLS LAST,
+                 /* fallback: title alpha */
+                 (item->>'simulationTitle')
+             )
+             FROM rows
+           ), '[]'::jsonb)
        );
 $$;

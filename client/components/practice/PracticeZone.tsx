@@ -104,9 +104,7 @@ export default function PracticeZone({
                 {...(typeof simulation.hasPassed === "boolean" && {
                   hasPassed: simulation.hasPassed,
                 })}
-                {...(typeof simulation.passRate === "number" && {
-                  passRate: simulation.passRate,
-                })}
+                // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
                 onStartSimulation={onStartSimulation}
                 loadingSimulation={loadingSimulation}
