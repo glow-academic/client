@@ -138,6 +138,7 @@ class Providers(_Base, table=True):
 class Rubrics(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
+        Index('rubrics_id_idx', 'id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -233,7 +234,8 @@ class ParameterItems(_Base, table=True):
 class Personas(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
-        PrimaryKeyConstraint('id', name='personas_pkey')
+        PrimaryKeyConstraint('id', name='personas_pkey'),
+        Index('personas_id_idx', 'id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -291,7 +293,8 @@ class Profiles(_Base, table=True):
 class Simulations(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulations_pkey')
+        PrimaryKeyConstraint('id', name='simulations_pkey'),
+        Index('simulations_id_active_idx', 'id', 'active')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -397,7 +400,8 @@ class ModelRuns(_Base, table=True):
 class Scenarios(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
-        PrimaryKeyConstraint('id', name='scenarios_pkey')
+        PrimaryKeyConstraint('id', name='scenarios_pkey'),
+        Index('scenarios_id_active_idx', 'id', 'active')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -425,6 +429,7 @@ class SimulationAttempts(_Base, table=True):
         ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
         Index('simulation_attempts_archived_idx', 'archived'),
+        Index('simulation_attempts_id_profile_archived_idx', 'id', 'profile_id', 'archived', 'infinite_mode'),
         Index('simulation_attempts_profile_sim_idx', 'profile_id', 'simulation_id')
     )
 

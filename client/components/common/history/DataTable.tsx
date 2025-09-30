@@ -84,8 +84,10 @@ export function DataTable<TData, TValue>({
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
-      // Hide search column by default since it's only used for internal filtering
       search: false,
+      profileId: false,
+      simulationId: false,
+      scenarios: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []

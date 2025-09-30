@@ -62,7 +62,7 @@ const columnMap = {
   actorId: "Agent/Persona",
   inputTokens: "Input Tokens",
   outputTokens: "Output Tokens",
-  profileName: "Person",
+  profileName: "Name",
   improvementRatePerDay: "Daily Improvement",
   mostImprovedPercent: "Most Improved",
   quickestPassMinutes: "Quickest Pass",
@@ -70,6 +70,9 @@ const columnMap = {
   timeSpentMinutes: "Time Spent",
   highestScoreAvg: "Highest Score",
   personaResponseSeconds: "Response Times",
+  simulationName: "Simulation",
+  numScenariosCompleted: "Scenarios",
+  personaNames: "Personas",
 };
 
 export interface DataTableViewOptionsProps<TData> {
@@ -102,7 +105,10 @@ export function DataTableViewOptions<TData>({
             (column) =>
               typeof column.accessorFn !== "undefined" &&
               column.getCanHide() &&
-              column.id !== "search" // Always hide search column
+              column.id !== "search" && // Always hide search column
+              column.id !== "profileId" && // Hide faceting columns
+              column.id !== "simulationId" &&
+              column.id !== "scenarios"
           )
           .map((column) => {
             return (

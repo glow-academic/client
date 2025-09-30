@@ -18,6 +18,7 @@ import * as React from "react";
 import { DataTable } from "./DataTable";
 import { DataTableColumnHeader } from "./DataTableColumnHeader";
 import { DataTableRowActions } from "./DataTableRowActions";
+import { HistorySkeleton } from "./HistorySkeleton";
 
 // New data structure for history items
 export interface HistoryDataItem {
@@ -583,7 +584,7 @@ export default function SimulationHistory({
   }, [data]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <HistorySkeleton rows={10} />;
   }
 
   return (

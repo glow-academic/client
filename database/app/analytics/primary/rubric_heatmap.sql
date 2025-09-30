@@ -10,51 +10,128 @@ CREATE OR REPLACE FUNCTION analytics_rubric_heatmap_fn(
   p_sim_filters  text[],
   p_profile_id   uuid
 ) RETURNS jsonb
-LANGUAGE sql STABLE AS $$
--- A. Tighten filters & avoid "now()" in the range
-WITH base AS MATERIALIZED (
-  SELECT chat_id, profile_id, profile_role, cohort_ids, profile_cohort_ids,
-         is_general, is_practice, is_archived, simulation_id
-  FROM analytics a
-  WHERE a.chat_created_at > p_start
-    AND a.chat_created_at < p_end                    -- ← drop GREATEST(..., now())
-    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
-    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
-    AND (p_sim_filters IS NULL OR cardinality(p_sim_filters) > 0)
-    AND (
-      p_sim_filters IS NULL OR (
-        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
-        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-        ('archived' = ANY (p_sim_filters) AND a.is_archived)
-      )
-    )
-    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
 ),
--- B. Pick latest grade per chat **without** joining `base` until the end
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+),
+
+/* Only the chats we care about, distinct */
+filtered_chats AS MATERIALIZED (
+  SELECT DISTINCT chat_id
+  FROM cohort_scoped
+  WHERE chat_id IS NOT NULL
+),
+
+/* -------- Latest grade per kept chat (no per-row EXISTS) -------- */
 latest_grade_per_chat AS MATERIALIZED (
   SELECT DISTINCT ON (scg.simulation_chat_id)
          scg.id,
          scg.simulation_chat_id AS chat_id,
          scg.rubric_id
   FROM simulation_chat_grades scg
+  JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
   ORDER BY scg.simulation_chat_id, scg.created_at DESC
 ),
--- C. Pre-aggregate once, with `float8`, and materialize
+
+/* -------- Aggregate feedback into per-(chat,rubric,group) pct -------- */
 per_grade_group AS MATERIALIZED (
   SELECT
     lg.chat_id,
     sg.rubric_id,
     sg.id   AS group_id,
     sg.name AS group_name,
+    /* Sum totals divided by sum of points per group for that grade */
     (100.0 * SUM(scf.total)::float8 / NULLIF(SUM(s.points)::float8, 0))::float8 AS pct
   FROM latest_grade_per_chat lg
   JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
   JOIN standards s          ON s.id = scf.standard_id
   JOIN standard_groups sg   ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
-  WHERE EXISTS (SELECT 1 FROM base b WHERE b.chat_id = lg.chat_id)  -- semi-join to filtered chats
   GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name
 ),
--- D. Drop the O(G²) `pairs` CTE; self-join on (rubric, chat)
+
+/* -------- Correlations per rubric (upper triangle) -------- */
 corrs AS MATERIALIZED (
   SELECT
     a.rubric_id,
@@ -66,20 +143,22 @@ corrs AS MATERIALIZED (
   JOIN per_grade_group b
     ON b.rubric_id = a.rubric_id
    AND b.chat_id   = a.chat_id
-   AND b.group_id >= a.group_id   -- upper triangle incl. diagonal
+   AND b.group_id >= a.group_id
   GROUP BY a.rubric_id, a.group_id, b.group_id
 ),
--- E. Build `groups` from what actually appears
+
+/* -------- Groups actually present -------- */
 groups AS MATERIALIZED (
-  SELECT DISTINCT
-    pgg.rubric_id, sg.id, sg.name, sg.short_name
+  SELECT DISTINCT pgg.rubric_id, sg.id, sg.name, sg.short_name
   FROM per_grade_group pgg
   JOIN standard_groups sg ON sg.id = pgg.group_id
 ),
-valid_rubrics AS (
+valid_rubrics AS MATERIALIZED (
   SELECT DISTINCT rubric_id FROM groups
 ),
-enriched AS (
+
+/* -------- Enrich with p-values, strength, color -------- */
+enriched AS MATERIALIZED (
   SELECT
     c.rubric_id, c.g1, c.g2, c.n,
     CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
@@ -111,8 +190,9 @@ enriched AS (
     END AS color
   FROM corrs c
 ),
--- Build matrix per rubric as a JSON object
-per_rubric_matrix AS (
+
+/* -------- Build matrices per rubric -------- */
+per_rubric_matrix AS MATERIALIZED (
   SELECT
     g1.rubric_id,
     ROW_NUMBER() OVER (PARTITION BY g1.rubric_id ORDER BY g1.name) - 1 AS row_idx,
@@ -158,7 +238,7 @@ insights AS (
       ELSE (
         SELECT 'Top pair: "' || g1.name || '" vs "' || g2.name ||
                '" r=' || TO_CHAR(e2.r, 'FM0.00') ||
-               ' (n=' || e2.n || ')' AS txt
+               ' (n=' || e2.n || ')'
         FROM enriched e2
         JOIN groups g1 ON g1.id = e2.g1 AND g1.rubric_id = e2.rubric_id
         JOIN groups g2 ON g2.id = e2.g2 AND g2.rubric_id = e2.rubric_id
@@ -176,24 +256,22 @@ has_data AS (
   FROM enriched
   GROUP BY rubric_id
 ),
--- Pack per-rubric objects
 per_rubric AS (
   SELECT
     r.rubric_id,
-    COALESCE(m.matrix, '[]'::jsonb)          AS matrix,
+    COALESCE(m.matrix, '[]'::jsonb)           AS matrix,
     COALESCE(sg.standard_groups, '[]'::jsonb) AS standard_groups,
     (SELECT txt FROM insights i WHERE i.rubric_id = r.rubric_id) AS insights,
     (SELECT h.has_data FROM has_data h WHERE h.rubric_id = r.rubric_id) AS has_data
   FROM valid_rubrics r
   LEFT JOIN matrix_json m ON m.rubric_id = r.rubric_id
-  LEFT JOIN sg_json sg ON sg.rubric_id = r.rubric_id
+  LEFT JOIN sg_json      sg ON sg.rubric_id = r.rubric_id
 ),
 valid_rubric_ids AS (
   SELECT jsonb_agg(rubric_id::text ORDER BY rubric_id::text) AS payload
   FROM valid_rubrics
 )
 SELECT jsonb_build_object(
-  -- Multi-rubric payload
   'matrices', COALESCE(
     (
       SELECT jsonb_agg(jsonb_build_object(
@@ -207,6 +285,6 @@ SELECT jsonb_build_object(
     ),
     '[]'::jsonb
   ),
-  'validRubricIds',    COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::jsonb)
+  'validRubricIds', COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::jsonb)
 );
 $$;

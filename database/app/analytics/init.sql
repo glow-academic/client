@@ -288,6 +288,69 @@ CREATE INDEX IF NOT EXISTS simulation_attempts_profile_sim_idx
 CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
   ON simulation_attempts (archived);
 
+-- Additional Performance Indexes for Analytics Functions
+-- On the materialized view "analytics"
+CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
+  ON analytics (attempt_created_at DESC);
+
+CREATE INDEX IF NOT EXISTS analytics_profile_role_idx
+  ON analytics (profile_role);
+
+CREATE INDEX IF NOT EXISTS analytics_profile_id_idx
+  ON analytics (profile_id);
+
+CREATE INDEX IF NOT EXISTS analytics_is_practice_is_archived_is_general_idx
+  ON analytics (is_practice, is_archived, is_general);
+
+-- ARRAY overlap checks: cohort_ids && p_cohort_ids, profile_cohort_ids && p_cohort_ids
+CREATE INDEX IF NOT EXISTS analytics_cohort_ids_gin
+  ON analytics USING GIN (cohort_ids);
+
+CREATE INDEX IF NOT EXISTS analytics_profile_cohort_ids_gin
+  ON analytics USING GIN (profile_cohort_ids);
+
+-- Common joins
+CREATE INDEX IF NOT EXISTS simulation_attempts_id_profile_archived_idx
+  ON simulation_attempts (id, profile_id, archived, infinite_mode);
+
+CREATE INDEX IF NOT EXISTS simulations_id_active_idx
+  ON simulations (id, active);
+
+CREATE INDEX IF NOT EXISTS rubrics_id_idx ON rubrics (id);
+CREATE INDEX IF NOT EXISTS scenarios_id_active_idx ON scenarios (id, active);
+CREATE INDEX IF NOT EXISTS personas_id_idx ON personas (id);
+
+-- Optimized indexes for analytics functions performance
+-- Profile + time range lookups for fast filtering
+CREATE INDEX IF NOT EXISTS analytics_profile_time_idx
+  ON analytics (profile_id, attempt_created_at DESC);
+
+-- Partial indexes for hot-path queries (general/practice splits)
+CREATE INDEX IF NOT EXISTS analytics_general_unarch_idx
+  ON analytics (attempt_created_at, profile_id)
+  WHERE is_general = TRUE AND is_archived = FALSE;
+
+CREATE INDEX IF NOT EXISTS analytics_practice_unarch_idx
+  ON analytics (attempt_created_at, profile_id)
+  WHERE is_practice = TRUE AND is_archived = FALSE;
+
+-- Rubric heatmap optimization indexes
+-- Chat grades with creation time ordering
+CREATE INDEX IF NOT EXISTS scg_chat_created_idx
+  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+
+-- Feedback lookup by grade
+CREATE INDEX IF NOT EXISTS scf_grade_idx
+  ON simulation_chat_feedbacks (simulation_chat_grade_id);
+
+-- Standards mapping
+CREATE INDEX IF NOT EXISTS standards_group_idx
+  ON standards (standard_group_id);
+
+-- Group ↔ rubric
+CREATE INDEX IF NOT EXISTS standard_groups_rubric_idx
+  ON standard_groups (rubric_id);
+
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$
 BEGIN
