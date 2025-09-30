@@ -2,14 +2,12 @@ import uuid
 from datetime import datetime, time, timezone
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, REAL, BigInteger, Boolean, Column, DateTime,
-                        Double, Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, String, Text, Time, Uuid, text)
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
+                        Enum, ForeignKeyConstraint, Integer,
+                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time, REAL)
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field, Relationship, SQLModel, Index
 from sqlalchemy.orm import Mapped
-from sqlmodel import Field, Index, Relationship, SQLModel
-
-
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
@@ -545,6 +543,7 @@ class SimulationChatGrades(_Base, table=True):
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
         ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey'),
+        Index('scg_chat_created_desc_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_created_idx', 'simulation_chat_id', 'created_at'),
         Index('simulation_chat_grades_chat_id_created_at_idx', 'simulation_chat_id', 'created_at'),
         Index('simulation_chat_grades_chat_id_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
