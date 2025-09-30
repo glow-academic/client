@@ -173,6 +173,8 @@ export function ReportsDataTable({
       taCohortIds: false,
       personaResponseTimes: false,
       stagnationRate: false,
+      scenario_id: false,
+      simulation_id: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
