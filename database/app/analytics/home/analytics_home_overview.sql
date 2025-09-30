@@ -123,13 +123,16 @@ user_sim_status AS (
     b.avg_pct_over_expected,
     sp.pass_pct,
     (b.avg_pct_over_expected >= sp.pass_pct) AS passed,
-    -- count any activity for in-progress / not-started
-    COALESCE(abps.chats,0) AS chats
+    -- count completed chats for in-progress / not-started
+    COALESCE(abps.completed_chats,0) AS chats_completed
   FROM best_user_sim b
   JOIN sim_pass_pct sp ON sp.simulation_id = b.simulation_id
   LEFT JOIN (
-    SELECT profile_id, simulation_id, COUNT(DISTINCT chat_id) AS chats
-    FROM filt GROUP BY profile_id, simulation_id
+    -- OLD UI only considered progress once at least one chat was completed
+    SELECT profile_id, simulation_id,
+           COUNT(DISTINCT chat_id) FILTER (WHERE completed) AS completed_chats
+    FROM filt
+    GROUP BY profile_id, simulation_id
   ) abps ON abps.profile_id = b.profile_id AND abps.simulation_id = b.simulation_id
 ),
 
@@ -139,6 +142,16 @@ cohort_sim AS (
   FROM cohorts c
   JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
   WHERE (p_cohort_ids IS NULL OR c.id = ANY(p_cohort_ids))
+),
+
+-- ---------------- Simulation display order from cohort arrays
+sim_display_order AS (
+  SELECT
+    cs.simulation_id,
+    MIN(array_position(c.simulation_ids, cs.simulation_id)) AS order_idx
+  FROM cohort_sim cs
+  JOIN cohorts c ON c.id = cs.cohort_id
+  GROUP BY cs.simulation_id
 ),
 
 -- ---------------- Cohort membership exploded & filtered by cohorts/roles
@@ -198,7 +211,7 @@ ta_rows AS (
       'status',                (
                                  SELECT CASE
                                            WHEN COALESCE(uss.passed, false) THEN 'passed'
-                                           WHEN COALESCE(uss.chats, 0) > 0 THEN 'in-progress'
+                                           WHEN COALESCE(uss.chats_completed, 0) > 0 THEN 'in-progress'
                                            ELSE 'not-started'
                                          END
                                  FROM user_sim_status uss
@@ -261,7 +274,7 @@ inst_counts AS (
     cs.simulation_id,
     COUNT(DISTINCT cm.profile_id) AS total_members,
     COUNT(DISTINCT CASE WHEN uss.passed THEN cm.profile_id END) AS passed_count,
-    COUNT(DISTINCT CASE WHEN (NOT uss.passed) AND uss.chats > 0 THEN cm.profile_id END) AS in_progress_count
+    COUNT(DISTINCT CASE WHEN (NOT uss.passed) AND uss.chats_completed > 0 THEN cm.profile_id END) AS in_progress_count
   FROM cohort_sim cs
   LEFT JOIN cohort_membership cm
     ON cm.cohort_id = cs.cohort_id AND cm.simulation_id = cs.simulation_id
@@ -312,19 +325,16 @@ inst_rows AS (
       'color',                 spm.color,
       'icon',                  spm.icon,
       'hasPassed',             CASE
-                                 WHEN COALESCE(ic.total_members,0) > 0
-                                      AND COALESCE(ic.passed_count,0) = ic.total_members
-                                 THEN true ELSE false END,
+                                 WHEN COALESCE(ic.total_members,0) = 0 THEN true            -- NEW: empty cohort = complete
+                                 WHEN COALESCE(ic.passed_count,0) = COALESCE(ic.total_members,0) THEN true
+                                 ELSE false END,
       'passRate',              CASE WHEN s.rubric_points > 0
                                     THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
                                     ELSE NULL END,
       'status',                CASE
-                                 WHEN COALESCE(ic.total_members,0) > 0
-                                      AND COALESCE(ic.passed_count,0) = ic.total_members
-                                   THEN 'passed'
-                                 WHEN COALESCE(ic.passed_count,0) > 0
-                                      OR COALESCE(ic.in_progress_count,0) > 0
-                                   THEN 'in-progress'
+                                 WHEN COALESCE(ic.total_members,0) = 0 THEN 'passed'        -- NEW: empty cohort shows "Complete"
+                                 WHEN COALESCE(ic.passed_count,0) = COALESCE(ic.total_members,0) THEN 'passed'
+                                 WHEN COALESCE(ic.passed_count,0) > 0 OR COALESCE(ic.in_progress_count,0) > 0 THEN 'in-progress'
                                  ELSE 'not-started'
                                END,
       'completionPct',         CASE
@@ -343,12 +353,23 @@ inst_rows AS (
       'passPct',               NULL,
       /* NEW: single-line & pretty variants */
       'cohortName',            icn.cohort_name,
-      'cohortNames',           icn.cohort_names
-    ) AS item
+      'cohortNames',           icn.cohort_names,
+      'orderIndex',            sdo.order_idx          -- <—— expose it
+    ) AS item,
+    -- carry keys out for ORDER BY in jsonb_agg
+    CASE
+      WHEN COALESCE(ic.total_members,0) = 0 THEN true
+      WHEN COALESCE(ic.passed_count,0) = COALESCE(ic.total_members,0) THEN true
+      ELSE false
+    END AS has_passed_bool,
+    icn.cohort_name AS sort_cohort_name,
+    sdo.order_idx   AS sort_order_idx,
+    s.simulation_title AS sort_title
   FROM sim_meta s
   JOIN inst_counts ic            ON ic.simulation_id = s.simulation_id
   LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
   LEFT JOIN inst_cohort_names icn ON icn.simulation_id = s.simulation_id
+  LEFT JOIN sim_display_order sdo ON sdo.simulation_id = s.simulation_id
   WHERE p_profile_id IS NULL
     AND s.sim_kind_ok
 ),
@@ -356,7 +377,17 @@ inst_payload AS (
   SELECT jsonb_build_object(
            'mode',    'instructional',
            'hasData', EXISTS(SELECT 1 FROM inst_rows),
-           'items',   COALESCE((SELECT jsonb_agg(item ORDER BY (item->>'simulationTitle')) FROM inst_rows), '[]'::jsonb)
+           'items',
+             COALESCE((
+               SELECT jsonb_agg(item
+                 ORDER BY
+                   has_passed_bool ASC,          -- incomplete first
+                   sort_cohort_name NULLS LAST,  -- by cohort
+                   sort_order_idx NULLS LAST,    -- by cohort array order
+                   sort_title                    -- fallback by title
+               )
+               FROM inst_rows
+             ), '[]'::jsonb)
          ) AS payload
   WHERE p_profile_id IS NULL
 )

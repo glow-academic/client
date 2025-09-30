@@ -239,35 +239,71 @@ export default function Home() {
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
-    return [...simulationItems].sort((a, b) => {
-      if (!a || !b) return 0;
-      // First sort by completion status (non-completed first)
-      // Keep behavior identical to OLD: completed (hasPassed=true) at the end
-      if (!!a.hasPassed !== !!b.hasPassed) {
-        return a.hasPassed ? 1 : -1;
-      }
+    const items = [...(simulationItems ?? [])]; // copy, avoid in-place mutation
 
-      // Then sort by cohort name (fallback to simulation title)
-      return (a.cohortName || a.simulationTitle || "").localeCompare(
-        b.cohortName || b.simulationTitle || ""
-      );
+    return items.sort((a, b) => {
+      if (!a || !b) return 0;
+
+      // 1) incomplete first (hasPassed false first)
+      if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
+
+      // 2) cohort subtitle (single line) alpha
+      const ca = (a?.cohortName || "").toLowerCase();
+      const cb = (b?.cohortName || "").toLowerCase();
+      if (ca !== cb) return ca < cb ? -1 : 1;
+
+      // 3) NEW: respect cohort.simulation_ids order when available
+      const ai =
+        typeof a?.orderIndex === "number"
+          ? a.orderIndex
+          : Number.POSITIVE_INFINITY;
+      const bi =
+        typeof b?.orderIndex === "number"
+          ? b.orderIndex
+          : Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+
+      // 4) title alpha (fallback)
+      const ta = (a?.simulationTitle || "").toLowerCase();
+      const tb = (b?.simulationTitle || "").toLowerCase();
+      if (ta !== tb) return ta < tb ? -1 : 1;
+
+      return 0;
     });
   }, [simulationItems]);
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    return [...simulationItems].sort((a, b) => {
-      if (!a || !b) return 0;
-      // First sort by completion status (non-completed first)
-      // Keep behavior identical to OLD: completed (hasPassed=true) at the end
-      if (!!a.hasPassed !== !!b.hasPassed) {
-        return a.hasPassed ? 1 : -1;
-      }
+    const items = [...(simulationItems ?? [])]; // copy, avoid in-place mutation
 
-      // Then sort by cohort name (fallback to simulation title)
-      return (a.cohortName || a.simulationTitle || "").localeCompare(
-        b.cohortName || b.simulationTitle || ""
-      );
+    return items.sort((a, b) => {
+      if (!a || !b) return 0;
+
+      // 1) incomplete first (hasPassed false first)
+      if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
+
+      // 2) cohort subtitle (single line) alpha
+      const ca = (a?.cohortName || "").toLowerCase();
+      const cb = (b?.cohortName || "").toLowerCase();
+      if (ca !== cb) return ca < cb ? -1 : 1;
+
+      // 3) NEW: respect cohort.simulation_ids order when available
+      const ai =
+        typeof a?.orderIndex === "number"
+          ? a.orderIndex
+          : Number.POSITIVE_INFINITY;
+      const bi =
+        typeof b?.orderIndex === "number"
+          ? b.orderIndex
+          : Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+
+      // 4) title alpha (fallback)
+      const ta = (a?.simulationTitle || "").toLowerCase();
+      const tb = (b?.simulationTitle || "").toLowerCase();
+      if (ta !== tb) return ta < tb ? -1 : 1;
+
+      return 0;
     });
   }, [simulationItems]);
 

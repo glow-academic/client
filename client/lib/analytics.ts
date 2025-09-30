@@ -591,6 +591,7 @@ export const HomeSimulationItemSchema = z.object({
   passRate: z.number().nullable().optional(),
   cohortName: z.string().nullable().optional(),
   cohortNames: z.string().nullable().optional(),
+  orderIndex: z.number().nullable().optional(),
   status: z.enum(["not-started", "in-progress", "passed"]),
   completionPct: z.number(),
   passedCount: z.number().nullable().optional(),
