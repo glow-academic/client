@@ -239,31 +239,33 @@ export default function Home() {
 
   // Sort simulations by completion status and then by cohort
   const sortedSimulations = useMemo(() => {
-    const items = [...(simulationItems ?? [])]; // copy, avoid in-place mutation
-
+    if (simulationItems[0]?.viewMode === "instructional") {
+      // Server already sorted with: passed → cohortName → cohort order → title
+      return simulationItems;
+    }
+    // TA: keep orderIndex before cohortName
+    const items = [...(simulationItems ?? [])];
     return items.sort((a, b) => {
       if (!a || !b) return 0;
 
       // 1) incomplete first (hasPassed false first)
       if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
 
-      // 2) cohort subtitle (single line) alpha
+      // 2) use cohort array order when available (especially TA)
+      const ai = Number.isFinite(a?.orderIndex)
+        ? a.orderIndex!
+        : Number.POSITIVE_INFINITY;
+      const bi = Number.isFinite(b?.orderIndex)
+        ? b.orderIndex!
+        : Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+
+      // 3) cohort name alpha as a softer signal
       const ca = (a?.cohortName || "").toLowerCase();
       const cb = (b?.cohortName || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
-      // 3) NEW: respect cohort.simulation_ids order when available
-      const ai =
-        typeof a?.orderIndex === "number"
-          ? a.orderIndex
-          : Number.POSITIVE_INFINITY;
-      const bi =
-        typeof b?.orderIndex === "number"
-          ? b.orderIndex
-          : Number.POSITIVE_INFINITY;
-      if (ai !== bi) return ai - bi;
-
-      // 4) title alpha (fallback)
+      // 4) title alpha
       const ta = (a?.simulationTitle || "").toLowerCase();
       const tb = (b?.simulationTitle || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;
@@ -274,31 +276,33 @@ export default function Home() {
 
   // Sort progress data the same way as the cards (non-completed first, then by cohort)
   const sortedProgressData = useMemo(() => {
-    const items = [...(simulationItems ?? [])]; // copy, avoid in-place mutation
-
+    if (simulationItems[0]?.viewMode === "instructional") {
+      // Server already sorted with: passed → cohortName → cohort order → title
+      return simulationItems;
+    }
+    // TA: keep orderIndex before cohortName
+    const items = [...(simulationItems ?? [])];
     return items.sort((a, b) => {
       if (!a || !b) return 0;
 
       // 1) incomplete first (hasPassed false first)
       if (!!a?.hasPassed !== !!b?.hasPassed) return a?.hasPassed ? 1 : -1;
 
-      // 2) cohort subtitle (single line) alpha
+      // 2) use cohort array order when available (especially TA)
+      const ai = Number.isFinite(a?.orderIndex)
+        ? a.orderIndex!
+        : Number.POSITIVE_INFINITY;
+      const bi = Number.isFinite(b?.orderIndex)
+        ? b.orderIndex!
+        : Number.POSITIVE_INFINITY;
+      if (ai !== bi) return ai - bi;
+
+      // 3) cohort name alpha as a softer signal
       const ca = (a?.cohortName || "").toLowerCase();
       const cb = (b?.cohortName || "").toLowerCase();
       if (ca !== cb) return ca < cb ? -1 : 1;
 
-      // 3) NEW: respect cohort.simulation_ids order when available
-      const ai =
-        typeof a?.orderIndex === "number"
-          ? a.orderIndex
-          : Number.POSITIVE_INFINITY;
-      const bi =
-        typeof b?.orderIndex === "number"
-          ? b.orderIndex
-          : Number.POSITIVE_INFINITY;
-      if (ai !== bi) return ai - bi;
-
-      // 4) title alpha (fallback)
+      // 4) title alpha
       const ta = (a?.simulationTitle || "").toLowerCase();
       const tb = (b?.simulationTitle || "").toLowerCase();
       if (ta !== tb) return ta < tb ? -1 : 1;

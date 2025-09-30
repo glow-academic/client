@@ -154,6 +154,23 @@ sim_display_order AS (
   GROUP BY cs.simulation_id
 ),
 
+-- ---------------- TA primary cohort (deterministic by array position)
+ta_primary_cohort AS (
+  SELECT
+    c.id          AS cohort_id,
+    c.title       AS cohort_title,
+    sids.simulation_id,
+    array_position(c.simulation_ids, sids.simulation_id) AS order_idx,
+    ROW_NUMBER() OVER (
+      PARTITION BY sids.simulation_id
+      ORDER BY array_position(c.simulation_ids, sids.simulation_id)
+    ) AS rn
+  FROM cohorts c
+  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
+  WHERE p_profile_id = ANY (c.profile_ids)
+    AND (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
+),
+
 -- ---------------- Cohort membership exploded & filtered by cohorts/roles
 cohort_membership AS (
   SELECT
@@ -231,9 +248,9 @@ ta_rows AS (
                                     THEN ROUND(100.0 * s.rubric_pass_points::numeric / s.rubric_points)::int
                                     ELSE NULL END,
       'cohortName',            (
-                                 SELECT (ARRAY_AGG(DISTINCT c.cohort_title ORDER BY c.cohort_title))[1]
-                                 FROM cohort_membership c
-                                 WHERE c.simulation_id = s.simulation_id AND c.profile_id = p_profile_id
+                                 SELECT tpc.cohort_title
+                                 FROM ta_primary_cohort tpc
+                                 WHERE tpc.simulation_id = s.simulation_id AND tpc.rn = 1
                                ),
       'cohortNames',           (
                                  SELECT CASE
@@ -249,6 +266,11 @@ ta_rows AS (
                                    FROM cohort_membership c
                                    WHERE c.simulation_id = s.simulation_id AND c.profile_id = p_profile_id
                                  ) x
+                               ),
+      'orderIndex',            (
+                                 SELECT tpc.order_idx
+                                 FROM ta_primary_cohort tpc
+                                 WHERE tpc.simulation_id = s.simulation_id AND tpc.rn = 1
                                )
     ) AS item
   FROM sim_meta s
