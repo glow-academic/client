@@ -21,17 +21,18 @@ CREATE OR REPLACE FUNCTION analytics_skill_performance_fn(
   p_profile_id   uuid
 ) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
-WITH filt AS (
-  SELECT *
+WITH
+-- 0) Filtered analytics: narrow columns, index-friendly end bound
+filt AS MATERIALIZED (
+  SELECT chat_id, simulation_id, cohort_ids, profile_cohort_ids, profile_role,
+         is_general, is_practice, is_archived, profile_id, chat_created_at
   FROM analytics a
   WHERE a.chat_created_at > p_start
-    AND a.chat_created_at < GREATEST(p_end, now())
+    AND a.chat_created_at < p_end
     AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
-    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
-    AND (
-      p_sim_filters IS NULL
-      OR cardinality(p_sim_filters) > 0
-    )
+    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles)
+         OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+    AND (p_sim_filters IS NULL OR cardinality(p_sim_filters) > 0)
     AND (
       p_sim_filters IS NULL OR (
         ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
@@ -41,8 +42,9 @@ WITH filt AS (
     )
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
--- latest grade per (chat, rubric)
-latest_grade AS (
+
+-- 1) Latest grade per (chat, rubric); no join to filt yet
+latest_grade AS MATERIALIZED (
   SELECT DISTINCT ON (scg.simulation_chat_id, scg.rubric_id)
          scg.id                 AS grade_id,
          scg.simulation_chat_id AS chat_id,
@@ -52,67 +54,41 @@ latest_grade AS (
   ORDER BY scg.simulation_chat_id, scg.rubric_id, scg.created_at DESC
 ),
 
--- feedback rows joined to latest grade + filtered analytics
-fb AS (
+-- 2) Per-grade × group totals (score/points) restricted to filtered chats.
+--    Compute pct here to avoid a second pass. Use float8 for corr/avg performance.
+per_grade_group AS MATERIALIZED (
   SELECT
-    scf.id              AS feedback_id,
-    scf.standard_id,
     lg.rubric_id,
-    lg.grade_id,
-    lg.chat_id,
-    f.simulation_id,
-    scf.total::numeric  AS earned
-  FROM latest_grade lg
-  JOIN filt f ON f.chat_id = lg.chat_id
-  JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.grade_id
-),
-
-st AS (
-  SELECT
-    s.id              AS standard_id,
-    s.points::numeric AS points,
     sg.id             AS group_id,
     sg.name           AS group_name,
-    sg.rubric_id
-  FROM standards s
-  JOIN standard_groups sg ON sg.id = s.standard_group_id
+    f.simulation_id,
+    lg.grade_id       AS grade_id,
+    SUM(scf.total)::float8              AS score,
+    SUM(s.points)::float8               AS points,
+    CASE WHEN SUM(s.points) > 0
+         THEN 100.0 * SUM(scf.total)::float8 / SUM(s.points)::float8
+         ELSE NULL
+    END                                 AS pct
+  FROM latest_grade lg
+  JOIN filt f
+    ON f.chat_id = lg.chat_id
+  JOIN simulation_chat_feedbacks scf
+    ON scf.simulation_chat_grade_id = lg.grade_id
+  JOIN standards s
+    ON s.id = scf.standard_id
+  JOIN standard_groups sg
+    ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
+  GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id
 ),
 
--- 1) per grade × group totals
-per_grade_group AS (
-  SELECT
-    fb.rubric_id,
-    st.group_id,
-    st.group_name,
-    fb.simulation_id,
-    fb.grade_id,
-    SUM(fb.earned) AS score,
-    SUM(st.points) AS points
-  FROM fb
-  JOIN st ON st.standard_id = fb.standard_id AND st.rubric_id = fb.rubric_id
-  GROUP BY fb.rubric_id, st.group_id, st.group_name, fb.simulation_id, fb.grade_id
-),
-
--- 2) per-grade percentage
-per_grade_pct AS (
-  SELECT
-    rubric_id, group_id, group_name, simulation_id, grade_id,
-    CASE WHEN points > 0 THEN 100.0 * score / points ELSE NULL END AS pct
+-- 3) Radar rows: avg pct per (rubric, group)
+radar_rows AS MATERIALIZED (
+  SELECT rubric_id, group_name, AVG(pct)::float8 AS avg_pct
   FROM per_grade_group
+  GROUP BY rubric_id, group_name
 ),
 
--- 3) pre-aggregate for radar (avg pct per rubric × group)
-radar_rows AS (
-  SELECT
-    pg.rubric_id,
-    pg.group_name,
-    AVG(pp.pct) AS avg_pct
-  FROM per_grade_group pg
-  JOIN per_grade_pct pp USING (rubric_id, group_id, group_name, simulation_id, grade_id)
-  GROUP BY pg.rubric_id, pg.group_name
-),
-
-radar_per_rubric AS (
+radar_per_rubric AS MATERIALIZED (
   SELECT
     rubric_id,
     jsonb_agg(
@@ -127,22 +103,21 @@ radar_per_rubric AS (
   GROUP BY rubric_id
 ),
 
--- 4) pre-aggregate facts by (rubric, group, simulation)
-group_stats AS (
+-- 4) Facts by (rubric, group, simulation)
+group_stats AS MATERIALIZED (
   SELECT
-    pg.rubric_id,
-    pg.group_id,
-    pg.group_name,
-    pg.simulation_id,
-    SUM(pg.score)  AS score_sum,
-    SUM(pg.points) AS points_sum,
-    ROUND(AVG(pp.pct))::int AS avg_pct
-  FROM per_grade_group pg
-  JOIN per_grade_pct pp USING (rubric_id, group_id, group_name, simulation_id, grade_id)
-  GROUP BY pg.rubric_id, pg.group_id, pg.group_name, pg.simulation_id
+    rubric_id,
+    group_id,
+    group_name,
+    simulation_id,
+    SUM(score)  AS score_sum,
+    SUM(points) AS points_sum,
+    ROUND(AVG(pct))::int AS avg_pct
+  FROM per_grade_group
+  GROUP BY rubric_id, group_id, group_name, simulation_id
 ),
 
-facts_per_rubric AS (
+facts_per_rubric AS MATERIALIZED (
   SELECT
     rubric_id,
     jsonb_agg(
@@ -159,13 +134,16 @@ facts_per_rubric AS (
   FROM group_stats
   GROUP BY rubric_id
 ),
-valid_rubrics AS (
+
+valid_rubrics AS MATERIALIZED (
   SELECT DISTINCT rubric_id FROM per_grade_group
 ),
+
 valid_rubric_ids AS (
   SELECT jsonb_agg(rubric_id::text ORDER BY rubric_id::text) AS payload
   FROM valid_rubrics
 ),
+
 packages AS (
   SELECT jsonb_agg(
            jsonb_build_object(
@@ -179,6 +157,7 @@ packages AS (
   LEFT JOIN radar_per_rubric rpr ON rpr.rubric_id = vr.rubric_id
   LEFT JOIN facts_per_rubric fpr ON fpr.rubric_id = vr.rubric_id
 )
+
 SELECT jsonb_build_object(
   'packages',       COALESCE((SELECT payload FROM packages), '[]'::jsonb),
   'validRubricIds', COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::jsonb)

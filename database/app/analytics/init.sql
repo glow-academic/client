@@ -210,6 +210,50 @@ CREATE INDEX IF NOT EXISTS analytics_profile_cohort_ids_gin
 CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
   ON analytics (attempt_created_at);
 
+-- Performance indexes for analytics functions
+-- Latest grade per chat fast path
+CREATE INDEX IF NOT EXISTS scg_chat_created_idx
+  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+
+-- Feedback lookup by grade
+CREATE INDEX IF NOT EXISTS scf_grade_idx
+  ON simulation_chat_feedbacks (simulation_chat_grade_id);
+
+-- Standards mapping
+CREATE INDEX IF NOT EXISTS standards_group_idx
+  ON standards (standard_group_id);
+
+-- Group ↔ rubric
+CREATE INDEX IF NOT EXISTS standard_groups_rubric_idx
+  ON standard_groups (id, rubric_id);
+
+-- Analytics 'where' clause helpers
+CREATE INDEX IF NOT EXISTS analytics_chat_created_idx
+  ON analytics (chat_created_at);
+
+CREATE INDEX IF NOT EXISTS analytics_chat_id_idx
+  ON analytics (chat_id);
+
+-- Additional analytics filtering indexes
+CREATE INDEX IF NOT EXISTS analytics_simulation_idx
+  ON analytics (simulation_id);
+
+-- GIN for array overlaps (cohort filters)
+CREATE INDEX IF NOT EXISTS analytics_cohorts_gin
+  ON analytics USING GIN (cohort_ids);
+
+CREATE INDEX IF NOT EXISTS analytics_profile_cohorts_gin
+  ON analytics USING GIN (profile_cohort_ids);
+
+-- Additional indexes for skill performance optimization
+-- Latest grade per (chat, rubric) fast path
+CREATE INDEX IF NOT EXISTS scg_chat_rubric_created_idx
+  ON simulation_chat_grades (simulation_chat_id, rubric_id, created_at DESC);
+
+-- Group id + rubric (we filter sg.rubric_id = lg.rubric_id)
+CREATE INDEX IF NOT EXISTS standard_groups_id_rubric_idx
+  ON standard_groups (id, rubric_id);
+
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$
 BEGIN

@@ -11,17 +11,16 @@ CREATE OR REPLACE FUNCTION analytics_rubric_heatmap_fn(
   p_profile_id   uuid
 ) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
-WITH base AS (
-  SELECT *
+-- A. Tighten filters & avoid "now()" in the range
+WITH base AS MATERIALIZED (
+  SELECT chat_id, profile_id, profile_role, cohort_ids, profile_cohort_ids,
+         is_general, is_practice, is_archived, simulation_id
   FROM analytics a
   WHERE a.chat_created_at > p_start
-    AND a.chat_created_at < GREATEST(p_end, now())
+    AND a.chat_created_at < p_end                    -- ← drop GREATEST(..., now())
     AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
     AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
-    AND (
-      p_sim_filters IS NULL
-      OR cardinality(p_sim_filters) > 0
-    )
+    AND (p_sim_filters IS NULL OR cardinality(p_sim_filters) > 0)
     AND (
       p_sim_filters IS NULL OR (
         ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
@@ -31,83 +30,51 @@ WITH base AS (
     )
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
--- Latest grade chosen per chat (whatever rubric it used)
-latest_grade_per_chat AS (
+-- B. Pick latest grade per chat **without** joining `base` until the end
+latest_grade_per_chat AS MATERIALIZED (
   SELECT DISTINCT ON (scg.simulation_chat_id)
          scg.id,
-         scg.simulation_chat_id,
-         scg.rubric_id,
-         scg.created_at
+         scg.simulation_chat_id AS chat_id,
+         scg.rubric_id
   FROM simulation_chat_grades scg
-  JOIN base b ON b.chat_id = scg.simulation_chat_id
   ORDER BY scg.simulation_chat_id, scg.created_at DESC
 ),
-fb AS (
+-- C. Pre-aggregate once, with `float8`, and materialize
+per_grade_group AS MATERIALIZED (
   SELECT
-    b.profile_id,
-    lg.simulation_chat_id AS chat_id,
-    sg.id   AS standard_group_id,
-    sg.name AS standard_group_name,
-    sg.short_name,
-    sg.rubric_id,
-    scf.total::numeric AS earned,           -- per standard row
-    st.points::numeric AS possible
-  FROM base b
-  JOIN latest_grade_per_chat lg
-    ON lg.simulation_chat_id = b.chat_id
-  JOIN simulation_chat_feedbacks scf
-    ON scf.simulation_chat_grade_id = lg.id
-  JOIN standards st
-    ON st.id = scf.standard_id
-  JOIN standard_groups sg
-    ON sg.id = st.standard_group_id
-),
--- per grade × (rubric, group) percentage
-per_grade_group AS (
-  SELECT
-    lg.simulation_chat_id AS chat_id,
+    lg.chat_id,
     sg.rubric_id,
     sg.id   AS group_id,
     sg.name AS group_name,
-    100.0 * SUM(scf.total)::numeric / NULLIF(SUM(s.points)::numeric, 0) AS pct
+    (100.0 * SUM(scf.total)::float8 / NULLIF(SUM(s.points)::float8, 0))::float8 AS pct
   FROM latest_grade_per_chat lg
-  JOIN simulation_chat_feedbacks scf
-    ON scf.simulation_chat_grade_id = lg.id
-  JOIN standards s
-    ON s.id = scf.standard_id
-  JOIN standard_groups sg
-    ON sg.id = s.standard_group_id
-   AND sg.rubric_id = lg.rubric_id
-  GROUP BY lg.simulation_chat_id, sg.rubric_id, sg.id, sg.name
+  JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
+  JOIN standards s          ON s.id = scf.standard_id
+  JOIN standard_groups sg   ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
+  WHERE EXISTS (SELECT 1 FROM base b WHERE b.chat_id = lg.chat_id)  -- semi-join to filtered chats
+  GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name
 ),
--- only chats that have both groups present for a pair
-pairs AS (
-  SELECT g1.rubric_id, g1.group_id AS g1, g2.group_id AS g2
-  FROM (SELECT DISTINCT rubric_id, group_id FROM per_grade_group) g1
-  JOIN (SELECT DISTINCT rubric_id, group_id FROM per_grade_group) g2
-    ON g2.rubric_id = g1.rubric_id
-),
-corrs AS (
+-- D. Drop the O(G²) `pairs` CTE; self-join on (rubric, chat)
+corrs AS MATERIALIZED (
   SELECT
-    p.rubric_id, p.g1, p.g2,
-    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL)::int AS n,
+    a.rubric_id,
+    a.group_id AS g1,
+    b.group_id AS g2,
+    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL) AS n,
     corr(a.pct, b.pct) AS r
-  FROM pairs p
-  JOIN per_grade_group a ON a.rubric_id = p.rubric_id AND a.group_id = p.g1
-  JOIN per_grade_group b ON b.rubric_id = p.rubric_id AND b.group_id = p.g2
-   AND a.chat_id = b.chat_id                    -- correlate within the same grade/session
-  GROUP BY p.rubric_id, p.g1, p.g2
+  FROM per_grade_group a
+  JOIN per_grade_group b
+    ON b.rubric_id = a.rubric_id
+   AND b.chat_id   = a.chat_id
+   AND b.group_id >= a.group_id   -- upper triangle incl. diagonal
+  GROUP BY a.rubric_id, a.group_id, b.group_id
 ),
--- Only groups that actually appear for a rubric
-groups AS (
+-- E. Build `groups` from what actually appears
+groups AS MATERIALIZED (
   SELECT DISTINCT
-    pgg.rubric_id,
-    sg.id,
-    sg.name,
-    sg.short_name
+    pgg.rubric_id, sg.id, sg.name, sg.short_name
   FROM per_grade_group pgg
   JOIN standard_groups sg ON sg.id = pgg.group_id
-  ORDER BY pgg.rubric_id, sg.name
 ),
 valid_rubrics AS (
   SELECT DISTINCT rubric_id FROM groups
@@ -117,7 +84,7 @@ enriched AS (
     c.rubric_id, c.g1, c.g2, c.n,
     CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
     CASE WHEN c.r = c.r AND c.n >= 3
-         THEN analytics_p_value_from_r_n(c.r, c.n)
+         THEN analytics_p_value_from_r_n(c.r, c.n::integer)
          ELSE NULL
     END AS p_value,
     CASE
