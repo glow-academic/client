@@ -423,7 +423,9 @@ class SimulationAttempts(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
         ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_attempts_pkey')
+        PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
+        Index('simulation_attempts_archived_idx', 'archived'),
+        Index('simulation_attempts_profile_sim_idx', 'profile_id', 'simulation_id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -518,7 +520,8 @@ class SimulationChats(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['attempt_id'], ['simulation_attempts.id'], ondelete='CASCADE', name='simulation_chats_attempt_id_fkey'),
         ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='simulation_chats_scenario_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_chats_pkey')
+        PrimaryKeyConstraint('id', name='simulation_chats_pkey'),
+        Index('simulation_chats_id_created_idx', 'id', 'created_at')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -548,6 +551,7 @@ class SimulationChatGrades(_Base, table=True):
         Index('simulation_chat_grades_chat_id_created_at_idx', 'simulation_chat_id', 'created_at'),
         Index('simulation_chat_grades_chat_id_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
         Index('simulation_chat_grades_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
+        Index('simulation_chat_grades_latest_idx', 'simulation_chat_id', 'created_at'),
         Index('simulation_chat_grades_rubric_id_idx', 'rubric_id'),
         Index('simulation_chat_grades_simulation_chat_id_idx', 'simulation_chat_id')
     )
@@ -570,7 +574,8 @@ class SimulationMessages(_Base, table=True):
     __tablename__ = 'simulation_messages'
     __table_args__ = (
         ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_messages_chat_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_messages_pkey')
+        PrimaryKeyConstraint('id', name='simulation_messages_pkey'),
+        Index('simulation_messages_chat_created_type_idx', 'chat_id', 'created_at', 'type')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))

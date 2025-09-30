@@ -412,6 +412,7 @@ export default function Practice() {
                       personaColors: item.personaColors,
                       score: item.score,
                       simulation_id: item.simulation_id,
+                      scenario_titles: item.scenario_titles,
                       scenario_ids: item.scenario_ids,
                       isArchived: item.isArchived,
                       showView: item.showView,

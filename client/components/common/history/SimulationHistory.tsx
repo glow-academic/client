@@ -34,6 +34,7 @@ export interface HistoryDataItem {
   score: number | null; // nullable
   simulation_id: string;
   scenario_ids: string[];
+  scenario_titles: string[] | undefined;
   isArchived: boolean;
   showView: boolean;
   showContinue: boolean;
@@ -132,24 +133,19 @@ export default function SimulationHistory({
   const scenarioOptions = React.useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    const uniqueScenarios = data.reduce(
-      (acc, item) => {
-        if (item?.scenario_ids && Array.isArray(item.scenario_ids)) {
-          item.scenario_ids.forEach((scenarioId) => {
-            if (scenarioId && !acc.find((s) => s.value === scenarioId)) {
-              acc.push({
-                value: scenarioId,
-                label: `Scenario ${scenarioId}`, // You might want to fetch scenario names
-              });
-            }
-          });
-        }
-        return acc;
-      },
-      [] as { value: string; label: string }[]
-    );
-
-    return uniqueScenarios;
+    const map = new Map<string, string>(); // id -> title
+    for (const item of data) {
+      const ids = item.scenario_ids || [];
+      const titles = item.scenario_titles || [];
+      ids.forEach((id, i) => {
+        const title = titles[i] || `Scenario ${id}`;
+        if (!map.has(id)) map.set(id, title);
+      });
+    }
+    return Array.from(map.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }));
   }, [data]);
 
   // Create column definitions that work with the new data structure
@@ -185,6 +181,40 @@ export default function SimulationHistory({
           }
 
           return false;
+        },
+      },
+      // Hidden faceting column for Name (IDs)
+      {
+        accessorKey: "profileId",
+        id: "profileId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+      },
+      // Hidden faceting column for Simulation (IDs)
+      {
+        accessorKey: "simulation_id",
+        id: "simulationId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+      },
+      // Hidden faceting column for Scenarios (IDs)
+      {
+        id: "scenarios",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        // Return the array of scenario IDs for this row
+        accessorFn: (row: HistoryDataItem) => row.scenario_ids ?? [],
+        // Let filtering check membership
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenarios") as string[]) ?? [];
+          // keep row if it contains ANY selected scenario
+          return value.some((v) => rowIds.includes(v));
         },
       },
       // Date column
@@ -242,15 +272,15 @@ export default function SimulationHistory({
       ...(!allSameProfile
         ? [
             {
-              id: "profileId", // <--- add this
               accessorKey: "profileName",
+              id: "profileName",
               header: ({
                 column,
               }: {
                 column: Column<HistoryDataItem, unknown>;
               }) => <DataTableColumnHeader column={column} title="Name" />,
               cell: ({ row }: { row: Row<HistoryDataItem> }) => {
-                const profileName = row.getValue("profileName") as string;
+                const profileName = row.original.profileName;
                 return (
                   <div className="flex items-center">
                     <span>{profileName}</span>
@@ -259,10 +289,10 @@ export default function SimulationHistory({
               },
               filterFn: (
                 row: Row<HistoryDataItem>,
-                id: string,
+                _id: string,
                 value: string[]
               ) => {
-                return value.includes(row.getValue(id) as string);
+                return value.includes(row.original.profileId);
               },
               enableSorting: true,
             },
@@ -270,13 +300,13 @@ export default function SimulationHistory({
         : []),
       // Simulation column
       {
-        id: "simulationId", // <--- add this
         accessorKey: "simulationName",
+        id: "simulationName",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
-          const simulationName = row.getValue("simulationName") as string;
+          const simulationName = row.original.simulationName;
           const isInfinite = row.original.infiniteMode;
 
           return (
@@ -301,8 +331,8 @@ export default function SimulationHistory({
       },
       // Scenarios completion column
       {
-        id: "scenarios", // <--- add this
         accessorKey: "numScenariosCompleted",
+        id: "numScenariosCompleted",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),

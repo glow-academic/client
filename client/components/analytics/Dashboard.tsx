@@ -1581,6 +1581,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                 infiniteMode: item.infiniteMode,
                 personaNames: item.personaNames,
                 personaColors: item.personaColors,
+                scenario_titles: item.scenario_titles,
                 score: item.score,
                 simulation_id: item.simulation_id,
                 scenario_ids: item.scenario_ids,

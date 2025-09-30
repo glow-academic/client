@@ -141,11 +141,23 @@ export function DataTableFacetedFilter<TData, TValue>({
                     >
                       {option.label}
                     </span>
-                    {facets?.get(option.value) && (
-                      <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
-                        {facets.get(option.value)}
-                      </span>
-                    )}
+                    {(() => {
+                      if (!facets) return null;
+                      let cnt = 0;
+                      // facets is Map<any, number>
+                      facets.forEach((n, k) => {
+                        if (Array.isArray(k)) {
+                          if (k.includes(option.value)) cnt += n; // row counted if it has this scenario
+                        } else if (k === option.value) {
+                          cnt += n;
+                        }
+                      });
+                      return cnt > 0 ? (
+                        <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                          {cnt}
+                        </span>
+                      ) : null;
+                    })()}
                   </CommandItem>
                 );
               })}

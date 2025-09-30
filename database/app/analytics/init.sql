@@ -254,6 +254,40 @@ CREATE INDEX IF NOT EXISTS scg_chat_rubric_created_idx
 CREATE INDEX IF NOT EXISTS standard_groups_id_rubric_idx
   ON standard_groups (id, rubric_id);
 
+-- Performance optimization indexes for analytics functions
+-- High-impact indexes on analytics matview for fast queries
+CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
+  ON analytics (attempt_created_at);
+
+CREATE INDEX IF NOT EXISTS analytics_role_time_idx
+  ON analytics (profile_role, attempt_created_at);
+
+-- Partial indexes for common filter patterns
+CREATE INDEX IF NOT EXISTS analytics_is_general_true_idx
+  ON analytics (attempt_created_at) WHERE is_general = true;
+
+CREATE INDEX IF NOT EXISTS analytics_is_practice_true_idx
+  ON analytics (attempt_created_at) WHERE is_practice = true;
+
+CREATE INDEX IF NOT EXISTS analytics_is_archived_true_idx
+  ON analytics (attempt_created_at) WHERE is_archived = true;
+
+-- Supporting table indexes for analytics functions
+CREATE INDEX IF NOT EXISTS simulation_chat_grades_latest_idx
+  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS simulation_messages_chat_created_type_idx
+  ON simulation_messages (chat_id, created_at, type);
+
+CREATE INDEX IF NOT EXISTS simulation_chats_id_created_idx
+  ON simulation_chats (id, created_at);
+
+CREATE INDEX IF NOT EXISTS simulation_attempts_profile_sim_idx
+  ON simulation_attempts (profile_id, simulation_id);
+
+CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
+  ON simulation_attempts (archived);
+
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$
 BEGIN
