@@ -44,12 +44,7 @@ import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 
-// Type for the enhanced attempt data
-interface EnhancedAttempt {
-  id: string;
-  archived: boolean;
-  [key: string]: unknown;
-}
+// Legacy interface - no longer used
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -96,7 +91,7 @@ export function DataTable<TData, TValue>({
     []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "createdAt", desc: true }, // Default to descending order by date
+    { id: "date", desc: true }, // Default to descending order by date
   ]);
 
   // State for selected attempts when showArchive is true
@@ -121,11 +116,22 @@ export function DataTable<TData, TValue>({
     []
   );
 
+  // Helper functions to normalize id and archived fields
+  const getRowId = (item: unknown) => {
+    const obj = item as Record<string, unknown>;
+    return String(obj["id"] ?? obj["attemptId"] ?? "");
+  };
+
+  const getArchived = (item: unknown) => {
+    const obj = item as Record<string, unknown>;
+    return Boolean(obj["archived"] ?? obj["isArchived"] ?? false);
+  };
+
   // Handle select all
   const _handleSelectAll = React.useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedAttempts(data.map((item) => (item as EnhancedAttempt).id));
+        setSelectedAttempts(data.map((item) => String(getRowId(item))));
       } else {
         setSelectedAttempts([]);
       }
@@ -136,17 +142,13 @@ export function DataTable<TData, TValue>({
   // Calculate archive/unarchive counts
   const { archiveCount, unarchiveCount } = React.useMemo(() => {
     const archiveCount = selectedAttempts.filter((attemptId) => {
-      const item = data.find(
-        (item) => (item as unknown as EnhancedAttempt).id === attemptId
-      );
-      return item && !(item as unknown as EnhancedAttempt).archived;
+      const item = data.find((it) => String(getRowId(it)) === attemptId);
+      return item && !getArchived(item);
     }).length;
 
     const unarchiveCount = selectedAttempts.filter((attemptId) => {
-      const item = data.find(
-        (item) => (item as unknown as EnhancedAttempt).id === attemptId
-      );
-      return item && (item as unknown as EnhancedAttempt).archived;
+      const item = data.find((it) => String(getRowId(it)) === attemptId);
+      return item && getArchived(item);
     }).length;
 
     return { archiveCount, unarchiveCount };
@@ -163,12 +165,10 @@ export function DataTable<TData, TValue>({
     if (archiveAction === null) return;
 
     const attemptsToUpdate = selectedAttempts.filter((attemptId) => {
-      const item = data.find(
-        (item) => (item as unknown as EnhancedAttempt).id === attemptId
-      );
+      const item = data.find((it) => String(getRowId(it)) === attemptId);
       if (!item) return false;
 
-      const isCurrentlyArchived = (item as unknown as EnhancedAttempt).archived;
+      const isCurrentlyArchived = getArchived(item);
       return archiveAction ? !isCurrentlyArchived : isCurrentlyArchived;
     });
 
@@ -252,21 +252,17 @@ export function DataTable<TData, TValue>({
           className="translate-y-[2px]"
         />
       ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={selectedAttempts.includes(
-            (row.original as unknown as EnhancedAttempt).id
-          )}
-          onCheckedChange={(value) =>
-            _handleAttemptSelect(
-              (row.original as unknown as EnhancedAttempt).id,
-              !!value
-            )
-          }
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      ),
+      cell: ({ row }) => {
+        const rid = String(getRowId(row.original));
+        return (
+          <Checkbox
+            checked={selectedAttempts.includes(rid)}
+            onCheckedChange={(value) => _handleAttemptSelect(rid, !!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        );
+      },
       enableSorting: false,
       enableHiding: false,
     };

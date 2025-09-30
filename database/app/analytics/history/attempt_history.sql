@@ -169,7 +169,7 @@ SELECT COALESCE(
   jsonb_agg(
     jsonb_build_object(
       'attemptId',             fr.attempt_id::text,
-      'date',                  to_char(fr.attempt_date, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
+      'date',                  fr.attempt_date,
       'profileId',             fr.profile_id::text,
       'profileName',           fr.profile_name,
       'simulationName',        fr.simulation_name,

@@ -194,12 +194,18 @@ export default function SimulationHistory({
           <DataTableColumnHeader column={column} title="Date" />
         ),
         cell: ({ row }) => {
-          const date = row.getValue("date") as Date;
-          if (!date || !(date instanceof Date)) return null;
+          const raw = row.getValue("date") as string; // <-- it's a string
+          const date = new Date(raw); // <-- parse it
 
-          const day = date.getDate().toString().padStart(2, "0");
-          const month = (date.getMonth() + 1).toString().padStart(2, "0");
-          const year = date.getFullYear().toString().slice(-2);
+          if (Number.isNaN(date.getTime())) {
+            return (
+              <div className="text-sm text-muted-foreground">Invalid Date</div>
+            );
+          }
+
+          const day = String(date.getDate()).padStart(2, "0");
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const year = String(date.getFullYear()).slice(-2);
           const time = date.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
@@ -230,7 +236,7 @@ export default function SimulationHistory({
           );
         },
         enableSorting: true,
-        sortDescFirst: true, // Default to descending order
+        sortDescFirst: true,
       },
       // User Name column - only show if not all attempts have the same profile
       ...(!allSameProfile
@@ -287,7 +293,7 @@ export default function SimulationHistory({
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
 
-          const simulationId = row.getValue("simulation_id") as string;
+          const simulationId = row.original.simulation_id; // <-- use original
           return value.includes(simulationId);
         },
       },
@@ -298,9 +304,8 @@ export default function SimulationHistory({
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
-          const completedCount = row.getValue(
-            "numScenariosCompleted"
-          ) as number;
+          // Use original for display so we don't show a ratio:
+          const completedCount = row.original.numScenariosCompleted;
           const totalCount = row.original.numScenarios;
           const isInfinite = row.original.infiniteMode;
 
@@ -320,20 +325,19 @@ export default function SimulationHistory({
           );
         },
         enableSorting: true,
+        // Keep accessorFn solely to provide a sortable value (ratio)
         accessorFn: (row: HistoryDataItem) => {
-          const totalCount = row.numScenarios;
-          if (totalCount === null || totalCount === 0) return 0;
-          return row.numScenariosCompleted / totalCount;
+          const total = row.numScenarios;
+          if (total === null || total === 0) return 0;
+          return row.numScenariosCompleted / total;
         },
+        // scenario filtering should read from original
         filterFn: (row, _id, value) => {
           if (!value || value.length === 0) return true;
-
-          const scenarioIds = row.original.scenario_ids;
-          const hasSelectedScenario = value.some((scenarioId: string) =>
+          const scenarioIds = row.original.scenario_ids || [];
+          return value.some((scenarioId: string) =>
             scenarioIds.includes(scenarioId)
           );
-
-          return hasSelectedScenario;
         },
       },
       // Personas tested column
