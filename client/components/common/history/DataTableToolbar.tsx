@@ -52,23 +52,29 @@ export function DataTableToolbar<TData>({
   const simulationIdColumn = table.getColumn("simulationId");
   const scenariosColumn = table.getColumn("scenarios");
 
+  // Helper functions to normalize id and archived fields
+  const getRowId = (o: unknown) => {
+    const obj = o as Record<string, unknown>;
+    return String(obj["id"] ?? obj["attemptId"] ?? "");
+  };
+  const getArchived = (o: unknown) => {
+    const obj = o as Record<string, unknown>;
+    return Boolean(obj["archived"] ?? obj["isArchived"] ?? false);
+  };
+
   // Calculate archive/unarchive counts
   const archiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find(
-        (r) => (r.original as unknown as { id: string }).id === attemptId
-      );
-    return row && !(row.original as unknown as { archived: boolean }).archived;
+      .rows.find((r) => getRowId(r.original) === attemptId);
+    return row && !getArchived(row.original);
   }).length;
 
   const unarchiveCount = selectedAttempts.filter((attemptId) => {
     const row = table
       .getRowModel()
-      .rows.find(
-        (r) => (r.original as unknown as { id: string }).id === attemptId
-      );
-    return row && (row.original as unknown as { archived: boolean }).archived;
+      .rows.find((r) => getRowId(r.original) === attemptId);
+    return row && getArchived(row.original);
   }).length;
 
   return (

@@ -242,6 +242,7 @@ export default function SimulationHistory({
       ...(!allSameProfile
         ? [
             {
+              id: "profileId", // <--- add this
               accessorKey: "profileName",
               header: ({
                 column,
@@ -269,6 +270,7 @@ export default function SimulationHistory({
         : []),
       // Simulation column
       {
+        id: "simulationId", // <--- add this
         accessorKey: "simulationName",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Simulation" />
@@ -299,6 +301,7 @@ export default function SimulationHistory({
       },
       // Scenarios completion column
       {
+        id: "scenarios", // <--- add this
         accessorKey: "numScenariosCompleted",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Scenarios" />
@@ -408,16 +411,13 @@ export default function SimulationHistory({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Score" />
         ),
-        accessorFn: (row: HistoryDataItem) => {
-          return row.score || 0;
-        },
+        // keep value as-is; do NOT coalesce to 0
+        accessorFn: (row: HistoryDataItem) => row.score, // <-- no `|| 0`
         cell: ({ row }) => {
-          const score = row.getValue("score") as number | null;
-
+          const score = row.original.score; // <-- read original for display
           if (score === null) {
             return <div className="text-muted-foreground">Not graded</div>;
           }
-
           return (
             <div className="text-center">
               <Badge
@@ -436,20 +436,13 @@ export default function SimulationHistory({
           );
         },
         enableSorting: true,
+        // Use original for filter buckets too so null stays null
         filterFn: (row, _, value) => {
-          const score = row.getValue("score") as number | null;
-
-          if (score === null) {
-            return value.includes("not-graded");
-          }
-
-          if (score >= 80) {
-            return value.includes("excellent");
-          } else if (score >= 70) {
-            return value.includes("good");
-          } else {
-            return value.includes("needs-improvement");
-          }
+          const score = (row.original as HistoryDataItem).score;
+          if (score === null) return value.includes("not-graded");
+          if (score >= 80) return value.includes("excellent");
+          if (score >= 70) return value.includes("good");
+          return value.includes("needs-improvement");
         },
       },
       // Actions column
