@@ -12,31 +12,101 @@ CREATE OR REPLACE FUNCTION analytics_persona_performance_fn(
   p_profile_id   uuid
 ) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
-WITH filt AS (
-  SELECT *
-  FROM analytics a
-  WHERE a.chat_created_at > p_start
-    AND a.chat_created_at < GREATEST(p_end, now())
-    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
-    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
-    AND (
-      p_sim_filters IS NULL
-      OR cardinality(p_sim_filters) > 0
-    )
-    AND (
-      p_sim_filters IS NULL OR (
-        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
-        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-        ('archived' = ANY (p_sim_filters) AND a.is_archived)
-      )
-    )
-    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
 ),
--- Only personas that actually appear in the filtered rows
-persona_ids AS (
-  SELECT DISTINCT f.persona_id
-  FROM filt f
-  WHERE f.persona_id IS NOT NULL
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filtered_chats AS MATERIALIZED (
+  SELECT DISTINCT chat_id
+  FROM cohort_scoped
+  WHERE chat_id IS NOT NULL
+),
+persona_ids AS MATERIALIZED (
+  SELECT DISTINCT persona_id
+  FROM cohort_scoped
+  WHERE persona_id IS NOT NULL
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
 ),
 pers AS (
   SELECT pi.persona_id, p.name, COALESCE(p.color, '#3b82f6') AS color
@@ -72,9 +142,9 @@ grade_events AS (
     scg.created_at        AS grade_at,
     (CASE WHEN r.points > 0 THEN (scg.score::numeric / r.points::numeric) * 100.0 END) AS pct
   FROM simulation_chat_grades scg
+  JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
   JOIN analytics b ON b.chat_id = scg.simulation_chat_id
   JOIN rubrics r   ON r.id = scg.rubric_id
-  WHERE b.chat_id IN (SELECT chat_id FROM filt)  -- keep same filters
 ),
 trend AS (
   SELECT
