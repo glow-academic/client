@@ -99,71 +99,67 @@ cohort_scoped AS MATERIALIZED (
 filt AS (
   SELECT * FROM cohort_scoped
 ),
-per_attempt AS (
+-- Calculate overall user metrics (matching Python logic)
+user_metrics AS (
   SELECT
-    attempt_id,
-    MIN(attempt_created_at) AS attempt_created_at,
-    COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
-    COUNT(*) FILTER (WHERE completed) AS completed_chats,
-    COUNT(*) AS chats_in_attempt,
-    SUM(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS sum_grade_percent
+    -- Overall average score (from attempt scores, not individual chat scores)
+    AVG(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS avg_score,
+    -- Total time spent in minutes
+    SUM(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0) 
+      FILTER (WHERE chat_completed_at IS NOT NULL) AS total_minutes,
+    -- Total number of chats (matching Python: len(user_chats))
+    COUNT(*) AS total_sessions,
+    -- Count of completed chats
+    COUNT(*) FILTER (WHERE chat_completed_at IS NOT NULL) AS completed_chats
   FROM filt
-  GROUP BY attempt_id
 ),
-attempt_norm AS (
+user_efficiency AS (
   SELECT
-    attempt_id,
-    attempt_created_at,
-    GREATEST(expected_from_sim, chats_in_attempt) AS expected,
-    completed_chats,
-    CASE
-      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 AND completed_chats > 0
-        THEN (sum_grade_percent / GREATEST(expected_from_sim, chats_in_attempt))
-      ELSE NULL
-    END AS norm
-  FROM per_attempt
+    avg_score,
+    total_minutes,
+    total_sessions,
+    -- Calculate average minutes per session (matching Python logic)
+    CASE 
+      WHEN total_sessions > 0 THEN total_minutes / total_sessions
+      ELSE total_minutes
+    END AS avg_minutes_per_session,
+    -- Calculate session efficiency using Python formula
+    GREATEST(0.0, LEAST(100.0, 
+      avg_score * (1.0 - LEAST(1.0, 
+        CASE 
+          WHEN total_sessions > 0 THEN total_minutes / total_sessions
+          ELSE total_minutes
+        END / 120.0
+      ))
+    )) AS session_efficiency
+  FROM user_metrics
 ),
-chat_durations AS (
-  SELECT
-    attempt_id,
-    SUM(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)))
-      FILTER (WHERE chat_completed_at IS NOT NULL) AS total_secs,
-    COUNT(*) FILTER (WHERE chat_completed_at IS NOT NULL) AS completed_cnt
-  FROM filt
-  GROUP BY attempt_id
-),
+-- For daily breakdown, we'll use the overall efficiency for each day
 by_day AS (
   SELECT
-    to_char(an.attempt_created_at, 'YYYY-MM-DD') AS date,
-    -- avgScore over attempts that started that day
-    AVG(an.norm)::float AS avg_score,
-    -- average minutes per session that day:
-    COALESCE(SUM(cd.total_secs),0) / GREATEST(SUM(cd.completed_cnt),1) / 60.0 AS avg_minutes,
-    COUNT(*)::int AS count
-  FROM attempt_norm an
-  LEFT JOIN chat_durations cd USING (attempt_id)
-  GROUP BY 1
+    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+    ROUND(ue.session_efficiency)::int AS value,
+    COUNT(DISTINCT attempt_id)::int AS count
+  FROM filt f
+  CROSS JOIN user_efficiency ue
+  GROUP BY 1, ue.session_efficiency
 ),
 cur AS (
   SELECT 
-    ROUND(GREATEST(0, LEAST(100, AVG(an.norm) * (1 - LEAST(1, COALESCE(SUM(cd.total_secs),0) / GREATEST(SUM(cd.completed_cnt),1) / 60.0 / 120.0)))))::int AS current_value,
-    COUNT(*) > 0 AS has_data
-  FROM attempt_norm an
-  LEFT JOIN chat_durations cd USING (attempt_id)
-  WHERE an.norm IS NOT NULL
+    ROUND(session_efficiency)::int AS current_value,
+    total_sessions > 0 AS has_data
+  FROM user_efficiency
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    f.profile_id::text,
-           'date',         to_char(an.attempt_created_at,'YYYY-MM-DD'),
-           'value',        ROUND(GREATEST(0, LEAST(100, an.norm * (1 - LEAST(1, COALESCE(cd.total_secs,0) / GREATEST(cd.completed_cnt,1) / 60.0 / 120.0)))))::int,
+           'date',         to_char(f.attempt_created_at,'YYYY-MM-DD'),
+           'value',        ROUND(ue.session_efficiency)::int,
            'simulationId', f.simulation_id::text,
            'scenarioId',   f.scenario_id::text
-         ) ORDER BY f.profile_id, an.attempt_created_at) AS payload
-  FROM attempt_norm an
-  JOIN filt f ON f.attempt_id = an.attempt_id
-  LEFT JOIN chat_durations cd ON cd.attempt_id = an.attempt_id
-  WHERE an.norm IS NOT NULL
+         ) ORDER BY f.profile_id, f.attempt_created_at) AS payload
+  FROM filt f
+  CROSS JOIN user_efficiency ue
 )
 SELECT jsonb_build_object(
   'hasData',    COALESCE((SELECT has_data FROM cur), false),
@@ -171,7 +167,7 @@ SELECT jsonb_build_object(
   'trendData',  COALESCE((
                   SELECT jsonb_agg(jsonb_build_object(
                     'date',  date,
-                    'value', ROUND(GREATEST(0, LEAST(100, avg_score * (1 - LEAST(1, avg_minutes/120.0)))))::int,
+                    'value', value,
                     'count', count
                   ) ORDER BY date)
                   FROM by_day), '[]'::jsonb),
