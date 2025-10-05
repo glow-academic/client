@@ -117,7 +117,7 @@ chart AS (
              'personaResponseTimes', r.value,
              'sessionEfficiency',    e.value,
              'stagnationRate',       g.value,
-             'timeSpent',            CASE WHEN ts.value IS NOT NULL THEN ts.value / 60.0 ELSE NULL END,
+             'timeSpent',            ts.value,
              'totalAttempts',        t.value
            )
            ORDER BY s.d

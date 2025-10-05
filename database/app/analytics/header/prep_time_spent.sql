@@ -102,14 +102,14 @@ filt AS (
 by_day AS (
   SELECT
     to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
-    ROUND(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0))::int AS value,
+    ROUND(sum(LEAST(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0, 30.0)))::int AS value,
     count(*)::int AS count
   FROM filt
   WHERE chat_completed_at IS NOT NULL
   GROUP BY 1
 ),
 cur AS (
-  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0))::int, 0) AS current_value,
+  SELECT COALESCE(round(sum(LEAST(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0, 30.0)))::int, 0) AS current_value,
          count(*) > 0 AS has_data
   FROM filt
   WHERE chat_completed_at IS NOT NULL
@@ -130,7 +130,7 @@ data_points AS (
       attempt_id,
       simulation_id,
       scenario_id,
-      SUM(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0) as total_minutes
+      SUM(LEAST(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0, 30.0)) as total_minutes
     FROM filt
     WHERE chat_completed_at IS NOT NULL
     GROUP BY profile_id, date_trunc('day', chat_created_at), attempt_id, simulation_id, scenario_id

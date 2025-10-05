@@ -236,6 +236,13 @@ cohort_rows AS (
              'name',               cohort_name,
              'passRate',           ROUND(
                CASE 
+                 -- For individual profile, pass rate is either 0% or 100%
+                 WHEN (SELECT profile_id FROM params) IS NOT NULL THEN
+                   CASE 
+                     WHEN passed_students > 0 THEN 100.0
+                     ELSE 0.0
+                   END
+                 -- For cohort view, use percentage calculation
                  WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::numeric
                  ELSE 0
                END::numeric, 2

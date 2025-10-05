@@ -244,7 +244,7 @@ export default function Growth({
                         : id === "personaResponseTimes"
                           ? `${Math.round(value)}s`
                           : id === "timeSpent"
-                            ? `${Math.round(value)}h`
+                            ? `${Math.round(value)}m`
                             : `${Math.round(value)}`;
 
                     return [formattedValue, metric?.name ?? id];

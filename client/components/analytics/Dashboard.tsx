@@ -123,8 +123,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
       cohortIds: selectedCohortIds,
       roles: selectedRoles,
       simulationFilters,
+      profileId,
     }),
-    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]
+    [
+      startDate,
+      endDate,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+      profileId,
+    ]
   );
 
   // Stable React Query options to prevent unnecessary refetches
@@ -535,8 +543,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
     );
 
     return {
-      totalTimeSpent: Number.isFinite(current) ? Math.round(current) : 0,
-      timeSpentTrend: resp.trendData ?? [],
+      totalTimeSpent: Number.isFinite(current) ? Math.round(current * 60) : 0, // Convert minutes to seconds
+      timeSpentTrend: (resp.trendData ?? []).map((trend) => ({
+        ...trend,
+        value: Math.round(trend.value * 60), // Convert trend data from minutes to seconds
+      })),
       hasDataAvailable: !!resp.hasData && points.length > 0,
     };
   })();
