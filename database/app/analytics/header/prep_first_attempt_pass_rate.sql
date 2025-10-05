@@ -34,9 +34,9 @@ want AS (
   FROM params
 ),
 
-/* -------- Find earliest attempt per (profile, scenario) overall -------- */
+/* -------- Find earliest attempt per simulation for the specific user (Python approach) -------- */
 earliest_attempt_all_time AS MATERIALIZED (
-  SELECT DISTINCT ON (a.profile_id, a.scenario_id)
+  SELECT DISTINCT ON (a.profile_id, a.simulation_id)
          a.attempt_id, a.profile_id, a.simulation_id, a.scenario_id, a.attempt_created_at
   FROM analytics a
   CROSS JOIN params pr
@@ -53,7 +53,7 @@ earliest_attempt_all_time AS MATERIALIZED (
   )
   AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
   AND (cardinality(pr.cohort_ids) = 0 OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
-  ORDER BY a.profile_id, a.scenario_id, a.attempt_created_at
+  ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
 ),
 
 /* -------- Restrict to window for counting/trends -------- */
@@ -91,28 +91,25 @@ first_pass AS (
 by_day AS (
   SELECT
     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-    (100.0 * avg((passed)::int))::float AS value,
+    (100.0 * avg(COALESCE((passed)::int, 0)))::float AS value,
     count(*)::int AS count
   FROM first_pass
-  WHERE passed IS NOT NULL
   GROUP BY 1
 ),
 cur AS (
-  SELECT round(100.0 * avg((passed)::int))::int AS current_value,
+  SELECT round(100.0 * avg(COALESCE((passed)::int, 0)))::int AS current_value,
          count(*) > 0                             AS has_data
   FROM first_pass
-  WHERE passed IS NOT NULL
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    fp.profile_id::text,
            'date',         to_char(fp.attempt_created_at,'YYYY-MM-DD'),
-           'value',        (fp.passed)::int,
+           'value',        COALESCE((fp.passed)::int, 0),
            'simulationId', fp.simulation_id::text,
            'scenarioId',   fp.scenario_id::text
          ) ORDER BY fp.profile_id, fp.attempt_created_at) AS payload
   FROM first_pass fp
-  WHERE fp.passed IS NOT NULL
 )
 SELECT jsonb_build_object(
   'hasData',    COALESCE((SELECT has_data FROM cur), false),
