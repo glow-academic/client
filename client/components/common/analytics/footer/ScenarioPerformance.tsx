@@ -42,6 +42,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   Cell,
   Legend,
@@ -81,7 +82,41 @@ function iconFor(paramName: string, itemName: string) {
   if (p.includes("region")) return "🌍";
   // per-item easter eggs:
   if (/pass/i.test(itemName)) return "✅";
-  return "•";
+  return ""; // was "•"
+}
+
+function CustomPieTooltip({
+  active,
+  payload,
+  getElement,
+}: {
+  active?: boolean;
+  payload?: TooltipProps<number, string>["payload"];
+  getElement: (name: string) => AttributeElement | undefined;
+}) {
+  if (!active || !payload || !payload.length) return null;
+
+  // For Pie, the first payload item corresponds to the hovered slice
+  const item = payload[0];
+  const name = String(item?.name ?? "");
+  const el = getElement(name);
+  if (!el) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">
+        {el.icon ? <span className="mr-1">{el.icon}</span> : null}
+        {el.displayName}
+      </div>
+      <div className="mt-1 text-xs space-y-1">
+        <div>Usage: {el.percentage}%</div>
+        <div>Scenarios: {el.count}</div>
+        <div>Avg Score: {el.avgScore}%</div>
+        <div>Completion: {el.completionRate}%</div>
+        <div>Attempts: {el.totalAttempts}</div>
+      </div>
+    </div>
+  );
 }
 
 type Parameter = {
@@ -245,6 +280,12 @@ export default function ScenarioPerformance({
           ? "warning"
           : "danger";
 
+  // Create lookup for custom tooltip
+  const elementsByName = useMemo(
+    () => Object.fromEntries(elements.map((e) => [e.name, e] as const)),
+    [elements]
+  );
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -320,8 +361,8 @@ export default function ScenarioPerformance({
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={50}
+                  outerRadius={120}
+                  innerRadius={60}
                   paddingAngle={2}
                 >
                   {elements.map((e, i) => (
@@ -329,37 +370,17 @@ export default function ScenarioPerformance({
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                  formatter={(value: number, name: string) => {
-                    const element = elements.find((e) => e.name === name);
-                    if (!element) return [value, name];
-                    return [
-                      <div key="t" className="space-y-2">
-                        <div className="font-medium">
-                          {element.icon} {element.displayName}
-                        </div>
-                        <div className="text-sm space-y-1">
-                          <div>Usage: {element.percentage}%</div>
-                          <div>Scenarios: {element.count}</div>
-                          <div>Avg Score: {element.avgScore}%</div>
-                          <div>Completion: {element.completionRate}%</div>
-                          <div>Attempts: {element.totalAttempts}</div>
-                        </div>
-                      </div>,
-                      "",
-                    ];
-                  }}
-                  labelFormatter={() => ""}
+                  content={
+                    <CustomPieTooltip
+                      getElement={(name: string) => elementsByName[name]}
+                    />
+                  }
                 />
                 <Legend
                   verticalAlign="bottom"
-                  height={60}
+                  height={20}
                   content={({ payload }) => (
-                    <div className="flex items-center justify-center gap-2 pt-2 flex-wrap max-w-full">
+                    <div className="flex items-center justify-center gap-2 pt-0 flex-wrap max-w-full">
                       {payload?.map(
                         (entry: { value: string; color?: string }) => {
                           const element = elements.find(
@@ -370,9 +391,10 @@ export default function ScenarioPerformance({
                             <Dialog key={entry.value}>
                               <DialogTrigger asChild>
                                 <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap text-center">
-                                  <span style={{ color: element.color }}>
-                                    ●
-                                  </span>
+                                  <span
+                                    className="inline-block size-2 rounded-sm"
+                                    style={{ backgroundColor: element.color }}
+                                  />
                                   {element.name}
                                 </span>
                               </DialogTrigger>

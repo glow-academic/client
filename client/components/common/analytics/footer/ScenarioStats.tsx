@@ -36,15 +36,70 @@ import type { NumericAttemptFact, NumericScenarioFact } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+// Static chart palette for reliable colors
+const CHART_PALETTE = [
+  "#2563eb", // blue
+  "#7c3aed", // purple
+  "#10b981", // green
+  "#f59e0b", // orange
+  "#ef4444", // red
+  "#06b6d4", // teal
+  "#84cc16", // lime
+  "#a855f7", // violet
+];
+
+function pickColor(fallbackIndex = 0): string {
+  // Use the fallbackIndex directly to ensure different colors
+  const idx = fallbackIndex % CHART_PALETTE.length;
+  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "#2563eb";
+}
+
+function CustomBarTooltip({
+  active,
+  payload,
+  label,
+  getRowData,
+}: {
+  active?: boolean;
+  payload?: TooltipProps<number, string>["payload"];
+  label?: string;
+  getRowData: (label: string) =>
+    | {
+        metricLevel: string;
+        avgScore: number;
+        scenarioCount: number;
+        totalAttempts: number;
+      }
+    | undefined;
+}) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  const rowData = getRowData(label);
+  if (!rowData) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{rowData.metricLevel}</div>
+      <div className="mt-1 text-xs space-y-1">
+        <div>Average Score: {rowData.avgScore}%</div>
+        <div>Scenarios: {rowData.scenarioCount}</div>
+        <div>Total Attempts: {rowData.totalAttempts}</div>
+      </div>
+    </div>
+  );
+}
 
 type Parameter = {
   id: string;
@@ -139,11 +194,12 @@ export default function ScenarioStats({
 
     return [...byLevel.values()]
       .sort((a, b) => a.value - b.value)
-      .map((r) => ({
+      .map((r, idx) => ({
         metricLevel: r.label,
         avgScore: r.sumW ? Math.round(r.sumScore / r.sumW) : 0,
         scenarioCount: scenCountByLevel.get(r.label) ?? 0,
         totalAttempts: r.attempts,
+        color: pickColor(idx),
       }));
   }, [numericAttemptFacts, numericScenarioFacts, activeParamId]);
 
@@ -199,7 +255,11 @@ export default function ScenarioStats({
     return "danger";
   }, [chartRows, thresholds]);
 
-  const selected = metricOptions.find((m) => m.id === activeParamId);
+  // Create lookup for custom tooltip
+  const chartRowsByName = useMemo(
+    () => Object.fromEntries(chartRows.map((r) => [r.metricLevel, r] as const)),
+    [chartRows]
+  );
 
   if (isLoading) {
     return (
@@ -279,28 +339,27 @@ export default function ScenarioStats({
                   tickFormatter={(v) => `${v}%`}
                 />
                 <RTooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                  formatter={(v: number) => [`${v}%`, "Average Score"]}
-                  labelFormatter={(label) => {
-                    const dp = chartRows.find((x) => x.metricLevel === label);
-                    return `${selected?.name || "Parameter"} Level ${label} (${dp?.scenarioCount || 0} scenarios)`;
-                  }}
+                  content={
+                    <CustomBarTooltip
+                      getRowData={(label: string) => chartRowsByName[label]}
+                    />
+                  }
                 />
                 <Bar
                   dataKey="avgScore"
                   name="Average Score"
                   radius={[4, 4, 0, 0]}
-                />
+                >
+                  {chartRows.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Correlation */}
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end -mt-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
