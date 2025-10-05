@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, timestamp, text, foreignKey, uuid, integer, boolean, doublePrecision, bigint, jsonb, real, primaryKey, pgMaterializedView, numeric, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, varchar, timestamp, text, foreignKey, uuid, integer, boolean, doublePrecision, bigint, index, jsonb, real, primaryKey, pgMaterializedView, numeric, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
@@ -88,7 +88,9 @@ export const rubrics = pgTable("rubrics", {
 	passPoints: integer("pass_points").notNull(),
 	defaultRubric: boolean("default_rubric").default(false).notNull(),
 	active: boolean().default(true).notNull(),
-});
+}, (table) => [
+	index("rubrics_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
+]);
 
 export const standardGroups = pgTable("standard_groups", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -100,6 +102,8 @@ export const standardGroups = pgTable("standard_groups", {
 	passPoints: integer("pass_points").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
 }, (table) => [
+	index("standard_groups_id_rubric_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops"), table.rubricId.asc().nullsLast().op("uuid_ops")),
+	index("standard_groups_rubric_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops"), table.rubricId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -115,6 +119,7 @@ export const standards = pgTable("standards", {
 	points: integer().notNull(),
 	standardGroupId: uuid("standard_group_id").notNull(),
 }, (table) => [
+	index("standards_group_idx").using("btree", table.standardGroupId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.standardGroupId],
 			foreignColumns: [standardGroups.id],
@@ -218,6 +223,7 @@ export const personas = pgTable("personas", {
 	guardrailActive: boolean("guardrail_active").default(false).notNull(),
 	imageInputActive: boolean("image_input_active").default(false).notNull(),
 }, (table) => [
+	index("personas_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
@@ -304,6 +310,7 @@ export const scenarios = pgTable("scenarios", {
 	parentId: uuid("parent_id"),
 	active: boolean().default(true).notNull(),
 }, (table) => [
+	index("scenarios_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
 			columns: [table.personaId],
 			foreignColumns: [personas.id],
@@ -348,6 +355,9 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 	infiniteModeTimeLimit: integer("infinite_mode_time_limit"),
 	archived: boolean().default(false).notNull(),
 }, (table) => [
+	index("simulation_attempts_archived_idx").using("btree", table.archived.asc().nullsLast().op("bool_ops")),
+	index("simulation_attempts_id_profile_archived_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops"), table.profileId.asc().nullsLast().op("uuid_ops"), table.archived.asc().nullsLast().op("uuid_ops"), table.infiniteMode.asc().nullsLast().op("uuid_ops")),
+	index("simulation_attempts_profile_sim_idx").using("btree", table.profileId.asc().nullsLast().op("uuid_ops"), table.simulationId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
@@ -373,6 +383,7 @@ export const simulations = pgTable("simulations", {
 	defaultSimulation: boolean("default_simulation").default(false).notNull(),
 	practiceSimulation: boolean("practice_simulation").default(false).notNull(),
 }, (table) => [
+	index("simulations_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -391,6 +402,7 @@ export const simulationChats = pgTable("simulation_chats", {
 	completed: boolean().default(false).notNull(),
 	traceId: text("trace_id"),
 }, (table) => [
+	index("simulation_chats_id_created_idx").using("btree", table.id.asc().nullsLast().op("timestamptz_ops"), table.createdAt.asc().nullsLast().op("timestamptz_ops")),
 	foreignKey({
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
@@ -412,6 +424,7 @@ export const simulationMessages = pgTable("simulation_messages", {
 	type: simulationMessageType().notNull(),
 	completed: boolean().default(false).notNull(),
 }, (table) => [
+	index("simulation_messages_chat_created_type_idx").using("btree", table.chatId.asc().nullsLast().op("enum_ops"), table.createdAt.asc().nullsLast().op("timestamptz_ops"), table.type.asc().nullsLast().op("enum_ops")),
 	foreignKey({
 			columns: [table.chatId],
 			foreignColumns: [simulationChats.id],
@@ -429,6 +442,9 @@ export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	rubricId: uuid("rubric_id").notNull(),
 	simulationChatId: uuid("simulation_chat_id").notNull(),
 }, (table) => [
+	index("scg_chat_created_idx").using("btree", table.simulationChatId.asc().nullsLast().op("timestamptz_ops"), table.createdAt.desc().nullsFirst().op("timestamptz_ops")),
+	index("scg_chat_rubric_created_idx").using("btree", table.simulationChatId.asc().nullsLast().op("uuid_ops"), table.rubricId.asc().nullsLast().op("timestamptz_ops"), table.createdAt.desc().nullsFirst().op("uuid_ops")),
+	index("simulation_chat_grades_latest_idx").using("btree", table.simulationChatId.asc().nullsLast().op("uuid_ops"), table.createdAt.desc().nullsFirst().op("uuid_ops")),
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -449,6 +465,7 @@ export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
 	total: integer().notNull(),
 	feedback: text(),
 }, (table) => [
+	index("scf_grade_idx").using("btree", table.simulationChatGradeId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.standardId],
 			foreignColumns: [standards.id],

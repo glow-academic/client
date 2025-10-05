@@ -214,18 +214,40 @@ export default function Growth({
                 <YAxis className="text-xs" domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
+                    backgroundColor: "black",
+                    border: "1px solid black",
+                    color: "white",
                     borderRadius: "6px",
                   }}
-                  formatter={(value: number, name: string) => {
+                  labelStyle={{
+                    color: "white",
+                  }}
+                  itemStyle={{
+                    color: "white",
+                  }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: number, _name: string, item: any) => {
+                    const id = String(item?.dataKey ?? "");
                     const metric = metricsWithFormatters.find(
-                      (m) => m.id === name
+                      (m) => m.id === id
                     );
-                    const formattedValue = metric?.formatter
-                      ? metric.formatter(value)
-                      : `${value}%`;
-                    return [formattedValue, metric?.name || name];
+
+                    // Prefer the metric's own formatter if present
+                    if (metric?.formatter) {
+                      return [metric.formatter(value), metric.name];
+                    }
+
+                    // Smart fallback based on metric id (NOT name)
+                    const formattedValue =
+                      /Rate|Score|Efficiency|Stagnation/i.test(id)
+                        ? `${Math.round(value)}%`
+                        : id === "personaResponseTimes"
+                          ? `${Math.round(value)}s`
+                          : id === "timeSpent"
+                            ? `${Math.round(value)}h`
+                            : `${Math.round(value)}`;
+
+                    return [formattedValue, metric?.name ?? id];
                   }}
                 />
                 <Legend />

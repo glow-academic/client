@@ -225,6 +225,12 @@ export default function AttemptImprovement({
                     color: "white",
                     borderRadius: "6px",
                   }}
+                  labelStyle={{
+                    color: "white",
+                  }}
+                  itemStyle={{
+                    color: "white",
+                  }}
                   formatter={(value: number, name: string) => [
                     name === "Average Time" ? `${value} min` : `${value}%`,
                     name,

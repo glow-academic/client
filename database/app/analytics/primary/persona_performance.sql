@@ -151,10 +151,11 @@ trend AS (
     g.persona_id,
     g.simulation_id,
     to_char(date_trunc('day', g.grade_at),'YYYY-MM-DD') AS date,
-    g.pct::float                                        AS score,
-    (EXTRACT(EPOCH FROM g.grade_at)*1000)::bigint       AS ts
+    AVG(g.pct::float)                                  AS score,
+    (EXTRACT(EPOCH FROM date_trunc('day', g.grade_at))*1000)::bigint AS ts
   FROM grade_events g
   WHERE g.pct IS NOT NULL
+  GROUP BY g.persona_id, g.simulation_id, date_trunc('day', g.grade_at)
 ),
 chart AS (
   SELECT jsonb_agg(

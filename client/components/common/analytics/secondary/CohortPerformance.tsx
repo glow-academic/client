@@ -353,8 +353,8 @@ export default function CohortPerformance({
                             <YAxis domain={[0, 100]} className="text-xs" />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: "hsl(var(--background))",
-                                border: "1px solid hsl(var(--border))",
+                                backgroundColor: "white",
+                                border: "1px solid #e5e7eb",
                                 borderRadius: "6px",
                               }}
                               formatter={(value: number) => [

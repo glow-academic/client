@@ -1,8 +1,8 @@
 
 import * as mockSchema from './schema';
 import { faker } from '@faker-js/faker';
-import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDebugInfo, createMockDocument, createMockMigration, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatCrowdsourcedFeedback, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationCrowdsourcedMessage, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
-import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, DebugInfo, Document, Migration, ModelRun, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatCrowdsourcedFeedback, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationCrowdsourcedMessage, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
+import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDebugInfo, createMockDocument, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatCrowdsourcedFeedback, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationCrowdsourcedMessage, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
+import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, DebugInfo, Document, ModelRun, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatCrowdsourcedFeedback, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationCrowdsourcedMessage, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
 
 // A type-safe, in-memory database for testing
 export class MockDb {
@@ -15,7 +15,6 @@ export class MockDb {
   cohorts: Cohort[];
   debugInfo: DebugInfo[];
   documents: Document[];
-  migrations: Migration[];
   modelRuns: ModelRun[];
   models: Model[];
   parameterItems: ParameterItem[];
@@ -47,7 +46,6 @@ export class MockDb {
     this.cohorts = JSON.parse(JSON.stringify(mockSchema.cohorts));
     this.debugInfo = JSON.parse(JSON.stringify(mockSchema.debugInfo));
     this.documents = JSON.parse(JSON.stringify(mockSchema.documents));
-    this.migrations = JSON.parse(JSON.stringify(mockSchema.migrations));
     this.modelRuns = JSON.parse(JSON.stringify(mockSchema.modelRuns));
     this.models = JSON.parse(JSON.stringify(mockSchema.models));
     this.parameterItems = JSON.parse(JSON.stringify(mockSchema.parameterItems));
@@ -294,40 +292,17 @@ export class MockDb {
     return deletedItem[0];
   }
 
-  // MIGRATIONS Queries
-  getAllMigrations() { return this.migrations; }
-  getMigration(id: number) { return this.migrations.find(item => item.id === id) || null; }
-
-  // MIGRATIONS Mutations
-  createMigration(data: Partial<Migration>) {
-    const newItem = createMockMigration({ ...data, id: data.id ?? faker.number.int() });
-    this.migrations.push(newItem);
-    return newItem;
-  }
-  updateMigration(id: number, data: Partial<Migration>) {
-    const itemIndex = this.migrations.findIndex(item => item.id === id);
-    if (itemIndex === -1) return null;
-    this.migrations[itemIndex] = { ...this.migrations[itemIndex], ...data } as Migration;
-    return this.migrations[itemIndex];
-  }
-  deleteMigration(id: number) {
-    const itemIndex = this.migrations.findIndex(item => item.id === id);
-    if (itemIndex === -1) return null;
-    const deletedItem = this.migrations.splice(itemIndex, 1);
-    return deletedItem[0];
-  }
-
   // MODELRUNS Queries
   getAllModelRuns() { return this.modelRuns; }
   getModelRun(id: string) { return this.modelRuns.find(item => item.id === id) || null; }
-  getModelRunsByAgent(agentId: string) { 
-    return this.modelRuns.filter(item => item.agentId === agentId); 
-  }
   getModelRunsByModel(modelId: string) { 
     return this.modelRuns.filter(item => item.modelId === modelId); 
   }
   getModelRunsByPersona(personaId: string) { 
     return this.modelRuns.filter(item => item.personaId === personaId); 
+  }
+  getModelRunsByAgent(agentId: string) { 
+    return this.modelRuns.filter(item => item.agentId === agentId); 
   }
   getModelRunsByProfile(profileId: string) { 
     return this.modelRuns.filter(item => item.profileId === profileId); 
@@ -577,11 +552,11 @@ export class MockDb {
   // SIMULATIONCHATCROWDSOURCEDFEEDBACKS Queries
   getAllSimulationChatCrowdsourcedFeedbacks() { return this.simulationChatCrowdsourcedFeedbacks; }
   getSimulationChatCrowdsourcedFeedback(id: string) { return this.simulationChatCrowdsourcedFeedbacks.find(item => item.id === id) || null; }
-  getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedback(simulationChatFeedbackId: string) { 
-    return this.simulationChatCrowdsourcedFeedbacks.filter(item => item.simulationChatFeedbackId === simulationChatFeedbackId); 
-  }
   getSimulationChatCrowdsourcedFeedbacksByProfile(profileId: string) { 
     return this.simulationChatCrowdsourcedFeedbacks.filter(item => item.profileId === profileId); 
+  }
+  getSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedback(simulationChatFeedbackId: string) { 
+    return this.simulationChatCrowdsourcedFeedbacks.filter(item => item.simulationChatFeedbackId === simulationChatFeedbackId); 
   }
 
   // SIMULATIONCHATCROWDSOURCEDFEEDBACKS Mutations
@@ -606,11 +581,11 @@ export class MockDb {
   // SIMULATIONCHATFEEDBACKS Queries
   getAllSimulationChatFeedbacks() { return this.simulationChatFeedbacks; }
   getSimulationChatFeedback(id: string) { return this.simulationChatFeedbacks.find(item => item.id === id) || null; }
-  getSimulationChatFeedbacksBySimulationChatGrade(simulationChatGradeId: string) { 
-    return this.simulationChatFeedbacks.filter(item => item.simulationChatGradeId === simulationChatGradeId); 
-  }
   getSimulationChatFeedbacksByStandard(standardId: string) { 
     return this.simulationChatFeedbacks.filter(item => item.standardId === standardId); 
+  }
+  getSimulationChatFeedbacksBySimulationChatGrade(simulationChatGradeId: string) { 
+    return this.simulationChatFeedbacks.filter(item => item.simulationChatGradeId === simulationChatGradeId); 
   }
 
   // SIMULATIONCHATFEEDBACKS Mutations
@@ -664,11 +639,11 @@ export class MockDb {
   // SIMULATIONCHATS Queries
   getAllSimulationChats() { return this.simulationChats; }
   getSimulationChat(id: string) { return this.simulationChats.find(item => item.id === id) || null; }
-  getSimulationChatsBySimulationAttempt(simulationAttemptId: string) { 
-    return this.simulationChats.filter(item => item.attemptId === simulationAttemptId); 
-  }
   getSimulationChatsByScenario(scenarioId: string) { 
     return this.simulationChats.filter(item => item.scenarioId === scenarioId); 
+  }
+  getSimulationChatsBySimulationAttempt(simulationAttemptId: string) { 
+    return this.simulationChats.filter(item => item.attemptId === simulationAttemptId); 
   }
 
   // SIMULATIONCHATS Mutations
@@ -693,11 +668,11 @@ export class MockDb {
   // SIMULATIONCROWDSOURCEDMESSAGES Queries
   getAllSimulationCrowdsourcedMessages() { return this.simulationCrowdsourcedMessages; }
   getSimulationCrowdsourcedMessage(id: string) { return this.simulationCrowdsourcedMessages.find(item => item.id === id) || null; }
-  getSimulationCrowdsourcedMessagesByProfile(profileId: string) { 
-    return this.simulationCrowdsourcedMessages.filter(item => item.profileId === profileId); 
-  }
   getSimulationCrowdsourcedMessagesBySimulationMessage(simulationMessageId: string) { 
     return this.simulationCrowdsourcedMessages.filter(item => item.simulationMessageId === simulationMessageId); 
+  }
+  getSimulationCrowdsourcedMessagesByProfile(profileId: string) { 
+    return this.simulationCrowdsourcedMessages.filter(item => item.profileId === profileId); 
   }
 
   // SIMULATIONCROWDSOURCEDMESSAGES Mutations

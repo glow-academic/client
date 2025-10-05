@@ -221,9 +221,16 @@ export default function PersonaPerformance({
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
+                    backgroundColor: "black",
+                    border: "1px solid black",
+                    color: "white",
                     borderRadius: "6px",
+                  }}
+                  labelStyle={{
+                    color: "white",
+                  }}
+                  itemStyle={{
+                    color: "white",
                   }}
                   formatter={(value: number) => [`${value}%`, "Average Score"]}
                   labelFormatter={(label) => `${label} Students`}
@@ -325,9 +332,16 @@ export default function PersonaPerformance({
                           <YAxis className="text-xs" domain={[0, 100]} />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: "hsl(var(--background))",
-                              border: "1px solid hsl(var(--border))",
+                              backgroundColor: "black",
+                              border: "1px solid black",
+                              color: "white",
                               borderRadius: "6px",
+                            }}
+                            labelStyle={{
+                              color: "white",
+                            }}
+                            itemStyle={{
+                              color: "white",
                             }}
                             formatter={(value: number) => [
                               `${value}%`,
