@@ -144,7 +144,7 @@ data_points AS (
            'value',        an.norm,
            'simulationId', f.simulation_id::text,
            'scenarioId',   f.scenario_id::text
-         ) ORDER BY f.profile_id, an.norm DESC, an.attempt_created_at) AS payload
+         ) ORDER BY f.profile_id, an.attempt_created_at) AS payload
   FROM attempt_norm an
   JOIN filt f ON f.attempt_id = an.attempt_id
   WHERE an.norm IS NOT NULL

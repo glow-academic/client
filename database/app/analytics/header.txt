@@ -335,10 +335,10 @@ want AS (
   FROM params
 ),
 
-/* -------- Find earliest attempt per (profile, simulation) overall -------- */
+/* -------- Find earliest attempt per (profile, scenario) overall -------- */
 earliest_attempt_all_time AS MATERIALIZED (
-  SELECT DISTINCT ON (a.profile_id, a.simulation_id)
-         a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at
+  SELECT DISTINCT ON (a.profile_id, a.scenario_id)
+         a.attempt_id, a.profile_id, a.simulation_id, a.scenario_id, a.attempt_created_at
   FROM analytics a
   CROSS JOIN params pr
   CROSS JOIN want w
@@ -354,7 +354,7 @@ earliest_attempt_all_time AS MATERIALIZED (
   )
   AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
   AND (cardinality(pr.cohort_ids) = 0 OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
-  ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+  ORDER BY a.profile_id, a.scenario_id, a.attempt_created_at
 ),
 
 /* -------- Restrict to window for counting/trends -------- */
@@ -374,21 +374,20 @@ filt AS (
 ),
 
 first_attempts AS (
-  SELECT fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  SELECT fa.profile_id, fa.simulation_id, fa.scenario_id, fa.attempt_id, fa.attempt_created_at
   FROM first_attempts_in_window fa
 ),
 first_pass AS (
   SELECT
     fa.profile_id,
     fa.simulation_id,
+    fa.scenario_id,
     fa.attempt_id,
     fa.attempt_created_at,
-    BOOL_OR(f.passed)                                  AS passed,
-    -- choose a representative scenario for the attempt (earliest chat)
-    (ARRAY_AGG(f.scenario_id ORDER BY f.chat_created_at))[1] AS scenario_id
+    BOOL_OR(f.passed)                                  AS passed
   FROM first_attempts_in_window fa
   JOIN filt f USING (attempt_id)
-  GROUP BY fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  GROUP BY fa.profile_id, fa.simulation_id, fa.scenario_id, fa.attempt_id, fa.attempt_created_at
 ),
 by_day AS (
   SELECT
@@ -575,7 +574,7 @@ data_points AS (
            'value',        an.norm,
            'simulationId', f.simulation_id::text,
            'scenarioId',   f.scenario_id::text
-         ) ORDER BY f.profile_id, an.norm DESC, an.attempt_created_at) AS payload
+         ) ORDER BY f.profile_id, an.attempt_created_at) AS payload
   FROM attempt_norm an
   JOIN filt f ON f.attempt_id = an.attempt_id
   WHERE an.norm IS NOT NULL
@@ -746,29 +745,48 @@ CREATE OR REPLACE FUNCTION analytics_persona_response_times_fn(
 LANGUAGE sql
 STABLE
 AS $$
-WITH filt AS (
-  SELECT *
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+filt AS (
+  SELECT a.*
   FROM analytics a
-  WHERE a.chat_created_at >= p_start
-    AND a.chat_created_at < p_end
-    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids OR a.profile_cohort_ids && p_cohort_ids))
-    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE a.chat_created_at >= pr.start_at
+    AND a.chat_created_at < pr.end_at
     AND (
-      p_sim_filters IS NULL
-      OR cardinality(p_sim_filters) > 0
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
     )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+    AND (cardinality(pr.cohort_ids) = 0
+         OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
     AND (
-      p_sim_filters IS NULL OR (
-        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
-        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
-        ('archived' = ANY (p_sim_filters) AND a.is_archived)
-      )
+      (w.want_general  AND a.is_general)  OR
+      (w.want_practice AND a.is_practice) OR
+      (w.want_archived AND a.is_archived)
     )
-    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
 flat AS (
-  SELECT date_trunc('day', chat_created_at) AS d, x AS delta
-  FROM filt, LATERAL unnest(message_time_taken_seconds) AS x
+  SELECT date_trunc('day', f.chat_created_at) AS d, x / 60.0 AS delta
+  FROM filt f, LATERAL unnest(f.message_time_taken_seconds) AS x
 ),
 by_day AS (
   SELECT to_char(d, 'YYYY-MM-DD') AS date,
@@ -786,7 +804,7 @@ data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    f.profile_id::text,
            'date',         to_char(date_trunc('day', f.chat_created_at),'YYYY-MM-DD'),
-           'value',        x::int,
+           'value',        round(x / 60.0)::int,
            'simulationId', f.simulation_id::text,
            'scenarioId',   f.scenario_id::text
          ) ORDER BY f.profile_id, f.chat_created_at) AS payload
@@ -1256,14 +1274,14 @@ filt AS (
 by_day AS (
   SELECT
     to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
-    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)))::float AS value,
+    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::float AS value,
     count(*)::int AS count
   FROM filt
   WHERE chat_completed_at IS NOT NULL
   GROUP BY 1
 ),
 cur AS (
-  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at))))::int, 0) AS current_value,
+  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0))::int, 0) AS current_value,
          count(*) > 0 AS has_data
   FROM filt
   WHERE chat_completed_at IS NOT NULL
@@ -1272,7 +1290,7 @@ data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    profile_id::text,
            'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
-           'value',        EXTRACT(epoch FROM (chat_completed_at - chat_created_at))::int,
+           'value',        round(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::int,
            'simulationId', simulation_id::text,
            'scenarioId',   scenario_id::text
          ) ORDER BY profile_id, chat_created_at) AS payload

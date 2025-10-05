@@ -34,10 +34,10 @@ want AS (
   FROM params
 ),
 
-/* -------- Find earliest attempt per (profile, simulation) overall -------- */
+/* -------- Find earliest attempt per (profile, scenario) overall -------- */
 earliest_attempt_all_time AS MATERIALIZED (
-  SELECT DISTINCT ON (a.profile_id, a.simulation_id)
-         a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at
+  SELECT DISTINCT ON (a.profile_id, a.scenario_id)
+         a.attempt_id, a.profile_id, a.simulation_id, a.scenario_id, a.attempt_created_at
   FROM analytics a
   CROSS JOIN params pr
   CROSS JOIN want w
@@ -53,7 +53,7 @@ earliest_attempt_all_time AS MATERIALIZED (
   )
   AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
   AND (cardinality(pr.cohort_ids) = 0 OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
-  ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+  ORDER BY a.profile_id, a.scenario_id, a.attempt_created_at
 ),
 
 /* -------- Restrict to window for counting/trends -------- */
@@ -73,21 +73,20 @@ filt AS (
 ),
 
 first_attempts AS (
-  SELECT fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  SELECT fa.profile_id, fa.simulation_id, fa.scenario_id, fa.attempt_id, fa.attempt_created_at
   FROM first_attempts_in_window fa
 ),
 first_pass AS (
   SELECT
     fa.profile_id,
     fa.simulation_id,
+    fa.scenario_id,
     fa.attempt_id,
     fa.attempt_created_at,
-    BOOL_OR(f.passed)                                  AS passed,
-    -- choose a representative scenario for the attempt (earliest chat)
-    (ARRAY_AGG(f.scenario_id ORDER BY f.chat_created_at))[1] AS scenario_id
+    BOOL_OR(f.passed)                                  AS passed
   FROM first_attempts_in_window fa
   JOIN filt f USING (attempt_id)
-  GROUP BY fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  GROUP BY fa.profile_id, fa.simulation_id, fa.scenario_id, fa.attempt_id, fa.attempt_created_at
 ),
 by_day AS (
   SELECT

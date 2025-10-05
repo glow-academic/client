@@ -102,14 +102,14 @@ filt AS (
 by_day AS (
   SELECT
     to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
-    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)))::float AS value,
+    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::float AS value,
     count(*)::int AS count
   FROM filt
   WHERE chat_completed_at IS NOT NULL
   GROUP BY 1
 ),
 cur AS (
-  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at))))::int, 0) AS current_value,
+  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0))::int, 0) AS current_value,
          count(*) > 0 AS has_data
   FROM filt
   WHERE chat_completed_at IS NOT NULL
@@ -118,7 +118,7 @@ data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    profile_id::text,
            'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
-           'value',        EXTRACT(epoch FROM (chat_completed_at - chat_created_at))::int,
+           'value',        round(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::int,
            'simulationId', simulation_id::text,
            'scenarioId',   scenario_id::text
          ) ORDER BY profile_id, chat_created_at) AS payload
