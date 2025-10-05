@@ -91,6 +91,33 @@ export default function SimulationComposition({
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
 
+  // Create a global color mapping for parameter items
+  const parameterItemColorMap = useMemo(() => {
+    const colorMap = new Map<string, string>();
+
+    // Process all parameter items to create unique color mapping
+    [
+      ...simulationParameterFactsCategorical,
+      ...simulationParameterFactsNumeric,
+    ].forEach((fact) => {
+      let key: string;
+      if ("parameterItemId" in fact) {
+        key = fact.parameterId + ":" + fact.parameterItemId;
+      } else {
+        key = fact.parameterId + ":" + fact.levelLabel;
+      }
+
+      if (!colorMap.has(key)) {
+        const isNumeric = simulationParameterFactsNumeric.some(
+          (nf) => nf.parameterId === fact.parameterId
+        );
+        colorMap.set(key, getParameterColor(key, isNumeric));
+      }
+    });
+
+    return colorMap;
+  }, [simulationParameterFactsCategorical, simulationParameterFactsNumeric]);
+
   // Compute high and low performing simulations based on config
   const {
     highPerforming,
@@ -161,7 +188,8 @@ export default function SimulationComposition({
       simulationParameterFactsCategorical,
       simulationParameterFactsNumeric,
       allParameters,
-      allParameterItems
+      allParameterItems,
+      parameterItemColorMap
     );
 
     // Build parameter composition for low performers
@@ -170,7 +198,8 @@ export default function SimulationComposition({
       simulationParameterFactsCategorical,
       simulationParameterFactsNumeric,
       allParameters,
-      allParameterItems
+      allParameterItems,
+      parameterItemColorMap
     );
 
     // Build detailed simulation information
@@ -219,6 +248,7 @@ export default function SimulationComposition({
     simulationParameterFactsNumeric,
     allParameters,
     allParameterItems,
+    parameterItemColorMap,
   ]);
 
   // Compute threshold status
@@ -346,52 +376,66 @@ export default function SimulationComposition({
           )}
 
         {/* Parameter Comparison Table */}
-        <div className="flex-1 min-h-[300px]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+        <div className="flex-1 min-h-[260px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
             {/* High Performing Side */}
             <Dialog>
               <DialogTrigger asChild>
-                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm h-full">
+                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm">
                   <div className="text-center mb-3">
-                    <h3 className="font-semibold text-green-600 flex items-center justify-center gap-2 text-sm">
-                      <TrendingUp className="h-4 w-4" />
+                    <h3 className="font-semibold text-green-600 flex items-center justify-center gap-1 text-sm">
+                      <TrendingUp className="h-3 w-3" />
                       {getMethodLabel(true)}
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       {highPerformingDetails.length} simulations
                     </p>
                   </div>
-                  <div className="overflow-x-auto flex-1">
-                    <Table className="w-full">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="p-2 text-xs">
-                            Parameter
-                          </TableHead>
-                          <TableHead className="p-2 text-xs text-center">
-                            Count
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {highPerforming.slice(0, 5).map((item, index) => (
-                          <TableRow key={`high-${index}`}>
-                            <TableCell className="p-2 text-xs">
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: item.color }}
-                                />
-                                <span className="truncate">{item.name}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="p-2 text-xs text-center font-mono">
-                              {item.value}
-                            </TableCell>
+                  <div className="flex-1">
+                    <div className="max-h-64 overflow-auto rounded-md">
+                      <Table className="w-full table-fixed">
+                        <colgroup>
+                          <col className="w-[75%]" />
+                          <col className="w-[25%]" />
+                        </colgroup>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="p-2 text-xs leading-snug">
+                              Parameter
+                            </TableHead>
+                            <TableHead className="p-2 text-xs leading-snug w-16 text-right">
+                              Count
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {highPerforming.slice(0, 5).map((item, index) => (
+                            <TableRow
+                              key={`high-${index}`}
+                              className="hover:bg-muted/50"
+                            >
+                              <TableCell className="p-2 text-xs leading-snug">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span
+                                    className="truncate text-xs"
+                                    title={item.name}
+                                  >
+                                    {item.name}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="p-2 text-xs font-mono tabular-nums text-right w-16 shrink-0">
+                                {item.value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </div>
               </DialogTrigger>
@@ -465,47 +509,61 @@ export default function SimulationComposition({
             {/* Low Performing Side */}
             <Dialog>
               <DialogTrigger asChild>
-                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm h-full">
+                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm">
                   <div className="text-center mb-3">
-                    <h3 className="font-semibold text-red-600 flex items-center justify-center gap-2 text-sm">
-                      <TrendingDown className="h-4 w-4" />
+                    <h3 className="font-semibold text-red-600 flex items-center justify-center gap-1 text-sm">
+                      <TrendingDown className="h-3 w-3" />
                       {getMethodLabel(false)}
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       {lowPerformingDetails.length} simulations
                     </p>
                   </div>
-                  <div className="overflow-x-auto flex-1">
-                    <Table className="w-full">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="p-2 text-xs">
-                            Parameter
-                          </TableHead>
-                          <TableHead className="p-2 text-xs text-center">
-                            Count
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lowPerforming.slice(0, 5).map((item, index) => (
-                          <TableRow key={`low-${index}`}>
-                            <TableCell className="p-2 text-xs">
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: item.color }}
-                                />
-                                <span className="truncate">{item.name}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="p-2 text-xs text-center font-mono">
-                              {item.value}
-                            </TableCell>
+                  <div className="flex-1">
+                    <div className="max-h-64 overflow-auto rounded-md">
+                      <Table className="w-full table-fixed">
+                        <colgroup>
+                          <col className="w-[75%]" />
+                          <col className="w-[25%]" />
+                        </colgroup>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="p-2 text-xs leading-snug">
+                              Parameter
+                            </TableHead>
+                            <TableHead className="p-2 text-xs leading-snug w-16 text-right">
+                              Count
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {lowPerforming.slice(0, 5).map((item, index) => (
+                            <TableRow
+                              key={`low-${index}`}
+                              className="hover:bg-muted/50"
+                            >
+                              <TableCell className="p-2 text-xs leading-snug">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span
+                                    className="truncate text-xs"
+                                    title={item.name}
+                                  >
+                                    {item.name}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="p-2 text-xs font-mono tabular-nums text-right w-16 shrink-0">
+                                {item.value}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 </div>
               </DialogTrigger>
@@ -589,8 +647,8 @@ export default function SimulationComposition({
   );
 }
 
-// Helper function to get color based on parameter type
-function getParameterColor(parameterName: string, isNumeric: boolean): string {
+// Helper function to get color based on parameter ID
+function getParameterColor(parameterId: string, isNumeric: boolean): string {
   const colors = {
     numeric: [
       "#3b82f6", // blue
@@ -614,10 +672,10 @@ function getParameterColor(parameterName: string, isNumeric: boolean): string {
     ],
   };
 
-  // Use parameter name as seed for consistent color selection
+  // Use parameter ID as seed for consistent color selection
   let hash = 0;
-  for (let i = 0; i < parameterName.length; i++) {
-    const char = parameterName.charCodeAt(i);
+  for (let i = 0; i < parameterId.length; i++) {
+    const char = parameterId.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
@@ -633,7 +691,8 @@ function buildParameterComposition(
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: Parameter[],
-  allParameterItems: ParameterItem[]
+  allParameterItems: ParameterItem[],
+  parameterItemColorMap: Map<string, string>
 ): HighLowPerforming[] {
   const parameterCounts = new Map<
     string,
@@ -661,11 +720,12 @@ function buildParameterComposition(
         if (existing) {
           existing.count += fact.scenarioCount;
         } else {
+          const itemKey = fact.parameterId + ":" + fact.parameterItemId;
           parameterCounts.set(key, {
             count: fact.scenarioCount,
             name: parameterItem.name,
             icon: "",
-            color: getParameterColor(parameterItem.name, false),
+            color: parameterItemColorMap.get(itemKey) || "#6b7280",
             description: "",
             isNumeric: false,
           });
@@ -685,11 +745,12 @@ function buildParameterComposition(
         if (existing) {
           existing.count += fact.scenarioCount;
         } else {
+          const itemKey = fact.parameterId + ":" + fact.levelLabel;
           parameterCounts.set(key, {
             count: fact.scenarioCount,
             name: `${parameter.name} ${fact.levelLabel}`,
             icon: "",
-            color: getParameterColor(parameter.name, true),
+            color: parameterItemColorMap.get(itemKey) || "#6b7280",
             description: "",
             isNumeric: true,
           });
@@ -716,28 +777,7 @@ function buildParameterComposition(
     }))
     .sort((a, b) => b.value - a.value);
 
-  // Optimize to show top 5 most different parameters
-  const optimizedParameters = [];
-  const usedColors = new Set<string>();
-  const usedTypes = new Set<boolean>();
-
-  for (const param of allParametersArray) {
-    // Prioritize parameters with different colors and types
-    const hasUniqueColor = !usedColors.has(param.color);
-    const hasUniqueType = !usedTypes.has(param.isNumeric);
-
-    if (optimizedParameters.length < 5) {
-      if (hasUniqueColor || hasUniqueType || optimizedParameters.length < 3) {
-        optimizedParameters.push(param);
-        usedColors.add(param.color);
-        usedTypes.add(param.isNumeric);
-      }
-    } else {
-      break;
-    }
-  }
-
-  return optimizedParameters;
+  return allParametersArray;
 }
 
 // Helper function to build parameter breakdown for a simulation
