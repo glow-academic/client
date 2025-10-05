@@ -77,20 +77,25 @@ export default function ReportsPage() {
 
       // Helper to format values with thresholds
       const formatMetric = (
-        value: number | null,
+        metric: { hasData: boolean; hover: Record<string, unknown> }, // The full metric object with hasData
+        valueExtractor: (metric: {
+          hasData: boolean;
+          hover: Record<string, unknown>;
+        }) => number | null,
         formatter: (n: number) => string,
         thresholds: { gray: number; red: number; yellow: number; green: number }
       ) => {
-        if (value === null) {
+        if (!metric.hasData) {
           return {
             value: null,
             formattedValue: "N/A",
             thresholds,
           };
         }
+        const value = valueExtractor(metric);
         return {
           value,
-          formattedValue: formatter(value),
+          formattedValue: value !== null ? formatter(value) : "N/A",
           thresholds,
         };
       };
@@ -104,7 +109,8 @@ export default function ReportsPage() {
 
         averageScore: {
           ...formatMetric(
-            profile.metrics.averageScore.hover.mean,
+            profile.metrics.averageScore,
+            (m) => (m.hover as any).mean, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -113,7 +119,8 @@ export default function ReportsPage() {
 
         completionPercentage: {
           ...formatMetric(
-            profile.metrics.completionPercentage.hover.percent,
+            profile.metrics.completionPercentage,
+            (m) => (m.hover as any).percent, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -122,7 +129,8 @@ export default function ReportsPage() {
 
         firstAttemptPassRate: {
           ...formatMetric(
-            profile.metrics.firstAttemptPassRate.hover.percent,
+            profile.metrics.firstAttemptPassRate,
+            (m) => (m.hover as any).percent, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -131,7 +139,8 @@ export default function ReportsPage() {
 
         highestScore: {
           ...formatMetric(
-            profile.metrics.highestScore.hover.top[0] || null,
+            profile.metrics.highestScore,
+            (m) => (m.hover as any).top?.[0] || null, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 70, yellow: 80, green: 90 }
           ),
@@ -140,7 +149,8 @@ export default function ReportsPage() {
 
         messagesPerSession: {
           ...formatMetric(
-            profile.metrics.messagesPerSession.hover.mean,
+            profile.metrics.messagesPerSession,
+            (m) => (m.hover as any).mean, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}`,
             { gray: 0, red: 5, yellow: 8, green: 12 }
           ),
@@ -149,7 +159,8 @@ export default function ReportsPage() {
 
         personaResponseTimes: {
           ...formatMetric(
-            profile.metrics.personaResponseTimes.hover.meanSeconds,
+            profile.metrics.personaResponseTimes,
+            (m) => (m.hover as any).meanSeconds, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${Math.round(n / 60)}m`,
             { gray: 0, red: 300, yellow: 180, green: 60 }
           ),
@@ -158,7 +169,8 @@ export default function ReportsPage() {
 
         sessionEfficiency: {
           ...formatMetric(
-            profile.metrics.sessionEfficiency.hover.efficiency,
+            profile.metrics.sessionEfficiency,
+            (m) => (m.hover as any).efficiency, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -167,7 +179,8 @@ export default function ReportsPage() {
 
         stagnationRate: {
           ...formatMetric(
-            profile.metrics.stagnationRate.hover.ratePercent,
+            profile.metrics.stagnationRate,
+            (m) => (m.hover as any).ratePercent, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}%`,
             { gray: 0, red: 25, yellow: 15, green: 5 }
           ),
@@ -176,7 +189,8 @@ export default function ReportsPage() {
 
         timeSpent: {
           ...formatMetric(
-            profile.metrics.timeSpent.hover.avgSessionMinutes,
+            profile.metrics.timeSpent,
+            (m) => (m.hover as any).avgSessionMinutes, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}m`,
             { gray: 0, red: 90, yellow: 60, green: 30 }
           ),
@@ -185,7 +199,8 @@ export default function ReportsPage() {
 
         totalAttempts: {
           ...formatMetric(
-            profile.metrics.totalAttempts.hover.attempts,
+            profile.metrics.totalAttempts,
+            (m) => (m.hover as any).attempts, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}`,
             { gray: 0, red: 3, yellow: 5, green: 8 }
           ),

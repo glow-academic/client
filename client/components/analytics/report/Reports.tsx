@@ -347,8 +347,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.completionPercentage.value ?? -Infinity;
+        const bv = b.original.completionPercentage.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },
@@ -412,8 +412,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.messagesPerSession.value ?? -Infinity;
+        const bv = b.original.messagesPerSession.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },
@@ -445,8 +445,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.personaResponseTimes.value ?? -Infinity;
+        const bv = b.original.personaResponseTimes.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },
@@ -477,8 +477,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.sessionEfficiency.value ?? -Infinity;
+        const bv = b.original.sessionEfficiency.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },
@@ -509,8 +509,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.stagnationRate.value ?? -Infinity;
+        const bv = b.original.stagnationRate.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },
@@ -542,8 +542,8 @@ export default function Reports({
       },
       enableSorting: true,
       sortingFn: (a, b) => {
-        const av = a.original.totalAttempts.value ?? -Infinity;
-        const bv = b.original.totalAttempts.value ?? -Infinity;
+        const av = a.original.timeSpent.value ?? -Infinity;
+        const bv = b.original.timeSpent.value ?? -Infinity;
         return av === bv ? 0 : av < bv ? -1 : 1;
       },
     },

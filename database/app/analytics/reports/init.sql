@@ -21,52 +21,19 @@ WITH params AS (
     'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
     'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
 ),
--- Base window for discovering relevant profiles once
-base_general AS MATERIALIZED (
-  SELECT a.*
-  FROM analytics a
-  CROSS JOIN params pr
-  WHERE pr.want_general
-    AND a.is_general = TRUE
-    AND a.attempt_created_at >= pr.start_at
-    AND a.attempt_created_at <  pr.end_at
-),
-base_practice AS MATERIALIZED (
-  SELECT a.*
-  FROM analytics a
-  CROSS JOIN params pr
-  WHERE pr.want_practice
-    AND a.is_practice = TRUE
-    AND a.attempt_created_at >= pr.start_at
-    AND a.attempt_created_at <  pr.end_at
-),
-base_arch AS MATERIALIZED (
-  SELECT a.*
-  FROM analytics a
-  CROSS JOIN params pr
-  WHERE pr.want_archived
-    AND a.attempt_created_at >= pr.start_at
-    AND a.attempt_created_at <  pr.end_at
-    AND a.is_archived = TRUE
-),
-base_union AS MATERIALIZED (
-  SELECT * FROM base_general
-  UNION ALL SELECT * FROM base_practice
-  UNION ALL SELECT * FROM base_arch
-),
--- Apply roles/cohorts/profile gating once
-scoped AS MATERIALIZED (
-  SELECT b.*
-  FROM base_union b
-  CROSS JOIN params pr
+-- Build roster of all profiles that match the filters (regardless of activity)
+roster AS (
+  SELECT DISTINCT p.id AS profile_id
+  FROM profiles p
+  CROSS JOIN params params
+  LEFT JOIN cohorts c ON c.id = ANY(params.cohort_ids)
   WHERE
-    (cardinality(pr.roles) = 0 OR b.profile_role = ANY (pr.roles)) AND
-    (cardinality(pr.cohort_ids) = 0 OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)) AND
-    (p_profile_id IS NULL OR b.profile_id = p_profile_id)
+    (cardinality(params.roles) = 0 OR p.role = ANY(params.roles)) AND
+    (cardinality(params.cohort_ids) = 0 OR p.id = ANY(c.profile_ids)) AND
+    (p_profile_id IS NULL OR p.id = p_profile_id)
 ),
 profiles_set AS (
-  SELECT DISTINCT b.profile_id
-  FROM scoped b
+  SELECT DISTINCT profile_id AS pid FROM roster
 ),
 -- Helper: compute mean/median/mode for a jsonb array of points with numeric "value"
 -- We do this per-metric, per-profile via LATERAL; this CTE is just a template note
@@ -392,13 +359,13 @@ SELECT jsonb_build_object(
   )
 )
 FROM (
-  -- final profile set: provided profile OR discovered from filters
+  -- final profile set: provided profile OR discovered from roster
   SELECT DISTINCT
     CASE
       WHEN p_profile_id IS NOT NULL THEN p_profile_id
-      ELSE s.profile_id
+      ELSE r.profile_id
     END AS pid
-  FROM scoped s
-  WHERE p_profile_id IS NULL OR s.profile_id = p_profile_id
+  FROM roster r
+  WHERE p_profile_id IS NULL OR r.profile_id = p_profile_id
 ) profs;
 $$;
