@@ -99,12 +99,15 @@ cohort_scoped AS MATERIALIZED (
 filt AS (
   SELECT * FROM cohort_scoped
 ),
+-- Use attempt-level averages with zeros for missing scenarios (matching frontend logic)
+-- Only count attempts where ALL completed chats have grades (matching text file logic)
 per_attempt AS (
   SELECT
     attempt_id,
     MIN(attempt_created_at) AS attempt_created_at,
     COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
     COUNT(*) FILTER (WHERE completed) AS completed_chats,
+    COUNT(*) FILTER (WHERE completed AND grade_percent IS NOT NULL) AS graded_chats,
     COUNT(*) AS chats_in_attempt,
     SUM(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS sum_grade_percent
   FROM filt
@@ -116,8 +119,12 @@ attempt_norm AS (
     attempt_created_at,
     GREATEST(expected_from_sim, chats_in_attempt) AS expected,
     completed_chats,
+    graded_chats,
+    -- Only include attempts where ALL completed chats have grades
     CASE
-      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 AND completed_chats > 0
+      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 
+           AND completed_chats > 0 
+           AND completed_chats = graded_chats  -- All completed chats have grades
         THEN (sum_grade_percent / GREATEST(expected_from_sim, chats_in_attempt))
       ELSE NULL
     END AS norm
