@@ -38,7 +38,7 @@ passes AS (
 by_day AS (
   SELECT
     to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
-    min(time_taken_seconds)::float AS value,
+    round(min(time_taken_seconds) / 60.0)::int AS value,
     count(*)::int AS count
   FROM passes
   GROUP BY 1
@@ -51,7 +51,7 @@ data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',   profile_id::text,
            'date',        to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
-           'value',       time_taken_seconds,
+           'value',       round(time_taken_seconds / 60.0)::int,
            'simulationId',simulation_id::text
          ) ORDER BY profile_id, time_taken_seconds, chat_created_at) AS payload
   FROM passes
@@ -62,7 +62,7 @@ SELECT jsonb_build_object(
   'trendData',  COALESCE((
                   SELECT jsonb_agg(jsonb_build_object(
                     'date',  date,
-                    'value', round(value)::int,
+                    'value', value,
                     'count', count
                   ) ORDER BY date)
                   FROM by_day), '[]'::jsonb),

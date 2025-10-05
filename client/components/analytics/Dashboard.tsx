@@ -25,6 +25,7 @@ import {
   computeSimulationPerformanceActionableInsight,
   computeSkillPerformanceActionableInsight,
   computeTrendAnalysis,
+  KeyField,
   MetricResponse,
   TrendData,
 } from "@/lib/analytics";
@@ -296,7 +297,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     // Use all data points for aggregate view
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as
+        | "attemptId"
+        | "simulationId"
+        | "profileId"
+        | "date"
+        | undefined
+    );
 
     return {
       averageScore: Number.isFinite(current) ? current : 0,
@@ -317,7 +328,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       completionPercentage: Number.isFinite(current) ? current : 0,
@@ -338,7 +354,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as
+        | "attemptId"
+        | "simulationId"
+        | "profileId"
+        | "date"
+        | undefined
+    );
 
     return {
       firstAttemptPassRate: Number.isFinite(current) ? current : 0,
@@ -359,7 +385,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as
+        | "attemptId"
+        | "simulationId"
+        | "profileId"
+        | "date"
+        | undefined
+    );
 
     return {
       highestScore: Number.isFinite(current) ? current : 0,
@@ -380,7 +416,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as
+        | "attemptId"
+        | "simulationId"
+        | "profileId"
+        | "date"
+        | undefined
+    );
 
     return {
       averageMessagesPerSession: Number.isFinite(current)
@@ -403,7 +449,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       averageResponseTime: Number.isFinite(current) ? Math.round(current) : 0,
@@ -424,7 +475,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       sessionEfficiency: Number.isFinite(current) ? current : 0,
@@ -445,7 +501,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       stagnationRate: Number.isFinite(current) ? current : 0,
@@ -466,7 +527,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       totalTimeSpent: Number.isFinite(current) ? Math.round(current) : 0,
@@ -487,7 +553,12 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     const points = resp.dataPoints;
-    const current = computeCurrent(resp.method, points);
+    const current = computeCurrent(
+      resp.method,
+      points,
+      "value",
+      resp.keyField as KeyField
+    );
 
     return {
       totalAttempts: Number.isFinite(current) ? Math.round(current) : 0,

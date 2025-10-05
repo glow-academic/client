@@ -210,7 +210,7 @@ export type PersonaPerformanceResponse = z.infer<
 
 // Narrow what can be used as "valueField" and "keyField" so indexing is safe
 type ValueField = "value" | "count";
-type KeyField = "attemptId" | "simulationId" | "profileId" | "date";
+export type KeyField = "attemptId" | "simulationId" | "profileId" | "date";
 
 // Utility function to compute current value from data points
 export function computeCurrent(
@@ -914,31 +914,94 @@ export type TotalAttemptsMetricResponse = z.infer<
   typeof TotalAttemptsMetricResponseSchema
 >;
 
+// Leaderboard-specific metric response schemas (reusing existing ones where possible)
+// Reused from reports: MessagesPerSessionMetricResponse, PersonaResponseTimesMetricResponse, TimeSpentMetricResponse, TotalAttemptsMetricResponse
+
+export const HighestScoreAvgMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: z.record(z.string(), z.any()),
+});
+
+export const PerfectScoreCountMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: z.record(z.string(), z.any()),
+});
+
+export const ImprovementRatePerDayMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: z.record(z.string(), z.any()),
+});
+
+export const QuickestPassMinutesMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: z.record(z.string(), z.any()),
+});
+
+export type HighestScoreAvgMetricResponse = z.infer<
+  typeof HighestScoreAvgMetricResponseSchema
+>;
+export type PerfectScoreCountMetricResponse = z.infer<
+  typeof PerfectScoreCountMetricResponseSchema
+>;
+export type ImprovementRatePerDayMetricResponse = z.infer<
+  typeof ImprovementRatePerDayMetricResponseSchema
+>;
+export type QuickestPassMinutesMetricResponse = z.infer<
+  typeof QuickestPassMinutesMetricResponseSchema
+>;
+
+// Aliases for leaderboard metrics that reuse reports metrics
+export type PersonaResponseSecondsMetricResponse =
+  PersonaResponseTimesMetricResponse;
+export type TimeSpentMinutesMetricResponse = TimeSpentMetricResponse;
+
 export type ProfileMetrics = z.infer<typeof ProfileMetricsSchema>;
 export type ProfileData = z.infer<typeof ProfileDataSchema>;
 export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 
-// Leaderboard Bundle Response Schema
+// Leaderboard Bundle Response Schema - matches reports structure
+export const LeaderboardMetricSchema = z.object({
+  hasData: z.boolean(),
+  method: z.string(),
+  keyField: z.string().optional(),
+  trendData: z.array(z.any()),
+  dataPoints: z.array(z.any()),
+  hover: z.record(z.string(), z.any()),
+});
+
 export const LeaderboardRowSchema = z.object({
   profileId: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  totalAttempts: z.number(),
-  highestScoreAvg: z.number(),
-  messagesPerSession: z.number(),
-  personaResponseSeconds: z.number(),
-  timeSpentMinutes: z.number(),
-  improvementRatePerDay: z.number(),
-  perfectScoreCount: z.number(),
-  quickestPassMinutes: z.number(),
-  mostImprovedPercent: z.number(),
+  metrics: z.object({
+    totalAttempts: LeaderboardMetricSchema,
+    highestScoreAvg: LeaderboardMetricSchema,
+    messagesPerSession: LeaderboardMetricSchema,
+    personaResponseSeconds: LeaderboardMetricSchema,
+    timeSpentMinutes: LeaderboardMetricSchema,
+    improvementRatePerDay: LeaderboardMetricSchema,
+    perfectScoreCount: LeaderboardMetricSchema,
+    quickestPassMinutes: LeaderboardMetricSchema,
+  }),
 });
 
 export const LeaderboardBundleResponseSchema = z.object({
-  hasData: z.boolean(),
   data: z.array(LeaderboardRowSchema),
 });
 
+export type LeaderboardMetric = z.infer<typeof LeaderboardMetricSchema>;
 export type LeaderboardRow = z.infer<typeof LeaderboardRowSchema>;
 export type LeaderboardBundleResponse = z.infer<
   typeof LeaderboardBundleResponseSchema

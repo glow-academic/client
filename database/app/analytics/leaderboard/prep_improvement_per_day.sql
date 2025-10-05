@@ -1,8 +1,8 @@
 -- Improvement per Day Analytics Function
 -- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
 -- Returns: JSON object with hasData, method, trendData, and dataPoints
--- What it is: Slope (percentage points per day) of average grade per day
--- Method: slope (client computes slope of value vs. date treated as day index)
+-- What it is: Maximum improvement rate per day across all simulations for a user
+-- Method: max (client computes max of improvement rates per simulation, rounded to integer)
 
 CREATE OR REPLACE FUNCTION analytics_improvement_per_day_fn(
   p_start           timestamptz,
@@ -29,41 +29,80 @@ WITH filt AS (
         ))
     AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
 ),
--- Per-profile, per-day average grade
-per_day AS (
-  SELECT
-    profile_id,
-    date_trunc('day', chat_created_at) AS d,
-    avg(grade_percent)::float AS avg_grade,
-    count(*)::int AS n
-  FROM filt
-  WHERE grade_percent IS NOT NULL
-  GROUP BY profile_id, date_trunc('day', chat_created_at)
+-- Get attempts by simulation with grades and timestamps
+attempts_by_sim AS (
+  SELECT 
+    a.simulation_id,
+    a.attempt_id,
+    a.profile_id,
+    a.chat_created_at,
+    a.grade_percent
+  FROM filt a
+  WHERE a.grade_percent IS NOT NULL
+    AND a.attempt_id IS NOT NULL
 ),
--- Keep your global chart consistent: overall daily average across all profiles
+-- Group by simulation and attempt to get the best grade per attempt
+attempt_grades AS (
+  SELECT 
+    simulation_id,
+    attempt_id,
+    profile_id,
+    MIN(chat_created_at) as first_time,
+    MAX(grade_percent) as best_grade
+  FROM attempts_by_sim
+  GROUP BY simulation_id, attempt_id, profile_id
+),
+-- Calculate improvement rate per simulation
+sim_rates AS (
+  SELECT 
+    simulation_id,
+    profile_id,
+    CASE 
+      WHEN COUNT(*) >= 2 THEN
+        -- Calculate improvement rate: (best_last_grade - best_first_grade) / days
+        ROUND(
+          (MAX(best_grade) - MIN(best_grade)) / 
+          GREATEST(1.0, 
+            EXTRACT(EPOCH FROM (MAX(first_time) - MIN(first_time))) / 86400.0
+          )
+        )::int
+      ELSE 0
+    END AS improvement_rate
+  FROM attempt_grades
+  GROUP BY simulation_id, profile_id
+),
+-- Get the maximum improvement rate per profile
+max_rates AS (
+  SELECT 
+    profile_id,
+    COALESCE(MAX(improvement_rate), 0) AS max_improvement_rate
+  FROM sim_rates
+  GROUP BY profile_id
+),
+-- For trend data, use daily averages (simplified)
 by_day AS (
   SELECT
-    to_char(d, 'MM/DD') AS date,
-    avg(avg_grade)::float AS value,
-    sum(n)::int          AS count
-  FROM per_day
+    to_char(date_trunc('day', chat_created_at), 'MM/DD') AS date,
+    avg(grade_percent)::float AS value,
+    count(*)::int AS count
+  FROM filt
+  WHERE grade_percent IS NOT NULL
   GROUP BY 1
 ),
 cur AS (
-  SELECT (SELECT count(*) > 0 FROM per_day) AS has_data
+  SELECT (SELECT count(*) > 0 FROM filt WHERE grade_percent IS NOT NULL) AS has_data
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId', profile_id::text,
-           'date',      to_char(d,'YYYY-MM-DD'),
-           'value',     avg_grade,
-           'count',     n
-         ) ORDER BY profile_id, d) AS payload
-  FROM per_day
+           'value', max_improvement_rate,
+           'count', 1
+         ) ORDER BY profile_id) AS payload
+  FROM max_rates
 )
 SELECT jsonb_build_object(
   'hasData',    COALESCE((SELECT has_data FROM cur), false),
-  'method',     'slope',
+  'method',     'max',
   'trendData',  COALESCE((
                   SELECT jsonb_agg(jsonb_build_object(
                     'date',  date,
@@ -71,6 +110,9 @@ SELECT jsonb_build_object(
                     'count', count
                   ) ORDER BY date)
                   FROM by_day), '[]'::jsonb),
-  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb),
+  'hover', jsonb_build_object(
+    'maxRate', COALESCE((SELECT max(max_improvement_rate) FROM max_rates), 0)
+  )
 );
 $$;

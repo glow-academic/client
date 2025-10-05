@@ -29,7 +29,11 @@ type MetricKey =
   | "timeSpent"
   | "totalAttempts";
 
-function computePerProfile(method: Method, dataPoints: DataPoint[]) {
+function computePerProfile(
+  method: Method,
+  dataPoints: DataPoint[],
+  keyField?: string
+) {
   // group points by profileId, then computeCurrent(method, pointsForProfile)
   const map = new Map<string, number>();
   const byProfile = new Map<string, DataPoint[]>();
@@ -42,7 +46,20 @@ function computePerProfile(method: Method, dataPoints: DataPoint[]) {
   }
 
   for (const [id, pts] of byProfile) {
-    map.set(id, computeCurrent(method, pts));
+    map.set(
+      id,
+      computeCurrent(
+        method,
+        pts,
+        "value",
+        keyField as
+          | "attemptId"
+          | "simulationId"
+          | "profileId"
+          | "date"
+          | undefined
+      )
+    );
   }
   return map; // profileId -> metric value
 }
@@ -55,7 +72,7 @@ export function buildRowsFromMetrics(
 
   const attach = (key: MetricKey, resp?: MetricResponse) => {
     if (!resp?.dataPoints?.length) return;
-    const map = computePerProfile(resp.method, resp.dataPoints);
+    const map = computePerProfile(resp.method, resp.dataPoints, resp.keyField);
     for (const [id, val] of map) {
       const row = rows.get(id) ?? { id };
       (row as Record<string, unknown>)[key] = Number.isFinite(val)

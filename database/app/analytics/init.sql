@@ -387,6 +387,7 @@ END $$;
 \i app/analytics/leaderboard/prep_improvement_per_day.sql
 \i app/analytics/leaderboard/prep_perfect_scores.sql
 \i app/analytics/leaderboard/prep_quickest_pass.sql
+\i app/analytics/leaderboard/init.sql
 
 -- Primary Analytics Functions
 \i app/analytics/primary/helpers.sql
