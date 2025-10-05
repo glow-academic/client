@@ -829,6 +829,7 @@ export const TimeSpentMetricResponseSchema = z.object({
 export const TotalAttemptsMetricResponseSchema = z.object({
   hasData: z.boolean(),
   method: MethodSchema,
+  keyField: z.string().optional(),
   trendData: z.array(TrendDataSchema),
   dataPoints: z.array(DataPointSchema),
   hover: TotalAttemptsHoverSchema,

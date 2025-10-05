@@ -362,6 +362,7 @@ SELECT jsonb_build_object(
             SELECT jsonb_build_object(
               'hasData', COALESCE((m.j->>'hasData')::boolean, false),
               'method',  COALESCE(m.j->>'method','countDistinct'),
+              'keyField', COALESCE(m.j->>'keyField','attemptId'),
               'trendData', COALESCE(m.j->'trendData','[]'::jsonb),
               'dataPoints', COALESCE(m.j->'dataPoints','[]'::jsonb),
               'hover', jsonb_build_object(

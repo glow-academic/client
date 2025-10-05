@@ -271,7 +271,9 @@ export default function ReportsPage() {
               const metricData = m as TotalAttemptsMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
+                "value",
+                metricData.keyField as "attemptId"
               );
             },
             (n) => `${n}`,
