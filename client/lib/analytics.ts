@@ -140,7 +140,7 @@ export const GrowthMetricSchema = z.object({
   color: z.string(),
   unit: z.string(),
   description: z.string(),
-  formatterId: z.enum(["percent", "int", "sec", "min"]),
+  formatterId: z.enum(["percent", "int", "sec", "min", "hours", "minutes"]),
 });
 
 export const GrowthWindowAverageSchema = z.object({

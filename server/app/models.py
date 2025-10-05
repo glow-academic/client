@@ -319,7 +319,6 @@ class StandardGroups(_Base, table=True):
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='standard_groups_pkey'),
         Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
-        Index('standard_groups_rubric_id_idx', 'rubric_id'),
         Index('standard_groups_rubric_idx', 'id', 'rubric_id')
     )
 
@@ -451,8 +450,7 @@ class Standards(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', name='standards_standard_group_id_fkey'),
         PrimaryKeyConstraint('id', name='standards_pkey'),
-        Index('standards_group_idx', 'standard_group_id'),
-        Index('standards_standard_group_id_idx', 'standard_group_id')
+        Index('standards_group_idx', 'standard_group_id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -552,15 +550,9 @@ class SimulationChatGrades(_Base, table=True):
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
         ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey'),
-        Index('scg_chat_created_desc_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_created_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
-        Index('simulation_chat_grades_chat_id_created_at_idx', 'simulation_chat_id', 'created_at'),
-        Index('simulation_chat_grades_chat_id_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
-        Index('simulation_chat_grades_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
-        Index('simulation_chat_grades_latest_idx', 'simulation_chat_id', 'created_at'),
-        Index('simulation_chat_grades_rubric_id_idx', 'rubric_id'),
-        Index('simulation_chat_grades_simulation_chat_id_idx', 'simulation_chat_id')
+        Index('simulation_chat_grades_latest_idx', 'simulation_chat_id', 'created_at')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -603,9 +595,7 @@ class SimulationChatFeedbacks(_Base, table=True):
         ForeignKeyConstraint(['simulation_chat_grade_id'], ['simulation_chat_grades.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_simulation_chat_grade_id_fkey'),
         ForeignKeyConstraint(['standard_id'], ['standards.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_standard_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey'),
-        Index('scf_grade_idx', 'simulation_chat_grade_id'),
-        Index('simulation_chat_feedbacks_grade_id_idx', 'simulation_chat_grade_id'),
-        Index('simulation_chat_feedbacks_standard_id_idx', 'standard_id')
+        Index('scf_grade_idx', 'simulation_chat_grade_id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))

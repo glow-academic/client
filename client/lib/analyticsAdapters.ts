@@ -5,7 +5,7 @@
 import type { GrowthMetric } from "@/lib/analytics";
 
 type ServerMetric = Omit<GrowthMetric, "formatter"> & {
-  formatterId: "percent" | "int" | "sec" | "min" | "hours";
+  formatterId: "percent" | "int" | "sec" | "min" | "hours" | "minutes";
 };
 
 export function attachFormatters(
@@ -17,6 +17,15 @@ export function attachFormatters(
     sec: (v: number) => `${Math.round(v)} sec`,
     min: (v: number) => `${Math.round(v)} min`,
     hours: (v: number) => `${Math.round(v)}h`,
+    minutes: (v: number) => {
+      const totalMinutes = Math.round(v);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours > 0) {
+        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+      }
+      return `${minutes}m`;
+    },
   };
 
   const { availableMetrics, ...rest } = payload;

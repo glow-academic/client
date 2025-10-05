@@ -117,7 +117,7 @@ chart AS (
              'personaResponseTimes', r.value,
              'sessionEfficiency',    e.value,
              'stagnationRate',       g.value,
-             'timeSpent',            ts.value,
+             'timeSpent',            CASE WHEN ts.value IS NOT NULL THEN ts.value / 60.0 ELSE NULL END,
              'totalAttempts',        t.value
            )
            ORDER BY s.d
@@ -155,7 +155,7 @@ available_metrics AS (
     jsonb_build_object('id','personaResponseTimes','name','Response Time','color','#a855f7','unit','sec','description','Avg reply latency','formatterId','sec'),
     jsonb_build_object('id','sessionEfficiency','name','Efficiency','color','#8b5cf6','unit','%','description','Score per time proxy','formatterId','percent'),
     jsonb_build_object('id','stagnationRate','name','Stagnation','color','#ef4444','unit','%','description','Stalled sessions share','formatterId','percent'),
-    jsonb_build_object('id','timeSpent','name','Time Spent','color','#64748b','unit','h','description','Total time spent (hours)','formatterId','hours'),
+    jsonb_build_object('id','timeSpent','name','Time Spent','color','#64748b','unit','min','description','Total time spent (minutes)','formatterId','minutes'),
     jsonb_build_object('id','totalAttempts','name','Total Attempts','color','#14b8a6','unit','attempts','description','Attempt count','formatterId','int')
   ) AS payload
 ),
