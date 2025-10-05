@@ -342,8 +342,8 @@ export const CohortDataSchema = z.object({
   passedStudents: z.number(),
   totalAttempts: z.number(),
   passedAttempts: z.number(),
-  rubricPoints: z.number(),
-  rubricPassPoints: z.number(),
+  simulationCount: z.number(),
+  requiredSimulations: z.number(),
 });
 
 export const DailyDataSchema = z.object({
@@ -1221,25 +1221,43 @@ export function computeCohortMultipleActionableInsights(
     cohortData.reduce((sum, cohort) => sum + cohort.passRate, 0) /
     cohortData.length;
 
+  // Check if all cohorts are high performers
+  const highPerformers = cohortData.filter((c) => c.passRate >= 90);
+  const allHighPerformers = highPerformers.length === cohortData.length;
+
   // Generate single focused insight for each cohort
   cohortData.forEach((cohort) => {
     const cohortInsights: Record<string, string | null> = {};
     const rank = sortedCohorts.findIndex((c) => c.id === cohort.id) + 1;
     const totalCohorts = cohortData.length;
+    const passRateDiff = cohort.passRate - avgPassRate;
 
     // Return the most impactful single insight
-    if (cohort.passRate >= 90) {
-      cohortInsights["insight"] =
-        `Exceptional performance at ${Math.round(cohort.passRate)}% - share best practices with other cohorts.`;
+    if (cohort.passRate >= 95) {
+      if (allHighPerformers) {
+        cohortInsights["insight"] =
+          `Outstanding performance at ${Math.round(cohort.passRate)}% - maintain excellence and mentor others.`;
+      } else {
+        cohortInsights["insight"] =
+          `Exceptional performance at ${Math.round(cohort.passRate)}% - share best practices with other cohorts.`;
+      }
+    } else if (cohort.passRate >= 90) {
+      if (allHighPerformers) {
+        cohortInsights["insight"] =
+          `Strong performance at ${Math.round(cohort.passRate)}% - continue current strategies.`;
+      } else {
+        cohortInsights["insight"] =
+          `Excellent performance at ${Math.round(cohort.passRate)}% - share successful approaches.`;
+      }
     } else if (cohort.passRate < 60) {
       cohortInsights["insight"] =
         `Critical attention needed - ${Math.round(cohort.passRate)}% pass rate requires immediate intervention.`;
-    } else if (cohort.passRate > avgPassRate + 15) {
+    } else if (passRateDiff > 15) {
       cohortInsights["insight"] =
-        `Outperforming average by ${Math.round(cohort.passRate - avgPassRate)}% - consider leadership opportunities.`;
-    } else if (cohort.passRate < avgPassRate - 15) {
+        `Outperforming average by ${Math.round(passRateDiff)}% - consider leadership opportunities.`;
+    } else if (passRateDiff < -15) {
       cohortInsights["insight"] =
-        `Underperforming average by ${Math.round(avgPassRate - cohort.passRate)}% - additional support needed.`;
+        `Underperforming average by ${Math.round(-passRateDiff)}% - additional support needed.`;
     } else if (rank === 1) {
       cohortInsights["insight"] =
         `Top performer with ${Math.round(cohort.passRate)}% pass rate - maintain current approach.`;

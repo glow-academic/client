@@ -40,8 +40,8 @@ type CohortRow = {
   passedStudents: number;
   totalAttempts: number;
   passedAttempts: number;
-  rubricPoints: number;
-  rubricPassPoints: number;
+  simulationCount: number;
+  requiredSimulations: number;
 };
 type DailyRow = { date: string; avgScore: number };
 type CohortFact = {
@@ -99,8 +99,8 @@ export default function CohortPerformance({
         name: string;
         totalStudents: number;
         passedStudents: number;
-        rubricPoints: number;
-        rubricPassPoints: number;
+        simulationCount: number;
+        requiredSimulations: number;
         wPass: number;
         wScore: number;
         w: number;
@@ -114,8 +114,8 @@ export default function CohortPerformance({
         name: c.name,
         totalStudents: c.totalStudents,
         passedStudents: c.passedStudents,
-        rubricPoints: c.rubricPoints,
-        rubricPassPoints: c.rubricPassPoints,
+        simulationCount: c.simulationCount,
+        requiredSimulations: c.requiredSimulations,
         wPass: 0,
         wScore: 0,
         w: 0,
@@ -143,8 +143,8 @@ export default function CohortPerformance({
       passedStudents: a.passedStudents,
       totalAttempts: a.totalAttempts,
       passedAttempts: a.passedAttempts,
-      rubricPoints: a.rubricPoints,
-      rubricPassPoints: a.rubricPassPoints,
+      simulationCount: a.simulationCount,
+      requiredSimulations: a.requiredSimulations,
     }));
   }, [selected, cohortData, cohortFacts]);
 
@@ -257,11 +257,8 @@ export default function CohortPerformance({
             }}
           >
             {displayCohorts.map((cohort) => {
-              const passRatePct = cohort.totalStudents
-                ? (cohort.passedStudents /
-                    (isSingleProfileMode ? 1 : cohort.totalStudents)) *
-                  100
-                : 0;
+              // Use the passRate from backend instead of recalculating
+              const passRatePct = cohort.passRate;
 
               // Determine background color based on pass rate
               let bgColor: string;
@@ -304,24 +301,17 @@ export default function CohortPerformance({
                             {isSingleProfileMode
                               ? `${passRatePct.toFixed(2)}% pass rate for `
                               : `${passRatePct.toFixed(2)}% of students pass `}
-                            {cohort.rubricPoints > 0 ? cohort.rubricPoints : 0}{" "}
+                            {cohort.simulationCount > 0
+                              ? cohort.simulationCount
+                              : 0}{" "}
                             quiz
-                            {cohort.rubricPoints > 0
-                              ? cohort.rubricPoints !== 1
+                            {cohort.simulationCount > 0
+                              ? cohort.simulationCount !== 1
                                 ? "zes"
                                 : ""
                               : "zes"}
-                            {cohort.rubricPoints > 0 && (
-                              <>
-                                {" "}
-                                with a{" "}
-                                {Math.round(
-                                  (cohort.rubricPassPoints /
-                                    cohort.rubricPoints) *
-                                    100
-                                )}
-                                % or better
-                              </>
+                            {cohort.simulationCount > 0 && (
+                              <> with a 80 % or better</>
                             )}
                           </p>
                         </div>

@@ -194,39 +194,52 @@ cohort_agg AS (
     cl.id                                        AS cohort_id,
     cl.title                                     AS cohort_name,
     COALESCE(cardinality(cl.profile_ids), 0)     AS total_students_declared,
-    (SELECT COUNT(DISTINCT profile_id) FROM filt_x WHERE c_id = cl.id) AS total_students_seen,
+    cardinality(cl.profile_ids) AS total_students_seen,
     COUNT(DISTINCT ca.attempt_id)                AS total_attempts,
     SUM(passed_any)::int                         AS passed_attempts,
     (100.0 * AVG(passed_any))::float             AS pass_rate_attempts,
     AVG(ca.avg_grade_attempt)::float             AS avg_percentage_score,
-    (SELECT COUNT(*) FROM students_passed_all spa
-      WHERE spa.cohort_id = cl.id AND spa.passed_all = 1) AS passed_students,
+    (SELECT COUNT(*) FROM (
+      SELECT profile_id
+      FROM filt_x fx2
+      WHERE fx2.c_id = cl.id
+      GROUP BY profile_id
+      HAVING 
+        -- Student must have attempted all simulations in the cohort
+        COUNT(DISTINCT simulation_id) = cardinality(cl.simulation_ids)
+        -- AND have at least one attempt ≥80% in EACH simulation
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM (
+            SELECT 
+              simulation_id,
+              MAX(CASE WHEN grade_percent IS NULL THEN 0 ELSE grade_percent END) as best_score
+            FROM filt_x fx3 
+            WHERE fx3.c_id = cl.id 
+              AND fx3.profile_id = fx2.profile_id
+            GROUP BY simulation_id
+          ) sim_bests
+          WHERE sim_bests.best_score < 80.0
+        )
+    ) s) AS passed_students,
     /*  ⬆️ removed the second total_students_seen here */
-    (SELECT a2.rubric_points
-       FROM analytics a2
-      WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
-      GROUP BY a2.rubric_id, a2.rubric_points
-      ORDER BY COUNT(*) DESC
-      LIMIT 1)                                   AS rubric_points,
-    (SELECT a2.rubric_pass_points
-       FROM analytics a2
-      WHERE a2.chat_id IN (SELECT chat_id FROM filt_x WHERE c_id = cl.id)
-      GROUP BY a2.rubric_id, a2.rubric_pass_points
-      ORDER BY COUNT(*) DESC
-      LIMIT 1)                                   AS rubric_pass_points
+    cardinality(cl.simulation_ids)               AS simulation_count,
+    cardinality(cl.simulation_ids)               AS required_simulations
   FROM cohort_list cl
   LEFT JOIN cohort_attempts ca ON ca.cohort_id = cl.id
-  GROUP BY cl.id, cl.title, cl.profile_ids
+  GROUP BY cl.id, cl.title, cl.profile_ids, cl.simulation_ids
 ),
 cohort_rows AS (
   SELECT jsonb_agg(
            jsonb_build_object(
              'id',                 cohort_id::text,
              'name',               cohort_name,
-             'passRate',           ROUND(COALESCE(
-               (100.0 * NULLIF(passed_students,0) / NULLIF(total_students_seen,0))::float, 
-               pass_rate_attempts
-             ))::int,
+             'passRate',           ROUND(
+               CASE 
+                 WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::float
+                 ELSE 0
+               END
+             )::int,
              'avgPercentageScore', ROUND(COALESCE(avg_percentage_score,0))::int,
              'totalStudents',      GREATEST(total_students_declared, total_students_seen),
              'passedStudents',     (SELECT COUNT(*) FROM (
@@ -238,8 +251,8 @@ cohort_rows AS (
                                     ) s),
              'totalAttempts',      COALESCE(total_attempts,0),
              'passedAttempts',     COALESCE(passed_attempts,0),
-             'rubricPoints',       COALESCE(rubric_points, 0),
-             'rubricPassPoints',   COALESCE(rubric_pass_points, 0)
+             'simulationCount',     COALESCE(simulation_count, 0),
+             'requiredSimulations', COALESCE(required_simulations, 0)
            )
            ORDER BY cohort_name
          ) AS payload
