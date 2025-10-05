@@ -210,7 +210,7 @@ export default function ReportsPage() {
                 metricData.dataPoints || []
               );
             },
-            (n) => `${Math.round(n / 60)}m`,
+            (n) => `${n}s`,
             { gray: 0, red: 300, yellow: 180, green: 60 }
           ),
           hover: profile.metrics.personaResponseTimes.hover,
