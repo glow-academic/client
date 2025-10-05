@@ -8,9 +8,7 @@
 "use client";
 
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useHeaderMetrics } from "@/hooks/use-header-metrics";
-import { computeCurrent, type DataPoint } from "@/lib/analytics";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useAnalyticsReportsBundle } from "@/lib/api/hooks/analytics";
 import { useProfiles } from "@/lib/api/hooks/profiles";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { useSimulations } from "@/lib/api/hooks/simulations";
@@ -40,68 +38,17 @@ export default function ReportsPage() {
 
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
 
+  // Single hook call instead of 10 separate calls!
   const {
-    raw: headerMetrics,
-    summaries,
+    data: reportsData,
     isLoading,
     isError,
-  } = useHeaderMetrics(filters, undefined, rqOpts);
+  } = useAnalyticsReportsBundle(filters, rqOpts);
   const { data: allScenarios } = useScenarios();
   const { data: allSimulations } = useSimulations();
-  const { data: cohorts = [] } = useCohorts();
   const { data: allProfiles = [] } = useProfiles();
 
-  // Build per-metric Map<profileId, DataPoint[]>
-  const metricByProfile = useMemo(() => {
-    const indexMetric = (m?: { dataPoints?: DataPoint[] }) => {
-      const map = new Map<string, DataPoint[]>();
-      m?.dataPoints?.forEach((dp) => {
-        const id = dp.profileId;
-        if (!id) return;
-        const arr = map.get(id);
-        if (arr) arr.push(dp);
-        else map.set(id, [dp]);
-      });
-      return map;
-    };
-
-    return {
-      averageScore: indexMetric(headerMetrics?.averageScore),
-      completionPercentage: indexMetric(headerMetrics?.completionPercentage),
-      firstAttemptPassRate: indexMetric(headerMetrics?.firstAttemptPassRate),
-      highestScore: indexMetric(headerMetrics?.highestScore),
-      messagesPerSession: indexMetric(headerMetrics?.messagesPerSession),
-      personaResponseTimes: indexMetric(headerMetrics?.personaResponseTimes),
-      sessionEfficiency: indexMetric(headerMetrics?.sessionEfficiency),
-      stagnationRate: indexMetric(headerMetrics?.stagnationRate),
-      timeSpent: indexMetric(headerMetrics?.timeSpent),
-      totalAttempts: indexMetric(headerMetrics?.totalAttempts),
-    };
-  }, [headerMetrics]);
-
-  // Get profiles from selected cohorts
-  const baseProfileIds = useMemo(() => {
-    const set = new Set<string>();
-    cohorts
-      .filter(
-        (c) => !selectedCohortIds?.length || selectedCohortIds.includes(c.id)
-      )
-      .forEach((c) =>
-        (c.profileIds || []).forEach((pid: string) => set.add(pid))
-      );
-    return Array.from(set);
-  }, [cohorts, selectedCohortIds]);
-
-  // Union: all profiles in cohorts + any with datapoints
-  const profileIds = useMemo(() => {
-    const s = new Set<string>(baseProfileIds);
-    Object.values(metricByProfile).forEach((map) =>
-      map?.forEach((_, id) => s.add(id))
-    );
-    return [...s];
-  }, [baseProfileIds, metricByProfile]);
-
-  // Profile lookup map
+  // Profile lookup map for names
   const profileMap = useMemo(() => {
     const m = new Map<
       string,
@@ -117,231 +64,140 @@ export default function ReportsPage() {
     return m;
   }, [allProfiles]);
 
-  // Helpers
-  const valOf = (map: Map<string, DataPoint[]> | undefined, id: string) =>
-    map?.get(id) ?? [];
-  const compute = (method: string, dps: DataPoint[]) =>
-    computeCurrent(
-      method as "avg" | "max" | "sum" | "rate" | "countDistinct",
-      dps
-    );
+  // Transform the data to match the existing Reports component interface
+  const transformedData = useMemo(() => {
+    if (!reportsData?.data) return [];
 
-  // Build reports rows — compute each metric ONCE per profile
-  const reportsData = useMemo(() => {
-    if (!headerMetrics) return [];
+    return reportsData.data.map((profile) => {
+      const profileInfo = profileMap.get(profile.profileId);
+      const profileName = profileInfo
+        ? `${profileInfo.firstName} ${profileInfo.lastName}`
+        : profile.profileId;
+      const profileAlias = profileInfo?.alias || profile.profileId;
 
-    // Helper to get profile names
-    const getName = (pid: string) => {
-      const p = profileMap.get(pid);
-      if (!p) return { profileName: pid, profileAlias: pid }; // fallback
-      return {
-        profileName: `${p.firstName} ${p.lastName}`,
-        profileAlias: p.alias,
-      };
-    };
-
-    // Helper: compute or return N/A
-    function computeMetric(
-      method: string,
-      dps: DataPoint[] | undefined,
-      format: (n: number) => string,
-      thresholds: { gray: number; red: number; yellow: number; green: number }
-    ) {
-      const arr = dps ?? [];
-      if (arr.length === 0) {
+      // Helper to format values with thresholds
+      const formatMetric = (
+        value: number | null,
+        formatter: (n: number) => string,
+        thresholds: { gray: number; red: number; yellow: number; green: number }
+      ) => {
+        if (value === null) {
+          return {
+            value: null,
+            formattedValue: "N/A",
+            thresholds,
+          };
+        }
         return {
-          value: null as number | null,
-          formattedValue: "N/A",
+          value,
+          formattedValue: formatter(value),
           thresholds,
         };
-      }
-      const v = compute(
-        method as "avg" | "max" | "sum" | "rate" | "countDistinct",
-        arr
-      );
-      return { value: v, formattedValue: format(v), thresholds };
-    }
-
-    return profileIds.map((pid) => {
-      // scenario/simulation from any available dp for this profile
-      const anyDp = (metricByProfile.averageScore.get(pid) ??
-        metricByProfile.completionPercentage.get(pid) ??
-        [])[0];
-
-      const scenario_id = anyDp?.scenarioId ?? "";
-      const simulation_id = anyDp?.simulationId ?? "";
-
-      const nameBits = getName(pid);
-
-      const avg = computeMetric(
-        headerMetrics.averageScore?.method ?? "avg",
-        valOf(metricByProfile.averageScore, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 60, yellow: 75, green: 85 }
-      );
-
-      const compl = computeMetric(
-        headerMetrics.completionPercentage?.method ?? "rate",
-        valOf(metricByProfile.completionPercentage, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 60, yellow: 75, green: 85 }
-      );
-
-      const fap = computeMetric(
-        headerMetrics.firstAttemptPassRate?.method ?? "rate",
-        valOf(metricByProfile.firstAttemptPassRate, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 60, yellow: 75, green: 85 }
-      );
-
-      const high = computeMetric(
-        headerMetrics.highestScore?.method ?? "max",
-        valOf(metricByProfile.highestScore, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 70, yellow: 80, green: 90 }
-      );
-
-      const mps = computeMetric(
-        headerMetrics.messagesPerSession?.method ?? "avg",
-        valOf(metricByProfile.messagesPerSession, pid),
-        (n) => `${n}`,
-        { gray: 0, red: 5, yellow: 8, green: 12 }
-      );
-
-      const prt = computeMetric(
-        headerMetrics.personaResponseTimes?.method ?? "avg",
-        valOf(metricByProfile.personaResponseTimes, pid),
-        (n) => `${Math.round(n / 60)}m`,
-        { gray: 0, red: 300, yellow: 180, green: 60 }
-      );
-
-      const eff = computeMetric(
-        headerMetrics.sessionEfficiency?.method ?? "avg",
-        valOf(metricByProfile.sessionEfficiency, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 60, yellow: 75, green: 85 }
-      );
-
-      const stag = computeMetric(
-        headerMetrics.stagnationRate?.method ?? "rate",
-        valOf(metricByProfile.stagnationRate, pid),
-        (n) => `${n}%`,
-        { gray: 0, red: 25, yellow: 15, green: 5 }
-      );
-
-      const time = computeMetric(
-        headerMetrics.timeSpent?.method ?? "avg",
-        valOf(metricByProfile.timeSpent, pid),
-        (n) => `${Math.round(n / 60)}m`,
-        { gray: 0, red: 90, yellow: 60, green: 30 }
-      );
-
-      const attempts = computeMetric(
-        headerMetrics.totalAttempts?.method ?? "countDistinct",
-        valOf(metricByProfile.totalAttempts, pid),
-        (n) => `${n}`,
-        { gray: 0, red: 3, yellow: 5, green: 8 }
-      );
+      };
 
       return {
-        profile_id: pid,
-        profileName: nameBits.profileName,
-        profileAlias: nameBits.profileAlias,
-        scenario_id,
-        simulation_id,
+        profile_id: profile.profileId,
+        profileName,
+        profileAlias,
+        scenario_id: "", // Not available in bundle response
+        simulation_id: "", // Not available in bundle response
 
         averageScore: {
-          ...avg,
-          hover: {
-            mean: summaries?.averageScore?.mean ?? 0,
-            median: summaries?.averageScore?.median ?? 0,
-            mode: summaries?.averageScore?.mode ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.averageScore.hover.mean,
+            (n) => `${n}%`,
+            { gray: 0, red: 60, yellow: 75, green: 85 }
+          ),
+          hover: profile.metrics.averageScore.hover,
         },
 
         completionPercentage: {
-          ...compl,
-          hover: {
-            completed: summaries?.completionPercentage?.completed ?? 0,
-            total: summaries?.completionPercentage?.total ?? 0,
-            percent: summaries?.completionPercentage?.percent ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.completionPercentage.hover.percent,
+            (n) => `${n}%`,
+            { gray: 0, red: 60, yellow: 75, green: 85 }
+          ),
+          hover: profile.metrics.completionPercentage.hover,
         },
 
         firstAttemptPassRate: {
-          ...fap,
-          hover: {
-            passed: summaries?.firstAttemptPassRate?.passed ?? 0,
-            total: summaries?.firstAttemptPassRate?.total ?? 0,
-            percent: summaries?.firstAttemptPassRate?.percent ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.firstAttemptPassRate.hover.percent,
+            (n) => `${n}%`,
+            { gray: 0, red: 60, yellow: 75, green: 85 }
+          ),
+          hover: profile.metrics.firstAttemptPassRate.hover,
         },
 
         highestScore: {
-          ...high,
-          hover: { top: summaries?.highestScoreTop ?? [] },
+          ...formatMetric(
+            profile.metrics.highestScore.hover.top[0] || null,
+            (n) => `${n}%`,
+            { gray: 0, red: 70, yellow: 80, green: 90 }
+          ),
+          hover: profile.metrics.highestScore.hover,
         },
 
         messagesPerSession: {
-          ...mps,
-          hover: {
-            mean: summaries?.messagesPerSession?.mean ?? 0,
-            median: summaries?.messagesPerSession?.median ?? 0,
-            count: summaries?.messagesPerSession?.count ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.messagesPerSession.hover.mean,
+            (n) => `${n}`,
+            { gray: 0, red: 5, yellow: 8, green: 12 }
+          ),
+          hover: profile.metrics.messagesPerSession.hover,
         },
 
         personaResponseTimes: {
-          ...prt,
-          hover: {
-            meanSeconds: summaries?.personaResponseTimes?.meanSeconds ?? 0,
-            medianSeconds: summaries?.personaResponseTimes?.medianSeconds ?? 0,
-            samples: summaries?.personaResponseTimes?.samples ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.personaResponseTimes.hover.meanSeconds,
+            (n) => `${Math.round(n / 60)}m`,
+            { gray: 0, red: 300, yellow: 180, green: 60 }
+          ),
+          hover: profile.metrics.personaResponseTimes.hover,
         },
 
         sessionEfficiency: {
-          ...eff,
-          hover: {
-            avgScorePercent: summaries?.sessionEfficiency?.efficiency ?? 0,
-            avgMinutes: 0,
-            efficiency: summaries?.sessionEfficiency?.efficiency ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.sessionEfficiency.hover.efficiency,
+            (n) => `${n}%`,
+            { gray: 0, red: 60, yellow: 75, green: 85 }
+          ),
+          hover: profile.metrics.sessionEfficiency.hover,
         },
 
         stagnationRate: {
-          ...stag,
-          hover: {
-            tracked: summaries?.stagnationRate?.tracked ?? 0,
-            stagnant: summaries?.stagnationRate?.stagnant ?? 0,
-            ratePercent: summaries?.stagnationRate?.ratePercent ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.stagnationRate.hover.ratePercent,
+            (n) => `${n}%`,
+            { gray: 0, red: 25, yellow: 15, green: 5 }
+          ),
+          hover: profile.metrics.stagnationRate.hover,
         },
 
         timeSpent: {
-          ...time,
-          hover: {
-            avgSessionMinutes: summaries?.timeSpent?.avgSessionMinutes ?? 0,
-            avgChatMinutes: summaries?.timeSpent?.avgChatMinutes ?? 0,
-            avgOverallMinutes: summaries?.timeSpent?.avgOverallMinutes ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.timeSpent.hover.avgSessionMinutes,
+            (n) => `${n}m`,
+            { gray: 0, red: 90, yellow: 60, green: 30 }
+          ),
+          hover: profile.metrics.timeSpent.hover,
         },
 
         totalAttempts: {
-          ...attempts,
-          hover: {
-            attempts: summaries?.totalAttempts?.attempts ?? 0,
-            uniqueSimulations: summaries?.totalAttempts?.uniqueSimulations ?? 0,
-            perSimulationMean: summaries?.totalAttempts?.perSimulationMean ?? 0,
-          },
+          ...formatMetric(
+            profile.metrics.totalAttempts.hover.attempts,
+            (n) => `${n}`,
+            { gray: 0, red: 3, yellow: 5, green: 8 }
+          ),
+          hover: profile.metrics.totalAttempts.hover,
         },
       };
     });
-  }, [headerMetrics, summaries, profileIds, metricByProfile, profileMap]);
+  }, [reportsData, profileMap]);
 
   return (
     <Reports
-      data={reportsData}
+      data={transformedData}
       isLoading={isLoading}
       isError={isError}
       allScenarios={allScenarios ?? []}

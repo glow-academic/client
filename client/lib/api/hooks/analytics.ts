@@ -8,6 +8,7 @@ import {
   MetricResponseSchema,
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponseSchema,
+  ReportsBundleResponseSchema,
   RubricHeatmapResponseSchema,
   ScenarioPerformanceResponseSchema,
   ScenarioStatsResponseSchema,
@@ -34,6 +35,7 @@ import {
   analyticsPracticeOverviewKeys,
   analyticsQuickestPassKeys,
   analyticsRefreshKeys,
+  analyticsReportsBundleKeys,
   analyticsRubricHeatmapKeys,
   analyticsScenarioPerformanceKeys,
   analyticsScenarioStatsKeys,
@@ -695,6 +697,29 @@ export function useAnalyticsAttemptHistory(
         body: JSON.stringify(filters),
       });
       return AttemptHistoryResponseSchema.parse(res);
+    },
+  });
+}
+
+// Reports Bundle Analytics Hook
+export function useAnalyticsReportsBundle(
+  filters: AnalyticsFilters,
+  options: AnalyticsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: analyticsReportsBundleKeys.list(filters),
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/reports", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return ReportsBundleResponseSchema.parse(res);
     },
   });
 }

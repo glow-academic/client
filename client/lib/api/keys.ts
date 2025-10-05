@@ -314,6 +314,13 @@ export const analyticsAttemptHistoryKeys = {
 export const analyticsRefreshKeys = {
   all: ["analytics:refresh"] as const,
 };
+
+// Reports Bundle Analytics Keys
+export const analyticsReportsBundleKeys = {
+  all: ["analytics:reports:bundle"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsReportsBundleKeys.all, { filters }] as const,
+};
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,
   many: (ids: Array<string | number>) =>

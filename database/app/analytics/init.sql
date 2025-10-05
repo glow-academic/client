@@ -413,3 +413,6 @@ END $$;
 
 -- Practice Analytics Functions
 \i app/analytics/practice/analytics_practice_overview.sql
+
+-- Reports Analytics Functions
+\i app/analytics/reports/init.sql

@@ -20,6 +20,8 @@ import {
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponse,
   PracticeOverviewResponseSchema,
+  ReportsBundleResponse,
+  ReportsBundleResponseSchema,
   RubricHeatmapResponse,
   RubricHeatmapResponseSchema,
   ScenarioPerformanceResponse,
@@ -341,6 +343,17 @@ export const analyticsRepo = {
       filters
     );
     return PracticeOverviewResponseSchema.parse(result);
+  },
+
+  // Reports Bundle Analytics
+  async getReportsBundle(
+    filters: AnalyticsFilters
+  ): Promise<ReportsBundleResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_reports_bundle_fn",
+      filters
+    );
+    return ReportsBundleResponseSchema.parse(result);
   },
 
   // Refresh materialized view

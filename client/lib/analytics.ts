@@ -692,6 +692,231 @@ export type AttemptHistoryResponse = z.infer<
   typeof AttemptHistoryResponseSchema
 >;
 
+// Reports Bundle Analytics Types
+
+// Hover data schemas for each metric
+export const AverageScoreHoverSchema = z.object({
+  mean: z.number(),
+  median: z.number(),
+  mode: z.number(),
+});
+
+export const CompletionPercentageHoverSchema = z.object({
+  completed: z.number(),
+  total: z.number(),
+  percent: z.number(),
+});
+
+export const FirstAttemptPassRateHoverSchema = z.object({
+  passed: z.number(),
+  total: z.number(),
+  percent: z.number(),
+});
+
+export const HighestScoreHoverSchema = z.object({
+  top: z.array(z.number()),
+});
+
+export const MessagesPerSessionHoverSchema = z.object({
+  mean: z.number(),
+  median: z.number(),
+  count: z.number(),
+});
+
+export const PersonaResponseTimesHoverSchema = z.object({
+  meanSeconds: z.number(),
+  medianSeconds: z.number(),
+  samples: z.number(),
+});
+
+export const SessionEfficiencyHoverSchema = z.object({
+  avgScorePercent: z.number(),
+  avgMinutes: z.number(),
+  efficiency: z.number(),
+});
+
+export const StagnationRateHoverSchema = z.object({
+  tracked: z.number(),
+  stagnant: z.number(),
+  ratePercent: z.number(),
+});
+
+export const TimeSpentHoverSchema = z.object({
+  avgSessionMinutes: z.number(),
+  avgChatMinutes: z.number(),
+  avgOverallMinutes: z.number(),
+});
+
+export const TotalAttemptsHoverSchema = z.object({
+  attempts: z.number(),
+  uniqueSimulations: z.number(),
+  perSimulationMean: z.number(),
+});
+
+// Individual metric response schemas with specific hover types
+export const AverageScoreMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: AverageScoreHoverSchema,
+});
+
+export const CompletionPercentageMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: CompletionPercentageHoverSchema,
+});
+
+export const FirstAttemptPassRateMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: FirstAttemptPassRateHoverSchema,
+});
+
+export const HighestScoreMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: HighestScoreHoverSchema,
+});
+
+export const MessagesPerSessionMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: MessagesPerSessionHoverSchema,
+});
+
+export const PersonaResponseTimesMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: PersonaResponseTimesHoverSchema,
+});
+
+export const SessionEfficiencyMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: SessionEfficiencyHoverSchema,
+});
+
+export const StagnationRateMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: StagnationRateHoverSchema,
+});
+
+export const TimeSpentMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: TimeSpentHoverSchema,
+});
+
+export const TotalAttemptsMetricResponseSchema = z.object({
+  hasData: z.boolean(),
+  method: MethodSchema,
+  trendData: z.array(TrendDataSchema),
+  dataPoints: z.array(DataPointSchema),
+  hover: TotalAttemptsHoverSchema,
+});
+
+// Profile metrics bundle schema with explicit types
+export const ProfileMetricsSchema = z.object({
+  averageScore: AverageScoreMetricResponseSchema,
+  completionPercentage: CompletionPercentageMetricResponseSchema,
+  firstAttemptPassRate: FirstAttemptPassRateMetricResponseSchema,
+  highestScore: HighestScoreMetricResponseSchema,
+  messagesPerSession: MessagesPerSessionMetricResponseSchema,
+  personaResponseTimes: PersonaResponseTimesMetricResponseSchema,
+  sessionEfficiency: SessionEfficiencyMetricResponseSchema,
+  stagnationRate: StagnationRateMetricResponseSchema,
+  timeSpent: TimeSpentMetricResponseSchema,
+  totalAttempts: TotalAttemptsMetricResponseSchema,
+});
+
+// Profile data schema
+export const ProfileDataSchema = z.object({
+  profileId: z.string(),
+  metrics: ProfileMetricsSchema,
+});
+
+// Reports bundle response schema
+export const ReportsBundleResponseSchema = z.object({
+  data: z.array(ProfileDataSchema),
+});
+
+// Type exports for reports analytics
+export type AverageScoreHover = z.infer<typeof AverageScoreHoverSchema>;
+export type CompletionPercentageHover = z.infer<
+  typeof CompletionPercentageHoverSchema
+>;
+export type FirstAttemptPassRateHover = z.infer<
+  typeof FirstAttemptPassRateHoverSchema
+>;
+export type HighestScoreHover = z.infer<typeof HighestScoreHoverSchema>;
+export type MessagesPerSessionHover = z.infer<
+  typeof MessagesPerSessionHoverSchema
+>;
+export type PersonaResponseTimesHover = z.infer<
+  typeof PersonaResponseTimesHoverSchema
+>;
+export type SessionEfficiencyHover = z.infer<
+  typeof SessionEfficiencyHoverSchema
+>;
+export type StagnationRateHover = z.infer<typeof StagnationRateHoverSchema>;
+export type TimeSpentHover = z.infer<typeof TimeSpentHoverSchema>;
+export type TotalAttemptsHover = z.infer<typeof TotalAttemptsHoverSchema>;
+
+// Individual metric response types
+export type AverageScoreMetricResponse = z.infer<
+  typeof AverageScoreMetricResponseSchema
+>;
+export type CompletionPercentageMetricResponse = z.infer<
+  typeof CompletionPercentageMetricResponseSchema
+>;
+export type FirstAttemptPassRateMetricResponse = z.infer<
+  typeof FirstAttemptPassRateMetricResponseSchema
+>;
+export type HighestScoreMetricResponse = z.infer<
+  typeof HighestScoreMetricResponseSchema
+>;
+export type MessagesPerSessionMetricResponse = z.infer<
+  typeof MessagesPerSessionMetricResponseSchema
+>;
+export type PersonaResponseTimesMetricResponse = z.infer<
+  typeof PersonaResponseTimesMetricResponseSchema
+>;
+export type SessionEfficiencyMetricResponse = z.infer<
+  typeof SessionEfficiencyMetricResponseSchema
+>;
+export type StagnationRateMetricResponse = z.infer<
+  typeof StagnationRateMetricResponseSchema
+>;
+export type TimeSpentMetricResponse = z.infer<
+  typeof TimeSpentMetricResponseSchema
+>;
+export type TotalAttemptsMetricResponse = z.infer<
+  typeof TotalAttemptsMetricResponseSchema
+>;
+
+export type ProfileMetrics = z.infer<typeof ProfileMetricsSchema>;
+export type ProfileData = z.infer<typeof ProfileDataSchema>;
+export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
+
 // Growth Analytics Utilities
 export function computeGrowthActionableInsight(
   windowAverages: GrowthWindowAverages
