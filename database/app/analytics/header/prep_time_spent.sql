@@ -102,7 +102,7 @@ filt AS (
 by_day AS (
   SELECT
     to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
-    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::float AS value,
+    ROUND(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0))::int AS value,
     count(*)::int AS count
   FROM filt
   WHERE chat_completed_at IS NOT NULL
@@ -117,13 +117,24 @@ cur AS (
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    profile_id::text,
-           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
-           'value',        round(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0)::int,
+           'date',         to_char(day, 'YYYY-MM-DD'),
+           'value',        ROUND(total_minutes)::int,
+           'attemptId',    attempt_id::text,
            'simulationId', simulation_id::text,
            'scenarioId',   scenario_id::text
-         ) ORDER BY profile_id, chat_created_at) AS payload
-  FROM filt
-  WHERE chat_completed_at IS NOT NULL
+         ) ORDER BY profile_id, day) AS payload
+  FROM (
+    SELECT 
+      profile_id,
+      date_trunc('day', chat_created_at) as day,
+      attempt_id,
+      simulation_id,
+      scenario_id,
+      SUM(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)) / 60.0) as total_minutes
+    FROM filt
+    WHERE chat_completed_at IS NOT NULL
+    GROUP BY profile_id, date_trunc('day', chat_created_at), attempt_id, simulation_id, scenario_id
+  ) grouped
 )
 SELECT jsonb_build_object(
   'hasData',    (SELECT has_data FROM cur),

@@ -190,7 +190,7 @@ export default function ReportsPage() {
         timeSpent: {
           ...formatMetric(
             profile.metrics.timeSpent,
-            (m) => (m.hover as any).avgSessionMinutes, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => (m.hover as any).avgOverallMinutes, // eslint-disable-line @typescript-eslint/no-explicit-any
             (n) => `${n}m`,
             { gray: 0, red: 90, yellow: 60, green: 30 }
           ),

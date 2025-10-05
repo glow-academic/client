@@ -284,29 +284,48 @@ SELECT jsonb_build_object(
               SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
             ),
             pts AS (
-              SELECT (e->>'value')::int AS secs
+              SELECT (e->>'value')::int AS minutes
               FROM m, LATERAL jsonb_array_elements(j->'dataPoints') e
               WHERE e ? 'value'
             ),
             by_attempt AS (
-              SELECT (e->>'attemptId')::text AS attempt_id, (e->>'value')::int AS secs
+              SELECT (e->>'attemptId')::text AS attempt_id, (e->>'value')::int AS minutes
               FROM m, LATERAL jsonb_array_elements(j->'dataPoints') e
               WHERE e ? 'attemptId' AND e ? 'value'
             ),
             agg_attempt AS (
-              SELECT attempt_id, SUM(secs) AS secs
+              SELECT attempt_id, SUM(minutes) AS minutes
               FROM by_attempt
               GROUP BY attempt_id
             ),
             stats AS (
               SELECT
-                CASE WHEN COUNT(*)>0 THEN ROUND(AVG(secs)/60.0)::int ELSE 0 END AS avgChatMinutes
+                CASE WHEN COUNT(*)>0 THEN ROUND(AVG(minutes))::int ELSE 0 END AS avgChatMinutes
               FROM pts
+            ),
+            total_chats AS (
+              SELECT COUNT(*) as total_chat_count
+              FROM analytics a
+              CROSS JOIN params pr
+              WHERE a.profile_id = pid
+                AND a.chat_created_at >= pr.start_at
+                AND a.chat_created_at < pr.end_at
+                AND a.chat_created_at IS NOT NULL
             ),
             stats2 AS (
               SELECT
-                CASE WHEN COUNT(*)>0 THEN ROUND(AVG(secs)/60.0)::int ELSE 0 END AS avgSessionMinutes
+                CASE WHEN COUNT(*)>0 THEN ROUND(AVG(minutes))::int ELSE 0 END AS avgSessionMinutes
               FROM agg_attempt
+            ),
+            total_stats AS (
+              SELECT
+                CASE WHEN COUNT(*)>0 THEN ROUND(SUM(minutes))::int ELSE 0 END AS totalMinutes
+              FROM pts
+            ),
+            python_style_stats AS (
+              SELECT
+                CASE WHEN tc.total_chat_count > 0 THEN ROUND(ts.totalMinutes::numeric / tc.total_chat_count)::int ELSE 0 END AS avgOverallMinutes
+              FROM total_stats ts, total_chats tc
             )
             SELECT jsonb_build_object(
               'hasData', COALESCE((m.j->>'hasData')::boolean, false),
@@ -314,9 +333,9 @@ SELECT jsonb_build_object(
               'trendData', COALESCE(m.j->'trendData','[]'::jsonb),
               'dataPoints', COALESCE(m.j->'dataPoints','[]'::jsonb),
               'hover', jsonb_build_object(
-                'avgSessionMinutes', COALESCE((SELECT avgSessionMinutes FROM stats2),0),
+                'avgSessionMinutes', COALESCE((SELECT avgChatMinutes FROM stats),0),
                 'avgChatMinutes',    COALESCE((SELECT avgChatMinutes    FROM stats ),0),
-                'avgOverallMinutes', COALESCE((SELECT avgSessionMinutes FROM stats2),0)
+                'avgOverallMinutes', COALESCE((SELECT avgOverallMinutes FROM python_style_stats),0)
               )
             ) FROM m
           ),
