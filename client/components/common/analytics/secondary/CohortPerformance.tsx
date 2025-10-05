@@ -11,6 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -238,111 +246,147 @@ export default function CohortPerformance({
           />
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-auto p-3 space-y-3">
-        {displayCohorts.map((cohort) => {
-          const passRatePct = cohort.totalStudents
-            ? (cohort.passedStudents /
-                (isSingleProfileMode ? 1 : cohort.totalStudents)) *
-              100
-            : 0;
+      <CardContent className="flex-1 p-3">
+        {/* Scrollable list if > 5 cohorts */}
+        <div className="h-full overflow-y-auto">
+          <div
+            className="grid gap-3 h-full"
+            style={{
+              // up to 5 equal-height rows; each row ~ 1/5 height
+              gridTemplateRows: `repeat(${Math.min(displayCohorts.length || 1, 5)}, minmax(0, 1fr))`,
+            }}
+          >
+            {displayCohorts.map((cohort) => {
+              const passRatePct = cohort.totalStudents
+                ? (cohort.passedStudents /
+                    (isSingleProfileMode ? 1 : cohort.totalStudents)) *
+                  100
+                : 0;
 
-          // Determine background color based on pass rate
-          let bgColor: string;
-          if (passRatePct === 0) {
-            bgColor = "#ef4444"; // Red for 0%
-          } else if (passRatePct >= 85) {
-            bgColor = "#22c55e"; // Green for success
-          } else if (passRatePct >= 75) {
-            bgColor = "#eab308"; // Yellow for warning
-          } else {
-            bgColor = "#ef4444"; // Red for danger
-          }
+              // Determine background color based on pass rate
+              let bgColor: string;
+              if (passRatePct === 0) {
+                bgColor = "#ef4444"; // Red for 0%
+              } else if (passRatePct >= 85) {
+                bgColor = "#22c55e"; // Green for success
+              } else if (passRatePct >= 75) {
+                bgColor = "#eab308"; // Yellow for warning
+              } else {
+                bgColor = "#ef4444"; // Red for danger
+              }
 
-          return (
-            <div
-              key={cohort.id}
-              className="p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden"
-            >
-              {/* Progress bar background */}
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{ backgroundColor: bgColor }}
-              />
+              return (
+                <Dialog key={cohort.id}>
+                  <DialogTrigger asChild>
+                    {/* Each item fills its grid row height */}
+                    <div className="h-full p-2 border rounded-md cursor-pointer hover:bg-muted transition-colors relative overflow-hidden">
+                      {/* Progress bar background */}
+                      <div
+                        className="absolute inset-0 opacity-10"
+                        style={{ backgroundColor: bgColor }}
+                      />
 
-              {/* Progress bar fill */}
-              <div
-                className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
-                style={{
-                  backgroundColor: bgColor,
-                  width: `${Math.max(passRatePct, 1)}%`, // Minimum 1% width for visibility
-                }}
-              />
+                      {/* Progress bar fill */}
+                      <div
+                        className="absolute inset-y-0 left-0 opacity-20 transition-all duration-300"
+                        style={{
+                          backgroundColor: bgColor,
+                          width: `${Math.max(passRatePct, 1)}%`, // Minimum 1% width for visibility
+                        }}
+                      />
 
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm truncate">
-                    {cohort.name}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    {isSingleProfileMode
-                      ? `${passRatePct.toFixed(2)}% pass rate for `
-                      : `${passRatePct.toFixed(2)}% of students pass `}
-                    {cohort.rubricPoints > 0 ? cohort.rubricPoints : 0} quiz
-                    {cohort.rubricPoints > 0
-                      ? cohort.rubricPoints !== 1
-                        ? "zes"
-                        : ""
-                      : "zes"}
-                    {cohort.rubricPoints > 0 && (
-                      <>
-                        {" "}
-                        with a{" "}
-                        {Math.round(
-                          (cohort.rubricPassPoints / cohort.rubricPoints) * 100
-                        )}
-                        % or better
-                      </>
+                      <div className="flex items-center justify-between relative z-10 h-full">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">
+                            {cohort.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {isSingleProfileMode
+                              ? `${passRatePct.toFixed(2)}% pass rate for `
+                              : `${passRatePct.toFixed(2)}% of students pass `}
+                            {cohort.rubricPoints > 0 ? cohort.rubricPoints : 0}{" "}
+                            quiz
+                            {cohort.rubricPoints > 0
+                              ? cohort.rubricPoints !== 1
+                                ? "zes"
+                                : ""
+                              : "zes"}
+                            {cohort.rubricPoints > 0 && (
+                              <>
+                                {" "}
+                                with a{" "}
+                                {Math.round(
+                                  (cohort.rubricPassPoints /
+                                    cohort.rubricPoints) *
+                                    100
+                                )}
+                                % or better
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </DialogTrigger>
+
+                  {/* Modal contents */}
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {cohort.name} performance details
+                      </DialogTitle>
+                      <DialogDescription hidden>
+                        Daily pass rate trends and insights
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {/* Daily trend chart inside the modal */}
+                    {displayDaily.length > 0 && (
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={displayDaily}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              className="stroke-muted"
+                            />
+                            <XAxis dataKey="date" className="text-xs" />
+                            <YAxis domain={[0, 100]} className="text-xs" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "6px",
+                              }}
+                              formatter={(value: number) => [
+                                `${value}%`,
+                                "Average Score",
+                              ]}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="avgScore"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
 
-        {/* Daily trend */}
-        {displayDaily.length > 0 && (
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={displayDaily}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis domain={[0, 100]} className="text-xs" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                  formatter={(value: number) => [`${value}%`, "Average Score"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="avgScore"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                    {/* Actionable insight inside the modal */}
+                    {actionableInsight && (
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {actionableInsight}
+                        </p>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              );
+            })}
           </div>
-        )}
-
-        {/* Actionable Insights */}
-        {actionableInsight && (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

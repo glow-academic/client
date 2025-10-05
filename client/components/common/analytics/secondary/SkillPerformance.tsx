@@ -148,7 +148,13 @@ export default function SkillPerformance({
           </div>
           {pickerRubrics.length > 0 && (
             <RubricPicker
-              rubrics={pickerRubrics}
+              rubrics={pickerRubrics.map((r) => ({
+                id: r.id,
+                name: r.name,
+                description: "", // hide description in the UI
+                points: r.points ?? 0,
+                active: r.active ?? true,
+              }))}
               placeholder="Filter by rubric..."
               onSelect={setSelectedRubrics}
               selectedRubrics={
@@ -229,11 +235,20 @@ export default function SkillPerformance({
                 formatter={(
                   value: number,
                   name: string,
-                  props: { payload?: { score: number; points: number } }
+                  props: { payload?: { score?: number; points?: number } }
                 ) => {
-                  if (name === "value" && props?.payload) {
-                    const data = props.payload;
-                    return [`${data.score.toFixed(2)}/${data.points}`, "Score"];
+                  if (name === "value") {
+                    const score = props?.payload?.score;
+                    const points = props?.payload?.points;
+                    if (
+                      typeof score === "number" &&
+                      typeof points === "number"
+                    ) {
+                      return [`${score.toFixed(2)}/${points}`, "Score"];
+                    }
+                    // fallback: show percent for the normalized "value"
+                    const v = typeof value === "number" ? value : Number(value);
+                    return [`${(v * 100).toFixed(1)}%`, "Performance"];
                   }
                   return [value, name];
                 }}
