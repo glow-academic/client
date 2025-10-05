@@ -13,10 +13,10 @@ import { useProfile } from "@/contexts/profile-context";
 import {
   AttemptHistoryRow,
   computeAttemptImprovementActionableInsight,
-  computeCohortPerformanceActionableInsight,
+  computeCohortMultipleActionableInsights,
   computeCurrent,
   computeGrowthActionableInsight,
-  computePersonaActionableInsight,
+  computePersonaMultipleActionableInsights,
   computePersonaPerformanceStatus,
   computeRubricHeatmapActionableInsight,
   computeScenarioPerformanceActionableInsight,
@@ -654,12 +654,17 @@ export default function Dashboard({ profileId }: DashboardProps) {
       thresholds
     );
 
-    // Compute actionable insights for each persona
+    // Compute multiple actionable insights for each persona
     const actionableInsights: Record<string, string | null> = {};
     chartData.forEach((persona) => {
-      actionableInsights[persona.name] = computePersonaActionableInsight(
-        persona.trendData
+      const multipleInsights = computePersonaMultipleActionableInsights(
+        persona.trendData,
+        persona.name,
+        persona.score
       );
+
+      // Use the single focused insight
+      actionableInsights[persona.name] = multipleInsights["insight"] || null;
     });
 
     // Filter simulations by validSimulationIds
@@ -752,7 +757,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         validSimulationIds: [],
         hasDataAvailable: false,
         performanceStatus: "neutral" as const,
-        actionableInsight: null,
+        actionableInsights: {},
       };
     }
 
@@ -765,8 +770,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
       validSimulationIdsSet.has(sim.id)
     );
 
-    const actionableInsight =
-      computeCohortPerformanceActionableInsight(cohortData);
+    // Compute multiple actionable insights for each cohort
+    const multipleCohortInsights =
+      computeCohortMultipleActionableInsights(cohortData);
+
+    // Convert to the format expected by the component
+    const actionableInsights: Record<string, string | null> = {};
+    Object.entries(multipleCohortInsights).forEach(([cohortId, insights]) => {
+      // Use the single focused insight
+      actionableInsights[cohortId] = insights["insight"] || null;
+    });
 
     return {
       cohortData,
@@ -775,7 +788,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       dailyFacts: cohortPerformanceData.dailyFacts || [],
       availableSimulations,
       hasDataAvailable: cohortData.length > 0,
-      actionableInsight,
+      actionableInsights,
     };
   })();
 
@@ -1131,7 +1144,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       isLoading={cohortPerformanceLoading}
       isError={cohortPerformanceError}
       profileId={profileId}
-      actionableInsight={cohortPerformanceProcessed.actionableInsight}
+      actionableInsights={cohortPerformanceProcessed.actionableInsights || {}}
       thresholds={thresholds}
     />,
     <AttemptImprovement

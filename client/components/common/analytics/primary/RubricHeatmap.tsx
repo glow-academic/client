@@ -431,15 +431,6 @@ export default function RubricHeatmap({
           </div>
 
           {/* Actionable Insights */}
-          {deferredMatrix.insights && (
-            <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
-              <p className="text-xs text-muted-foreground">
-                {deferredMatrix.insights}
-              </p>
-            </div>
-          )}
-
-          {/* Actionable Insights */}
           {actionableInsight && (
             <div className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full">
               <p className="text-xs text-muted-foreground">

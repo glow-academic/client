@@ -1079,6 +1079,49 @@ export function computePersonaActionableInsight(
   return null;
 }
 
+export function computePersonaMultipleActionableInsights(
+  trendData: PersonaTrendData[],
+  _personaName: string,
+  currentScore: number
+): Record<string, string | null> {
+  const insights: Record<string, string | null> = {};
+
+  if (trendData.length < 2) return insights;
+
+  const recentScores = trendData.slice(-3);
+  const earlierScores = trendData.slice(0, 3);
+
+  if (recentScores.length === 0 || earlierScores.length === 0) return insights;
+
+  const recentAvg =
+    recentScores.reduce((sum, item) => sum + (item.score ?? 0), 0) /
+    recentScores.length;
+  const earlierAvg =
+    earlierScores.reduce((sum, item) => sum + (item.score ?? 0), 0) /
+    earlierScores.length;
+  const improvement = recentAvg - earlierAvg;
+
+  // Return the most impactful single insight
+  if (improvement > 5) {
+    insights["insight"] =
+      `Performance improved ${Math.round(improvement)}% recently - consider advancing to more challenging scenarios.`;
+  } else if (improvement < -5) {
+    insights["insight"] =
+      `Performance declined ${Math.round(Math.abs(improvement))}% recently - review training approach.`;
+  } else if (currentScore >= 90) {
+    insights["insight"] =
+      `Excellent performance at ${Math.round(currentScore)}% - consider advanced challenges.`;
+  } else if (currentScore < 60) {
+    insights["insight"] =
+      `Below average performance at ${Math.round(currentScore)}% - additional support needed.`;
+  } else {
+    insights["insight"] =
+      `Steady performance at ${Math.round(currentScore)}% - focus on incremental improvements.`;
+  }
+
+  return insights;
+}
+
 // Attempt Improvement Analytics Utilities
 export function computeAttemptImprovementStatus(
   chartData: AttemptImprovementData[],
@@ -1163,6 +1206,52 @@ export function computeCohortPerformanceActionableInsight(
   }
 
   return null;
+}
+
+export function computeCohortMultipleActionableInsights(
+  cohortData: CohortData[]
+): Record<string, Record<string, string | null>> {
+  const insights: Record<string, Record<string, string | null>> = {};
+
+  if (cohortData.length === 0) return insights;
+
+  // Sort cohorts by performance
+  const sortedCohorts = [...cohortData].sort((a, b) => b.passRate - a.passRate);
+  const avgPassRate =
+    cohortData.reduce((sum, cohort) => sum + cohort.passRate, 0) /
+    cohortData.length;
+
+  // Generate single focused insight for each cohort
+  cohortData.forEach((cohort) => {
+    const cohortInsights: Record<string, string | null> = {};
+    const rank = sortedCohorts.findIndex((c) => c.id === cohort.id) + 1;
+    const totalCohorts = cohortData.length;
+
+    // Return the most impactful single insight
+    if (cohort.passRate >= 90) {
+      cohortInsights["insight"] =
+        `Exceptional performance at ${Math.round(cohort.passRate)}% - share best practices with other cohorts.`;
+    } else if (cohort.passRate < 60) {
+      cohortInsights["insight"] =
+        `Critical attention needed - ${Math.round(cohort.passRate)}% pass rate requires immediate intervention.`;
+    } else if (cohort.passRate > avgPassRate + 15) {
+      cohortInsights["insight"] =
+        `Outperforming average by ${Math.round(cohort.passRate - avgPassRate)}% - consider leadership opportunities.`;
+    } else if (cohort.passRate < avgPassRate - 15) {
+      cohortInsights["insight"] =
+        `Underperforming average by ${Math.round(avgPassRate - cohort.passRate)}% - additional support needed.`;
+    } else if (rank === 1) {
+      cohortInsights["insight"] =
+        `Top performer with ${Math.round(cohort.passRate)}% pass rate - maintain current approach.`;
+    } else {
+      cohortInsights["insight"] =
+        `Ranked ${rank}/${totalCohorts} with ${Math.round(cohort.passRate)}% pass rate - focus on incremental improvements.`;
+    }
+
+    insights[cohort.id] = cohortInsights;
+  });
+
+  return insights;
 }
 
 // Skill Performance Analytics Utilities

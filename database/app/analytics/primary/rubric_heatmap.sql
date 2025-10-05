@@ -122,8 +122,8 @@ per_grade_group AS MATERIALIZED (
     sg.rubric_id,
     sg.id   AS group_id,
     sg.name AS group_name,
-    /* Sum totals divided by sum of points per group for that grade */
-    (100.0 * SUM(scf.total)::float8 / NULLIF(SUM(s.points)::float8, 0))::float8 AS pct
+    /* Sum totals divided by standard group max points */
+    (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
   FROM latest_grade_per_chat lg
   JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
   JOIN standards s          ON s.id = scf.standard_id
@@ -162,10 +162,7 @@ enriched AS MATERIALIZED (
   SELECT
     c.rubric_id, c.g1, c.g2, c.n,
     CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
-    CASE WHEN c.r = c.r AND c.n >= 3
-         THEN analytics_p_value_from_r_n(c.r, c.n::integer)
-         ELSE NULL
-    END AS p_value,
+    NULL AS p_value,  -- Disabled due to underflow issues with high correlations
     CASE
       WHEN c.n IS NULL OR c.n < 3 THEN 'No Data'
       WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN 'Strong'

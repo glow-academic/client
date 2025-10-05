@@ -64,7 +64,7 @@ export interface CohortPerformanceProps {
   isError: boolean;
   /** If rendering for a single learner detail view */
   profileId?: string | undefined;
-  actionableInsight?: string | null;
+  actionableInsights?: Record<string, string | null>; // Key: cohort_id, Value: insight text
   thresholds: {
     danger: number;
     warning: number;
@@ -81,7 +81,7 @@ export default function CohortPerformance({
   isLoading,
   isError,
   profileId,
-  actionableInsight,
+  actionableInsights,
   thresholds,
 }: CohortPerformanceProps) {
   const [selected, setSelected] = useState<SimulationPickerType[]>([]);
@@ -374,10 +374,10 @@ export default function CohortPerformance({
                     )}
 
                     {/* Actionable insight inside the modal */}
-                    {actionableInsight && (
+                    {actionableInsights && actionableInsights[cohort.id] && (
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
-                          {actionableInsight}
+                          {actionableInsights[cohort.id]}
                         </p>
                       </div>
                     )}

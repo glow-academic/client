@@ -27,18 +27,21 @@ type RadarDatum = {
   metric: string;
   value: number;
   fullMark: number;
+  description?: string | undefined;
 };
-type GroupFact = {
-  groupId: string;
-  groupName: string;
+type StandardFact = {
+  standardId: string;
+  standardName: string;
+  standardDescription?: string | undefined;
   simulationId: string;
   score: number;
   points: number;
+  avgPct: number;
 };
 type Package = {
   rubricId: string;
   radarData: RadarDatum[];
-  groupFacts: GroupFact[];
+  groupFacts: StandardFact[];
 };
 
 export interface SkillPerformanceProps {

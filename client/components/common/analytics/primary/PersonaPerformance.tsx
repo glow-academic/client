@@ -51,7 +51,7 @@ export interface PersonaPerformanceProps {
   isLoading: boolean;
   isError: boolean;
   performanceStatus: "success" | "warning" | "danger" | "neutral";
-  actionableInsights: Record<string, string | null>;
+  actionableInsights?: Record<string, string | null>; // Key: persona_id, Value: insight text
   thresholds: {
     danger: number;
     warning: number;
@@ -351,7 +351,7 @@ export default function PersonaPerformance({
                     </div>
 
                     {/* Actionable Insights */}
-                    {actionableInsights[persona.name] && (
+                    {actionableInsights && actionableInsights[persona.name] && (
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-sm text-muted-foreground">
                           {actionableInsights[persona.name]}
