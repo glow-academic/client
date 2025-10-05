@@ -173,7 +173,7 @@ SELECT jsonb_build_object(
             ),
             stats AS (
               SELECT
-                ROUND(AVG(v))::int AS mean,
+                ROUND(AVG(v) - 0.0001)::int AS mean,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY v)::int AS median,
                 COUNT(*) AS count
               FROM pts
