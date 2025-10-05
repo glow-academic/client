@@ -349,6 +349,7 @@ export const CohortDataSchema = z.object({
 export const DailyDataSchema = z.object({
   date: z.string(),
   avgScore: z.number(),
+  cohortId: z.string().optional(),
 });
 
 export const CohortFactSchema = z.object({

@@ -43,7 +43,11 @@ type CohortRow = {
   simulationCount: number;
   requiredSimulations: number;
 };
-type DailyRow = { date: string; avgScore: number };
+type DailyRow = {
+  date: string;
+  avgScore: number;
+  cohortId?: string | undefined;
+};
 type CohortFact = {
   cohortId: string;
   simulationId: string;
@@ -76,7 +80,6 @@ export default function CohortPerformance({
   cohortData,
   dailyData,
   cohortFacts,
-  dailyFacts,
   allSimulations,
   isLoading,
   isError,
@@ -147,26 +150,6 @@ export default function CohortPerformance({
       requiredSimulations: a.requiredSimulations,
     }));
   }, [selected, cohortData, cohortFacts]);
-
-  // Daily series (filter via dailyFacts if sims picked)
-  const displayDaily = useMemo<DailyRow[]>(() => {
-    if (!selected.length) return dailyData;
-    const sel = new Set(selected.map((s) => s.id));
-    const byDay = new Map<string, { sum: number; n: number }>();
-    dailyFacts.forEach((d) => {
-      if (!sel.has(d.simulationId)) return;
-      const acc = byDay.get(d.date) ?? { sum: 0, n: 0 };
-      acc.sum += d.avgScore;
-      acc.n += 1;
-      byDay.set(d.date, acc);
-    });
-    return [...byDay.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, v]) => ({
-        date,
-        avgScore: Math.round(v.sum / Math.max(1, v.n)),
-      }));
-  }, [selected, dailyData, dailyFacts]);
 
   // Calculate threshold status based on cohort performance data
   const getThresholdStatus = () => {
@@ -331,37 +314,45 @@ export default function CohortPerformance({
                     </DialogHeader>
 
                     {/* Daily trend chart inside the modal */}
-                    {displayDaily.length > 0 && (
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={displayDaily}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              className="stroke-muted"
-                            />
-                            <XAxis dataKey="date" className="text-xs" />
-                            <YAxis domain={[0, 100]} className="text-xs" />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "white",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "6px",
-                              }}
-                              formatter={(value: number) => [
-                                `${value}%`,
-                                "Average Score",
-                              ]}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="avgScore"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
+                    {(() => {
+                      // Filter daily data for this specific cohort
+                      const cohortDailyData = dailyData.filter(
+                        (d: DailyRow) => d.cohortId === cohort.id
+                      );
+                      if (cohortDailyData.length === 0) return null;
+
+                      return (
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={cohortDailyData}>
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                className="stroke-muted"
+                              />
+                              <XAxis dataKey="date" className="text-xs" />
+                              <YAxis domain={[0, 100]} className="text-xs" />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "6px",
+                                }}
+                                formatter={(value: number) => [
+                                  `${value}%`,
+                                  "Average Score",
+                                ]}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="avgScore"
+                                strokeWidth={2}
+                                dot={{ r: 4 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
 
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (

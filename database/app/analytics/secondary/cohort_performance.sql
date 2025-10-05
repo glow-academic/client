@@ -236,10 +236,10 @@ cohort_rows AS (
              'name',               cohort_name,
              'passRate',           ROUND(
                CASE 
-                 WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::float
+                 WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::numeric
                  ELSE 0
-               END
-             )::int,
+               END::numeric, 2
+             )::float,
              'avgPercentageScore', ROUND(COALESCE(avg_percentage_score,0))::int,
              'totalStudents',      GREATEST(total_students_declared, total_students_seen),
              'passedStudents',     (SELECT COUNT(*) FROM (
@@ -258,38 +258,47 @@ cohort_rows AS (
          ) AS payload
   FROM cohort_agg
 ),
--- daily series (overall)
+-- daily series (cohort-specific)
 daily AS (
   SELECT
+    fx.c_id AS cohort_id,
     to_char(date_trunc('day', fx.chat_created_at), 'MM/DD') AS date,
     AVG(fx.grade_percent)::float AS avg_score
   FROM filt_x fx
   WHERE fx.grade_percent IS NOT NULL
-  GROUP BY 1
-  ORDER BY 1
+  GROUP BY fx.c_id, 2
+  ORDER BY fx.c_id, 2
 ),
 daily_rows AS (
-  SELECT jsonb_agg(jsonb_build_object('date', date, 'avgScore', ROUND(avg_score)::int)) AS payload
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'cohortId', cohort_id::text,
+      'date', date, 
+      'avgScore', ROUND(avg_score)::int
+    ) ORDER BY cohort_id, date
+  ) AS payload
   FROM daily
 ),
--- daily × simulation for client-side filters
+-- daily × simulation for client-side filters (cohort-specific)
 daily_sim AS (
   SELECT
+    fx.c_id AS cohort_id,
     to_char(date_trunc('day', fx.chat_created_at), 'MM/DD') AS date,
     fx.simulation_id,
     AVG(fx.grade_percent)::float AS avg_score
   FROM filt_x fx
   WHERE fx.grade_percent IS NOT NULL
-  GROUP BY 1, 2
-  ORDER BY 1, 2
+  GROUP BY fx.c_id, 2, 3
+  ORDER BY fx.c_id, 2, 3
 ),
 daily_facts AS (
   SELECT jsonb_agg(
            jsonb_build_object(
+             'cohortId',    cohort_id::text,
              'date',        date,
              'simulationId', simulation_id::text,
              'avgScore',    ROUND(avg_score)::int
-           )
+           ) ORDER BY cohort_id, date, simulation_id
          ) AS payload
   FROM daily_sim
 ),
