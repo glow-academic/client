@@ -284,12 +284,12 @@ SELECT jsonb_build_object(
               SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
             ),
             pts AS (
-              SELECT (e->>'value')::int AS minutes
+              SELECT (e->>'value')::numeric AS minutes
               FROM m, LATERAL jsonb_array_elements(j->'dataPoints') e
               WHERE e ? 'value'
             ),
             by_attempt AS (
-              SELECT (e->>'attemptId')::text AS attempt_id, (e->>'value')::int AS minutes
+              SELECT (e->>'attemptId')::text AS attempt_id, (e->>'value')::numeric AS minutes
               FROM m, LATERAL jsonb_array_elements(j->'dataPoints') e
               WHERE e ? 'attemptId' AND e ? 'value'
             ),

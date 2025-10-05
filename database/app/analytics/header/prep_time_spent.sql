@@ -118,7 +118,7 @@ data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
            'profileId',    profile_id::text,
            'date',         to_char(day, 'YYYY-MM-DD'),
-           'value',        ROUND(total_minutes)::int,
+           'value',        total_minutes,
            'attemptId',    attempt_id::text,
            'simulationId', simulation_id::text,
            'scenarioId',   scenario_id::text
