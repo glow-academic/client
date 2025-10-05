@@ -27,9 +27,9 @@ filt AS MATERIALIZED (
   SELECT chat_id, simulation_id, cohort_ids, profile_cohort_ids, profile_role,
          is_general, is_practice, is_archived, profile_id, chat_created_at
   FROM analytics a
-  WHERE a.chat_created_at > p_start
+  WHERE a.chat_created_at >= p_start
     AND a.chat_created_at < p_end
-    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids OR a.profile_cohort_ids && p_cohort_ids))
     AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles)
          OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
     AND (p_sim_filters IS NULL OR cardinality(p_sim_filters) > 0)

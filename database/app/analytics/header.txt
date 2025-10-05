@@ -1,0 +1,1433 @@
+-- Average Score Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses attempt-level normalization with expected scenario count
+
+CREATE OR REPLACE FUNCTION analytics_average_score_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+per_attempt AS (
+  SELECT
+    attempt_id,
+    MIN(attempt_created_at) AS attempt_created_at,
+    COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
+    COUNT(*) FILTER (WHERE completed) AS completed_chats,
+    COUNT(*) AS chats_in_attempt,
+    SUM(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS sum_grade_percent
+  FROM filt
+  GROUP BY attempt_id
+),
+attempt_norm AS (
+  SELECT
+    attempt_id,
+    attempt_created_at,
+    GREATEST(expected_from_sim, chats_in_attempt) AS expected,
+    completed_chats,
+    CASE
+      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 AND completed_chats > 0
+        THEN (sum_grade_percent / GREATEST(expected_from_sim, chats_in_attempt))
+      ELSE NULL
+    END AS norm
+  FROM per_attempt
+),
+by_day AS (
+  SELECT
+    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+    avg(norm)::float AS value,
+    count(*)::int AS count
+  FROM attempt_norm
+  WHERE norm IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(norm))::int AS current_value,
+         count(*) > 0           AS has_data
+  FROM attempt_norm
+  WHERE norm IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(an.attempt_created_at,'YYYY-MM-DD'),
+           'value',        an.norm,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, an.attempt_created_at) AS payload
+  FROM attempt_norm an
+  JOIN filt f ON f.attempt_id = an.attempt_id
+  WHERE an.norm IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Completion Percentage Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_completion_percentage_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
+    (100.0 * avg((completed)::int))::float AS value,
+    count(*)::int AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(100.0 * avg((completed)::int))::int AS current_value,
+         count(*) > 0                               AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        (completed)::int,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',   -- frontend: avg(value) -> rate [0..1] then *100
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- First Attempt Pass Rate Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: "First attempt" = earliest attempt_created_at per (profile_id, simulation_id) within the filtered range
+
+CREATE OR REPLACE FUNCTION analytics_first_attempt_pass_rate_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Find earliest attempt per (profile, simulation) overall -------- */
+earliest_attempt_all_time AS MATERIALIZED (
+  SELECT DISTINCT ON (a.profile_id, a.simulation_id)
+         a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE (
+    (w.want_general AND a.is_general = TRUE) OR
+    (w.want_practice AND a.is_practice = TRUE) OR
+    (w.want_archived AND a.is_archived = TRUE)
+  )
+  AND (
+    pr.profile_id IS NOT NULL
+    OR cardinality(pr.roles) = 0
+    OR a.profile_role = ANY (pr.roles)
+  )
+  AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+  AND (cardinality(pr.cohort_ids) = 0 OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
+  ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+),
+
+/* -------- Restrict to window for counting/trends -------- */
+first_attempts_in_window AS MATERIALIZED (
+  SELECT ea.*
+  FROM earliest_attempt_all_time ea
+  CROSS JOIN params pr
+  WHERE ea.attempt_created_at >= pr.start_at
+    AND ea.attempt_created_at < pr.end_at
+),
+
+/* -------- Get pass data for first attempts -------- */
+filt AS (
+  SELECT a.*
+  FROM analytics a
+  JOIN first_attempts_in_window fa USING (attempt_id)
+),
+
+first_attempts AS (
+  SELECT fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  FROM first_attempts_in_window fa
+),
+first_pass AS (
+  SELECT
+    fa.profile_id,
+    fa.simulation_id,
+    fa.attempt_id,
+    fa.attempt_created_at,
+    BOOL_OR(f.passed)                                  AS passed,
+    -- choose a representative scenario for the attempt (earliest chat)
+    (ARRAY_AGG(f.scenario_id ORDER BY f.chat_created_at))[1] AS scenario_id
+  FROM first_attempts_in_window fa
+  JOIN filt f USING (attempt_id)
+  GROUP BY fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+),
+by_day AS (
+  SELECT
+    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+    (100.0 * avg((passed)::int))::float AS value,
+    count(*)::int AS count
+  FROM first_pass
+  WHERE passed IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(100.0 * avg((passed)::int))::int AS current_value,
+         count(*) > 0                             AS has_data
+  FROM first_pass
+  WHERE passed IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    fp.profile_id::text,
+           'date',         to_char(fp.attempt_created_at,'YYYY-MM-DD'),
+           'value',        (fp.passed)::int,
+           'simulationId', fp.simulation_id::text,
+           'scenarioId',   fp.scenario_id::text
+         ) ORDER BY fp.profile_id, fp.attempt_created_at) AS payload
+  FROM first_pass fp
+  WHERE fp.passed IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Highest Score Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses attempt-level normalization with expected scenario count
+
+CREATE OR REPLACE FUNCTION analytics_highest_score_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+per_attempt AS (
+  SELECT
+    attempt_id,
+    MIN(attempt_created_at) AS attempt_created_at,
+    COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
+    COUNT(*) FILTER (WHERE completed) AS completed_chats,
+    COUNT(*) AS chats_in_attempt,
+    SUM(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS sum_grade_percent
+  FROM filt
+  GROUP BY attempt_id
+),
+attempt_norm AS (
+  SELECT
+    attempt_id,
+    attempt_created_at,
+    GREATEST(expected_from_sim, chats_in_attempt) AS expected,
+    completed_chats,
+    CASE
+      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 AND completed_chats > 0
+        THEN (sum_grade_percent / GREATEST(expected_from_sim, chats_in_attempt))
+      ELSE NULL
+    END AS norm
+  FROM per_attempt
+),
+by_day AS (
+  SELECT
+    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+    max(norm)::float AS value,
+    count(*)::int AS count
+  FROM attempt_norm
+  WHERE norm IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT COALESCE(round(max(norm))::int, 0) AS current_value,
+         count(norm) > 0                    AS has_data
+  FROM attempt_norm
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(an.attempt_created_at,'YYYY-MM-DD'),
+           'value',        an.norm,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, an.norm DESC, an.attempt_created_at) AS payload
+  FROM attempt_norm an
+  JOIN filt f ON f.attempt_id = an.attempt_id
+  WHERE an.norm IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    (SELECT has_data FROM cur),
+  'method',     'max',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Messages per Session Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+
+CREATE OR REPLACE FUNCTION analytics_messages_per_session_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
+    avg(num_messages_total)::float AS value,
+    count(*)::int                 AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(num_messages_total))::int AS current_value,
+         count(*) > 0                         AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        num_messages_total,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Persona Response Times Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses message_time_taken_seconds (int[]) and averages all deltas
+-- count = number of deltas aggregated that day
+
+CREATE OR REPLACE FUNCTION analytics_persona_response_times_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+WITH filt AS (
+  SELECT *
+  FROM analytics a
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at < p_end
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids OR a.profile_cohort_ids && p_cohort_ids))
+    AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
+    AND (
+      p_sim_filters IS NULL
+      OR cardinality(p_sim_filters) > 0
+    )
+    AND (
+      p_sim_filters IS NULL OR (
+        ('general'  = ANY (p_sim_filters) AND a.is_general)  OR
+        ('practice' = ANY (p_sim_filters) AND a.is_practice) OR
+        ('archived' = ANY (p_sim_filters) AND a.is_archived)
+      )
+    )
+    AND (p_profile_id IS NULL OR a.profile_id = p_profile_id)
+),
+flat AS (
+  SELECT date_trunc('day', chat_created_at) AS d, x AS delta
+  FROM filt, LATERAL unnest(message_time_taken_seconds) AS x
+),
+by_day AS (
+  SELECT to_char(d, 'YYYY-MM-DD') AS date,
+         avg(delta)::float   AS value,
+         count(*)::int       AS count
+  FROM flat
+  GROUP BY 1
+),
+cur AS (
+  SELECT round(avg(delta))::int AS current_value,
+         count(*) > 0           AS has_data
+  FROM flat
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(date_trunc('day', f.chat_created_at),'YYYY-MM-DD'),
+           'value',        x::int,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, f.chat_created_at) AS payload
+  FROM filt f, LATERAL unnest(f.message_time_taken_seconds) AS x
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Session Efficiency Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses TS formula: eff = clamp(0..100, avgScore * (1 - min(1, avgMinutes/120)))
+
+CREATE OR REPLACE FUNCTION analytics_session_efficiency_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+per_attempt AS (
+  SELECT
+    attempt_id,
+    MIN(attempt_created_at) AS attempt_created_at,
+    COALESCE(MAX(sim_scenario_count), 0) AS expected_from_sim,
+    COUNT(*) FILTER (WHERE completed) AS completed_chats,
+    COUNT(*) AS chats_in_attempt,
+    SUM(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) AS sum_grade_percent
+  FROM filt
+  GROUP BY attempt_id
+),
+attempt_norm AS (
+  SELECT
+    attempt_id,
+    attempt_created_at,
+    GREATEST(expected_from_sim, chats_in_attempt) AS expected,
+    completed_chats,
+    CASE
+      WHEN GREATEST(expected_from_sim, chats_in_attempt) > 0 AND completed_chats > 0
+        THEN (sum_grade_percent / GREATEST(expected_from_sim, chats_in_attempt))
+      ELSE NULL
+    END AS norm
+  FROM per_attempt
+),
+chat_durations AS (
+  SELECT
+    attempt_id,
+    SUM(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)))
+      FILTER (WHERE chat_completed_at IS NOT NULL) AS total_secs,
+    COUNT(*) FILTER (WHERE chat_completed_at IS NOT NULL) AS completed_cnt
+  FROM filt
+  GROUP BY attempt_id
+),
+by_day AS (
+  SELECT
+    to_char(an.attempt_created_at, 'YYYY-MM-DD') AS date,
+    -- avgScore over attempts that started that day
+    AVG(an.norm)::float AS avg_score,
+    -- average minutes per session that day:
+    COALESCE(SUM(cd.total_secs),0) / GREATEST(SUM(cd.completed_cnt),1) / 60.0 AS avg_minutes,
+    COUNT(*)::int AS count
+  FROM attempt_norm an
+  LEFT JOIN chat_durations cd USING (attempt_id)
+  GROUP BY 1
+),
+cur AS (
+  SELECT 
+    ROUND(GREATEST(0, LEAST(100, AVG(an.norm) * (1 - LEAST(1, COALESCE(SUM(cd.total_secs),0) / GREATEST(SUM(cd.completed_cnt),1) / 60.0 / 120.0)))))::int AS current_value,
+    COUNT(*) > 0 AS has_data
+  FROM attempt_norm an
+  LEFT JOIN chat_durations cd USING (attempt_id)
+  WHERE an.norm IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(an.attempt_created_at,'YYYY-MM-DD'),
+           'value',        ROUND(GREATEST(0, LEAST(100, an.norm * (1 - LEAST(1, COALESCE(cd.total_secs,0) / GREATEST(cd.completed_cnt,1) / 60.0 / 120.0)))))::int,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, an.attempt_created_at) AS payload
+  FROM attempt_norm an
+  JOIN filt f ON f.attempt_id = an.attempt_id
+  LEFT JOIN chat_durations cd ON cd.attempt_id = an.attempt_id
+  WHERE an.norm IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'avg',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', ROUND(GREATEST(0, LEAST(100, avg_score * (1 - LEAST(1, avg_minutes/120.0)))))::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Stagnation Rate Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses grade-timeline stagnation (non-increasing normalized scores across time)
+
+CREATE OR REPLACE FUNCTION analytics_stagnation_rate_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filtered_chats AS MATERIALIZED (
+  SELECT DISTINCT chat_id
+  FROM cohort_scoped
+  WHERE chat_id IS NOT NULL
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+grade_stream AS (
+  SELECT
+    sg.id,
+    sg.simulation_chat_id,
+    sg.created_at,
+    (sg.score::numeric / NULLIF(r.points,0)) * 100.0 AS norm
+  FROM simulation_chat_grades sg
+  JOIN filtered_chats fc ON fc.chat_id = sg.simulation_chat_id
+  JOIN rubrics r ON r.id = sg.rubric_id
+),
+ordered AS (
+  SELECT *,
+         LAG(norm) OVER (ORDER BY created_at) AS prev_norm
+  FROM grade_stream
+),
+flags AS (
+  SELECT *,
+         CASE WHEN prev_norm IS NULL THEN NULL
+              WHEN norm <= prev_norm + 0.1 THEN 1 ELSE 0 END AS stagnated
+  FROM ordered
+  WHERE prev_norm IS NOT NULL
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS date,
+    (100.0 * AVG(stagnated))::float AS value,
+    COUNT(*)::int AS count
+  FROM flags
+  GROUP BY 1
+),
+cur AS (
+  SELECT ROUND(100.0 * AVG(stagnated))::int AS current_value,
+         COUNT(*) > 0 AS has_data
+  FROM flags
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    f.profile_id::text,
+           'date',         to_char(date_trunc('day', gs.created_at),'YYYY-MM-DD'),
+           'value',        (stagnated)::int,
+           'simulationId', f.simulation_id::text,
+           'scenarioId',   f.scenario_id::text
+         ) ORDER BY f.profile_id, gs.created_at) AS payload
+  FROM flags fl
+  JOIN grade_stream gs ON gs.id = fl.id
+  JOIN filt f ON f.chat_id = gs.simulation_chat_id
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'rate',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Time Spent Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Uses chat duration (completed_at - created_at) instead of time_taken_seconds
+
+CREATE OR REPLACE FUNCTION analytics_time_spent_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', chat_created_at), 'YYYY-MM-DD') AS date,
+    sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at)))::float AS value,
+    count(*)::int AS count
+  FROM filt
+  WHERE chat_completed_at IS NOT NULL
+  GROUP BY 1
+),
+cur AS (
+  SELECT COALESCE(round(sum(EXTRACT(epoch FROM (chat_completed_at - chat_created_at))))::int, 0) AS current_value,
+         count(*) > 0 AS has_data
+  FROM filt
+  WHERE chat_completed_at IS NOT NULL
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', chat_created_at),'YYYY-MM-DD'),
+           'value',        EXTRACT(epoch FROM (chat_completed_at - chat_created_at))::int,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, chat_created_at) AS payload
+  FROM filt
+  WHERE chat_completed_at IS NOT NULL
+)
+SELECT jsonb_build_object(
+  'hasData',    (SELECT has_data FROM cur),
+  'method',     'sum',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', round(value)::int,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;
+-- Total Attempts Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with hasData, method, trendData, and dataPoints
+-- Note: Counts distinct attempt_id overall and per day (distinct per day as well)
+
+CREATE OR REPLACE FUNCTION analytics_total_attempts_fn(
+  p_start           timestamptz,
+  p_end             timestamptz,
+  p_cohort_ids      uuid[],
+  p_roles           profile_role[],
+  p_sim_filters     text[],
+  p_profile_id      uuid
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+by_day AS (
+  SELECT
+    to_char(date_trunc('day', attempt_created_at), 'YYYY-MM-DD') AS date,
+    count(DISTINCT attempt_id)::int AS value,
+    count(DISTINCT attempt_id)::int AS count
+  FROM filt
+  GROUP BY 1
+),
+cur AS (
+  SELECT count(DISTINCT attempt_id)::int AS current_value,
+         count(*) > 0                    AS has_data
+  FROM filt
+),
+data_points AS (
+  SELECT jsonb_agg(jsonb_build_object(
+           'profileId',    profile_id::text,
+           'date',         to_char(date_trunc('day', attempt_created_at),'YYYY-MM-DD'),
+           'attemptId',    attempt_id::text,
+           'value',        1,
+           'simulationId', simulation_id::text,
+           'scenarioId',   scenario_id::text
+         ) ORDER BY profile_id, attempt_id) AS payload
+  FROM filt
+)
+SELECT jsonb_build_object(
+  'hasData',    COALESCE((SELECT has_data FROM cur), false),
+  'method',     'countDistinct',
+  'keyField',   'attemptId',
+  'trendData',  COALESCE((
+                  SELECT jsonb_agg(jsonb_build_object(
+                    'date',  date,
+                    'value', value,
+                    'count', count
+                  ) ORDER BY date)
+                  FROM by_day), '[]'::jsonb),
+  'dataPoints', COALESCE((SELECT payload FROM data_points), '[]'::jsonb)
+);
+$$;

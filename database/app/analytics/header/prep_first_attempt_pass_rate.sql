@@ -24,8 +24,8 @@ WITH params AS (
     p_start                                    AS start_at,
     p_end                                      AS end_at,
     'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
-    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
-    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
 ),
 want AS (
   SELECT
@@ -34,81 +34,47 @@ want AS (
   FROM params
 ),
 
-/* -------- Base selection from analytics (attempt date window) -------- */
-base_general AS MATERIALIZED (
-  SELECT a.*
+/* -------- Find earliest attempt per (profile, simulation) overall -------- */
+earliest_attempt_all_time AS MATERIALIZED (
+  SELECT DISTINCT ON (a.profile_id, a.simulation_id)
+         a.attempt_id, a.profile_id, a.simulation_id, a.attempt_created_at
   FROM analytics a
   CROSS JOIN params pr
   CROSS JOIN want w
-  WHERE w.want_general
-    AND a.is_general = TRUE
-    AND a.attempt_created_at >= pr.start_at
-    AND a.attempt_created_at <  pr.end_at
-    AND (
-      pr.profile_id IS NOT NULL
-      OR cardinality(pr.roles) = 0
-      OR a.profile_role = ANY (pr.roles)
-    )
-    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+  WHERE (
+    (w.want_general AND a.is_general = TRUE) OR
+    (w.want_practice AND a.is_practice = TRUE) OR
+    (w.want_archived AND a.is_archived = TRUE)
+  )
+  AND (
+    pr.profile_id IS NOT NULL
+    OR cardinality(pr.roles) = 0
+    OR a.profile_role = ANY (pr.roles)
+  )
+  AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+  AND (cardinality(pr.cohort_ids) = 0 OR (a.cohort_ids && pr.cohort_ids OR a.profile_cohort_ids && pr.cohort_ids))
+  ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
 ),
-base_practice AS MATERIALIZED (
-  SELECT a.*
-  FROM analytics a
+
+/* -------- Restrict to window for counting/trends -------- */
+first_attempts_in_window AS MATERIALIZED (
+  SELECT ea.*
+  FROM earliest_attempt_all_time ea
   CROSS JOIN params pr
-  CROSS JOIN want w
-  WHERE w.want_practice
-    AND a.is_practice = TRUE
-    AND a.attempt_created_at >= pr.start_at
-    AND a.attempt_created_at <  pr.end_at
-    AND (
-      pr.profile_id IS NOT NULL
-      OR cardinality(pr.roles) = 0
-      OR a.profile_role = ANY (pr.roles)
-    )
-    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
-),
-base_union AS MATERIALIZED (
-  SELECT * FROM base_general
-  UNION ALL
-  SELECT * FROM base_practice
+  WHERE ea.attempt_created_at >= pr.start_at
+    AND ea.attempt_created_at < pr.end_at
 ),
 
-/* -------- Archived tri-state -------- */
-base_archived AS MATERIALIZED (
-  SELECT bu.*
-  FROM base_union bu
-  CROSS JOIN want w
-  WHERE
-    CASE
-      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
-      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
-      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
-      ELSE FALSE
-    END
-),
-
-/* -------- Cohort scoping (if passed) -------- */
-cohort_scoped AS MATERIALIZED (
-  SELECT b.*
-  FROM base_archived b
-  CROSS JOIN params pr
-  WHERE cardinality(pr.cohort_ids) = 0
-     OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
-),
-
+/* -------- Get pass data for first attempts -------- */
 filt AS (
-  SELECT * FROM cohort_scoped
+  SELECT a.*
+  FROM analytics a
+  JOIN first_attempts_in_window fa USING (attempt_id)
 ),
-attempts AS (
-  SELECT DISTINCT attempt_id, profile_id, simulation_id,
-         MIN(attempt_created_at) AS attempt_created_at
-  FROM filt
-  GROUP BY attempt_id, profile_id, simulation_id
-),
+
 first_attempts AS (
-  SELECT DISTINCT ON (profile_id, simulation_id) *
-  FROM attempts
-  ORDER BY profile_id, simulation_id, attempt_created_at
+  SELECT fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
+  FROM first_attempts_in_window fa
 ),
 first_pass AS (
   SELECT
@@ -119,7 +85,7 @@ first_pass AS (
     BOOL_OR(f.passed)                                  AS passed,
     -- choose a representative scenario for the attempt (earliest chat)
     (ARRAY_AGG(f.scenario_id ORDER BY f.chat_created_at))[1] AS scenario_id
-  FROM first_attempts fa
+  FROM first_attempts_in_window fa
   JOIN filt f USING (attempt_id)
   GROUP BY fa.profile_id, fa.simulation_id, fa.attempt_id, fa.attempt_created_at
 ),
@@ -140,14 +106,14 @@ cur AS (
 ),
 data_points AS (
   SELECT jsonb_agg(jsonb_build_object(
-           'profileId',    profile_id::text,
-           'date',         to_char(attempt_created_at,'YYYY-MM-DD'),
-           'value',        (passed)::int,
-           'simulationId', simulation_id::text,
-           'scenarioId',   scenario_id::text
-         ) ORDER BY profile_id, attempt_created_at) AS payload
-  FROM first_pass
-  WHERE passed IS NOT NULL
+           'profileId',    fp.profile_id::text,
+           'date',         to_char(fp.attempt_created_at,'YYYY-MM-DD'),
+           'value',        (fp.passed)::int,
+           'simulationId', fp.simulation_id::text,
+           'scenarioId',   fp.scenario_id::text
+         ) ORDER BY fp.profile_id, fp.attempt_created_at) AS payload
+  FROM first_pass fp
+  WHERE fp.passed IS NOT NULL
 )
 SELECT jsonb_build_object(
   'hasData',    COALESCE((SELECT has_data FROM cur), false),

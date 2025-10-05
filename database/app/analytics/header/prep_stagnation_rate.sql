@@ -24,8 +24,8 @@ WITH params AS (
     p_start                                    AS start_at,
     p_end                                      AS end_at,
     'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
-    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
-    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
 ),
 want AS (
   SELECT
@@ -93,7 +93,7 @@ cohort_scoped AS MATERIALIZED (
   FROM base_archived b
   CROSS JOIN params pr
   WHERE cardinality(pr.cohort_ids) = 0
-     OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
 ),
 
 filtered_chats AS MATERIALIZED (

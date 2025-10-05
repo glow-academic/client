@@ -98,7 +98,7 @@ cohort_scoped AS (
   CROSS JOIN params pr
   WHERE
     cardinality(pr.cohort_ids) = 0
-    OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+    OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
 ),
 /* Attempt-level aggregates from chat-grain MV */
 attempt_rollup AS (

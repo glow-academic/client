@@ -97,7 +97,7 @@ cohort_scoped AS MATERIALIZED (
   FROM base_archived b
   CROSS JOIN params pr
   WHERE cardinality(pr.cohort_ids) = 0
-     OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
 ),
 
 base AS (

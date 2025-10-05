@@ -318,6 +318,7 @@ class StandardGroups(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='standard_groups_pkey'),
+        Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
         Index('standard_groups_rubric_id_idx', 'rubric_id'),
         Index('standard_groups_rubric_idx', 'id', 'rubric_id')
     )
@@ -553,6 +554,7 @@ class SimulationChatGrades(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey'),
         Index('scg_chat_created_desc_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_created_idx', 'simulation_chat_id', 'created_at'),
+        Index('scg_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
         Index('simulation_chat_grades_chat_id_created_at_idx', 'simulation_chat_id', 'created_at'),
         Index('simulation_chat_grades_chat_id_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
         Index('simulation_chat_grades_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),

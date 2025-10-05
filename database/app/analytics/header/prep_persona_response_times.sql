@@ -18,9 +18,9 @@ AS $$
 WITH filt AS (
   SELECT *
   FROM analytics a
-  WHERE a.chat_created_at > p_start
-    AND a.chat_created_at < GREATEST(p_end, now())
-    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids AND a.profile_cohort_ids && p_cohort_ids))
+  WHERE a.chat_created_at >= p_start
+    AND a.chat_created_at < p_end
+    AND (p_cohort_ids IS NULL OR (a.cohort_ids && p_cohort_ids OR a.profile_cohort_ids && p_cohort_ids))
     AND (p_cohort_ids IS NOT NULL OR p_roles IS NULL OR a.profile_role = ANY(p_roles) OR (p_profile_id IS NOT NULL AND a.profile_id = p_profile_id))
     AND (
       p_sim_filters IS NULL

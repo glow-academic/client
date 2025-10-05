@@ -61,7 +61,7 @@ scoped AS MATERIALIZED (
   CROSS JOIN params pr
   WHERE
     (cardinality(pr.roles) = 0 OR b.profile_role = ANY (pr.roles)) AND
-    (cardinality(pr.cohort_ids) = 0 OR (b.cohort_ids && pr.cohort_ids AND b.profile_cohort_ids && pr.cohort_ids)) AND
+    (cardinality(pr.cohort_ids) = 0 OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)) AND
     (p_profile_id IS NULL OR b.profile_id = p_profile_id)
 ),
 profiles_set AS (
