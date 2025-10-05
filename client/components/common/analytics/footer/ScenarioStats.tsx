@@ -324,12 +324,12 @@ export default function ScenarioStats({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 flex-1 flex flex-col">
-          <div className="flex-1 min-h-[300px] h-[300px]">
+        <CardContent className="flex-1 flex flex-col gap-2">
+          <div className="flex-1 h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartRows}
-                margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="metricLevel" fontSize={12} />
@@ -359,7 +359,7 @@ export default function ScenarioStats({
           </div>
 
           {/* Correlation */}
-          <div className="flex items-center justify-end -mt-10">
+          <div className="flex items-center justify-end">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">

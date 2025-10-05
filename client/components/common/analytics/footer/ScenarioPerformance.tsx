@@ -349,123 +349,121 @@ export default function ScenarioPerformance({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 flex-1 flex flex-col">
+      <CardContent className="flex-1 flex flex-col gap-2 -mt-2">
         {/* Pie Chart */}
-        <div className="flex-1 min-h-[300px] flex items-center justify-center">
-          <div className="w-full max-w-lg h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={elements}
-                  dataKey="percentage"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={120}
-                  innerRadius={60}
-                  paddingAngle={2}
-                >
-                  {elements.map((e, i) => (
-                    <Cell key={i} fill={e.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={
-                    <CustomPieTooltip
-                      getElement={(name: string) => elementsByName[name]}
-                    />
-                  }
-                />
-                <Legend
-                  verticalAlign="bottom"
-                  height={20}
-                  content={({ payload }) => (
-                    <div className="flex items-center justify-center gap-2 pt-0 flex-wrap max-w-full">
-                      {payload?.map(
-                        (entry: { value: string; color?: string }) => {
-                          const element = elements.find(
-                            (e) => e.name === entry.value
-                          );
-                          if (!element) return null;
-                          return (
-                            <Dialog key={entry.value}>
-                              <DialogTrigger asChild>
-                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap text-center">
-                                  <span
-                                    className="inline-block size-2 rounded-sm"
-                                    style={{ backgroundColor: element.color }}
-                                  />
-                                  {element.name}
-                                </span>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle className="flex items-center gap-2">
-                                    <span className="text-lg">
-                                      {element.icon}
-                                    </span>
-                                    {element.displayName} Performance
-                                  </DialogTitle>
-                                  <DialogDescription hidden>
-                                    Daily trend
-                                  </DialogDescription>
-                                </DialogHeader>
+        <div className="flex-1 h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: -20, right: 0, bottom: 20, left: 0 }}>
+              <Pie
+                data={elements}
+                dataKey="percentage"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                innerRadius={60}
+                paddingAngle={2}
+              >
+                {elements.map((e, i) => (
+                  <Cell key={i} fill={e.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={
+                  <CustomPieTooltip
+                    getElement={(name: string) => elementsByName[name]}
+                  />
+                }
+              />
+              <Legend
+                verticalAlign="bottom"
+                height={20}
+                content={({ payload }) => (
+                  <div className="flex items-center justify-center gap-2 pt-0 flex-wrap max-w-full">
+                    {payload?.map(
+                      (entry: { value: string; color?: string }) => {
+                        const element = elements.find(
+                          (e) => e.name === entry.value
+                        );
+                        if (!element) return null;
+                        return (
+                          <Dialog key={entry.value}>
+                            <DialogTrigger asChild>
+                              <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap text-center">
+                                <span
+                                  className="inline-block size-2 rounded-sm"
+                                  style={{ backgroundColor: element.color }}
+                                />
+                                {element.name}
+                              </span>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <span className="text-lg">
+                                    {element.icon}
+                                  </span>
+                                  {element.displayName} Performance
+                                </DialogTitle>
+                                <DialogDescription hidden>
+                                  Daily trend
+                                </DialogDescription>
+                              </DialogHeader>
 
-                                {element.trendData.length > 0 && (
-                                  <div className="h-64">
-                                    <ResponsiveContainer
-                                      width="100%"
-                                      height="100%"
-                                    >
-                                      <LineChart data={element.trendData}>
-                                        <XAxis
-                                          dataKey="date"
-                                          className="text-xs"
-                                          angle={-45}
-                                          textAnchor="end"
-                                          height={60}
-                                        />
-                                        <YAxis className="text-xs" />
-                                        <Tooltip
-                                          contentStyle={{
-                                            backgroundColor:
-                                              "hsl(var(--background))",
-                                            border:
-                                              "1px solid hsl(var(--border))",
-                                            borderRadius: "6px",
-                                          }}
-                                          formatter={(v: number) => [
-                                            `${v}%`,
-                                            "Score",
-                                          ]}
-                                        />
-                                        <Line
-                                          type="monotone"
-                                          dataKey="score"
-                                          stroke={element.color}
-                                          strokeWidth={2}
-                                          dot={{ r: 4 }}
-                                        />
-                                      </LineChart>
-                                    </ResponsiveContainer>
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
-                          );
-                        }
-                      )}
-                    </div>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+                              {element.trendData.length > 0 && (
+                                <div className="h-64">
+                                  <ResponsiveContainer
+                                    width="100%"
+                                    height="100%"
+                                  >
+                                    <LineChart data={element.trendData}>
+                                      <XAxis
+                                        dataKey="date"
+                                        className="text-xs"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={60}
+                                      />
+                                      <YAxis className="text-xs" />
+                                      <Tooltip
+                                        contentStyle={{
+                                          backgroundColor:
+                                            "hsl(var(--background))",
+                                          border:
+                                            "1px solid hsl(var(--border))",
+                                          borderRadius: "6px",
+                                        }}
+                                        formatter={(v: number) => [
+                                          `${v}%`,
+                                          "Score",
+                                        ]}
+                                      />
+                                      <Line
+                                        type="monotone"
+                                        dataKey="score"
+                                        stroke={element.color}
+                                        strokeWidth={2}
+                                        dot={{ r: 4 }}
+                                      />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                        );
+                      }
+                    )}
+                  </div>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Actionable Insights */}
         {actionableInsight && (
-          <div className="p-3 bg-muted rounded-lg mt-4">
+          <div className="p-3 bg-muted rounded-lg -mt-2">
             <p className="text-sm text-muted-foreground text-center">
               {actionableInsight}
             </p>

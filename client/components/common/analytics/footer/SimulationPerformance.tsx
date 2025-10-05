@@ -30,15 +30,119 @@ import type { ScenarioFact } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+function CustomBarTooltip({
+  active,
+  payload,
+  label,
+  getDataPoint,
+}: {
+  active?: boolean;
+  payload?: TooltipProps<number, string>["payload"];
+  label?: string;
+  getDataPoint: (label: string) =>
+    | {
+        scenarioName: string;
+        avgScore: number;
+        successRate: number;
+        totalAttempts: number;
+      }
+    | undefined;
+}) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  const dataPoint = getDataPoint(label);
+  if (!dataPoint) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{dataPoint.scenarioName}</div>
+      <div className="mt-1 text-xs space-y-1">
+        <div>Average Score: {dataPoint.avgScore}%</div>
+        <div>Success Rate: {dataPoint.successRate}%</div>
+        <div>Attempts: {dataPoint.totalAttempts}</div>
+      </div>
+    </div>
+  );
+}
+
+// Constants for consistent spacing
+const X_TICK_LINE_HEIGHT = 11; // was 12
+const X_TICK_MAX_LINES = 2; // was 3
+const X_TICK_PAD = 4; // small padding
+const X_AXIS_HEIGHT = X_TICK_MAX_LINES * X_TICK_LINE_HEIGHT + X_TICK_PAD; // = 26
+
+function WrappedTick({
+  x,
+  y,
+  payload,
+  maxWidth = 90,
+  lineHeight = X_TICK_LINE_HEIGHT,
+  maxLines = X_TICK_MAX_LINES,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+  maxWidth?: number;
+  lineHeight?: number;
+  maxLines?: number;
+}) {
+  if (x == null || y == null || !payload) return null;
+  const text = String(payload.value ?? "");
+
+  // naive width-to-chars estimate (~7px per char at ~10–11px font)
+  const charsPerLine = Math.max(1, Math.floor(maxWidth / 7));
+
+  // word-wrap into lines
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let cur = "";
+
+  words.forEach((w0) => {
+    let w = w0;
+    if ((cur + (cur ? " " : "") + w).length <= charsPerLine) {
+      cur = cur ? cur + " " + w : w;
+    } else {
+      if (cur) lines.push(cur);
+      // overly long single word: hard-break
+      while (w.length > charsPerLine) {
+        lines.push(w.slice(0, charsPerLine));
+        w = w.slice(charsPerLine);
+      }
+      cur = w;
+    }
+  });
+  if (cur) lines.push(cur);
+
+  // clamp & add ellipsis if needed
+  const clamped =
+    lines.length > maxLines
+      ? [...lines.slice(0, maxLines - 1), lines[maxLines - 1] + "…"]
+      : lines;
+
+  const startY = y + 6; // was 8 — tighter
+
+  return (
+    <text x={x} y={startY} textAnchor="middle" fontSize={10}>
+      {clamped.map((line, i) => (
+        <tspan key={i} x={x} dy={i === 0 ? 0 : lineHeight}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
 
 type SimulationLite = { id: string; title: string; scenarioIds?: string[] };
 
@@ -101,6 +205,36 @@ export default function SimulationPerformance({
     return "danger";
   }, [data, thresholds]);
 
+  // Create lookup for custom tooltip
+  const dataByName = useMemo(
+    () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),
+    [data]
+  );
+
+  // Data-driven insight
+  const dataInsight = useMemo(() => {
+    if (!data.length) return null;
+
+    const avgScore = data.reduce((s, d) => s + d.avgScore, 0) / data.length;
+    const avgSuccess =
+      data.reduce((s, d) => s + d.successRate, 0) / data.length;
+    const totalAttempts = data.reduce((s, d) => s + d.totalAttempts, 0);
+
+    const topPerformer = data.reduce((best, current) =>
+      current.avgScore > best.avgScore ? current : best
+    );
+
+    const underperformers = data.filter((d) => d.avgScore < avgScore * 0.8);
+
+    if (avgScore >= 80) {
+      return `Strong performance across scenarios (${avgScore.toFixed(0)}% avg score). ${topPerformer.scenarioName} leads with ${topPerformer.avgScore}% score.`;
+    } else if (underperformers.length > 0) {
+      return `Performance varies significantly. Focus on improving ${underperformers.map((u) => u.scenarioName).join(", ")} which score below ${(avgScore * 0.8).toFixed(0)}%.`;
+    } else {
+      return `Moderate performance (${avgScore.toFixed(0)}% avg score, ${avgSuccess.toFixed(0)}% success rate) across ${data.length} scenarios with ${totalAttempts} total attempts.`;
+    }
+  }, [data]);
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -150,7 +284,7 @@ export default function SimulationPerformance({
               Simulation Performance
             </CardTitle>
             <CardDescription className="text-sm">
-              Performance trends for scenarios within simulations
+              Performance trends for simulations
             </CardDescription>
           </div>
 
@@ -162,37 +296,62 @@ export default function SimulationPerformance({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 flex-1 flex flex-col">
-        <div className="flex-1 min-h-[180px] h-[180px] mb-2">
+      <CardContent className="space-y-0 flex-1 flex flex-col">
+        {/* Chart */}
+        <div className="min-h-[300px] h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              margin={{ top: 10, right: 10, bottom: 30, left: 10 }}
+              margin={{ top: 10, right: 10, bottom: X_AXIS_HEIGHT, left: 10 }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="scenarioName"
-                fontSize={10}
-                height={40}
-                angle={-45}
-                textAnchor="end"
-                tickFormatter={(name: string) =>
-                  name.length > 12 ? name.slice(0, 11) + "…" : name
-                }
+                interval={0} // don't skip ticks
+                tickLine={false}
+                axisLine={true}
+                tick={<WrappedTick maxWidth={90} />}
+                height={X_AXIS_HEIGHT} // <- match margin.bottom exactly
+                tickMargin={2} // <- minimal extra space
               />
               <YAxis domain={[0, 100]} fontSize={10} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                  color: "#000000",
+                content={
+                  <CustomBarTooltip
+                    getDataPoint={(label: string) => dataByName[label]}
+                  />
+                }
+              />
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="top"
+                wrapperStyle={{ right: 8, top: 8 }}
+                content={({ payload }) => {
+                  if (!payload) return null;
+                  // Only show the two series we care about (order stable)
+                  const items = payload.filter((p) =>
+                    ["Average Score", "Success Rate"].includes(String(p.value))
+                  );
+                  return (
+                    <div className="flex flex-col gap-1 p-2 rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm">
+                      {items.map((p) => (
+                        <div
+                          key={String(p.value)}
+                          className="flex items-center gap-2 text-[10px] leading-none"
+                        >
+                          <span
+                            className="inline-block w-2 h-2 rounded"
+                            style={{ background: p.color }}
+                          />
+                          <span className="whitespace-nowrap">
+                            {String(p.value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
                 }}
-                labelStyle={{ color: "#000000" }}
-                formatter={(value: number, name: string) => [
-                  `${value}%`,
-                  name === "avgScore" ? "Average Score" : "Success Rate",
-                ]}
               />
               <Bar
                 dataKey="avgScore"
@@ -210,17 +369,14 @@ export default function SimulationPerformance({
           </ResponsiveContainer>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-4 text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded bg-blue-500" />
-            <span>Average Score</span>
+        {/* Data-driven Insight */}
+        {dataInsight && (
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-sm text-muted-foreground text-center">
+              {dataInsight}
+            </p>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded bg-green-500" />
-            <span>Success Rate</span>
-          </div>
-        </div>
+        )}
 
         {/* Actionable Insights */}
         {actionableInsight && (

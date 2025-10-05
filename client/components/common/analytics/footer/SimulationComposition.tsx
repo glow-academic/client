@@ -68,7 +68,7 @@ export interface SimulationCompositionProps {
   thresholds: {
     danger: number;
     warning: number;
-    success: number; 
+    success: number;
   };
 }
 
@@ -374,11 +374,14 @@ export default function SimulationComposition({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {highPerforming.slice(0, 8).map((item, index) => (
+                        {highPerforming.slice(0, 5).map((item, index) => (
                           <TableRow key={`high-${index}`}>
                             <TableCell className="p-2 text-xs">
-                              <div className="flex items-center gap-1">
-                                <span>{item.icon}</span>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: item.color }}
+                                />
                                 <span className="truncate">{item.name}</span>
                               </div>
                             </TableCell>
@@ -485,11 +488,14 @@ export default function SimulationComposition({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {lowPerforming.slice(0, 8).map((item, index) => (
+                        {lowPerforming.slice(0, 5).map((item, index) => (
                           <TableRow key={`low-${index}`}>
                             <TableCell className="p-2 text-xs">
-                              <div className="flex items-center gap-1">
-                                <span>{item.icon}</span>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: item.color }}
+                                />
                                 <span className="truncate">{item.name}</span>
                               </div>
                             </TableCell>
@@ -583,6 +589,44 @@ export default function SimulationComposition({
   );
 }
 
+// Helper function to get color based on parameter type
+function getParameterColor(parameterName: string, isNumeric: boolean): string {
+  const colors = {
+    numeric: [
+      "#3b82f6", // blue
+      "#10b981", // emerald
+      "#f59e0b", // amber
+      "#ef4444", // red
+      "#8b5cf6", // violet
+      "#06b6d4", // cyan
+      "#84cc16", // lime
+      "#f97316", // orange
+    ],
+    categorical: [
+      "#ec4899", // pink
+      "#14b8a6", // teal
+      "#6366f1", // indigo
+      "#f43f5e", // rose
+      "#8b5cf6", // purple
+      "#06b6d4", // sky
+      "#10b981", // green
+      "#f59e0b", // yellow
+    ],
+  };
+
+  // Use parameter name as seed for consistent color selection
+  let hash = 0;
+  for (let i = 0; i < parameterName.length; i++) {
+    const char = parameterName.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  const colorSet = isNumeric ? colors.numeric : colors.categorical;
+  const index = Math.abs(hash) % colorSet.length;
+  return colorSet[index] || "#6b7280";
+}
+
 // Helper function to build parameter composition
 function buildParameterComposition(
   simulations: SimulationFact[],
@@ -599,6 +643,7 @@ function buildParameterComposition(
       icon: string;
       color: string;
       description: string;
+      isNumeric: boolean;
     }
   >();
 
@@ -619,9 +664,10 @@ function buildParameterComposition(
           parameterCounts.set(key, {
             count: fact.scenarioCount,
             name: parameterItem.name,
-            icon: parameterItem.description || "📊",
-            color: parameterItem.value || "#888888",
+            icon: "",
+            color: getParameterColor(parameterItem.name, false),
             description: "",
+            isNumeric: false,
           });
         }
       }
@@ -642,9 +688,10 @@ function buildParameterComposition(
           parameterCounts.set(key, {
             count: fact.scenarioCount,
             name: `${parameter.name} ${fact.levelLabel}`,
-            icon: "📈",
-            color: "#3b82f6",
+            icon: "",
+            color: getParameterColor(parameter.name, true),
             description: "",
+            isNumeric: true,
           });
         }
       }
@@ -652,13 +699,14 @@ function buildParameterComposition(
   }
 
   // Convert to array and sort by count
-  return Array.from(parameterCounts.entries())
+  const allParametersArray = Array.from(parameterCounts.entries())
     .map(([_key, data]) => ({
       name: data.name,
       value: data.count,
       icon: data.icon,
       color: data.color,
       description: data.description,
+      isNumeric: data.isNumeric,
       significance:
         data.count > 5
           ? "high"
@@ -666,8 +714,30 @@ function buildParameterComposition(
             ? "medium"
             : ("low" as "high" | "medium" | "low" | "none"),
     }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10);
+    .sort((a, b) => b.value - a.value);
+
+  // Optimize to show top 5 most different parameters
+  const optimizedParameters = [];
+  const usedColors = new Set<string>();
+  const usedTypes = new Set<boolean>();
+
+  for (const param of allParametersArray) {
+    // Prioritize parameters with different colors and types
+    const hasUniqueColor = !usedColors.has(param.color);
+    const hasUniqueType = !usedTypes.has(param.isNumeric);
+
+    if (optimizedParameters.length < 5) {
+      if (hasUniqueColor || hasUniqueType || optimizedParameters.length < 3) {
+        optimizedParameters.push(param);
+        usedColors.add(param.color);
+        usedTypes.add(param.isNumeric);
+      }
+    } else {
+      break;
+    }
+  }
+
+  return optimizedParameters;
 }
 
 // Helper function to build parameter breakdown for a simulation
