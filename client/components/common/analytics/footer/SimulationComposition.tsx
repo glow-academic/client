@@ -38,13 +38,9 @@ import type {
 import { Parameter, ParameterItem, Simulation } from "@/types";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-
-type SimulationCompositionConfig = {
-  method: "percentile" | "quartile" | "standard_deviation";
-  topPercentage: number;
-  bottomPercentage: number;
-  description: string;
-};
+import SimulationCompositionPicker, {
+  SimulationCompositionConfig,
+} from "../SimulationCompositionPicker";
 
 type HighLowPerforming = {
   name: string;
@@ -828,66 +824,4 @@ function buildParameterBreakdown(
   }
 
   return breakdown;
-}
-
-// Configuration picker component
-function SimulationCompositionPicker({
-  currentConfig,
-  onConfigChange,
-}: {
-  currentConfig: SimulationCompositionConfig;
-  onConfigChange: (config: SimulationCompositionConfig) => void;
-}) {
-  const configs: SimulationCompositionConfig[] = [
-    {
-      method: "percentile",
-      topPercentage: 25,
-      bottomPercentage: 25,
-      description: "Top 25% vs Bottom 25% - Best vs Worst",
-    },
-    {
-      method: "percentile",
-      topPercentage: 10,
-      bottomPercentage: 10,
-      description: "Top 10% vs Bottom 10% - Elite vs Struggling",
-    },
-    {
-      method: "quartile",
-      topPercentage: 25,
-      bottomPercentage: 25,
-      description: "Q1 vs Q4 - Quartile Analysis",
-    },
-    {
-      method: "standard_deviation",
-      topPercentage: 0,
-      bottomPercentage: 0,
-      description: "Above 1σ vs Below 1σ - Statistical Analysis",
-    },
-  ];
-
-  return (
-    <div className="flex items-center gap-2">
-      <select
-        value={configs.findIndex(
-          (c) =>
-            c.method === currentConfig.method &&
-            c.topPercentage === currentConfig.topPercentage &&
-            c.bottomPercentage === currentConfig.bottomPercentage
-        )}
-        onChange={(e) => {
-          const selectedConfig = configs[parseInt(e.target.value)];
-          if (selectedConfig) {
-            onConfigChange(selectedConfig);
-          }
-        }}
-        className="text-xs border rounded px-2 py-1 bg-background"
-      >
-        {configs.map((config, index) => (
-          <option key={index} value={index}>
-            {config.description}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
 }

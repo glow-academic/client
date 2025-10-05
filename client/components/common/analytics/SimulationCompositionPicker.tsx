@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Settings } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export interface SimulationCompositionConfig {
   method: "percentile" | "standard_deviation" | "quartile";
@@ -62,7 +62,7 @@ export default function SimulationCompositionPicker({
     (config) =>
       config.method === currentConfig.method &&
       config.topPercentage === currentConfig.topPercentage &&
-      config.bottomPercentage === currentConfig.bottomPercentage,
+      config.bottomPercentage === currentConfig.bottomPercentage
   ) ?? PRESET_CONFIGS[0]) as SimulationCompositionConfig;
 
   const getConfigLabel = (config: SimulationCompositionConfig) => {
@@ -78,25 +78,11 @@ export default function SimulationCompositionPicker({
     }
   };
 
-  const getConfigIcon = (config: SimulationCompositionConfig) => {
-    switch (config.method) {
-      case "percentile":
-        return "📊";
-      case "quartile":
-        return "📈";
-      case "standard_deviation":
-        return "📉";
-      default:
-        return "⚙️";
-    }
-  };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-8">
-          <Settings className="h-4 w-4 mr-2" />
-          {getConfigIcon(selectedConfig)} {getConfigLabel(selectedConfig)}
+          {getConfigLabel(selectedConfig)}
           <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
       </DropdownMenuTrigger>
@@ -108,7 +94,6 @@ export default function SimulationCompositionPicker({
             className="flex items-start gap-3 p-3 cursor-pointer"
           >
             <div className="flex items-center gap-2 flex-1">
-              <span className="text-lg">{getConfigIcon(config)}</span>
               <div className="flex flex-col">
                 <span className="font-medium">{getConfigLabel(config)}</span>
                 <span className="text-xs text-muted-foreground">

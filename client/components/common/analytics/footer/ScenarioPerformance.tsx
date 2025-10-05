@@ -286,6 +286,103 @@ export default function ScenarioPerformance({
     [elements]
   );
 
+  // Compact legend renderer for single-line layout
+  function LegendCompact({
+    payload,
+    elements,
+  }: {
+    payload?: Array<{ value: string; color?: string }>;
+    elements: AttributeElement[];
+  }) {
+    const count = payload?.length ?? 0;
+
+    // Density presets based on legend size
+    const fontSize = count <= 8 ? 12 : count <= 14 ? 11 : count <= 20 ? 10 : 9;
+    const dot = count <= 8 ? 8 : count <= 14 ? 7 : 6;
+    const padX = count <= 8 ? "px-2" : count <= 14 ? "px-1.5" : "px-1";
+    const padY = count <= 8 ? "py-1" : count <= 14 ? "py-0.5" : "py-0.5";
+    const gap = count <= 8 ? "gap-2" : count <= 14 ? "gap-1.5" : "gap-1";
+    // Constrain each pill's width so everything fits on one line; truncate long text
+    const maxLabelPx = count <= 8 ? 140 : count <= 14 ? 110 : 90;
+
+    return (
+      <div
+        className={`w-full ${gap} flex items-center justify-center flex-nowrap overflow-x-auto no-scrollbar min-h-7`}
+        style={{ lineHeight: 1 }} // keep it one line high
+      >
+        {payload?.map((entry) => {
+          const element = elements.find((e) => e.name === entry.value);
+          if (!element) return null;
+          return (
+            <Dialog key={entry.value}>
+              <DialogTrigger asChild>
+                <span
+                  className={`cursor-pointer hover:text-primary transition-colors inline-flex items-center ${padX} ${padY} rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap`}
+                  style={{ fontSize }}
+                  title={element.name} // full name on hover
+                >
+                  <span
+                    className="inline-block rounded-sm mr-1"
+                    style={{
+                      backgroundColor: element.color,
+                      width: dot,
+                      height: dot,
+                      minWidth: dot,
+                    }}
+                  />
+                  <span className="truncate" style={{ maxWidth: maxLabelPx }}>
+                    {element.name}
+                  </span>
+                </span>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <span className="text-lg">{element.icon}</span>
+                    {element.displayName} Performance
+                  </DialogTitle>
+                  <DialogDescription hidden>Daily trend</DialogDescription>
+                </DialogHeader>
+
+                {element.trendData.length > 0 && (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={element.trendData}>
+                        <XAxis
+                          dataKey="date"
+                          className="text-xs"
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis className="text-xs" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "6px",
+                          }}
+                          formatter={(v: number) => [`${v}%`, "Score"]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="score"
+                          stroke={element.color}
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card className="w-full h-full flex flex-col">
@@ -353,7 +450,7 @@ export default function ScenarioPerformance({
         {/* Pie Chart */}
         <div className="flex-1 h-56">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: -20, right: 0, bottom: 20, left: 0 }}>
+            <PieChart margin={{ top: -20, right: 8, bottom: 22, left: 8 }}>
               <Pie
                 data={elements}
                 dataKey="percentage"
@@ -377,84 +474,15 @@ export default function ScenarioPerformance({
               />
               <Legend
                 verticalAlign="bottom"
-                height={20}
+                height={28}
+                wrapperStyle={{ width: "100%" }}
                 content={({ payload }) => (
-                  <div className="flex items-center justify-center gap-2 pt-0 flex-wrap max-w-full">
-                    {payload?.map(
-                      (entry: { value: string; color?: string }) => {
-                        const element = elements.find(
-                          (e) => e.name === entry.value
-                        );
-                        if (!element) return null;
-                        return (
-                          <Dialog key={entry.value}>
-                            <DialogTrigger asChild>
-                              <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap text-center">
-                                <span
-                                  className="inline-block size-2 rounded-sm"
-                                  style={{ backgroundColor: element.color }}
-                                />
-                                {element.name}
-                              </span>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2">
-                                  <span className="text-lg">
-                                    {element.icon}
-                                  </span>
-                                  {element.displayName} Performance
-                                </DialogTitle>
-                                <DialogDescription hidden>
-                                  Daily trend
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              {element.trendData.length > 0 && (
-                                <div className="h-64">
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
-                                    <LineChart data={element.trendData}>
-                                      <XAxis
-                                        dataKey="date"
-                                        className="text-xs"
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={60}
-                                      />
-                                      <YAxis className="text-xs" />
-                                      <Tooltip
-                                        contentStyle={{
-                                          backgroundColor:
-                                            "hsl(var(--background))",
-                                          border:
-                                            "1px solid hsl(var(--border))",
-                                          borderRadius: "6px",
-                                        }}
-                                        formatter={(v: number) => [
-                                          `${v}%`,
-                                          "Score",
-                                        ]}
-                                      />
-                                      <Line
-                                        type="monotone"
-                                        dataKey="score"
-                                        stroke={element.color}
-                                        strokeWidth={2}
-                                        dot={{ r: 4 }}
-                                      />
-                                    </LineChart>
-                                  </ResponsiveContainer>
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                        );
-                      }
-                    )}
-                  </div>
+                  <LegendCompact
+                    payload={
+                      payload as Array<{ value: string; color?: string }>
+                    }
+                    elements={elements}
+                  />
                 )}
               />
             </PieChart>
