@@ -55,6 +55,35 @@ import {
   YAxis,
 } from "recharts";
 
+// Static chart palette for reliable colors
+const CHART_PALETTE = [
+  "#2563eb", // blue
+  "#7c3aed", // purple
+  "#10b981", // green
+  "#f59e0b", // orange
+  "#ef4444", // red
+  "#06b6d4", // teal
+  "#84cc16", // lime
+  "#a855f7", // violet
+];
+
+function pickColor(fallbackIndex = 0): string {
+  // Use the fallbackIndex directly to ensure different colors
+  const idx = fallbackIndex % CHART_PALETTE.length;
+  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "#2563eb";
+}
+
+function iconFor(paramName: string, itemName: string) {
+  const p = paramName.toLowerCase();
+  if (p.includes("difficulty")) return "🎚️";
+  if (p.includes("topic")) return "🧩";
+  if (p.includes("persona")) return "🧑‍🏫";
+  if (p.includes("region")) return "🌍";
+  // per-item easter eggs:
+  if (/pass/i.test(itemName)) return "✅";
+  return "•";
+}
+
 type Parameter = {
   id: string;
   name: string;
@@ -146,7 +175,7 @@ export default function ScenarioPerformance({
   }, [attributeScenarioFacts, activeParameterId]);
 
   const elements: AttributeElement[] = useMemo(() => {
-    return itemsForParameter.map((it) => {
+    return itemsForParameter.map((it, idx) => {
       const scen = attributeScenarioFacts.filter(
         (f) => f.parameterItemId === it.id
       );
@@ -176,12 +205,16 @@ export default function ScenarioPerformance({
           timestamp: a.timestamp,
         }));
 
+      const color = pickColor(idx);
+      const paramName =
+        allParameters.find((p) => p.id === activeParameterId)?.name ?? "";
+
       return {
         id: `param-item-${it.id}`,
         name: it.name,
         displayName: it.name,
-        icon: it.description ?? "",
-        color: it.value || "#888888",
+        icon: iconFor(paramName, it.name),
+        color,
         count: scenCount,
         percentage:
           Math.round((1000 * scenCount) / totalScenariosForParam) / 10, // 1 decimal
@@ -196,6 +229,8 @@ export default function ScenarioPerformance({
     attributeAttemptFacts,
     attributeScenarioFacts,
     totalScenariosForParam,
+    activeParameterId,
+    allParameters,
   ]);
 
   const avgPerf = elements.length
@@ -274,128 +309,144 @@ export default function ScenarioPerformance({
       </CardHeader>
 
       <CardContent className="space-y-6 flex-1 flex flex-col">
-        {/* Pie */}
-        <div className="flex-1 min-h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={elements}
-                dataKey="percentage"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                innerRadius={60}
-                paddingAngle={2}
-              >
-                {elements.map((e, i) => (
-                  <Cell key={i} fill={e.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-                formatter={(value: number, name: string) => {
-                  const element = elements.find((e) => e.name === name);
-                  if (!element) return [value, name];
-                  return [
-                    <div key="t" className="space-y-2">
-                      <div className="font-medium">
-                        {element.icon} {element.displayName}
-                      </div>
-                      <div className="text-sm space-y-1">
-                        <div>Usage: {element.percentage}%</div>
-                        <div>Scenarios: {element.count}</div>
-                        <div>Avg Score: {element.avgScore}%</div>
-                        <div>Completion: {element.completionRate}%</div>
-                        <div>Attempts: {element.totalAttempts}</div>
-                      </div>
-                    </div>,
-                    "",
-                  ];
-                }}
-                labelFormatter={() => ""}
-              />
-              <Legend
-                verticalAlign="bottom"
-                height={80}
-                content={({ payload }) => (
-                  <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                    {payload?.map((entry: { value: string }, idx: number) => {
-                      const element = elements[idx];
-                      if (!element) return null;
-                      return (
-                        <Dialog key={entry.value}>
-                          <DialogTrigger asChild>
-                            <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap">
-                              <span style={{ color: element.color }}>●</span>
-                              {element.name}
-                            </span>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <span className="text-lg">{element.icon}</span>
-                                {element.displayName} Performance
-                              </DialogTitle>
-                              <DialogDescription hidden>
-                                Daily trend
-                              </DialogDescription>
-                            </DialogHeader>
+        {/* Pie Chart */}
+        <div className="flex-1 min-h-[300px] flex items-center justify-center">
+          <div className="w-full max-w-lg h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={elements}
+                  dataKey="percentage"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={50}
+                  paddingAngle={2}
+                >
+                  {elements.map((e, i) => (
+                    <Cell key={i} fill={e.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                  formatter={(value: number, name: string) => {
+                    const element = elements.find((e) => e.name === name);
+                    if (!element) return [value, name];
+                    return [
+                      <div key="t" className="space-y-2">
+                        <div className="font-medium">
+                          {element.icon} {element.displayName}
+                        </div>
+                        <div className="text-sm space-y-1">
+                          <div>Usage: {element.percentage}%</div>
+                          <div>Scenarios: {element.count}</div>
+                          <div>Avg Score: {element.avgScore}%</div>
+                          <div>Completion: {element.completionRate}%</div>
+                          <div>Attempts: {element.totalAttempts}</div>
+                        </div>
+                      </div>,
+                      "",
+                    ];
+                  }}
+                  labelFormatter={() => ""}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={60}
+                  content={({ payload }) => (
+                    <div className="flex items-center justify-center gap-2 pt-2 flex-wrap max-w-full">
+                      {payload?.map(
+                        (entry: { value: string; color?: string }) => {
+                          const element = elements.find(
+                            (e) => e.name === entry.value
+                          );
+                          if (!element) return null;
+                          return (
+                            <Dialog key={entry.value}>
+                              <DialogTrigger asChild>
+                                <span className="text-xs cursor-pointer hover:text-primary transition-colors flex items-center gap-1 px-2 py-1 rounded border border-border hover:border-primary/50 hover:bg-muted/50 whitespace-nowrap text-center">
+                                  <span style={{ color: element.color }}>
+                                    ●
+                                  </span>
+                                  {element.name}
+                                </span>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <span className="text-lg">
+                                      {element.icon}
+                                    </span>
+                                    {element.displayName} Performance
+                                  </DialogTitle>
+                                  <DialogDescription hidden>
+                                    Daily trend
+                                  </DialogDescription>
+                                </DialogHeader>
 
-                            {element.trendData.length > 0 && (
-                              <div className="h-64">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <LineChart data={element.trendData}>
-                                    <XAxis
-                                      dataKey="date"
-                                      className="text-xs"
-                                      angle={-45}
-                                      textAnchor="end"
-                                      height={60}
-                                    />
-                                    <YAxis className="text-xs" />
-                                    <Tooltip
-                                      contentStyle={{
-                                        backgroundColor:
-                                          "hsl(var(--background))",
-                                        border: "1px solid hsl(var(--border))",
-                                        borderRadius: "6px",
-                                      }}
-                                      formatter={(v: number) => [
-                                        `${v}%`,
-                                        "Score",
-                                      ]}
-                                    />
-                                    <Line
-                                      type="monotone"
-                                      dataKey="score"
-                                      stroke={element.color}
-                                      strokeWidth={2}
-                                      dot={{ r: 4 }}
-                                    />
-                                  </LineChart>
-                                </ResponsiveContainer>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      );
-                    })}
-                  </div>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+                                {element.trendData.length > 0 && (
+                                  <div className="h-64">
+                                    <ResponsiveContainer
+                                      width="100%"
+                                      height="100%"
+                                    >
+                                      <LineChart data={element.trendData}>
+                                        <XAxis
+                                          dataKey="date"
+                                          className="text-xs"
+                                          angle={-45}
+                                          textAnchor="end"
+                                          height={60}
+                                        />
+                                        <YAxis className="text-xs" />
+                                        <Tooltip
+                                          contentStyle={{
+                                            backgroundColor:
+                                              "hsl(var(--background))",
+                                            border:
+                                              "1px solid hsl(var(--border))",
+                                            borderRadius: "6px",
+                                          }}
+                                          formatter={(v: number) => [
+                                            `${v}%`,
+                                            "Score",
+                                          ]}
+                                        />
+                                        <Line
+                                          type="monotone"
+                                          dataKey="score"
+                                          stroke={element.color}
+                                          strokeWidth={2}
+                                          dot={{ r: 4 }}
+                                        />
+                                      </LineChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Actionable Insights */}
         {actionableInsight && (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          <div className="p-3 bg-muted rounded-lg mt-4">
+            <p className="text-sm text-muted-foreground text-center">
+              {actionableInsight}
+            </p>
           </div>
         )}
       </CardContent>
