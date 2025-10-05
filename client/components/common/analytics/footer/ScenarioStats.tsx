@@ -359,7 +359,7 @@ export default function ScenarioStats({
           </div>
 
           {/* Correlation */}
-          <div className="flex items-center justify-end -mt-2">
+          <div className="flex items-center justify-end -mt-10">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
