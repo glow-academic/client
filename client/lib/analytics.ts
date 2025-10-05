@@ -1015,22 +1015,53 @@ export type LeaderboardBundleResponse = z.infer<
 export function computeGrowthActionableInsight(
   windowAverages: GrowthWindowAverages
 ): string | null {
-  if (
-    !windowAverages?.averageScore?.last ||
-    !windowAverages?.averageScore?.prev
-  ) {
-    return null;
+  const current = windowAverages?.averageScore?.last;
+  const previous = windowAverages?.averageScore?.prev;
+
+  // treat 0 as valid; only null/undefined means missing
+  if (current == null) return null;
+
+  // If we have both current and previous, analyze trends
+  if (previous != null) {
+    // allow 0
+    const improvement = current - previous;
+
+    if (improvement < -5) {
+      return `Performance declined ${Math.abs(improvement).toFixed(1)}% - review challenging areas.`;
+    }
+
+    if (improvement > 5) {
+      return `Scores improved ${improvement.toFixed(1)}% - consider advanced challenges.`;
+    }
+
+    if (improvement > 2) {
+      return `Steady improvement of ${improvement.toFixed(1)}% - continue current approach.`;
+    }
+
+    if (improvement < -2) {
+      return `Slight decline of ${Math.abs(improvement).toFixed(1)}% - adjust study strategy.`;
+    }
   }
 
-  const improvement =
-    windowAverages.averageScore.last - windowAverages.averageScore.prev;
-
-  if (improvement < -5) {
-    return `Average score has declined by ${Math.abs(improvement).toFixed(1)}% in the last ${windowAverages.averageScore.n} days. Consider additional training support.`;
+  // Performance level-based insights
+  if (current >= 90) {
+    return `Outstanding performance at ${current.toFixed(1)}% - consider mentoring others.`;
   }
 
-  if (improvement > 5) {
-    return `Average score has improved by ${improvement.toFixed(1)}% in the last ${windowAverages.averageScore.n} days. Great progress!`;
+  if (current >= 80) {
+    return `Strong performance at ${current.toFixed(1)}% - focus on consistency.`;
+  }
+
+  if (current >= 70) {
+    return `Good performance at ${current.toFixed(1)}% - identify improvement areas.`;
+  }
+
+  if (current >= 60) {
+    return `Average performance at ${current.toFixed(1)}% - additional practice needed.`;
+  }
+
+  if (current < 60) {
+    return `Below target at ${current.toFixed(1)}% - focus on fundamentals.`;
   }
 
   return null;
@@ -1294,13 +1325,47 @@ export function computeSkillPerformanceActionableInsight(
 ): string | null {
   if (radarData.length === 0) return null;
 
-  // Find the weakest skill
-  const weakestSkill = radarData.reduce((weakest, current) =>
-    current.value < weakest.value ? current : weakest
-  );
+  // Calculate skill statistics
+  const values = radarData.map((skill) => skill.value);
+  const avgProficiency =
+    values.reduce((sum, val) => sum + val, 0) / values.length;
+  const minProficiency = Math.min(...values);
+  const maxProficiency = Math.max(...values);
+  const skillGap = maxProficiency - minProficiency;
 
-  if (weakestSkill.value < 0.5) {
-    return `Focus on improving ${weakestSkill.metric} - currently at ${Math.round(weakestSkill.value * 100)}% proficiency.`;
+  // Find skills by performance level
+  const weakSkills = radarData.filter((skill) => skill.value < 0.5);
+  const strongSkills = radarData.filter((skill) => skill.value >= 0.8);
+
+  // Significant skill gaps
+  if (skillGap > 0.4) {
+    const weakestSkill = radarData.reduce((weakest, current) =>
+      current.value < weakest.value ? current : weakest
+    );
+    return `Large skill gap - focus on ${weakestSkill.metric} (${Math.round(weakestSkill.value * 100)}%).`;
+  }
+
+  // Multiple weak skills
+  if (weakSkills.length > 1) {
+    return `Multiple weak areas - focus on fundamentals.`;
+  }
+
+  // Single weak skill
+  if (weakSkills.length === 1) {
+    const weakSkill = weakSkills[0];
+    if (weakSkill) {
+      return `Focus on ${weakSkill.metric} (${Math.round(weakSkill.value * 100)}%).`;
+    }
+  }
+
+  // All skills are strong
+  if (strongSkills.length === radarData.length) {
+    return `All skills strong (${Math.round(avgProficiency * 100)}%) - consider advanced challenges.`;
+  }
+
+  // Low overall performance
+  if (avgProficiency < 0.6) {
+    return `Overall development needed (${Math.round(avgProficiency * 100)}%) - focus on fundamentals.`;
   }
 
   return null;

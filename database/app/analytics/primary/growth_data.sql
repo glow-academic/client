@@ -166,8 +166,9 @@ win_params AS (
 ),
 
 avg_series AS (
-  SELECT s.d, COALESCE(a.value,0) AS average_score
+  SELECT s.d, a.value AS average_score
   FROM spine s LEFT JOIN avg_score a ON a.d = s.d
+  WHERE a.value IS NOT NULL  -- Only include days with actual data
   ORDER BY s.d
 ),
 avg_positions AS (

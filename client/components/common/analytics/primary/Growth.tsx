@@ -93,15 +93,14 @@ export default function Growth({
   const getThresholdStatus = () => {
     if (!hasDataAvailable) return "neutral";
 
-    if (
-      !windowAverages?.averageScore?.last ||
-      !windowAverages?.averageScore?.prev
-    ) {
+    const last = windowAverages?.averageScore?.last;
+    const prev = windowAverages?.averageScore?.prev;
+
+    if (last == null || prev == null) {
       return "neutral";
     }
 
-    const improvement =
-      windowAverages.averageScore.last - windowAverages.averageScore.prev;
+    const improvement = last - prev;
 
     if (improvement >= thresholds.success) return "success";
     if (improvement >= thresholds.warning) return "warning";
@@ -109,6 +108,12 @@ export default function Growth({
   };
 
   const thresholdStatus = getThresholdStatus();
+
+  // Normalize to a string once
+  const normalizedInsight = useMemo(
+    () => (actionableInsight ?? "").trim(),
+    [actionableInsight]
+  );
 
   if (isLoading) {
     return (
@@ -191,14 +196,14 @@ export default function Growth({
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col space-y-6">
+        <div className="flex-1 flex flex-col space-y-4">
           {/* Multi-line Chart */}
           <div
             className="flex-1 min-h-0"
             style={
               process.env.NODE_ENV === "test"
-                ? { minWidth: 400, minHeight: 300 }
-                : undefined
+                ? { minWidth: 400, minHeight: 280 }
+                : { minHeight: 280 }
             }
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -267,10 +272,13 @@ export default function Growth({
           </div>
 
           {/* Actionable Insights */}
-          {actionableInsight && (
-            <div className="p-3 bg-muted rounded-lg mt-2">
-              <p className="text-sm text-muted-foreground">
-                {actionableInsight}
+          {normalizedInsight && (
+            <div
+              className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full"
+              data-testid="growth-insight"
+            >
+              <p className="text-xs text-muted-foreground">
+                {normalizedInsight}
               </p>
             </div>
           )}

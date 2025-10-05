@@ -170,12 +170,12 @@ export default function SkillPerformance({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden flex flex-col justify-center">
-        <div className="h-96 flex items-center justify-center">
+      <CardContent className="flex-1 flex flex-col">
+        <div className="h-[300px] flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               data={activePackage?.radarData ?? []}
-              margin={{ top: 60, right: 30, bottom: 10, left: 30 }}
+              margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
             >
               <PolarAngleAxis
                 dataKey="metric"
