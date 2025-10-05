@@ -65,8 +65,8 @@ per_grade_group AS MATERIALIZED (
     lg.grade_id       AS grade_id,
     SUM(scf.total)::float8              AS score,
     SUM(s.points)::float8               AS points,
-    CASE WHEN SUM(s.points) > 0
-         THEN 100.0 * SUM(scf.total)::float8 / SUM(s.points)::float8
+    CASE WHEN sg.points > 0
+         THEN 100.0 * SUM(scf.total)::float8 / sg.points::float8
          ELSE NULL
     END                                 AS pct
   FROM latest_grade lg
@@ -81,16 +81,16 @@ per_grade_group AS MATERIALIZED (
   GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id
 ),
 
--- 3) Radar rows: avg pct per (rubric, standard) - using individual standard names
+-- 3) Radar rows: avg pct per (rubric, standard_group) - using standard group short names
 radar_rows AS MATERIALIZED (
   SELECT 
     pgg.rubric_id, 
-    s.name AS standard_name,
-    s.description AS standard_description,
+    sg.short_name AS group_name,
+    sg.description AS group_description,
     AVG(pgg.pct)::float8 AS avg_pct
   FROM per_grade_group pgg
-  JOIN standards s ON s.standard_group_id = pgg.group_id
-  GROUP BY pgg.rubric_id, s.name, s.description
+  JOIN standard_groups sg ON sg.id = pgg.group_id
+  GROUP BY pgg.rubric_id, sg.short_name, sg.description
 ),
 
 radar_per_rubric AS MATERIALIZED (
@@ -98,31 +98,31 @@ radar_per_rubric AS MATERIALIZED (
     rubric_id,
     jsonb_agg(
       jsonb_build_object(
-        'metric',   standard_name,
-        'description', standard_description,
+        'metric',   group_name,
+        'description', group_description,
         'value',    GREATEST(0, LEAST(1, COALESCE(avg_pct,0)/100.0)),
         'fullMark', 1
       )
-      ORDER BY standard_name
+      ORDER BY group_name
     ) AS radar
   FROM radar_rows
   GROUP BY rubric_id
 ),
 
--- 4) Facts by (rubric, standard, simulation) - using individual standards
+-- 4) Facts by (rubric, standard_group, simulation) - using standard group names
 group_stats AS MATERIALIZED (
   SELECT
     pgg.rubric_id,
-    s.id AS standard_id,
-    s.name AS standard_name,
-    s.description AS standard_description,
+    sg.id AS group_id,
+    sg.name AS group_name,
+    sg.description AS group_description,
     pgg.simulation_id,
     SUM(pgg.score)  AS score_sum,
     SUM(pgg.points) AS points_sum,
     ROUND(AVG(pgg.pct))::int AS avg_pct
   FROM per_grade_group pgg
-  JOIN standards s ON s.standard_group_id = pgg.group_id
-  GROUP BY pgg.rubric_id, s.id, s.name, s.description, pgg.simulation_id
+  JOIN standard_groups sg ON sg.id = pgg.group_id
+  GROUP BY pgg.rubric_id, sg.id, sg.name, sg.description, pgg.simulation_id
 ),
 
 facts_per_rubric AS MATERIALIZED (
@@ -130,15 +130,15 @@ facts_per_rubric AS MATERIALIZED (
     rubric_id,
     jsonb_agg(
       jsonb_build_object(
-        'standardId',      standard_id::text,
-        'standardName',    standard_name,
-        'standardDescription', standard_description,
+        'groupId',         group_id::text,
+        'groupName',       group_name,
+        'groupDescription', group_description,
         'simulationId',    simulation_id::text,
         'score',           COALESCE(score_sum,0),
         'points',          COALESCE(points_sum,0),
         'avgPct',          COALESCE(avg_pct,0)
       )
-      ORDER BY standard_name, simulation_id
+      ORDER BY group_name, simulation_id
     ) AS facts
   FROM group_stats
   GROUP BY rubric_id

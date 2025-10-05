@@ -78,7 +78,7 @@ export default function AttemptImprovement({
     >();
 
     facts.forEach((f) => {
-      if (!sel.has(f.simulationId)) return;
+      if (!sel.has(f.simulationId) || f.attemptNo > 5) return; // Limit to 5 attempts
       const acc = byAttempt.get(f.attemptNo) ?? {
         gradeSum: 0,
         minSum: 0,

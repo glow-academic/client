@@ -352,10 +352,9 @@ export default function RubricHeatmap({
                                         {cell.correlation > 0 ? "+" : ""}
                                         {cell.correlation.toFixed(2)}
                                       </p>
-                                      <p>
-                                        p-value:{" "}
-                                        {cell.pValue?.toFixed(3) || "N/A"}
-                                      </p>
+                                      {cell.pValue && (
+                                        <p>p-value: {cell.pValue.toFixed(3)}</p>
+                                      )}
                                       <p>Data points: {cell.dataPoints}</p>
                                     </TooltipContent>
                                   </Tooltip>

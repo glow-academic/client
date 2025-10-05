@@ -125,7 +125,21 @@ attempt_rows AS (
   JOIN filt f ON f.attempt_id = ao.attempt_id
   GROUP BY ao.profile_id, ao.simulation_id, ao.attempt_id, ao.attempt_no
 ),
-by_attempt_sim AS (
+
+/* -------- Individual user vs Multiple users logic -------- */
+individual_user_data AS (
+  SELECT
+    attempt_no,
+    avg_grade::float,
+    (avg_time_seconds/60.0)::float AS avg_time_minutes,
+    (passed_any * 100.0)::float AS pass_rate
+  FROM attempt_rows ar
+  CROSS JOIN params pr
+  WHERE pr.profile_id IS NOT NULL
+    AND avg_grade IS NOT NULL
+    AND attempt_no <= 5
+),
+multiple_users_data AS (
   SELECT
     simulation_id,
     attempt_no,
@@ -136,6 +150,9 @@ by_attempt_sim AS (
   FROM attempt_rows
   WHERE avg_grade IS NOT NULL
   GROUP BY simulation_id, attempt_no
+),
+by_attempt_sim AS (
+  SELECT * FROM multiple_users_data
 ),
 by_attempt AS (
   SELECT
@@ -157,20 +174,40 @@ chart AS (
            )
            ORDER BY attempt_no
          ) AS payload
-  FROM by_attempt
+  FROM (
+    -- Individual user: use individual_user_data directly
+    SELECT attempt_no, avg_grade, avg_time_minutes, pass_rate
+    FROM individual_user_data
+    WHERE EXISTS (SELECT 1 FROM params WHERE profile_id IS NOT NULL)
+    UNION ALL
+    -- Multiple users: use aggregated by_attempt data
+    SELECT attempt_no, avg_grade, avg_time_minutes, pass_rate
+    FROM by_attempt
+    WHERE NOT EXISTS (SELECT 1 FROM params WHERE profile_id IS NOT NULL)
+  ) chart_data
 ),
 facts AS (
   SELECT jsonb_agg(
            jsonb_build_object(
-             'simulationId', simulation_id::text,
+             'simulationId', COALESCE(simulation_id::text, 'individual'),
              'attemptNo',    attempt_no,
              'avgGrade',     ROUND(avg_grade)::int,
              'avgMinutes',   ROUND(avg_time_minutes)::int,
              'passRate',     ROUND(pass_rate)::int
            )
-           ORDER BY simulation_id, attempt_no
+           ORDER BY COALESCE(simulation_id, '00000000-0000-0000-0000-000000000000'::uuid), attempt_no
          ) AS payload
-  FROM by_attempt_sim
+  FROM (
+    -- Individual user: use individual_user_data with NULL simulation_id
+    SELECT NULL::uuid AS simulation_id, attempt_no, avg_grade, avg_time_minutes, pass_rate
+    FROM individual_user_data
+    WHERE EXISTS (SELECT 1 FROM params WHERE profile_id IS NOT NULL)
+    UNION ALL
+    -- Multiple users: use simulation-level data
+    SELECT simulation_id, attempt_no, avg_grade, avg_time_minutes, pass_rate
+    FROM by_attempt_sim
+    WHERE NOT EXISTS (SELECT 1 FROM params WHERE profile_id IS NOT NULL)
+  ) facts_data
 ),
 valid_sim_ids AS (
   SELECT jsonb_agg(DISTINCT f.simulation_id::text ORDER BY f.simulation_id::text) AS payload

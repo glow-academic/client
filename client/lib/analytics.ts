@@ -382,9 +382,9 @@ export const SkillRadarDataSchema = z.object({
 });
 
 export const SkillStandardFactSchema = z.object({
-  standardId: z.string(),
-  standardName: z.string(),
-  standardDescription: z.string().optional(),
+  groupId: z.string(),
+  groupName: z.string(),
+  groupDescription: z.string().optional(),
   simulationId: z.string(),
   score: z.number(),
   points: z.number(),

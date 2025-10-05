@@ -30,9 +30,9 @@ type RadarDatum = {
   description?: string | undefined;
 };
 type StandardFact = {
-  standardId: string;
-  standardName: string;
-  standardDescription?: string | undefined;
+  groupId: string;
+  groupName: string;
+  groupDescription?: string | undefined;
   simulationId: string;
   score: number;
   points: number;
@@ -231,9 +231,16 @@ export default function SkillPerformance({
               <PolarRadiusAxis domain={[0, 1]} axisLine={false} tick={false} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
+                  backgroundColor: "black",
+                  border: "1px solid black",
+                  color: "white",
                   borderRadius: "6px",
+                }}
+                labelStyle={{
+                  color: "white",
+                }}
+                itemStyle={{
+                  color: "white",
                 }}
                 formatter={(
                   value: number,
@@ -255,7 +262,7 @@ export default function SkillPerformance({
                   }
                   return [value, name];
                 }}
-                labelFormatter={(label: string) => `Skill: ${label}`}
+                labelFormatter={(label: string) => label}
               />
               <Radar
                 dataKey="value"
