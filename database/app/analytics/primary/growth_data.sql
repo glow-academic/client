@@ -104,21 +104,21 @@ attempts AS (
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
 
--- 3) UI-ready chart rows (one row per day, all metrics as flat fields)
+-- 3) UI-ready chart rows (only days with actual data, like header functions)
 chart AS (
   SELECT jsonb_agg(
            jsonb_build_object(
              'date', to_char(s.d,'YYYY-MM-DD'),
-             'averageScore',         COALESCE(a.value, 0),
-             'passRate',             COALESCE(p.value, 0),
-             'completionRate',       COALESCE(c.value, 0),
-             'firstAttemptPassRate', COALESCE(p.value, 0),   -- synonym for pass rate
-             'messagesPerSession',   COALESCE(m.value, 0),
-             'personaResponseTimes', COALESCE(r.value, 0),
-             'sessionEfficiency',    COALESCE(e.value, 0),
-             'stagnationRate',       COALESCE(g.value, 0),
-             'timeSpent',            COALESCE(ts.value, 0),
-             'totalAttempts',        COALESCE(t.value, 0)
+             'averageScore',         a.value,
+             'passRate',             p.value,
+             'completionRate',       c.value,
+             'firstAttemptPassRate', p.value,   -- synonym for pass rate
+             'messagesPerSession',   m.value,
+             'personaResponseTimes', r.value,
+             'sessionEfficiency',    e.value,
+             'stagnationRate',       g.value,
+             'timeSpent',            ts.value,
+             'totalAttempts',        t.value
            )
            ORDER BY s.d
          ) AS payload
@@ -132,6 +132,16 @@ chart AS (
   LEFT JOIN stagn       g  ON g.d  = s.d
   LEFT JOIN time_spent  ts ON ts.d = s.d
   LEFT JOIN attempts    t  ON t.d  = s.d
+  -- Only include days where at least one metric has data (like header functions)
+  WHERE a.value IS NOT NULL 
+     OR p.value IS NOT NULL 
+     OR c.value IS NOT NULL 
+     OR m.value IS NOT NULL 
+     OR r.value IS NOT NULL 
+     OR e.value IS NOT NULL 
+     OR g.value IS NOT NULL 
+     OR ts.value IS NOT NULL 
+     OR t.value IS NOT NULL
 ),
 
 -- 4) Metric catalog for your GrowthPicker (no opinions, just metadata)

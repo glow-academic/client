@@ -122,16 +122,16 @@ export const RubricHeatmapResponseSchema = z.object({
 // Growth Data Types
 export const GrowthDataPointSchema = z.object({
   date: z.string(),
-  averageScore: z.number(),
-  passRate: z.number(),
-  completionRate: z.number(),
-  firstAttemptPassRate: z.number(),
-  messagesPerSession: z.number(),
-  personaResponseTimes: z.number(),
-  sessionEfficiency: z.number(),
-  stagnationRate: z.number(),
-  timeSpent: z.number(),
-  totalAttempts: z.number(),
+  averageScore: z.number().nullable(),
+  passRate: z.number().nullable(),
+  completionRate: z.number().nullable(),
+  firstAttemptPassRate: z.number().nullable(),
+  messagesPerSession: z.number().nullable(),
+  personaResponseTimes: z.number().nullable(),
+  sessionEfficiency: z.number().nullable(),
+  stagnationRate: z.number().nullable(),
+  timeSpent: z.number().nullable(),
+  totalAttempts: z.number().nullable(),
 });
 
 export const GrowthMetricSchema = z.object({
@@ -376,22 +376,25 @@ export const CohortPerformanceResponseSchema = z.object({
 // Skill Performance Types
 export const SkillRadarDataSchema = z.object({
   metric: z.string(),
+  description: z.string().optional(),
   value: z.number(),
   fullMark: z.number(),
 });
 
-export const SkillGroupFactSchema = z.object({
-  groupId: z.string(),
-  groupName: z.string(),
+export const SkillStandardFactSchema = z.object({
+  standardId: z.string(),
+  standardName: z.string(),
+  standardDescription: z.string().optional(),
   simulationId: z.string(),
   score: z.number(),
   points: z.number(),
+  avgPct: z.number(),
 });
 
 export const SkillPackageSchema = z.object({
   rubricId: z.string(),
   radarData: z.array(SkillRadarDataSchema),
-  groupFacts: z.array(SkillGroupFactSchema),
+  groupFacts: z.array(SkillStandardFactSchema),
 });
 
 export const SkillPerformanceResponseSchema = z.object({
@@ -428,7 +431,7 @@ export type CohortPerformanceResponse = z.infer<
 >;
 
 export type SkillRadarData = z.infer<typeof SkillRadarDataSchema>;
-export type SkillGroupFact = z.infer<typeof SkillGroupFactSchema>;
+export type SkillStandardFact = z.infer<typeof SkillStandardFactSchema>;
 export type SkillPackage = z.infer<typeof SkillPackageSchema>;
 export type SkillPerformanceResponse = z.infer<
   typeof SkillPerformanceResponseSchema
