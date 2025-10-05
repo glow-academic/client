@@ -8,6 +8,19 @@
 "use client";
 
 import { useAnalytics } from "@/contexts/analytics-context";
+import {
+  AverageScoreMetricResponse,
+  CompletionPercentageMetricResponse,
+  computeCurrent,
+  FirstAttemptPassRateMetricResponse,
+  HighestScoreMetricResponse,
+  MessagesPerSessionMetricResponse,
+  PersonaResponseTimesMetricResponse,
+  SessionEfficiencyMetricResponse,
+  StagnationRateMetricResponse,
+  TimeSpentMetricResponse,
+  TotalAttemptsMetricResponse,
+} from "@/lib/analytics";
 import { useAnalyticsReportsBundle } from "@/lib/api/hooks/analytics";
 import { useProfiles } from "@/lib/api/hooks/profiles";
 import { useScenarios } from "@/lib/api/hooks/scenarios";
@@ -110,7 +123,13 @@ export default function ReportsPage() {
         averageScore: {
           ...formatMetric(
             profile.metrics.averageScore,
-            (m) => (m.hover as any).mean, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as AverageScoreMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -120,7 +139,13 @@ export default function ReportsPage() {
         completionPercentage: {
           ...formatMetric(
             profile.metrics.completionPercentage,
-            (m) => (m.hover as any).percent, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as CompletionPercentageMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -130,7 +155,13 @@ export default function ReportsPage() {
         firstAttemptPassRate: {
           ...formatMetric(
             profile.metrics.firstAttemptPassRate,
-            (m) => (m.hover as any).percent, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as FirstAttemptPassRateMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -140,7 +171,13 @@ export default function ReportsPage() {
         highestScore: {
           ...formatMetric(
             profile.metrics.highestScore,
-            (m) => (m.hover as any).top?.[0] || null, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as HighestScoreMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 70, yellow: 80, green: 90 }
           ),
@@ -150,7 +187,13 @@ export default function ReportsPage() {
         messagesPerSession: {
           ...formatMetric(
             profile.metrics.messagesPerSession,
-            (m) => (m.hover as any).mean, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as MessagesPerSessionMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}`,
             { gray: 0, red: 5, yellow: 8, green: 12 }
           ),
@@ -160,7 +203,13 @@ export default function ReportsPage() {
         personaResponseTimes: {
           ...formatMetric(
             profile.metrics.personaResponseTimes,
-            (m) => (m.hover as any).meanSeconds, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as PersonaResponseTimesMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${Math.round(n / 60)}m`,
             { gray: 0, red: 300, yellow: 180, green: 60 }
           ),
@@ -170,7 +219,13 @@ export default function ReportsPage() {
         sessionEfficiency: {
           ...formatMetric(
             profile.metrics.sessionEfficiency,
-            (m) => (m.hover as any).efficiency, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as SessionEfficiencyMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 60, yellow: 75, green: 85 }
           ),
@@ -180,7 +235,13 @@ export default function ReportsPage() {
         stagnationRate: {
           ...formatMetric(
             profile.metrics.stagnationRate,
-            (m) => (m.hover as any).ratePercent, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as StagnationRateMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}%`,
             { gray: 0, red: 25, yellow: 15, green: 5 }
           ),
@@ -190,7 +251,13 @@ export default function ReportsPage() {
         timeSpent: {
           ...formatMetric(
             profile.metrics.timeSpent,
-            (m) => (m.hover as any).avgOverallMinutes, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as TimeSpentMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}m`,
             { gray: 0, red: 90, yellow: 60, green: 30 }
           ),
@@ -200,7 +267,13 @@ export default function ReportsPage() {
         totalAttempts: {
           ...formatMetric(
             profile.metrics.totalAttempts,
-            (m) => (m.hover as any).attempts, // eslint-disable-line @typescript-eslint/no-explicit-any
+            (m) => {
+              const metricData = m as TotalAttemptsMetricResponse;
+              return computeCurrent(
+                metricData.method,
+                metricData.dataPoints || []
+              );
+            },
             (n) => `${n}`,
             { gray: 0, red: 3, yellow: 5, green: 8 }
           ),
