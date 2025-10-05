@@ -918,6 +918,32 @@ export type ProfileMetrics = z.infer<typeof ProfileMetricsSchema>;
 export type ProfileData = z.infer<typeof ProfileDataSchema>;
 export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 
+// Leaderboard Bundle Response Schema
+export const LeaderboardRowSchema = z.object({
+  profileId: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  totalAttempts: z.number(),
+  highestScoreAvg: z.number(),
+  messagesPerSession: z.number(),
+  personaResponseSeconds: z.number(),
+  timeSpentMinutes: z.number(),
+  improvementRatePerDay: z.number(),
+  perfectScoreCount: z.number(),
+  quickestPassMinutes: z.number(),
+  mostImprovedPercent: z.number(),
+});
+
+export const LeaderboardBundleResponseSchema = z.object({
+  hasData: z.boolean(),
+  data: z.array(LeaderboardRowSchema),
+});
+
+export type LeaderboardRow = z.infer<typeof LeaderboardRowSchema>;
+export type LeaderboardBundleResponse = z.infer<
+  typeof LeaderboardBundleResponseSchema
+>;
+
 // Growth Analytics Utilities
 export function computeGrowthActionableInsight(
   windowAverages: GrowthWindowAverages

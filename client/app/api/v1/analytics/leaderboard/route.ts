@@ -8,13 +8,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    const result = await analyticsRepo.getPerfectScores(filters);
+    const result = await analyticsRepo.getLeaderboardBundle(filters);
 
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    log.error("analytics.leaderboard.perfect-scores.error", {
+    log.error("analytics.leaderboard.error", {
       message: errorMessage,
       error,
     });

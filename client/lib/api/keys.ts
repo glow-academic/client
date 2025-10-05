@@ -213,22 +213,6 @@ export const analyticsTotalAttemptsKeys = {
     [...analyticsTotalAttemptsKeys.all, { filters }] as const,
 };
 
-// New analytics keys for leaderboard metrics
-export const analyticsImprovementPerDayKeys = {
-  all: ["analytics:leaderboard:improvement-per-day"] as const,
-  list: (filters?: unknown) =>
-    [...analyticsImprovementPerDayKeys.all, { filters }] as const,
-};
-export const analyticsPerfectScoresKeys = {
-  all: ["analytics:leaderboard:perfect-scores"] as const,
-  list: (filters?: unknown) =>
-    [...analyticsPerfectScoresKeys.all, { filters }] as const,
-};
-export const analyticsQuickestPassKeys = {
-  all: ["analytics:leaderboard:quickest-pass"] as const,
-  list: (filters?: unknown) =>
-    [...analyticsQuickestPassKeys.all, { filters }] as const,
-};
 export const analyticsRubricHeatmapKeys = {
   all: ["analytics:primary:rubric-heatmap"] as const,
   list: (filters?: unknown) =>
@@ -320,6 +304,13 @@ export const analyticsReportsBundleKeys = {
   all: ["analytics:reports:bundle"] as const,
   list: (filters?: unknown) =>
     [...analyticsReportsBundleKeys.all, { filters }] as const,
+};
+
+// Leaderboard Bundle Analytics Keys
+export const analyticsLeaderboardBundleKeys = {
+  all: ["analytics:leaderboard:bundle"] as const,
+  list: (filters?: unknown) =>
+    [...analyticsLeaderboardBundleKeys.all, { filters }] as const,
 };
 export const agentKeysByModelId = {
   one: (id: string | number) => ["agents:by:modelId", String(id)] as const,

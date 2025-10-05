@@ -9,12 +9,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useLeaderboardData,
-  type LeaderboardRowLite,
-} from "@/hooks/use-leaderboard-data";
-import type { AnalyticsFilters } from "@/lib/analytics";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import type { AnalyticsFilters, LeaderboardRow } from "@/lib/analytics";
+import { useAnalyticsLeaderboardBundle } from "@/lib/api/hooks/analytics";
 import type { Profile } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -75,35 +71,17 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     ]
   );
 
-  // Load the 8 metric payloads
-  const { rows, isLoading, isError } = useLeaderboardData(filters);
+  // Load the leaderboard data
+  const {
+    data: leaderboardResponse,
+    isLoading,
+    isError,
+  } = useAnalyticsLeaderboardBundle(filters);
 
-  // Use batched profiles query to hydrate names
-  const { data: profiles = [] } = useProfiles();
-
-  // Create a map for quick profile lookup
-  const profileMap = useMemo(() => {
-    const map = new Map<string, { firstName?: string; lastName?: string }>();
-    profiles.forEach((profile) => {
-      map.set(profile.id, {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-      });
-    });
-    return map;
-  }, [profiles]);
-
-  // Hydrate names in rows
+  // Use the data directly from the API (no hydration needed)
   const hydratedRows = useMemo(() => {
-    return rows.map((row) => {
-      const profile = profileMap.get(row.profileId);
-      return {
-        ...row,
-        firstName: profile?.firstName,
-        lastName: profile?.lastName,
-      };
-    });
-  }, [rows, profileMap]);
+    return leaderboardResponse?.data || [];
+  }, [leaderboardResponse?.data]);
 
   // Two-page carousel state
   const [page, setPage] = useState(0);
@@ -122,7 +100,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     key: string;
     title: string;
     icon: React.ReactNode;
-    accolade: { holder: LeaderboardRowLite | undefined; details: string };
+    accolade: { holder: LeaderboardRow | undefined; details: string };
   } | null>(null);
   const [isHoveringAccolades, setIsHoveringAccolades] = useState(false);
 
@@ -157,7 +135,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   // Compute accolade winners from hydrated rows
   const computedAccolades = useMemo(() => {
     // Helpers to pick winners
-    const pickMax = (key: keyof LeaderboardRowLite) =>
+    const pickMax = (key: keyof LeaderboardRow) =>
       hydratedRows.reduce(
         (best, cur) =>
           best == null ||
@@ -165,10 +143,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             Number((best as Record<string, unknown>)?.[key] ?? 0)
             ? cur
             : best,
-        hydratedRows[0] as LeaderboardRowLite | undefined
+        hydratedRows[0] as LeaderboardRow | undefined
       );
 
-    const pickMinPositive = (key: keyof LeaderboardRowLite) => {
+    const pickMinPositive = (key: keyof LeaderboardRow) => {
       const positives = hydratedRows.filter((r) => Number(r[key] ?? 0) > 0);
       if (!positives.length) return undefined;
       return positives.reduce((best, cur) =>
@@ -385,7 +363,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   // Calculate challengers for each accolade
   const getChallengers = (
     accoladeKey: string,
-    currentWinner: LeaderboardRowLite | null | undefined
+    currentWinner: LeaderboardRow | null | undefined
   ) => {
     if (!hydratedRows || hydratedRows.length === 0) return [];
 
@@ -504,7 +482,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   };
 
   // Calculate leaderboard data sorted by highest score
-  const leaderboardData = useMemo(() => {
+  const processedLeaderboardData = useMemo(() => {
     if (hydratedRows && hydratedRows.length > 0) {
       const rows = hydratedRows.map((r) => ({
         id: r.profileId,
@@ -816,7 +794,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         </AnimatePresence>
         <div>
           <LeaderboardTable
-            data={leaderboardData}
+            data={processedLeaderboardData}
             currentUserId={effectiveProfile?.id || ""}
             {...(shouldDisableNavigation
               ? {}

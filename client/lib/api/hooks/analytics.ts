@@ -5,6 +5,7 @@ import {
   CohortPerformanceResponseSchema,
   GrowthDataResponseSchema,
   HomeOverviewResponseSchema,
+  LeaderboardBundleResponseSchema,
   MetricResponseSchema,
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponseSchema,
@@ -27,13 +28,11 @@ import {
   analyticsGrowthDataKeys,
   analyticsHighestScoreKeys,
   analyticsHomeOverviewKeys,
-  analyticsImprovementPerDayKeys,
+  analyticsLeaderboardBundleKeys,
   analyticsMessagesPerSessionKeys,
-  analyticsPerfectScoresKeys,
   analyticsPersonaPerformanceKeys,
   analyticsPersonaResponseTimesKeys,
   analyticsPracticeOverviewKeys,
-  analyticsQuickestPassKeys,
   analyticsRefreshKeys,
   analyticsReportsBundleKeys,
   analyticsRubricHeatmapKeys,
@@ -289,83 +288,6 @@ export function useAnalyticsTotalAttempts(
     queryFn: async () => {
       const res = await api<unknown>(
         "/api/v1/analytics/header/total-attempts",
-        {
-          method: "POST",
-          body: JSON.stringify(filters),
-        }
-      );
-      return MetricResponseSchema.parse(res);
-    },
-  });
-}
-
-// Leaderboard Analytics Hooks (3 metrics)
-
-export function useAnalyticsImprovementPerDay(
-  filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
-) {
-  const queryOptions =
-    typeof options === "boolean"
-      ? { enabled: options }
-      : { enabled: true, ...options };
-
-  return useQuery({
-    queryKey: analyticsImprovementPerDayKeys.list(filters),
-    ...queryOptions,
-    queryFn: async () => {
-      const res = await api<unknown>(
-        "/api/v1/analytics/leaderboard/improvement-per-day",
-        {
-          method: "POST",
-          body: JSON.stringify(filters),
-        }
-      );
-      return MetricResponseSchema.parse(res);
-    },
-  });
-}
-
-export function useAnalyticsPerfectScores(
-  filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
-) {
-  const queryOptions =
-    typeof options === "boolean"
-      ? { enabled: options }
-      : { enabled: true, ...options };
-
-  return useQuery({
-    queryKey: analyticsPerfectScoresKeys.list(filters),
-    ...queryOptions,
-    queryFn: async () => {
-      const res = await api<unknown>(
-        "/api/v1/analytics/leaderboard/perfect-scores",
-        {
-          method: "POST",
-          body: JSON.stringify(filters),
-        }
-      );
-      return MetricResponseSchema.parse(res);
-    },
-  });
-}
-
-export function useAnalyticsQuickestPass(
-  filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
-) {
-  const queryOptions =
-    typeof options === "boolean"
-      ? { enabled: options }
-      : { enabled: true, ...options };
-
-  return useQuery({
-    queryKey: analyticsQuickestPassKeys.list(filters),
-    ...queryOptions,
-    queryFn: async () => {
-      const res = await api<unknown>(
-        "/api/v1/analytics/leaderboard/quickest-pass",
         {
           method: "POST",
           body: JSON.stringify(filters),
@@ -774,6 +696,27 @@ export function useRefreshAnalytics() {
     gcTime: 0, // Don't cache mutation results
     meta: {
       errorMessage: "Failed to refresh analytics data",
+    },
+  });
+}
+
+// Leaderboard Bundle Analytics Hook
+export function useAnalyticsLeaderboardBundle(
+  filters: AnalyticsFilters,
+  options: AnalyticsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean" ? { enabled: options } : options;
+
+  return useQuery({
+    queryKey: analyticsLeaderboardBundleKeys.list(filters),
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v1/analytics/leaderboard", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return LeaderboardBundleResponseSchema.parse(res);
     },
   });
 }

@@ -14,6 +14,8 @@ import {
   GrowthDataResponseSchema,
   HomeOverviewResponse,
   HomeOverviewResponseSchema,
+  LeaderboardBundleResponse,
+  LeaderboardBundleResponseSchema,
   MetricResponse,
   MetricResponseSchema,
   PersonaPerformanceResponse,
@@ -354,6 +356,17 @@ export const analyticsRepo = {
       filters
     );
     return ReportsBundleResponseSchema.parse(result);
+  },
+
+  // Leaderboard Bundle Analytics
+  async getLeaderboardBundle(
+    filters: AnalyticsFilters
+  ): Promise<LeaderboardBundleResponse> {
+    const result = await executePrimaryFunction<unknown>(
+      "analytics_leaderboard_bundle_fn",
+      filters
+    );
+    return LeaderboardBundleResponseSchema.parse(result);
   },
 
   // Refresh materialized view
