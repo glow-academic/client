@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   scenarioKeys,
   scenarioKeysByDepartmentId,
   scenarioKeysByPersonaId,
@@ -29,14 +28,7 @@ export function useCreateScenario() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate scenarios queries
-      qc.invalidateQueries({ queryKey: scenarioKeys.all });
-      // Invalidate analytics dependencies since new scenario affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.scenarios,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: scenarioKeys.all }),
   });
 }
 
@@ -73,10 +65,6 @@ export function useUpdateScenario(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: scenarioKeys.all });
       }
-      // Invalidate analytics dependencies since scenario update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.scenarios,
-      });
     },
   });
 }
@@ -95,14 +83,7 @@ export function useDeleteScenario(id?: string) {
       }
       return api<void>(`/api/v1/scenarios/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => {
-      // Invalidate scenarios queries
-      qc.invalidateQueries({ queryKey: scenarioKeys.all });
-      // Invalidate analytics dependencies since scenario deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.scenarios,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: scenarioKeys.all }),
   });
 }
 

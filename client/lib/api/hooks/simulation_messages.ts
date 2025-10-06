@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   simulationMessageKeys,
   simulationMessageKeysByChatId,
 } from "@/lib/api/keys";
@@ -28,14 +27,8 @@ export function useCreateSimulationMessage() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate simulation messages queries
-      qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
-      // Invalidate analytics dependencies since new message affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationMessages,
-      });
-    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationMessageKeys.all }),
   });
 }
 
@@ -74,10 +67,6 @@ export function useUpdateSimulationMessage(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
       }
-      // Invalidate analytics dependencies since message update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationMessages,
-      });
     },
   });
 }
@@ -98,14 +87,8 @@ export function useDeleteSimulationMessage(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      // Invalidate simulation messages queries
-      qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
-      // Invalidate analytics dependencies since message deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationMessages,
-      });
-    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationMessageKeys.all }),
   });
 }
 

@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   personaKeys,
   personaKeysByDepartmentId,
   personaKeysByModelId,
@@ -29,14 +28,7 @@ export function useCreatePersona() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate personas queries
-      qc.invalidateQueries({ queryKey: personaKeys.all });
-      // Invalidate analytics dependencies since new persona affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.personas,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.all }),
   });
 }
 
@@ -73,10 +65,6 @@ export function useUpdatePersona(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: personaKeys.all });
       }
-      // Invalidate analytics dependencies since persona update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.personas,
-      });
     },
   });
 }
@@ -95,14 +83,7 @@ export function useDeletePersona(id?: string) {
       }
       return api<void>(`/api/v1/personas/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => {
-      // Invalidate personas queries
-      qc.invalidateQueries({ queryKey: personaKeys.all });
-      // Invalidate analytics dependencies since persona deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.personas,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.all }),
   });
 }
 

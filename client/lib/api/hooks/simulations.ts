@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   simulationKeys,
   simulationKeysByDepartmentId,
   simulationKeysByRubricId,
@@ -29,14 +28,7 @@ export function useCreateSimulation() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate simulations queries
-      qc.invalidateQueries({ queryKey: simulationKeys.all });
-      // Invalidate analytics dependencies since new simulation affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulations,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
   });
 }
 
@@ -73,10 +65,6 @@ export function useUpdateSimulation(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationKeys.all });
       }
-      // Invalidate analytics dependencies since simulation update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulations,
-      });
     },
   });
 }
@@ -97,14 +85,7 @@ export function useDeleteSimulation(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      // Invalidate simulations queries
-      qc.invalidateQueries({ queryKey: simulationKeys.all });
-      // Invalidate analytics dependencies since simulation deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulations,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
   });
 }
 

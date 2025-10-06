@@ -1,21 +1,3 @@
-// Analytics Materialized View Dependencies
-// These keys track when tables used in the analytics MV are updated
-export const analyticsDependencyKeys = {
-  all: ["analytics:dependencies"] as const,
-  scenarios: ["analytics:dependencies:scenarios"] as const,
-  simulationChatGrades: [
-    "analytics:dependencies:simulation_chat_grades",
-  ] as const,
-  simulations: ["analytics:dependencies:simulations"] as const,
-  cohorts: ["analytics:dependencies:cohorts"] as const,
-  simulationAttempts: ["analytics:dependencies:simulation_attempts"] as const,
-  simulationMessages: ["analytics:dependencies:simulation_messages"] as const,
-  simulationChats: ["analytics:dependencies:simulation_chats"] as const,
-  profiles: ["analytics:dependencies:profiles"] as const,
-  personas: ["analytics:dependencies:personas"] as const,
-  rubrics: ["analytics:dependencies:rubrics"] as const,
-};
-
 export const agentKeys = {
   all: ["agents"] as const,
   list: (filters?: unknown) => [...agentKeys.all, { filters }] as const,
@@ -56,7 +38,6 @@ export const cohortKeys = {
   all: ["cohorts"] as const,
   list: (filters?: unknown) => [...cohortKeys.all, { filters }] as const,
   detail: (id: string | number) => [...cohortKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.cohorts,
 };
 export const debugInfoKeys = {
   all: ["debug_info"] as const,
@@ -93,13 +74,11 @@ export const personaKeys = {
   all: ["personas"] as const,
   list: (filters?: unknown) => [...personaKeys.all, { filters }] as const,
   detail: (id: string | number) => [...personaKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.personas,
 };
 export const profileKeys = {
   all: ["profiles"] as const,
   list: (filters?: unknown) => [...profileKeys.all, { filters }] as const,
   detail: (id: string | number) => [...profileKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.profiles,
 };
 export const providerKeys = {
   all: ["providers"] as const,
@@ -110,13 +89,11 @@ export const rubricKeys = {
   all: ["rubrics"] as const,
   list: (filters?: unknown) => [...rubricKeys.all, { filters }] as const,
   detail: (id: string | number) => [...rubricKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.rubrics,
 };
 export const scenarioKeys = {
   all: ["scenarios"] as const,
   list: (filters?: unknown) => [...scenarioKeys.all, { filters }] as const,
   detail: (id: string | number) => [...scenarioKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.scenarios,
 };
 export const simulationAttemptKeys = {
   all: ["simulation_attempts"] as const,
@@ -124,7 +101,6 @@ export const simulationAttemptKeys = {
     [...simulationAttemptKeys.all, { filters }] as const,
   detail: (id: string | number) =>
     [...simulationAttemptKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.simulationAttempts,
 };
 export const simulationChatCrowdsourcedFeedbackKeys = {
   all: ["simulation_chat_crowdsourced_feedbacks"] as const,
@@ -146,7 +122,6 @@ export const simulationChatGradeKeys = {
     [...simulationChatGradeKeys.all, { filters }] as const,
   detail: (id: string | number) =>
     [...simulationChatGradeKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.simulationChatGrades,
 };
 export const simulationChatKeys = {
   all: ["simulation_chats"] as const,
@@ -154,7 +129,6 @@ export const simulationChatKeys = {
     [...simulationChatKeys.all, { filters }] as const,
   detail: (id: string | number) =>
     [...simulationChatKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.simulationChats,
 };
 export const simulationCrowdsourcedMessageKeys = {
   all: ["simulation_crowdsourced_messages"] as const,
@@ -169,13 +143,11 @@ export const simulationMessageKeys = {
     [...simulationMessageKeys.all, { filters }] as const,
   detail: (id: string | number) =>
     [...simulationMessageKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.simulationMessages,
 };
 export const simulationKeys = {
   all: ["simulations"] as const,
   list: (filters?: unknown) => [...simulationKeys.all, { filters }] as const,
   detail: (id: string | number) => [...simulationKeys.all, String(id)] as const,
-  analytics: analyticsDependencyKeys.simulations,
 };
 export const standardGroupKeys = {
   all: ["standard_groups"] as const,

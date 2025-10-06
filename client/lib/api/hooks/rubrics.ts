@@ -1,11 +1,7 @@
 // AUTO-GENERATED minimal hooks for rubrics
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import {
-  analyticsDependencyKeys,
-  rubricKeys,
-  rubricKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { rubricKeys, rubricKeysByDepartmentId } from "@/lib/api/keys";
 import type {
   Rubric,
   RubricCreate,
@@ -28,14 +24,7 @@ export function useCreateRubric() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate rubrics queries
-      qc.invalidateQueries({ queryKey: rubricKeys.all });
-      // Invalidate analytics dependencies since new rubric affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.rubrics,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
   });
 }
 
@@ -72,10 +61,6 @@ export function useUpdateRubric(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: rubricKeys.all });
       }
-      // Invalidate analytics dependencies since rubric update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.rubrics,
-      });
     },
   });
 }
@@ -94,14 +79,7 @@ export function useDeleteRubric(id?: string) {
       }
       return api<void>(`/api/v1/rubrics/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => {
-      // Invalidate rubrics queries
-      qc.invalidateQueries({ queryKey: rubricKeys.all });
-      // Invalidate analytics dependencies since rubric deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.rubrics,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
   });
 }
 

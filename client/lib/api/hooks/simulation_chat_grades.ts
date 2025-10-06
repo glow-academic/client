@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   simulationChatGradeKeys,
   simulationChatGradeKeysByRubricId,
   simulationChatGradeKeysBySimulationChatId,
@@ -29,14 +28,8 @@ export function useCreateSimulationChatGrade() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate simulation chat grades queries
-      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
-      // Invalidate analytics dependencies since new grade affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChatGrades,
-      });
-    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all }),
   });
 }
 
@@ -76,10 +69,6 @@ export function useUpdateSimulationChatGrade(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
       }
-      // Invalidate analytics dependencies since grade update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChatGrades,
-      });
     },
   });
 }
@@ -100,14 +89,8 @@ export function useDeleteSimulationChatGrade(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      // Invalidate simulation chat grades queries
-      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
-      // Invalidate analytics dependencies since grade deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChatGrades,
-      });
-    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all }),
   });
 }
 

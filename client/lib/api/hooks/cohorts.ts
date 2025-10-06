@@ -1,11 +1,7 @@
 // AUTO-GENERATED minimal hooks for cohorts
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import {
-  analyticsDependencyKeys,
-  cohortKeys,
-  cohortKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/keys";
 import type {
   Cohort,
   CohortCreate,
@@ -28,14 +24,7 @@ export function useCreateCohort() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate cohorts queries
-      qc.invalidateQueries({ queryKey: cohortKeys.all });
-      // Invalidate analytics dependencies since new cohort affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.cohorts,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: cohortKeys.all }),
   });
 }
 
@@ -72,10 +61,6 @@ export function useUpdateCohort(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: cohortKeys.all });
       }
-      // Invalidate analytics dependencies since cohort update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.cohorts,
-      });
     },
   });
 }
@@ -94,14 +79,7 @@ export function useDeleteCohort(id?: string) {
       }
       return api<void>(`/api/v1/cohorts/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => {
-      // Invalidate cohorts queries
-      qc.invalidateQueries({ queryKey: cohortKeys.all });
-      // Invalidate analytics dependencies since cohort deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.cohorts,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: cohortKeys.all }),
   });
 }
 

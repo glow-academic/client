@@ -2,7 +2,6 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
-  analyticsDependencyKeys,
   simulationChatKeys,
   simulationChatKeysByAttemptId,
   simulationChatKeysByScenarioId,
@@ -29,14 +28,7 @@ export function useCreateSimulationChat() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => {
-      // Invalidate simulation chats queries
-      qc.invalidateQueries({ queryKey: simulationChatKeys.all });
-      // Invalidate analytics dependencies since new chat affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChats,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatKeys.all }),
   });
 }
 
@@ -75,10 +67,6 @@ export function useUpdateSimulationChat(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationChatKeys.all });
       }
-      // Invalidate analytics dependencies since chat update affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChats,
-      });
     },
   });
 }
@@ -99,14 +87,7 @@ export function useDeleteSimulationChat(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      // Invalidate simulation chats queries
-      qc.invalidateQueries({ queryKey: simulationChatKeys.all });
-      // Invalidate analytics dependencies since chat deletion affects analytics
-      qc.invalidateQueries({
-        queryKey: analyticsDependencyKeys.simulationChats,
-      });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatKeys.all }),
   });
 }
 
