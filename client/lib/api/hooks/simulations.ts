@@ -1,17 +1,18 @@
 // AUTO-GENERATED minimal hooks for simulations
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  simulationKeys,
+  simulationKeysByDepartmentId,
+  simulationKeysByRubricId,
+} from "@/lib/api/keys";
 import type {
   Simulation,
   SimulationCreate,
   SimulationUpdate,
 } from "@/lib/repos/simulationRepo";
-import {
-  simulationKeys,
-  simulationKeysByRubricId,
-  simulationKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulations(filters?: unknown) {
   return useQuery({
@@ -28,7 +29,14 @@ export function useCreateSimulation() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulations queries
+      qc.invalidateQueries({ queryKey: simulationKeys.all });
+      // Invalidate analytics dependencies since new simulation affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulations,
+      });
+    },
   });
 }
 
@@ -65,6 +73,10 @@ export function useUpdateSimulation(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationKeys.all });
       }
+      // Invalidate analytics dependencies since simulation update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulations,
+      });
     },
   });
 }
@@ -85,7 +97,14 @@ export function useDeleteSimulation(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulations queries
+      qc.invalidateQueries({ queryKey: simulationKeys.all });
+      // Invalidate analytics dependencies since simulation deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulations,
+      });
+    },
   });
 }
 

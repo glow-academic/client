@@ -1,17 +1,18 @@
 // AUTO-GENERATED minimal hooks for scenarios
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  scenarioKeys,
+  scenarioKeysByDepartmentId,
+  scenarioKeysByPersonaId,
+} from "@/lib/api/keys";
 import type {
   Scenario,
   ScenarioCreate,
   ScenarioUpdate,
 } from "@/lib/repos/scenarioRepo";
-import {
-  scenarioKeys,
-  scenarioKeysByPersonaId,
-  scenarioKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useScenarios(filters?: unknown) {
   return useQuery({
@@ -28,7 +29,14 @@ export function useCreateScenario() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: scenarioKeys.all }),
+    onSuccess: () => {
+      // Invalidate scenarios queries
+      qc.invalidateQueries({ queryKey: scenarioKeys.all });
+      // Invalidate analytics dependencies since new scenario affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.scenarios,
+      });
+    },
   });
 }
 
@@ -65,6 +73,10 @@ export function useUpdateScenario(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: scenarioKeys.all });
       }
+      // Invalidate analytics dependencies since scenario update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.scenarios,
+      });
     },
   });
 }
@@ -83,7 +95,14 @@ export function useDeleteScenario(id?: string) {
       }
       return api<void>(`/api/v1/scenarios/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: scenarioKeys.all }),
+    onSuccess: () => {
+      // Invalidate scenarios queries
+      qc.invalidateQueries({ queryKey: scenarioKeys.all });
+      // Invalidate analytics dependencies since scenario deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.scenarios,
+      });
+    },
   });
 }
 

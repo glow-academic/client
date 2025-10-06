@@ -2,6 +2,7 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
+  analyticsDependencyKeys,
   profileKeys,
   profileKeysByDepartmentId,
   profileKeysByUserId,
@@ -28,7 +29,14 @@ export function useCreateProfile() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+    onSuccess: () => {
+      // Invalidate profiles queries
+      qc.invalidateQueries({ queryKey: profileKeys.all });
+      // Invalidate analytics dependencies since new profile affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.profiles,
+      });
+    },
   });
 }
 
@@ -40,7 +48,14 @@ export function useCreateProfiles() {
         method: "POST",
         body: JSON.stringify({ profiles: payloads }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+    onSuccess: () => {
+      // Invalidate profiles queries
+      qc.invalidateQueries({ queryKey: profileKeys.all });
+      // Invalidate analytics dependencies since new profiles affect analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.profiles,
+      });
+    },
   });
 }
 
@@ -77,6 +92,10 @@ export function useUpdateProfile(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: profileKeys.all });
       }
+      // Invalidate analytics dependencies since profile update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.profiles,
+      });
     },
   });
 }
@@ -95,7 +114,14 @@ export function useDeleteProfile(id?: string) {
       }
       return api<void>(`/api/v1/profiles/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: profileKeys.all }),
+    onSuccess: () => {
+      // Invalidate profiles queries
+      qc.invalidateQueries({ queryKey: profileKeys.all });
+      // Invalidate analytics dependencies since profile deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.profiles,
+      });
+    },
   });
 }
 

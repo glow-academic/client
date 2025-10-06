@@ -68,10 +68,50 @@ base_practice AS (
     )
     AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
 ),
+/* Handle case where we want only archived items (regardless of simulation type) */
+base_archived_only AS (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND NOT w.want_nonarchived_or_any
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+/* Handle case where we want archived items that are neither general nor practice */
+base_archived_other AS (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND w.want_nonarchived_or_any
+    AND a.is_general = FALSE
+    AND a.is_practice = FALSE
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
 base_union AS (
   SELECT * FROM base_general
   UNION ALL
   SELECT * FROM base_practice
+  UNION ALL
+  SELECT * FROM base_archived_only
+  UNION ALL
+  SELECT * FROM base_archived_other
 ),
 /* Archived tri-state: 
    - if archived AND (general/practice) → allow both (no filter)

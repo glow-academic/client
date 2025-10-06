@@ -1,17 +1,18 @@
 // AUTO-GENERATED minimal hooks for simulation_chat_grades
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  simulationChatGradeKeys,
+  simulationChatGradeKeysByRubricId,
+  simulationChatGradeKeysBySimulationChatId,
+} from "@/lib/api/keys";
 import type {
   SimulationChatGrade,
   SimulationChatGradeCreate,
   SimulationChatGradeUpdate,
 } from "@/lib/repos/simulationChatGradeRepo";
-import {
-  simulationChatGradeKeys,
-  simulationChatGradeKeysByRubricId,
-  simulationChatGradeKeysBySimulationChatId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationChatGrades(filters?: unknown) {
   return useQuery({
@@ -28,8 +29,14 @@ export function useCreateSimulationChatGrade() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation chat grades queries
+      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
+      // Invalidate analytics dependencies since new grade affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChatGrades,
+      });
+    },
   });
 }
 
@@ -57,7 +64,7 @@ export function useUpdateSimulationChatGrade(id?: string) {
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
       return api<SimulationChatGrade>(
         `/api/v1/simulation_chat_grades/${resolvedId}`,
-        { method: "PATCH", body: JSON.stringify(body) },
+        { method: "PATCH", body: JSON.stringify(body) }
       );
     },
     onSuccess: (_data, variables) => {
@@ -69,6 +76,10 @@ export function useUpdateSimulationChatGrade(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
       }
+      // Invalidate analytics dependencies since grade update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChatGrades,
+      });
     },
   });
 }
@@ -89,8 +100,14 @@ export function useDeleteSimulationChatGrade(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation chat grades queries
+      qc.invalidateQueries({ queryKey: simulationChatGradeKeys.all });
+      // Invalidate analytics dependencies since grade deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChatGrades,
+      });
+    },
   });
 }
 
@@ -99,7 +116,7 @@ export function useSimulationChatGradesByRubricId(id: string) {
     queryKey: simulationChatGradeKeysByRubricId.one(id),
     queryFn: () =>
       api<SimulationChatGrade[]>(
-        `/api/v1/simulation_chat_grades/by/rubricId/${id}`,
+        `/api/v1/simulation_chat_grades/by/rubricId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -111,7 +128,7 @@ export function useSimulationChatGradesByRubricIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationChatGrade[]>(
         `/api/v1/simulation_chat_grades/by/rubricId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -122,7 +139,7 @@ export function useSimulationChatGradesBySimulationChatId(id: string) {
     queryKey: simulationChatGradeKeysBySimulationChatId.one(id),
     queryFn: () =>
       api<SimulationChatGrade[]>(
-        `/api/v1/simulation_chat_grades/by/simulationChatId/${id}`,
+        `/api/v1/simulation_chat_grades/by/simulationChatId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -134,7 +151,7 @@ export function useSimulationChatGradesBySimulationChatIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationChatGrade[]>(
         `/api/v1/simulation_chat_grades/by/simulationChatId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

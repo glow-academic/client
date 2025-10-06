@@ -1,17 +1,18 @@
 // AUTO-GENERATED minimal hooks for simulation_chats
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  simulationChatKeys,
+  simulationChatKeysByAttemptId,
+  simulationChatKeysByScenarioId,
+} from "@/lib/api/keys";
 import type {
   SimulationChat,
   SimulationChatCreate,
   SimulationChatUpdate,
 } from "@/lib/repos/simulationChatRepo";
-import {
-  simulationChatKeys,
-  simulationChatKeysByScenarioId,
-  simulationChatKeysByAttemptId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationChats(filters?: unknown) {
   return useQuery({
@@ -28,7 +29,14 @@ export function useCreateSimulationChat() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation chats queries
+      qc.invalidateQueries({ queryKey: simulationChatKeys.all });
+      // Invalidate analytics dependencies since new chat affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChats,
+      });
+    },
   });
 }
 
@@ -67,6 +75,10 @@ export function useUpdateSimulationChat(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationChatKeys.all });
       }
+      // Invalidate analytics dependencies since chat update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChats,
+      });
     },
   });
 }
@@ -87,7 +99,14 @@ export function useDeleteSimulationChat(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation chats queries
+      qc.invalidateQueries({ queryKey: simulationChatKeys.all });
+      // Invalidate analytics dependencies since chat deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationChats,
+      });
+    },
   });
 }
 

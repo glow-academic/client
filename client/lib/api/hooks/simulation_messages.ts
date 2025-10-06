@@ -1,16 +1,17 @@
 // AUTO-GENERATED minimal hooks for simulation_messages
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  simulationMessageKeys,
+  simulationMessageKeysByChatId,
+} from "@/lib/api/keys";
 import type {
   SimulationMessage,
   SimulationMessageCreate,
   SimulationMessageUpdate,
 } from "@/lib/repos/simulationMessageRepo";
-import {
-  simulationMessageKeys,
-  simulationMessageKeysByChatId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationMessages(filters?: unknown) {
   return useQuery({
@@ -27,8 +28,14 @@ export function useCreateSimulationMessage() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationMessageKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation messages queries
+      qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
+      // Invalidate analytics dependencies since new message affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationMessages,
+      });
+    },
   });
 }
 
@@ -55,7 +62,7 @@ export function useUpdateSimulationMessage(id?: string) {
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
       return api<SimulationMessage>(
         `/api/v1/simulation_messages/${resolvedId}`,
-        { method: "PATCH", body: JSON.stringify(body) },
+        { method: "PATCH", body: JSON.stringify(body) }
       );
     },
     onSuccess: (_data, variables) => {
@@ -67,6 +74,10 @@ export function useUpdateSimulationMessage(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
       }
+      // Invalidate analytics dependencies since message update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationMessages,
+      });
     },
   });
 }
@@ -87,8 +98,14 @@ export function useDeleteSimulationMessage(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationMessageKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation messages queries
+      qc.invalidateQueries({ queryKey: simulationMessageKeys.all });
+      // Invalidate analytics dependencies since message deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationMessages,
+      });
+    },
   });
 }
 

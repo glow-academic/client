@@ -1,13 +1,17 @@
 // AUTO-GENERATED minimal hooks for rubrics
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  rubricKeys,
+  rubricKeysByDepartmentId,
+} from "@/lib/api/keys";
 import type {
   Rubric,
   RubricCreate,
   RubricUpdate,
 } from "@/lib/repos/rubricRepo";
-import { rubricKeys, rubricKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useRubrics(filters?: unknown) {
   return useQuery({
@@ -24,7 +28,14 @@ export function useCreateRubric() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
+    onSuccess: () => {
+      // Invalidate rubrics queries
+      qc.invalidateQueries({ queryKey: rubricKeys.all });
+      // Invalidate analytics dependencies since new rubric affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.rubrics,
+      });
+    },
   });
 }
 
@@ -61,6 +72,10 @@ export function useUpdateRubric(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: rubricKeys.all });
       }
+      // Invalidate analytics dependencies since rubric update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.rubrics,
+      });
     },
   });
 }
@@ -79,7 +94,14 @@ export function useDeleteRubric(id?: string) {
       }
       return api<void>(`/api/v1/rubrics/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
+    onSuccess: () => {
+      // Invalidate rubrics queries
+      qc.invalidateQueries({ queryKey: rubricKeys.all });
+      // Invalidate analytics dependencies since rubric deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.rubrics,
+      });
+    },
   });
 }
 

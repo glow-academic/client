@@ -1,17 +1,18 @@
 // AUTO-GENERATED minimal hooks for personas
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  analyticsDependencyKeys,
+  personaKeys,
+  personaKeysByDepartmentId,
+  personaKeysByModelId,
+} from "@/lib/api/keys";
 import type {
   Persona,
   PersonaCreate,
   PersonaUpdate,
 } from "@/lib/repos/personaRepo";
-import {
-  personaKeys,
-  personaKeysByModelId,
-  personaKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function usePersonas(filters?: unknown) {
   return useQuery({
@@ -28,7 +29,14 @@ export function useCreatePersona() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.all }),
+    onSuccess: () => {
+      // Invalidate personas queries
+      qc.invalidateQueries({ queryKey: personaKeys.all });
+      // Invalidate analytics dependencies since new persona affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.personas,
+      });
+    },
   });
 }
 
@@ -65,6 +73,10 @@ export function useUpdatePersona(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: personaKeys.all });
       }
+      // Invalidate analytics dependencies since persona update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.personas,
+      });
     },
   });
 }
@@ -83,7 +95,14 @@ export function useDeletePersona(id?: string) {
       }
       return api<void>(`/api/v1/personas/${resolvedId}`, { method: "DELETE" });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: personaKeys.all }),
+    onSuccess: () => {
+      // Invalidate personas queries
+      qc.invalidateQueries({ queryKey: personaKeys.all });
+      // Invalidate analytics dependencies since persona deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.personas,
+      });
+    },
   });
 }
 

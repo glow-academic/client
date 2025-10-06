@@ -2,6 +2,7 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
 import {
+  analyticsDependencyKeys,
   simulationAttemptKeys,
   simulationAttemptKeysByProfileId,
   simulationAttemptKeysBySimulationId,
@@ -28,8 +29,14 @@ export function useCreateSimulationAttempt() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation attempts queries
+      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
+      // Invalidate analytics dependencies since new attempt affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationAttempts,
+      });
+    },
   });
 }
 
@@ -68,6 +75,10 @@ export function useUpdateSimulationAttempt(id?: string) {
       } else {
         qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
       }
+      // Invalidate analytics dependencies since attempt update affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationAttempts,
+      });
     },
   });
 }
@@ -88,8 +99,14 @@ export function useDeleteSimulationAttempt(id?: string) {
         method: "DELETE",
       });
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all }),
+    onSuccess: () => {
+      // Invalidate simulation attempts queries
+      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
+      // Invalidate analytics dependencies since attempt deletion affects analytics
+      qc.invalidateQueries({
+        queryKey: analyticsDependencyKeys.simulationAttempts,
+      });
+    },
   });
 }
 
