@@ -22,7 +22,8 @@ CREATE TABLE personas (
   reasoning reasoning_effort DEFAULT NULL,
   active BOOLEAN NOT NULL DEFAULT FALSE,
   guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
-  image_input_active BOOLEAN NOT NULL DEFAULT FALSE
+  image_input_active BOOLEAN NOT NULL DEFAULT FALSE,
+  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );
 
 CREATE TABLE agents (
@@ -46,7 +47,8 @@ CREATE TABLE model_runs (
   output_tokens INTEGER     NOT NULL DEFAULT 0,
   persona_id   UUID        NULL REFERENCES personas(id),
   agent_id     UUID        NULL REFERENCES agents(id),
-  profile_id   UUID        NULL REFERENCES profiles(id)
+  profile_id   UUID        NULL REFERENCES profiles(id),
+  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );
 
 CREATE TABLE debug_info (

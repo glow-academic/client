@@ -18,5 +18,6 @@ CREATE TABLE documents (
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     file_id    TEXT        NULL,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
-    tags TEXT[]        NOT NULL DEFAULT '{}' -- tags to associate and search each document
+    tags TEXT[]        NOT NULL DEFAULT '{}', -- tags to associate and search each document
+    department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );

@@ -10,6 +10,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 -- 1. Independent tables (no foreign key dependencies)
+\i app/departments/init.sql
+\i seed/default/departments.sql
+
 \i app/users/init.sql
 \i seed/default/users.sql
 

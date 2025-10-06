@@ -13,7 +13,8 @@ CREATE TABLE parameters (
   description TEXT        NOT NULL,
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
-  default_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  default_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );
 
 CREATE TABLE parameter_items (
@@ -40,5 +41,6 @@ CREATE TABLE scenarios (
   practice_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   parent_id UUID        NULL DEFAULT NULL,
-  active BOOLEAN     NOT NULL DEFAULT TRUE
+  active BOOLEAN     NOT NULL DEFAULT TRUE,
+  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );

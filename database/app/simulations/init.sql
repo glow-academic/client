@@ -18,7 +18,8 @@ CREATE TABLE simulations (
   scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references scenarios
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
   default_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
-  practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE
+  practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
+  department_id   UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
 );
 
 CREATE TABLE simulation_attempts (
