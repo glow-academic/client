@@ -31,11 +31,12 @@ import { useProfile } from "@/contexts/profile-context";
 import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import {
   useDeleteRubric,
-  useRubricsByDepartmentId,
+  useRubricsByDepartmentIdBatch,
 } from "@/lib/api/hooks/rubrics";
-import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 import { Rubric } from "@/types";
 import { RubricsDataTable } from "./RubricsDataTable";
+import { useDepartments } from "@/contexts/departments-context";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -47,15 +48,16 @@ export default function Rubrics() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const deleteRubricMutation = useDeleteRubric();
 
   const { data: rubrics = [], isLoading: isRubricsLoading } =
-    useRubricsByDepartmentId(effectiveProfile?.departmentId || "");
+    useRubricsByDepartmentIdBatch(selectedDepartmentIds);
 
-  const { data: simulations = [] } = useSimulationsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
 
   // Check if a rubric is being used by any simulations

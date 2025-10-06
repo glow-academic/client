@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 import { AnalyticsFilters } from "@/components/common/analytics/AnalyticsFilters";
+import { DepartmentsFilters } from "@/components/common/analytics/DepartmentsFilters";
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
@@ -42,6 +43,7 @@ import TATour from "@/components/home/TATour";
 import { PracticeCustomizeDialog } from "@/components/practice/PracticeCustomizeDialog";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
+import { DepartmentsProvider } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   SimulationProvider,
@@ -83,7 +85,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const simulationContext = useSimulation();
   const currentChatId = simulationContext?.currentChat?.id;
   const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
-    currentChatId!,
+    currentChatId!
   );
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
@@ -127,7 +129,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null,
+    null
   );
   React.useEffect(() => {
     if (!simulationContext?.endChatLoading) {
@@ -153,7 +155,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const uploadFile = async (
     file: File,
     classification?: { type: import("@/types").DocumentType; tags: string[] },
-    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] },
+    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] }
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -171,7 +173,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      }),
+      })
     );
 
     try {
@@ -252,7 +254,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               fileId,
               isZipFile, // zip parameter
               shouldAutoClassify, // autoClassify parameter
-              effectiveProfile?.id,
+              effectiveProfile?.id
             );
 
             if (result.success) {
@@ -435,6 +437,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     isHomePage,
   ]);
 
+  const canShowDepartmentsFilters = useMemo(() => {
+    return effectiveProfile?.role === "superadmin";
+  }, [effectiveProfile?.role]);
+
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
   // Determine action button based on current path
@@ -516,7 +522,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       chatId: simulationContext.currentChat?.id,
                       attemptId: simulationContext.attemptId,
                     },
-                  }),
+                  })
                 );
                 setEndingAction("endChat");
                 endChat();
@@ -740,6 +746,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               />
             )}
 
+            {/* Department Filters - Show for superadmin users */}
+            { canShowDepartmentsFilters && <DepartmentsFilters />}
+
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
           {/* Practice Customize Dialog */}
@@ -752,7 +761,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   // Infinite mode - use WebSocket
                   if (!isConnected) {
                     toast.error(
-                      "WebSocket not connected. Please refresh the page.",
+                      "WebSocket not connected. Please refresh the page."
                     );
                     return;
                   }
@@ -777,7 +786,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     "Creating practice scenario...",
                     {
                       dismissible: true,
-                    },
+                    }
                   ) as unknown as string;
 
                   try {
@@ -796,7 +805,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       router.push("/practice");
                     } else {
                       throw new Error(
-                        result.message || "Failed to create practice scenario",
+                        result.message || "Failed to create practice scenario"
                       );
                     }
                   } catch (error) {
@@ -812,7 +821,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       {
                         id: "start-attempt",
                         dismissible: true,
-                      },
+                      }
                     );
                   } finally {
                     setIsStartingAttempt(false);
@@ -851,7 +860,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           attemptId: simulationContext?.attemptId,
                           remainingSessions: endAllRemainingSessions,
                         },
-                      }),
+                      })
                     );
                     setConfirmEndAllOpen(false);
                     setEndingAction("endAll");
@@ -888,7 +897,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           chatId: simulationContext?.currentChat?.id,
                           attemptId: simulationContext?.attemptId,
                         },
-                      }),
+                      })
                     );
                     setConfirmEndChatOpen(false);
                     setEndingAction("endChat");
@@ -930,7 +939,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               }}
               onRemoveFile={(fileName) =>
                 setPendingFiles((prev) =>
-                  prev.filter((f) => f.name !== fileName),
+                  prev.filter((f) => f.name !== fileName)
                 )
               }
             />
@@ -977,13 +986,15 @@ export default function MainLayout({
   return (
     <TourProvider>
       <AnalyticsProvider>
-        {attemptId ? (
-          <SimulationProvider attemptId={attemptId}>
+        <DepartmentsProvider>
+          {attemptId ? (
+            <SimulationProvider attemptId={attemptId}>
+              <MainLayoutContent>{children}</MainLayoutContent>
+            </SimulationProvider>
+          ) : (
             <MainLayoutContent>{children}</MainLayoutContent>
-          </SimulationProvider>
-        ) : (
-          <MainLayoutContent>{children}</MainLayoutContent>
-        )}
+          )}
+        </DepartmentsProvider>
       </AnalyticsProvider>
     </TourProvider>
   );
