@@ -1,1 +1,0 @@
-Your goal is to find the title of a given chat. It must be exactly 3-4 words.

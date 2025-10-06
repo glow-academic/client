@@ -15,7 +15,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/users/init.sql
 \i seed/cs/users.sql
-\i seed/users.sql
 
 \i app/models/init.sql
 \i seed/cs/models.sql
@@ -36,8 +35,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 3. Personas and Agents
 \i app/personas/init.sql
 \i seed/cs/personas.sql
+
 \i app/agents/init.sql
-\i seed/agents.sql
+\i seed/cs/agents.sql
 
 -- 4. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
@@ -56,6 +56,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 9. Audit tables, after seed data has been inserted
 \i app/audit/init.sql
+
+\i seed/init.sql
 
 -- ============================================================================
 -- COMPLETION MESSAGE

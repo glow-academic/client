@@ -13,7 +13,7 @@ CREATE TABLE assistant_chats (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
-  profile_id UUID        NOT NULL REFERENCES profiles(id),
+  profile_id UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   trace_id   TEXT         NULL -- openai trace id
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE assistant_messages (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   completed_at TIMESTAMPTZ  NULL,
-  chat_id    UUID        NOT NULL REFERENCES assistant_chats(id),
+  chat_id    UUID        NOT NULL REFERENCES assistant_chats(id) ON DELETE CASCADE,
   role       assistant_message_type NOT NULL,
   content    TEXT        NOT NULL,
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
@@ -33,7 +33,7 @@ CREATE TABLE assistant_tool_calls (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   completed_at TIMESTAMPTZ  NULL,
-  chat_id    UUID        NOT NULL REFERENCES assistant_chats(id),
+  chat_id    UUID        NOT NULL REFERENCES assistant_chats(id) ON DELETE CASCADE,
   tool_name  TEXT        NOT NULL,
   tool_type  assistant_tool_type NOT NULL,
   tool_arguments JSONB        NOT NULL,

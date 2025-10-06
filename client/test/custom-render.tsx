@@ -27,8 +27,7 @@ const mockProfile = {
   lastLogin: new Date().toISOString(), 
   lastActive: new Date().toISOString(), 
   defaultProfile: false,
-  reqPerDay: 100,
-  departmentId: null,
+  reqPerDay: 100
 };
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => (

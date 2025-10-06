@@ -169,30 +169,16 @@ restore_from_backup() {
 start_fresh_from_init() {
   echo "🆕 Starting fresh database from init.sql"
   
-  # Generate agent SQL from markdown files
-  if [[ -f "app/agents/generate-agents-sql.sh" ]]; then
-    echo "🔧 Generating agent SQL from markdown files..."
-    cd app/agents && ./generate-agents-sql.sh && cd - > /dev/null
-    echo "✅ Agent SQL generated from markdown files"
-  fi
-  
-  # Generate persona SQL from markdown files
-  if [[ -f "app/personas/generate-persona-sql.sh" ]]; then
-    echo "🔧 Generating persona SQL from markdown files..."
-    cd app/personas && ./generate-persona-sql.sh && cd - > /dev/null
-    echo "✅ Persona SQL generated from markdown files"
-  fi
-  
-  # Generate model SQL with encrypted API keys
-  if [[ -f "app/models/generate-models.sh" ]]; then
-    echo "🔐 Generating model SQL with encrypted API keys..."
-    cd app/models
-    if ./generate-models.sh; then
-      echo "✅ Model SQL generated with encrypted API keys"
+  # Generate all seed data from CS folder
+  if [[ -f "seed/init.sh" ]]; then
+    echo "🌱 Generating all CS seed data..."
+    if ./seed/init.sh; then
+      echo "✅ All CS seed data generated successfully"
     else
-      echo "⚠️  Model generation failed, using existing SQL"
+      echo "⚠️  CS seed generation had issues, but continuing..."
     fi
-    cd - > /dev/null
+  else
+    echo "⚠️  CS seed initialization script not found, using existing SQL"
   fi
   
   if [[ ! -f "$INIT_SQL" ]]; then

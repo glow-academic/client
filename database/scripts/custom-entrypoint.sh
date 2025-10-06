@@ -101,37 +101,18 @@ log_info "Setting up database initialization..."
 # Create the initialization directory
 mkdir -p /docker-entrypoint-initdb.d
 
-# --- GENERATE DYNAMIC SQL FROM MARKDOWN ------------------------------
-log_info "🔧 Generating agent SQL from markdown files..."
-if [ -f "/docker-entrypoint-initdb.d/app/agents/generate-agents-sql.sh" ]; then
-  cd /docker-entrypoint-initdb.d/app/agents
-  ./generate-agents-sql.sh
-  log_success "✅ Agent SQL generated from markdown files"
-else
-  log_warning "⚠️  Agent generation script not found, using existing SQL"
-fi
-
-log_info "🔧 Generating persona SQL from markdown files..."
-if [ -f "/docker-entrypoint-initdb.d/app/personas/generate-persona-sql.sh" ]; then
-  cd /docker-entrypoint-initdb.d/app/personas
-  ./generate-persona-sql.sh
-  log_success "✅ Persona SQL generated from markdown files"
-else
-  log_warning "⚠️  Persona generation script not found, using existing SQL"
-fi
-
-# --- GENERATE MODEL SQL WITH ENCRYPTED KEYS -------------------------
-log_info "🔐 Generating model SQL with encrypted API keys..."
-if [ -f "/docker-entrypoint-initdb.d/app/models/generate-models.sh" ]; then
-  cd /docker-entrypoint-initdb.d/app/models
-  if ./generate-models.sh; then
-    log_success "✅ Model SQL generated with encrypted API keys"
+# --- GENERATE ALL CS SEED DATA --------------------------------------
+log_info "🌱 Generating all CS seed data..."
+if [ -f "/docker-entrypoint-initdb.d/seed/init.sh" ]; then
+  cd /docker-entrypoint-initdb.d/seed
+  if ./init.sh; then
+    log_success "✅ All CS seed data generated successfully"
   else
-    log_warning "⚠️  Model generation failed, using existing SQL"
+    log_warning "⚠️  CS seed generation had issues, but continuing..."
   fi
   cd - > /dev/null
 else
-  log_warning "⚠️  Model generation script not found, using existing SQL"
+  log_warning "⚠️  CS seed initialization script not found, using existing SQL"
 fi
 
 # Create the main initialization script with extensions
