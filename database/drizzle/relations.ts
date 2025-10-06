@@ -1,10 +1,14 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, models, personas, agents, modelRuns, debugInfo, scenarios, parameters, parameterItems, simulationAttempts, simulations, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages } from "./schema";
+import { users, profiles, departments, providers, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, parameters, parameterItems, models, personas, agents, modelRuns, debugInfo, scenarios, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages, cohorts } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
 		fields: [profiles.userId],
 		references: [users.id]
+	}),
+	department: one(departments, {
+		fields: [profiles.departmentId],
+		references: [departments.id]
 	}),
 	appFeedbacks: many(appFeedback),
 	assistantChats: many(assistantChats),
@@ -18,15 +22,38 @@ export const usersRelations = relations(users, ({many}) => ({
 	profiles: many(profiles),
 }));
 
-export const standardGroupsRelations = relations(standardGroups, ({one, many}) => ({
-	rubric: one(rubrics, {
-		fields: [standardGroups.rubricId],
-		references: [rubrics.id]
-	}),
-	standards: many(standards),
+export const departmentsRelations = relations(departments, ({many}) => ({
+	profiles: many(profiles),
+	providers: many(providers),
+	documents: many(documents),
+	rubrics: many(rubrics),
+	personas: many(personas),
+	modelRuns: many(modelRuns),
+	parameters: many(parameters),
+	scenarios: many(scenarios),
+	simulations: many(simulations),
+	cohorts: many(cohorts),
 }));
 
-export const rubricsRelations = relations(rubrics, ({many}) => ({
+export const providersRelations = relations(providers, ({one}) => ({
+	department: one(departments, {
+		fields: [providers.departmentId],
+		references: [departments.id]
+	}),
+}));
+
+export const documentsRelations = relations(documents, ({one}) => ({
+	department: one(departments, {
+		fields: [documents.departmentId],
+		references: [departments.id]
+	}),
+}));
+
+export const rubricsRelations = relations(rubrics, ({one, many}) => ({
+	department: one(departments, {
+		fields: [rubrics.departmentId],
+		references: [departments.id]
+	}),
 	standardGroups: many(standardGroups),
 	simulations: many(simulations),
 	simulationChatGrades: many(simulationChatGrades),
@@ -38,6 +65,14 @@ export const standardsRelations = relations(standards, ({one, many}) => ({
 		references: [standardGroups.id]
 	}),
 	simulationChatFeedbacks: many(simulationChatFeedbacks),
+}));
+
+export const standardGroupsRelations = relations(standardGroups, ({one, many}) => ({
+	standards: many(standards),
+	rubric: one(rubrics, {
+		fields: [standardGroups.rubricId],
+		references: [rubrics.id]
+	}),
 }));
 
 export const appFeedbackRelations = relations(appFeedback, ({one}) => ({
@@ -70,10 +105,29 @@ export const assistantToolCallsRelations = relations(assistantToolCalls, ({one})
 	}),
 }));
 
+export const parameterItemsRelations = relations(parameterItems, ({one}) => ({
+	parameter: one(parameters, {
+		fields: [parameterItems.parameterId],
+		references: [parameters.id]
+	}),
+}));
+
+export const parametersRelations = relations(parameters, ({one, many}) => ({
+	parameterItems: many(parameterItems),
+	department: one(departments, {
+		fields: [parameters.departmentId],
+		references: [departments.id]
+	}),
+}));
+
 export const personasRelations = relations(personas, ({one, many}) => ({
 	model: one(models, {
 		fields: [personas.modelId],
 		references: [models.id]
+	}),
+	department: one(departments, {
+		fields: [personas.departmentId],
+		references: [departments.id]
 	}),
 	modelRuns: many(modelRuns),
 	scenarios: many(scenarios),
@@ -110,6 +164,10 @@ export const modelRunsRelations = relations(modelRuns, ({one, many}) => ({
 		fields: [modelRuns.profileId],
 		references: [profiles.id]
 	}),
+	department: one(departments, {
+		fields: [modelRuns.departmentId],
+		references: [departments.id]
+	}),
 	debugInfos: many(debugInfo),
 }));
 
@@ -125,18 +183,23 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 		fields: [scenarios.personaId],
 		references: [personas.id]
 	}),
+	department: one(departments, {
+		fields: [scenarios.departmentId],
+		references: [departments.id]
+	}),
 	simulationChats: many(simulationChats),
 }));
 
-export const parameterItemsRelations = relations(parameterItems, ({one}) => ({
-	parameter: one(parameters, {
-		fields: [parameterItems.parameterId],
-		references: [parameters.id]
+export const simulationsRelations = relations(simulations, ({one, many}) => ({
+	rubric: one(rubrics, {
+		fields: [simulations.rubricId],
+		references: [rubrics.id]
 	}),
-}));
-
-export const parametersRelations = relations(parameters, ({many}) => ({
-	parameterItems: many(parameterItems),
+	department: one(departments, {
+		fields: [simulations.departmentId],
+		references: [departments.id]
+	}),
+	simulationAttempts: many(simulationAttempts),
 }));
 
 export const simulationAttemptsRelations = relations(simulationAttempts, ({one, many}) => ({
@@ -149,14 +212,6 @@ export const simulationAttemptsRelations = relations(simulationAttempts, ({one, 
 		references: [simulations.id]
 	}),
 	simulationChats: many(simulationChats),
-}));
-
-export const simulationsRelations = relations(simulations, ({one, many}) => ({
-	simulationAttempts: many(simulationAttempts),
-	rubric: one(rubrics, {
-		fields: [simulations.rubricId],
-		references: [rubrics.id]
-	}),
 }));
 
 export const simulationChatsRelations = relations(simulationChats, ({one, many}) => ({
@@ -223,5 +278,12 @@ export const simulationCrowdsourcedMessagesRelations = relations(simulationCrowd
 	profile: one(profiles, {
 		fields: [simulationCrowdsourcedMessages.profileId],
 		references: [profiles.id]
+	}),
+}));
+
+export const cohortsRelations = relations(cohorts, ({one}) => ({
+	department: one(departments, {
+		fields: [cohorts.departmentId],
+		references: [departments.id]
 	}),
 }));

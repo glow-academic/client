@@ -82,4 +82,21 @@ export const simulationRepo = {
       .from(simulations)
       .where(inArray(simulations.rubricId, rubricIds));
   },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(simulations)
+      .where(eq(simulations.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(simulations)
+      .where(inArray(simulations.departmentId, departmentIds));
+  },
 };

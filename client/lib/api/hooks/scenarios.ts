@@ -7,7 +7,11 @@ import type {
   ScenarioCreate,
   ScenarioUpdate,
 } from "@/lib/repos/scenarioRepo";
-import { scenarioKeys, scenarioKeysByPersonaId } from "@/lib/api/keys";
+import {
+  scenarioKeys,
+  scenarioKeysByPersonaId,
+  scenarioKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function useScenarios(filters?: unknown) {
   return useQuery({
@@ -96,6 +100,26 @@ export function useScenariosByPersonaIdBatch(ids: string[]) {
     queryKey: scenarioKeysByPersonaId.many(ids),
     queryFn: () =>
       api<Scenario[]>(`/api/v1/scenarios/by/personaId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useScenariosByDepartmentId(id: string) {
+  return useQuery<Scenario[]>({
+    queryKey: scenarioKeysByDepartmentId.one(id),
+    queryFn: () => api<Scenario[]>(`/api/v1/scenarios/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useScenariosByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Scenario[]>({
+    queryKey: scenarioKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Scenario[]>(`/api/v1/scenarios/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),

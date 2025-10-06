@@ -7,7 +7,7 @@ import type {
   RubricCreate,
   RubricUpdate,
 } from "@/lib/repos/rubricRepo";
-import { rubricKeys } from "@/lib/api/keys";
+import { rubricKeys, rubricKeysByDepartmentId } from "@/lib/api/keys";
 
 export function useRubrics(filters?: unknown) {
   return useQuery({
@@ -80,5 +80,25 @@ export function useDeleteRubric(id?: string) {
       return api<void>(`/api/v1/rubrics/${resolvedId}`, { method: "DELETE" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
+  });
+}
+
+export function useRubricsByDepartmentId(id: string) {
+  return useQuery<Rubric[]>({
+    queryKey: rubricKeysByDepartmentId.one(id),
+    queryFn: () => api<Rubric[]>(`/api/v1/rubrics/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useRubricsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Rubric[]>({
+    queryKey: rubricKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Rubric[]>(`/api/v1/rubrics/by/departmentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

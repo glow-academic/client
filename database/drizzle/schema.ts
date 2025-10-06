@@ -34,11 +34,63 @@ export const profiles = pgTable("profiles", {
 	active: boolean().default(false).notNull(),
 	lastActive: timestamp("last_active", { withTimezone: true, mode: 'string' }),
 	reqPerDay: integer("req_per_day"),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "profiles_user_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "profiles_department_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const departments = pgTable("departments", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	title: text().notNull(),
+	description: text(),
+});
+
+export const providers = pgTable("providers", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	apiKey: text("api_key").notNull(),
+	baseUrl: text("base_url"),
+	departmentId: uuid("department_id"),
+}, (table) => [
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "providers_department_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const documents = pgTable("documents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	filePath: text("file_path").notNull(),
+	mimeType: text("mime_type").notNull(),
+	type: documentType().default('homework').notNull(),
+	classified: boolean().default(false).notNull(),
+	fileId: text("file_id"),
+	active: boolean().default(true).notNull(),
+	tags: text().array().default([""]).notNull(),
+	departmentId: uuid("department_id"),
+}, (table) => [
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "documents_department_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -71,13 +123,6 @@ export const accounts = pgTable("accounts", {
 	tokenType: text("token_type"),
 });
 
-export const sessions = pgTable("sessions", {
-	id: serial().primaryKey().notNull(),
-	userId: integer().notNull(),
-	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-	sessionToken: varchar({ length: 255 }).notNull(),
-});
-
 export const rubrics = pgTable("rubrics", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -88,8 +133,30 @@ export const rubrics = pgTable("rubrics", {
 	passPoints: integer("pass_points").notNull(),
 	defaultRubric: boolean("default_rubric").default(false).notNull(),
 	active: boolean().default(true).notNull(),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	index("rubrics_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "rubrics_department_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const standards = pgTable("standards", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	points: integer().notNull(),
+	standardGroupId: uuid("standard_group_id").notNull(),
+}, (table) => [
+	index("standards_group_idx").using("btree", table.standardGroupId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.standardGroupId],
+			foreignColumns: [standardGroups.id],
+			name: "standards_standard_group_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const standardGroups = pgTable("standard_groups", {
@@ -108,22 +175,6 @@ export const standardGroups = pgTable("standard_groups", {
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
 			name: "standard_groups_rubric_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const standards = pgTable("standards", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	points: integer().notNull(),
-	standardGroupId: uuid("standard_group_id").notNull(),
-}, (table) => [
-	index("standards_group_idx").using("btree", table.standardGroupId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.standardGroupId],
-			foreignColumns: [standardGroups.id],
-			name: "standards_standard_group_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -206,6 +257,23 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 		}),
 ]);
 
+export const parameterItems = pgTable("parameter_items", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	value: text().notNull(),
+	parameterId: uuid("parameter_id").notNull(),
+	defaultItem: boolean("default_item").default(false).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.parameterId],
+			foreignColumns: [parameters.id],
+			name: "parameter_items_parameter_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const personas = pgTable("personas", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -222,6 +290,7 @@ export const personas = pgTable("personas", {
 	active: boolean().default(false).notNull(),
 	guardrailActive: boolean("guardrail_active").default(false).notNull(),
 	imageInputActive: boolean("image_input_active").default(false).notNull(),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	index("personas_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -229,6 +298,11 @@ export const personas = pgTable("personas", {
 			foreignColumns: [models.id],
 			name: "personas_model_id_fkey"
 		}),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "personas_department_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const agents = pgTable("agents", {
@@ -259,6 +333,7 @@ export const modelRuns = pgTable("model_runs", {
 	personaId: uuid("persona_id"),
 	agentId: uuid("agent_id"),
 	profileId: uuid("profile_id"),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
@@ -280,6 +355,11 @@ export const modelRuns = pgTable("model_runs", {
 			foreignColumns: [profiles.id],
 			name: "model_runs_profile_id_fkey"
 		}),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "model_runs_department_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const debugInfo = pgTable("debug_info", {
@@ -293,6 +373,24 @@ export const debugInfo = pgTable("debug_info", {
 			foreignColumns: [modelRuns.id],
 			name: "debug_info_model_run_id_fkey"
 		}),
+]);
+
+export const parameters = pgTable("parameters", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	numerical: boolean().default(false).notNull(),
+	active: boolean().default(false).notNull(),
+	defaultParameter: boolean("default_parameter").default(false).notNull(),
+	departmentId: uuid("department_id"),
+}, (table) => [
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "parameters_department_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const scenarios = pgTable("scenarios", {
@@ -309,6 +407,7 @@ export const scenarios = pgTable("scenarios", {
 	generated: boolean().default(false).notNull(),
 	parentId: uuid("parent_id"),
 	active: boolean().default(true).notNull(),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	index("scenarios_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
@@ -316,33 +415,37 @@ export const scenarios = pgTable("scenarios", {
 			foreignColumns: [personas.id],
 			name: "scenarios_persona_id_fkey"
 		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "scenarios_department_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
-export const parameters = pgTable("parameters", {
+export const simulations = pgTable("simulations", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	numerical: boolean().default(false).notNull(),
-	active: boolean().default(false).notNull(),
-	defaultParameter: boolean("default_parameter").default(false).notNull(),
-});
-
-export const parameterItems = pgTable("parameter_items", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	value: text().notNull(),
-	parameterId: uuid("parameter_id").notNull(),
-	defaultItem: boolean("default_item").default(false).notNull(),
+	title: text().notNull(),
+	description: text().default('No description provided').notNull(),
+	timeLimit: integer("time_limit"),
+	active: boolean().default(true).notNull(),
+	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
+	rubricId: uuid("rubric_id").notNull(),
+	defaultSimulation: boolean("default_simulation").default(false).notNull(),
+	practiceSimulation: boolean("practice_simulation").default(false).notNull(),
+	departmentId: uuid("department_id"),
 }, (table) => [
+	index("simulations_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
-			columns: [table.parameterId],
-			foreignColumns: [parameters.id],
-			name: "parameter_items_parameter_id_fkey"
+			columns: [table.rubricId],
+			foreignColumns: [rubrics.id],
+			name: "simulations_rubric_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "simulations_department_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -367,27 +470,6 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 			columns: [table.simulationId],
 			foreignColumns: [simulations.id],
 			name: "simulation_attempts_simulation_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const simulations = pgTable("simulations", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	title: text().notNull(),
-	description: text().default('No description provided').notNull(),
-	timeLimit: integer("time_limit"),
-	active: boolean().default(true).notNull(),
-	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
-	rubricId: uuid("rubric_id").notNull(),
-	defaultSimulation: boolean("default_simulation").default(false).notNull(),
-	practiceSimulation: boolean("practice_simulation").default(false).notNull(),
-}, (table) => [
-	index("simulations_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
-	foreignKey({
-			columns: [table.rubricId],
-			foreignColumns: [rubrics.id],
-			name: "simulations_rubric_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -527,30 +609,20 @@ export const cohorts = pgTable("cohorts", {
 	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
 	defaultCohort: boolean("default_cohort").default(false).notNull(),
 	simulationIds: uuid("simulation_ids").array().default(["RAY"]).notNull(),
-});
+	departmentId: uuid("department_id"),
+}, (table) => [
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "cohorts_department_id_fkey"
+		}).onDelete("cascade"),
+]);
 
-export const documents = pgTable("documents", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	filePath: text("file_path").notNull(),
-	mimeType: text("mime_type").notNull(),
-	type: documentType().default('homework').notNull(),
-	classified: boolean().default(false).notNull(),
-	fileId: text("file_id"),
-	active: boolean().default(true).notNull(),
-	tags: text().array().default([""]).notNull(),
-});
-
-export const providers = pgTable("providers", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	apiKey: text("api_key").notNull(),
-	baseUrl: text("base_url"),
+export const sessions = pgTable("sessions", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+	sessionToken: varchar({ length: 255 }).notNull(),
 });
 
 export const verificationToken = pgTable("verification_token", {
@@ -590,4 +662,4 @@ export const analytics = pgMaterializedView("analytics", {	chatId: uuid("chat_id
 	profileCohortIds: uuid("profile_cohort_ids"),
 	simScenarioCount: integer("sim_scenario_count"),
 	gradeCreatedAt: timestamp("grade_created_at", { withTimezone: true, mode: 'string' }),
-}).as(sql`WITH RECURSIVE scenario_roots AS ( SELECT scenarios.id, scenarios.parent_id, scenarios.id AS root_id FROM scenarios WHERE scenarios.parent_id IS NULL UNION ALL SELECT s_1.id, s_1.parent_id, sr.root_id FROM scenarios s_1 JOIN scenario_roots sr ON s_1.parent_id = sr.id ), root_map AS ( SELECT s_1.id AS leaf_scenario_id, COALESCE(sr.root_id, s_1.id) AS root_scenario_id FROM scenarios s_1 LEFT JOIN scenario_roots sr ON s_1.id = sr.id ), latest_grade AS ( SELECT DISTINCT ON (simulation_chat_grades.simulation_chat_id) simulation_chat_grades.simulation_chat_id, simulation_chat_grades.score::numeric AS score, simulation_chat_grades.time_taken::numeric AS time_taken_seconds, simulation_chat_grades.rubric_id, simulation_chat_grades.created_at FROM simulation_chat_grades ORDER BY simulation_chat_grades.simulation_chat_id, simulation_chat_grades.created_at DESC ), active_sims AS ( SELECT simulations.id, simulations.created_at, simulations.updated_at, simulations.title, simulations.description, simulations.time_limit, simulations.active, simulations.scenario_ids, simulations.rubric_id, simulations.default_simulation, simulations.practice_simulation FROM simulations WHERE simulations.active = true ), active_scenarios AS ( SELECT scenarios.id, scenarios.created_at, scenarios.updated_at, scenarios.name, scenarios.description, scenarios.persona_id, scenarios.parameter_item_ids, scenarios.document_ids, scenarios.default_scenario, scenarios.practice_scenario, scenarios.generated, scenarios.parent_id, scenarios.active FROM scenarios WHERE scenarios.active = true ), cohorts_expanded AS ( SELECT c.id, c.active, c.simulation_ids, c.profile_ids FROM cohorts c ), cohorts_by_sim AS ( SELECT s_1.id AS simulation_id, ARRAY( SELECT DISTINCT c.id FROM cohorts_expanded c WHERE c.active = true AND (s_1.id = ANY (c.simulation_ids))) AS cohort_ids FROM active_sims s_1 ), profile_cohorts_for_sim AS ( SELECT sa_1.id AS attempt_id, sa_1.profile_id, sa_1.simulation_id, ARRAY( SELECT c.id FROM cohorts_expanded c WHERE c.active = true AND (sa_1.simulation_id = ANY (c.simulation_ids)) AND (sa_1.profile_id = ANY (c.profile_ids))) AS profile_cohort_ids FROM simulation_attempts sa_1 ), message_counts AS ( SELECT sm.chat_id, count(*)::integer AS num_messages_total, count(*) FILTER (WHERE sm.type = 'query'::simulation_message_type)::integer AS num_query_messages, count(*) FILTER (WHERE sm.type = 'response'::simulation_message_type)::integer AS num_response_messages FROM simulation_messages sm GROUP BY sm.chat_id ), message_deltas AS ( SELECT m.chat_id, CASE WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'::simulation_message_type AND m.type = 'query'::simulation_message_type THEN GREATEST(EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::integer, 0) ELSE NULL::integer END AS delta_seconds, m.created_at FROM simulation_messages m JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id ), message_deltas_agg AS ( SELECT message_deltas.chat_id, array_remove(array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at), NULL::integer) AS message_time_taken_seconds FROM message_deltas GROUP BY message_deltas.chat_id ) SELECT sc.id AS chat_id, sc.attempt_id, sa.profile_id, sa.simulation_id, rm.root_scenario_id AS scenario_id, rm.leaf_scenario_id, s.persona_id, p.color AS persona_color, sim.practice_simulation AS is_practice, sa.archived AS is_archived, NOT sim.practice_simulation AND NOT sa.archived AS is_general, pr.role AS profile_role, cbs.cohort_ids, sc.created_at AS chat_created_at, sc.completed_at AS chat_completed_at, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL::numeric ELSE lg.score / r.points::numeric * 100.0 END AS grade_percent, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL::boolean ELSE lg.score >= r.pass_points::numeric END AS passed, lg.time_taken_seconds, lg.rubric_id, r.points AS rubric_points, r.pass_points AS rubric_pass_points, sc.completed OR sc.completed_at IS NOT NULL OR lg.simulation_chat_id IS NOT NULL AS completed, COALESCE(mc.num_messages_total, 0) AS num_messages_total, COALESCE(mc.num_query_messages, 0) AS num_query_messages, COALESCE(mc.num_response_messages, 0) AS num_response_messages, COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds, sa.created_at AS attempt_created_at, pcs.profile_cohort_ids, COALESCE(array_length(sim.scenario_ids, 1), 0) AS sim_scenario_count, lg.created_at AS grade_created_at FROM simulation_chats sc JOIN simulation_attempts sa ON sa.id = sc.attempt_id JOIN active_sims sim ON sim.id = sa.simulation_id JOIN profiles pr ON pr.id = sa.profile_id JOIN active_scenarios s ON s.id = sc.scenario_id JOIN root_map rm ON rm.leaf_scenario_id = s.id LEFT JOIN personas p ON p.id = s.persona_id LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id LEFT JOIN rubrics r ON r.id = lg.rubric_id LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id LEFT JOIN message_counts mc ON mc.chat_id = sc.id LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id`);
+}).as(sql`WITH RECURSIVE scenario_roots AS ( SELECT scenarios.id, scenarios.parent_id, scenarios.id AS root_id FROM scenarios WHERE scenarios.parent_id IS NULL UNION ALL SELECT s_1.id, s_1.parent_id, sr.root_id FROM scenarios s_1 JOIN scenario_roots sr ON s_1.parent_id = sr.id ), root_map AS ( SELECT s_1.id AS leaf_scenario_id, COALESCE(sr.root_id, s_1.id) AS root_scenario_id FROM scenarios s_1 LEFT JOIN scenario_roots sr ON s_1.id = sr.id ), latest_grade AS ( SELECT DISTINCT ON (simulation_chat_grades.simulation_chat_id) simulation_chat_grades.simulation_chat_id, simulation_chat_grades.score::numeric AS score, simulation_chat_grades.time_taken::numeric AS time_taken_seconds, simulation_chat_grades.rubric_id, simulation_chat_grades.created_at FROM simulation_chat_grades ORDER BY simulation_chat_grades.simulation_chat_id, simulation_chat_grades.created_at DESC ), active_sims AS ( SELECT simulations.id, simulations.created_at, simulations.updated_at, simulations.title, simulations.description, simulations.time_limit, simulations.active, simulations.scenario_ids, simulations.rubric_id, simulations.default_simulation, simulations.practice_simulation, simulations.department_id FROM simulations WHERE simulations.active = true ), active_scenarios AS ( SELECT scenarios.id, scenarios.created_at, scenarios.updated_at, scenarios.name, scenarios.description, scenarios.persona_id, scenarios.parameter_item_ids, scenarios.document_ids, scenarios.default_scenario, scenarios.practice_scenario, scenarios.generated, scenarios.parent_id, scenarios.active, scenarios.department_id FROM scenarios WHERE scenarios.active = true ), cohorts_expanded AS ( SELECT c.id, c.active, c.simulation_ids, c.profile_ids FROM cohorts c ), cohorts_by_sim AS ( SELECT s_1.id AS simulation_id, ARRAY( SELECT DISTINCT c.id FROM cohorts_expanded c WHERE c.active = true AND (s_1.id = ANY (c.simulation_ids))) AS cohort_ids FROM active_sims s_1 ), profile_cohorts_for_sim AS ( SELECT sa_1.id AS attempt_id, sa_1.profile_id, sa_1.simulation_id, ARRAY( SELECT c.id FROM cohorts_expanded c WHERE c.active = true AND (sa_1.simulation_id = ANY (c.simulation_ids)) AND (sa_1.profile_id = ANY (c.profile_ids))) AS profile_cohort_ids FROM simulation_attempts sa_1 ), message_counts AS ( SELECT sm.chat_id, count(*)::integer AS num_messages_total, count(*) FILTER (WHERE sm.type = 'query'::simulation_message_type)::integer AS num_query_messages, count(*) FILTER (WHERE sm.type = 'response'::simulation_message_type)::integer AS num_response_messages FROM simulation_messages sm GROUP BY sm.chat_id ), message_deltas AS ( SELECT m.chat_id, CASE WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'::simulation_message_type AND m.type = 'query'::simulation_message_type THEN GREATEST(EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at)) OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::integer, 0) ELSE NULL::integer END AS delta_seconds, m.created_at FROM simulation_messages m JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id ), message_deltas_agg AS ( SELECT message_deltas.chat_id, array_remove(array_agg(message_deltas.delta_seconds ORDER BY message_deltas.created_at), NULL::integer) AS message_time_taken_seconds FROM message_deltas GROUP BY message_deltas.chat_id ) SELECT sc.id AS chat_id, sc.attempt_id, sa.profile_id, sa.simulation_id, rm.root_scenario_id AS scenario_id, rm.leaf_scenario_id, s.persona_id, p.color AS persona_color, sim.practice_simulation AS is_practice, sa.archived AS is_archived, NOT sim.practice_simulation AND NOT sa.archived AS is_general, pr.role AS profile_role, cbs.cohort_ids, sc.created_at AS chat_created_at, sc.completed_at AS chat_completed_at, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL::numeric ELSE lg.score / r.points::numeric * 100.0 END AS grade_percent, CASE WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL::boolean ELSE lg.score >= r.pass_points::numeric END AS passed, lg.time_taken_seconds, lg.rubric_id, r.points AS rubric_points, r.pass_points AS rubric_pass_points, sc.completed OR sc.completed_at IS NOT NULL OR lg.simulation_chat_id IS NOT NULL AS completed, COALESCE(mc.num_messages_total, 0) AS num_messages_total, COALESCE(mc.num_query_messages, 0) AS num_query_messages, COALESCE(mc.num_response_messages, 0) AS num_response_messages, COALESCE(mda.message_time_taken_seconds, '{}'::integer[]) AS message_time_taken_seconds, sa.created_at AS attempt_created_at, pcs.profile_cohort_ids, COALESCE(array_length(sim.scenario_ids, 1), 0) AS sim_scenario_count, lg.created_at AS grade_created_at FROM simulation_chats sc JOIN simulation_attempts sa ON sa.id = sc.attempt_id JOIN active_sims sim ON sim.id = sa.simulation_id JOIN profiles pr ON pr.id = sa.profile_id JOIN active_scenarios s ON s.id = sc.scenario_id JOIN root_map rm ON rm.leaf_scenario_id = s.id LEFT JOIN personas p ON p.id = s.persona_id LEFT JOIN latest_grade lg ON lg.simulation_chat_id = sc.id LEFT JOIN rubrics r ON r.id = lg.rubric_id LEFT JOIN cohorts_by_sim cbs ON cbs.simulation_id = sa.simulation_id LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id LEFT JOIN message_counts mc ON mc.chat_id = sc.id LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id`);

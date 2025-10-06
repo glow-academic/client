@@ -1,7 +1,7 @@
 import { handle } from "@/lib/api/route-factory";
 import { simulationAttemptRepo } from "@/lib/repos/simulationAttemptRepo";
-import { log } from "@/utils/logger";
 import { z } from "zod";
+import { log } from "@/utils/logger";
 
 const Body = z.object({ ids: z.array(z.string()).min(1) });
 

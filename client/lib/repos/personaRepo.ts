@@ -79,4 +79,21 @@ export const personaRepo = {
       .from(personas)
       .where(inArray(personas.modelId, modelIds));
   },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(personas)
+      .where(eq(personas.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(personas)
+      .where(inArray(personas.departmentId, departmentIds));
+  },
 };

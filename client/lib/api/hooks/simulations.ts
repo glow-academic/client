@@ -7,7 +7,11 @@ import type {
   SimulationCreate,
   SimulationUpdate,
 } from "@/lib/repos/simulationRepo";
-import { simulationKeys, simulationKeysByRubricId } from "@/lib/api/keys";
+import {
+  simulationKeys,
+  simulationKeysByRubricId,
+  simulationKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function useSimulations(filters?: unknown) {
   return useQuery({
@@ -98,6 +102,27 @@ export function useSimulationsByRubricIdBatch(ids: string[]) {
     queryKey: simulationKeysByRubricId.many(ids),
     queryFn: () =>
       api<Simulation[]>(`/api/v1/simulations/by/rubricId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useSimulationsByDepartmentId(id: string) {
+  return useQuery<Simulation[]>({
+    queryKey: simulationKeysByDepartmentId.one(id),
+    queryFn: () =>
+      api<Simulation[]>(`/api/v1/simulations/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useSimulationsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Simulation[]>({
+    queryKey: simulationKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Simulation[]>(`/api/v1/simulations/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),

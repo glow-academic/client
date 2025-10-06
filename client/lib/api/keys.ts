@@ -523,3 +523,69 @@ export const standardKeysByStandardGroupId = {
   many: (ids: Array<string | number>) =>
     ["standards:by:standardGroupId:batch", ids.map(String).sort()] as const,
 };
+
+export const departmentKeys = {
+  all: ["departments"] as const,
+  list: (filters?: unknown) => [...departmentKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...departmentKeys.all, String(id)] as const,
+};
+export const cohortKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["cohorts:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["cohorts:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const documentKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["documents:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["documents:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const modelRunKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["model_runs:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_runs:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const parameterKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["parameters:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["parameters:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const personaKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["personas:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["personas:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const profileKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["profiles:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["profiles:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const providerKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["providers:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["providers:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const rubricKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["rubrics:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["rubrics:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["scenarios:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenarios:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const simulationKeysByDepartmentId = {
+  one: (id: string | number) =>
+    ["simulations:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["simulations:by:departmentId:batch", ids.map(String).sort()] as const,
+};

@@ -49,38 +49,26 @@ class AppLogs(_Base, table=True):
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True)))
 
 
-class Cohorts(_Base, table=True):
+class Departments(_Base, table=True):
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='cohorts_pkey'),
+        PrimaryKeyConstraint('id', name='departments_pkey'),
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     title: str = Field(sa_column=Column('title', Text, nullable=False))
-    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    profile_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
-    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, nullable=False, default=False))
-    simulation_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
-    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
 
-
-class Documents(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='documents_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
-    name: str = Field(sa_column=Column('name', Text, nullable=False))
-    file_path: str = Field(sa_column=Column('file_path', Text, nullable=False))
-    mime_type: str = Field(sa_column=Column('mime_type', Text, nullable=False))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), nullable=False, default=r'homework'))
-    classified: bool = Field(sa_column=Column('classified', Boolean, nullable=False, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
-    file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
+    cohorts: list['Cohorts'] = Relationship(back_populates='department')
+    documents: list['Documents'] = Relationship(back_populates='department')
+    personas: list['Personas'] = Relationship(back_populates='department')
+    profiles: list['Profiles'] = Relationship(back_populates='department')
+    providers: list['Providers'] = Relationship(back_populates='department')
+    rubrics: list['Rubrics'] = Relationship(back_populates='department')
+    model_runs: list['ModelRuns'] = Relationship(back_populates='department')
+    scenarios: list['Scenarios'] = Relationship(back_populates='department')
+    simulations: list['Simulations'] = Relationship(back_populates='department')
 
 
 class Models(_Base, table=True):
@@ -119,41 +107,6 @@ class Parameters(_Base, table=True):
     default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, nullable=False, default=False))
 
     parameter_items: list['ParameterItems'] = Relationship(back_populates='parameter')
-
-
-class Providers(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='providers_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
-    name: str = Field(sa_column=Column('name', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False))
-    api_key: str = Field(sa_column=Column('api_key', Text, nullable=False))
-    base_url: Optional[str] = Field(default=None, sa_column=Column('base_url', Text))
-
-
-class Rubrics(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='rubrics_pkey'),
-        Index('rubrics_id_idx', 'id')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
-    name: str = Field(sa_column=Column('name', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False))
-    points: int = Field(sa_column=Column('points', Integer, nullable=False))
-    pass_points: int = Field(sa_column=Column('pass_points', Integer, nullable=False))
-    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, nullable=False, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-
-    simulations: list['Simulations'] = Relationship(back_populates='rubric')
-    standard_groups: list['StandardGroups'] = Relationship(back_populates='rubric')
-    simulation_chat_grades: list['SimulationChatGrades'] = Relationship(back_populates='rubric')
 
 
 class Sessions(_Base, table=True):
@@ -212,6 +165,48 @@ class Agents(_Base, table=True):
     model_runs: list['ModelRuns'] = Relationship(back_populates='agent')
 
 
+class Cohorts(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='cohorts_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='cohorts_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    profile_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
+    default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, nullable=False, default=False))
+    simulation_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
+    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
+
+    department: Optional['Departments'] = Relationship(back_populates='cohorts')
+
+
+class Documents(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='documents_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='documents_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    file_path: str = Field(sa_column=Column('file_path', Text, nullable=False))
+    mime_type: str = Field(sa_column=Column('mime_type', Text, nullable=False))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), nullable=False, default=r'homework'))
+    classified: bool = Field(sa_column=Column('classified', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
+    file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
+
+    department: Optional['Departments'] = Relationship(back_populates='documents')
+
+
 class ParameterItems(_Base, table=True):
     __tablename__ = 'parameter_items'
     __table_args__ = (
@@ -233,6 +228,7 @@ class ParameterItems(_Base, table=True):
 
 class Personas(_Base, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='personas_department_id_fkey'),
         ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
         PrimaryKeyConstraint('id', name='personas_pkey'),
         Index('personas_id_idx', 'id')
@@ -253,7 +249,9 @@ class Personas(_Base, table=True):
     image_input_active: bool = Field(sa_column=Column('image_input_active', Boolean, nullable=False, default=False))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
+    department: Optional['Departments'] = Relationship(back_populates='personas')
     model: Optional['Models'] = Relationship(back_populates='personas')
     model_runs: list['ModelRuns'] = Relationship(back_populates='persona')
     scenarios: list['Scenarios'] = Relationship(back_populates='persona')
@@ -261,6 +259,7 @@ class Personas(_Base, table=True):
 
 class Profiles(_Base, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='profiles_department_id_fkey'),
         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='profiles_user_id_fkey'),
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
@@ -280,7 +279,9 @@ class Profiles(_Base, table=True):
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
     last_active: Optional[datetime] = Field(default=None, sa_column=Column('last_active', DateTime(True)))
     req_per_day: Optional[int] = Field(default=None, sa_column=Column('req_per_day', Integer))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
+    department: Optional['Departments'] = Relationship(back_populates='profiles')
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: list['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: list['AssistantChats'] = Relationship(back_populates='profile')
@@ -290,49 +291,46 @@ class Profiles(_Base, table=True):
     simulation_chat_crowdsourced_feedbacks: list['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='profile')
 
 
-class Simulations(_Base, table=True):
+class Providers(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulations_pkey'),
-        Index('simulations_id_active_idx', 'id', 'active')
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='providers_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='providers_pkey')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
-    title: str = Field(sa_column=Column('title', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False, default=r'No description provided'))
-    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    scenario_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
-    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
-    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, nullable=False, default=False))
-    practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, nullable=False, default=False))
-    time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    api_key: str = Field(sa_column=Column('api_key', Text, nullable=False))
+    base_url: Optional[str] = Field(default=None, sa_column=Column('base_url', Text))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
-    rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
-    simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='simulation')
+    department: Optional['Departments'] = Relationship(back_populates='providers')
 
 
-class StandardGroups(_Base, table=True):
-    __tablename__ = 'standard_groups'
+class Rubrics(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
-        PrimaryKeyConstraint('id', name='standard_groups_pkey'),
-        Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
-        Index('standard_groups_rubric_idx', 'id', 'rubric_id')
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='rubrics_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='rubrics_pkey'),
+        Index('rubrics_id_idx', 'id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     name: str = Field(sa_column=Column('name', Text, nullable=False))
-    short_name: str = Field(sa_column=Column('short_name', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False))
     points: int = Field(sa_column=Column('points', Integer, nullable=False))
     pass_points: int = Field(sa_column=Column('pass_points', Integer, nullable=False))
-    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
+    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
-    rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
-    standards: list['Standards'] = Relationship(back_populates='standard_group')
+    department: Optional['Departments'] = Relationship(back_populates='rubrics')
+    simulations: list['Simulations'] = Relationship(back_populates='rubric')
+    standard_groups: list['StandardGroups'] = Relationship(back_populates='rubric')
+    simulation_chat_grades: list['SimulationChatGrades'] = Relationship(back_populates='rubric')
 
 
 class AppFeedback(_Base, table=True):
@@ -374,6 +372,7 @@ class ModelRuns(_Base, table=True):
     __tablename__ = 'model_runs'
     __table_args__ = (
         ForeignKeyConstraint(['agent_id'], ['agents.id'], name='model_runs_agent_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='model_runs_department_id_fkey'),
         ForeignKeyConstraint(['model_id'], ['models.id'], name='model_runs_model_id_fkey'),
         ForeignKeyConstraint(['persona_id'], ['personas.id'], name='model_runs_persona_id_fkey'),
         ForeignKeyConstraint(['profile_id'], ['profiles.id'], name='model_runs_profile_id_fkey'),
@@ -389,8 +388,10 @@ class ModelRuns(_Base, table=True):
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
     agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
     profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
     agent: Optional['Agents'] = Relationship(back_populates='model_runs')
+    department: Optional['Departments'] = Relationship(back_populates='model_runs')
     model: Optional['Models'] = Relationship(back_populates='model_runs')
     persona: Optional['Personas'] = Relationship(back_populates='model_runs')
     profile: Optional['Profiles'] = Relationship(back_populates='model_runs')
@@ -399,6 +400,7 @@ class ModelRuns(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='scenarios_department_id_fkey'),
         ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey'),
         Index('scenarios_id_active_idx', 'id', 'active')
@@ -417,51 +419,59 @@ class Scenarios(_Base, table=True):
     parameter_item_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
     document_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
     parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
+    department: Optional['Departments'] = Relationship(back_populates='scenarios')
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
     simulation_chats: list['SimulationChats'] = Relationship(back_populates='scenario')
 
 
-class SimulationAttempts(_Base, table=True):
-    __tablename__ = 'simulation_attempts'
+class Simulations(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
-        Index('simulation_attempts_archived_idx', 'archived'),
-        Index('simulation_attempts_id_profile_archived_idx', 'id', 'profile_id', 'archived', 'infinite_mode'),
-        Index('simulation_attempts_profile_sim_idx', 'profile_id', 'simulation_id')
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='simulations_department_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulations_pkey'),
+        Index('simulations_id_active_idx', 'id', 'active')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid, nullable=False))
-    infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, nullable=False, default=False))
-    archived: bool = Field(sa_column=Column('archived', Boolean, nullable=False, default=False))
-    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
-    infinite_mode_time_limit: Optional[int] = Field(default=None, sa_column=Column('infinite_mode_time_limit', Integer))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    title: str = Field(sa_column=Column('title', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False, default=r'No description provided'))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
+    scenario_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
+    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
+    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, nullable=False, default=False))
+    practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, nullable=False, default=False))
+    time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
-    profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
-    simulation: Optional['Simulations'] = Relationship(back_populates='simulation_attempts')
-    simulation_chats: list['SimulationChats'] = Relationship(back_populates='attempt')
+    department: Optional['Departments'] = Relationship(back_populates='simulations')
+    rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
+    simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='simulation')
 
 
-class Standards(_Base, table=True):
+class StandardGroups(_Base, table=True):
+    __tablename__ = 'standard_groups'
     __table_args__ = (
-        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', name='standards_standard_group_id_fkey'),
-        PrimaryKeyConstraint('id', name='standards_pkey'),
-        Index('standards_group_idx', 'standard_group_id')
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
+        PrimaryKeyConstraint('id', name='standard_groups_pkey'),
+        Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
+        Index('standard_groups_rubric_idx', 'id', 'rubric_id')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
     name: str = Field(sa_column=Column('name', Text, nullable=False))
+    short_name: str = Field(sa_column=Column('short_name', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False))
     points: int = Field(sa_column=Column('points', Integer, nullable=False))
-    standard_group_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_group_id', Uuid, nullable=False))
+    pass_points: int = Field(sa_column=Column('pass_points', Integer, nullable=False))
+    rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
 
-    standard_group: Optional['StandardGroups'] = Relationship(back_populates='standards')
-    simulation_chat_feedbacks: list['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
+    rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
+    standards: list['Standards'] = Relationship(back_populates='standard_group')
 
 
 class AssistantMessages(_Base, table=True):
@@ -517,6 +527,48 @@ class DebugInfo(_Base, table=True):
     content: str = Field(sa_column=Column('content', Text, nullable=False))
 
     model_run: Optional['ModelRuns'] = Relationship(back_populates='debug_info')
+
+
+class SimulationAttempts(_Base, table=True):
+    __tablename__ = 'simulation_attempts'
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
+        Index('simulation_attempts_archived_idx', 'archived'),
+        Index('simulation_attempts_id_profile_archived_idx', 'id', 'profile_id', 'archived', 'infinite_mode'),
+        Index('simulation_attempts_profile_sim_idx', 'profile_id', 'simulation_id')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid, nullable=False))
+    infinite_mode: bool = Field(sa_column=Column('infinite_mode', Boolean, nullable=False, default=False))
+    archived: bool = Field(sa_column=Column('archived', Boolean, nullable=False, default=False))
+    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
+    infinite_mode_time_limit: Optional[int] = Field(default=None, sa_column=Column('infinite_mode_time_limit', Integer))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
+    simulation: Optional['Simulations'] = Relationship(back_populates='simulation_attempts')
+    simulation_chats: list['SimulationChats'] = Relationship(back_populates='attempt')
+
+
+class Standards(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', name='standards_standard_group_id_fkey'),
+        PrimaryKeyConstraint('id', name='standards_pkey'),
+        Index('standards_group_idx', 'standard_group_id')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    points: int = Field(sa_column=Column('points', Integer, nullable=False))
+    standard_group_id: Mapped[uuid.UUID] = Field(sa_column=Column('standard_group_id', Uuid, nullable=False))
+
+    standard_group: Optional['StandardGroups'] = Relationship(back_populates='standards')
+    simulation_chat_feedbacks: list['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
 
 
 class SimulationChats(_Base, table=True):

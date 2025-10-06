@@ -7,7 +7,7 @@ import type {
   ProviderCreate,
   ProviderUpdate,
 } from "@/lib/repos/providerRepo";
-import { providerKeys } from "@/lib/api/keys";
+import { providerKeys, providerKeysByDepartmentId } from "@/lib/api/keys";
 
 export function useProviders(filters?: unknown) {
   return useQuery({
@@ -80,5 +80,25 @@ export function useDeleteProvider(id?: string) {
       return api<void>(`/api/v1/providers/${resolvedId}`, { method: "DELETE" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: providerKeys.all }),
+  });
+}
+
+export function useProvidersByDepartmentId(id: string) {
+  return useQuery<Provider[]>({
+    queryKey: providerKeysByDepartmentId.one(id),
+    queryFn: () => api<Provider[]>(`/api/v1/providers/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useProvidersByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Provider[]>({
+    queryKey: providerKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Provider[]>(`/api/v1/providers/by/departmentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

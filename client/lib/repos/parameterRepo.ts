@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { parameters } from "@/utils/drizzle/schema";
@@ -64,5 +64,22 @@ export const parameterRepo = {
       .returning();
     if (!rows[0])
       throw HttpError.notFound("Parameter with id " + id + " not found");
+  },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(parameters)
+      .where(eq(parameters.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(parameters)
+      .where(inArray(parameters.departmentId, departmentIds));
   },
 };

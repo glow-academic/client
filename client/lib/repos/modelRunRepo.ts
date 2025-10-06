@@ -127,4 +127,21 @@ export const modelRunRepo = {
       .from(modelRuns)
       .where(inArray(modelRuns.profileId, profileIds));
   },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(modelRuns)
+      .where(eq(modelRuns.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(modelRuns)
+      .where(inArray(modelRuns.departmentId, departmentIds));
+  },
 };

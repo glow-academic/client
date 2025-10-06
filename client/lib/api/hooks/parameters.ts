@@ -7,7 +7,7 @@ import type {
   ParameterCreate,
   ParameterUpdate,
 } from "@/lib/repos/parameterRepo";
-import { parameterKeys } from "@/lib/api/keys";
+import { parameterKeys, parameterKeysByDepartmentId } from "@/lib/api/keys";
 
 export function useParameters(filters?: unknown) {
   return useQuery({
@@ -82,5 +82,25 @@ export function useDeleteParameter(id?: string) {
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parameterKeys.all }),
+  });
+}
+
+export function useParametersByDepartmentId(id: string) {
+  return useQuery<Parameter[]>({
+    queryKey: parameterKeysByDepartmentId.one(id),
+    queryFn: () => api<Parameter[]>(`/api/v1/parameters/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useParametersByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Parameter[]>({
+    queryKey: parameterKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Parameter[]>(`/api/v1/parameters/by/departmentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

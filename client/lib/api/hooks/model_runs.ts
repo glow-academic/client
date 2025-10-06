@@ -13,6 +13,7 @@ import {
   modelRunKeysByPersonaId,
   modelRunKeysByAgentId,
   modelRunKeysByProfileId,
+  modelRunKeysByDepartmentId,
 } from "@/lib/api/keys";
 
 export function useModelRuns(filters?: unknown) {
@@ -164,6 +165,26 @@ export function useModelRunsByProfileIdBatch(ids: string[]) {
     queryKey: modelRunKeysByProfileId.many(ids),
     queryFn: () =>
       api<ModelRun[]>(`/api/v1/model_runs/by/profileId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useModelRunsByDepartmentId(id: string) {
+  return useQuery<ModelRun[]>({
+    queryKey: modelRunKeysByDepartmentId.one(id),
+    queryFn: () => api<ModelRun[]>(`/api/v1/model_runs/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useModelRunsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<ModelRun[]>({
+    queryKey: modelRunKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<ModelRun[]>(`/api/v1/model_runs/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),

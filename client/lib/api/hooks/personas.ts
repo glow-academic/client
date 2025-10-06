@@ -7,7 +7,11 @@ import type {
   PersonaCreate,
   PersonaUpdate,
 } from "@/lib/repos/personaRepo";
-import { personaKeys, personaKeysByModelId } from "@/lib/api/keys";
+import {
+  personaKeys,
+  personaKeysByModelId,
+  personaKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function usePersonas(filters?: unknown) {
   return useQuery({
@@ -96,6 +100,26 @@ export function usePersonasByModelIdBatch(ids: string[]) {
     queryKey: personaKeysByModelId.many(ids),
     queryFn: () =>
       api<Persona[]>(`/api/v1/personas/by/modelId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function usePersonasByDepartmentId(id: string) {
+  return useQuery<Persona[]>({
+    queryKey: personaKeysByDepartmentId.one(id),
+    queryFn: () => api<Persona[]>(`/api/v1/personas/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function usePersonasByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Persona[]>({
+    queryKey: personaKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Persona[]>(`/api/v1/personas/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),
