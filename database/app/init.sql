@@ -11,44 +11,45 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. Independent tables (no foreign key dependencies)
 \i app/departments/init.sql
+\i seed/cs/departments.sql
 
 \i app/users/init.sql
-\i seed/default/users.sql
+\i seed/cs/users.sql
+\i seed/users.sql
 
 \i app/models/init.sql
-\i seed/default/models.sql
+\i seed/cs/models.sql
 
 \i app/documents/init.sql
-\i seed/default/documents.sql
+\i seed/cs/documents.sql
 
 \i app/rubrics/init.sql
-\i seed/default/rubrics.sql
+\i seed/cs/rubrics.sql
 
 \i app/system/init.sql
-\i seed/default/system.sql
+\i seed/cs/system.sql
 
 -- 2. Assistant tables
 \i app/assistants/init.sql
-\i seed/default/assistants.sql
+\i seed/cs/assistants.sql
 
--- 3. Agents
+-- 3. Personas and Agents
+\i app/personas/init.sql
+\i seed/cs/personas.sql
 \i app/agents/init.sql
-\i seed/default/agents.sql
+\i seed/agents.sql
 
 -- 4. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
-\i seed/default/scenarios.sql
+\i seed/cs/scenarios.sql
 
 -- 5. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
-\i seed/default/simulations.sql
+\i seed/cs/simulations.sql
 
 -- 6. Tables that depend on multiple previous tables
 \i app/cohorts/init.sql
-\i seed/default/cohorts.sql
-
--- 7. Insert seed init file
-\i seed/init.sql
+\i seed/cs/cohorts.sql
 
 -- 8. Create materialized view
 \i app/analytics/init.sql

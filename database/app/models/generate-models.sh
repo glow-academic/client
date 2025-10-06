@@ -33,17 +33,17 @@ if [[ -z "$ENCRYPTED_OPENAI_KEY" ]] || [[ -z "$ENCRYPTED_GOOGLE_KEY" ]]; then
   exit 1
 fi
 
-# Resolve target path to database/seed/default/models.sql
-TARGET_DIR=$(cd "$SCRIPT_DIR/../../seed/default" && pwd)
+# Resolve target path to database/seed/cs/models.sql
+TARGET_DIR=$(cd "$SCRIPT_DIR/../../seed/cs" && pwd)
 mkdir -p "$TARGET_DIR"
 TARGET_FILE="$TARGET_DIR/models.sql"
 
 # Write ONLY insert statements
 cat > "$TARGET_FILE" << EOF
 -- Insert providers with properly encrypted API keys
-INSERT INTO providers (id, name, description, api_key) VALUES 
-('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', '$ENCRYPTED_OPENAI_KEY'),
-('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', '$ENCRYPTED_GOOGLE_KEY');
+INSERT INTO providers (id, name, description, api_key, department_id) VALUES 
+('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', '$ENCRYPTED_OPENAI_KEY', '33333333-3333-3333-3333-333333333333'),
+('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', '$ENCRYPTED_GOOGLE_KEY', '33333333-3333-3333-3333-333333333333');
 
 -- Insert models with current pricing (August 2025)
 -- Pricing per 1 million tokens: input_ppm (input price), output_ppm (output price)

@@ -176,6 +176,13 @@ start_fresh_from_init() {
     echo "✅ Agent SQL generated from markdown files"
   fi
   
+  # Generate persona SQL from markdown files
+  if [[ -f "app/personas/generate-persona-sql.sh" ]]; then
+    echo "🔧 Generating persona SQL from markdown files..."
+    cd app/personas && ./generate-persona-sql.sh && cd - > /dev/null
+    echo "✅ Persona SQL generated from markdown files"
+  fi
+  
   # Generate model SQL with encrypted API keys
   if [[ -f "app/models/generate-models.sh" ]]; then
     echo "🔐 Generating model SQL with encrypted API keys..."

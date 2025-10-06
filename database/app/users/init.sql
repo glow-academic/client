@@ -72,5 +72,5 @@ CREATE TABLE profiles (
   active     BOOLEAN     NOT NULL DEFAULT FALSE,
   last_active TIMESTAMPTZ,
   req_per_day INTEGER     NULL DEFAULT NULL, -- model requests per day, null means unlimited
-  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+  department_id UUID        NULL DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL
 );

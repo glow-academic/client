@@ -19,7 +19,7 @@ CREATE TABLE simulations (
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
   default_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
-  department_id   UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+  department_id   UUID        REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE simulation_attempts (

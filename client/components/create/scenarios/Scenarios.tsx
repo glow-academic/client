@@ -38,15 +38,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParameters } from "@/lib/api/hooks/parameters";
+import { useParametersByDepartmentId } from "@/lib/api/hooks/parameters";
 import {
   useCreateScenario,
   useDeleteScenario,
-  useScenarios,
+  useScenariosByDepartmentId,
 } from "@/lib/api/hooks/scenarios";
-import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
 import { Scenario } from "@/types";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
@@ -65,16 +66,23 @@ export function Scenarios() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
+  const { effectiveProfile } = useProfile();
 
   // Mutation hooks
   const createScenarioMutation = useCreateScenario();
   const deleteScenarioMutation = useDeleteScenario();
 
-  const { data: scenarios = [] } = useScenarios();
-  const { data: simulations = [] } = useSimulations();
-  const { data: parameters = [] } = useParameters();
+  const { data: scenarios = [] } = useScenariosByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: simulations = [] } = useSimulationsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: parameters = [] } = useParametersByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
   const { data: parameterItems = [] } = useParameterItems();
 
   // Group scenarios by parent_id
@@ -125,7 +133,7 @@ export function Scenarios() {
   // Check if a scenario is being used by any simulations
   const isScenarioInUse = (scenarioId: string) => {
     return simulations.some(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   };
 
@@ -264,11 +272,11 @@ export function Scenarios() {
 
     scenario.parameterItemIds.forEach((parameterItemId) => {
       const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId,
+        (item) => item.id === parameterItemId
       );
       if (parameterItem) {
         const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId,
+          (param) => param.id === parameterItem.parameterId
         );
         if (parameter && !parameter.numerical) {
           badges.push({
@@ -288,7 +296,7 @@ export function Scenarios() {
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void,
+    onToggleCollapse?: () => void
   ) => (
     <Card
       key={scenario.id}
@@ -442,7 +450,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDeleteClick(
                         scenario.id,
-                        scenario.name || "Unnamed Scenario",
+                        scenario.name || "Unnamed Scenario"
                       )
                     }
                   >
@@ -487,7 +495,7 @@ export function Scenarios() {
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.id),
+            () => toggleGroupCollapse(group.parent.id)
           )}
 
           {/* Child Scenarios */}

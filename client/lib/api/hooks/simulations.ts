@@ -109,7 +109,7 @@ export function useSimulationsByRubricIdBatch(ids: string[]) {
   });
 }
 
-export function useSimulationsByDepartmentId(id: string) {
+export function useSimulationsByDepartmentId(id: string)  {
   return useQuery<Simulation[]>({
     queryKey: simulationKeysByDepartmentId.one(id),
     queryFn: () =>

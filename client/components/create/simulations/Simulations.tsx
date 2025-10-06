@@ -26,13 +26,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useCohortsByDepartmentId } from "@/lib/api/hooks/cohorts";
+import { useRubricsByDepartmentId } from "@/lib/api/hooks/rubrics";
+import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
 import {
   useCreateSimulation,
   useDeleteSimulation,
-  useSimulations,
+  useSimulationsByDepartmentId,
 } from "@/lib/api/hooks/simulations";
 import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
@@ -52,16 +52,24 @@ export function Simulations() {
   const createSimulationMutation = useCreateSimulation();
   const deleteSimulationMutation = useDeleteSimulation();
 
-  const { data: simulations = [] } = useSimulations();
-  const { data: scenarios = [] } = useScenarios();
-  const { data: rubrics = [] } = useRubrics();
-  const { data: cohorts = [] } = useCohorts();
+  const { data: simulations = [] } = useSimulationsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: scenarios = [] } = useScenariosByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: rubrics = [] } = useRubricsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: cohorts = [] } = useCohortsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
     );
   };
 

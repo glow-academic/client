@@ -37,9 +37,9 @@ import { useProfile } from "@/contexts/profile-context";
 import {
   useCreatePersona,
   useDeletePersona,
-  usePersonas,
+  usePersonasByDepartmentId,
 } from "@/lib/api/hooks/personas";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
 import { Persona } from "@/types";
 import { PersonasDataTable } from "./PersonasDataTable";
 
@@ -79,8 +79,12 @@ export default function Personas() {
   const createPersonaMutation = useCreatePersona();
   const deletePersonaMutation = useDeletePersona();
 
-  const { data: personas = [] } = usePersonas();
-  const { data: scenarios = [] } = useScenarios();
+  const { data: personas = [] } = usePersonasByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: scenarios = [] } = useScenariosByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
 
   // Get table columns and filter options
   const {
@@ -311,7 +315,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDeleteClick(
                       persona.id,
-                      persona.name || "Unnamed Persona",
+                      persona.name || "Unnamed Persona"
                     )
                   }
                 >

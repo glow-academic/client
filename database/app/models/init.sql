@@ -13,7 +13,7 @@ CREATE TABLE providers (
   description TEXT        NOT NULL,
   api_key TEXT        NOT NULL, -- This will be encrypted when stored in the database
   base_url TEXT        NULL DEFAULT NULL, -- If there is a custom model provider
-  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE models (
@@ -22,7 +22,7 @@ CREATE TABLE models (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  provider_id UUID        NOT NULL,
+  provider_id UUID        NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
   active      BOOLEAN     NOT NULL DEFAULT TRUE,
   input_ppm   FLOAT       NOT NULL DEFAULT 0.0, -- price per million input tokens (dollars) (free is 0.0)
   output_ppm  FLOAT       NOT NULL DEFAULT 0.0, -- price per million output tokens (dollars) (free is 0.0)

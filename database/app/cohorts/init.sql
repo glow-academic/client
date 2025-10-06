@@ -15,5 +15,5 @@ CREATE TABLE cohorts (
   profile_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], 
   default_cohort BOOLEAN     NOT NULL           DEFAULT FALSE,
   simulation_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
-  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
 );

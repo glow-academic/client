@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useProfile } from "@/contexts/profile-context";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { usePersonas } from "@/lib/api/hooks/personas";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
-import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useParametersByDepartmentId } from "@/lib/api/hooks/parameters";
+import { usePersonasByDepartmentId } from "@/lib/api/hooks/personas";
+import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
+import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
 import type {
   Parameter,
   ParameterItem,
@@ -57,23 +58,32 @@ export function PracticeCustomizeDialog({
   const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
-    undefined,
+    undefined
   );
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
+  const { effectiveProfile } = useProfile();
 
   // API calls - only made when dialog is open
-  const { data: simulations = [] } = useSimulations();
-  const { data: scenarios = [] } = useScenarios();
-  const { data: personas = [] } = usePersonas();
-  const { data: parameters = [] } = useParameters();
+  const { data: simulations = [] } = useSimulationsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: scenarios = [] } = useScenariosByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: personas = [] } = usePersonasByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
+  const { data: parameters = [] } = useParametersByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
   const { data: parameterItems = [] } = useParameterItems();
 
   // Only allow customizing non-default parameters and non-default items
   const customParameters = useMemo(() => {
     return (parameters as Parameter[]).filter(
-      (p) => p.defaultParameter === false,
+      (p) => p.defaultParameter === false
     );
   }, [parameters]);
 
@@ -81,7 +91,7 @@ export function PracticeCustomizeDialog({
     // Use ONLY default items, but only for the non-default parameters
     const customParamIds = new Set(customParameters.map((p) => p.id));
     return (parameterItems as ParameterItem[]).filter(
-      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId),
+      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
     );
   }, [parameterItems, customParameters]);
 
@@ -111,7 +121,7 @@ export function PracticeCustomizeDialog({
         (s) =>
           s.personaId === selectedPersona.id &&
           s.defaultScenario === true &&
-          s.practiceScenario === true,
+          s.practiceScenario === true
       );
 
       // Find simulation that includes the base scenario (prefer default+practice)
@@ -120,15 +130,15 @@ export function PracticeCustomizeDialog({
           (sim) =>
             (sim.scenarioIds || []).includes(baseScenario?.id || "") &&
             sim.defaultSimulation === true &&
-            sim.practiceSimulation === true,
+            sim.practiceSimulation === true
         ) ||
         (simulations as Simulation[]).find((sim) =>
-          (sim.scenarioIds || []).includes(baseScenario?.id || ""),
+          (sim.scenarioIds || []).includes(baseScenario?.id || "")
         );
 
       if (!targetSimulation) {
         toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`,
+          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
         );
         return;
       }

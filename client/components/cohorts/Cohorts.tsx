@@ -22,11 +22,11 @@ import { toast } from "sonner";
 
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
 import {
-  useCohorts,
+  useCohortsByDepartmentId,
   useCreateCohort,
   useDeleteCohort,
 } from "@/lib/api/hooks/cohorts";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useProfilesByDepartmentId } from "@/lib/api/hooks/profiles";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -49,11 +49,15 @@ import { Cohort } from "@/types";
 
 export default function Cohorts() {
   const router = useRouter();
+  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
+
   // Fetch cohorts data
-  const { data: cohorts = [], isLoading: loadingCohorts } = useCohorts();
+  const { data: cohorts = [], isLoading: loadingCohorts } =
+    useCohortsByDepartmentId(effectiveProfile?.departmentId || "");
 
   // Fetch profiles data for role checking
-  const { data: profiles = [], isLoading: loadingProfiles } = useProfiles();
+  const { data: profiles = [], isLoading: loadingProfiles } =
+    useProfilesByDepartmentId(effectiveProfile?.departmentId || "");
 
   // Mutation hooks
   const createCohortMutation = useCreateCohort();
@@ -73,7 +77,6 @@ export default function Cohorts() {
     name: string;
   } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
-  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
 
   // Get table columns and filter options - must be called before loading check
   const { columns, profileOptions, simulationOptions } = useCohortColumns();
@@ -143,10 +146,10 @@ export default function Cohorts() {
 
     // For active cohorts, check if there are any TA members
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      cohort.profileIds?.includes(profile.id)
     );
     const hasTAMembers = cohortProfiles.some(
-      (profile) => profile.role === "ta",
+      (profile) => profile.role === "ta"
     );
 
     // Cannot delete active cohorts that have TA members
@@ -184,16 +187,16 @@ export default function Cohorts() {
 
     // Check if user is in the cohort
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
+      effectiveProfile?.id || ""
     );
     if (!isUserInCohort) return false;
 
     // Check if there are other instructional users in the cohort
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      cohort.profileIds?.includes(profile.id)
     );
     const instructionalProfiles = cohortProfiles.filter(
-      (profile) => profile.role === "instructional",
+      (profile) => profile.role === "instructional"
     );
 
     // Can leave if there are other instructional users (not the only one)
@@ -218,7 +221,7 @@ export default function Cohorts() {
 
     // Check if user's profile is in the cohort's profileIds
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
+      effectiveProfile?.id || ""
     );
 
     return isUserInCohort || !isCohortInUse(cohortId);

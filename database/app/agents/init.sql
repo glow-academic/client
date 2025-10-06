@@ -5,27 +5,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE reasoning_effort AS ENUM ('minimal', 'low', 'medium', 'high');
-
-CREATE TABLE personas (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
-  description TEXT        NOT NULL,
-  system_prompt     TEXT        NOT NULL,
-  temperature  REAL     NOT NULL, -- 0.0-1.0
-  default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
-  color TEXT        NOT NULL, -- hex color code
-  icon TEXT        NOT NULL, -- icon name, in Lucide Icons
-  model_id UUID REFERENCES models(id),
-  reasoning reasoning_effort DEFAULT NULL,
-  active BOOLEAN NOT NULL DEFAULT FALSE,
-  guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
-  image_input_active BOOLEAN NOT NULL DEFAULT FALSE,
-  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
-);
-
 CREATE TABLE agents (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -42,13 +21,12 @@ CREATE TABLE model_runs (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  model_id   UUID        NULL REFERENCES models(id),
+  model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   input_tokens INTEGER     NOT NULL DEFAULT 0,
   output_tokens INTEGER     NOT NULL DEFAULT 0,
   persona_id   UUID        NULL REFERENCES personas(id),
   agent_id     UUID        NULL REFERENCES agents(id),
-  profile_id   UUID        NULL REFERENCES profiles(id),
-  department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+  profile_id   UUID        NULL REFERENCES profiles(id)
 );
 
 CREATE TABLE debug_info (

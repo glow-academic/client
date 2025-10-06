@@ -29,8 +29,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useRubricColumns } from "@/hooks/use-rubric-columns";
-import { useDeleteRubric, useRubrics } from "@/lib/api/hooks/rubrics";
-import { useSimulations } from "@/lib/api/hooks/simulations";
+import {
+  useDeleteRubric,
+  useRubricsByDepartmentId,
+} from "@/lib/api/hooks/rubrics";
+import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
 import { Rubric } from "@/types";
 import { RubricsDataTable } from "./RubricsDataTable";
 
@@ -48,9 +51,12 @@ export default function Rubrics() {
   // Mutation hooks
   const deleteRubricMutation = useDeleteRubric();
 
-  const { data: rubrics = [], isLoading: isRubricsLoading } = useRubrics();
+  const { data: rubrics = [], isLoading: isRubricsLoading } =
+    useRubricsByDepartmentId(effectiveProfile?.departmentId || "");
 
-  const { data: simulations = [] } = useSimulations();
+  const { data: simulations = [] } = useSimulationsByDepartmentId(
+    effectiveProfile?.departmentId || ""
+  );
 
   // Check if a rubric is being used by any simulations
   const isRubricInUse = (rubricId: string) => {

@@ -111,6 +111,15 @@ else
   log_warning "⚠️  Agent generation script not found, using existing SQL"
 fi
 
+log_info "🔧 Generating persona SQL from markdown files..."
+if [ -f "/docker-entrypoint-initdb.d/app/personas/generate-persona-sql.sh" ]; then
+  cd /docker-entrypoint-initdb.d/app/personas
+  ./generate-persona-sql.sh
+  log_success "✅ Persona SQL generated from markdown files"
+else
+  log_warning "⚠️  Persona generation script not found, using existing SQL"
+fi
+
 # --- GENERATE MODEL SQL WITH ENCRYPTED KEYS -------------------------
 log_info "🔐 Generating model SQL with encrypted API keys..."
 if [ -f "/docker-entrypoint-initdb.d/app/models/generate-models.sh" ]; then
