@@ -38,16 +38,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParametersByDepartmentId } from "@/lib/api/hooks/parameters";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import {
   useCreateScenario,
   useDeleteScenario,
-  useScenariosByDepartmentId,
+  useScenariosByDepartmentIdBatch,
 } from "@/lib/api/hooks/scenarios";
-import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 import { Scenario } from "@/types";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
@@ -69,19 +70,20 @@ export function Scenarios() {
     new Set()
   );
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createScenarioMutation = useCreateScenario();
   const deleteScenarioMutation = useDeleteScenario();
 
-  const { data: scenarios = [] } = useScenariosByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: simulations = [] } = useSimulationsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: parameters = [] } = useParametersByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
+    selectedDepartmentIds
   );
   const { data: parameterItems = [] } = useParameterItems();
 

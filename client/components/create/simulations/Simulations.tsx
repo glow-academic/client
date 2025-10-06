@@ -24,15 +24,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { useCohortsByDepartmentId } from "@/lib/api/hooks/cohorts";
-import { useRubricsByDepartmentId } from "@/lib/api/hooks/rubrics";
-import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import {
   useCreateSimulation,
   useDeleteSimulation,
-  useSimulationsByDepartmentId,
+  useSimulationsByDepartmentIdBatch,
 } from "@/lib/api/hooks/simulations";
 import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
@@ -47,22 +48,23 @@ export function Simulations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createSimulationMutation = useCreateSimulation();
   const deleteSimulationMutation = useDeleteSimulation();
 
-  const { data: simulations = [] } = useSimulationsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: scenarios = [] } = useScenariosByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: rubrics = [] } = useRubricsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: cohorts = [] } = useCohortsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
 
   // Check if a simulation is being used by any cohorts
@@ -191,6 +193,7 @@ export function Simulations() {
         active: false,
         scenarioIds: simulation.scenarioIds,
         rubricId: simulation.rubricId,
+        departmentId: effectiveProfile?.departmentId || "",
         defaultSimulation: false, // Duplicated simulations are not default
       };
 

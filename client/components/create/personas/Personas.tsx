@@ -33,13 +33,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreatePersona,
   useDeletePersona,
-  usePersonasByDepartmentId,
+  usePersonasByDepartmentIdBatch,
 } from "@/lib/api/hooks/personas";
-import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { Persona } from "@/types";
 import { PersonasDataTable } from "./PersonasDataTable";
 
@@ -74,16 +75,17 @@ export default function Personas() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createPersonaMutation = useCreatePersona();
   const deletePersonaMutation = useDeletePersona();
 
-  const { data: personas = [] } = usePersonasByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: scenarios = [] } = useScenariosByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
   );
 
   // Get table columns and filter options

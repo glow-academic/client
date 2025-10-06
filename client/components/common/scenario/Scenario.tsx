@@ -45,17 +45,18 @@ import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDocuments } from "@/lib/api/hooks/documents";
+import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { usePersonas } from "@/lib/api/hooks/personas";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
 import {
   useCreateScenario,
   useScenario,
   useUpdateScenario,
 } from "@/lib/api/hooks/scenarios";
-import { useSimulations } from "@/lib/api/hooks/simulations";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { randomizeScenario } from "@/utils/api/scenarios/randomize";
@@ -82,6 +83,7 @@ export default function Scenario({
 }: ScenarioProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!scenarioId;
 
   // Mutation hooks
@@ -112,11 +114,19 @@ export default function Scenario({
     useState<Partial<ScenarioType>>(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
 
-  const { data: documents = [] } = useDocuments();
-  const { data: personas = [] } = usePersonas();
-  const { data: parameters = [] } = useParameters();
+  const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
+  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { data: parameterItems = [] } = useParameterItems();
-  const { data: simulations = [] } = useSimulations();
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { data: scenario, isLoading } = useScenario(scenarioId!);
 
   // Load scenario data if editing
@@ -161,7 +171,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -170,7 +180,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return false;
 
     const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active,
+      (sim: Simulation) => sim.active
     );
 
     const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
@@ -240,7 +250,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | boolean | null,
+    value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -423,7 +433,7 @@ export default function Scenario({
         context: { component: "Scenario", function: "handleGenerateScenario" },
       });
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -442,6 +452,7 @@ export default function Scenario({
         parameterItemIds: formData.parameterItemIds,
         defaultScenario: formData.defaultScenario || false,
         practiceScenario: formData.practiceScenario || false,
+        departmentId: effectiveProfile?.departmentId || "",
       };
 
       if (isEditMode) {
@@ -469,7 +480,7 @@ export default function Scenario({
         },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -504,10 +515,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id),
+    formData.documentIds?.includes(doc.id)
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId,
+    (persona) => persona.id === formData.personaId
   );
 
   return (
@@ -763,7 +774,7 @@ export default function Scenario({
               onMultiSelect={(selectedDocs) =>
                 handleInputChange(
                   "documentIds",
-                  selectedDocs.map((doc) => doc.id),
+                  selectedDocs.map((doc) => doc.id)
                 )
               }
               disabled={isReadonly || noDocuments}

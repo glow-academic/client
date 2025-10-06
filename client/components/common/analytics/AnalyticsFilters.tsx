@@ -16,8 +16,9 @@ import { RolePicker } from "@/components/common/profile/RolePicker";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import type { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { useIsFetching } from "@tanstack/react-query";
@@ -47,7 +48,10 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalytics();
 
-  const { data: cohorts = [] } = useCohorts();
+  const { selectedDepartmentIds } = useDepartments();
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
     useRefreshAnalytics();
 

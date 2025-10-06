@@ -16,11 +16,12 @@ import { Document } from "@/types";
 // Removed downloadDocument import - now calling API directly
 import CodeViewer from "@/components/common/viewers/CodeViewer";
 import HtmlViewer from "@/components/common/viewers/HtmlViewer";
+import { useDepartments } from "@/contexts/departments-context";
+import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { isCodeByName } from "@/utils/mime-map";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { useDocuments } from "@/lib/api/hooks/documents";
 
 export interface DocumentViewerProps {
   document?: Document;
@@ -55,7 +56,12 @@ export default function DocumentViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: docs = [], isLoading, error: queryError } = useDocuments();
+  const { selectedDepartmentIds } = useDepartments();
+  const {
+    data: docs = [],
+    isLoading,
+    error: queryError,
+  } = useDocumentsByDepartmentIdBatch(selectedDepartmentIds);
 
   // Memoize documentsToUse to prevent unnecessary re-renders
   const documentsToUse = useMemo(() => {
@@ -98,7 +104,7 @@ export default function DocumentViewer({
             {
               method: "GET",
               credentials: "include",
-            },
+            }
           );
         }
 

@@ -39,8 +39,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParameters } from "@/lib/api/hooks/parameters";
 import { useRubrics } from "@/lib/api/hooks/rubrics";
@@ -83,6 +84,7 @@ interface FormErrors {
 
 export default function Simulation({ simulationId }: SimulationProps) {
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createSimulationMutation = useCreateSimulation();
@@ -90,7 +92,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
+    null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -110,7 +112,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       defaultSimulation: false,
       practiceSimulation: false,
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -118,7 +120,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
-    simulationId!,
+    simulationId!
   );
   const { data: rubrics = [], isLoading: isLoadingRubrics } = useRubrics();
   const { data: scenarios = [], isLoading: isLoadingScenarios } =
@@ -127,7 +129,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
     useParameters();
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
     useParameterItems();
-  const { data: cohorts = [] } = useCohorts();
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
 
   const isLoading =
     isLoadingSimulation ||
@@ -149,7 +153,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     if (!targetId) return false;
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(targetId),
+        cohort.simulationIds && cohort.simulationIds.includes(targetId)
     );
   }, [cohorts, simulationId, editingSimulationId]);
 
@@ -183,7 +187,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null,
+    value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -293,6 +297,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           active: formData?.active || true,
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
+          departmentId: effectiveProfile?.departmentId || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -304,7 +309,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -346,7 +351,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // Maintain separate state for regular and practice scenarios
   const [regularScenarioIds, setRegularScenarioIds] = React.useState<string[]>(
-    [],
+    []
   );
   const [practiceScenarioIds, setPracticeScenarioIds] = React.useState<
     string[]
@@ -447,11 +452,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
     scenario.parameterItemIds.forEach((parameterItemId) => {
       const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId,
+        (item) => item.id === parameterItemId
       );
       if (parameterItem) {
         const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId,
+          (param) => param.id === parameterItem.parameterId
         );
         if (parameter && !parameter.numerical) {
           // Only show non-numerical parameters
@@ -520,7 +525,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 onChange={(e) =>
                   handleInputChange(
                     "timeLimit",
-                    parseInt(e.target.value) || null,
+                    parseInt(e.target.value) || null
                   )
                 }
                 className={errors.timeLimit ? "border-destructive" : ""}
@@ -548,7 +553,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   <span className="truncate text-left">
                     {(() => {
                       const selected = rubrics.find(
-                        (r: Rubric) => r.id === formData.rubricId,
+                        (r: Rubric) => r.id === formData.rubricId
                       );
                       return selected ? selected.name : "No rubric selected";
                     })()}
@@ -566,7 +571,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           description: r.description,
                           points: r.points,
                           active: r.active,
-                        }) as RubricPickerItem,
+                        }) as RubricPickerItem
                     )}
                   placeholder="Select a rubric..."
                   onSelect={(selected) =>
@@ -574,7 +579,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   }
                   selectedRubrics={(() => {
                     const selected = rubrics.find(
-                      (r: Rubric) => r.id === formData.rubricId,
+                      (r: Rubric) => r.id === formData.rubricId
                     );
                     return selected
                       ? [
@@ -695,7 +700,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {selectedScenarios.map((scenario) => {
                 const originalScenario = scenarios.find(
-                  (s: Scenario) => s.id === scenario.id,
+                  (s: Scenario) => s.id === scenario.id
                 );
                 if (!originalScenario) return null;
 
@@ -737,10 +742,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
                                   onClick={() => {
                                     const newSelectedScenarios =
                                       selectedScenarios.filter(
-                                        (s) => s.id !== scenario.id,
+                                        (s) => s.id !== scenario.id
                                       );
                                     handleScenarioSelection(
-                                      newSelectedScenarios,
+                                      newSelectedScenarios
                                     );
                                   }}
                                   className="h-6 w-6 p-0"

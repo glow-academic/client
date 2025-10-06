@@ -22,11 +22,11 @@ import { toast } from "sonner";
 
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
 import {
-  useCohortsByDepartmentId,
+  useCohortsByDepartmentIdBatch,
   useCreateCohort,
   useDeleteCohort,
 } from "@/lib/api/hooks/cohorts";
-import { useProfilesByDepartmentId } from "@/lib/api/hooks/profiles";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useUpdateCohort } from "@/lib/api/hooks/cohorts";
 import { Cohort } from "@/types";
@@ -50,14 +51,15 @@ import { Cohort } from "@/types";
 export default function Cohorts() {
   const router = useRouter();
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Fetch cohorts data
   const { data: cohorts = [], isLoading: loadingCohorts } =
-    useCohortsByDepartmentId(effectiveProfile?.departmentId || "");
+    useCohortsByDepartmentIdBatch(selectedDepartmentIds);
 
   // Fetch profiles data for role checking
   const { data: profiles = [], isLoading: loadingProfiles } =
-    useProfilesByDepartmentId(effectiveProfile?.departmentId || "");
+    useProfilesByDepartmentIdBatch(selectedDepartmentIds);
 
   // Mutation hooks
   const createCohortMutation = useCreateCohort();

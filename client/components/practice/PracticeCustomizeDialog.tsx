@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParametersByDepartmentId } from "@/lib/api/hooks/parameters";
-import { usePersonasByDepartmentId } from "@/lib/api/hooks/personas";
-import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
-import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 import type {
   Parameter,
   ParameterItem,
@@ -64,19 +65,20 @@ export function PracticeCustomizeDialog({
     string[]
   >([]);
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // API calls - only made when dialog is open
-  const { data: simulations = [] } = useSimulationsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: scenarios = [] } = useScenariosByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: personas = [] } = usePersonasByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: parameters = [] } = useParametersByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
+    selectedDepartmentIds
   );
   const { data: parameterItems = [] } = useParameterItems();
 

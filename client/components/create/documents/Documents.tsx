@@ -48,16 +48,16 @@ import { documents as documentsTable } from "@/utils/drizzle/schema";
 import { UploadCloud } from "lucide-react";
 
 import TagSelector from "@/components/common/tags/TagSelector";
-import { useProfile } from "@/contexts/profile-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
 import {
   useDeleteDocument,
   useDeleteDocuments,
-  useDocumentsByDepartmentId,
+  useDocumentsByDepartmentIdBatch,
   useUpdateDocument,
   useUpdateDocuments,
 } from "@/lib/api/hooks/documents";
-import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { log } from "@/utils/logger";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
@@ -88,12 +88,12 @@ export default function Documents() {
     "__keep__"
   );
   const [bulkTags, setBulkTags] = useState<string[]>([]);
-  const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   const { data: documents = [], isLoading: isLoadingDocuments } =
-    useDocumentsByDepartmentId(effectiveProfile?.departmentId || "");
+    useDocumentsByDepartmentIdBatch(selectedDepartmentIds);
   const { data: scenarios = [], isLoading: isLoadingScenarios } =
-    useScenariosByDepartmentId(effectiveProfile?.departmentId || "");
+    useScenariosByDepartmentIdBatch(selectedDepartmentIds);
 
   // Check if document can be deleted (not used by active scenarios)
   const canDeleteDocument = useCallback(

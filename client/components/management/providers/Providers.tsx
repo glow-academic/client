@@ -37,15 +37,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
+import { useDepartments } from "@/contexts/departments-context";
 
 import { useProviderColumns } from "@/hooks/use-provider-columns";
 import { useAgents } from "@/lib/api/hooks/agents";
 import { useDeleteModel, useModels } from "@/lib/api/hooks/models";
-import { usePersonasByDepartmentId } from "@/lib/api/hooks/personas";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
 import {
   useDeleteProvider,
-  useProvidersByDepartmentId,
+  useProvidersByDepartmentIdBatch,
 } from "@/lib/api/hooks/providers";
 import { Model, Provider } from "@/types";
 import { ProvidersDataTable } from "./ProvidersDataTable";
@@ -70,18 +70,18 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
-  const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
   const deleteProviderMutation = useDeleteProvider();
 
   const { data: models = [] } = useModels();
-  const { data: providers = [] } = useProvidersByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: providers = [] } = useProvidersByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: personas = [] } = usePersonasByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
+    selectedDepartmentIds
   );
   const { data: agents = [] } = useAgents();
 

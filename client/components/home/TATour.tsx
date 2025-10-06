@@ -13,10 +13,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import { useUpdateProfile } from "@/lib/api/hooks/profiles";
 import {
   profileKeys,
@@ -92,6 +93,7 @@ export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
   const { effectiveProfile, activeProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
@@ -123,7 +125,9 @@ export default function TATour() {
     tourStateRef.current = tourState;
   }, [tourState]);
 
-  const { data: cohorts = [] } = useCohorts();
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
 
   // Get TA's assigned cohorts
   const taCohorts = useMemo(() => {
@@ -264,7 +268,13 @@ export default function TATour() {
         });
       }
     },
-    [effectiveProfile, completeStep, tourState.steps, updateProfileMutation, queryClient]
+    [
+      effectiveProfile,
+      completeStep,
+      tourState.steps,
+      updateProfileMutation,
+      queryClient,
+    ]
   );
 
   // Navigation handlers with proper delays

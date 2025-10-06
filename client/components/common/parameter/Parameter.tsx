@@ -30,8 +30,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCohortsByDepartmentId } from "@/lib/api/hooks/cohorts";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import {
   useCreateParameterItem,
   useCreateParameterItems,
@@ -44,8 +45,8 @@ import {
   useParameter,
   useUpdateParameter,
 } from "@/lib/api/hooks/parameters";
-import { useScenariosByDepartmentId } from "@/lib/api/hooks/scenarios";
-import { useSimulationsByDepartmentId } from "@/lib/api/hooks/simulations";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 import { Plus, Trash2 } from "lucide-react";
 
 interface FormData {
@@ -78,6 +79,7 @@ export default function Parameter({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
   const { effectiveProfile } = useProfile();
+  const { selectedDepartmentIds } = useDepartments();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -102,14 +104,14 @@ export default function Parameter({
   const { data: parameterItems, isLoading: isLoadingParameterItems } =
     useParameterItemsByParameterId(parameterId!);
 
-  const { data: cohorts = [] } = useCohortsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: sims = [] } = useSimulationsByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: sims = [] } = useSimulationsByDepartmentIdBatch(
+    selectedDepartmentIds
   );
-  const { data: allScenarios = [] } = useScenariosByDepartmentId(
-    effectiveProfile?.departmentId || ""
+  const { data: allScenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
   );
 
   // Mutation hooks
