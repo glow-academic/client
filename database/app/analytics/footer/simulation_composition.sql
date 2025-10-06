@@ -33,8 +33,8 @@ WITH params AS (
     p_start                                    AS start_at,
     p_end                                      AS end_at,
     'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
-    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_practice,
-    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_archived
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
 ),
 want AS (
   SELECT
@@ -141,35 +141,47 @@ sim_scenarios_seen AS (
   WHERE s.active = TRUE AND sc.active = TRUE
   GROUP BY s.id
 ),
--- categorical parameter composition per simulation (count of scenarios having the item)
+-- categorical parameter composition per simulation (count of chats having the item)
 sim_param_items_seen AS (
   SELECT
     s.id AS simulation_id,
     p.id AS parameter_id,
     pi.id AS parameter_item_id,
-    COUNT(DISTINCT sc.id)::int AS cnt
+    COUNT(a.chat_id)::int AS cnt
   FROM simulations s
   JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
-  JOIN scen_seen ss      ON ss.scenario_id = sc.id
+  JOIN scen_seen ss ON ss.scenario_id = sc.id
   JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
-  JOIN parameters p       ON p.id = pi.parameter_id AND p.numerical = FALSE
+  JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = FALSE
+  JOIN analytics a ON a.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE
   GROUP BY s.id, p.id, pi.id
 ),
--- numeric parameter composition per simulation (avg across scenarios seen)
+-- numeric parameter composition per simulation (most common value across chats)
 sim_param_nums_seen AS (
   SELECT
     s.id AS simulation_id,
     p.id AS parameter_id,
-    AVG(pi.value::numeric) AS avg_level,
-    COUNT(DISTINCT sc.id)::int AS cnt
+    pi.value::numeric AS most_common_level,
+    COUNT(a.chat_id)::int AS chat_count
   FROM simulations s
   JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
-  JOIN scen_seen ss      ON ss.scenario_id = sc.id
+  JOIN scen_seen ss ON ss.scenario_id = sc.id
   JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
-  JOIN parameters p       ON p.id = pi.parameter_id AND p.numerical = TRUE
+  JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = TRUE
+  JOIN analytics a ON a.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE
-  GROUP BY s.id, p.id
+  GROUP BY s.id, p.id, pi.value
+),
+-- get the most frequent parameter value per simulation/parameter
+sim_param_nums_most_common AS (
+  SELECT
+    simulation_id,
+    parameter_id,
+    most_common_level,
+    chat_count,
+    ROW_NUMBER() OVER (PARTITION BY simulation_id, parameter_id ORDER BY chat_count DESC, most_common_level DESC) as rn
+  FROM sim_param_nums_seen
 ),
 -- ids list for quick client filtering
 valid_sim_ids AS (
@@ -180,17 +192,17 @@ valid_sim_ids AS (
 -- per-sim rolled facts for list & sorting
 simulation_facts AS (
   SELECT jsonb_agg(
-           jsonb_build_object(
-             'simulationId',  s.id::text,
-             'title',         s.title,
-             'avgScore',      COALESCE(ROUND(ss.avg_score), 0)::int,
-             'passRate',      COALESCE(ROUND(ss.pass_rate), 0)::int,
-             'completionRate',COALESCE(ROUND(ss.completion_rate), 0)::int,
-             'totalAttempts', COALESCE(ss.attempts, 0),
-             'scenarioCount', COALESCE(sc_seen.scenario_count, 0)
-           )
-           ORDER BY s.title
-         ) AS payload
+            jsonb_build_object(
+              'simulationId',  s.id::text,
+              'title',         s.title,
+              'avgScore',      COALESCE(ROUND(ss.avg_score), 0)::int,
+              'passRate',      COALESCE(ROUND(ss.pass_rate), 0)::int,
+              'completionRate',COALESCE(ROUND(ss.completion_rate), 0)::int,
+              'totalAttempts', COALESCE(ss.attempts, 0),
+              'scenarioCount', COALESCE(sc_seen.scenario_count, 0)
+            )
+            ORDER BY s.title
+          ) AS payload
   FROM simulations s
   LEFT JOIN sim_summary       ss      ON ss.simulation_id = s.id
   LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
@@ -215,15 +227,16 @@ param_facts_num AS (
            jsonb_build_object(
              'simulationId',  simulation_id::text,
              'parameterId',   parameter_id::text,
-             'avgLevel',      avg_level,
+             'avgLevel',      most_common_level,
              'levelLabel',    CASE
-                                WHEN avg_level = floor(avg_level) THEN (avg_level::int)::text
-                                ELSE to_char(avg_level, 'FM999D0')
+                                WHEN most_common_level = floor(most_common_level) THEN (most_common_level::int)::text
+                                ELSE to_char(most_common_level, 'FM999D0')
                               END,
-             'scenarioCount', cnt
+             'scenarioCount', chat_count
            )
          ) AS payload
-  FROM sim_param_nums_seen
+  FROM sim_param_nums_most_common
+  WHERE rn = 1
 )
 SELECT jsonb_build_object(
   'validSimulationIds',                 COALESCE((SELECT payload FROM valid_sim_ids), '[]'::jsonb),
