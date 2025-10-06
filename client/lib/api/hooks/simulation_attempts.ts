@@ -1,17 +1,17 @@
 // AUTO-GENERATED minimal hooks for simulation_attempts
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  SimulationAttempt,
-  SimulationAttemptCreate,
-  SimulationAttemptUpdate,
-} from "@/lib/repos/simulationAttemptRepo";
 import {
   simulationAttemptKeys,
   simulationAttemptKeysByProfileId,
   simulationAttemptKeysBySimulationId,
 } from "@/lib/api/keys";
+import type {
+  SimulationAttempt,
+  SimulationAttemptCreate,
+  SimulationAttemptUpdate,
+} from "@/lib/repos/simulationAttemptRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationAttempts(filters?: unknown) {
   return useQuery({
@@ -136,5 +136,20 @@ export function useSimulationAttemptsBySimulationIdBatch(ids: string[]) {
         { method: "POST", body: JSON.stringify({ ids }) },
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useUpdateSimulationAttempts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      updates: Array<{ id: string } & SimulationAttemptUpdate>;
+    }) =>
+      api<SimulationAttempt[]>(`/api/v1/simulation_attempts/bulk-update`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all }),
   });
 }
