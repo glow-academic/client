@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_chat_feedbacks" },
         context: { foreignKey: "standardId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

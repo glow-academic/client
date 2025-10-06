@@ -95,7 +95,7 @@ function scanComponentFiles(dir, relativePath = "", sourceName = "") {
         const subComponents = scanComponentFiles(
           fullPath,
           itemRelativePath,
-          sourceName
+          sourceName,
         );
         components.push(...subComponents);
       } else if (stat.isFile() && item.endsWith(".tsx")) {
@@ -188,7 +188,7 @@ function analyzeComponent(componentPath) {
 
     // Extract named exports (excluding default)
     const namedExports = Array.from(exports.keys()).filter(
-      (n) => n !== "default"
+      (n) => n !== "default",
     );
 
     // Check for various hooks and patterns using AST
@@ -197,7 +197,7 @@ function analyzeComponent(componentPath) {
 
     const uses = {
       useRouter: identifierTexts.some((text) =>
-        ["useRouter", "usePathname", "useSearchParams"].includes(text)
+        ["useRouter", "usePathname", "useSearchParams"].includes(text),
       ),
       useState: identifierTexts.includes("useState"),
       useEffect: identifierTexts.includes("useEffect"),
@@ -242,7 +242,7 @@ function analyzeComponent(componentPath) {
   } catch (error) {
     console.error(
       `❌ Error analyzing component ${componentPath}:`,
-      error.message
+      error.message,
     );
     return {
       content: "",
@@ -280,12 +280,12 @@ function generateTestTemplate(component, analysis) {
   if (sourceName === "components") {
     importPath = `@/components/${componentPath.replace(/\\/g, "/")}`.replace(
       ".tsx",
-      ""
+      "",
     );
   } else {
     importPath = `@/${sourceName}/${componentPath.replace(/\\/g, "/")}`.replace(
       ".tsx",
-      ""
+      "",
     );
   }
 
@@ -342,7 +342,7 @@ import userEvent from '@testing-library/user-event';`;
   }
 
   const needsTAPerformanceData = mockPropLines.some((l) =>
-    l.includes("TAPerformanceData")
+    l.includes("TAPerformanceData"),
   );
   if (needsTAPerformanceData) {
     template += `\nimport type { TAPerformanceData } from '@/hooks/use-report-columns';`;
@@ -637,7 +637,7 @@ function generateTestFiles(components) {
 
     if (isTestImplemented(testFilePath)) {
       console.log(
-        `⏭️  Skipping ${component.testFileName} (already implemented)`
+        `⏭️  Skipping ${component.testFileName} (already implemented)`,
       );
       skipped++;
     } else {
@@ -652,7 +652,7 @@ function generateTestFiles(components) {
 
       if (existed) {
         console.log(
-          `✨ Updated ${component.testFileName} (was empty/incomplete)`
+          `✨ Updated ${component.testFileName} (was empty/incomplete)`,
         );
         updated++;
       } else {
@@ -671,8 +671,8 @@ function generateTestFiles(components) {
 function cleanupOrphanedTests(components) {
   const existingComponentPaths = new Set(
     components.map((c) =>
-      `${c.sourceName}/${c.componentPath}`.replace(/\\/g, "/")
-    )
+      `${c.sourceName}/${c.componentPath}`.replace(/\\/g, "/"),
+    ),
   );
 
   let cleanedUp = 0;
@@ -692,12 +692,12 @@ function cleanupOrphanedTests(components) {
         const componentName = item.replace(".test.tsx", "");
         const expectedComponentPath = path.join(
           relativePath,
-          `${componentName}.tsx`
+          `${componentName}.tsx`,
         );
 
         if (!existingComponentPaths.has(expectedComponentPath)) {
           console.log(
-            `🗑️  Removing orphaned test: ${path.join(relativePath, item)}`
+            `🗑️  Removing orphaned test: ${path.join(relativePath, item)}`,
           );
           fs.unlinkSync(fullPath);
           cleanedUp++;
@@ -897,7 +897,7 @@ function main() {
 
   console.log("\n✅ Component test generation complete!");
   console.log(
-    '💡 Run "npm run test:components" to execute all component tests'
+    '💡 Run "npm run test:components" to execute all component tests',
   );
 }
 
@@ -951,7 +951,7 @@ function getPropsGenericInfo(sourceText, ifaceName) {
   } catch (error) {
     console.error(
       `❌ Error detecting generics for ${ifaceName}:`,
-      error.message
+      error.message,
     );
     return { isGeneric: false, paramCount: 0 };
   }
@@ -1074,7 +1074,7 @@ function buildMockProps(sourceText, ifaceName) {
             name.includes("data-") ||
             (name.startsWith("on") &&
               name.length > 2 &&
-              name[2] === name[2].toUpperCase())
+              name[2] === name[2].toUpperCase()),
         )
       ) {
         return null;
@@ -1205,7 +1205,7 @@ function buildMockProps(sourceText, ifaceName) {
   } catch (error) {
     console.error(
       `❌ Error building mock props for ${ifaceName}:`,
-      error.message
+      error.message,
     );
     return [];
   }

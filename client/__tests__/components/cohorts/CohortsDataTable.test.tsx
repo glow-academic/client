@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
@@ -103,7 +103,7 @@ describe("CohortsDataTable", () => {
           profileOptions={[]}
           simulationOptions={[]}
           renderCohortCard={vi.fn()}
-        />
+        />,
       );
       expect(document.body).toBeInTheDocument();
     });

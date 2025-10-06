@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -99,7 +99,7 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Check that profile content is displayed
@@ -159,7 +159,7 @@ describe("Profile", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       // Should handle empty names gracefully
@@ -230,4 +230,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";

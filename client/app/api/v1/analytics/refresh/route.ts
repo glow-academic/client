@@ -27,7 +27,7 @@ export async function POST() {
         message: errorMessage,
         status: "error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

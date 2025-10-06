@@ -29,9 +29,9 @@ export default function Logs() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const queryClient = useQueryClient();
 
-  const {data: logsData = []} = useAppLogs(); // TODO: need some limiting here
+  const { data: logsData = [] } = useAppLogs(); // TODO: need some limiting here
 
-  const {data: profilesData = []} = useProfiles();
+  const { data: profilesData = [] } = useProfiles();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -84,7 +84,7 @@ export default function Logs() {
       const userId = actor["userId"] as string | undefined;
       return explicit ?? profileId ?? userId ?? null;
     },
-    [profileIdToName]
+    [profileIdToName],
   );
 
   const { columns, levelOptions } = useLogColumns({
@@ -112,7 +112,7 @@ export default function Logs() {
 
     const getContextString = (
       ctx: unknown,
-      key: string
+      key: string,
     ): string | undefined => {
       if (!ctx || typeof ctx !== "object") return undefined;
       const value = (ctx as Record<string, unknown>)[key];
@@ -126,7 +126,7 @@ export default function Logs() {
       const component = getContextString(l.context, "component");
       const fn = getContextString(l.context, "function");
       const actor = resolveActorName(
-        l.actor as Record<string, unknown> | null | undefined
+        l.actor as Record<string, unknown> | null | undefined,
       );
       if (provider) providers.add(provider);
       if (model) models.add(model);

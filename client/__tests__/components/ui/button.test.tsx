@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -40,9 +40,7 @@ describe("Button", () => {
     });
 
     it("should render with destructive variant", () => {
-      render(
-        <Button variant="destructive">Destructive Button</Button>,
-      );
+      render(<Button variant="destructive">Destructive Button</Button>);
 
       const button = screen.getByRole("button", { name: "Destructive Button" });
       expect(button).toBeInTheDocument();

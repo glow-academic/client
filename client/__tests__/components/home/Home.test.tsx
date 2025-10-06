@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -105,7 +105,7 @@ describe("Home", () => {
         "@/utils/queries/cohorts/get-all-cohorts"
       );
       vi.mocked(getAllCohorts).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
       );
 
       render(<Home />);
@@ -204,7 +204,7 @@ describe("Home", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       await waitFor(() => {
@@ -227,8 +227,8 @@ describe("Home", () => {
         expect(screen.getByText("No Cohorts Available")).toBeInTheDocument();
         expect(
           screen.getByText(
-            "There are no cohorts assigned to you. Please contact an administrator."
-          )
+            "There are no cohorts assigned to you. Please contact an administrator.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -241,7 +241,7 @@ describe("Home", () => {
         "@/utils/queries/cohorts/get-all-cohorts"
       );
       vi.mocked(getAllCohorts).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
 
       render(<Home />);
@@ -263,4 +263,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock React's use hook to avoid suspension
@@ -86,7 +86,7 @@ describe("CohortEditPage", () => {
 
       const metadata = await generateMetadata(
         { params: mockParams },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("Test Cohort Edit");
@@ -99,7 +99,7 @@ describe("CohortEditPage", () => {
 
       const metadata = await generateMetadata(
         { params: mockParams },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("Cohort Edit");

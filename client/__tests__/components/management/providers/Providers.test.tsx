@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

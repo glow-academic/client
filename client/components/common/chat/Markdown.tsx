@@ -91,7 +91,7 @@ export default function Markdown({ children }: MarkdownProps) {
   // turn csv://token into /api/download/csv/token/token
   processedText = processedText.replace(
     /\]\(csv:\/\/([\w-]+)\)/gi,
-    "](/api/download/csv/token/$1)"
+    "](/api/download/csv/token/$1)",
   );
 
   return (

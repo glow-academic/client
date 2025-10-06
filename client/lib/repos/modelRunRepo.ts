@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ModelRunUpdate = Partial<ModelRunCreate>;
 export const ModelRunCreateSchema = createInsertSchema(modelRuns);
 export const ModelRunUpdateSchema = ModelRunCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const modelRunRepo = {
   async create(payload: ModelRunCreate) {
@@ -26,26 +27,43 @@ export const modelRunRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(modelRuns).orderBy(modelRuns.createdAt ?? modelRuns.id);
+    return db
+      .select()
+      .from(modelRuns)
+      .orderBy(modelRuns.createdAt ?? modelRuns.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(modelRuns).where(eq(modelRuns.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("ModelRun with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(modelRuns)
+      .where(eq(modelRuns.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("ModelRun with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: ModelRunUpdate) {
     const db = await getDb();
-    const rows = await db.update(modelRuns).set(patch).where(eq(modelRuns.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("ModelRun with id " + id + " not found");
+    const rows = await db
+      .update(modelRuns)
+      .set(patch)
+      .where(eq(modelRuns.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("ModelRun with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(modelRuns).where(eq(modelRuns.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("ModelRun with id " + id + " not found");
+    const rows = await db
+      .delete(modelRuns)
+      .where(eq(modelRuns.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("ModelRun with id " + id + " not found");
   },
 
   async listByModel(modelId: string) {
@@ -56,18 +74,27 @@ export const modelRunRepo = {
   async listByModels(modelIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(modelIds) || modelIds.length === 0) return [];
-    return db.select().from(modelRuns).where(inArray(modelRuns.modelId, modelIds));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(inArray(modelRuns.modelId, modelIds));
   },
 
   async listByPersona(personaId: string) {
     const db = await getDb();
-    return db.select().from(modelRuns).where(eq(modelRuns.personaId, personaId));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(eq(modelRuns.personaId, personaId));
   },
 
   async listByPersonas(personaIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(personaIds) || personaIds.length === 0) return [];
-    return db.select().from(modelRuns).where(inArray(modelRuns.personaId, personaIds));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(inArray(modelRuns.personaId, personaIds));
   },
 
   async listByAgent(agentId: string) {
@@ -78,17 +105,26 @@ export const modelRunRepo = {
   async listByAgents(agentIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(agentIds) || agentIds.length === 0) return [];
-    return db.select().from(modelRuns).where(inArray(modelRuns.agentId, agentIds));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(inArray(modelRuns.agentId, agentIds));
   },
 
   async listByProfile(profileId: string) {
     const db = await getDb();
-    return db.select().from(modelRuns).where(eq(modelRuns.profileId, profileId));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(eq(modelRuns.profileId, profileId));
   },
 
   async listByProfiles(profileIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(profileIds) || profileIds.length === 0) return [];
-    return db.select().from(modelRuns).where(inArray(modelRuns.profileId, profileIds));
+    return db
+      .select()
+      .from(modelRuns)
+      .where(inArray(modelRuns.profileId, profileIds));
   },
 };

@@ -255,11 +255,11 @@ export function SimulationPicker({
       if (scenario?.parameterItemIds) {
         scenario.parameterItemIds.forEach((parameterItemId: string) => {
           const parameterItem = parameterItems.find(
-            (item) => item.id === parameterItemId
+            (item) => item.id === parameterItemId,
           );
           if (parameterItem) {
             const parameter = parameters.find(
-              (param) => param.id === parameterItem.parameterId
+              (param) => param.id === parameterItem.parameterId,
             );
             if (parameter && !parameter.numerical) {
               // Use parameter name as key to avoid duplicates
@@ -299,7 +299,7 @@ export function SimulationPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedSimulations = selectedSimulations.filter(
-        (s) => s.id !== simulation.id
+        (s) => s.id !== simulation.id,
       );
     } else {
       if (singleSelect) {
@@ -327,11 +327,11 @@ export function SimulationPicker({
   // Remove individual item
   const handleRemoveItem = (
     simulationToRemove: Simulation,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     const newSelectedSimulations = selectedSimulations.filter(
-      (s) => s.id !== simulationToRemove.id
+      (s) => s.id !== simulationToRemove.id,
     );
     onSelect?.(newSelectedSimulations);
   };
@@ -499,7 +499,7 @@ export function SimulationPicker({
                             filterPersonaIds.length > 0 ||
                               filterParameterItemIds.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground"
+                              : "text-muted-foreground",
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -539,7 +539,7 @@ export function SimulationPicker({
                                   )}
                                   {personaOptions.map((p) => {
                                     const checked = filterPersonaIds.includes(
-                                      p.id
+                                      p.id,
                                     );
                                     return (
                                       <label
@@ -556,7 +556,7 @@ export function SimulationPicker({
                                                 return [...prev, p.id];
                                               }
                                               return prev.filter(
-                                                (x) => x !== p.id
+                                                (x) => x !== p.id,
                                               );
                                             });
                                           }}
@@ -604,9 +604,9 @@ export function SimulationPicker({
                                                   return [...prev, opt.id];
                                                 }
                                                 return prev.filter(
-                                                  (x) => x !== opt.id
+                                                  (x) => x !== opt.id,
                                                 );
-                                              }
+                                              },
                                             );
                                           }}
                                         />
@@ -675,7 +675,7 @@ export function SimulationPicker({
                       key={simulation.id}
                       simulation={simulation}
                       isSelected={selectedSimulations.some(
-                        (s) => s.id === simulation.id
+                        (s) => s.id === simulation.id,
                       )}
                       onPeek={(simulation) => setPeekedSimulation(simulation)}
                       onSelect={() => handleSelect(simulation)}
@@ -738,7 +738,7 @@ function SimulationItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0"
+            isSelected ? "opacity-100" : "opacity-0",
           )}
         />
       </div>

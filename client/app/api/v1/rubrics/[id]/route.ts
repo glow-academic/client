@@ -3,7 +3,10 @@ import { rubricRepo, RubricUpdateSchema } from "@/lib/repos/rubricRepo";
 import type { RubricUpdate } from "@/lib/repos/rubricRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => rubricRepo.find(id),
@@ -12,11 +15,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch rubric",
         subject: { entityType: "rubrics", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = RubricUpdateSchema.safeParse(json);
@@ -32,19 +38,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "rubrics", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await rubricRepo.remove(id); return {}; },
+    async () => {
+      await rubricRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.rubrics.delete.failed", {
         message: "Failed to delete rubric",
         subject: { entityType: "rubrics", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

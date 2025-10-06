@@ -34,5 +34,5 @@ async function _getEarliestAttemptDate() {
 // Export the wrapped, mockable version
 export const getEarliestAttemptDate = createMockableAction(
   "getEarliestAttemptDate",
-  _getEarliestAttemptDate
+  _getEarliestAttemptDate,
 );

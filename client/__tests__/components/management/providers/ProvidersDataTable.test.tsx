@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type {} from "@tanstack/react-table";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -162,7 +162,7 @@ describe("ProvidersDataTable", () => {
           customModelOptions={[]}
           statusOptions={[]}
           renderProviderGroup={vi.fn()}
-        />
+        />,
       );
 
       // Component should handle invalid props gracefully

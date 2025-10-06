@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationChatGradeRepo, SimulationChatGradeCreateSchema } from "@/lib/repos/simulationChatGradeRepo";
+import {
+  simulationChatGradeRepo,
+  SimulationChatGradeCreateSchema,
+} from "@/lib/repos/simulationChatGradeRepo";
 import type { SimulationChatGradeCreate } from "@/lib/repos/simulationChatGradeRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_chat_grades",
         subject: { entityType: "simulation_chat_grades" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_chat_grades" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

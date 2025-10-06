@@ -83,7 +83,7 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
     ) {
       const ok = navigator.sendBeacon(
         logUrl,
-        new Blob([body], { type: "application/json" })
+        new Blob([body], { type: "application/json" }),
       );
       if (ok) return;
     }
@@ -127,7 +127,7 @@ export const log = {
       // eslint-disable-next-line no-console
       (console as any)[entry.level === "error" ? "error" : entry.level](
         label,
-        entry
+        entry,
       );
     }
     const withCorr = {
@@ -159,7 +159,7 @@ export const log = {
 
 // Optional helper for timings
 export async function withDuration<T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<[T, number]> {
   const start =
     typeof performance !== "undefined" ? performance.now() : Date.now();

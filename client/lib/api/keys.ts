@@ -523,9 +523,3 @@ export const standardKeysByStandardGroupId = {
   many: (ids: Array<string | number>) =>
     ["standards:by:standardGroupId:batch", ids.map(String).sort()] as const,
 };
-
-export const migrationKeys = {
-  all: ["migrations"] as const,
-  list: (filters?: unknown) => [...migrationKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...migrationKeys.all, String(id)] as const,
-};

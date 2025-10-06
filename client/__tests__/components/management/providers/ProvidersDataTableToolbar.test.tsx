@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { Table } from "@tanstack/react-table";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

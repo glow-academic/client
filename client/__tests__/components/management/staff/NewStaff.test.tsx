@@ -3,8 +3,8 @@
  * Tests for the NewStaff component
  */
 
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -94,7 +94,7 @@ describe("NewStaff", () => {
       expect(screen.getByText(/choose csv file/i)).toBeInTheDocument();
       expect(screen.getByText(/download template/i)).toBeInTheDocument();
       expect(
-        screen.getByText(/include the following columns/i)
+        screen.getByText(/include the following columns/i),
       ).toBeInTheDocument();
     });
 
@@ -239,7 +239,7 @@ describe("NewStaff", () => {
           },
         ]);
         expect(toast.success).toHaveBeenCalledWith(
-          "Successfully created new profile: Jane Smith (jsmith)"
+          "Successfully created new profile: Jane Smith (jsmith)",
         );
       });
 
@@ -256,19 +256,19 @@ describe("NewStaff", () => {
 
       expect(screen.getByText(/supports .csv files/i)).toBeInTheDocument();
       expect(
-        screen.getAllByText(/firstName \(required\)/i).length
+        screen.getAllByText(/firstName \(required\)/i).length,
       ).toBeGreaterThan(0);
       expect(
-        screen.getAllByText(/lastName \(required\)/i).length
+        screen.getAllByText(/lastName \(required\)/i).length,
       ).toBeGreaterThan(0);
       expect(screen.getAllByText(/alias \(required\)/i).length).toBeGreaterThan(
-        0
+        0,
       );
       expect(screen.getAllByText(/role \(required\)/i).length).toBeGreaterThan(
-        0
+        0,
       );
       expect(
-        screen.getAllByText(/cohortName \(optional\)/i).length
+        screen.getAllByText(/cohortName \(optional\)/i).length,
       ).toBeGreaterThan(0);
     });
   });

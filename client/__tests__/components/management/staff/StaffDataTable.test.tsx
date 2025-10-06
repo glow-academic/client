@@ -1,6 +1,6 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { Row } from "@tanstack/react-table";
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -173,7 +173,7 @@ describe("StaffDataTable", () => {
 
       // Look for search input
       const searchInput = screen.getByPlaceholderText(
-        /search staff by name or alias/i
+        /search staff by name or alias/i,
       );
       expect(searchInput).toBeInTheDocument();
 

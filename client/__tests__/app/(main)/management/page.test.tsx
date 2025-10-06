@@ -16,7 +16,7 @@ describe("ManagementPage", () => {
     expect(metadata).toBeDefined();
     expect(metadata.title).toBe("Management");
     expect(metadata.description).toContain(
-      "Manage cohorts, evals, logs, models, and staff in GLOW"
+      "Manage cohorts, evals, logs, models, and staff in GLOW",
     );
   });
 });

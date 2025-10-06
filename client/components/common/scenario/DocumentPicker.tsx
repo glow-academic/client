@@ -113,7 +113,7 @@ export function DocumentPicker({
       if (isSelected) {
         // Remove from selection
         newSelectedDocuments = selectedDocuments.filter(
-          (d) => d.id !== document.id
+          (d) => d.id !== document.id,
         );
       } else {
         // Add to selection
@@ -173,12 +173,12 @@ export function DocumentPicker({
   // Remove individual item in multi-select mode
   const handleRemoveItem = (
     documentToRemove: Document,
-    e: React.MouseEvent
+    e: React.MouseEvent,
   ) => {
     e.stopPropagation();
     if (multiSelect) {
       const newSelectedDocuments = selectedDocuments.filter(
-        (d) => d.id !== documentToRemove.id
+        (d) => d.id !== documentToRemove.id,
       );
       if (!externalSelectedDocuments.length) {
         setInternalSelectedDocuments(newSelectedDocuments);
@@ -341,7 +341,7 @@ export function DocumentPicker({
                             "relative hover:bg-accent overflow-visible h-8 w-8 p-0",
                             filterTags.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground"
+                              : "text-muted-foreground",
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -407,9 +407,9 @@ export function DocumentPicker({
                             <div className="flex gap-2">
                               {filterTags.length > 0 && (
                                 <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setFilterTags([])}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setFilterTags([])}
                                 >
                                   Clear
                                 </Button>
@@ -456,7 +456,7 @@ export function DocumentPicker({
                         isSelected={
                           multiSelect
                             ? selectedDocuments.some(
-                                (d) => d.id === document.id
+                                (d) => d.id === document.id,
                               )
                             : selectedDocument?.id === document.id
                         }

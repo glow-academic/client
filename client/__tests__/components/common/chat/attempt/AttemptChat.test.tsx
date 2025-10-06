@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -45,7 +45,7 @@ describe("AttemptChat", () => {
 
       // Test for proper paragraph text
       const description = screen.getByText(
-        "The attempt you're looking for doesn't exist or has no chats available."
+        "The attempt you're looking for doesn't exist or has no chats available.",
       );
       expect(description).toBeInTheDocument();
     });
@@ -97,7 +97,7 @@ describe("AttemptChat", () => {
 
       // Should show appropriate error message
       const errorMessage = screen.getByText(
-        "The attempt you're looking for doesn't exist or has no chats available."
+        "The attempt you're looking for doesn't exist or has no chats available.",
       );
       expect(errorMessage).toBeInTheDocument();
 

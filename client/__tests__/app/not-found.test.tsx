@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -42,8 +42,8 @@ describe("NotFound", () => {
       expect(screen.getByText("Page Not Found")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "The page you're looking for doesn't exist or has been moved."
-        )
+          "The page you're looking for doesn't exist or has been moved.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -53,12 +53,12 @@ describe("NotFound", () => {
       // Check for proper heading structure
       expect(screen.getByRole("heading", { name: "404" })).toBeInTheDocument();
       expect(
-        screen.getByRole("heading", { name: "Page Not Found" })
+        screen.getByRole("heading", { name: "Page Not Found" }),
       ).toBeInTheDocument();
 
       // Check for button
       expect(
-        screen.getByRole("button", { name: "Back to Glow" })
+        screen.getByRole("button", { name: "Back to Glow" }),
       ).toBeInTheDocument();
     });
   });
@@ -153,13 +153,13 @@ describe("NotFound", () => {
 
       expect(
         screen.getByText(
-          "The page you're looking for doesn't exist or has been moved."
-        )
+          "The page you're looking for doesn't exist or has been moved.",
+        ),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          "If you believe this is an error, please contact support or try refreshing the page."
-        )
+          "If you believe this is an error, please contact support or try refreshing the page.",
+        ),
       ).toBeInTheDocument();
     });
   });

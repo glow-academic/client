@@ -3,7 +3,10 @@ import { profileRepo, ProfileUpdateSchema } from "@/lib/repos/profileRepo";
 import type { ProfileUpdate } from "@/lib/repos/profileRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => profileRepo.find(id),
@@ -12,11 +15,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch profile",
         subject: { entityType: "profiles", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = ProfileUpdateSchema.safeParse(json);
@@ -32,19 +38,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "profiles", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await profileRepo.remove(id); return {}; },
+    async () => {
+      await profileRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.profiles.delete.failed", {
         message: "Failed to delete profile",
         subject: { entityType: "profiles", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

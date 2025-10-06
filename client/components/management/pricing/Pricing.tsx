@@ -115,7 +115,7 @@ export default function Pricing() {
 
     // Build include sets (empty selection means All)
     const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : models.map((m) => m.id)
+      selectedModelIds.length ? selectedModelIds : models.map((m) => m.id),
     );
     const includeActors = new Set(selectedActorIds);
     const includeProfiles = new Set(selectedProfileIds);
@@ -191,7 +191,7 @@ export default function Pricing() {
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2)
+            .toFixed(2),
         );
         return row;
       });
@@ -240,7 +240,7 @@ export default function Pricing() {
   // Debug info by run
   const filteredRunIds = useMemo(
     () => (filteredRuns || []).map((r) => r.id as string),
-    [filteredRuns]
+    [filteredRuns],
   );
 
   const { data: debugInfoList = [] } =
@@ -259,7 +259,7 @@ export default function Pricing() {
   // Build options for toolbar
   const modelOptions = useMemo(
     () => models.map((m) => ({ value: m.id, label: m.name })),
-    [models]
+    [models],
   );
   const actorOptions = useMemo(() => {
     const agentOpts = agents.map((a) => ({ value: a.id, label: a.name }));
@@ -406,7 +406,7 @@ export default function Pricing() {
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ])
+                ]),
               )}
               className="aspect-[16/7]"
             >

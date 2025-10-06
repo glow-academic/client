@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationMessageRepo, SimulationMessageUpdateSchema } from "@/lib/repos/simulationMessageRepo";
+import {
+  simulationMessageRepo,
+  SimulationMessageUpdateSchema,
+} from "@/lib/repos/simulationMessageRepo";
 import type { SimulationMessageUpdate } from "@/lib/repos/simulationMessageRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => simulationMessageRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch simulationMessage",
         subject: { entityType: "simulation_messages", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = SimulationMessageUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "simulation_messages", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await simulationMessageRepo.remove(id); return {}; },
+    async () => {
+      await simulationMessageRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.simulation_messages.delete.failed", {
         message: "Failed to delete simulationMessage",
         subject: { entityType: "simulation_messages", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

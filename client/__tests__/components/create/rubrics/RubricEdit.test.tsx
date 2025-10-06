@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

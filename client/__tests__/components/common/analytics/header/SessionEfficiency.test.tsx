@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,10 +18,10 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock("@/utils/queries/simulations/get-all-simulations");
@@ -299,7 +299,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
     });
@@ -325,13 +325,13 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
       // Should show no data message
       expect(
-        screen.getByText(/No data available for the selected date range/)
+        screen.getByText(/No data available for the selected date range/),
       ).toBeInTheDocument();
     });
   });
@@ -439,7 +439,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -448,7 +448,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Session Efficiency Trend")
+          screen.queryByText("Session Efficiency Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -478,7 +478,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -512,7 +512,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -592,7 +592,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -626,7 +626,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -660,7 +660,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -694,7 +694,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -728,7 +728,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -762,7 +762,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -795,7 +795,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -828,7 +828,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -858,7 +858,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -891,7 +891,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -925,7 +925,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -959,7 +959,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -992,7 +992,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1025,7 +1025,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1059,7 +1059,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1093,7 +1093,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1127,7 +1127,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1161,7 +1161,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1194,7 +1194,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1228,7 +1228,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1261,7 +1261,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1294,7 +1294,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 
@@ -1328,7 +1328,7 @@ describe("SessionEfficiency", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Session Efficiency Trend")
+          screen.getByText("Session Efficiency Trend"),
         ).toBeInTheDocument();
       });
 

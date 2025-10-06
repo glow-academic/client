@@ -21,7 +21,7 @@ export interface DeleteDocumentResponse {
 
 export async function deleteDocument(
   documentId: string,
-  force: boolean = true
+  force: boolean = true,
 ): Promise<DeleteDocumentResponse> {
   try {
     const url = new URL(`${getApiBase()}/documents/id/${documentId}`);

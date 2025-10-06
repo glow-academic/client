@@ -63,7 +63,7 @@ export interface StaffEditProps {
 const useStaffEditBusinessLogic = (
   profileId: string,
   redirectOnSuccess: boolean,
-  onDone?: () => void
+  onDone?: () => void,
 ) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,7 +124,7 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation]
+    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation],
   );
 
   const handleDelete = useCallback(async () => {
@@ -220,7 +220,7 @@ export default function StaffEdit({
       }
       await handleSubmit(payload);
     },
-    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser]
+    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser],
   );
 
   const handleFormInputChange = useCallback(
@@ -228,7 +228,7 @@ export default function StaffEdit({
       setFormData((prev) => ({ ...prev, [field]: value }));
       handleInputChange(String(field), String(value));
     },
-    [handleInputChange]
+    [handleInputChange],
   );
 
   return (
@@ -363,7 +363,7 @@ export default function StaffEdit({
                         const num = parseInt(val, 10);
                         handleFormInputChange(
                           "reqPerDay",
-                          Number.isNaN(num) ? "" : num
+                          Number.isNaN(num) ? "" : num,
                         );
                       }
                     }}

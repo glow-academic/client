@@ -1,5 +1,5 @@
 import { LoadingDots } from "@/components/ui/loading-dots";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

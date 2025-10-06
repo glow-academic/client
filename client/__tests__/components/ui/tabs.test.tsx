@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

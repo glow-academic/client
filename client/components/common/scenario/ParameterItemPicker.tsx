@@ -117,7 +117,7 @@ export function ParameterItemPicker({
     // Enforce uniqueness of value (which equals name) within this parameter
     const proposedValue = newName.trim();
     const duplicate = items.some(
-      (i) => i.value.trim().toLowerCase() === proposedValue.toLowerCase()
+      (i) => i.value.trim().toLowerCase() === proposedValue.toLowerCase(),
     );
     if (duplicate) {
       toast.error("An item with the same value already exists");
@@ -243,7 +243,7 @@ export function ParameterItemPicker({
                             "ml-auto",
                             selectedItem?.id === item.id
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                       </div>

@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { simulationChatRepo } from "@/lib/repos/simulationChatRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => simulationChatRepo.listBySimulationAttempt(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "simulation_chats" },
         context: { foreignKey: "attemptId", id },
         error: e,
-      })
+      }),
   );
 }

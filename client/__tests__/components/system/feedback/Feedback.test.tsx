@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -103,7 +103,7 @@ describe("Feedback", () => {
       // Find and click refresh button (the one with refresh-cw icon)
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -126,7 +126,7 @@ describe("Feedback", () => {
       // Find and click view details button (the one with message-square icon)
       const buttons = screen.getAllByRole("button");
       const viewDetailsButton = buttons.find((button) =>
-        button.querySelector('svg[class*="message-square"]')
+        button.querySelector('svg[class*="message-square"]'),
       );
       expect(viewDetailsButton).toBeDefined();
       await user.click(viewDetailsButton!);
@@ -154,7 +154,7 @@ describe("Feedback", () => {
       // Open dialog
       const buttons = screen.getAllByRole("button");
       const viewDetailsButton = buttons.find((button) =>
-        button.querySelector('svg[class*="message-square"]')
+        button.querySelector('svg[class*="message-square"]'),
       );
       expect(viewDetailsButton).toBeDefined();
       await user.click(viewDetailsButton!);
@@ -170,7 +170,7 @@ describe("Feedback", () => {
       await waitFor(() => {
         // The dialog's Author heading should be gone (the one in the dialog is an h4)
         expect(
-          screen.queryByRole("heading", { name: "Author", level: 4 })
+          screen.queryByRole("heading", { name: "Author", level: 4 }),
         ).not.toBeInTheDocument();
       });
     });
@@ -221,7 +221,7 @@ describe("Feedback", () => {
 
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="refresh-cw"]')
+        button.querySelector('svg[class*="refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -304,7 +304,7 @@ describe("Feedback", () => {
       // Open dialog
       const buttons = screen.getAllByRole("button");
       const viewDetailsButton = buttons.find((button) =>
-        button.querySelector('svg[class*="message-square"]')
+        button.querySelector('svg[class*="message-square"]'),
       );
       expect(viewDetailsButton).toBeDefined();
       await user.click(viewDetailsButton!);
@@ -326,7 +326,7 @@ describe("Feedback", () => {
 
       const buttons = screen.getAllByRole("button");
       const viewDetailsButton = buttons.find((button) =>
-        button.querySelector('svg[class*="message-square"]')
+        button.querySelector('svg[class*="message-square"]'),
       );
       expect(viewDetailsButton).toBeDefined();
       await user.click(viewDetailsButton!);

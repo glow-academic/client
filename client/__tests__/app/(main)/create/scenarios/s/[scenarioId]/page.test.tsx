@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +52,7 @@ describe("EditScenarioPage", () => {
       expect(screen.getByTestId("scenario-edit")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-edit")).toHaveAttribute(
         "data-scenario-id",
-        "test-scenario-id"
+        "test-scenario-id",
       );
     });
 
@@ -81,7 +81,7 @@ describe("EditScenarioPage", () => {
       expect(screen.getByTestId("scenario-edit")).toBeInTheDocument();
       expect(screen.getByTestId("scenario-edit")).toHaveAttribute(
         "data-scenario-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

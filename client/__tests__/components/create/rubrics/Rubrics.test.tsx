@@ -2,8 +2,8 @@
  * Rubrics.test.tsx
  * Comprehensive tests for the Rubrics component
  */
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Rubrics from "@/components/create/rubrics/Rubrics";
@@ -217,7 +217,7 @@ describe("Rubrics Component", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Math Problem Solving Rubric")
+          screen.getByText("Math Problem Solving Rubric"),
         ).toBeInTheDocument();
         expect(screen.getByText("100 total points")).toBeInTheDocument();
         expect(screen.getByText("Pass: 70 pts (70%)")).toBeInTheDocument();
@@ -401,7 +401,7 @@ describe("Rubrics Component", () => {
       // Verify the function was called with correct parameters
       expect(duplicateRubric).toHaveBeenCalledWith(
         "rubric-1",
-        "Test Rubric Copy"
+        "Test Rubric Copy",
       );
 
       // Verify the result
@@ -421,12 +421,12 @@ describe("Rubrics Component", () => {
     it("should handle duplication errors gracefully", async () => {
       // Mock the duplicateRubric function to throw an error
       vi.mocked(duplicateRubric).mockRejectedValue(
-        new Error("Duplication failed")
+        new Error("Duplication failed"),
       );
 
       // Verify the function throws an error
       await expect(
-        duplicateRubric("rubric-1", "Test Rubric Copy")
+        duplicateRubric("rubric-1", "Test Rubric Copy"),
       ).rejects.toThrow("Duplication failed");
     });
   });
@@ -446,7 +446,7 @@ describe("Rubrics Component", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No rubrics match the current filters.")
+          screen.getByText("No rubrics match the current filters."),
         ).toBeInTheDocument();
       });
     });

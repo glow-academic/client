@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
@@ -62,7 +62,7 @@ describe("ReportsPage", () => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          "test-profile-id"
+          "test-profile-id",
         );
       });
     });
@@ -83,7 +83,7 @@ describe("ReportsPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          "test-profile-id"
+          "test-profile-id",
         );
       });
     });
@@ -94,7 +94,7 @@ describe("ReportsPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toBeInTheDocument();
         expect(
-          screen.getByText("Report Component for test-profile-id")
+          screen.getByText("Report Component for test-profile-id"),
         ).toBeInTheDocument();
       });
     });
@@ -123,7 +123,7 @@ describe("ReportsPage", () => {
 
       const metadata = await generateMetadata(
         { params: Promise.resolve({ profileId: "test-profile-id" }) },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("John Doe");
@@ -135,7 +135,7 @@ describe("ReportsPage", () => {
 
       const metadata = await generateMetadata(
         { params: Promise.resolve({ profileId: "test-profile-id" }) },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("undefined undefined");
@@ -152,7 +152,7 @@ describe("ReportsPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          "test-profile-id"
+          "test-profile-id",
         );
       });
     });
@@ -165,7 +165,7 @@ describe("ReportsPage", () => {
       await waitFor(() => {
         expect(screen.getByTestId("report-component")).toHaveAttribute(
           "data-profile-id",
-          "test-profile-id"
+          "test-profile-id",
         );
       });
     });

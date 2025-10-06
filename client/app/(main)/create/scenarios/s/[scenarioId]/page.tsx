@@ -13,7 +13,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ scenarioId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { scenarioId } = await params;
   const scenario = await scenarioRepo.find(scenarioId);

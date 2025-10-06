@@ -2,7 +2,11 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Scenario, ScenarioCreate, ScenarioUpdate } from "@/lib/repos/scenarioRepo";
+import type {
+  Scenario,
+  ScenarioCreate,
+  ScenarioUpdate,
+} from "@/lib/repos/scenarioRepo";
 import { scenarioKeys, scenarioKeysByPersonaId } from "@/lib/api/keys";
 
 export function useScenarios(filters?: unknown) {
@@ -15,7 +19,11 @@ export function useScenarios(filters?: unknown) {
 export function useCreateScenario() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ScenarioCreate) => api<Scenario>("/api/v1/scenarios", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ScenarioCreate) =>
+      api<Scenario>("/api/v1/scenarios", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: scenarioKeys.all }),
   });
 }
@@ -33,11 +41,18 @@ export function useUpdateScenario(id?: string) {
   return useMutation({
     mutationFn: (patch: ScenarioUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Scenario>(`/api/v1/scenarios/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Scenario>(`/api/v1/scenarios/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,7 +70,11 @@ export function useDeleteScenario(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
       return api<void>(`/api/v1/scenarios/${resolvedId}`, { method: "DELETE" });
@@ -75,7 +94,11 @@ export function useScenariosByPersonaId(id: string) {
 export function useScenariosByPersonaIdBatch(ids: string[]) {
   return useQuery<Scenario[]>({
     queryKey: scenarioKeysByPersonaId.many(ids),
-    queryFn: () => api<Scenario[]>(`/api/v1/scenarios/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<Scenario[]>(`/api/v1/scenarios/by/personaId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

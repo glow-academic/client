@@ -50,7 +50,7 @@ export default function RubricDetails({
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -78,7 +78,7 @@ export default function RubricDetails({
         context: { component: "RubricDetails", rubricId },
       });
       toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
       );
     }
   };

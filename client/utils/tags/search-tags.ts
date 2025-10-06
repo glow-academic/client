@@ -12,7 +12,7 @@
 export function searchTags(
   query: string,
   allTags: string[],
-  limit: number = 20
+  limit: number = 20,
 ): string[] {
   const q = query.trim().toLowerCase();
   const unique = Array.from(new Set(allTags.filter(Boolean)));
@@ -38,7 +38,7 @@ export function searchTags(
  * Extracts all known tags from a list of documents (string arrays), flattened and deduped.
  */
 export function extractKnownTagsFromDocuments(
-  documents: { tags?: string[] }[]
+  documents: { tags?: string[] }[],
 ): string[] {
   const tags = documents.flatMap((d) => d.tags ?? []);
   return Array.from(new Set(tags.filter(Boolean)));

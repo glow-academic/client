@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -103,14 +103,14 @@ describe("Agents", () => {
       // Find and click edit button - look for the Edit icon from lucide-react
       const buttons = screen.getAllByRole("button");
       const editButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-edit"]')
+        button.querySelector('svg[class*="lucide-edit"]'),
       );
 
       // If not found, try alternative selectors
       if (!editButton) {
         // Look for any button that contains an svg
         const buttonWithSvg = buttons.find((button) =>
-          button.querySelector("svg")
+          button.querySelector("svg"),
         );
         expect(buttonWithSvg).toBeDefined();
         await user.click(buttonWithSvg!);

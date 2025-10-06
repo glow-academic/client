@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -42,7 +42,7 @@ vi.mock(
         createdAt: "2024-01-15T10:00:00Z",
       },
     ]),
-  })
+  }),
 );
 
 vi.mock(
@@ -55,7 +55,7 @@ vi.mock(
         createdAt: "2024-01-15T10:00:00Z",
       },
     ]),
-  })
+  }),
 );
 
 vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
@@ -148,7 +148,7 @@ describe("TimeSpent", () => {
           mockProps.dateEnd,
           mockProps.profileId,
           expect.any(Array), // cohorts
-          mockProps.cohortIds
+          mockProps.cohortIds,
         );
       });
     });

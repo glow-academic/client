@@ -54,13 +54,13 @@ describe("useHistoryColumns", () => {
 
     // Check that all expected properties are present
     expect(screen.getByTestId("has-profile-options")).toHaveTextContent(
-      "false"
+      "false",
     );
     expect(screen.getByTestId("has-simulation-options")).toHaveTextContent(
-      "false"
+      "false",
     );
     expect(screen.getByTestId("has-scenario-options")).toHaveTextContent(
-      "false"
+      "false",
     );
   });
 
@@ -69,7 +69,7 @@ describe("useHistoryColumns", () => {
 
     // Check that profile options are hidden when all attempts have the same profile and export is enabled
     expect(screen.getByTestId("has-profile-options")).toHaveTextContent(
-      "false"
+      "false",
     );
   });
 
@@ -78,7 +78,7 @@ describe("useHistoryColumns", () => {
 
     // Check that profile options are shown when export is disabled, even if all attempts have the same profile
     expect(screen.getByTestId("has-profile-options")).toHaveTextContent(
-      "false"
+      "false",
     );
   });
 
@@ -87,7 +87,7 @@ describe("useHistoryColumns", () => {
 
     // Check that profile options are shown when not all attempts have the same profile
     expect(screen.getByTestId("has-profile-options")).toHaveTextContent(
-      "false"
+      "false",
     );
   });
 });

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -105,7 +105,7 @@ describe("Practice", () => {
         "@/utils/queries/personas/get-all-personas"
       );
       vi.mocked(getAllPersonas).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve([]), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve([]), 100)),
       );
 
       render(<Practice />);
@@ -208,7 +208,7 @@ describe("Practice", () => {
               </AssistantProvider>
             </AnalyticsProvider>
           </ProfileProvider>
-        </QueryClientProvider>
+        </QueryClientProvider>,
       );
 
       await waitFor(() => {
@@ -226,7 +226,7 @@ describe("Practice", () => {
         "@/utils/queries/simulations/get-all-simulations"
       );
       vi.mocked(getAllSimulations).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
 
       render(<Practice />);
@@ -279,4 +279,4 @@ import { ProfileProvider } from "@/contexts/profile-context";
 import { TourProvider } from "@/contexts/tour-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";

@@ -1,4 +1,4 @@
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import the hook to test
@@ -8,7 +8,7 @@ import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import "@/mocks/api";
 
 // Import the test helper
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 
 // Test component that uses the hook
 function TestComponent() {
@@ -49,12 +49,12 @@ describe("useScenarioColumns", () => {
 
     // Check that all expected properties are present
     expect(screen.getByTestId("has-simulation-options")).toHaveTextContent(
-      "true"
+      "true",
     );
     expect(screen.getByTestId("has-cohort-options")).toHaveTextContent("true");
     expect(screen.getByTestId("has-persona-options")).toHaveTextContent("true");
     expect(screen.getByTestId("has-scenario-type-options")).toHaveTextContent(
-      "true"
+      "true",
     );
   });
 });

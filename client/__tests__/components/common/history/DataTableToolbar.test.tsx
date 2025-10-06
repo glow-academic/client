@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { Table } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 
@@ -82,10 +82,7 @@ describe("DataTableToolbar", () => {
 
     it("should handle missing or invalid props", () => {
       render(
-        <DataTableToolbar
-          table={createMockTable()}
-          profileOptions={[]}
-        />,
+        <DataTableToolbar table={createMockTable()} profileOptions={[]} />,
       );
 
       // Component should handle missing props

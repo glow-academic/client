@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -39,7 +39,11 @@ describe("AttemptPage", () => {
     it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
       await act(async () => {
-        render(<AttemptPage params={Promise.resolve({ attemptId: "test-attempt-id" })} />);
+        render(
+          <AttemptPage
+            params={Promise.resolve({ attemptId: "test-attempt-id" })}
+          />,
+        );
       });
 
       // Should render the attempt chat component
@@ -48,7 +52,11 @@ describe("AttemptPage", () => {
 
     it("should have correct accessibility attributes", async () => {
       await act(async () => {
-        render(<AttemptPage params={Promise.resolve({ attemptId: "test-attempt-id" })} />);
+        render(
+          <AttemptPage
+            params={Promise.resolve({ attemptId: "test-attempt-id" })}
+          />,
+        );
       });
 
       // Should have proper accessibility attributes
@@ -60,7 +68,11 @@ describe("AttemptPage", () => {
     it("should handle edge cases gracefully", async () => {
       // Test edge cases
       await act(async () => {
-        render(<AttemptPage params={Promise.resolve({ attemptId: "test-attempt-id" })} />);
+        render(
+          <AttemptPage
+            params={Promise.resolve({ attemptId: "test-attempt-id" })}
+          />,
+        );
       });
 
       // Should render the component even with edge cases

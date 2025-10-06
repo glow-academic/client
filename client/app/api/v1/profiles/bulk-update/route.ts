@@ -28,6 +28,6 @@ export async function PATCH(req: Request) {
         subject: { entityType: "profiles" },
         context: { count: updates.length },
         error: e,
-      })
+      }),
   );
 }

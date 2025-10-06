@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { assistantChatRepo, AssistantChatUpdateSchema } from "@/lib/repos/assistantChatRepo";
+import {
+  assistantChatRepo,
+  AssistantChatUpdateSchema,
+} from "@/lib/repos/assistantChatRepo";
 import type { AssistantChatUpdate } from "@/lib/repos/assistantChatRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => assistantChatRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch assistantChat",
         subject: { entityType: "assistant_chats", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = AssistantChatUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "assistant_chats", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await assistantChatRepo.remove(id); return {}; },
+    async () => {
+      await assistantChatRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.assistant_chats.delete.failed", {
         message: "Failed to delete assistantChat",
         subject: { entityType: "assistant_chats", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

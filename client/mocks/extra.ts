@@ -107,7 +107,7 @@ vi.mock("recharts", () => ({
         className: "recharts-responsive-container",
         style: { width: "100%", height: "100%", minWidth: 0 },
       },
-      children
+      children,
     ),
   LineChart: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", { "data-testid": "line-chart" }, children),
@@ -244,7 +244,7 @@ vi.mock("@/utils/drizzle/db", () => ({
             returning: vi.fn(() => Promise.resolve([])),
           })),
         })),
-      })
+      }),
     ),
   },
   db_url: "postgresql://test:test@localhost:5432/test",

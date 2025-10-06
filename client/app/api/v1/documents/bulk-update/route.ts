@@ -28,6 +28,6 @@ export async function PATCH(req: Request) {
         subject: { entityType: "documents" },
         context: { count: updates.length },
         error: e,
-      })
+      }),
   );
 }

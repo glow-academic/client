@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,18 +48,18 @@ describe("Error", () => {
 
       // Check for proper heading structure
       expect(
-        screen.getByRole("heading", { name: "Error" })
+        screen.getByRole("heading", { name: "Error" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("heading", { name: "An error occurred" })
+        screen.getByRole("heading", { name: "An error occurred" }),
       ).toBeInTheDocument();
 
       // Check for buttons
       expect(
-        screen.getByRole("button", { name: "Try Again" })
+        screen.getByRole("button", { name: "Try Again" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Back to Glow" })
+        screen.getByRole("button", { name: "Back to Glow" }),
       ).toBeInTheDocument();
     });
   });
@@ -172,7 +172,7 @@ describe("Error", () => {
       render(<Error error={customError} reset={mockReset} />);
 
       expect(
-        screen.getByText("Custom error message with special characters: !@#$%")
+        screen.getByText("Custom error message with special characters: !@#$%"),
       ).toBeInTheDocument();
     });
 

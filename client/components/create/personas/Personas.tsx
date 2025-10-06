@@ -311,7 +311,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDeleteClick(
                       persona.id,
-                      persona.name || "Unnamed Persona"
+                      persona.name || "Unnamed Persona",
                     )
                   }
                 >

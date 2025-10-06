@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +52,7 @@ describe("EditRubricPage", () => {
       expect(screen.getByTestId("rubric-edit")).toBeInTheDocument();
       expect(screen.getByTestId("rubric-edit")).toHaveAttribute(
         "data-rubric-id",
-        "test-rubric-id"
+        "test-rubric-id",
       );
     });
 
@@ -81,7 +81,7 @@ describe("EditRubricPage", () => {
       expect(screen.getByTestId("rubric-edit")).toBeInTheDocument();
       expect(screen.getByTestId("rubric-edit")).toHaveAttribute(
         "data-rubric-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

@@ -22,21 +22,21 @@ vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
   () => ({
     getSimulationAttemptsByProfiles: vi.fn(),
-  })
+  }),
 );
 
 vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts",
   () => ({
     getSimulationChatsByAttempts: vi.fn(),
-  })
+  }),
 );
 
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
   () => ({
     getSimulationChatGradesBySimulationChats: vi.fn(),
-  })
+  }),
 );
 
 vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
@@ -59,13 +59,13 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 const mockGetAllProfiles = vi.mocked(getAllProfiles);
 const mockGetAllCohorts = vi.mocked(getAllCohorts);
 const mockGetSimulationAttemptsByProfiles = vi.mocked(
-  getSimulationAttemptsByProfiles
+  getSimulationAttemptsByProfiles,
 );
 const mockGetSimulationChatsByAttempts = vi.mocked(
-  getSimulationChatsByAttempts
+  getSimulationChatsByAttempts,
 );
 const mockGetSimulationChatGradesBySimulationChats = vi.mocked(
-  getSimulationChatGradesBySimulationChats
+  getSimulationChatGradesBySimulationChats,
 );
 const mockGetAllSimulations = vi.mocked(getAllSimulations);
 const mockGetAllRubrics = vi.mocked(getAllRubrics);
@@ -310,7 +310,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -318,7 +318,7 @@ describe("AttemptImprovement", () => {
     });
 
     expect(
-      screen.getByText("Performance improvement across multiple attempts")
+      screen.getByText("Performance improvement across multiple attempts"),
     ).toBeInTheDocument();
   });
 
@@ -326,7 +326,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // The component should render without crashing during loading
@@ -337,7 +337,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -353,7 +353,7 @@ describe("AttemptImprovement", () => {
         defaultProps.profileId,
         mockCohorts,
         defaultProps.cohortIds,
-        []
+        [],
       );
     });
   });
@@ -362,13 +362,13 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       // The threshold indicator should be present (it's a colored dot)
       const thresholdIndicator = document.querySelector(
-        '[class*="rounded-full"]'
+        '[class*="rounded-full"]',
       );
       expect(thresholdIndicator).toBeInTheDocument();
     });
@@ -378,19 +378,19 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       // Check for chart container
       const chartContainer = document.querySelector(
-        ".recharts-responsive-container"
+        ".recharts-responsive-container",
       );
       expect(chartContainer).toBeInTheDocument();
 
       // Check that the chart is rendered (even if text might not be visible in tests)
       expect(
-        screen.queryByText("No improvement data available")
+        screen.queryByText("No improvement data available"),
       ).not.toBeInTheDocument();
     });
   });
@@ -412,13 +412,13 @@ describe("AttemptImprovement", () => {
     ];
 
     mockCalculateAttemptImprovement.mockReturnValue(
-      improvementDataWithInsights
+      improvementDataWithInsights,
     );
 
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -432,14 +432,14 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          "No improvement data available. Multiple attempts required."
-        )
+          "No improvement data available. Multiple attempts required.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -451,12 +451,12 @@ describe("AttemptImprovement", () => {
           {...defaultProps}
           cohortIds={["nonexistent-cohort"]}
         />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       expect(
-        screen.getByText("No data available for the selected cohorts")
+        screen.getByText("No data available for the selected cohorts"),
       ).toBeInTheDocument();
     });
   });
@@ -465,7 +465,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} profileId="profile1" />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -481,7 +481,7 @@ describe("AttemptImprovement", () => {
         "profile1",
         mockCohorts,
         defaultProps.cohortIds,
-        []
+        [],
       );
     });
   });
@@ -490,7 +490,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} cohortIds={["cohort1"]} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -506,7 +506,7 @@ describe("AttemptImprovement", () => {
         defaultProps.profileId,
         mockCohorts,
         ["cohort1"],
-        []
+        [],
       );
     });
   });
@@ -517,7 +517,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -530,7 +530,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -542,19 +542,19 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       // Check for chart container
       const chartContainer = document.querySelector(
-        ".recharts-responsive-container"
+        ".recharts-responsive-container",
       );
       expect(chartContainer).toBeInTheDocument();
 
       // Check that the chart is rendered (even if legend text might not be visible in tests)
       expect(
-        screen.queryByText("No improvement data available")
+        screen.queryByText("No improvement data available"),
       ).not.toBeInTheDocument();
     });
   });
@@ -580,7 +580,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -590,7 +590,7 @@ describe("AttemptImprovement", () => {
 
       // Check that chart is rendered
       const chartContainer = document.querySelector(
-        ".recharts-responsive-container"
+        ".recharts-responsive-container",
       );
       expect(chartContainer).toBeInTheDocument();
     });
@@ -617,7 +617,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
@@ -637,14 +637,14 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     await waitFor(() => {
       expect(
         screen.getByText(
-          "No improvement data available. Multiple attempts required."
-        )
+          "No improvement data available. Multiple attempts required.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -656,7 +656,7 @@ describe("AttemptImprovement", () => {
     render(
       <TestWrapper>
         <AttemptImprovement {...defaultProps} />
-      </TestWrapper>
+      </TestWrapper>,
     );
 
     // Should not call calculateAttemptImprovement when data is missing

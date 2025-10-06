@@ -193,7 +193,7 @@ export function ExportButton<TData>({
 
             if (column.id === "profileId" && cellValue) {
               const profileOption = profileOptions.find(
-                (profile) => profile.value === cellValue
+                (profile) => profile.value === cellValue,
               );
               return profileOption
                 ? `"${profileOption.label}"`

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -103,10 +103,10 @@ describe("ProfileSelector", () => {
       expect(screen.getByRole("tablist")).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "Search" })).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: "CSV Import" })
+        screen.getByRole("tab", { name: "CSV Import" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: "Quick Add" })
+        screen.getByRole("tab", { name: "Quick Add" }),
       ).toBeInTheDocument();
     });
   });
@@ -122,7 +122,7 @@ describe("ProfileSelector", () => {
 
       // Check that CSV content is shown
       expect(
-        screen.getByText(/Upload a CSV file with profiles/)
+        screen.getByText(/Upload a CSV file with profiles/),
       ).toBeInTheDocument();
     });
 
@@ -132,7 +132,7 @@ describe("ProfileSelector", () => {
 
       // Test search functionality
       const searchInput = screen.getByPlaceholderText(
-        "Search profiles by name or alias..."
+        "Search profiles by name or alias...",
       );
       await user.type(searchInput, "test");
 
@@ -146,7 +146,7 @@ describe("ProfileSelector", () => {
 
       // Test search input
       const searchInput = screen.getByPlaceholderText(
-        "Search profiles by name or alias..."
+        "Search profiles by name or alias...",
       );
       await user.type(searchInput, "admin");
 
@@ -235,7 +235,7 @@ describe("ProfileSelector", () => {
       const onProfilesChange = vi.fn();
 
       render(
-        <ProfileSelector {...mockProps} onProfilesChange={onProfilesChange} />
+        <ProfileSelector {...mockProps} onProfilesChange={onProfilesChange} />,
       );
 
       // Test that the callback is available
@@ -255,7 +255,7 @@ describe("ProfileSelector", () => {
       ];
 
       render(
-        <ProfileSelector {...mockProps} selectedProfiles={selectedProfiles} />
+        <ProfileSelector {...mockProps} selectedProfiles={selectedProfiles} />,
       );
 
       // Check that selected profiles are displayed

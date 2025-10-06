@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,7 +39,7 @@ const createMockMetrics = (): GrowthMetric[] => [
 ];
 
 const createMockProps = (
-  overrides: Partial<GrowthPickerProps> = {}
+  overrides: Partial<GrowthPickerProps> = {},
 ): GrowthPickerProps => ({
   availableMetrics: createMockMetrics(),
   selectedMetrics: ["averageScore"],
@@ -285,7 +285,7 @@ describe("GrowthPicker", () => {
       const { onMetricsChange: _onMetricsChange, ...propsWithoutCallback } =
         props;
       render(
-        <GrowthPicker {...propsWithoutCallback} onMetricsChange={vi.fn()} />
+        <GrowthPicker {...propsWithoutCallback} onMetricsChange={vi.fn()} />,
       );
 
       const button = screen.getByRole("combobox");

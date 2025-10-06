@@ -56,7 +56,7 @@ export default function Provider({ providerId }: ProviderProps) {
       apiKey: "",
       baseUrl: "",
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -64,7 +64,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(
     providerId!,
-    !!providerId
+    !!providerId,
   );
 
   // Mutation hooks
@@ -88,7 +88,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined
+    value: string | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -186,7 +186,7 @@ export default function Provider({ providerId }: ProviderProps) {
       toast.success(
         isEditMode && providerId
           ? "Provider updated successfully!"
-          : "Provider created successfully!"
+          : "Provider created successfully!",
       );
       router.push(`/management/providers`);
     } catch (error) {
@@ -198,7 +198,7 @@ export default function Provider({ providerId }: ProviderProps) {
         context: { component: "Provider", isEditMode, providerId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);

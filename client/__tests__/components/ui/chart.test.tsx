@@ -1,5 +1,5 @@
 import { ChartContainer } from "@/components/ui/chart";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

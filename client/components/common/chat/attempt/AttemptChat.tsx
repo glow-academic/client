@@ -66,7 +66,7 @@ export default function AttemptChat() {
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null
+    null,
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
 
@@ -98,13 +98,13 @@ export default function AttemptChat() {
   const selectedChat = useMemo(() => {
     if (!selectedChatId || !simulationContext?.chats) return null;
     return simulationContext?.chats.find(
-      (chat: SimulationChat) => chat.id === selectedChatId
+      (chat: SimulationChat) => chat.id === selectedChatId,
     );
   }, [selectedChatId, simulationContext?.chats]);
 
   const { data: selectedScenario } = useScenario(
     selectedChat?.scenarioId || "",
-    selectedChat !== null
+    selectedChat !== null,
   );
 
   // Helper function to calculate time taken from chat timestamps
@@ -118,7 +118,7 @@ export default function AttemptChat() {
 
       return timeTakenSeconds;
     },
-    []
+    [],
   );
 
   // Helper function to calculate adjusted time limit for multi-simulation attempts
@@ -142,7 +142,7 @@ export default function AttemptChat() {
       // For single simulation attempts, use the full time limit
       return totalTimeLimitSeconds;
     },
-    [simulationContext?.simulation?.timeLimit, simulationContext?.chats]
+    [simulationContext?.simulation?.timeLimit, simulationContext?.chats],
   );
 
   // Helper function to calculate how much time was exceeded for a chat
@@ -155,7 +155,7 @@ export default function AttemptChat() {
 
       return Math.max(0, timeTaken - adjustedTimeLimit);
     },
-    [calculateChatTimeTaken, calculateAdjustedTimeLimit]
+    [calculateChatTimeTaken, calculateAdjustedTimeLimit],
   );
 
   // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
@@ -227,7 +227,7 @@ export default function AttemptChat() {
 
       // If all chats are completed, default to showing rubric
       const completedChats = simulationContext?.chats.filter(
-        (chat: SimulationChat) => chat.completed
+        (chat: SimulationChat) => chat.completed,
       );
       if (completedChats.length === simulationContext?.chats.length) {
         setShowGrades(true);
@@ -299,7 +299,7 @@ export default function AttemptChat() {
   // In infinite mode, force chat view until time has expired
   const isAttemptInfinite = Boolean(simulationContext?.attempt?.infiniteMode);
   const hasInfiniteLimit = Boolean(
-    simulationContext?.attempt?.infiniteModeTimeLimit
+    simulationContext?.attempt?.infiniteModeTimeLimit,
   );
   const timeRemaining = simulationContext?.timer.remaining;
   const shouldForceChatView =
@@ -399,11 +399,11 @@ export default function AttemptChat() {
                                   selectedChat &&
                                   simulationContext?.allDynamicRubrics.find(
                                     (rubric) =>
-                                      rubric.chatId === selectedChat.id
+                                      rubric.chatId === selectedChat.id,
                                   )
                                     ? simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === selectedChat.id,
                                       )?.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
@@ -436,21 +436,21 @@ export default function AttemptChat() {
                                 >
                                   {selectedChat && selectedChat.completed
                                     ? formatTime(
-                                        calculateChatTimeTaken(selectedChat)
+                                        calculateChatTimeTaken(selectedChat),
                                       )
                                     : isInfiniteMode
                                       ? infiniteLimitMinutes
                                         ? formatTime(infiniteLimitMinutes * 60)
                                         : formatTime(
                                             simulationContext?.timer.elapsed ||
-                                              0
+                                              0,
                                           )
                                       : simulationContext?.simulation
                                             ?.timeLimit && selectedChat
                                         ? formatTime(
                                             calculateAdjustedTimeLimit(
-                                              selectedChat
-                                            )
+                                              selectedChat,
+                                            ),
                                           )
                                         : "No time limit"}
                                 </span>
@@ -459,14 +459,14 @@ export default function AttemptChat() {
                             {selectedChat &&
                             showGrades &&
                             simulationContext?.allDynamicRubrics.find(
-                              (rubric) => rubric.chatId === selectedChat.id
+                              (rubric) => rubric.chatId === selectedChat.id,
                             ) ? (
                               <TooltipContent>
                                 <p className="flex items-center flex-wrap gap-x-0">
                                   <span>
                                     {simulationContext?.allDynamicRubrics.find(
                                       (rubric) =>
-                                        rubric.chatId === selectedChat.id
+                                        rubric.chatId === selectedChat.id,
                                     )?.passed
                                       ? "Passed"
                                       : "Failed"}
@@ -474,14 +474,14 @@ export default function AttemptChat() {
                                     {
                                       simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === selectedChat.id,
                                       )?.score
                                     }
                                     /
                                     {
                                       simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === selectedChat.id
+                                          rubric.chatId === selectedChat.id,
                                       )?.totalPossiblePoints
                                     }
                                     )
@@ -492,7 +492,7 @@ export default function AttemptChat() {
                                       <span className="text-xs text-muted-foreground ml-2">
                                         +
                                         {formatTime(
-                                          calculateTimeExceeded(selectedChat)
+                                          calculateTimeExceeded(selectedChat),
                                         )}
                                       </span>
                                     )}
@@ -512,7 +512,7 @@ export default function AttemptChat() {
                                   (
                                   {Math.round(
                                     simulationContext?.aggregatedResults
-                                      .averageScore
+                                      .averageScore,
                                   )}
                                   /
                                   {simulationContext?.allDynamicRubrics?.[0]
@@ -543,7 +543,7 @@ export default function AttemptChat() {
                               // Find rubric result for this chat
                               const rubricResult =
                                 simulationContext?.allDynamicRubrics.find(
-                                  (rubric) => rubric.chatId === chat.id
+                                  (rubric) => rubric.chatId === chat.id,
                                 );
 
                               return (
@@ -576,7 +576,7 @@ export default function AttemptChat() {
                                   </div>
                                 </SelectItem>
                               );
-                            }
+                            },
                           )}
                         </SelectContent>
                       </Select>
@@ -643,7 +643,7 @@ export default function AttemptChat() {
                         (() => {
                           const document =
                             simulationContext.scenarioDocuments.find(
-                              (doc) => doc.id === selectedDocumentId
+                              (doc) => doc.id === selectedDocumentId,
                             ) || simulationContext.scenarioDocuments[0];
                           return document ? (
                             <DocumentViewer
@@ -702,7 +702,7 @@ export default function AttemptChat() {
                               simulationContext?.simulation?.scenarioIds
                                 ?.length ===
                                 simulationContext?.chats.filter(
-                                  (chat: SimulationChat) => chat.completed
+                                  (chat: SimulationChat) => chat.completed,
                                 ).length && (
                                 <Badge variant="default">Completed</Badge>
                               )}
@@ -746,7 +746,8 @@ export default function AttemptChat() {
                                     simulationContext?.simulation?.scenarioIds
                                       ?.length ===
                                       simulationContext?.chats.filter(
-                                        (chat: SimulationChat) => chat.completed
+                                        (chat: SimulationChat) =>
+                                          chat.completed,
                                       ).length
                                       ? simulationContext?.currentDynamicRubric
                                           .passed
@@ -782,21 +783,21 @@ export default function AttemptChat() {
                                             Math.max(
                                               simulationContext?.timer
                                                 .remaining || 0,
-                                              0
-                                            )
+                                              0,
+                                            ),
                                           )
                                         : formatTime(
-                                            simulationContext?.timer.elapsed
+                                            simulationContext?.timer.elapsed,
                                           )
                                       : simulationContext?.simulation
                                             ?.timeLimit &&
                                           simulationContext?.timer.remaining !==
                                             null
                                         ? formatTime(
-                                            simulationContext?.timer.remaining
+                                            simulationContext?.timer.remaining,
                                           )
                                         : formatTime(
-                                            simulationContext?.timer.elapsed
+                                            simulationContext?.timer.elapsed,
                                           )}
                                   </span>
                                   {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
@@ -808,7 +809,7 @@ export default function AttemptChat() {
                                 simulationContext?.simulation?.scenarioIds
                                   ?.length ===
                                   simulationContext?.chats.filter(
-                                    (chat: SimulationChat) => chat.completed
+                                    (chat: SimulationChat) => chat.completed,
                                   ).length && (
                                   <TooltipContent>
                                     <p>
@@ -845,7 +846,7 @@ export default function AttemptChat() {
                           <Progress
                             value={
                               (simulationContext?.chats.filter(
-                                (chat: SimulationChat) => chat.completed
+                                (chat: SimulationChat) => chat.completed,
                               ).length /
                                 simulationContext?.expectedChatCount) *
                               100
@@ -900,7 +901,7 @@ export default function AttemptChat() {
                       (() => {
                         const document =
                           simulationContext.scenarioDocuments.find(
-                            (doc) => doc.id === selectedDocumentId
+                            (doc) => doc.id === selectedDocumentId,
                           ) || simulationContext.scenarioDocuments[0];
                         return document ? (
                           <DocumentViewer

@@ -2,7 +2,7 @@ import PersonaPerformance, {
   PersonaPerformanceProps,
 } from "@/components/common/analytics/primary/PersonaPerformance";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SimulationPicker component
@@ -62,7 +62,7 @@ vi.mock("@/utils/queries/profiles/get-all-profiles", () => ({
         active: true,
         lastActive: "2024-01-01T00:00:00Z",
       },
-    ])
+    ]),
   ),
 }));
 
@@ -80,7 +80,7 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts", () => ({
         active: true,
         defaultCohort: false,
       },
-    ])
+    ]),
   ),
 }));
 
@@ -102,7 +102,7 @@ vi.mock("@/utils/queries/personas/get-all-personas", () => ({
         reasoning: null,
         active: true,
       },
-    ])
+    ]),
   ),
 }));
 
@@ -124,7 +124,7 @@ vi.mock("@/utils/queries/scenarios/get-all-scenarios", () => ({
         parentId: null,
         active: true,
       },
-    ])
+    ]),
   ),
 }));
 
@@ -139,9 +139,9 @@ vi.mock(
           profileId: "profile1",
           simulationId: "simulation1",
         },
-      ])
+      ]),
     ),
-  })
+  }),
 );
 
 vi.mock(
@@ -160,9 +160,9 @@ vi.mock(
           title: "Test Chat 1",
           traceId: "trace1",
         },
-      ])
+      ]),
     ),
-  })
+  }),
 );
 
 vi.mock(
@@ -179,9 +179,9 @@ vi.mock(
           rubricId: "rubric1",
           simulationChatId: "chat1",
         },
-      ])
+      ]),
     ),
-  })
+  }),
 );
 
 vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
@@ -199,7 +199,7 @@ vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
         defaultSimulation: false,
         practiceSimulation: false,
       },
-    ])
+    ]),
   ),
 }));
 
@@ -217,7 +217,7 @@ vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
         defaultRubric: false,
         active: true,
       },
-    ])
+    ]),
   ),
 }));
 
@@ -258,7 +258,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -266,7 +266,7 @@ describe("PersonaPerformance", () => {
       });
 
       expect(
-        screen.getByText("Performance analysis by student persona type")
+        screen.getByText("Performance analysis by student persona type"),
       ).toBeInTheDocument();
     });
 
@@ -283,7 +283,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -296,7 +296,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -309,7 +309,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -323,21 +323,21 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         // Check for chart container
         const chartContainer = document.querySelector(
-          ".recharts-responsive-container"
+          ".recharts-responsive-container",
         );
         expect(chartContainer).toBeInTheDocument();
 
         // Check that the chart is rendered (even if text might not be visible in tests)
         expect(
           screen.queryByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).not.toBeInTheDocument();
       });
     });
@@ -346,21 +346,21 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         // Check for chart container
         const chartContainer = document.querySelector(
-          ".recharts-responsive-container"
+          ".recharts-responsive-container",
         );
         expect(chartContainer).toBeInTheDocument();
 
         // Check that the chart is rendered (even if legend text might not be visible in tests)
         expect(
           screen.queryByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).not.toBeInTheDocument();
       });
     });
@@ -371,7 +371,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -384,7 +384,7 @@ describe("PersonaPerformance", () => {
     it("displays warning indicator when performance meets warning threshold", async () => {
       // Mock data with moderate performance (75% - warning level)
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -404,7 +404,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -417,7 +417,7 @@ describe("PersonaPerformance", () => {
     it("displays danger indicator when performance is below danger threshold", async () => {
       // Mock data with low performance (45% - danger level)
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -437,7 +437,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -450,13 +450,13 @@ describe("PersonaPerformance", () => {
     it("displays neutral indicator when no performance data is available", async () => {
       // Mock empty data
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -472,7 +472,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -484,7 +484,7 @@ describe("PersonaPerformance", () => {
     it("applies yellow background for moderate performance scores", async () => {
       // Mock data with moderate performance
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -498,7 +498,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -510,7 +510,7 @@ describe("PersonaPerformance", () => {
     it("applies red background for low performance scores", async () => {
       // Mock data with low performance
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -524,7 +524,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -538,7 +538,7 @@ describe("PersonaPerformance", () => {
     it("displays improvement insight when performance has improved", async () => {
       // Mock data with improving trend
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -556,7 +556,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -567,7 +567,7 @@ describe("PersonaPerformance", () => {
     it("displays decline insight when performance has declined", async () => {
       // Mock data with declining trend
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -585,7 +585,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -596,7 +596,7 @@ describe("PersonaPerformance", () => {
     it("does not display insights when trend is stable", async () => {
       // Mock data with stable trend
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -614,15 +614,15 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/Performance has improved/)
+          screen.queryByText(/Performance has improved/),
         ).not.toBeInTheDocument();
         expect(
-          screen.queryByText(/Performance has declined/)
+          screen.queryByText(/Performance has declined/),
         ).not.toBeInTheDocument();
       });
     });
@@ -630,7 +630,7 @@ describe("PersonaPerformance", () => {
     it("does not display insights when insufficient trend data", async () => {
       // Mock data with insufficient trend data
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([
         {
           name: "Confident",
@@ -644,15 +644,15 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/Performance has improved/)
+          screen.queryByText(/Performance has improved/),
         ).not.toBeInTheDocument();
         expect(
-          screen.queryByText(/Performance has declined/)
+          screen.queryByText(/Performance has declined/),
         ).not.toBeInTheDocument();
       });
     });
@@ -665,12 +665,12 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
-          screen.getByText("No data available for the selected cohorts")
+          screen.getByText("No data available for the selected cohorts"),
         ).toBeInTheDocument();
       });
     });
@@ -681,13 +681,13 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(screen.getByText("Persona Performance")).toBeInTheDocument();
         expect(
-          screen.queryByText("No data available for the selected cohorts")
+          screen.queryByText("No data available for the selected cohorts"),
         ).not.toBeInTheDocument();
       });
     });
@@ -696,13 +696,13 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(screen.getByText("Persona Performance")).toBeInTheDocument();
         expect(
-          screen.queryByText("No data available for the selected cohorts")
+          screen.queryByText("No data available for the selected cohorts"),
         ).not.toBeInTheDocument();
       });
     });
@@ -712,20 +712,20 @@ describe("PersonaPerformance", () => {
     it("shows no performance data message when no data is available", async () => {
       // Mock empty performance data
       vi.mocked(
-        await import("@/utils/analytics/primary")
+        await import("@/utils/analytics/primary"),
       ).calculatePersonaPerformance.mockReturnValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -733,13 +733,13 @@ describe("PersonaPerformance", () => {
     it("handles missing profiles data", async () => {
       // Mock missing profiles
       vi.mocked(
-        await import("@/utils/queries/profiles/get-all-profiles")
+        await import("@/utils/queries/profiles/get-all-profiles"),
       ).getAllProfiles.mockResolvedValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -750,13 +750,13 @@ describe("PersonaPerformance", () => {
     it("handles missing cohorts data", async () => {
       // Mock missing cohorts
       vi.mocked(
-        await import("@/utils/queries/cohorts/get-all-cohorts")
+        await import("@/utils/queries/cohorts/get-all-cohorts"),
       ).getAllCohorts.mockResolvedValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -770,7 +770,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -787,7 +787,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -803,19 +803,19 @@ describe("PersonaPerformance", () => {
     it("handles no simulations available", async () => {
       // Mock no simulations
       vi.mocked(
-        await import("@/utils/queries/simulations/get-all-simulations")
+        await import("@/utils/queries/simulations/get-all-simulations"),
       ).getAllSimulations.mockResolvedValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(screen.getByText("Persona Performance")).toBeInTheDocument();
         expect(
-          screen.queryByText("Filter by simulation...")
+          screen.queryByText("Filter by simulation..."),
         ).not.toBeInTheDocument();
       });
     });
@@ -823,7 +823,7 @@ describe("PersonaPerformance", () => {
     it("filters simulations by practice status", async () => {
       // Mock simulations with practice simulations
       vi.mocked(
-        await import("@/utils/queries/simulations/get-all-simulations")
+        await import("@/utils/queries/simulations/get-all-simulations"),
       ).getAllSimulations.mockResolvedValue([
         {
           id: "simulation1",
@@ -854,7 +854,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -870,7 +870,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -884,7 +884,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...props} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -896,13 +896,13 @@ describe("PersonaPerformance", () => {
   describe("Error Handling", () => {
     it("handles API errors gracefully", async () => {
       vi.mocked(
-        await import("@/utils/queries/profiles/get-all-profiles")
+        await import("@/utils/queries/profiles/get-all-profiles"),
       ).getAllProfiles.mockRejectedValue(new Error("API Error"));
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -912,13 +912,13 @@ describe("PersonaPerformance", () => {
 
     it("handles missing data gracefully", async () => {
       vi.mocked(
-        await import("@/utils/queries/profiles/get-all-profiles")
+        await import("@/utils/queries/profiles/get-all-profiles"),
       ).getAllProfiles.mockResolvedValue([]);
 
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -932,7 +932,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -945,7 +945,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -960,7 +960,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -971,8 +971,8 @@ describe("PersonaPerformance", () => {
       await waitFor(() => {
         expect(
           screen.queryByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).not.toBeInTheDocument();
       });
     });
@@ -981,7 +981,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -992,8 +992,8 @@ describe("PersonaPerformance", () => {
       await waitFor(() => {
         expect(
           screen.queryByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).not.toBeInTheDocument();
       });
     });
@@ -1002,7 +1002,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -1013,8 +1013,8 @@ describe("PersonaPerformance", () => {
       await waitFor(() => {
         expect(
           screen.queryByText(
-            "No performance data found for the selected date range"
-          )
+            "No performance data found for the selected date range",
+          ),
         ).not.toBeInTheDocument();
       });
     });
@@ -1025,7 +1025,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -1041,7 +1041,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -1059,7 +1059,7 @@ describe("PersonaPerformance", () => {
       render(
         <TestWrapper>
           <PersonaPerformance {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {

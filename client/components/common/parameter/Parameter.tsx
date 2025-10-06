@@ -87,7 +87,7 @@ export default function Parameter({
       active: false,
       defaultParameter: false,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,7 +97,7 @@ export default function Parameter({
   >([]);
 
   const { data: parameter, isLoading: isLoadingParameter } = useParameter(
-    parameterId!
+    parameterId!,
   );
   const { data: parameterItems, isLoading: isLoadingParameterItems } =
     useParameterItemsByParameterId(parameterId!);
@@ -122,14 +122,14 @@ export default function Parameter({
       (c.simulationIds || []).forEach((id) => activeSimulationIds.add(id));
     });
     const activeSimulations = sims.filter(
-      (s) => s.active && activeSimulationIds.has(s.id)
+      (s) => s.active && activeSimulationIds.has(s.id),
     );
     const scenarioIds = new Set<string>();
     activeSimulations.forEach((s) => {
       (s.scenarioIds || []).forEach((id) => scenarioIds.add(id));
     });
     const relevantScenarios = (allScenarios || []).filter((sc) =>
-      scenarioIds.has(sc.id)
+      scenarioIds.has(sc.id),
     );
     const ids = new Set<string>();
     relevantScenarios.forEach((sc: { parameterItemIds: string[] | null }) => {
@@ -260,19 +260,21 @@ export default function Parameter({
         // Execute bulk operations
         if (itemsToDelete.length > 0) {
           promises.push(
-            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete })
+            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete }),
           );
         }
 
         if (itemsToCreate.length > 0) {
           promises.push(
-            createParameterItemsMutation.mutateAsync({ items: itemsToCreate })
+            createParameterItemsMutation.mutateAsync({ items: itemsToCreate }),
           );
         }
 
         if (itemsToUpdate.length > 0) {
           promises.push(
-            updateParameterItemsMutation.mutateAsync({ updates: itemsToUpdate })
+            updateParameterItemsMutation.mutateAsync({
+              updates: itemsToUpdate,
+            }),
           );
         }
 
@@ -300,7 +302,7 @@ export default function Parameter({
                   value: formData.numerical || false ? item.value : item.name,
                   parameterId: newParameter.id,
                   defaultItem: !!item.defaultItem,
-                })
+                }),
               );
             }
           });
@@ -314,7 +316,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -324,7 +326,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -374,7 +376,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted
+      (item) => !item.isDeleted,
     );
 
     activeItems.forEach((item, index) => {
@@ -392,7 +394,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`
+            `Parameter item ${index + 1}: Value must be a valid number`,
           );
         }
       }
@@ -541,7 +543,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm"
@@ -555,7 +557,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                             className="text-sm min-h-[96px]"
@@ -572,7 +574,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="text-sm"
@@ -592,7 +594,7 @@ export default function Parameter({
                                         handleParameterItemInputChange(
                                           itemIndex,
                                           "defaultItem",
-                                          Boolean(checked)
+                                          Boolean(checked),
                                         )
                                       }
                                       aria-label="Save as system item"
@@ -628,7 +630,7 @@ export default function Parameter({
                           </div>
                         </TableCell>
                       </TableRow>
-                    )
+                    ),
                   )}
                 </TableBody>
               </Table>
@@ -674,7 +676,7 @@ export default function Parameter({
                         defaultItem: item.defaultItem ?? false,
                         isNew: false,
                         isDeleted: false,
-                      }))
+                      })),
                     ))
               }
             >

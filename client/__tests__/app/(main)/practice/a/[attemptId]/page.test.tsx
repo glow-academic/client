@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock AttemptChat component
@@ -71,7 +71,7 @@ describe("PracticeAttemptPage", () => {
 
       const metadata = await generateMetadata(
         { params: mockParams },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("Practice Test Simulation");
@@ -84,7 +84,7 @@ describe("PracticeAttemptPage", () => {
 
       const metadata = await generateMetadata(
         { params: mockParams },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("Practice Attempt test-att...");
@@ -105,7 +105,7 @@ describe("PracticeAttemptPage", () => {
 
       const metadata = await generateMetadata(
         { params: mockParams },
-        {} as ResolvingMetadata
+        {} as ResolvingMetadata,
       );
 
       expect(metadata.title).toBe("Practice Attempt");

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,11 +38,11 @@ vi.mock("@/utils/queries/parameter_items/get-all-parameter-items");
 vi.mock("@/utils/queries/personas/get-all-personas");
 vi.mock("@/utils/queries/documents/get-all-documents");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 
 // Mock Recharts components
@@ -278,7 +278,7 @@ const mockCorrelationData = {
 
 // Mock the utility function
 const mockCalculateScenarioPerformance = vi.mocked(
-  calculateScenarioPerformance
+  calculateScenarioPerformance,
 );
 
 // Mock all query functions
@@ -292,13 +292,13 @@ const mockGetAllParameterItems = vi.mocked(getAllParameterItems);
 const mockGetAllPersonas = vi.mocked(getAllPersonas);
 const mockGetAllDocuments = vi.mocked(getAllDocuments);
 const mockGetSimulationAttemptsByProfiles = vi.mocked(
-  getSimulationAttemptsByProfiles
+  getSimulationAttemptsByProfiles,
 );
 const mockGetSimulationChatsByAttempts = vi.mocked(
-  getSimulationChatsByAttempts
+  getSimulationChatsByAttempts,
 );
 const mockGetSimulationChatGradesBySimulationChats = vi.mocked(
-  getSimulationChatGradesBySimulationChats
+  getSimulationChatGradesBySimulationChats,
 );
 
 // Test props
@@ -329,7 +329,7 @@ describe("ScenarioStats", () => {
     mockGetSimulationAttemptsByProfiles.mockResolvedValue(mockData.attempts);
     mockGetSimulationChatsByAttempts.mockResolvedValue(mockData.chats);
     mockGetSimulationChatGradesBySimulationChats.mockResolvedValue(
-      mockData.grades
+      mockData.grades,
     );
 
     mockCalculateScenarioPerformance.mockReturnValue({
@@ -348,14 +348,14 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
       expect(
         screen.getByText(
-          "Performance correlation with scenario characteristics"
-        )
+          "Performance correlation with scenario characteristics",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -364,7 +364,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -373,7 +373,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByRole("combobox")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       // The component auto-selects the first parameter, so it shows "Difficulty" instead of "Select Parameter"
@@ -386,7 +386,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -395,7 +395,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(screen.getByTestId("responsive-container")).toBeInTheDocument();
@@ -406,7 +406,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -415,7 +415,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("Pearson r:")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(screen.getByText("+0.75")).toBeInTheDocument();
@@ -438,7 +438,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -446,7 +446,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(mockCalculateScenarioPerformance).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioPerformance).toHaveBeenCalledWith(
@@ -463,7 +463,7 @@ describe("ScenarioStats", () => {
         mockProps.dateEnd,
         mockProps.profileId,
         mockData.cohorts,
-        mockProps.cohortIds
+        mockProps.cohortIds,
       );
     });
 
@@ -476,8 +476,8 @@ describe("ScenarioStats", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No scenario data available for the selected time period."
-          )
+            "No scenario data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -491,7 +491,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -500,7 +500,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByRole("combobox")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       // Open the parameter picker
@@ -518,7 +518,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -527,7 +527,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByRole("combobox")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       // Verify initial call
@@ -563,7 +563,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -571,7 +571,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       const statusIndicator = screen.getByTestId("status-indicator");
@@ -596,7 +596,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -604,7 +604,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       const statusIndicator = screen.getByTestId("status-indicator");
@@ -629,7 +629,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -637,7 +637,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       const statusIndicator = screen.getByTestId("status-indicator");
@@ -665,7 +665,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No data available for the selected cohorts.")
+          screen.getByText("No data available for the selected cohorts."),
         ).toBeInTheDocument();
       });
     });
@@ -675,7 +675,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -694,7 +694,7 @@ describe("ScenarioStats", () => {
           expect.any(Date),
           mockProps.profileId,
           mockData.cohorts,
-          mockProps.cohortIds
+          mockProps.cohortIds,
         );
       });
     });
@@ -718,7 +718,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("No numerical parameters available for analysis.")
+          screen.getByText("No numerical parameters available for analysis."),
         ).toBeInTheDocument();
       });
     });
@@ -735,7 +735,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -743,7 +743,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("+0.75")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
 
@@ -757,7 +757,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -765,7 +765,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("-0.60")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
 
@@ -779,7 +779,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -787,7 +787,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("0.00")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
   });
@@ -798,7 +798,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -806,12 +806,12 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       const barChart = screen.getByTestId("bar-chart");
       const chartData = JSON.parse(
-        barChart.getAttribute("data-chart-data") || "[]"
+        barChart.getAttribute("data-chart-data") || "[]",
       );
 
       expect(chartData).toEqual(mockPerformanceData);
@@ -822,7 +822,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -830,7 +830,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("cartesian-grid")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(screen.getByTestId("x-axis")).toBeInTheDocument();
@@ -847,7 +847,7 @@ describe("ScenarioStats", () => {
 
       // Should still render the component structure
       expect(
-        screen.getByText("Scenario Performance Analysis")
+        screen.getByText("Scenario Performance Analysis"),
       ).toBeInTheDocument();
     });
 
@@ -861,7 +861,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -884,7 +884,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -903,7 +903,7 @@ describe("ScenarioStats", () => {
           customDateProps.dateEnd,
           customDateProps.profileId,
           expect.any(Array),
-          customDateProps.cohortIds
+          customDateProps.cohortIds,
         );
       });
     });
@@ -920,13 +920,13 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
       // Should still render the component structure
       expect(
-        screen.getByText("Scenario Performance Analysis")
+        screen.getByText("Scenario Performance Analysis"),
       ).toBeInTheDocument();
     });
 
@@ -940,13 +940,13 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
       // Should still render the component structure
       expect(
-        screen.getByText("Scenario Performance Analysis")
+        screen.getByText("Scenario Performance Analysis"),
       ).toBeInTheDocument();
     });
 
@@ -960,7 +960,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -968,7 +968,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("0.00")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
 
@@ -982,7 +982,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -990,7 +990,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("+0.99")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
 
@@ -1004,7 +1004,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -1012,7 +1012,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByText("-0.99")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
   });
@@ -1023,7 +1023,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -1032,14 +1032,14 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByRole("combobox")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       // Check that all major elements are present
       expect(
         screen.getByText(
-          "Performance correlation with scenario characteristics"
-        )
+          "Performance correlation with scenario characteristics",
+        ),
       ).toBeInTheDocument();
       expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
       expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
@@ -1050,7 +1050,7 @@ describe("ScenarioStats", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Performance Analysis")
+          screen.getByText("Scenario Performance Analysis"),
         ).toBeInTheDocument();
       });
 
@@ -1059,7 +1059,7 @@ describe("ScenarioStats", () => {
         () => {
           expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       // Verify that the component maintains its state

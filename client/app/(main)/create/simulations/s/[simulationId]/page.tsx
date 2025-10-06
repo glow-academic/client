@@ -13,7 +13,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { simulationId } = await params;
   const simulation = await simulationRepo.find(simulationId);

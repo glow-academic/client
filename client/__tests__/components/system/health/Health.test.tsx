@@ -165,7 +165,7 @@ describe("Health", () => {
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith("/api/health");
         expect(global.fetch).toHaveBeenCalledWith(
-          "http://localhost:8000/health"
+          "http://localhost:8000/health",
         );
       });
     });
@@ -186,7 +186,7 @@ describe("Health", () => {
 
     it("should handle network errors", async () => {
       (global.fetch as unknown as Mock).mockRejectedValueOnce(
-        new Error("Network error")
+        new Error("Network error"),
       );
 
       render(<Health />);
@@ -249,7 +249,7 @@ describe("Health", () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          "http://localhost:8000/health"
+          "http://localhost:8000/health",
         );
       });
     });

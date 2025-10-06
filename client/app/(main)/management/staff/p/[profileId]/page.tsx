@@ -12,7 +12,7 @@ import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   // read route params
   const { profileId } = await params;

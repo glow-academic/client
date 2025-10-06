@@ -1,4 +1,4 @@
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import the hook to test
@@ -8,7 +8,7 @@ import { useParameterColumns } from "@/hooks/use-parameter-columns";
 import "@/mocks/api";
 
 // Import the test helper
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 
 // Test component that uses the hook
 function TestComponent() {
@@ -50,11 +50,11 @@ describe("useParameterColumns", () => {
     // Check that all expected properties are present
     expect(screen.getByTestId("has-type-options")).toHaveTextContent("true");
     expect(screen.getByTestId("has-item-count-options")).toHaveTextContent(
-      "true"
+      "true",
     );
     expect(screen.getByTestId("has-status-options")).toHaveTextContent("true");
     expect(screen.getByTestId("has-scenario-options")).toHaveTextContent(
-      "true"
+      "true",
     );
   });
 });

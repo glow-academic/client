@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -32,7 +32,7 @@ describe("Markdown", () => {
 ## Heading 2
 ### Heading 3
 #### Heading 4`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("Markdown", () => {
       render(
         <Markdown>
           This is a paragraph with some text. This is another paragraph.
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe("Markdown", () => {
       render(
         <Markdown>
           **Bold text** and *italic text* and ***bold italic text***
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe("Markdown", () => {
 1. Ordered item 1
 2. Ordered item 2
    1. Nested ordered item`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("Markdown", () => {
           {`> This is a blockquote
 > 
 > With multiple lines`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -94,7 +94,7 @@ function hello() {
   console.log("Hello, world!");
 }
 \`\`\``}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -104,7 +104,7 @@ function hello() {
       render(
         <Markdown>
           Use the `console.log()` function to print to the console.
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -117,7 +117,7 @@ function hello() {
 |----------|----------|----------|
 | Cell 1   | Cell 2   | Cell 3   |
 | Cell 4   | Cell 5   | Cell 6   |`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -126,9 +126,7 @@ function hello() {
 
   describe("Link Handling", () => {
     it("should render external links with target blank", () => {
-      render(
-        <Markdown>[External Link](https://example.com)</Markdown>
-      );
+      render(<Markdown>[External Link](https://example.com)</Markdown>);
 
       const link = screen.getByText("External Link");
       expect(link).toBeInTheDocument();
@@ -160,7 +158,7 @@ function hello() {
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute(
         "href",
-        "/api/download/csv/token/token123?name=Download Data"
+        "/api/download/csv/token/token123?name=Download Data",
       );
     });
   });
@@ -170,7 +168,7 @@ function hello() {
       render(
         <Markdown>
           {`The quadratic formula is $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -182,7 +180,7 @@ function hello() {
           {`$$
 \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
 $$`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -191,9 +189,7 @@ $$`}
 
   describe("Image Handling", () => {
     it("should render images correctly", () => {
-      render(
-        <Markdown>![Alt text](https://example.com/image.png)</Markdown>
-      );
+      render(<Markdown>![Alt text](https://example.com/image.png)</Markdown>);
 
       expect(document.body).toBeInTheDocument();
     });
@@ -202,7 +198,7 @@ $$`}
       render(
         <Markdown>
           ![Alt text](https://example.com/image.png "Image title")
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -222,7 +218,7 @@ $$`}
           {`- [x] Completed task
 - [ ] Incomplete task
 - [x] Another completed task`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -230,7 +226,7 @@ $$`}
 
     it("should render autolinks", () => {
       render(
-        <Markdown>Visit https://example.com for more information.</Markdown>
+        <Markdown>Visit https://example.com for more information.</Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -245,7 +241,7 @@ $$`}
 const greeting = "Hello, World!";
 console.log(greeting);
 \`\`\``}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -258,7 +254,7 @@ console.log(greeting);
 def hello_world():
     print("Hello, World!")
 \`\`\``}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -274,7 +270,7 @@ def hello_world():
   "city": "New York"
 }
 \`\`\``}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -292,7 +288,7 @@ def hello_world():
       render(
         <Markdown>
           {`Special characters: & < > " ' \` ~ ! @ # $ % ^ & * ( ) _ + - = [ ] { } | \\ ; : ' " , . / ?`}
-        </Markdown>
+        </Markdown>,
       );
       expect(document.body).toBeInTheDocument();
     });
@@ -323,7 +319,7 @@ const x = 1;
 ![Image](https://example.com/image.png)
 
 Math: $E = mc^2$`}
-        </Markdown>
+        </Markdown>,
       );
       expect(document.body).toBeInTheDocument();
     });
@@ -340,7 +336,7 @@ Math: $E = mc^2$`}
 
 | Unclosed table
 | Unclosed row`}
-        </Markdown>
+        </Markdown>,
       );
       expect(document.body).toBeInTheDocument();
     });
@@ -358,7 +354,7 @@ Math: $E = mc^2$`}
 1. 
 | | |
 |---|---|`}
-        </Markdown>
+        </Markdown>,
       );
       expect(document.body).toBeInTheDocument();
     });
@@ -369,7 +365,7 @@ Math: $E = mc^2$`}
       render(
         <Markdown>
           {`Download [Data 1](csv://token1) and [Data 2](csv://token2)`}
-        </Markdown>
+        </Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -377,7 +373,7 @@ Math: $E = mc^2$`}
 
     it("should handle CSV links with special characters in token", () => {
       render(
-        <Markdown>[Download](csv://token-with-special-chars_123)</Markdown>
+        <Markdown>[Download](csv://token-with-special-chars_123)</Markdown>,
       );
 
       expect(document.body).toBeInTheDocument();
@@ -392,9 +388,7 @@ Math: $E = mc^2$`}
 
   describe("Newline Processing", () => {
     it("should normalize different newline formats", () => {
-      render(
-        <Markdown>{"Line 1\r\nLine 2\nLine 3\rLine 4"}</Markdown>
-      );
+      render(<Markdown>{"Line 1\r\nLine 2\nLine 3\rLine 4"}</Markdown>);
       expect(document.body).toBeInTheDocument();
     });
 

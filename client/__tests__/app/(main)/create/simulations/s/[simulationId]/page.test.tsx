@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -54,7 +54,7 @@ describe("EditSimulationPage", () => {
       expect(screen.getByTestId("simulation-edit")).toBeInTheDocument();
       expect(screen.getByTestId("simulation-edit")).toHaveAttribute(
         "data-simulation-id",
-        "test-simulation-id"
+        "test-simulation-id",
       );
     });
 
@@ -85,7 +85,7 @@ describe("EditSimulationPage", () => {
       expect(screen.getByTestId("simulation-edit")).toBeInTheDocument();
       expect(screen.getByTestId("simulation-edit")).toHaveAttribute(
         "data-simulation-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

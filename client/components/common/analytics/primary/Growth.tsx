@@ -85,7 +85,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return metricsWithFormatters.filter((metric) =>
-      selectedMetrics.includes(metric.id)
+      selectedMetrics.includes(metric.id),
     );
   }, [metricsWithFormatters, selectedMetrics]);
 
@@ -112,7 +112,7 @@ export default function Growth({
   // Normalize to a string once
   const normalizedInsight = useMemo(
     () => (actionableInsight ?? "").trim(),
-    [actionableInsight]
+    [actionableInsight],
   );
 
   if (isLoading) {
@@ -234,7 +234,7 @@ export default function Growth({
                   formatter={(value: number, _name: string, item: any) => {
                     const id = String(item?.dataKey ?? "");
                     const metric = metricsWithFormatters.find(
-                      (m) => m.id === id
+                      (m) => m.id === id,
                     );
 
                     // Prefer the metric's own formatter if present

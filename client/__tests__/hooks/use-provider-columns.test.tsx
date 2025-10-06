@@ -1,4 +1,4 @@
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import the hook to test
@@ -8,7 +8,7 @@ import { useProviderColumns } from "@/hooks/use-provider-columns";
 import "@/mocks/api";
 
 // Import the test helper
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 
 // Test component that uses the hook
 function TestComponent() {
@@ -46,10 +46,10 @@ describe("useProviderColumns", () => {
 
     // Check that all expected properties are present
     expect(screen.getByTestId("has-provider-options")).toHaveTextContent(
-      "true"
+      "true",
     );
     expect(screen.getByTestId("has-custom-model-options")).toHaveTextContent(
-      "true"
+      "true",
     );
     expect(screen.getByTestId("has-status-options")).toHaveTextContent("true");
   });

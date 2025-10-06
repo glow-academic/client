@@ -24,7 +24,7 @@ export interface NewScenarioResponse {
 }
 
 export async function newScenario(
-  params: NewScenarioParams
+  params: NewScenarioParams,
 ): Promise<NewScenarioResponse> {
   try {
     const formData = new FormData();
@@ -80,7 +80,7 @@ export async function newScenario(
       message: result.message || "Scenario generated successfully",
       status: result.status || "success",
       title: result.title,
-      description: result.description
+      description: result.description,
     };
   } catch (error) {
     const errorMessage = `Error generating new scenario: ${error instanceof Error ? error.message : "Unknown error"}`;

@@ -17,7 +17,7 @@ export function useAgentColumns() {
       { value: "medium", label: "Medium" },
       { value: "high", label: "High" },
     ],
-    []
+    [],
   );
 
   const modelOptions = useMemo(() => {
@@ -34,7 +34,7 @@ export function useAgentColumns() {
       { value: "medium", label: "Medium (0.34-0.66)" },
       { value: "high", label: "High (0.67-1.0)" },
     ],
-    []
+    [],
   );
 
   // Helper function to get temperature range
@@ -129,7 +129,7 @@ export function useAgentColumns() {
         },
       },
     ],
-    [models]
+    [models],
   );
 
   return {

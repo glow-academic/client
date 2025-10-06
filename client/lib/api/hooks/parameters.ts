@@ -2,8 +2,12 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Parameter, ParameterCreate, ParameterUpdate } from "@/lib/repos/parameterRepo";
-import { parameterKeys  } from "@/lib/api/keys";
+import type {
+  Parameter,
+  ParameterCreate,
+  ParameterUpdate,
+} from "@/lib/repos/parameterRepo";
+import { parameterKeys } from "@/lib/api/keys";
 
 export function useParameters(filters?: unknown) {
   return useQuery({
@@ -15,7 +19,11 @@ export function useParameters(filters?: unknown) {
 export function useCreateParameter() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ParameterCreate) => api<Parameter>("/api/v1/parameters", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ParameterCreate) =>
+      api<Parameter>("/api/v1/parameters", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: parameterKeys.all }),
   });
 }
@@ -33,11 +41,18 @@ export function useUpdateParameter(id?: string) {
   return useMutation({
     mutationFn: (patch: ParameterUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Parameter>(`/api/v1/parameters/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Parameter>(`/api/v1/parameters/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,12 +70,17 @@ export function useDeleteParameter(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/parameters/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/parameters/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: parameterKeys.all }),
   });
 }
-

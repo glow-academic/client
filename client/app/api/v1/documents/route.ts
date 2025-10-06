@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list documents",
         subject: { entityType: "documents" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "documents" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

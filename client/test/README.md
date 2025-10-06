@@ -5,6 +5,7 @@ This directory contains the unified test harness that provides a streamlined tes
 ## Overview
 
 The unified test harness automatically generates:
+
 - Mockable server actions (queries and mutations)
 - Mock data with proper relationships
 - Comprehensive Vitest setup with centralized mocking
@@ -14,17 +15,21 @@ The unified test harness automatically generates:
 ## Generated Files
 
 ### Core Testing Infrastructure
+
 - `setup.ts` - Comprehensive Vitest setup with global mocks and server action mocking
 - `custom-render.tsx` - Custom render function with all context providers
 - `example-usage.test.tsx` - Example showing how to use the new setup
 
 ### Mock Data
+
 - `../mocks/schema.ts` - Mock data with proper relationships (generated)
 
 ### Mock Factory
+
 - `../lib/testing/create-mockable-action.ts` - Centralized mock factory (generated)
 
 ### Server Actions
+
 - `../utils/queries/*` - Mockable query functions (generated)
 - `../utils/mutations/*` - Mockable mutation functions (generated)
 
@@ -46,16 +51,18 @@ node database/scripts/generate-test-harness.js --from-schema
 ### Writing Tests
 
 1. **Import the custom render function:**
+
    ```typescript
-   import { render, screen, waitFor } from '@/test/custom-render';
+   import { render, screen, waitFor } from "@/test/custom-render";
    ```
 
 2. **Write your tests normally:**
+
    ```typescript
    describe("My Component", () => {
      it("should render correctly", async () => {
        render(<MyComponent />);
-       
+
        await waitFor(() => {
          expect(screen.getByText("Expected Text")).toBeInTheDocument();
        });
@@ -72,6 +79,7 @@ node database/scripts/generate-test-harness.js --from-schema
 ### What's Included Automatically
 
 #### Context Providers
+
 - `ProfileProvider` with mock profile
 - `QueryClient` with retry disabled
 - `AnalyticsProvider`
@@ -81,6 +89,7 @@ node database/scripts/generate-test-harness.js --from-schema
 - `SidebarProvider`
 
 #### Global Mocks
+
 - Next.js navigation (`useRouter`, `usePathname`)
 - Next.js image component
 - Markdown component
@@ -89,13 +98,16 @@ node database/scripts/generate-test-harness.js --from-schema
 - Next-Auth session
 
 #### Server Action Mocks
+
 All server actions are automatically mocked to return appropriate data from `mocks/schema.ts`:
+
 - Query functions (get all, get by ID, get by foreign key)
 - Mutation functions (create, update, delete - both single and multiple)
 
 ## Migration from Old Setup
 
 ### Before (Old Way)
+
 ```typescript
 import { renderWithMocks } from '@/test/renderWithMocks';
 
@@ -108,6 +120,7 @@ describe("My Component", () => {
 ```
 
 ### After (New Way)
+
 ```typescript
 import { render } from '@/test/custom-render';
 
@@ -137,7 +150,7 @@ Ensure your `vitest.config.ts` includes:
 ```typescript
 export default defineConfig({
   test: {
-    setupFiles: ['./test/setup.ts'],
+    setupFiles: ["./test/setup.ts"],
     // ... other config
   },
 });
@@ -150,14 +163,17 @@ The mock factory automatically detects Cypress environment and uses Cypress task
 ## Troubleshooting
 
 ### Server Actions Not Mocked
+
 - Ensure you're importing from `@/test/custom-render`
 - Check that the generator has been run recently
 - Verify that `test/setup.ts` is being loaded by Vitest
 
 ### Missing Providers
+
 - The custom render includes all common providers
 - If you need additional providers, modify `custom-render.tsx`
 
 ### Mock Data Issues
+
 - Regenerate mock data with `--pull` to match current database
-- Check `mocks/schema.ts` for the generated mock data structure 
+- Check `mocks/schema.ts` for the generated mock data structure

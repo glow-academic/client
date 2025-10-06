@@ -1,7 +1,7 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { Scenario } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -67,7 +67,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render the component with no data message
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -142,7 +142,7 @@ describe("ScenariosDataTable", () => {
 
       // Should have proper accessibility attributes
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
   });
@@ -153,7 +153,7 @@ describe("ScenariosDataTable", () => {
 
       // Should handle state changes properly
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -162,7 +162,7 @@ describe("ScenariosDataTable", () => {
 
       // Should handle user events properly
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
   });
@@ -184,7 +184,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render the component even with edge case props
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -204,7 +204,7 @@ describe("ScenariosDataTable", () => {
 
       // Should render with minimal props
       expect(
-        screen.getByText("No scenarios match the current filters.")
+        screen.getByText("No scenarios match the current filters."),
       ).toBeInTheDocument();
     });
   });

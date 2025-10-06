@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { Table } from "@tanstack/react-table";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -78,9 +78,7 @@ describe("ExportButton", () => {
       expect(document.body).toBeInTheDocument();
     });
     it("should handle missing or invalid props", () => {
-      render(
-        <ExportButton table={createMockTable()} profileOptions={[]} />,
-      );
+      render(<ExportButton table={createMockTable()} profileOptions={[]} />);
       expect(document.body).toBeInTheDocument();
     });
   });

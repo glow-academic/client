@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -19,7 +19,7 @@ vi.mock("@tanstack/react-query", async () => {
           data: [],
           isLoading: false,
           error: null,
-        }) as const
+        }) as const,
     ),
   };
 });
@@ -43,7 +43,7 @@ vi.mock(
   "@/utils/queries/simulation_messages/get-simulation-messages-by-chat",
   () => ({
     getSimulationMessagesByChat: vi.fn(() => Promise.resolve([])),
-  })
+  }),
 );
 
 // ------------------------------------------------------------------
@@ -145,7 +145,7 @@ describe("AttemptMessages", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Choose a prompt below or type your own message")
+          screen.getByText("Choose a prompt below or type your own message"),
         ).toBeInTheDocument();
       });
     });
@@ -163,10 +163,10 @@ describe("AttemptMessages", () => {
       await waitFor(() => {
         expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
         expect(
-          screen.getByText("What can I help you with?")
+          screen.getByText("What can I help you with?"),
         ).toBeInTheDocument();
         expect(
-          screen.getByText("I'm ready to assist you today")
+          screen.getByText("I'm ready to assist you today"),
         ).toBeInTheDocument();
       });
     });
@@ -267,7 +267,7 @@ describe("AttemptMessages", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("I need help with my assignment")
+          screen.getByText("I need help with my assignment"),
         ).toBeInTheDocument();
       });
     });
@@ -284,7 +284,7 @@ describe("AttemptMessages", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Hello, how can I help you?")
+          screen.getByText("Hello, how can I help you?"),
         ).toBeInTheDocument();
       });
     });
@@ -604,7 +604,7 @@ describe("AttemptMessages", () => {
       expect(vi.mocked(useQuery)).toHaveBeenCalledWith(
         expect.objectContaining({
           queryKey: ["simulationMessages", "test-chat-id"],
-        })
+        }),
       );
     });
 
@@ -626,7 +626,7 @@ describe("AttemptMessages", () => {
       expect(vi.mocked(useQuery)).toHaveBeenCalledWith(
         expect.objectContaining({
           queryKey: ["simulationMessages", "custom-chat-id"],
-        })
+        }),
       );
     });
   });

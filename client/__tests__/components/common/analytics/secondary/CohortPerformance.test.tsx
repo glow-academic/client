@@ -13,7 +13,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the utility function
@@ -26,13 +26,13 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 vi.mock(
-  "@/utils/queries/simulation_chats/get-simulation-chat-chats-by-attempts"
+  "@/utils/queries/simulation_chats/get-simulation-chat-chats-by-attempts",
 );
 vi.mock("@/utils/queries/simulations/get-all-simulations");
 
@@ -244,7 +244,7 @@ const renderComponent = (props = {}) => {
   return render(
     <QueryClientProvider client={mockQueryClient}>
       <CohortPerformance {...defaultProps} {...props} />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 };
 
@@ -259,7 +259,7 @@ describe("CohortPerformance", () => {
     vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(mockAttempts);
     vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
     vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
-      mockGrades
+      mockGrades,
     );
     vi.mocked(getAllSimulations).mockResolvedValue(mockSimulations);
   });
@@ -270,7 +270,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -303,8 +303,8 @@ describe("CohortPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No cohort data available for the selected time period."
-          )
+            "No cohort data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -316,7 +316,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent({
@@ -338,7 +338,7 @@ describe("CohortPerformance", () => {
           defaultProps.thresholds,
           "profile-1",
           ["cohort-1"],
-          []
+          [],
         );
       });
     });
@@ -359,8 +359,8 @@ describe("CohortPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No cohort data available for the selected time period."
-          )
+            "No cohort data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -372,7 +372,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -380,7 +380,7 @@ describe("CohortPerformance", () => {
       await waitFor(() => {
         expect(screen.getByText("Test Cohort 1")).toBeInTheDocument();
         expect(
-          screen.getByText(/50\.00% of students pass/)
+          screen.getByText(/50\.00% of students pass/),
         ).toBeInTheDocument();
       });
     });
@@ -438,7 +438,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -453,7 +453,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       // Mock empty simulations
@@ -463,7 +463,7 @@ describe("CohortPerformance", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByTestId("simulation-picker")
+          screen.queryByTestId("simulation-picker"),
         ).not.toBeInTheDocument();
       });
     });
@@ -573,7 +573,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -588,7 +588,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -604,7 +604,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent();
@@ -646,8 +646,8 @@ describe("CohortPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No cohort data available for the selected time period."
-          )
+            "No cohort data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -659,7 +659,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent({
@@ -683,7 +683,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       renderComponent({
@@ -705,7 +705,7 @@ describe("CohortPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateCohortPerformance).mockReturnValue(
-        mockCohortPerformanceResult
+        mockCohortPerformanceResult,
       );
 
       const customThresholds = {

@@ -2,8 +2,12 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Rubric, RubricCreate, RubricUpdate } from "@/lib/repos/rubricRepo";
-import { rubricKeys  } from "@/lib/api/keys";
+import type {
+  Rubric,
+  RubricCreate,
+  RubricUpdate,
+} from "@/lib/repos/rubricRepo";
+import { rubricKeys } from "@/lib/api/keys";
 
 export function useRubrics(filters?: unknown) {
   return useQuery({
@@ -15,7 +19,11 @@ export function useRubrics(filters?: unknown) {
 export function useCreateRubric() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: RubricCreate) => api<Rubric>("/api/v1/rubrics", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: RubricCreate) =>
+      api<Rubric>("/api/v1/rubrics", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
   });
 }
@@ -33,11 +41,18 @@ export function useUpdateRubric(id?: string) {
   return useMutation({
     mutationFn: (patch: RubricUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Rubric>(`/api/v1/rubrics/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Rubric>(`/api/v1/rubrics/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,7 +70,11 @@ export function useDeleteRubric(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
       return api<void>(`/api/v1/rubrics/${resolvedId}`, { method: "DELETE" });
@@ -63,4 +82,3 @@ export function useDeleteRubric(id?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: rubricKeys.all }),
   });
 }
-

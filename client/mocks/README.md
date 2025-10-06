@@ -22,21 +22,26 @@ client/mocks/
 **Purpose**: Mock API calls made with fetch to your Next.js Route Handlers and external APIs.
 
 **Key Responsibilities**:
+
 - Mock individual API client functions
 - Provide reusable response patterns (`mockSuccessResponse`, `mockErrorResponse`)
 - Export helper functions for easy test setup
 - Mock global `fetch` API
 
 **What to add here**:
+
 - New API endpoint mocks as you add them to your application
 - Custom response patterns for specific API scenarios
 - Mock implementations for external API integrations
 - Error handling patterns
 
 **Example additions**:
+
 ```typescript
 // Add new API mocks
-export const uploadFileMock = vi.fn().mockResolvedValue(mockSuccessResponse({ fileId: "file-123" }));
+export const uploadFileMock = vi
+  .fn()
+  .mockResolvedValue(mockSuccessResponse({ fileId: "file-123" }));
 
 // Add to vi.mock calls
 vi.mock("@/utils/api/files", () => ({
@@ -55,18 +60,21 @@ export const apiMocks = {
 **Purpose**: Handle everything related to user identity, sessions, and permissions.
 
 **Key Responsibilities**:
+
 - Mock NextAuth session data and hooks
 - Mock profile context and related utilities
 - Provide helper functions to change user state for different tests
 - Mock authentication-related API calls
 
 **What to add here**:
+
 - New authentication providers or methods
 - Additional profile properties or context features
 - Role-based access control mocks
 - Session management utilities
 
 **Example additions**:
+
 ```typescript
 // Add new profile properties
 export const mockProfile = {
@@ -89,18 +97,21 @@ export const setupAdminUser = () => {
 **Purpose**: Give complete control over application routing behavior during tests.
 
 **Key Responsibilities**:
+
 - Mock Next.js navigation hooks (`useRouter`, `usePathname`, `useSearchParams`)
 - Export mocked router functions for assertions
 - Mock navigation utilities and breadcrumbs
 - Provide navigation state management
 
 **What to add here**:
+
 - New navigation hooks or utilities
 - Custom routing logic mocks
 - Breadcrumb generation mocks
 - Route protection mocks
 
 **Example additions**:
+
 ```typescript
 // Add new navigation hooks
 vi.mock("next/navigation", () => ({
@@ -124,24 +135,29 @@ export const setupProtectedRoute = (requiresAuth = true) => {
 **Purpose**: Catch-all for global mocks that don't fit into other categories.
 
 **Key Responsibilities**:
+
 - Mock browser APIs (ResizeObserver, IntersectionObserver, matchMedia)
 - Mock third-party UI libraries (charts, notifications, uploads)
 - Mock utility modules (logger, database connections)
 - Set up environment variables for testing
 
 **What to add here**:
+
 - New third-party library integrations
 - Additional browser API mocks
 - Component library mocks
 - Global utility mocks
 
 **Example additions**:
+
 ```typescript
 // Add new third-party library
 vi.mock("date-fns", () => ({
   format: vi.fn((date) => "2024-01-01"),
   parseISO: vi.fn((date) => new Date(date)),
-  addDays: vi.fn((date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000)),
+  addDays: vi.fn(
+    (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000),
+  ),
 }));
 
 // Add new browser API
@@ -159,9 +175,11 @@ Object.defineProperty(window, "localStorage", {
 ## Best Practices
 
 ### 1. **Keep Mocks Focused**
+
 Each mock file should have a clear, single responsibility. Don't mix concerns between files.
 
 ### 2. **Export Test Utilities**
+
 Provide helper functions that make it easy to set up specific test scenarios:
 
 ```typescript
@@ -169,7 +187,10 @@ Provide helper functions that make it easy to set up specific test scenarios:
 export const setupAuthenticatedUser = (userData = {}) => {
   authMocks.useSession.mockReturnValue({
     ...mockSessionData,
-    data: { ...mockSessionData.data, user: { ...mockSessionData.data.user, ...userData } },
+    data: {
+      ...mockSessionData.data,
+      user: { ...mockSessionData.data.user, ...userData },
+    },
   });
 };
 
@@ -178,6 +199,7 @@ setupAuthenticatedUser({ role: "admin" });
 ```
 
 ### 3. **Use Consistent Patterns**
+
 Follow the established patterns in each file for consistency:
 
 - Export mock objects for easy access
@@ -186,9 +208,11 @@ Follow the established patterns in each file for consistency:
 - Include TypeScript types
 
 ### 4. **Document Complex Mocks**
+
 Add comments for complex mock implementations or when mocking behavior differs from real behavior.
 
 ### 5. **Test Your Mocks**
+
 Consider writing tests for complex mock utilities to ensure they work as expected.
 
 ## Integration with Test Setup
@@ -217,6 +241,7 @@ This ensures that all mocks are available globally for all tests without needing
 ### Testing Mock Changes
 
 After updating mocks, run your test suite to ensure:
+
 - No existing tests break
 - New functionality is properly mocked
 - Mock behavior matches expected behavior
@@ -224,10 +249,12 @@ After updating mocks, run your test suite to ensure:
 ### Regenerating Auto-Generated Files
 
 The following files are auto-generated and should not be edited manually:
+
 - `factories.ts` - Generated by test harness script
 - `mock-db.ts` - Generated by test harness script
 
 To regenerate these files, run:
+
 ```bash
 cd database && node scripts/generate-test-harness.js
 ```
@@ -272,4 +299,4 @@ describe('User Dashboard', () => {
 });
 ```
 
-This modular approach makes your test mocks more maintainable, organized, and easier to extend as your application grows. 
+This modular approach makes your test mocks more maintainable, organized, and easier to extend as your application grows.

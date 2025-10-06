@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -95,9 +95,7 @@ describe("LogsDataTableToolbar", () => {
     });
 
     it("should disable refresh button when refreshing", () => {
-      render(
-        <LogsDataTableToolbar {...mockProps} isRefreshing={true} />,
-      );
+      render(<LogsDataTableToolbar {...mockProps} isRefreshing={true} />);
 
       // Find the refresh button by looking for the button with refresh icon
       const buttons = screen.getAllByRole("button");

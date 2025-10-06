@@ -15,7 +15,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the RubricPicker component
@@ -66,13 +66,13 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades"
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics");
@@ -266,7 +266,7 @@ describe("SkillPerformance", () => {
     vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
     vi.mocked(getSimulationChatGradesByRubrics).mockResolvedValue(mockGrades);
     vi.mocked(
-      getSimulationChatFeedbacksBySimulationChatGrades
+      getSimulationChatFeedbacksBySimulationChatGrades,
     ).mockResolvedValue(mockFeedbacks);
     vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
     vi.mocked(getAllProfiles).mockResolvedValue(mockProfiles);
@@ -293,7 +293,7 @@ describe("SkillPerformance", () => {
     return render(
       <QueryClientProvider client={queryClient}>
         <SkillPerformance {...defaultProps} />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
   };
 
@@ -304,7 +304,7 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         expect(screen.getByText("Skill Performance")).toBeInTheDocument();
         expect(
-          screen.getByText("Performance across key teaching competencies")
+          screen.getByText("Performance across key teaching competencies"),
         ).toBeInTheDocument();
       });
     });
@@ -334,13 +334,13 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No skill data available for the selected time period"
-          )
+            "No skill data available for the selected time period",
+          ),
         ).toBeInTheDocument();
         expect(
           screen.getByText(
-            "Complete some training sessions to see your progress"
-          )
+            "Complete some training sessions to see your progress",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -352,7 +352,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -376,8 +376,8 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No skill data available for the selected time period"
-          )
+            "No skill data available for the selected time period",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -389,7 +389,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -397,7 +397,7 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         // The chart should be rendered (ResponsiveContainer)
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
@@ -407,7 +407,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -415,7 +415,7 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         // Check that the responsive container is rendered
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
@@ -427,7 +427,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -442,7 +442,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       // Mock empty rubrics
@@ -524,7 +524,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -532,7 +532,7 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         // Check that the responsive container is rendered
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
@@ -542,7 +542,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
@@ -550,7 +550,7 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         // Check that the responsive container is rendered
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
@@ -562,7 +562,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       // Mock query error
@@ -589,8 +589,8 @@ describe("SkillPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No skill data available for the selected time period"
-          )
+            "No skill data available for the selected time period",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -602,7 +602,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent({ profileId: "profile-1" });
@@ -617,7 +617,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent({ cohortIds: ["cohort-1", "cohort-2"] });
@@ -632,7 +632,7 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       const customThresholds = {
@@ -666,14 +666,14 @@ describe("SkillPerformance", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateSkillPerformance).mockReturnValue(
-        mockSkillPerformanceResult
+        mockSkillPerformanceResult,
       );
 
       renderComponent();
 
       await waitFor(() => {
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });

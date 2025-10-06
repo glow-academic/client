@@ -12,7 +12,7 @@ import { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   // read route params
   const { attemptId } = await params;
@@ -26,7 +26,7 @@ export async function generateMetadata(
   }
   // get simulation for attempt
   const attemptSimulation = await simulationRepo.find(
-    attemptData?.simulationId
+    attemptData?.simulationId,
   );
   // Attempts don't have a title, so we'll use a generic name with timestamp
   return {

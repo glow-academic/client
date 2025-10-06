@@ -14,11 +14,14 @@ export async function POST(req: Request) {
   return handle(
     () => simulationCrowdsourcedMessageRepo.listByProfiles(parsed.data.ids),
     (e: unknown) =>
-      log.error("api.simulation_crowdsourced_messages.by.profileId.batch.failed", {
-        message: "Failed to fetch by foreign key batch",
-        subject: { entityType: "simulation_crowdsourced_messages" },
-        context: { foreignKey: "profileId", count: parsed.data.ids.length },
-        error: e,
-      })
+      log.error(
+        "api.simulation_crowdsourced_messages.by.profileId.batch.failed",
+        {
+          message: "Failed to fetch by foreign key batch",
+          subject: { entityType: "simulation_crowdsourced_messages" },
+          context: { foreignKey: "profileId", count: parsed.data.ids.length },
+          error: e,
+        },
+      ),
   );
 }

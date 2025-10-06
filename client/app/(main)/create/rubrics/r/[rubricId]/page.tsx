@@ -13,7 +13,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ rubricId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { rubricId } = await params;
   const rubric = await rubricRepo.find(rubricId);

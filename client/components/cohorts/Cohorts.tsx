@@ -143,10 +143,10 @@ export default function Cohorts() {
 
     // For active cohorts, check if there are any TA members
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id)
+      cohort.profileIds?.includes(profile.id),
     );
     const hasTAMembers = cohortProfiles.some(
-      (profile) => profile.role === "ta"
+      (profile) => profile.role === "ta",
     );
 
     // Cannot delete active cohorts that have TA members
@@ -184,16 +184,16 @@ export default function Cohorts() {
 
     // Check if user is in the cohort
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || ""
+      effectiveProfile?.id || "",
     );
     if (!isUserInCohort) return false;
 
     // Check if there are other instructional users in the cohort
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id)
+      cohort.profileIds?.includes(profile.id),
     );
     const instructionalProfiles = cohortProfiles.filter(
-      (profile) => profile.role === "instructional"
+      (profile) => profile.role === "instructional",
     );
 
     // Can leave if there are other instructional users (not the only one)
@@ -218,7 +218,7 @@ export default function Cohorts() {
 
     // Check if user's profile is in the cohort's profileIds
     const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || ""
+      effectiveProfile?.id || "",
     );
 
     return isUserInCohort || !isCohortInUse(cohortId);

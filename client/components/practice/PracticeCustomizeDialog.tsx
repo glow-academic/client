@@ -57,7 +57,7 @@ export function PracticeCustomizeDialog({
   const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
-    undefined
+    undefined,
   );
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
@@ -73,7 +73,7 @@ export function PracticeCustomizeDialog({
   // Only allow customizing non-default parameters and non-default items
   const customParameters = useMemo(() => {
     return (parameters as Parameter[]).filter(
-      (p) => p.defaultParameter === false
+      (p) => p.defaultParameter === false,
     );
   }, [parameters]);
 
@@ -81,7 +81,7 @@ export function PracticeCustomizeDialog({
     // Use ONLY default items, but only for the non-default parameters
     const customParamIds = new Set(customParameters.map((p) => p.id));
     return (parameterItems as ParameterItem[]).filter(
-      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
+      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId),
     );
   }, [parameterItems, customParameters]);
 
@@ -111,7 +111,7 @@ export function PracticeCustomizeDialog({
         (s) =>
           s.personaId === selectedPersona.id &&
           s.defaultScenario === true &&
-          s.practiceScenario === true
+          s.practiceScenario === true,
       );
 
       // Find simulation that includes the base scenario (prefer default+practice)
@@ -120,15 +120,15 @@ export function PracticeCustomizeDialog({
           (sim) =>
             (sim.scenarioIds || []).includes(baseScenario?.id || "") &&
             sim.defaultSimulation === true &&
-            sim.practiceSimulation === true
+            sim.practiceSimulation === true,
         ) ||
         (simulations as Simulation[]).find((sim) =>
-          (sim.scenarioIds || []).includes(baseScenario?.id || "")
+          (sim.scenarioIds || []).includes(baseScenario?.id || ""),
         );
 
       if (!targetSimulation) {
         toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
+          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`,
         );
         return;
       }

@@ -2,28 +2,43 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { SimulationChatFeedback, SimulationChatFeedbackCreate, SimulationChatFeedbackUpdate } from "@/lib/repos/simulationChatFeedbackRepo";
-import { simulationChatFeedbackKeys, simulationChatFeedbackKeysByStandardId, simulationChatFeedbackKeysBySimulationChatGradeId } from "@/lib/api/keys";
+import type {
+  SimulationChatFeedback,
+  SimulationChatFeedbackCreate,
+  SimulationChatFeedbackUpdate,
+} from "@/lib/repos/simulationChatFeedbackRepo";
+import {
+  simulationChatFeedbackKeys,
+  simulationChatFeedbackKeysByStandardId,
+  simulationChatFeedbackKeysBySimulationChatGradeId,
+} from "@/lib/api/keys";
 
 export function useSimulationChatFeedbacks(filters?: unknown) {
   return useQuery({
     queryKey: simulationChatFeedbackKeys.list(filters),
-    queryFn: () => api<SimulationChatFeedback[]>("/api/v1/simulation_chat_feedbacks"),
+    queryFn: () =>
+      api<SimulationChatFeedback[]>("/api/v1/simulation_chat_feedbacks"),
   });
 }
 
 export function useCreateSimulationChatFeedback() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: SimulationChatFeedbackCreate) => api<SimulationChatFeedback>("/api/v1/simulation_chat_feedbacks", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all }),
+    mutationFn: (payload: SimulationChatFeedbackCreate) =>
+      api<SimulationChatFeedback>("/api/v1/simulation_chat_feedbacks", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all }),
   });
 }
 
 export function useSimulationChatFeedback(id: string, enabled = true) {
   return useQuery({
     queryKey: simulationChatFeedbackKeys.detail(id),
-    queryFn: () => api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${id}`),
+    queryFn: () =>
+      api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${id}`),
     enabled: enabled && id !== undefined && id !== null && id !== "",
   });
 }
@@ -33,16 +48,25 @@ export function useUpdateSimulationChatFeedback(id?: string) {
   return useMutation({
     mutationFn: (patch: SimulationChatFeedbackUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<SimulationChatFeedback>(`/api/v1/simulation_chat_feedbacks/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<SimulationChatFeedback>(
+        `/api/v1/simulation_chat_feedbacks/${resolvedId}`,
+        { method: "PATCH", body: JSON.stringify(body) },
+      );
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
       if (resolvedId && resolvedId !== "") {
-        qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.detail(resolvedId) });
+        qc.invalidateQueries({
+          queryKey: simulationChatFeedbackKeys.detail(resolvedId),
+        });
       } else {
         qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all });
       }
@@ -55,19 +79,29 @@ export function useDeleteSimulationChatFeedback(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/simulation_chat_feedbacks/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/simulation_chat_feedbacks/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: simulationChatFeedbackKeys.all }),
   });
 }
 
 export function useSimulationChatFeedbacksByStandardId(id: string) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysByStandardId.one(id),
-    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/standardId/${id}`),
+    queryFn: () =>
+      api<SimulationChatFeedback[]>(
+        `/api/v1/simulation_chat_feedbacks/by/standardId/${id}`,
+      ),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -75,7 +109,11 @@ export function useSimulationChatFeedbacksByStandardId(id: string) {
 export function useSimulationChatFeedbacksByStandardIdBatch(ids: string[]) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysByStandardId.many(ids),
-    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/standardId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<SimulationChatFeedback[]>(
+        `/api/v1/simulation_chat_feedbacks/by/standardId/batch`,
+        { method: "POST", body: JSON.stringify({ ids }) },
+      ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -83,15 +121,24 @@ export function useSimulationChatFeedbacksByStandardIdBatch(ids: string[]) {
 export function useSimulationChatFeedbacksBySimulationChatGradeId(id: string) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysBySimulationChatGradeId.one(id),
-    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/${id}`),
+    queryFn: () =>
+      api<SimulationChatFeedback[]>(
+        `/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/${id}`,
+      ),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
-export function useSimulationChatFeedbacksBySimulationChatGradeIdBatch(ids: string[]) {
+export function useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
+  ids: string[],
+) {
   return useQuery<SimulationChatFeedback[]>({
     queryKey: simulationChatFeedbackKeysBySimulationChatGradeId.many(ids),
-    queryFn: () => api<SimulationChatFeedback[]>(`/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<SimulationChatFeedback[]>(
+        `/api/v1/simulation_chat_feedbacks/by/simulationChatGradeId/batch`,
+        { method: "POST", body: JSON.stringify({ ids }) },
+      ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

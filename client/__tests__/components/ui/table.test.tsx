@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

@@ -65,7 +65,7 @@ export function Scenarios() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // Mutation hooks
@@ -125,7 +125,7 @@ export function Scenarios() {
   // Check if a scenario is being used by any simulations
   const isScenarioInUse = (scenarioId: string) => {
     return simulations.some(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
     );
   };
 
@@ -264,11 +264,11 @@ export function Scenarios() {
 
     scenario.parameterItemIds.forEach((parameterItemId) => {
       const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId
+        (item) => item.id === parameterItemId,
       );
       if (parameterItem) {
         const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId
+          (param) => param.id === parameterItem.parameterId,
         );
         if (parameter && !parameter.numerical) {
           badges.push({
@@ -288,7 +288,7 @@ export function Scenarios() {
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void
+    onToggleCollapse?: () => void,
   ) => (
     <Card
       key={scenario.id}
@@ -442,7 +442,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDeleteClick(
                         scenario.id,
-                        scenario.name || "Unnamed Scenario"
+                        scenario.name || "Unnamed Scenario",
                       )
                     }
                   >
@@ -487,7 +487,7 @@ export function Scenarios() {
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.id)
+            () => toggleGroupCollapse(group.parent.id),
           )}
 
           {/* Child Scenarios */}

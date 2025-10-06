@@ -44,27 +44,27 @@ export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-
-  const {data: feedbackData = []} = useAppFeedbacks();
-  const {data: crowdsourcedMessages} = useSimulationCrowdsourcedMessages();
-  const {data: crowdsourcedRubricFeedbacks} = useSimulationChatCrowdsourcedFeedbacks();
-  const {data: simulationMessages} = useSimulationMessages();
-  const {data: simulationChatFeedbacks} = useSimulationChatFeedbacks();
+  const { data: feedbackData = [] } = useAppFeedbacks();
+  const { data: crowdsourcedMessages } = useSimulationCrowdsourcedMessages();
+  const { data: crowdsourcedRubricFeedbacks } =
+    useSimulationChatCrowdsourcedFeedbacks();
+  const { data: simulationMessages } = useSimulationMessages();
+  const { data: simulationChatFeedbacks } = useSimulationChatFeedbacks();
 
   // Get unique profile IDs from all datasets
   const profileIds = useMemo(() => {
     const ids = new Set<string>();
     (feedbackData ?? []).forEach((f) => f.profileId && ids.add(f.profileId));
     (crowdsourcedMessages ?? []).forEach(
-      (m) => m.profileId && ids.add(m.profileId)
+      (m) => m.profileId && ids.add(m.profileId),
     );
     (crowdsourcedRubricFeedbacks ?? []).forEach(
-      (r) => r.profileId && ids.add(r.profileId)
+      (r) => r.profileId && ids.add(r.profileId),
     );
     return Array.from(ids);
   }, [feedbackData, crowdsourcedMessages, crowdsourcedRubricFeedbacks]);
 
-  const {data: profiles = []} = useProfiles();
+  const { data: profiles = [] } = useProfiles();
 
   const profileMap = useMemo(() => {
     const map: Record<string, Profile> = {};
@@ -112,7 +112,7 @@ export default function Feedback() {
       if (!profile) return "Unknown User";
       return `${profile.firstName} ${profile.lastName}`;
     },
-    [profileMap]
+    [profileMap],
   );
 
   const getAuthorAlias = useCallback(
@@ -122,7 +122,7 @@ export default function Feedback() {
       if (!profile) return "";
       return profile.alias;
     },
-    [profileMap]
+    [profileMap],
   );
 
   // Feedback type helpers removed (no longer used)

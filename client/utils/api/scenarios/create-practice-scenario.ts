@@ -30,7 +30,7 @@ export interface CreatePracticeScenarioResponse {
 }
 
 export async function createPracticeScenario(
-  params: CreatePracticeScenarioParams
+  params: CreatePracticeScenarioParams,
 ): Promise<CreatePracticeScenarioResponse> {
   try {
     const formData = new FormData();

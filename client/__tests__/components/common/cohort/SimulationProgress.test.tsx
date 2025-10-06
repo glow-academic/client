@@ -6,7 +6,7 @@
  */
 
 import SimulationProgress from "@/components/common/cohort/SimulationProgress";
-import { render, screen } from '@/test/custom-render';
+import { render, screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 describe("SimulationProgress", () => {
@@ -71,7 +71,7 @@ describe("SimulationProgress", () => {
     render(
       <SimulationProgress
         simulation={simulationWithoutCohort as typeof mockSimulation}
-      />
+      />,
     );
 
     expect(screen.getByText("Test Simulation")).toBeInTheDocument();

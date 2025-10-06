@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { debugInfoRepo, DebugInfoCreateSchema } from "@/lib/repos/debugInfoRepo";
+import {
+  debugInfoRepo,
+  DebugInfoCreateSchema,
+} from "@/lib/repos/debugInfoRepo";
 import type { DebugInfoCreate } from "@/lib/repos/debugInfoRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list debug_info",
         subject: { entityType: "debug_info" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "debug_info" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

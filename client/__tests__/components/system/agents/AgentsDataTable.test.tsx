@@ -1,6 +1,6 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { ColumnDef } from "@tanstack/react-table";
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -154,7 +154,7 @@ describe("AgentsDataTable", () => {
 
       // Should show "No system agents match the current filters." message
       expect(
-        screen.getByText("No system agents match the current filters.")
+        screen.getByText("No system agents match the current filters."),
       ).toBeInTheDocument();
     });
 
@@ -173,7 +173,7 @@ describe("AgentsDataTable", () => {
 
       // Component should still render
       expect(
-        screen.getByText("No system agents match the current filters.")
+        screen.getByText("No system agents match the current filters."),
       ).toBeInTheDocument();
     });
   });

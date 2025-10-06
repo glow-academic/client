@@ -59,7 +59,7 @@ type AnalyticsHookOptions = {
 
 export function useAnalyticsAverageScore(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -81,7 +81,7 @@ export function useAnalyticsAverageScore(
 
 export function useAnalyticsCompletionPercentage(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -97,7 +97,7 @@ export function useAnalyticsCompletionPercentage(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -106,7 +106,7 @@ export function useAnalyticsCompletionPercentage(
 
 export function useAnalyticsFirstAttemptPassRate(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -122,7 +122,7 @@ export function useAnalyticsFirstAttemptPassRate(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -131,7 +131,7 @@ export function useAnalyticsFirstAttemptPassRate(
 
 export function useAnalyticsHighestScore(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -153,7 +153,7 @@ export function useAnalyticsHighestScore(
 
 export function useAnalyticsMessagesPerSession(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -169,7 +169,7 @@ export function useAnalyticsMessagesPerSession(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -178,7 +178,7 @@ export function useAnalyticsMessagesPerSession(
 
 export function useAnalyticsPersonaResponseTimes(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -194,7 +194,7 @@ export function useAnalyticsPersonaResponseTimes(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -203,7 +203,7 @@ export function useAnalyticsPersonaResponseTimes(
 
 export function useAnalyticsSessionEfficiency(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -219,7 +219,7 @@ export function useAnalyticsSessionEfficiency(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -228,7 +228,7 @@ export function useAnalyticsSessionEfficiency(
 
 export function useAnalyticsStagnationRate(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -244,7 +244,7 @@ export function useAnalyticsStagnationRate(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -253,7 +253,7 @@ export function useAnalyticsStagnationRate(
 
 export function useAnalyticsTimeSpent(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -275,7 +275,7 @@ export function useAnalyticsTimeSpent(
 
 export function useAnalyticsTotalAttempts(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -291,7 +291,7 @@ export function useAnalyticsTotalAttempts(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return MetricResponseSchema.parse(res);
     },
@@ -302,7 +302,7 @@ export function useAnalyticsTotalAttempts(
 
 export function useAnalyticsRubricHeatmap(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -318,7 +318,7 @@ export function useAnalyticsRubricHeatmap(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return RubricHeatmapResponseSchema.parse(res);
     },
@@ -327,7 +327,7 @@ export function useAnalyticsRubricHeatmap(
 
 export function useAnalyticsGrowthData(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -349,7 +349,7 @@ export function useAnalyticsGrowthData(
 
 export function useAnalyticsPersonaPerformance(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -365,7 +365,7 @@ export function useAnalyticsPersonaPerformance(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return PersonaPerformanceResponseSchema.parse(res);
     },
@@ -376,7 +376,7 @@ export function useAnalyticsPersonaPerformance(
 
 export function useAnalyticsAttemptImprovement(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -392,7 +392,7 @@ export function useAnalyticsAttemptImprovement(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return AttemptImprovementResponseSchema.parse(res);
     },
@@ -401,7 +401,7 @@ export function useAnalyticsAttemptImprovement(
 
 export function useAnalyticsCohortPerformance(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -417,7 +417,7 @@ export function useAnalyticsCohortPerformance(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return CohortPerformanceResponseSchema.parse(res);
     },
@@ -426,7 +426,7 @@ export function useAnalyticsCohortPerformance(
 
 export function useAnalyticsSkillPerformance(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -442,7 +442,7 @@ export function useAnalyticsSkillPerformance(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return SkillPerformanceResponseSchema.parse(res);
     },
@@ -453,7 +453,7 @@ export function useAnalyticsSkillPerformance(
 
 export function useAnalyticsScenarioPerformance(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -469,7 +469,7 @@ export function useAnalyticsScenarioPerformance(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return ScenarioPerformanceResponseSchema.parse(res);
     },
@@ -478,7 +478,7 @@ export function useAnalyticsScenarioPerformance(
 
 export function useAnalyticsScenarioStats(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -494,7 +494,7 @@ export function useAnalyticsScenarioStats(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return ScenarioStatsResponseSchema.parse(res);
     },
@@ -503,7 +503,7 @@ export function useAnalyticsScenarioStats(
 
 export function useAnalyticsSimulationComposition(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -519,7 +519,7 @@ export function useAnalyticsSimulationComposition(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return SimulationCompositionResponseSchema.parse(res);
     },
@@ -528,7 +528,7 @@ export function useAnalyticsSimulationComposition(
 
 export function useAnalyticsSimulationPerformance(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -544,7 +544,7 @@ export function useAnalyticsSimulationPerformance(
         {
           method: "POST",
           body: JSON.stringify(filters),
-        }
+        },
       );
       return SimulationPerformanceResponseSchema.parse(res);
     },
@@ -555,7 +555,7 @@ export function useAnalyticsSimulationPerformance(
 
 export function useAnalyticsHomeOverview(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -579,7 +579,7 @@ export function useAnalyticsHomeOverview(
 
 export function useAnalyticsPracticeOverview(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -603,7 +603,7 @@ export function useAnalyticsPracticeOverview(
 
 export function useAnalyticsAttemptHistory(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -626,7 +626,7 @@ export function useAnalyticsAttemptHistory(
 // Reports Bundle Analytics Hook
 export function useAnalyticsReportsBundle(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean"
@@ -703,7 +703,7 @@ export function useRefreshAnalytics() {
 // Leaderboard Bundle Analytics Hook
 export function useAnalyticsLeaderboardBundle(
   filters: AnalyticsFilters,
-  options: AnalyticsHookOptions | boolean = true
+  options: AnalyticsHookOptions | boolean = true,
 ) {
   const queryOptions =
     typeof options === "boolean" ? { enabled: options } : options;

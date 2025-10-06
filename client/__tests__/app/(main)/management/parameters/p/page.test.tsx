@@ -1,50 +1,40 @@
-import { describe, it, vi, afterEach, expect } from 'vitest';
-import { render } from '@/test/custom-render';
+import { describe, it, vi, afterEach, expect } from "vitest";
+import { render } from "@/test/custom-render";
 
 // ——————————————————————————————————————————
-import ParameterPage from '@/app/(main)/management/parameters/p/page';
+import ParameterPage from "@/app/(main)/management/parameters/p/page";
 
 // Import centralized mocks
 import "@/mocks/navigation";
 
-describe('ParameterPage', () => {
-  
-
+describe("ParameterPage", () => {
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<ParameterPage />);
-      
+
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
     });
 
-    
-
-    it('should have correct accessibility attributes', async () => {
+    it("should have correct accessibility attributes", async () => {
       render(<ParameterPage />);
-      
+
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
     });
   });
 
-  
-
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', async () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
       render(<ParameterPage />);
-      
+
       // Should redirect to /management/parameters/new
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/parameters/new");
@@ -55,7 +45,7 @@ describe('ParameterPage', () => {
 /*
  * Component Analysis for page:
  * Path: (main)/management/parameters/p/page.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: metadata
@@ -69,20 +59,20 @@ describe('ParameterPage', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<page />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<page {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

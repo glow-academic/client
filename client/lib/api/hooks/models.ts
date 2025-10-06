@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
 import type { Model, ModelCreate, ModelUpdate } from "@/lib/repos/modelRepo";
-import { modelKeys  } from "@/lib/api/keys";
+import { modelKeys } from "@/lib/api/keys";
 
 export function useModels(filters?: unknown) {
   return useQuery({
@@ -15,7 +15,11 @@ export function useModels(filters?: unknown) {
 export function useCreateModel() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ModelCreate) => api<Model>("/api/v1/models", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ModelCreate) =>
+      api<Model>("/api/v1/models", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: modelKeys.all }),
   });
 }
@@ -33,11 +37,18 @@ export function useUpdateModel(id?: string) {
   return useMutation({
     mutationFn: (patch: ModelUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Model>(`/api/v1/models/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Model>(`/api/v1/models/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,7 +66,11 @@ export function useDeleteModel(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
       return api<void>(`/api/v1/models/${resolvedId}`, { method: "DELETE" });
@@ -63,4 +78,3 @@ export function useDeleteModel(id?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: modelKeys.all }),
   });
 }
-

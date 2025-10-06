@@ -29,7 +29,7 @@ export function useResolveBreadcrumb() {
           {
             method: "POST",
             body: JSON.stringify({ id, context }),
-          }
+          },
         );
 
         log.info("api.breadcrumbs.resolve.success", {

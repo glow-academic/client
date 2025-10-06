@@ -4,7 +4,7 @@ import { log } from "@/utils/logger";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   return handle(
@@ -15,6 +15,6 @@ export async function GET(
         subject: { entityType: "app_feedback" },
         context: { foreignKey: "profileId", id },
         error: e,
-      })
+      }),
   );
 }

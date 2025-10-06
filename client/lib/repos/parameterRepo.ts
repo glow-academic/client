@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ParameterUpdate = Partial<ParameterCreate>;
 export const ParameterCreateSchema = createInsertSchema(parameters);
 export const ParameterUpdateSchema = ParameterCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const parameterRepo = {
   async create(payload: ParameterCreate) {
@@ -26,27 +27,42 @@ export const parameterRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(parameters).orderBy(parameters.createdAt ?? parameters.id);
+    return db
+      .select()
+      .from(parameters)
+      .orderBy(parameters.createdAt ?? parameters.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(parameters).where(eq(parameters.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Parameter with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(parameters)
+      .where(eq(parameters.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Parameter with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: ParameterUpdate) {
     const db = await getDb();
-    const rows = await db.update(parameters).set(patch).where(eq(parameters.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Parameter with id " + id + " not found");
+    const rows = await db
+      .update(parameters)
+      .set(patch)
+      .where(eq(parameters.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Parameter with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(parameters).where(eq(parameters.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Parameter with id " + id + " not found");
+    const rows = await db
+      .delete(parameters)
+      .where(eq(parameters.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Parameter with id " + id + " not found");
   },
-
-
 };

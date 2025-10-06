@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { standardGroupRepo, StandardGroupUpdateSchema } from "@/lib/repos/standardGroupRepo";
+import {
+  standardGroupRepo,
+  StandardGroupUpdateSchema,
+} from "@/lib/repos/standardGroupRepo";
 import type { StandardGroupUpdate } from "@/lib/repos/standardGroupRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => standardGroupRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch standardGroup",
         subject: { entityType: "standard_groups", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = StandardGroupUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "standard_groups", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await standardGroupRepo.remove(id); return {}; },
+    async () => {
+      await standardGroupRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.standard_groups.delete.failed", {
         message: "Failed to delete standardGroup",
         subject: { entityType: "standard_groups", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

@@ -3,8 +3,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -17,11 +17,11 @@ describe("Resizable", () => {
           <ResizablePanel defaultSize={50}>Panel 1</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel defaultSize={50}>Panel 2</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -32,11 +32,11 @@ describe("Resizable", () => {
           <ResizablePanel defaultSize={50}>Accessible Panel</ResizablePanel>
           <ResizableHandle />
           <ResizablePanel defaultSize={50}>Another Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });
@@ -49,7 +49,7 @@ describe("Resizable", () => {
           <ResizablePanel defaultSize={50}>Left Panel</ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={50}>Right Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       expect(screen.getByText("Left Panel")).toBeInTheDocument();
@@ -60,11 +60,11 @@ describe("Resizable", () => {
       render(
         <ResizablePanelGroup direction="horizontal" className="custom-class">
           <ResizablePanel defaultSize={100}>Panel</ResizablePanel>
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toHaveClass("custom-class");
     });
@@ -76,11 +76,11 @@ describe("Resizable", () => {
       render(
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={100} />
-        </ResizablePanelGroup>
+        </ResizablePanelGroup>,
       );
 
       const panelGroup = document.querySelector(
-        '[data-slot="resizable-panel-group"]'
+        '[data-slot="resizable-panel-group"]',
       );
       expect(panelGroup).toBeInTheDocument();
     });

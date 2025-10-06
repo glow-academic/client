@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationChatCrowdsourcedFeedbackRepo, SimulationChatCrowdsourcedFeedbackCreateSchema } from "@/lib/repos/simulationChatCrowdsourcedFeedbackRepo";
+import {
+  simulationChatCrowdsourcedFeedbackRepo,
+  SimulationChatCrowdsourcedFeedbackCreateSchema,
+} from "@/lib/repos/simulationChatCrowdsourcedFeedbackRepo";
 import type { SimulationChatCrowdsourcedFeedbackCreate } from "@/lib/repos/simulationChatCrowdsourcedFeedbackRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_chat_crowdsourced_feedbacks",
         subject: { entityType: "simulation_chat_crowdsourced_feedbacks" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -21,7 +24,8 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const payload = parsed.data as unknown as SimulationChatCrowdsourcedFeedbackCreate;
+  const payload =
+    parsed.data as unknown as SimulationChatCrowdsourcedFeedbackCreate;
   return handle(
     () => simulationChatCrowdsourcedFeedbackRepo.create(payload),
     (e: unknown) =>
@@ -30,6 +34,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_chat_crowdsourced_feedbacks" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

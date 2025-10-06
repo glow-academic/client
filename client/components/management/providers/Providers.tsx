@@ -110,7 +110,7 @@ export default function Providers() {
     const model = models.find((m) => m.id === id);
     if (model && !canDeleteModel(model)) {
       toast.error(
-        "Cannot delete model: It is currently in use by personas or agents"
+        "Cannot delete model: It is currently in use by personas or agents",
       );
       return;
     }
@@ -121,7 +121,7 @@ export default function Providers() {
   const handleDeleteProviderClick = (provider: Provider) => {
     if (!canDeleteProvider(provider)) {
       toast.error(
-        "Cannot delete provider: Some models are currently in use by personas or agents"
+        "Cannot delete provider: Some models are currently in use by personas or agents",
       );
       return;
     }
@@ -158,7 +158,7 @@ export default function Providers() {
   // Check if a model is being used by any personas or agents
   const isModelInUse = (modelId: string) => {
     const usedByPersonas = personas.some(
-      (persona) => persona.modelId === modelId
+      (persona) => persona.modelId === modelId,
     );
     const usedByAgents = agents.some((agent) => agent.modelId === modelId);
 
@@ -174,12 +174,12 @@ export default function Providers() {
   const canDeleteProvider = (provider: Provider) => {
     // Get all models for this provider
     const providerModels = models.filter(
-      (model) => model.providerId === provider.id
+      (model) => model.providerId === provider.id,
     );
 
     // Check if any of the provider's models are in use
     const hasModelsInUse = providerModels.some((model) =>
-      isModelInUse(model.id)
+      isModelInUse(model.id),
     );
 
     // Can only delete if no models are in use
@@ -230,7 +230,7 @@ export default function Providers() {
                 size="sm"
                 onClick={() =>
                   router.push(
-                    `/management/providers/p/${providerGroup.provider.id}`
+                    `/management/providers/p/${providerGroup.provider.id}`,
                   )
                 }
               >
@@ -317,7 +317,7 @@ export default function Providers() {
           className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer flex flex-col h-full min-h-[220px]"
           onClick={() =>
             router.push(
-              `/management/providers/p/${providerGroup.provider.id}/new`
+              `/management/providers/p/${providerGroup.provider.id}/new`,
             )
           }
         >

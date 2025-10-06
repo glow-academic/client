@@ -1,7 +1,7 @@
 import { RubricsDataTable } from "@/components/create/rubrics/RubricsDataTable";
 import { Rubric } from "@/types";
 import type { ColumnDef } from "@tanstack/react-table";
-import { render, screen } from '@/test/custom-render';
+import { render, screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the RubricsDataTableToolbar component
@@ -116,7 +116,7 @@ describe("RubricsDataTable", () => {
   it("renders the toolbar", () => {
     render(<RubricsDataTable {...defaultProps} />);
     expect(
-      screen.getByTestId("rubrics-data-table-toolbar")
+      screen.getByTestId("rubrics-data-table-toolbar"),
     ).toBeInTheDocument();
   });
 
@@ -134,7 +134,7 @@ describe("RubricsDataTable", () => {
   it("shows no results message when no data", () => {
     render(<RubricsDataTable {...defaultProps} data={[]} />);
     expect(
-      screen.getByText("No rubrics match the current filters.")
+      screen.getByText("No rubrics match the current filters."),
     ).toBeInTheDocument();
   });
 });

@@ -250,7 +250,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -262,7 +262,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -278,7 +278,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -294,7 +294,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -310,7 +310,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -325,7 +325,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -380,7 +380,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -438,7 +438,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -491,7 +491,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -505,7 +505,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -517,7 +517,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -532,7 +532,7 @@ describe("MainLayout", () => {
           <MainLayout>
             <div data-testid="child-1">Child 1</div>
             <div data-testid="child-2">Child 2</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -547,7 +547,7 @@ describe("MainLayout", () => {
             <div data-testid="child-1">Child 1</div>
             <div data-testid="child-2">Child 2</div>
             <div data-testid="child-3">Child 3</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -563,7 +563,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 
@@ -575,7 +575,7 @@ describe("MainLayout", () => {
         render(
           <MainLayout>
             <div data-testid="test-content">Test Content</div>
-          </MainLayout>
+          </MainLayout>,
         );
       });
 

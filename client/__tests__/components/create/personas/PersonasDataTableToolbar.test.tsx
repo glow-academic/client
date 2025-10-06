@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -144,9 +144,7 @@ describe("PersonasDataTableToolbar", () => {
         temperatureOptions: [],
       };
 
-      render(
-        <PersonasDataTableToolbar {...propsWithNoFilterOptions} />,
-      );
+      render(<PersonasDataTableToolbar {...propsWithNoFilterOptions} />);
 
       // Should still render the search input
       expect(

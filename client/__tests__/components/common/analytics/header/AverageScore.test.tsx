@@ -1,7 +1,7 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { screen, waitFor } from '@/test/custom-render';
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -304,7 +304,7 @@ describe("AverageScore", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Average Score Trend")
+          screen.queryByText("Average Score Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -418,7 +418,7 @@ describe("AverageScore", () => {
 
       // Should show no data message with profile context
       expect(
-        screen.getByText(/No data available for the selected cohorts/)
+        screen.getByText(/No data available for the selected cohorts/),
       ).toBeInTheDocument();
     });
 
@@ -448,7 +448,7 @@ describe("AverageScore", () => {
 
       // Should show no data message without profile context
       expect(
-        screen.getByText(/No data available for the selected cohorts/)
+        screen.getByText(/No data available for the selected cohorts/),
       ).toBeInTheDocument();
       expect(screen.queryByText(/and profile/)).not.toBeInTheDocument();
     });
@@ -551,7 +551,7 @@ describe("AverageScore", () => {
       // This should trigger the rendering of the trend analysis section (lines 274-278)
       // Look for the trend analysis text that should be displayed
       const trendAnalysisText = screen.queryByText(
-        /Average score.*increased.*over the past/
+        /Average score.*increased.*over the past/,
       );
 
       // If trend analysis text is found, verify it's in the correct container
@@ -606,7 +606,7 @@ describe("AverageScore", () => {
 
       // The trend analysis should be displayed with decrease direction
       const trendAnalysisText = screen.queryByText(
-        /Average score.*decreased.*over the past/
+        /Average score.*decreased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -657,7 +657,7 @@ describe("AverageScore", () => {
 
       // The trend analysis should be displayed with 3 days period
       const trendAnalysisText = screen.queryByText(
-        /Average score.*over the past 3 days/
+        /Average score.*over the past 3 days/,
       );
 
       if (trendAnalysisText) {
@@ -705,7 +705,7 @@ describe("AverageScore", () => {
 
       // The trend analysis should be displayed with 1 week period
       const trendAnalysisText = screen.queryByText(
-        /Average score.*over the past 1 week/
+        /Average score.*over the past 1 week/,
       );
 
       if (trendAnalysisText) {
@@ -753,7 +753,7 @@ describe("AverageScore", () => {
 
       // The trend analysis should be displayed with 1 month period
       const trendAnalysisText = screen.queryByText(
-        /Average score.*over the past 1 month/
+        /Average score.*over the past 1 month/,
       );
 
       if (trendAnalysisText) {
@@ -910,7 +910,7 @@ describe("AverageScore", () => {
 
       // The trend analysis should be displayed in the dialog
       const trendAnalysisText = screen.queryByText(
-        /Average score.*increased.*over the past/
+        /Average score.*increased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -964,7 +964,7 @@ describe("AverageScore", () => {
       // The trend analysis section should be rendered
       // This should trigger the rendering of the trend analysis section (lines 274-278)
       const trendAnalysisText = screen.queryByText(
-        /Average score.*increased.*over the past/
+        /Average score.*increased.*over the past/,
       );
 
       if (trendAnalysisText) {

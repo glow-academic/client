@@ -1,6 +1,6 @@
 import { getMockColumn, getMockTable } from "@/mocks/navigation";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -219,9 +219,7 @@ describe("SimulationsDataTableToolbar", () => {
         timeLimitOptions: [],
       };
 
-      render(
-        <SimulationsDataTableToolbar {...propsWithEmptyOptions} />,
-      );
+      render(<SimulationsDataTableToolbar {...propsWithEmptyOptions} />);
 
       // Should still render without crashing
       expect(

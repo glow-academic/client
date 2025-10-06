@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,9 +52,7 @@ describe("ScenarioAttributePicker", () => {
         selectedAttribute: "locations" as const,
       };
 
-      render(
-        <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
-      );
+      render(<ScenarioAttributePicker {...propsWithDifferentAttribute} />);
 
       // Wait for component to load
       await waitFor(() => {
@@ -68,9 +66,7 @@ describe("ScenarioAttributePicker", () => {
         selectedAttribute: "deadlines" as const,
       };
 
-      render(
-        <ScenarioAttributePicker {...propsWithDifferentAttribute} />,
-      );
+      render(<ScenarioAttributePicker {...propsWithDifferentAttribute} />);
 
       // Wait for component to load
       await waitFor(() => {

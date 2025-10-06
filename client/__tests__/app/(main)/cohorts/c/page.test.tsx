@@ -1,50 +1,40 @@
-import { describe, it, vi, afterEach, expect } from 'vitest';
-import { render } from '@/test/custom-render';
+import { describe, it, vi, afterEach, expect } from "vitest";
+import { render } from "@/test/custom-render";
 
 // ——————————————————————————————————————————
-import CohortEditPage from '@/app/(main)/cohorts/c/page';
+import CohortEditPage from "@/app/(main)/cohorts/c/page";
 
 // Import centralized mocks
 import "@/mocks/navigation";
 
-describe('CohortEditPage', () => {
-  
-
+describe("CohortEditPage", () => {
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<CohortEditPage />);
-      
+
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/create/cohorts");
     });
 
-    
-
-    it('should have correct accessibility attributes', async () => {
+    it("should have correct accessibility attributes", async () => {
       render(<CohortEditPage />);
-      
+
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/create/cohorts");
     });
   });
 
-  
-
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', async () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
       render(<CohortEditPage />);
-      
+
       // Should redirect to /create/cohorts
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/create/cohorts");
@@ -55,7 +45,7 @@ describe('CohortEditPage', () => {
 /*
  * Component Analysis for page:
  * Path: (main)/cohorts/c/page.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: metadata
@@ -69,20 +59,20 @@ describe('CohortEditPage', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<page />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<page {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

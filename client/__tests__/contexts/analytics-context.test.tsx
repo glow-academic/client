@@ -1,7 +1,7 @@
 import { AnalyticsProvider, useAnalytics } from "@/contexts/analytics-context";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -107,7 +107,7 @@ describe("analytics-context", () => {
       render(
         <AnalyticsProvider>
           <TestComponent />
-        </AnalyticsProvider>
+        </AnalyticsProvider>,
       );
 
       // Wait for the component to render with the mocked data
@@ -133,7 +133,7 @@ describe("analytics-context", () => {
       render(
         <AnalyticsProvider>
           <TestComponent />
-        </AnalyticsProvider>
+        </AnalyticsProvider>,
       );
 
       // Wait for the component to render with the mocked data
@@ -148,7 +148,7 @@ describe("analytics-context", () => {
 
       // Allow for a small time difference (within 1 minute) due to test execution time
       const timeDifference = Math.abs(
-        startDate.getTime() - thirtyDaysAgo.getTime()
+        startDate.getTime() - thirtyDaysAgo.getTime(),
       );
       expect(timeDifference).toBeLessThan(60000); // 1 minute in milliseconds
     });

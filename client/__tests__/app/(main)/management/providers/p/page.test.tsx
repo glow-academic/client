@@ -1,50 +1,40 @@
-import { describe, it, vi, afterEach, expect } from 'vitest';
-import { render } from '@/test/custom-render';
+import { describe, it, vi, afterEach, expect } from "vitest";
+import { render } from "@/test/custom-render";
 
 // ——————————————————————————————————————————
-import ProviderEditPage from '@/app/(main)/management/providers/p/page';
+import ProviderEditPage from "@/app/(main)/management/providers/p/page";
 
 // Import centralized mocks
 import "@/mocks/navigation";
 
-describe('ProviderEditPage', () => {
-  
-
+describe("ProviderEditPage", () => {
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<ProviderEditPage />);
-      
+
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/providers");
     });
 
-    
-
-    it('should have correct accessibility attributes', async () => {
+    it("should have correct accessibility attributes", async () => {
       render(<ProviderEditPage />);
-      
+
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/providers");
     });
   });
 
-  
-
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', async () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
       render(<ProviderEditPage />);
-      
+
       // Should redirect to /management/providers
       const { redirect } = await import("next/navigation");
       expect(redirect).toHaveBeenCalledWith("/management/providers");
@@ -55,7 +45,7 @@ describe('ProviderEditPage', () => {
 /*
  * Component Analysis for page:
  * Path: (main)/management/providers/p/page.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: metadata
@@ -69,20 +59,20 @@ describe('ProviderEditPage', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<page />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<page {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

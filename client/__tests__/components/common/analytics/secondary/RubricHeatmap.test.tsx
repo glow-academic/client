@@ -28,13 +28,13 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades"
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics");
@@ -288,7 +288,7 @@ const renderComponent = (props = {}) => {
   return render(
     <QueryClientProvider client={mockQueryClient}>
       <RubricHeatmap {...defaultProps} {...props} />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 };
 
@@ -302,7 +302,7 @@ describe("RubricHeatmap", () => {
     vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
     vi.mocked(getSimulationChatGradesByRubrics).mockResolvedValue(mockGrades);
     vi.mocked(
-      getSimulationChatFeedbacksBySimulationChatGrades
+      getSimulationChatFeedbacksBySimulationChatGrades,
     ).mockResolvedValue(mockFeedbacks);
     vi.mocked(getAllCohorts).mockResolvedValue(mockCohorts);
     vi.mocked(getAllProfiles).mockResolvedValue(mockProfiles); // Mocked to return empty array as per new mock
@@ -316,17 +316,17 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
         expect(
-          screen.getByText("Correlation between skill areas (standard groups)")
+          screen.getByText("Correlation between skill areas (standard groups)"),
         ).toBeInTheDocument();
       });
     });
@@ -335,7 +335,7 @@ describe("RubricHeatmap", () => {
       renderComponent();
 
       expect(
-        screen.getByText("Skill Area Correlation Matrix")
+        screen.getByText("Skill Area Correlation Matrix"),
       ).toBeInTheDocument();
     });
 
@@ -355,8 +355,8 @@ describe("RubricHeatmap", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No correlation data available for the selected time period"
-          )
+            "No correlation data available for the selected time period",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -368,7 +368,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent({
@@ -391,7 +391,7 @@ describe("RubricHeatmap", () => {
           defaultProps.dateEnd,
           "profile-1",
           ["cohort-1"],
-          ["rubric-1"] // selectedRubricIds
+          ["rubric-1"], // selectedRubricIds
         );
       });
     });
@@ -412,8 +412,8 @@ describe("RubricHeatmap", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No correlation data available for the selected time period"
-          )
+            "No correlation data available for the selected time period",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -425,7 +425,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -441,7 +441,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -459,7 +459,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -474,7 +474,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       // Mock empty rubrics
@@ -646,7 +646,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -663,7 +663,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -682,7 +682,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -699,7 +699,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
@@ -717,14 +717,14 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();
 
       await waitFor(() => {
         expect(
-          screen.getByText(/Strong positive correlation/)
+          screen.getByText(/Strong positive correlation/),
         ).toBeInTheDocument();
       });
     });
@@ -742,7 +742,7 @@ describe("RubricHeatmap", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText(/Strong positive correlation/)
+          screen.queryByText(/Strong positive correlation/),
         ).not.toBeInTheDocument();
       });
     });
@@ -756,7 +756,7 @@ describe("RubricHeatmap", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
     });
@@ -780,8 +780,8 @@ describe("RubricHeatmap", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No correlation data available for the selected time period"
-          )
+            "No correlation data available for the selected time period",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -793,7 +793,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent({ profileId: "profile-1" });
@@ -813,7 +813,7 @@ describe("RubricHeatmap", () => {
           expect.any(Date),
           "profile-1",
           expect.any(Array),
-          expect.any(Array)
+          expect.any(Array),
         );
       });
     });
@@ -823,7 +823,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent({ cohortIds: ["cohort-1", "cohort-2"] });
@@ -843,7 +843,7 @@ describe("RubricHeatmap", () => {
           expect.any(Date),
           undefined,
           ["cohort-1", "cohort-2"],
-          expect.any(Array)
+          expect.any(Array),
         );
       });
     });
@@ -853,7 +853,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       const customThresholds = {
@@ -879,7 +879,7 @@ describe("RubricHeatmap", () => {
           expect.any(Date),
           undefined,
           expect.any(Array),
-          expect.any(Array)
+          expect.any(Array),
         );
       });
     });
@@ -894,7 +894,7 @@ describe("RubricHeatmap", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Skill Area Correlation Matrix")
+          screen.getByText("Skill Area Correlation Matrix"),
         ).toBeInTheDocument();
       });
     });
@@ -904,7 +904,7 @@ describe("RubricHeatmap", () => {
         "@/utils/analytics/secondary"
       );
       vi.mocked(calculateRubricHeatmap).mockReturnValue(
-        mockRubricHeatmapResult
+        mockRubricHeatmapResult,
       );
 
       renderComponent();

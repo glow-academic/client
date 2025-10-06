@@ -67,7 +67,7 @@ export default function RubricHeatmap({
   thresholds,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<RubricPickerType[]>(
-    []
+    [],
   );
 
   // State to track hovered cell for highlighting
@@ -82,7 +82,7 @@ export default function RubricHeatmap({
       availableRubrics.map((r) => ({
         ...r,
       })),
-    [availableRubrics]
+    [availableRubrics],
   );
 
   // Filter matrices by selected rubrics
@@ -267,7 +267,7 @@ export default function RubricHeatmap({
                           key={group.id}
                           className={cn(
                             "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
-                            hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
+                            hoveredCell.col === colIndex && "bg-muted", // Highlight on hover
                           )}
                         >
                           {/* Rotated Label */}
@@ -280,7 +280,7 @@ export default function RubricHeatmap({
                             </span>
                           </div>
                         </TableHead>
-                      )
+                      ),
                     )}
                   </TableRow>
                 </TableHeader>
@@ -297,7 +297,7 @@ export default function RubricHeatmap({
                         <TableCell
                           className={cn(
                             "font-medium text-xs p-1 text-right text-muted-foreground",
-                            hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
+                            hoveredCell.row === rowIndex && "bg-muted", // Highlight on hover
                           )}
                         >
                           {group.shortName}
@@ -338,7 +338,7 @@ export default function RubricHeatmap({
                                             "font-semibold",
                                             Math.abs(cell.correlation) >= 0.7
                                               ? "text-white"
-                                              : "text-gray-800"
+                                              : "text-gray-800",
                                           )}
                                         >
                                           {cell.correlation.toFixed(2)}
@@ -368,7 +368,7 @@ export default function RubricHeatmap({
                                         "font-semibold",
                                         Math.abs(cell.correlation) >= 0.7
                                           ? "text-white"
-                                          : "text-gray-800"
+                                          : "text-gray-800",
                                       )}
                                     >
                                       {cell.correlation.toFixed(2)}
@@ -377,10 +377,10 @@ export default function RubricHeatmap({
                                 )}
                               </TableCell>
                             );
-                          }
+                          },
                         )}
                       </TableRow>
-                    )
+                    ),
                   )}
                 </TableBody>
               </Table>

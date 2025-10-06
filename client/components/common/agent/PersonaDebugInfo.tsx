@@ -22,16 +22,18 @@ export interface PersonaDebugInfoRow {
 }
 
 export function PersonaDebugInfo({ personaId }: PersonaDebugInfoProps) {
-  const {data: modelRuns = [], isLoading: isLoadingRuns} = useModelRunsByPersonaId(personaId);
+  const { data: modelRuns = [], isLoading: isLoadingRuns } =
+    useModelRunsByPersonaId(personaId);
 
   const modelRunIds = useMemo(
     () => (modelRuns as ModelRun[]).map((mr) => mr.id),
-    [modelRuns]
+    [modelRuns],
   );
 
-  const {data: debugInfo = [], isLoading: isLoadingDebug} = useDebugInfoByModelRunIdBatch(modelRunIds);
+  const { data: debugInfo = [], isLoading: isLoadingDebug } =
+    useDebugInfoByModelRunIdBatch(modelRunIds);
 
-  const {data: models = [], isLoading: isLoadingModels} = useModels();
+  const { data: models = [], isLoading: isLoadingModels } = useModels();
 
   const modelIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -70,7 +72,7 @@ export function PersonaDebugInfo({ personaId }: PersonaDebugInfoProps) {
         value: m.id,
         label: m.name,
       })),
-    [models]
+    [models],
   );
 
   const isLoading = isLoadingRuns || isLoadingDebug || isLoadingModels;

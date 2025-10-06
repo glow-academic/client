@@ -27,7 +27,7 @@ export interface RandomizeScenarioResponse {
 }
 
 export async function randomizeScenario(
-  params: RandomizeScenarioParams
+  params: RandomizeScenarioParams,
 ): Promise<RandomizeScenarioResponse> {
   try {
     const formData = new FormData();
@@ -36,10 +36,10 @@ export async function randomizeScenario(
     if (params.description) formData.append("description", params.description);
     if (params.personaId) formData.append("persona_id", params.personaId);
     (params.documentIds || []).forEach(
-      (id) => id && formData.append("document_ids", id)
+      (id) => id && formData.append("document_ids", id),
     );
     (params.parameterItemIds || []).forEach(
-      (id) => id && formData.append("parameter_item_ids", id)
+      (id) => id && formData.append("parameter_item_ids", id),
     );
     (params.targets || []).forEach((t) => t && formData.append("targets", t));
 

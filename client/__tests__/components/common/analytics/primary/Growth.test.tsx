@@ -8,7 +8,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from '@/test/custom-render';
+import { render, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock all query functions
@@ -16,10 +16,10 @@ vi.mock("@/utils/queries/cohorts/get-all-cohorts");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock("@/utils/queries/simulations/get-all-simulations");
@@ -31,13 +31,13 @@ const mockGetAllCohorts = vi.mocked(getAllCohorts);
 const mockGetAllProfiles = vi.mocked(getAllProfiles);
 const mockGetAllRubrics = vi.mocked(getAllRubrics);
 const mockGetSimulationAttemptsByProfiles = vi.mocked(
-  getSimulationAttemptsByProfiles
+  getSimulationAttemptsByProfiles,
 );
 const mockGetSimulationChatGradesBySimulationChats = vi.mocked(
-  getSimulationChatGradesBySimulationChats
+  getSimulationChatGradesBySimulationChats,
 );
 const mockGetSimulationChatsByAttempts = vi.mocked(
-  getSimulationChatsByAttempts
+  getSimulationChatsByAttempts,
 );
 const mockGetAllSimulations = vi.mocked(getAllSimulations);
 const mockCalculatePlatformGrowth = vi.mocked(calculatePlatformGrowth);
@@ -224,13 +224,13 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(screen.getByText("Platform Growth")).toBeInTheDocument();
         expect(
-          screen.getByText("Platform-wide performance metrics over time")
+          screen.getByText("Platform-wide performance metrics over time"),
         ).toBeInTheDocument();
       });
     });
@@ -239,7 +239,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -252,7 +252,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -268,7 +268,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       expect(screen.getByText("Platform Growth")).toBeInTheDocument();
@@ -280,12 +280,12 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
-          screen.getByText("No growth data found for the selected date range")
+          screen.getByText("No growth data found for the selected date range"),
         ).toBeInTheDocument();
       });
     });
@@ -294,12 +294,12 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} cohortIds={["nonexistent"]} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
         expect(
-          screen.getByText("No data available for the selected cohorts")
+          screen.getByText("No data available for the selected cohorts"),
         ).toBeInTheDocument();
       });
     });
@@ -310,7 +310,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -325,7 +325,7 @@ describe("Growth Component", () => {
           defaultProps.dateEnd,
           defaultProps.profileId,
           mockCohorts,
-          defaultProps.cohortIds
+          defaultProps.cohortIds,
         );
       });
     });
@@ -336,7 +336,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...propsWithProfile} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -351,7 +351,7 @@ describe("Growth Component", () => {
           expect.any(Date),
           "profile1",
           expect.any(Array),
-          expect.any(Array)
+          expect.any(Array),
         );
       });
     });
@@ -362,7 +362,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...propsWithCohorts} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -377,7 +377,7 @@ describe("Growth Component", () => {
           expect.any(Date),
           undefined,
           expect.any(Array),
-          ["cohort1"]
+          ["cohort1"],
         );
       });
     });
@@ -394,7 +394,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -412,7 +412,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -431,7 +431,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -446,7 +446,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -466,7 +466,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -479,13 +479,13 @@ describe("Growth Component", () => {
   describe("Error Handling", () => {
     it("handles query errors gracefully", async () => {
       mockGetAllProfiles.mockRejectedValue(
-        new Error("Failed to fetch profiles")
+        new Error("Failed to fetch profiles"),
       );
 
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -505,7 +505,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -519,7 +519,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -532,7 +532,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...defaultProps} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -552,7 +552,7 @@ describe("Growth Component", () => {
       render(
         <TestWrapper>
           <Growth {...customDateRange} />
-        </TestWrapper>
+        </TestWrapper>,
       );
 
       await waitFor(() => {
@@ -567,7 +567,7 @@ describe("Growth Component", () => {
           new Date("2024-01-20"),
           undefined,
           expect.any(Array),
-          expect.any(Array)
+          expect.any(Array),
         );
       });
     });

@@ -63,7 +63,7 @@ describe("SimulationPicker", () => {
 
     expect(screen.getByText("Simulations")).toBeInTheDocument();
     expect(
-      screen.getByRole("combobox", { name: /select simulations/i })
+      screen.getByRole("combobox", { name: /select simulations/i }),
     ).toBeInTheDocument();
   });
 
@@ -76,7 +76,7 @@ describe("SimulationPicker", () => {
   it("shows selected simulation count when multiple are selected", () => {
     const selectedSims = [mockSimulations[0]!, mockSimulations[1]!];
     render(
-      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />
+      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />,
     );
 
     expect(screen.getByText("2 simulations selected")).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe("SimulationPicker", () => {
   it("shows single simulation title when one is selected", () => {
     const selectedSims = [mockSimulations[0]!];
     render(
-      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />
+      <SimulationPicker {...defaultProps} selectedSimulations={selectedSims} />,
     );
 
     expect(screen.getByText("Basic Communication")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("SimulationPicker", () => {
         {...defaultProps}
         simulations={simulationsWithoutPractice}
         showOnlyActive={false}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox", {
@@ -162,7 +162,8 @@ describe("SimulationPicker", () => {
       const simulationItems = screen.getAllByText("Basic Communication");
       // Click the one in the dropdown (not the button)
       const dropdownItem = simulationItems.find(
-        (item) => item.closest('[role="option"]') || item.closest("[cmdk-item]")
+        (item) =>
+          item.closest('[role="option"]') || item.closest("[cmdk-item]"),
       );
       if (dropdownItem) {
         fireEvent.click(dropdownItem);
@@ -181,7 +182,7 @@ describe("SimulationPicker", () => {
         {...defaultProps}
         onSelect={onSelect}
         selectedSimulations={selectedSims}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox", {
@@ -193,7 +194,8 @@ describe("SimulationPicker", () => {
       const simulationItems = screen.getAllByText("Basic Communication");
       // Click the one in the dropdown (not the button)
       const dropdownItem = simulationItems.find(
-        (item) => item.closest('[role="option"]') || item.closest("[cmdk-item]")
+        (item) =>
+          item.closest('[role="option"]') || item.closest("[cmdk-item]"),
       );
       if (dropdownItem) {
         fireEvent.click(dropdownItem);
@@ -211,12 +213,12 @@ describe("SimulationPicker", () => {
         {...defaultProps}
         selectedSimulations={selectedSims}
         hideSelectedChips={false}
-      />
+      />,
     );
 
     expect(screen.getAllByText("Basic Communication")[0]).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /remove basic communication/i })
+      screen.getByRole("button", { name: /remove basic communication/i }),
     ).toBeInTheDocument();
   });
 
@@ -229,7 +231,7 @@ describe("SimulationPicker", () => {
         {...defaultProps}
         onSelect={onSelect}
         selectedSimulations={selectedSims}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox", {
@@ -272,7 +274,7 @@ describe("SimulationPicker", () => {
         {...defaultProps}
         simulations={sims}
         showOnlyActive={false}
-      />
+      />,
     );
 
     const button = screen.getByRole("combobox", {
@@ -282,10 +284,10 @@ describe("SimulationPicker", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("A basic communication simulation")
+        screen.getByText("A basic communication simulation"),
       ).toBeInTheDocument();
       expect(
-        screen.getByText("Advanced leadership training simulation")
+        screen.getByText("Advanced leadership training simulation"),
       ).toBeInTheDocument();
     });
   });

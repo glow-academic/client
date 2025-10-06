@@ -47,7 +47,7 @@ export const simulationAttemptRepo = {
       .limit(1);
     if (!rows[0])
       throw HttpError.notFound(
-        "SimulationAttempt with id " + id + " not found"
+        "SimulationAttempt with id " + id + " not found",
       );
     return rows[0];
   },
@@ -61,7 +61,7 @@ export const simulationAttemptRepo = {
       .returning();
     if (!rows[0])
       throw HttpError.notFound(
-        "SimulationAttempt with id " + id + " not found"
+        "SimulationAttempt with id " + id + " not found",
       );
     return rows[0];
   },
@@ -74,7 +74,7 @@ export const simulationAttemptRepo = {
       .returning();
     if (!rows[0])
       throw HttpError.notFound(
-        "SimulationAttempt with id " + id + " not found"
+        "SimulationAttempt with id " + id + " not found",
       );
   },
 
@@ -116,7 +116,7 @@ export const simulationAttemptRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       simulationAttempts,
       updates,
-      "SimulationAttempt"
+      "SimulationAttempt",
     );
   },
 };

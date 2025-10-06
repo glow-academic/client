@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
         ...Object.fromEntries(
           [...req.headers.entries()].filter(([key]) =>
             ["authorization", "cookie", "user-agent"].includes(
-              key.toLowerCase()
-            )
-          )
+              key.toLowerCase(),
+            ),
+          ),
         ),
       },
       body: JSON.stringify(body),
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
     }
 
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 }

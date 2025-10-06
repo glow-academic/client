@@ -89,7 +89,7 @@ export const profileRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       profiles,
       updates,
-      "Profile"
+      "Profile",
     );
   },
 

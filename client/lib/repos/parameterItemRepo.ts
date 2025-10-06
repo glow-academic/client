@@ -95,7 +95,7 @@ export const parameterItemRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       parameterItems,
       updates,
-      "ParameterItem"
+      "ParameterItem",
     );
   },
 

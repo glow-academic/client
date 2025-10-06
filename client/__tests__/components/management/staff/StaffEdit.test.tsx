@@ -185,7 +185,7 @@ describe("StaffEdit", () => {
 
       // Mock updateProfile to delay resolution
       vi.mocked(updateProfile).mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
 
       render(<StaffEdit {...mockProps} />);
@@ -241,10 +241,10 @@ describe("StaffEdit", () => {
       // Should show admin role options
       expect(screen.getAllByText("Administrator").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Instructional Staff").length).toBeGreaterThan(
-        0
+        0,
       );
       expect(screen.getAllByText("Teaching Assistant").length).toBeGreaterThan(
-        0
+        0,
       );
     });
 
@@ -272,7 +272,7 @@ describe("StaffEdit", () => {
 
       // Should show superadmin role option
       expect(screen.getAllByText("Super Administrator").length).toBeGreaterThan(
-        0
+        0,
       );
     });
 
@@ -294,7 +294,7 @@ describe("StaffEdit", () => {
 
       // Should show guest role as disabled
       expect(screen.getAllByText("Guest (Read-only)").length).toBeGreaterThan(
-        0
+        0,
       );
     });
   });
@@ -392,8 +392,8 @@ describe("StaffEdit", () => {
       expect(screen.getByText("Are you absolutely sure?")).toBeInTheDocument();
       expect(
         screen.getByText(
-          /This will permanently delete the user account for John Doe/
-        )
+          /This will permanently delete the user account for John Doe/,
+        ),
       ).toBeInTheDocument();
     });
 
@@ -471,7 +471,7 @@ describe("StaffEdit", () => {
       await user.click(cancelButton);
 
       expect(
-        screen.queryByText("Are you absolutely sure?")
+        screen.queryByText("Are you absolutely sure?"),
       ).not.toBeInTheDocument();
     });
   });
@@ -596,10 +596,10 @@ describe("StaffEdit", () => {
       });
 
       expect(
-        screen.getByRole("button", { name: /update user/i })
+        screen.getByRole("button", { name: /update user/i }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /delete user/i })
+        screen.getByRole("button", { name: /delete user/i }),
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
     });
@@ -611,7 +611,7 @@ describe("StaffEdit", () => {
       );
 
       vi.mocked(updateProfile).mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100))
+        () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
 
       render(<StaffEdit {...mockProps} />);
@@ -633,7 +633,7 @@ describe("StaffEdit", () => {
       expect(screen.getByDisplayValue("johndoe")).toBeDisabled();
       expect(screen.getByRole("combobox")).toBeDisabled();
       expect(
-        screen.getByRole("button", { name: /delete user/i })
+        screen.getByRole("button", { name: /delete user/i }),
       ).toBeDisabled();
       expect(screen.getByRole("button", { name: /back/i })).toBeDisabled();
     });

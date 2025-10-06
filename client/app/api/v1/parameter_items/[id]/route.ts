@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { parameterItemRepo, ParameterItemUpdateSchema } from "@/lib/repos/parameterItemRepo";
+import {
+  parameterItemRepo,
+  ParameterItemUpdateSchema,
+} from "@/lib/repos/parameterItemRepo";
 import type { ParameterItemUpdate } from "@/lib/repos/parameterItemRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => parameterItemRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch parameterItem",
         subject: { entityType: "parameter_items", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = ParameterItemUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "parameter_items", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await parameterItemRepo.remove(id); return {}; },
+    async () => {
+      await parameterItemRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.parameter_items.delete.failed", {
         message: "Failed to delete parameterItem",
         subject: { entityType: "parameter_items", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

@@ -37,7 +37,7 @@ describe("websocket-context", () => {
       render(
         <WebSocketProvider {...mockProps} profileId={null}>
           <div>test-children</div>
-        </WebSocketProvider>
+        </WebSocketProvider>,
       );
 
       // TODO: Add meaningful assertions based on your component

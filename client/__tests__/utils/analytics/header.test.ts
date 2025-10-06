@@ -114,7 +114,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(85); // 85/100 * 100 = 85%
@@ -130,7 +130,7 @@ describe("Analytics Header Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -146,7 +146,7 @@ describe("Analytics Header Utilities", () => {
         [mockRubric],
         dateStart,
         dateEnd,
-        "different-profile"
+        "different-profile",
       );
 
       expect(result.currentValue).toBe(0);
@@ -165,7 +165,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(100); // 1 passed chat out of 1 total
@@ -181,7 +181,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0); // 0 passed chats out of 1 total
@@ -200,7 +200,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(100); // 1 passed first attempt out of 1 total
@@ -220,7 +220,7 @@ describe("Analytics Header Utilities", () => {
         [mockGrade],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(100); // Should only count first attempt
@@ -240,7 +240,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(85); // 85/100 * 100 = 85%
@@ -257,7 +257,7 @@ describe("Analytics Header Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(95); // Should return highest score
@@ -276,7 +276,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(1); // 1 message in 1 session
@@ -292,7 +292,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(2); // 2 messages in 1 session
@@ -317,7 +317,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(300); // 5 minutes = 300 seconds
@@ -332,7 +332,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -352,7 +352,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       // Efficiency = (Average Score %) / (Average Time per Session in minutes)
@@ -371,7 +371,7 @@ describe("Analytics Header Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -391,7 +391,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBeGreaterThanOrEqual(0);
@@ -407,7 +407,7 @@ describe("Analytics Header Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -425,7 +425,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(1800); // 30 minutes = 1800 seconds
@@ -444,7 +444,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0); // Incomplete sessions don't count
@@ -461,7 +461,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBe(1);
@@ -479,7 +479,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt, secondAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(2);
@@ -495,7 +495,7 @@ describe("Analytics Header Utilities", () => {
         [mockAttempt],
         [practiceSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -512,7 +512,7 @@ describe("Analytics Header Utilities", () => {
         [],
         [],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -529,7 +529,7 @@ describe("Analytics Header Utilities", () => {
         [futureAttempt],
         [mockSimulation],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0); // Outside date range
@@ -552,7 +552,7 @@ describe("Analytics Header Utilities", () => {
         dateEnd,
         "profile-1",
         [differentCohort],
-        ["cohort-2"]
+        ["cohort-2"],
       );
 
       expect(result.currentValue).toBe(0); // Profile not in cohort

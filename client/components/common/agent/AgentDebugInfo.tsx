@@ -22,17 +22,18 @@ export interface AgentDebugInfoRow {
 }
 
 export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
-
-  const {data: modelRuns = [], isLoading: isLoadingRuns} = useModelRunsByAgentId(agentId);
+  const { data: modelRuns = [], isLoading: isLoadingRuns } =
+    useModelRunsByAgentId(agentId);
 
   const modelRunIds = useMemo(
     () => (modelRuns as ModelRun[]).map((mr) => mr.id),
-    [modelRuns]
+    [modelRuns],
   );
 
-  const {data: debugInfo = [], isLoading: isLoadingDebug} = useDebugInfoByModelRunIdBatch(modelRunIds);
+  const { data: debugInfo = [], isLoading: isLoadingDebug } =
+    useDebugInfoByModelRunIdBatch(modelRunIds);
 
-  const {data: models = [], isLoading: isLoadingModels} = useModels();
+  const { data: models = [], isLoading: isLoadingModels } = useModels();
 
   const modelIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -71,7 +72,7 @@ export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
         value: m.id,
         label: m.name,
       })),
-    [models]
+    [models],
   );
 
   const isLoading = isLoadingRuns || isLoadingDebug || isLoadingModels;

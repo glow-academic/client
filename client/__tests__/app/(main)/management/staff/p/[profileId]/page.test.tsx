@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +52,7 @@ describe("StaffEditPage", () => {
       expect(screen.getByTestId("staff-edit")).toBeInTheDocument();
       expect(screen.getByTestId("staff-edit")).toHaveAttribute(
         "data-profile-id",
-        "test-profile-id"
+        "test-profile-id",
       );
     });
 
@@ -81,7 +81,7 @@ describe("StaffEditPage", () => {
       expect(screen.getByTestId("staff-edit")).toBeInTheDocument();
       expect(screen.getByTestId("staff-edit")).toHaveAttribute(
         "data-profile-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -65,7 +65,7 @@ describe("ProviderEditPage", () => {
       expect(screen.getByTestId("provider-edit")).toBeInTheDocument();
       expect(screen.getByTestId("provider-edit")).toHaveAttribute(
         "data-provider-id",
-        "test-provider-id"
+        "test-provider-id",
       );
     });
 
@@ -92,7 +92,7 @@ describe("ProviderEditPage", () => {
       expect(screen.getByTestId("provider-edit")).toBeInTheDocument();
       expect(screen.getByTestId("provider-edit")).toHaveAttribute(
         "data-provider-id",
-        "test-provider-id"
+        "test-provider-id",
       );
     });
   });

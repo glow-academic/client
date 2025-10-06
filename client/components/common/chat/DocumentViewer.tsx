@@ -55,7 +55,7 @@ export default function DocumentViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const {data: docs = [], isLoading, error: queryError} = useDocuments();
+  const { data: docs = [], isLoading, error: queryError } = useDocuments();
 
   // Memoize documentsToUse to prevent unnecessary re-renders
   const documentsToUse = useMemo(() => {
@@ -93,10 +93,13 @@ export default function DocumentViewer({
           // For form documents with blob URLs, fetch the blob directly
           response = await fetch(document.filePath);
         } else {
-          response = await fetch(`${appPrefix}/api/download/document/${docId}`, {
-            method: "GET",
-            credentials: "include",
-          });
+          response = await fetch(
+            `${appPrefix}/api/download/document/${docId}`,
+            {
+              method: "GET",
+              credentials: "include",
+            },
+          );
         }
 
         if (!response.ok) {

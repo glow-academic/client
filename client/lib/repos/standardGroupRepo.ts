@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type StandardGroupUpdate = Partial<StandardGroupCreate>;
 export const StandardGroupCreateSchema = createInsertSchema(standardGroups);
 export const StandardGroupUpdateSchema = StandardGroupCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const standardGroupRepo = {
   async create(payload: StandardGroupCreate) {
@@ -26,36 +27,59 @@ export const standardGroupRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(standardGroups).orderBy(standardGroups.createdAt ?? standardGroups.id);
+    return db
+      .select()
+      .from(standardGroups)
+      .orderBy(standardGroups.createdAt ?? standardGroups.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(standardGroups).where(eq(standardGroups.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("StandardGroup with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(standardGroups)
+      .where(eq(standardGroups.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("StandardGroup with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: StandardGroupUpdate) {
     const db = await getDb();
-    const rows = await db.update(standardGroups).set(patch).where(eq(standardGroups.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("StandardGroup with id " + id + " not found");
+    const rows = await db
+      .update(standardGroups)
+      .set(patch)
+      .where(eq(standardGroups.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("StandardGroup with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(standardGroups).where(eq(standardGroups.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("StandardGroup with id " + id + " not found");
+    const rows = await db
+      .delete(standardGroups)
+      .where(eq(standardGroups.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("StandardGroup with id " + id + " not found");
   },
 
   async listByRubric(rubricId: string) {
     const db = await getDb();
-    return db.select().from(standardGroups).where(eq(standardGroups.rubricId, rubricId));
+    return db
+      .select()
+      .from(standardGroups)
+      .where(eq(standardGroups.rubricId, rubricId));
   },
 
   async listByRubrics(rubricIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(rubricIds) || rubricIds.length === 0) return [];
-    return db.select().from(standardGroups).where(inArray(standardGroups.rubricId, rubricIds));
+    return db
+      .select()
+      .from(standardGroups)
+      .where(inArray(standardGroups.rubricId, rubricIds));
   },
 };

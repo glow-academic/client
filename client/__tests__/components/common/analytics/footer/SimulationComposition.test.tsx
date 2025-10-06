@@ -6,9 +6,9 @@
  */
 
 import SimulationComposition from "@/components/common/analytics/footer/SimulationComposition";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { calculateSimulationComposition } from "@/utils/analytics/footer";
-import { screen, waitFor } from '@/test/custom-render';
+import { screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the utility function
@@ -25,10 +25,10 @@ vi.mock("@/utils/queries/personas/get-all-personas");
 vi.mock("@/utils/queries/profiles/get-all-profiles");
 vi.mock("@/utils/queries/scenarios/get-all-scenarios");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock("@/utils/queries/simulations/get-all-simulations");
@@ -304,9 +304,7 @@ describe("SimulationComposition", () => {
   };
 
   const renderComponent = (props = {}) => {
-    return render(
-      <SimulationComposition {...defaultProps} {...props} />
-    );
+    return render(<SimulationComposition {...defaultProps} {...props} />);
   };
 
   describe("basic render smoke-test", () => {
@@ -382,8 +380,8 @@ describe("SimulationComposition", () => {
 
       expect(
         screen.getByText(
-          "No simulation data available for the selected time period."
-        )
+          "No simulation data available for the selected time period.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -528,7 +526,7 @@ describe("SimulationComposition", () => {
       };
 
       vi.mocked(calculateSimulationComposition).mockReturnValue(
-        highPerformanceData
+        highPerformanceData,
       );
       renderComponent();
 
@@ -604,7 +602,7 @@ describe("SimulationComposition", () => {
       };
 
       vi.mocked(calculateSimulationComposition).mockReturnValue(
-        moderatePerformanceData
+        moderatePerformanceData,
       );
       renderComponent();
 
@@ -680,7 +678,7 @@ describe("SimulationComposition", () => {
       };
 
       vi.mocked(calculateSimulationComposition).mockReturnValue(
-        lowPerformanceData
+        lowPerformanceData,
       );
       renderComponent();
 
@@ -778,7 +776,7 @@ describe("SimulationComposition", () => {
       };
 
       vi.mocked(calculateSimulationComposition).mockReturnValue(
-        noSignificanceData
+        noSignificanceData,
       );
       renderComponent();
 
@@ -937,7 +935,7 @@ describe("SimulationComposition", () => {
       };
 
       vi.mocked(calculateSimulationComposition).mockReturnValue(
-        dataWithMultipleParameters
+        dataWithMultipleParameters,
       );
       renderComponent();
 
@@ -1032,7 +1030,7 @@ describe("SimulationComposition", () => {
       });
 
       expect(
-        screen.getByText("No data available for the selected cohorts.")
+        screen.getByText("No data available for the selected cohorts."),
       ).toBeInTheDocument();
     });
 
@@ -1055,8 +1053,8 @@ describe("SimulationComposition", () => {
 
       expect(
         screen.getByText(
-          "No simulation data available for the selected time period."
-        )
+          "No simulation data available for the selected time period.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -1254,11 +1252,11 @@ describe("SimulationComposition", () => {
       vi.mocked(getAllParameterItems).mockResolvedValue(mockParameterItems);
       vi.mocked(getAllAgents).mockResolvedValue(mockAgents);
       vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(
-        mockAttempts
+        mockAttempts,
       );
       vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
       vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
-        mockGrades
+        mockGrades,
       );
 
       // Mock the utility function to return comprehensive data
@@ -1364,7 +1362,7 @@ describe("SimulationComposition", () => {
       // Verify the component renders with data
       expect(screen.getByText("Simulation Composition")).toBeInTheDocument();
       expect(
-        screen.getByText("High vs low performing simulations")
+        screen.getByText("High vs low performing simulations"),
       ).toBeInTheDocument();
     });
 

@@ -61,7 +61,7 @@ export function Simulations() {
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
     );
   };
 

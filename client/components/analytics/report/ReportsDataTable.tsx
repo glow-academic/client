@@ -177,7 +177,7 @@ export function ReportsDataTable({
       simulation_id: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "averageScore", desc: true }, // Default sort by score descending
@@ -207,7 +207,7 @@ export function ReportsDataTable({
   const renderWithHover = (
     key: string,
     content: React.ReactNode,
-    profileId: string
+    profileId: string,
   ) => {
     const item = data.find((d) => d.profile_id === profileId);
     let bullets: string[] = [];
@@ -331,7 +331,7 @@ export function ReportsDataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -352,7 +352,7 @@ export function ReportsDataTable({
                     const key = cell.column.id;
                     const content = flexRender(
                       cell.column.columnDef.cell,
-                      cell.getContext()
+                      cell.getContext(),
                     );
                     const shouldHover = [
                       "averageScore",
@@ -377,7 +377,7 @@ export function ReportsDataTable({
                           ? renderWithHover(
                               key,
                               content,
-                              row.original.profile_id
+                              row.original.profile_id,
                             )
                           : content}
                       </TableCell>

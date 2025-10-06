@@ -171,8 +171,7 @@ export default function ProfileSelector({
   const [isSearching, setIsSearching] = useState(false);
   const [csvPreview, setCsvPreview] = useState<CSVProfile[]>([]);
 
-
-  const {data: allProfiles = []} = useProfiles();
+  const { data: allProfiles = [] } = useProfiles();
 
   // Filter profiles by allowed roles
   const availableProfiles = useMemo(() => {
@@ -203,7 +202,7 @@ export default function ProfileSelector({
         setIsSearching(false);
       }
     },
-    [availableProfiles]
+    [availableProfiles],
   );
 
   // Debounced search
@@ -283,7 +282,7 @@ export default function ProfileSelector({
 
       if (lines.length < 2) {
         toast.error(
-          "CSV file must have at least a header row and one data row"
+          "CSV file must have at least a header row and one data row",
         );
         return;
       }
@@ -305,12 +304,12 @@ export default function ProfileSelector({
           (profile): profile is CSVProfile =>
             Boolean(profile.firstName) &&
             Boolean(profile.lastName) &&
-            allowedRoles.includes(profile.role)
+            allowedRoles.includes(profile.role),
         );
 
       if (profiles.length === 0) {
         toast.error(
-          "No valid profiles found in CSV. Please check the format and ensure roles are valid."
+          "No valid profiles found in CSV. Please check the format and ensure roles are valid.",
         );
         return;
       }
@@ -370,8 +369,8 @@ export default function ProfileSelector({
   const updateProfileRole = (profileId: string, newRole: ProfileRole) => {
     onProfilesChange(
       selectedProfiles.map((profile) =>
-        profile.id === profileId ? { ...profile, role: newRole } : profile
-      )
+        profile.id === profileId ? { ...profile, role: newRole } : profile,
+      ),
     );
   };
 

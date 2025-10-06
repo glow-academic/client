@@ -23,7 +23,7 @@ export interface TestScenarioResponse {
 }
 
 export async function testScenario(
-  params: TestScenarioParams
+  params: TestScenarioParams,
 ): Promise<TestScenarioResponse> {
   try {
     const formData = new FormData();

@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type AppFeedbackUpdate = Partial<AppFeedbackCreate>;
 export const AppFeedbackCreateSchema = createInsertSchema(appFeedback);
 export const AppFeedbackUpdateSchema = AppFeedbackCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const appFeedbackRepo = {
   async create(payload: AppFeedbackCreate) {
@@ -26,36 +27,59 @@ export const appFeedbackRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(appFeedback).orderBy(appFeedback.createdAt ?? appFeedback.id);
+    return db
+      .select()
+      .from(appFeedback)
+      .orderBy(appFeedback.createdAt ?? appFeedback.id);
   },
   async find(id: number) {
     const db = await getDb();
-    const rows = await db.select().from(appFeedback).where(eq(appFeedback.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("AppFeedback with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(appFeedback)
+      .where(eq(appFeedback.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("AppFeedback with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: number, patch: AppFeedbackUpdate) {
     const db = await getDb();
-    const rows = await db.update(appFeedback).set(patch).where(eq(appFeedback.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("AppFeedback with id " + id + " not found");
+    const rows = await db
+      .update(appFeedback)
+      .set(patch)
+      .where(eq(appFeedback.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("AppFeedback with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: number) {
     const db = await getDb();
-    const rows = await db.delete(appFeedback).where(eq(appFeedback.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("AppFeedback with id " + id + " not found");
+    const rows = await db
+      .delete(appFeedback)
+      .where(eq(appFeedback.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("AppFeedback with id " + id + " not found");
   },
 
   async listByProfile(profileId: string) {
     const db = await getDb();
-    return db.select().from(appFeedback).where(eq(appFeedback.profileId, profileId));
+    return db
+      .select()
+      .from(appFeedback)
+      .where(eq(appFeedback.profileId, profileId));
   },
 
   async listByProfiles(profileIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(profileIds) || profileIds.length === 0) return [];
-    return db.select().from(appFeedback).where(inArray(appFeedback.profileId, profileIds));
+    return db
+      .select()
+      .from(appFeedback)
+      .where(inArray(appFeedback.profileId, profileIds));
   },
 };

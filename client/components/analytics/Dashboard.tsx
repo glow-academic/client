@@ -132,7 +132,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
-    ]
+    ],
   );
 
   // Stable React Query options to prevent unnecessary refetches
@@ -141,7 +141,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       enabled: true,
       staleTime: 60_000,
     }),
-    []
+    [],
   );
 
   // Fetch data and process it inline
@@ -286,7 +286,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
-    ]
+    ],
   );
 
   const { data: historyData, isLoading: isHistoryLoading } =
@@ -314,7 +314,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         | "simulationId"
         | "profileId"
         | "date"
-        | undefined
+        | undefined,
     );
 
     return {
@@ -340,7 +340,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -371,7 +371,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         | "simulationId"
         | "profileId"
         | "date"
-        | undefined
+        | undefined,
     );
 
     return {
@@ -402,7 +402,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         | "simulationId"
         | "profileId"
         | "date"
-        | undefined
+        | undefined,
     );
 
     return {
@@ -433,7 +433,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
         | "simulationId"
         | "profileId"
         | "date"
-        | undefined
+        | undefined,
     );
 
     return {
@@ -461,7 +461,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -487,7 +487,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -513,7 +513,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -539,7 +539,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -568,7 +568,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       resp.method,
       points,
       "value",
-      resp.keyField as KeyField
+      resp.keyField as KeyField,
     );
 
     return {
@@ -581,43 +581,43 @@ export default function Dashboard({ profileId }: DashboardProps) {
   // Trend analysis using utility function
   const averageScoreTrendAnalysis = computeTrendAnalysis(
     averageScoreProcessed.scoreTrend,
-    "Average score"
+    "Average score",
   );
   const completionTrendAnalysis = computeTrendAnalysis(
     completionProcessed.completionTrend,
-    "Completion percentage"
+    "Completion percentage",
   );
   const passRateTrendAnalysis = computeTrendAnalysis(
     passRateProcessed.passRateTrend,
-    "First attempt pass rate"
+    "First attempt pass rate",
   );
   const highestScoreTrendAnalysis = computeTrendAnalysis(
     highestScoreProcessed.scoreTrend,
-    "Highest score"
+    "Highest score",
   );
   const messagesTrendAnalysis = computeTrendAnalysis(
     messagesProcessed.messagesTrend,
-    "Messages per session"
+    "Messages per session",
   );
   const responseTimeTrendAnalysis = computeTrendAnalysis(
     responseTimeProcessed.responseTimeTrend,
-    "Response time"
+    "Response time",
   );
   const sessionEfficiencyTrendAnalysis = computeTrendAnalysis(
     sessionEfficiencyProcessed.efficiencyTrend,
-    "Session efficiency"
+    "Session efficiency",
   );
   const stagnationRateTrendAnalysis = computeTrendAnalysis(
     stagnationRateProcessed.stagnationTrend,
-    "Stagnation rate"
+    "Stagnation rate",
   );
   const timeSpentTrendAnalysis = computeTrendAnalysis(
     timeSpentProcessed.timeSpentTrend,
-    "Time spent"
+    "Time spent",
   );
   const totalAttemptsTrendAnalysis = computeTrendAnalysis(
     totalAttemptsProcessed.attemptsTrend,
-    "Total attempts"
+    "Total attempts",
   );
 
   // Process growth data
@@ -662,7 +662,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const chartData = personaData.chartData || [];
     const performanceStatus = computePersonaPerformanceStatus(
       chartData,
-      thresholds
+      thresholds,
     );
 
     // Compute multiple actionable insights for each persona
@@ -671,7 +671,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       const multipleInsights = computePersonaMultipleActionableInsights(
         persona.trendData,
         persona.name,
-        persona.score
+        persona.score,
       );
 
       // Use the single focused insight
@@ -682,7 +682,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const validSimulationIds = personaData.validSimulationIds || [];
     const validSimulationIdsSet = new Set(validSimulationIds);
     const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
+      validSimulationIdsSet.has(sim.id),
     );
 
     return {
@@ -709,7 +709,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const validRubricIds = rubricHeatmapData.validRubricIds || [];
     const validRubricIdsSet = new Set(validRubricIds);
     const availableRubrics = allRubrics.filter((rubric) =>
-      validRubricIdsSet.has(rubric.id)
+      validRubricIdsSet.has(rubric.id),
     );
 
     const matrices = rubricHeatmapData.matrices || [];
@@ -742,7 +742,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const validSimulationIds = attemptImprovementData.validSimulationIds || [];
     const validSimulationIdsSet = new Set(validSimulationIds);
     const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
+      validSimulationIdsSet.has(sim.id),
     );
 
     const actionableInsight =
@@ -778,7 +778,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const validSimulationIds = cohortPerformanceData.validSimulationIds || [];
     const validSimulationIdsSet = new Set(validSimulationIds);
     const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
+      validSimulationIdsSet.has(sim.id),
     );
 
     // Compute multiple actionable insights for each cohort
@@ -821,7 +821,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     const validRubricIds = skillPerformanceData.validRubricIds || [];
     const validRubricIdsSet = new Set(validRubricIds);
     const availableRubrics = allRubrics.filter((rubric) =>
-      validRubricIdsSet.has(rubric.id)
+      validRubricIdsSet.has(rubric.id),
     );
 
     const activePackage = packages[0]; // Use first package for insight calculation
@@ -859,16 +859,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
     // Filter parameters and parameter items by valid IDs
     const validParameterIdsSet = new Set(validParameterIds);
     const availableParameters = allParameters.filter((param) =>
-      validParameterIdsSet.has(param.id)
+      validParameterIdsSet.has(param.id),
     );
 
     // Filter parameter items that belong to valid parameters
     const availableParameterItems = allParameterItems.filter((item) =>
-      validParameterIdsSet.has(item.parameterId)
+      validParameterIdsSet.has(item.parameterId),
     );
 
     const actionableInsight = computeScenarioPerformanceActionableInsight(
-      attributeAttemptFacts
+      attributeAttemptFacts,
     );
 
     return {
@@ -900,7 +900,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     // Filter parameters by valid numeric parameter IDs
     const validNumericParameterIdsSet = new Set(validNumericParameterIds);
     const availableParameters = allParameters.filter((param) =>
-      validNumericParameterIdsSet.has(param.id)
+      validNumericParameterIdsSet.has(param.id),
     );
 
     const actionableInsight =
@@ -965,24 +965,24 @@ export default function Dashboard({ profileId }: DashboardProps) {
     // Filter simulations by valid IDs
     const validSimulationIdsSet = new Set(validSimulationIds);
     const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
+      validSimulationIdsSet.has(sim.id),
     );
 
     // Get all parameter IDs that appear in the facts
     const parameterIds = new Set<string>();
     simulationParameterFactsCategorical.forEach((fact) =>
-      parameterIds.add(fact.parameterId)
+      parameterIds.add(fact.parameterId),
     );
     simulationParameterFactsNumeric.forEach((fact) =>
-      parameterIds.add(fact.parameterId)
+      parameterIds.add(fact.parameterId),
     );
 
     // Filter parameters and parameter items by the IDs that appear in facts
     const availableParameters = allParameters.filter((param) =>
-      parameterIds.has(param.id)
+      parameterIds.has(param.id),
     );
     const availableParameterItems = allParameterItems.filter((item) =>
-      parameterIds.has(item.parameterId)
+      parameterIds.has(item.parameterId),
     );
 
     const actionableInsight =
@@ -1243,14 +1243,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   // Header pagination logic
   const HEADER_CARDS_PER_PAGE = 5;
   const totalHeaderPages = Math.ceil(
-    headerComponents.length / HEADER_CARDS_PER_PAGE
+    headerComponents.length / HEADER_CARDS_PER_PAGE,
   );
 
   const getVisibleHeaderComponents = () => {
     const startIndex = headerCarouselIndex * HEADER_CARDS_PER_PAGE;
     return headerComponents.slice(
       startIndex,
-      startIndex + HEADER_CARDS_PER_PAGE
+      startIndex + HEADER_CARDS_PER_PAGE,
     );
   };
 
@@ -1258,7 +1258,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const navigateHeader = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setHeaderCarouselIndex(
-        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages
+        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages,
       );
     } else {
       setHeaderCarouselIndex((prev: number) => (prev + 1) % totalHeaderPages);
@@ -1293,7 +1293,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length
+        (prev: number) => (prev - 1 + length) % length,
       );
     } else {
       setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -1306,7 +1306,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
     if (direction === "prev") {
       setRightFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length
+        (prev: number) => (prev - 1 + length) % length,
       );
     } else {
       setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);

@@ -13,7 +13,7 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
   // read route params
   const { cohortId } = await params;

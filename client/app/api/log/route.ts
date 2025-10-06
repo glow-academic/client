@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     if (!entry || typeof entry !== "object") {
       return NextResponse.json(
         { ok: false, error: "Invalid payload" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     await logToDatabase(entry);
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -9,14 +9,14 @@ describe("MarkdownImage", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", () => {
       render(
-        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />,
       );
       expect(document.body).toBeInTheDocument();
     });
 
     it("should render with src and alt props", () => {
       render(
-        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -42,7 +42,7 @@ describe("MarkdownImage", () => {
   describe("Image Properties", () => {
     it("should render with correct Next.js Image props", () => {
       render(
-        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -53,7 +53,7 @@ describe("MarkdownImage", () => {
 
     it("should render with custom style properties", () => {
       render(
-        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -66,7 +66,7 @@ describe("MarkdownImage", () => {
 
     it("should render with unoptimized prop", () => {
       render(
-        <MarkdownImage src="https://example.com/image.png" alt="Test image" />
+        <MarkdownImage src="https://example.com/image.png" alt="Test image" />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -77,9 +77,7 @@ describe("MarkdownImage", () => {
 
   describe("Different Image Sources", () => {
     it("should render local images", () => {
-      render(
-        <MarkdownImage src="/images/local-image.png" alt="Local image" />
-      );
+      render(<MarkdownImage src="/images/local-image.png" alt="Local image" />);
 
       const image = screen.getByAltText("Local image");
       expect(image).toBeInTheDocument();
@@ -91,7 +89,7 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://cdn.example.com/image.jpg"
           alt="CDN image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("CDN image");
@@ -104,14 +102,14 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://supabase.co/storage/v1/object/public/bucket/image.png"
           alt="Supabase image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("Supabase image");
       expect(image).toBeInTheDocument();
       expect(image).toHaveAttribute(
         "src",
-        "https://supabase.co/storage/v1/object/public/bucket/image.png"
+        "https://supabase.co/storage/v1/object/public/bucket/image.png",
       );
     });
 
@@ -128,9 +126,7 @@ describe("MarkdownImage", () => {
 
   describe("Alt Text Handling", () => {
     it("should render with empty alt text", () => {
-      render(
-        <MarkdownImage src="https://example.com/image.png" alt="" />
-      );
+      render(<MarkdownImage src="https://example.com/image.png" alt="" />);
 
       const image = screen.getByAltText("");
       expect(image).toBeInTheDocument();
@@ -141,11 +137,11 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://example.com/image.png"
           alt="A beautiful sunset over the mountains"
-        />
+        />,
       );
 
       const image = screen.getByAltText(
-        "A beautiful sunset over the mountains"
+        "A beautiful sunset over the mountains",
       );
       expect(image).toBeInTheDocument();
     });
@@ -167,7 +163,7 @@ describe("MarkdownImage", () => {
           alt="Test image"
           className="custom-class"
           data-testid="custom-image"
-        />
+        />,
       );
 
       const image = screen.getByTestId("custom-image");
@@ -182,7 +178,7 @@ describe("MarkdownImage", () => {
           src="https://example.com/image.png"
           alt="Test image"
           onClick={handleClick}
-        />
+        />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -196,7 +192,7 @@ describe("MarkdownImage", () => {
           src="https://example.com/image.png"
           alt="Test image"
           onLoad={handleLoad}
-        />
+        />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -210,7 +206,7 @@ describe("MarkdownImage", () => {
           src="https://example.com/image.png"
           alt="Test image"
           onError={handleError}
-        />
+        />,
       );
 
       const image = screen.getByAltText("Test image");
@@ -231,9 +227,7 @@ describe("MarkdownImage", () => {
     it("should handle special characters in URLs", () => {
       const specialUrl =
         "https://example.com/image with spaces & special chars.png";
-      render(
-        <MarkdownImage src={specialUrl} alt="Special chars image" />
-      );
+      render(<MarkdownImage src={specialUrl} alt="Special chars image" />);
 
       const image = screen.getByAltText("Special chars image");
       expect(image).toBeInTheDocument();
@@ -242,7 +236,7 @@ describe("MarkdownImage", () => {
 
     it("should handle relative URLs", () => {
       render(
-        <MarkdownImage src="./relative/path/image.png" alt="Relative image" />
+        <MarkdownImage src="./relative/path/image.png" alt="Relative image" />,
       );
 
       const image = screen.getByAltText("Relative image");
@@ -255,7 +249,7 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="//example.com/image.png"
           alt="Protocol relative image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("Protocol relative image");
@@ -264,9 +258,7 @@ describe("MarkdownImage", () => {
     });
 
     it("should handle malformed URLs gracefully", () => {
-      render(
-        <MarkdownImage src="not-a-valid-url" alt="Malformed URL image" />
-      );
+      render(<MarkdownImage src="not-a-valid-url" alt="Malformed URL image" />);
 
       const image = screen.getByAltText("Malformed URL image");
       expect(image).toBeInTheDocument();
@@ -280,7 +272,7 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Responsive image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("Responsive image");
@@ -292,7 +284,7 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Responsive image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("Responsive image");
@@ -307,7 +299,7 @@ describe("MarkdownImage", () => {
         <MarkdownImage
           src="https://example.com/image.png"
           alt="Accessible image"
-        />
+        />,
       );
 
       const image = screen.getByAltText("Accessible image");
@@ -320,7 +312,7 @@ describe("MarkdownImage", () => {
           src="https://example.com/image.png"
           alt="Focusable image"
           tabIndex={0}
-        />
+        />,
       );
 
       const image = screen.getByAltText("Focusable image");

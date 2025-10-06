@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { AssistantChat, AssistantChatCreate, AssistantChatUpdate } from "@/lib/repos/assistantChatRepo";
-import { assistantChatKeys, assistantChatKeysByProfileId } from "@/lib/api/keys";
+import type {
+  AssistantChat,
+  AssistantChatCreate,
+  AssistantChatUpdate,
+} from "@/lib/repos/assistantChatRepo";
+import {
+  assistantChatKeys,
+  assistantChatKeysByProfileId,
+} from "@/lib/api/keys";
 
 export function useAssistantChats(filters?: unknown) {
   return useQuery({
@@ -15,7 +22,11 @@ export function useAssistantChats(filters?: unknown) {
 export function useCreateAssistantChat() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AssistantChatCreate) => api<AssistantChat>("/api/v1/assistant_chats", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: AssistantChatCreate) =>
+      api<AssistantChat>("/api/v1/assistant_chats", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: assistantChatKeys.all }),
   });
 }
@@ -33,16 +44,25 @@ export function useUpdateAssistantChat(id?: string) {
   return useMutation({
     mutationFn: (patch: AssistantChatUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<AssistantChat>(`/api/v1/assistant_chats/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<AssistantChat>(`/api/v1/assistant_chats/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
       if (resolvedId && resolvedId !== "") {
-        qc.invalidateQueries({ queryKey: assistantChatKeys.detail(resolvedId) });
+        qc.invalidateQueries({
+          queryKey: assistantChatKeys.detail(resolvedId),
+        });
       } else {
         qc.invalidateQueries({ queryKey: assistantChatKeys.all });
       }
@@ -55,10 +75,16 @@ export function useDeleteAssistantChat(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/assistant_chats/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/assistant_chats/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: assistantChatKeys.all }),
   });
@@ -67,7 +93,8 @@ export function useDeleteAssistantChat(id?: string) {
 export function useAssistantChatsByProfileId(id: string) {
   return useQuery<AssistantChat[]>({
     queryKey: assistantChatKeysByProfileId.one(id),
-    queryFn: () => api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/${id}`),
+    queryFn: () =>
+      api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -75,7 +102,11 @@ export function useAssistantChatsByProfileId(id: string) {
 export function useAssistantChatsByProfileIdBatch(ids: string[]) {
   return useQuery<AssistantChat[]>({
     queryKey: assistantChatKeysByProfileId.many(ids),
-    queryFn: () => api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AssistantChat[]>(`/api/v1/assistant_chats/by/profileId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

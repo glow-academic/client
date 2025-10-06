@@ -124,7 +124,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      })
+      }),
     );
 
     cohortFacts.forEach((f) => {
@@ -317,7 +317,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id
+                        (d: DailyRow) => d.cohortId === cohort.id,
                       );
                       if (cohortDailyData.length === 0) return null;
 

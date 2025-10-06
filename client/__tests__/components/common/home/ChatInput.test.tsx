@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -70,7 +70,7 @@ describe("ChatInput", () => {
         expect(sendButton).toBeInTheDocument();
         expect(textarea).toHaveAttribute(
           "placeholder",
-          "Start a conversation..."
+          "Start a conversation...",
         );
       });
     });
@@ -161,7 +161,7 @@ describe("ChatInput", () => {
           {...mockProps}
           promptToSet="Set prompt"
           onPromptSet={onPromptSet}
-        />
+        />,
       );
 
       await waitFor(() => {

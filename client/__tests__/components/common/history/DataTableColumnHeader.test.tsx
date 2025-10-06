@@ -1,5 +1,5 @@
 import { getMockColumn } from "@/mocks/navigation";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -50,9 +50,7 @@ describe("DataTableColumnHeader", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      render(
-        <DataTableColumnHeader column={getMockColumn()} title="test" />,
-      );
+      render(<DataTableColumnHeader column={getMockColumn()} title="test" />);
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

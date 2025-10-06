@@ -1,18 +1,18 @@
-import { describe, it, vi, afterEach } from 'vitest';
-import { render } from '@/test/custom-render';
-import userEvent from '@testing-library/user-event';
+import { describe, it, vi, afterEach } from "vitest";
+import { render } from "@/test/custom-render";
+import userEvent from "@testing-library/user-event";
 
 // ——————————————————————————————————————————
 
-
-
 // ✨ Import comprehensive mock data from our centralized mock system
-import '@/mocks/api';
-
+import "@/mocks/api";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import { AssistantProvider, type AssistantContextType } from '@/contexts/assistant-context';
+import {
+  AssistantProvider,
+  type AssistantContextType,
+} from "@/contexts/assistant-context";
 const mockProps: AssistantContextType = {
   uiState: "closed",
   setUiState: vi.fn(),
@@ -34,107 +34,98 @@ const mockProps: AssistantContextType = {
   isStoppingMessage: false,
 };
 // ------------------------------------------------------------------
-describe('assistant-context', () => {
-  
+describe("assistant-context", () => {
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
-   * 
+   *
    * All API functions are automatically mocked via imports above.
    * Use mockSchema.* for realistic test data:
-   * 
+   *
    * Examples:
    * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
+   * - mockSchema.classes - Array of class objects
    * - mockSchema.profiles - Array of profile objects
-   * 
+   *
    * To override specific mocks in individual tests:
    * - vi.mocked(queryFunction).mockResolvedValue(customData)
    * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
    * ------------------------------------------------------------------ */
-  
+
   // ✨ Reset mocks after each test
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       // ✨ All mocks are automatically set up via imports above
-      render(<AssistantProvider {...mockProps}>
-        <div>test-children</div>
-      </AssistantProvider>);
-      
+      render(
+        <AssistantProvider {...mockProps}>
+          <div>test-children</div>
+        </AssistantProvider>,
+      );
+
       // TODO: Add meaningful assertions based on your component
       // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
+    it.skip("should render with props", () => {
       // TODO: Test component with various props
       // Props interface: AssistantProviderProps
-      
       // TODO add props assertions
     });
 
-    it.skip('should have correct accessibility attributes', () => {
+    it.skip("should have correct accessibility attributes", () => {
       // TODO: Test accessibility features
-      
       // TODO add accessibility assertions
-
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
+  describe("User Interactions", () => {
+    it.skip("should handle state changes", async () => {
       const user = userEvent.setup();
       void user;
       // TODO: state management assertions
       // Mock data is available from @/mocks/schema for realistic testing
     });
 
-    it.skip('should handle user events', async () => {
+    it.skip("should handle user events", async () => {
       const user = userEvent.setup();
       void user;
       // TODO: interaction assertions
-
     });
   });
 
-  describe('API Integration', () => {
-    it.skip('should handle and display an API error state', async () => {
+  describe("API Integration", () => {
+    it.skip("should handle and display an API error state", async () => {
       // Arrange: Override the default success mock with an error for this test.
       // Example: vi.mocked(getAssistantChatsByProfile).mockRejectedValue(new Error('API Error'));
 
-      render(<AssistantProvider {...mockProps}>
-        <div>test-children</div>
-      </AssistantProvider>);
-      
+      render(
+        <AssistantProvider {...mockProps}>
+          <div>test-children</div>
+        </AssistantProvider>,
+      );
+
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
     });
 
-    it.skip('should handle loading states', () => {
+    it.skip("should handle loading states", () => {
       // TODO: Test loading states
       // Mock data is automatically loaded from @/mocks/schema
-      
       // TODO: loading states assertions
     });
   });
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
+  describe("Edge Cases", () => {
+    it.skip("should handle edge cases gracefully", () => {
       // TODO: Test edge cases and error scenarios
-      
       // TODO: edge-case assertions
-
     });
 
-    it.skip('should handle missing or invalid props', () => {
+    it.skip("should handle missing or invalid props", () => {
       // TODO: Test with missing/invalid props
-      
       // TODO: invalid props assertions
     });
   });
@@ -143,7 +134,7 @@ describe('assistant-context', () => {
 /*
  * Component Analysis for assistant-context:
  * Path: assistant-context.tsx
- * 
+ *
  * Features detected:
  * - Default export: false
  * - Named exports: AssistantProvider, useAssistant
@@ -157,20 +148,20 @@ describe('assistant-context', () => {
  * - Uses state: true
  * - Uses effects: true
  * - Uses context: true
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<assistant-context {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<assistant-context {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

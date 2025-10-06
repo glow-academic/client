@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationRepo, SimulationCreateSchema } from "@/lib/repos/simulationRepo";
+import {
+  simulationRepo,
+  SimulationCreateSchema,
+} from "@/lib/repos/simulationRepo";
 import type { SimulationCreate } from "@/lib/repos/simulationRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulations",
         subject: { entityType: "simulations" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulations" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -73,7 +73,7 @@ export function ScenarioPicker({
     Model[]
   >([]);
   const [peekedModel, setPeekedModel] = React.useState<Model | undefined>(
-    models[0]
+    models[0],
   );
 
   // Use external selectedModel if provided, otherwise use internal state
@@ -144,7 +144,7 @@ export function ScenarioPicker({
     e.stopPropagation();
     if (multiSelect) {
       const newSelectedModels = selectedModels.filter(
-        (m) => m.id !== modelToRemove.id
+        (m) => m.id !== modelToRemove.id,
       );
       if (!externalSelectedModels.length) {
         setInternalSelectedModels(newSelectedModels);

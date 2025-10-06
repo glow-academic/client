@@ -34,7 +34,7 @@ function ensureJson<T>(fn: () => Promise<T>): Promise<Response> {
 
 export async function handle<T>(
   fn: () => Promise<T>,
-  onError?: (e: unknown) => void
+  onError?: (e: unknown) => void,
 ): Promise<Response> {
   try {
     return await ensureJson(fn);

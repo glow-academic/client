@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -41,7 +41,7 @@ describe("AttemptInput", () => {
       render(<AttemptInput />);
 
       expect(
-        screen.getByPlaceholderText("Type your message...")
+        screen.getByPlaceholderText("Type your message..."),
       ).toBeInTheDocument();
 
       // Look for the send button by its type attribute
@@ -70,7 +70,7 @@ describe("AttemptInput", () => {
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(
-        'button[type="submit"]'
+        'button[type="submit"]',
       ) as HTMLButtonElement;
 
       // Initially button should be disabled (no text)
@@ -89,7 +89,7 @@ describe("AttemptInput", () => {
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(
-        'button[type="submit"]'
+        'button[type="submit"]',
       ) as HTMLButtonElement;
 
       // Type a message
@@ -149,7 +149,7 @@ describe("AttemptInput", () => {
       render(<AttemptInput />);
 
       const sendButton = document.querySelector(
-        'button[type="submit"]'
+        'button[type="submit"]',
       ) as HTMLButtonElement;
 
       // Button should be disabled when no text
@@ -158,7 +158,7 @@ describe("AttemptInput", () => {
       // Type only whitespace
       await user.type(
         screen.getByPlaceholderText("Type your message..."),
-        "   "
+        "   ",
       );
 
       // Button should still be disabled
@@ -170,7 +170,7 @@ describe("AttemptInput", () => {
       render(<AttemptInput />);
 
       const sendButton = document.querySelector(
-        'button[type="submit"]'
+        'button[type="submit"]',
       ) as HTMLButtonElement;
 
       // Try to submit empty message
@@ -186,7 +186,7 @@ describe("AttemptInput", () => {
 
       const textarea = screen.getByPlaceholderText("Type your message...");
       const sendButton = document.querySelector(
-        'button[type="submit"]'
+        'button[type="submit"]',
       ) as HTMLButtonElement;
 
       // Type only whitespace

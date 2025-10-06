@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { Table } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 

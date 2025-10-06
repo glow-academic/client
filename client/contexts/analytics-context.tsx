@@ -47,7 +47,7 @@ export interface AnalyticsContextType {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface AnalyticsProviderProps {
@@ -104,12 +104,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Route-aware flags
   const isPracticePage = useMemo(
     () => pathname?.startsWith("/practice") === true,
-    [pathname]
+    [pathname],
   );
   const isHomePage = useMemo(() => pathname === "/home", [pathname]);
   const isTALeaderboardPage = useMemo(
     () => pathname?.startsWith("/cohorts/c/") === true,
-    [pathname]
+    [pathname],
   );
 
   // Resolve effective roles: force TA-only for TA users
@@ -168,7 +168,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setSimulationFilters,
       clearFilters,
       hasActiveFilters,
-    ]
+    ],
   );
 
   return (

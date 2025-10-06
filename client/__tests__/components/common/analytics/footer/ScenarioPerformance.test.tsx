@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Import the component
@@ -29,11 +29,11 @@ vi.mock("@/utils/queries/parameter_items/get-all-parameter-items");
 vi.mock("@/utils/queries/personas/get-all-personas");
 vi.mock("@/utils/queries/documents/get-all-documents");
 vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles"
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles",
 );
 vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts");
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats"
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
 );
 
 // Mock the utility function
@@ -78,7 +78,7 @@ vi.mock("recharts", () => ({
 
 // Mock the utility function
 const mockCalculateScenarioAttributeBreakdown = vi.mocked(
-  calculateScenarioAttributeBreakdown
+  calculateScenarioAttributeBreakdown,
 );
 
 // Mock all query functions
@@ -92,13 +92,13 @@ const mockGetAllParameterItems = vi.mocked(getAllParameterItems);
 const mockGetAllPersonas = vi.mocked(getAllPersonas);
 const mockGetAllDocuments = vi.mocked(getAllDocuments);
 const mockGetSimulationAttemptsByProfiles = vi.mocked(
-  getSimulationAttemptsByProfiles
+  getSimulationAttemptsByProfiles,
 );
 const mockGetSimulationChatsByAttempts = vi.mocked(
-  getSimulationChatsByAttempts
+  getSimulationChatsByAttempts,
 );
 const mockGetSimulationChatGradesBySimulationChats = vi.mocked(
-  getSimulationChatGradesBySimulationChats
+  getSimulationChatGradesBySimulationChats,
 );
 
 describe("ScenarioPerformance", () => {
@@ -294,11 +294,11 @@ describe("ScenarioPerformance", () => {
     mockGetSimulationAttemptsByProfiles.mockResolvedValue(mockData.attempts);
     mockGetSimulationChatsByAttempts.mockResolvedValue(mockData.chats);
     mockGetSimulationChatGradesBySimulationChats.mockResolvedValue(
-      mockData.grades
+      mockData.grades,
     );
 
     mockCalculateScenarioAttributeBreakdown.mockReturnValue(
-      mockAttributeElements
+      mockAttributeElements,
     );
   });
 
@@ -307,9 +307,7 @@ describe("ScenarioPerformance", () => {
   });
 
   const renderComponent = (props = {}) => {
-    return render(
-      <ScenarioPerformance {...defaultProps} {...props} />
-    );
+    return render(<ScenarioPerformance {...defaultProps} {...props} />);
   };
 
   describe("Component Rendering", () => {
@@ -318,10 +316,10 @@ describe("ScenarioPerformance", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
         expect(
-          screen.getByText("Performance analysis by scenario attributes")
+          screen.getByText("Performance analysis by scenario attributes"),
         ).toBeInTheDocument();
       });
     });
@@ -339,7 +337,7 @@ describe("ScenarioPerformance", () => {
 
       // Component should render even while loading
       expect(
-        screen.getByText("Scenario Attribute Breakdown")
+        screen.getByText("Scenario Attribute Breakdown"),
       ).toBeInTheDocument();
     });
   });
@@ -351,7 +349,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -360,7 +358,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledWith(
@@ -377,7 +375,7 @@ describe("ScenarioPerformance", () => {
         defaultProps.dateEnd,
         defaultProps.profileId,
         mockData.cohorts,
-        defaultProps.cohortIds
+        defaultProps.cohortIds,
       );
     });
 
@@ -389,8 +387,8 @@ describe("ScenarioPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No scenario data available for the selected time period."
-          )
+            "No scenario data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -406,8 +404,8 @@ describe("ScenarioPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No scenario data available for the selected time period."
-          )
+            "No scenario data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -426,7 +424,7 @@ describe("ScenarioPerformance", () => {
         const difficultyElements = screen.getAllByText("Difficulty");
         expect(difficultyElements.length).toBeGreaterThan(0);
         expect(
-          screen.getByText("Performance by difficulty value")
+          screen.getByText("Performance by difficulty value"),
         ).toBeInTheDocument();
       });
     });
@@ -538,7 +536,7 @@ describe("ScenarioPerformance", () => {
         },
       ];
       mockCalculateScenarioAttributeBreakdown.mockReturnValue(
-        highPerformanceElements
+        highPerformanceElements,
       );
 
       renderComponent();
@@ -581,7 +579,7 @@ describe("ScenarioPerformance", () => {
         },
       ];
       mockCalculateScenarioAttributeBreakdown.mockReturnValue(
-        mediumPerformanceElements
+        mediumPerformanceElements,
       );
 
       renderComponent();
@@ -624,7 +622,7 @@ describe("ScenarioPerformance", () => {
         },
       ];
       mockCalculateScenarioAttributeBreakdown.mockReturnValue(
-        lowPerformanceElements
+        lowPerformanceElements,
       );
 
       renderComponent();
@@ -660,7 +658,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -669,7 +667,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledWith(
@@ -686,7 +684,7 @@ describe("ScenarioPerformance", () => {
         defaultProps.dateEnd,
         "profile1",
         mockData.cohorts,
-        ["cohort1"]
+        ["cohort1"],
       );
     });
   });
@@ -703,7 +701,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -712,7 +710,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledWith(
@@ -729,7 +727,7 @@ describe("ScenarioPerformance", () => {
         defaultProps.dateEnd,
         "profile1",
         mockData.cohorts,
-        defaultProps.cohortIds
+        defaultProps.cohortIds,
       );
     });
   });
@@ -746,7 +744,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -755,7 +753,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledWith(
@@ -772,7 +770,7 @@ describe("ScenarioPerformance", () => {
         customDateRange.dateEnd,
         defaultProps.profileId,
         mockData.cohorts,
-        defaultProps.cohortIds
+        defaultProps.cohortIds,
       );
     });
   });
@@ -789,8 +787,8 @@ describe("ScenarioPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No scenario data available for the selected time period."
-          )
+            "No scenario data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -805,8 +803,8 @@ describe("ScenarioPerformance", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No scenario data available for the selected time period."
-          )
+            "No scenario data available for the selected time period.",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -852,7 +850,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -861,7 +859,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledTimes(1);
@@ -873,7 +871,7 @@ describe("ScenarioPerformance", () => {
       // Wait for the component to load and process data
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -882,7 +880,7 @@ describe("ScenarioPerformance", () => {
         () => {
           expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalled();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
 
       expect(mockCalculateScenarioAttributeBreakdown).toHaveBeenCalledTimes(1);
@@ -938,7 +936,7 @@ describe("ScenarioPerformance", () => {
       // Check that the description is displayed
       await waitFor(() => {
         expect(
-          screen.getByText("Performance by difficulty value")
+          screen.getByText("Performance by difficulty value"),
         ).toBeInTheDocument();
       });
     });
@@ -1005,15 +1003,15 @@ describe("ScenarioPerformance", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Component should show no data message when there's no data
       expect(
         screen.getByText(
-          "No scenario data available for the selected time period."
-        )
+          "No scenario data available for the selected time period.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -1028,7 +1026,7 @@ describe("ScenarioPerformance", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
@@ -1053,15 +1051,15 @@ describe("ScenarioPerformance", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Scenario Attribute Breakdown")
+          screen.getByText("Scenario Attribute Breakdown"),
         ).toBeInTheDocument();
       });
 
       // Should show no data message
       expect(
         screen.getByText(
-          "No scenario data available for the selected time period."
-        )
+          "No scenario data available for the selected time period.",
+        ),
       ).toBeInTheDocument();
     });
   });

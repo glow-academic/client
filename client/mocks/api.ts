@@ -10,7 +10,7 @@ export const mockSuccessResponse = (data: unknown = {}) => ({
 
 export const mockErrorResponse = (
   message = "An error occurred",
-  status = 400
+  status = 400,
 ) => ({
   success: false,
   error: { message },
@@ -21,7 +21,7 @@ export const mockErrorResponse = (
 export const mockPaginatedResponse = (
   data: unknown[],
   page = 1,
-  total = 100
+  total = 100,
 ) => ({
   success: true,
   data,
@@ -71,7 +71,7 @@ export const getAnalyticsMock = vi.fn().mockResolvedValue(
     totalUsers: 100,
     activeSessions: 25,
     completionRate: 0.85,
-  })
+  }),
 );
 
 // --- API Module Mocks ---
@@ -146,15 +146,15 @@ export const resetAllApiMocks = () => {
   deleteDocumentMock.mockResolvedValue(mockSuccessResponse());
   uploadDocumentMock.mockResolvedValue(mockSuccessResponse({ id: "doc-123" }));
   getDocumentMock.mockResolvedValue(
-    mockSuccessResponse({ id: "doc-123", name: "test.pdf" })
+    mockSuccessResponse({ id: "doc-123", name: "test.pdf" }),
   );
   createScenarioMock.mockResolvedValue(
-    mockSuccessResponse({ id: "scenario-123" })
+    mockSuccessResponse({ id: "scenario-123" }),
   );
   updateScenarioMock.mockResolvedValue(mockSuccessResponse());
   deleteScenarioMock.mockResolvedValue(mockSuccessResponse());
   startSimulationMock.mockResolvedValue(
-    mockSuccessResponse({ sessionId: "sim-123" })
+    mockSuccessResponse({ sessionId: "sim-123" }),
   );
   endSimulationMock.mockResolvedValue(mockSuccessResponse());
   getAnalyticsMock.mockResolvedValue(
@@ -162,14 +162,14 @@ export const resetAllApiMocks = () => {
       totalUsers: 100,
       activeSessions: 25,
       completionRate: 0.85,
-    })
+    }),
   );
 };
 
 /** Mock a successful API response */
 export const mockApiSuccess = (
   mockFn: ReturnType<typeof vi.fn>,
-  data: unknown = {}
+  data: unknown = {},
 ) => {
   mockFn.mockResolvedValue(mockSuccessResponse(data));
 };
@@ -178,7 +178,7 @@ export const mockApiSuccess = (
 export const mockApiError = (
   mockFn: ReturnType<typeof vi.fn>,
   message = "API Error",
-  status = 400
+  status = 400,
 ) => {
   mockFn.mockResolvedValue(mockErrorResponse(message, status));
 };
@@ -186,7 +186,7 @@ export const mockApiError = (
 /** Mock a network error */
 export const mockApiNetworkError = (
   mockFn: ReturnType<typeof vi.fn>,
-  error = new Error("Network error")
+  error = new Error("Network error"),
 ) => {
   mockFn.mockRejectedValue(error);
 };
@@ -195,7 +195,7 @@ export const mockApiNetworkError = (
 export const mockFetchResponse = (
   _url: string,
   response: unknown,
-  status = 200
+  status = 200,
 ) => {
   mockFetch.mockResolvedValueOnce({
     ok: status >= 200 && status < 300,
@@ -208,7 +208,7 @@ export const mockFetchResponse = (
 /** Mock fetch with an error */
 export const mockFetchError = (
   _url: string,
-  error = new Error("Fetch failed")
+  error = new Error("Fetch failed"),
 ) => {
   mockFetch.mockRejectedValueOnce(error);
 };
@@ -217,7 +217,7 @@ export const mockFetchError = (
 export const createMockApiResponse = (
   data: unknown,
   success = true,
-  message?: string
+  message?: string,
 ) => {
   if (success) {
     return mockSuccessResponse(data);

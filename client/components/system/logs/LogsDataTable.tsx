@@ -63,7 +63,7 @@ export function LogsDataTable({
       function: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date

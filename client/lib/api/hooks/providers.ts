@@ -2,8 +2,12 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Provider, ProviderCreate, ProviderUpdate } from "@/lib/repos/providerRepo";
-import { providerKeys  } from "@/lib/api/keys";
+import type {
+  Provider,
+  ProviderCreate,
+  ProviderUpdate,
+} from "@/lib/repos/providerRepo";
+import { providerKeys } from "@/lib/api/keys";
 
 export function useProviders(filters?: unknown) {
   return useQuery({
@@ -15,7 +19,11 @@ export function useProviders(filters?: unknown) {
 export function useCreateProvider() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ProviderCreate) => api<Provider>("/api/v1/providers", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ProviderCreate) =>
+      api<Provider>("/api/v1/providers", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: providerKeys.all }),
   });
 }
@@ -33,11 +41,18 @@ export function useUpdateProvider(id?: string) {
   return useMutation({
     mutationFn: (patch: ProviderUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Provider>(`/api/v1/providers/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Provider>(`/api/v1/providers/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,7 +70,11 @@ export function useDeleteProvider(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
       return api<void>(`/api/v1/providers/${resolvedId}`, { method: "DELETE" });
@@ -63,4 +82,3 @@ export function useDeleteProvider(id?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: providerKeys.all }),
   });
 }
-

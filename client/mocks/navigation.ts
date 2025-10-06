@@ -91,7 +91,7 @@ export const mockSuccessfulNavigation = () => {
 
 /** Mock a failed navigation */
 export const mockFailedNavigation = (
-  error = new Error("Navigation failed")
+  error = new Error("Navigation failed"),
 ) => {
   routerMock.push.mockRejectedValue(error);
   routerMock.replace.mockRejectedValue(error);
@@ -106,7 +106,7 @@ export const wasNavigationCalled = (
   ...args: unknown[]
 ) => {
   return routerMock[method].mock.calls.some(
-    (call) => JSON.stringify(call) === JSON.stringify(args)
+    (call) => JSON.stringify(call) === JSON.stringify(args),
   );
 };
 

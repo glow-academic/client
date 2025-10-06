@@ -31,7 +31,7 @@ function GuideButton() {
   const isEmulatingAnother = Boolean(
     effectiveProfile?.id &&
       activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id
+      effectiveProfile.id !== activeProfile.id,
   );
 
   if (buttonState === "hidden" || !effectiveProfile || isEmulatingAnother) {
@@ -121,7 +121,7 @@ export default function TATour() {
   const taCohorts = useMemo(() => {
     if (!effectiveProfile || !cohorts) return [];
     return cohorts.filter((cohort) =>
-      cohort.profileIds?.includes(effectiveProfile.id)
+      cohort.profileIds?.includes(effectiveProfile.id),
     );
   }, [effectiveProfile, cohorts]);
 
@@ -170,7 +170,7 @@ export default function TATour() {
 
       // Update profile based on completed steps
       const updatedSteps = currentSteps.map((step, index) =>
-        index === stepIndex ? { ...step, isCompleted: true } : step
+        index === stepIndex ? { ...step, isCompleted: true } : step,
       );
 
       // Step 1 is tracked by viewedIntro (Cohort Leaderboard)
@@ -267,7 +267,7 @@ export default function TATour() {
       tourState.steps,
       queryClient,
       updateProfileMutation,
-    ] // queryClient is stable and doesn't need to be in dependencies
+    ], // queryClient is stable and doesn't need to be in dependencies
   );
 
   // Navigation handlers with proper delays
@@ -385,7 +385,7 @@ export default function TATour() {
       effectiveProfile?.id,
       emitStartSimulation,
       setLoadingSimulation,
-    ]
+    ],
   );
 
   const handleNavigateToPractice = useCallback(async () => {
@@ -567,7 +567,7 @@ export default function TATour() {
     const isEmulatingAnother = Boolean(
       effectiveProfile?.id &&
         activeProfile?.id &&
-        effectiveProfile.id !== activeProfile.id
+        effectiveProfile.id !== activeProfile.id,
     );
 
     // If emulating another user, ensure the tour is closed and guide hidden
@@ -673,7 +673,7 @@ export default function TATour() {
       taCohorts && taCohorts.length > 0 && taCohorts[0]
         ? taCohorts[0].id
         : undefined,
-      tourState.attemptId || undefined
+      tourState.attemptId || undefined,
     );
 
     // Determine initial step based on profile completion status
@@ -792,7 +792,7 @@ export default function TATour() {
         }
       }
     },
-    [tourState.steps, pathname, router, tourState.attemptId]
+    [tourState.steps, pathname, router, tourState.attemptId],
   );
 
   // Navigate to correct page when tour is opened
@@ -1328,62 +1328,62 @@ export default function TATour() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
     window.addEventListener(
       "simulationButtonPressed",
-      handleSimulationButtonPressed as EventListener
+      handleSimulationButtonPressed as EventListener,
     );
     window.addEventListener("messageSent", handleMessageSent as EventListener);
     window.addEventListener(
       "responseComplete",
-      handleResponseComplete as EventListener
+      handleResponseComplete as EventListener,
     );
     window.addEventListener(
       "endChatButtonPressed",
-      handleEndChatButtonPressed as EventListener
+      handleEndChatButtonPressed as EventListener,
     );
     window.addEventListener("chatEnded", handleChatEnded as EventListener);
     window.addEventListener(
       "backNavigation",
-      handleBackNavigation as EventListener
+      handleBackNavigation as EventListener,
     );
     window.addEventListener(
       "existingSimulationNavigation",
-      handleExistingSimulationNavigation as EventListener
+      handleExistingSimulationNavigation as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       window.removeEventListener(
         "simulationButtonPressed",
-        handleSimulationButtonPressed as EventListener
+        handleSimulationButtonPressed as EventListener,
       );
       window.removeEventListener(
         "messageSent",
-        handleMessageSent as EventListener
+        handleMessageSent as EventListener,
       );
       window.removeEventListener(
         "responseComplete",
-        handleResponseComplete as EventListener
+        handleResponseComplete as EventListener,
       );
       window.removeEventListener(
         "endChatButtonPressed",
-        handleEndChatButtonPressed as EventListener
+        handleEndChatButtonPressed as EventListener,
       );
       window.removeEventListener("chatEnded", handleChatEnded as EventListener);
       window.removeEventListener(
         "backNavigation",
-        handleBackNavigation as EventListener
+        handleBackNavigation as EventListener,
       );
       window.removeEventListener(
         "existingSimulationNavigation",
-        handleExistingSimulationNavigation as EventListener
+        handleExistingSimulationNavigation as EventListener,
       );
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -1432,7 +1432,7 @@ export default function TATour() {
         window.dispatchEvent(
           new CustomEvent("simulationButtonPressed", {
             detail: { simulationId: "tour-step-2" },
-          })
+          }),
         );
 
         // Check if we already have an attemptId
@@ -1483,7 +1483,7 @@ export default function TATour() {
           window.dispatchEvent(
             new CustomEvent("existingSimulationNavigation", {
               detail: { attemptId: tourState.attemptId },
-            })
+            }),
           );
 
           router.push(`/practice/a/${tourState.attemptId}`);
@@ -1493,13 +1493,13 @@ export default function TATour() {
           const triggerSimulationStart = () => {
             // Look for practice simulation cards (permanent-simulation-card) first
             let practiceCards = document.querySelectorAll(
-              '[data-testid="permanent-simulation-card"]'
+              '[data-testid="permanent-simulation-card"]',
             );
 
             // If no permanent cards found, try regular simulation cards as fallback
             if (practiceCards.length === 0) {
               practiceCards = document.querySelectorAll(
-                '[data-testid="simulation-card"]'
+                '[data-testid="simulation-card"]',
               );
             }
 
@@ -1508,7 +1508,7 @@ export default function TATour() {
               if (firstCard) {
                 // Look for the start button using data-testid
                 const startButton = firstCard.querySelector(
-                  '[data-testid^="start-simulation-"]'
+                  '[data-testid^="start-simulation-"]',
                 ) as HTMLButtonElement;
                 if (startButton && !startButton.disabled) {
                   log.debug("tour.simulation.autoclick_start", {
@@ -1516,7 +1516,7 @@ export default function TATour() {
                       component: "TATour",
                       buttonText: startButton.textContent ?? undefined,
                       cardTitle: firstCard.querySelector(
-                        '[data-testid="simulation-title"]'
+                        '[data-testid="simulation-title"]',
                       )?.textContent,
                       simulationId: startButton
                         .getAttribute("data-testid")
@@ -1537,7 +1537,7 @@ export default function TATour() {
                     },
                   });
                   toast.error(
-                    "Could not start simulation automatically. Please click the Start button manually."
+                    "Could not start simulation automatically. Please click the Start button manually.",
                   );
                 }
               } else {
@@ -1546,7 +1546,7 @@ export default function TATour() {
                   context: { component: "TATour" },
                 });
                 toast.error(
-                  "Could not start simulation automatically. Please click the Start button manually."
+                  "Could not start simulation automatically. Please click the Start button manually.",
                 );
               }
             } else {
@@ -1583,7 +1583,7 @@ export default function TATour() {
         setTimeout(() => {
           // Look for starter prompt buttons - they are buttons with variant="outline" in the attempt messages
           const starterPromptButtons = document.querySelectorAll(
-            'button[class*="outline"][class*="h-auto"][class*="p-4"]'
+            'button[class*="outline"][class*="h-auto"][class*="p-4"]',
           );
 
           if (starterPromptButtons.length > 0) {
@@ -1607,7 +1607,7 @@ export default function TATour() {
                 },
               });
               toast.error(
-                "Could not send message automatically. Please click a starter prompt manually."
+                "Could not send message automatically. Please click a starter prompt manually.",
               );
             }
           } else {
@@ -1616,7 +1616,7 @@ export default function TATour() {
               context: { component: "TATour" },
             });
             toast.error(
-              "No starter prompts available. Please type a message manually."
+              "No starter prompts available. Please type a message manually.",
             );
           }
         }, 1000); // Wait for page to load and messages to render
@@ -1649,7 +1649,7 @@ export default function TATour() {
                 chatId: "tour-step-4",
                 attemptId: tourState.attemptId,
               },
-            })
+            }),
           );
 
           // If we have an attemptId, navigate to the attempt page first
@@ -1660,7 +1660,7 @@ export default function TATour() {
           // Click the End Session/End Chat button after a short delay to ensure page is loaded
           setTimeout(() => {
             const endChatButton = document.querySelector(
-              "[data-tour-end-chat]"
+              "[data-tour-end-chat]",
             ) as HTMLButtonElement;
 
             if (endChatButton && !endChatButton.disabled) {
@@ -1682,7 +1682,7 @@ export default function TATour() {
                 },
               });
               toast.error(
-                "Could not end chat automatically. Please click the End Session button manually."
+                "Could not end chat automatically. Please click the End Session button manually.",
               );
             }
           }, 1000); // Wait for page to load
@@ -1737,7 +1737,7 @@ export default function TATour() {
     return () => {
       window.removeEventListener(
         "tourAction",
-        handleTourAction as EventListener
+        handleTourAction as EventListener,
       );
     };
   }, [

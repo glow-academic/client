@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +52,7 @@ describe("PersonaEditPage", () => {
       expect(screen.getByTestId("persona-edit")).toBeInTheDocument();
       expect(screen.getByTestId("persona-edit")).toHaveAttribute(
         "data-persona-id",
-        "test-persona-id"
+        "test-persona-id",
       );
     });
 
@@ -81,7 +81,7 @@ describe("PersonaEditPage", () => {
       expect(screen.getByTestId("persona-edit")).toBeInTheDocument();
       expect(screen.getByTestId("persona-edit")).toHaveAttribute(
         "data-persona-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

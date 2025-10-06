@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -52,7 +52,7 @@ describe("AgentEditPage", () => {
       expect(screen.getByTestId("edit-system-agent")).toBeInTheDocument();
       expect(screen.getByTestId("edit-system-agent")).toHaveAttribute(
         "data-agent-id",
-        "test-agent-id"
+        "test-agent-id",
       );
     });
 
@@ -81,7 +81,7 @@ describe("AgentEditPage", () => {
       expect(screen.getByTestId("edit-system-agent")).toBeInTheDocument();
       expect(screen.getByTestId("edit-system-agent")).toHaveAttribute(
         "data-agent-id",
-        "edge-case-id"
+        "edge-case-id",
       );
     });
   });

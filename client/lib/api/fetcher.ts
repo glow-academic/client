@@ -9,7 +9,7 @@ export class ApiError extends Error {
 
 export async function api<T>(
   input: RequestInfo,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T> {
   // Don't set Content-Type header for FormData - browser will set it automatically
   const headers =

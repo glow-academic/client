@@ -47,11 +47,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
 
-  const {data: agent, isLoading: isLoadingAgent} = useAgent(agentId);
+  const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId);
 
-  const {data: models, isLoading: isModelsLoading} = useModels();
+  const { data: models, isLoading: isModelsLoading } = useModels();
 
-  const {mutate: updateAgent} = useUpdateAgent();
+  const { mutate: updateAgent } = useUpdateAgent();
 
   const isLoading = isLoadingAgent || isModelsLoading;
 

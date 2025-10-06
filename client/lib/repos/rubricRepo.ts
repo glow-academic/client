@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type RubricUpdate = Partial<RubricCreate>;
 export const RubricCreateSchema = createInsertSchema(rubrics);
 export const RubricUpdateSchema = RubricCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const rubricRepo = {
   async create(payload: RubricCreate) {
@@ -26,27 +27,39 @@ export const rubricRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(rubrics).orderBy(rubrics.createdAt ?? rubrics.id);
+    return db
+      .select()
+      .from(rubrics)
+      .orderBy(rubrics.createdAt ?? rubrics.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(rubrics).where(eq(rubrics.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Rubric with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(rubrics)
+      .where(eq(rubrics.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Rubric with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: RubricUpdate) {
     const db = await getDb();
-    const rows = await db.update(rubrics).set(patch).where(eq(rubrics.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Rubric with id " + id + " not found");
+    const rows = await db
+      .update(rubrics)
+      .set(patch)
+      .where(eq(rubrics.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Rubric with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
     const rows = await db.delete(rubrics).where(eq(rubrics.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Rubric with id " + id + " not found");
+    if (!rows[0])
+      throw HttpError.notFound("Rubric with id " + id + " not found");
   },
-
-
 };

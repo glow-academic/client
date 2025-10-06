@@ -87,7 +87,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>
+      | React.MouseEvent<HTMLButtonElement>,
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -111,7 +111,7 @@ export default function AttemptInput({
           chatId: simulationContext.currentChat.id,
           isTourMessage: false,
         },
-      })
+      }),
     );
 
     simulationContext?.sendMessage(messageToSend);
@@ -135,7 +135,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight
+          maxTextareaHeight,
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
@@ -193,10 +193,10 @@ export default function AttemptInput({
               value={newMessage}
               onChange={(e) =>
                 pastePrevention.handleChange(e, (value) =>
-                  setNewMessage(sanitizeInputLength(value))
+                  setNewMessage(sanitizeInputLength(value)),
                 )
               }
-              placeholder='Type your $\Sigma$essage (LaTeX supported)'
+              placeholder="Type your $\Sigma$essage (LaTeX supported)"
               disabled={simulationContext?.readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}

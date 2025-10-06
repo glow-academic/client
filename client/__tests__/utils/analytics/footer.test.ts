@@ -158,7 +158,7 @@ describe("Footer Analytics Utilities", () => {
         [],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result).toEqual([]);
@@ -181,7 +181,7 @@ describe("Footer Analytics Utilities", () => {
         [mockParameterItem],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result).toEqual([]);
@@ -204,7 +204,7 @@ describe("Footer Analytics Utilities", () => {
         [mockParameterItem],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result).toEqual([]);
@@ -228,7 +228,7 @@ describe("Footer Analytics Utilities", () => {
         mockParameter,
         dateStart,
         dateEnd,
-        "profile-1"
+        "profile-1",
       );
 
       expect(result).toEqual([]);
@@ -249,7 +249,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.length).toBeGreaterThan(0);
@@ -270,7 +270,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [],
-        ["non-existent-cohort"]
+        ["non-existent-cohort"],
       );
 
       expect(result).toEqual([]);
@@ -288,7 +288,7 @@ describe("Footer Analytics Utilities", () => {
         [mockParameterItem],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.length).toBeGreaterThan(0);
@@ -328,7 +328,7 @@ describe("Footer Analytics Utilities", () => {
         [timeParameterItem],
         timeParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.length).toBeGreaterThan(0);
@@ -349,7 +349,7 @@ describe("Footer Analytics Utilities", () => {
         [],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.performanceData).toEqual([]);
@@ -373,7 +373,7 @@ describe("Footer Analytics Utilities", () => {
         [mockParameterItem],
         mockParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.performanceData).toEqual([]);
@@ -402,7 +402,7 @@ describe("Footer Analytics Utilities", () => {
         [numericalParameterItem],
         numericalParameter,
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.performanceData.length).toBeGreaterThan(0);
@@ -425,7 +425,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.performanceData.length).toBeGreaterThan(0);
@@ -449,7 +449,7 @@ describe("Footer Analytics Utilities", () => {
         [mockParameter],
         [mockParameterItem],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.highPerforming).toEqual([]);
@@ -473,7 +473,7 @@ describe("Footer Analytics Utilities", () => {
         undefined,
         [],
         [],
-        { method: "percentile", topPercentage: 25, bottomPercentage: 25 }
+        { method: "percentile", topPercentage: 25, bottomPercentage: 25 },
       );
 
       expect(result.highPerforming).toBeDefined();
@@ -497,7 +497,7 @@ describe("Footer Analytics Utilities", () => {
         undefined,
         [],
         [],
-        { method: "quartile", topPercentage: 25, bottomPercentage: 25 }
+        { method: "quartile", topPercentage: 25, bottomPercentage: 25 },
       );
 
       expect(result.highPerforming).toBeDefined();
@@ -523,7 +523,7 @@ describe("Footer Analytics Utilities", () => {
           method: "standard_deviation",
           topPercentage: 25,
           bottomPercentage: 25,
-        }
+        },
       );
 
       expect(result.highPerforming).toBeDefined();
@@ -544,7 +544,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.highPerforming).toBeDefined();
@@ -564,7 +564,7 @@ describe("Footer Analytics Utilities", () => {
         null,
         dateStart,
         dateEnd,
-        { danger: 50, warning: 70, success: 85 }
+        { danger: 50, warning: 70, success: 85 },
       );
 
       expect(result).toEqual([]);
@@ -586,7 +586,7 @@ describe("Footer Analytics Utilities", () => {
         mockSimulation,
         dateStart,
         dateEnd,
-        { danger: 50, warning: 70, success: 85 }
+        { danger: 50, warning: 70, success: 85 },
       );
 
       expect(result).toEqual([]);
@@ -603,7 +603,7 @@ describe("Footer Analytics Utilities", () => {
         mockSimulation,
         dateStart,
         dateEnd,
-        { danger: 50, warning: 70, success: 85 }
+        { danger: 50, warning: 70, success: 85 },
       );
 
       expect(result.length).toBeGreaterThan(0);
@@ -631,7 +631,7 @@ describe("Footer Analytics Utilities", () => {
         { danger: 50, warning: 70, success: 85 },
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result).toBeDefined();
@@ -652,7 +652,7 @@ describe("Footer Analytics Utilities", () => {
         [mockAttempt],
         [mockProfile],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result).toEqual([]);
@@ -671,7 +671,7 @@ describe("Footer Analytics Utilities", () => {
         [mockAttempt],
         [mockProfile],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result).toEqual([]);
@@ -685,7 +685,7 @@ describe("Footer Analytics Utilities", () => {
         [mockAttempt],
         [mockProfile],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.length).toBeGreaterThan(0);
@@ -707,7 +707,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       // The result should be an array (may be empty due to complex filtering)
@@ -731,7 +731,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [differentCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result).toEqual([]);
@@ -751,7 +751,7 @@ describe("Footer Analytics Utilities", () => {
         [mockProfile],
         dateStart,
         dateEnd,
-        "profile-1"
+        "profile-1",
       );
 
       expect(result).toEqual([]);
@@ -772,7 +772,7 @@ describe("Footer Analytics Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -793,7 +793,7 @@ describe("Footer Analytics Utilities", () => {
         [practiceSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBe(0);
@@ -809,7 +809,7 @@ describe("Footer Analytics Utilities", () => {
         [mockSimulation],
         [mockRubric],
         dateStart,
-        dateEnd
+        dateEnd,
       );
 
       expect(result.currentValue).toBeGreaterThan(0);
@@ -829,7 +829,7 @@ describe("Footer Analytics Utilities", () => {
         [mockRubric],
         dateStart,
         dateEnd,
-        "profile-1"
+        "profile-1",
       );
 
       expect(result.currentValue).toBeGreaterThan(0);
@@ -847,7 +847,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [mockCohort],
-        ["cohort-1"]
+        ["cohort-1"],
       );
 
       expect(result.currentValue).toBeGreaterThan(0);
@@ -865,7 +865,7 @@ describe("Footer Analytics Utilities", () => {
         dateEnd,
         undefined,
         [],
-        ["non-existent-cohort"]
+        ["non-existent-cohort"],
       );
 
       expect(result.currentValue).toBe(0);

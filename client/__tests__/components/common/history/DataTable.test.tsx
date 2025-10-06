@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -95,8 +95,8 @@ describe("DataTable", () => {
       // Should render search input
       expect(
         screen.getByPlaceholderText(
-          "Search by name, simulation, or scenarios..."
-        )
+          "Search by name, simulation, or scenarios...",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -166,7 +166,7 @@ describe("DataTable", () => {
           profileOptions={[]}
           simulationOptions={[]}
           scenarioOptions={[]}
-        />
+        />,
       );
 
       // Should handle missing props gracefully

@@ -29,7 +29,7 @@ const getFileExtension = (filename: string): string => {
 };
 
 export function useDocumentColumns(onPreview?: (document: Document) => void) {
-  const {data: scenarios = []} = useScenarios();
+  const { data: scenarios = [] } = useScenarios();
 
   // Filter options
   const typeOptions = useMemo(
@@ -42,7 +42,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
       { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
-    []
+    [],
   );
 
   const columns = useMemo<ColumnDef<Document>[]>(
@@ -201,7 +201,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         cell: ({ row }) => {
           const document = row.original;
           const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id)
+            scenario.documentIds?.includes(document.id),
           );
 
           if (documentScenarios.length === 0) {
@@ -261,7 +261,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         enableHiding: false,
       },
     ],
-    [scenarios, typeOptions, onPreview]
+    [scenarios, typeOptions, onPreview],
   );
 
   const scenarioOptions = useMemo(
@@ -270,7 +270,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         value: scenario.id,
         label: scenario.name,
       })),
-    [scenarios]
+    [scenarios],
   );
 
   const extensionOptions = useMemo(
@@ -284,7 +284,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
       { value: "PNG", label: "PNG" },
       { value: "OTHER", label: "Other" },
     ],
-    []
+    [],
   );
 
   return {

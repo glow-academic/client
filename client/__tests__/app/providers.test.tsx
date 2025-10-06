@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Import centralized mocks to avoid hoisting issues
@@ -14,7 +14,7 @@ import { Session } from "next-auth";
 const mockSession: Session | null = {
   user: { id: "123" },
   expires: new Date().toISOString(),
-}
+};
 
 // Mock useSession to return proper structure
 const mockUseSession = vi.fn(() => ({
@@ -72,7 +72,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("session-provider")).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       // Check that all providers are rendered
@@ -103,7 +103,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -184,7 +184,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -197,7 +197,7 @@ describe("Providers", () => {
         <Providers>
           <div data-testid="child-1">Child 1</div>
           <div data-testid="child-2">Child 2</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("child-1")).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe("Providers", () => {
           <div data-testid="child-1">Child 1</div>
           <div data-testid="child-2">Child 2</div>
           <div data-testid="child-3">Child 3</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("child-1")).toBeInTheDocument();
@@ -233,7 +233,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();
@@ -249,7 +249,7 @@ describe("Providers", () => {
       render(
         <Providers>
           <div data-testid="test-child">Test Content</div>
-        </Providers>
+        </Providers>,
       );
 
       expect(screen.getByTestId("test-child")).toBeInTheDocument();

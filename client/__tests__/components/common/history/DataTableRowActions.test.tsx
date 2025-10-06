@@ -1,4 +1,4 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
@@ -45,18 +45,14 @@ describe("DataTableRowActions", () => {
 
   describe("Button text logic", () => {
     it("should show 'View' when isIncomplete is true", () => {
-      render(
-        <DataTableRowActions {...mockProps} isIncomplete={true} />
-      );
+      render(<DataTableRowActions {...mockProps} isIncomplete={true} />);
 
       const button = document.querySelector("button");
       expect(button).toHaveTextContent("View");
     });
 
     it("should show 'View' when isIncomplete is false and not current user", () => {
-      render(
-        <DataTableRowActions {...mockProps} isIncomplete={false} />
-      );
+      render(<DataTableRowActions {...mockProps} isIncomplete={false} />);
 
       const button = document.querySelector("button");
       expect(button).toHaveTextContent("View");
@@ -75,7 +71,7 @@ describe("DataTableRowActions", () => {
           scenarios={[{ completed: false }]}
           interactionIds={["1", "2"]}
         />,
-        { profileContext: mockProfileContext }
+        { profileContext: mockProfileContext },
       );
 
       const button = document.querySelector("button");
@@ -92,7 +88,14 @@ describe("DataTableRowActions", () => {
     });
 
     it("should handle missing or invalid props", () => {
-      render(<DataTableRowActions id="test" profileId="test-profile-id" scenarios={[]} interactionIds={[]} />);
+      render(
+        <DataTableRowActions
+          id="test"
+          profileId="test-profile-id"
+          scenarios={[]}
+          interactionIds={[]}
+        />,
+      );
 
       // Component should handle missing props
       expect(document.body).toBeInTheDocument();

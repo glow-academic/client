@@ -8,7 +8,6 @@ import { useScenarios } from "@/lib/api/hooks/scenarios";
 import { useModels } from "@/lib/api/hooks/models";
 
 export function usePersonaColumns() {
-
   const { data: scenarios = [] } = useScenarios();
   const { data: models = [] } = useModels();
 
@@ -28,7 +27,7 @@ export function usePersonaColumns() {
       { value: "medium", label: "Medium" },
       { value: "high", label: "High" },
     ],
-    []
+    [],
   );
 
   const modelOptions = useMemo(() => {
@@ -45,7 +44,7 @@ export function usePersonaColumns() {
       { value: "medium", label: "Medium (0.34-0.66)" },
       { value: "high", label: "High (0.67-1.0)" },
     ],
-    []
+    [],
   );
 
   // Helper function to get temperature range
@@ -110,7 +109,7 @@ export function usePersonaColumns() {
           const persona = row.original;
           const personaScenarios = getScenariosForPersona(persona.id);
           return value.some((scenarioId: string) =>
-            personaScenarios.some((scenario) => scenario.id === scenarioId)
+            personaScenarios.some((scenario) => scenario.id === scenarioId),
           );
         },
       },

@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationChatGradeRepo, SimulationChatGradeUpdateSchema } from "@/lib/repos/simulationChatGradeRepo";
+import {
+  simulationChatGradeRepo,
+  SimulationChatGradeUpdateSchema,
+} from "@/lib/repos/simulationChatGradeRepo";
 import type { SimulationChatGradeUpdate } from "@/lib/repos/simulationChatGradeRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => simulationChatGradeRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch simulationChatGrade",
         subject: { entityType: "simulation_chat_grades", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = SimulationChatGradeUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "simulation_chat_grades", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await simulationChatGradeRepo.remove(id); return {}; },
+    async () => {
+      await simulationChatGradeRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.simulation_chat_grades.delete.failed", {
         message: "Failed to delete simulationChatGrade",
         subject: { entityType: "simulation_chat_grades", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

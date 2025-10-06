@@ -83,7 +83,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const simulationContext = useSimulation();
   const currentChatId = simulationContext?.currentChat?.id;
   const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
-    currentChatId!
+    currentChatId!,
   );
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
@@ -127,7 +127,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null
+    null,
   );
   React.useEffect(() => {
     if (!simulationContext?.endChatLoading) {
@@ -153,7 +153,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const uploadFile = async (
     file: File,
     classification?: { type: import("@/types").DocumentType; tags: string[] },
-    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] }
+    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] },
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -171,7 +171,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     try {
@@ -252,7 +252,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               fileId,
               isZipFile, // zip parameter
               shouldAutoClassify, // autoClassify parameter
-              effectiveProfile?.id
+              effectiveProfile?.id,
             );
 
             if (result.success) {
@@ -516,7 +516,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       chatId: simulationContext.currentChat?.id,
                       attemptId: simulationContext.attemptId,
                     },
-                  })
+                  }),
                 );
                 setEndingAction("endChat");
                 endChat();
@@ -743,86 +743,88 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
           {/* Practice Customize Dialog */}
-          {customizeOpen && <PracticeCustomizeDialog
-            open={customizeOpen}
-            onClose={() => setCustomizeOpen(false)}
-            onStartAttempt={async (params) => {
-              if (params.timeLimit) {
-                // Infinite mode - use WebSocket
-                if (!isConnected) {
-                  toast.error(
-                    "WebSocket not connected. Please refresh the page."
-                  );
-                  return;
-                }
-                const profileIdForEmit =
-                  effectiveProfile?.role === "guest"
-                    ? ""
-                    : String(effectiveProfile?.id || "");
-                toast.loading("Starting simulation...", {
-                  dismissible: true,
-                });
-                emitStartSimulation({
-                  simulation_id: params.simulationId,
-                  profile_id: profileIdForEmit,
-                  infinite: true,
-                  infinite_time_limit: params.timeLimit,
-                });
-                setCustomizeOpen(false);
-              } else {
-                // Custom one-off scenario
-                setIsStartingAttempt(true);
-                const startToastId = toast.loading(
-                  "Creating practice scenario...",
-                  {
-                    dismissible: true,
-                  }
-                ) as unknown as string;
-
-                try {
-                  const result = await createPracticeScenario({
-                    personaId: params.personaId!,
-                    parameterItemIds: params.parameterItemIds || [],
-                    profileId: effectiveProfile?.id || "",
-                  });
-
-                  if (result.success && result.scenario) {
-                    toast.success("Practice scenario created!", {
-                      id: startToastId,
-                      dismissible: true,
-                    });
-                    // Navigate to practice page to start the scenario
-                    router.push("/practice");
-                  } else {
-                    throw new Error(
-                      result.message || "Failed to create practice scenario"
+          {customizeOpen && (
+            <PracticeCustomizeDialog
+              open={customizeOpen}
+              onClose={() => setCustomizeOpen(false)}
+              onStartAttempt={async (params) => {
+                if (params.timeLimit) {
+                  // Infinite mode - use WebSocket
+                  if (!isConnected) {
+                    toast.error(
+                      "WebSocket not connected. Please refresh the page.",
                     );
+                    return;
                   }
-                } catch (error) {
-                  log.error("practice.session.error", {
-                    message: "Error starting practice session",
-                    error,
-                    context: { function: "onStartAttempt" },
+                  const profileIdForEmit =
+                    effectiveProfile?.role === "guest"
+                      ? ""
+                      : String(effectiveProfile?.id || "");
+                  toast.loading("Starting simulation...", {
+                    dismissible: true,
                   });
-                  toast.error(
-                    error instanceof Error
-                      ? error.message
-                      : "Failed to start practice session",
-                    {
-                      id: "start-attempt",
-                      dismissible: true,
-                    }
-                  );
-                } finally {
-                  setIsStartingAttempt(false);
+                  emitStartSimulation({
+                    simulation_id: params.simulationId,
+                    profile_id: profileIdForEmit,
+                    infinite: true,
+                    infinite_time_limit: params.timeLimit,
+                  });
                   setCustomizeOpen(false);
+                } else {
+                  // Custom one-off scenario
+                  setIsStartingAttempt(true);
+                  const startToastId = toast.loading(
+                    "Creating practice scenario...",
+                    {
+                      dismissible: true,
+                    },
+                  ) as unknown as string;
+
+                  try {
+                    const result = await createPracticeScenario({
+                      personaId: params.personaId!,
+                      parameterItemIds: params.parameterItemIds || [],
+                      profileId: effectiveProfile?.id || "",
+                    });
+
+                    if (result.success && result.scenario) {
+                      toast.success("Practice scenario created!", {
+                        id: startToastId,
+                        dismissible: true,
+                      });
+                      // Navigate to practice page to start the scenario
+                      router.push("/practice");
+                    } else {
+                      throw new Error(
+                        result.message || "Failed to create practice scenario",
+                      );
+                    }
+                  } catch (error) {
+                    log.error("practice.session.error", {
+                      message: "Error starting practice session",
+                      error,
+                      context: { function: "onStartAttempt" },
+                    });
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to start practice session",
+                      {
+                        id: "start-attempt",
+                        dismissible: true,
+                      },
+                    );
+                  } finally {
+                    setIsStartingAttempt(false);
+                    setCustomizeOpen(false);
+                  }
                 }
-              }
-            }}
-            isStartingAttempt={isStartingAttempt}
-            effectiveProfile={effectiveProfile!}
-            activeProfile={activeProfile!}
-          />}
+              }}
+              isStartingAttempt={isStartingAttempt}
+              effectiveProfile={effectiveProfile!}
+              activeProfile={activeProfile!}
+            />
+          )}
 
           {/* Confirm End All Dialog */}
           <AlertDialog
@@ -849,7 +851,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           attemptId: simulationContext?.attemptId,
                           remainingSessions: endAllRemainingSessions,
                         },
-                      })
+                      }),
                     );
                     setConfirmEndAllOpen(false);
                     setEndingAction("endAll");
@@ -886,7 +888,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           chatId: simulationContext?.currentChat?.id,
                           attemptId: simulationContext?.attemptId,
                         },
-                      })
+                      }),
                     );
                     setConfirmEndChatOpen(false);
                     setEndingAction("endChat");
@@ -899,36 +901,40 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             </AlertDialogContent>
           </AlertDialog>
           {/* Upload classification dialog */}
-          {showUploadDialog && <UploadClassificationDialog
-            open={showUploadDialog}
-            files={pendingFiles}
-            onClose={() => {
-              setShowUploadDialog(false);
-              // Clear dialog local state and allow reselection of same files later
-              setPendingFiles([]);
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
-            onConfirm={async (perFile, zipDefaults) => {
-              setShowUploadDialog(false);
-              // Kick off uploads with provided classifications
-              for (const file of pendingFiles) {
-                const classification = perFile[file.name];
-                // Fire without awaiting to allow parallel uploads
-                (async () => {
-                  await uploadFile(file, classification, zipDefaults);
-                })();
+          {showUploadDialog && (
+            <UploadClassificationDialog
+              open={showUploadDialog}
+              files={pendingFiles}
+              onClose={() => {
+                setShowUploadDialog(false);
+                // Clear dialog local state and allow reselection of same files later
+                setPendingFiles([]);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              onConfirm={async (perFile, zipDefaults) => {
+                setShowUploadDialog(false);
+                // Kick off uploads with provided classifications
+                for (const file of pendingFiles) {
+                  const classification = perFile[file.name];
+                  // Fire without awaiting to allow parallel uploads
+                  (async () => {
+                    await uploadFile(file, classification, zipDefaults);
+                  })();
+                }
+                // Clear state so user can add the same docs again if needed
+                setPendingFiles([]);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              onAddFiles={(files) => {
+                setPendingFiles((prev) => [...prev, ...files]);
+              }}
+              onRemoveFile={(fileName) =>
+                setPendingFiles((prev) =>
+                  prev.filter((f) => f.name !== fileName),
+                )
               }
-              // Clear state so user can add the same docs again if needed
-              setPendingFiles([]);
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
-            onAddFiles={(files) => {
-              setPendingFiles((prev) => [...prev, ...files]);
-            }}
-            onRemoveFile={(fileName) =>
-              setPendingFiles((prev) => prev.filter((f) => f.name !== fileName))
-            }
-          />}
+            />
+          )}
           <div
             className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
               shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""

@@ -17,8 +17,11 @@ export async function POST(req: Request) {
       log.error("api.standards.by.standardGroupId.batch.failed", {
         message: "Failed to fetch by foreign key batch",
         subject: { entityType: "standards" },
-        context: { foreignKey: "standardGroupId", count: parsed.data.ids.length },
+        context: {
+          foreignKey: "standardGroupId",
+          count: parsed.data.ids.length,
+        },
         error: e,
-      })
+      }),
   );
 }

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -181,8 +181,8 @@ describe("StagnationRate", () => {
       });
       expect(
         screen.getByText(
-          /No data available for the selected date range and profile/
-        )
+          /No data available for the selected date range and profile/,
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -256,7 +256,7 @@ describe("StagnationRate", () => {
       await user.keyboard("{Escape}");
       await waitFor(() => {
         expect(
-          screen.queryByText("Stagnation Rate Trend")
+          screen.queryByText("Stagnation Rate Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -986,7 +986,7 @@ describe("StagnationRate", () => {
       // Check if trend analysis text is displayed (this should trigger the uncovered lines 274-278)
       // The trend analysis should contain text like "Stagnation rate increased X% over the past..."
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*increased.*over the past/
+        /Stagnation rate.*increased.*over the past/,
       );
       if (trendAnalysisText) {
         expect(trendAnalysisText).toBeInTheDocument();
@@ -1032,7 +1032,7 @@ describe("StagnationRate", () => {
 
       // Check if trend analysis text is displayed with decrease direction
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*decreased.*over the past/
+        /Stagnation rate.*decreased.*over the past/,
       );
       if (trendAnalysisText) {
         expect(trendAnalysisText).toBeInTheDocument();
@@ -1078,7 +1078,7 @@ describe("StagnationRate", () => {
 
       // Check if trend analysis text is displayed with 3 days period
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*over the past 3 days/
+        /Stagnation rate.*over the past 3 days/,
       );
       if (trendAnalysisText) {
         expect(trendAnalysisText).toBeInTheDocument();
@@ -1121,7 +1121,7 @@ describe("StagnationRate", () => {
 
       // Check if trend analysis text is displayed with 1 week period
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*over the past 1 week/
+        /Stagnation rate.*over the past 1 week/,
       );
       if (trendAnalysisText) {
         expect(trendAnalysisText).toBeInTheDocument();
@@ -1164,7 +1164,7 @@ describe("StagnationRate", () => {
 
       // Check if trend analysis text is displayed with 1 month period
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*over the past 1 month/
+        /Stagnation rate.*over the past 1 month/,
       );
       if (trendAnalysisText) {
         expect(trendAnalysisText).toBeInTheDocument();
@@ -1218,7 +1218,7 @@ describe("StagnationRate", () => {
       // This should trigger the rendering of the trend analysis section (lines 274-278)
       // Look for the trend analysis text that should be displayed
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*increased.*over the past/
+        /Stagnation rate.*increased.*over the past/,
       );
 
       // If trend analysis text is found, verify it's in the correct container
@@ -1273,7 +1273,7 @@ describe("StagnationRate", () => {
 
       // The trend analysis should be displayed with decrease direction
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*decreased.*over the past/
+        /Stagnation rate.*decreased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -1324,7 +1324,7 @@ describe("StagnationRate", () => {
 
       // The trend analysis should be displayed with 3 days period
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*over the past 3 days/
+        /Stagnation rate.*over the past 3 days/,
       );
 
       if (trendAnalysisText) {
@@ -1372,7 +1372,7 @@ describe("StagnationRate", () => {
 
       // The trend analysis should be displayed with 1 week period
       const trendAnalysisText = screen.queryByText(
-        /Stagnation rate.*over the past 1 week/
+        /Stagnation rate.*over the past 1 week/,
       );
 
       if (trendAnalysisText) {

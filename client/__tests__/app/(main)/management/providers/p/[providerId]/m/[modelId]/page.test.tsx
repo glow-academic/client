@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -54,7 +54,7 @@ vi.mock(
         </div>
       );
     },
-  })
+  }),
 );
 
 describe("ModelEditPage", () => {
@@ -94,11 +94,11 @@ describe("ModelEditPage", () => {
       expect(screen.getByTestId("model-edit")).toBeInTheDocument();
       expect(screen.getByTestId("model-edit")).toHaveAttribute(
         "data-model-id",
-        "test-model-id"
+        "test-model-id",
       );
       expect(screen.getByTestId("model-edit")).toHaveAttribute(
         "data-provider-id",
-        "test-provider-id"
+        "test-provider-id",
       );
     });
 
@@ -131,11 +131,11 @@ describe("ModelEditPage", () => {
       expect(screen.getByTestId("model-edit")).toBeInTheDocument();
       expect(screen.getByTestId("model-edit")).toHaveAttribute(
         "data-model-id",
-        "test-model-id"
+        "test-model-id",
       );
       expect(screen.getByTestId("model-edit")).toHaveAttribute(
         "data-provider-id",
-        "test-provider-id"
+        "test-provider-id",
       );
     });
   });

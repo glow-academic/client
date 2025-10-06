@@ -108,7 +108,7 @@ const ToolCallCard = ({
 
   const getToolDescription = (
     toolName: string,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
   ) => {
     const descriptions: Record<
       string,
@@ -186,7 +186,7 @@ const ToolCallCard = ({
               <span className="text-xs text-muted-foreground">
                 {getToolDescription(
                   toolCall.toolName,
-                  toolCall.toolArguments as Record<string, unknown>
+                  toolCall.toolArguments as Record<string, unknown>,
                 )}
               </span>
             </div>
@@ -282,7 +282,7 @@ export default function ChatMessages({
       });
     }
     return timeline.sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
     );
   }, [messages, toolCalls]);
 

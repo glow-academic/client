@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type DebugInfoUpdate = Partial<DebugInfoCreate>;
 export const DebugInfoCreateSchema = createInsertSchema(debugInfo);
 export const DebugInfoUpdateSchema = DebugInfoCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const debugInfoRepo = {
   async create(payload: DebugInfoCreate) {
@@ -26,36 +27,59 @@ export const debugInfoRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(debugInfo).orderBy(debugInfo.createdAt ?? debugInfo.id);
+    return db
+      .select()
+      .from(debugInfo)
+      .orderBy(debugInfo.createdAt ?? debugInfo.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(debugInfo).where(eq(debugInfo.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("DebugInfo with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(debugInfo)
+      .where(eq(debugInfo.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("DebugInfo with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: DebugInfoUpdate) {
     const db = await getDb();
-    const rows = await db.update(debugInfo).set(patch).where(eq(debugInfo.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("DebugInfo with id " + id + " not found");
+    const rows = await db
+      .update(debugInfo)
+      .set(patch)
+      .where(eq(debugInfo.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("DebugInfo with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(debugInfo).where(eq(debugInfo.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("DebugInfo with id " + id + " not found");
+    const rows = await db
+      .delete(debugInfo)
+      .where(eq(debugInfo.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("DebugInfo with id " + id + " not found");
   },
 
   async listByModelRun(modelRunId: string) {
     const db = await getDb();
-    return db.select().from(debugInfo).where(eq(debugInfo.modelRunId, modelRunId));
+    return db
+      .select()
+      .from(debugInfo)
+      .where(eq(debugInfo.modelRunId, modelRunId));
   },
 
   async listByModelRuns(modelRunIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(modelRunIds) || modelRunIds.length === 0) return [];
-    return db.select().from(debugInfo).where(inArray(debugInfo.modelRunId, modelRunIds));
+    return db
+      .select()
+      .from(debugInfo)
+      .where(inArray(debugInfo.modelRunId, modelRunIds));
   },
 };

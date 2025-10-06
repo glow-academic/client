@@ -139,7 +139,7 @@ export function PracticePicker({
                         <Check
                           className={cn(
                             "ml-auto",
-                            isSelected ? "opacity-100" : "opacity-0"
+                            isSelected ? "opacity-100" : "opacity-0",
                           )}
                         />
                       </div>

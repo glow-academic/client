@@ -1,6 +1,6 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import type { Table } from "@tanstack/react-table";
-import { screen } from '@/test/custom-render';
+import { screen } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 

@@ -78,14 +78,14 @@ export function AgentDebugInfoDataTable({
         },
       },
     ],
-    []
+    [],
   );
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },

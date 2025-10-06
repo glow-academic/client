@@ -5,8 +5,8 @@
  * 07/26/2025
  */
 
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -88,9 +88,7 @@ describe("Parameter", () => {
     });
 
     it("should render edit form with existing data", async () => {
-      render(
-        <Parameter parameterId="test-parameter-id" mode="edit" />,
-      );
+      render(<Parameter parameterId="test-parameter-id" mode="edit" />);
 
       // Wait for the form to load
       await waitFor(() => {
@@ -258,9 +256,7 @@ describe("Parameter", () => {
     });
 
     it("should handle loading states", async () => {
-      render(
-        <Parameter parameterId="test-parameter-id" mode="edit" />,
-      );
+      render(<Parameter parameterId="test-parameter-id" mode="edit" />);
 
       // Check that loading skeletons are shown initially
       const skeletons = screen.getAllByTestId("skeleton");
@@ -305,9 +301,7 @@ describe("Parameter", () => {
     it("should successfully update a parameter", async () => {
       updateParameterMock.mockResolvedValue({ success: true });
 
-      render(
-        <Parameter parameterId="test-parameter-id" mode="edit" />,
-      );
+      render(<Parameter parameterId="test-parameter-id" mode="edit" />);
 
       // Wait for the form to load
       await waitFor(() => {

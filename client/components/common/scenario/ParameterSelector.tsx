@@ -40,7 +40,7 @@ export function ParameterSelector({
         acc[item.parameterId]!.push(item);
         return acc;
       },
-      {} as Record<string, ParameterItem[]>
+      {} as Record<string, ParameterItem[]>,
     );
   }, [parameterItems]);
 
@@ -56,7 +56,7 @@ export function ParameterSelector({
   // Get currently selected parameter items
   const selectedParameterItems = useMemo(() => {
     return parameterItems.filter((item) =>
-      selectedParameterItemIds.includes(item.id)
+      selectedParameterItemIds.includes(item.id),
     );
   }, [parameterItems, selectedParameterItemIds]);
 
@@ -70,18 +70,18 @@ export function ParameterSelector({
         acc[item.parameterId]!.push(item);
         return acc;
       },
-      {} as Record<string, ParameterItem[]>
+      {} as Record<string, ParameterItem[]>,
     );
   }, [selectedParameterItems]);
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
-    parameterItemId: string | null
+    parameterItemId: string | null,
   ) => {
     const currentItems = selectedParameterItemIds.filter(
       (id) =>
         parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId
+        parameterId,
     );
 
     if (parameterItemId) {
@@ -93,12 +93,12 @@ export function ParameterSelector({
 
   const handleNumericalParameterChange = (
     parameterId: string,
-    parameterItemId: string | null
+    parameterItemId: string | null,
   ) => {
     const currentItems = selectedParameterItemIds.filter(
       (id) =>
         parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId
+        parameterId,
     );
 
     if (parameterItemId) {
@@ -118,7 +118,7 @@ export function ParameterSelector({
   };
 
   const getNumericalParameterRange = (
-    parameterId: string
+    parameterId: string,
   ): { min: number; max: number; step: number } => {
     const items = parameterItemsByParameter[parameterId] || [];
     const values = items
@@ -136,7 +136,7 @@ export function ParameterSelector({
 
   const handleNumericalSliderChange = (
     parameterId: string,
-    value: number[]
+    value: number[],
   ) => {
     const items = parameterItemsByParameter[parameterId] || [];
     const targetValue = value[0];
@@ -221,7 +221,7 @@ export function ParameterSelector({
                       onSelect={(parameterItemId) =>
                         handleNonNumericalParameterChange(
                           parameter.id,
-                          parameterItemId
+                          parameterItemId,
                         )
                       }
                       disabled={disabled}
@@ -248,7 +248,7 @@ export function ParameterSelector({
                 const selectedItem =
                   selectedItemsByParameter[parameter.id]?.[0];
                 const { min, max, step } = getNumericalParameterRange(
-                  parameter.id
+                  parameter.id,
                 );
                 const currentValue = getSelectedNumericalValue(parameter.id);
 

@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ScenarioUpdate = Partial<ScenarioCreate>;
 export const ScenarioCreateSchema = createInsertSchema(scenarios);
 export const ScenarioUpdateSchema = ScenarioCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const scenarioRepo = {
   async create(payload: ScenarioCreate) {
@@ -26,36 +27,59 @@ export const scenarioRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(scenarios).orderBy(scenarios.createdAt ?? scenarios.id);
+    return db
+      .select()
+      .from(scenarios)
+      .orderBy(scenarios.createdAt ?? scenarios.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(scenarios).where(eq(scenarios.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Scenario with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(scenarios)
+      .where(eq(scenarios.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Scenario with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: ScenarioUpdate) {
     const db = await getDb();
-    const rows = await db.update(scenarios).set(patch).where(eq(scenarios.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Scenario with id " + id + " not found");
+    const rows = await db
+      .update(scenarios)
+      .set(patch)
+      .where(eq(scenarios.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Scenario with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(scenarios).where(eq(scenarios.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Scenario with id " + id + " not found");
+    const rows = await db
+      .delete(scenarios)
+      .where(eq(scenarios.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Scenario with id " + id + " not found");
   },
 
   async listByPersona(personaId: string) {
     const db = await getDb();
-    return db.select().from(scenarios).where(eq(scenarios.personaId, personaId));
+    return db
+      .select()
+      .from(scenarios)
+      .where(eq(scenarios.personaId, personaId));
   },
 
   async listByPersonas(personaIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(personaIds) || personaIds.length === 0) return [];
-    return db.select().from(scenarios).where(inArray(scenarios.personaId, personaIds));
+    return db
+      .select()
+      .from(scenarios)
+      .where(inArray(scenarios.personaId, personaIds));
   },
 };

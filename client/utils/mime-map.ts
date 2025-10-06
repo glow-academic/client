@@ -45,7 +45,7 @@ export const EXT_MIME_MAP: Record<string, string> = {
 
 export function inferMimeFromName(
   name: string,
-  fallback = "text/plain"
+  fallback = "text/plain",
 ): string {
   const dot = name.lastIndexOf(".");
   if (dot === -1) return fallback;

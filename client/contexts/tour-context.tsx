@@ -72,7 +72,7 @@ const initialState: TourContextState = {
 // Reducer
 function tourReducer(
   state: TourContextState,
-  action: TourAction
+  action: TourAction,
 ): TourContextState {
   switch (action.type) {
     case "OPEN":
@@ -112,7 +112,7 @@ function tourReducer(
       return {
         ...state,
         steps: state.steps.map((step, index) =>
-          index === action.payload ? { ...step, isCompleted: true } : step
+          index === action.payload ? { ...step, isCompleted: true } : step,
         ),
       };
     case "SET_NAVIGATING":
@@ -188,7 +188,7 @@ export function TourProvider({ children }: TourProviderProps) {
       }
       dispatch({ type: "OPEN", payload });
     },
-    []
+    [],
   );
 
   const closeTour = useCallback(() => {
@@ -207,7 +207,7 @@ export function TourProvider({ children }: TourProviderProps) {
       window.dispatchEvent(
         new CustomEvent("backNavigation", {
           detail: { fromStep, toStep },
-        })
+        }),
       );
     }
     dispatch({ type: "PREV" });
@@ -331,7 +331,7 @@ export function TourProvider({ children }: TourProviderProps) {
       openGuide,
       getGuideButtonState,
       setHasAssignedCohorts,
-    ]
+    ],
   );
 
   // Handle body class for tour open state
@@ -559,7 +559,7 @@ export function TourProvider({ children }: TourProviderProps) {
                         window.dispatchEvent(
                           new CustomEvent("tourAction", {
                             detail: { stepIndex: state.currentStep },
-                          })
+                          }),
                         );
                         log.info("tour.next.clicked", {
                           message: "Tour Next button clicked",

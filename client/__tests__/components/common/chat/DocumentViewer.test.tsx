@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { act, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { act, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -103,9 +103,7 @@ describe("DocumentViewer", () => {
 
     it("should render with compact prop", async () => {
       await act(async () => {
-        render(
-          <DocumentViewer document={mockDocument} compact={true} />
-        );
+        render(<DocumentViewer document={mockDocument} compact={true} />);
       });
       expect(document.body).toBeInTheDocument();
     });
@@ -128,7 +126,7 @@ describe("DocumentViewer", () => {
           expect.objectContaining({
             method: "GET",
             credentials: "include",
-          })
+          }),
         );
       });
     });
@@ -198,9 +196,7 @@ describe("DocumentViewer", () => {
         blob: vi.fn().mockResolvedValue(new Blob(["PDF content"])),
       } as unknown as Response);
 
-      render(
-        <DocumentViewer document={formDocument} isFormDocument={true} />
-      );
+      render(<DocumentViewer document={formDocument} isFormDocument={true} />);
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(formDocument.filePath);

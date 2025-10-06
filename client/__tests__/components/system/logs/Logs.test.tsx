@@ -106,7 +106,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -116,7 +116,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -132,7 +132,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -142,7 +142,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -152,7 +152,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -168,7 +168,7 @@ describe("Logs", () => {
       // Should still render the component without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -184,7 +184,7 @@ describe("Logs", () => {
       // Should still render the component without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -199,14 +199,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Find and click refresh button (look for button with RefreshCw icon)
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-refresh-cw"]')
+        button.querySelector('svg[class*="lucide-refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -220,10 +220,10 @@ describe("Logs", () => {
           expect.objectContaining({
             message: "Logs refreshed successfully",
             context: { component: "Logs" },
-          })
+          }),
         );
         expect(mockToast.success).toHaveBeenCalledWith(
-          "Logs refreshed successfully"
+          "Logs refreshed successfully",
         );
       });
     });
@@ -237,14 +237,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Find and click refresh button
       const buttons = screen.getAllByRole("button");
       const refreshButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-refresh-cw"]')
+        button.querySelector('svg[class*="lucide-refresh-cw"]'),
       );
       expect(refreshButton).toBeDefined();
       await user.click(refreshButton!);
@@ -259,7 +259,7 @@ describe("Logs", () => {
             message: "Error refreshing logs",
             error,
             context: { component: "Logs" },
-          })
+          }),
         );
         expect(mockToast.error).toHaveBeenCalledWith("Failed to refresh logs");
       });
@@ -267,7 +267,7 @@ describe("Logs", () => {
       // Verify that isRefreshing is set back to false (finally block)
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -278,14 +278,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Find and click view button for the long message
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -305,14 +305,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Open dialog first
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -339,7 +339,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -359,7 +359,7 @@ describe("Logs", () => {
       // Component should still render without crashing
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -368,7 +368,9 @@ describe("Logs", () => {
       // Mock a delayed response
       mockGetAppLogs.mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve(mockLogsData), 100))
+          new Promise((resolve) =>
+            setTimeout(() => resolve(mockLogsData), 100),
+          ),
       );
 
       render(<Logs />);
@@ -382,10 +384,10 @@ describe("Logs", () => {
       await waitFor(
         () => {
           expect(
-            screen.getByPlaceholderText("Search messages...")
+            screen.getByPlaceholderText("Search messages..."),
           ).toBeInTheDocument();
         },
-        { timeout: 200 }
+        { timeout: 200 },
       );
     });
 
@@ -400,7 +402,7 @@ describe("Logs", () => {
       // This is tested indirectly through the useQuery configuration
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -413,14 +415,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Open dialog for log with context
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -439,14 +441,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Open dialog first
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -473,14 +475,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Find and click view button for log without context (ID 3)
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -519,14 +521,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Open dialog
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -547,7 +549,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -559,7 +561,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -569,14 +571,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Log with null message should still be displayed
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -586,14 +588,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Log with null context should still be displayed
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -603,14 +605,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Long message should be truncated and show view button
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -634,7 +636,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -659,14 +661,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Open dialog
       const viewButtons = screen.getAllByRole("button");
       const viewButton = viewButtons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]')
+        button.querySelector('svg[class*="lucide-eye"]'),
       );
 
       if (viewButton) {
@@ -674,7 +676,7 @@ describe("Logs", () => {
 
         await waitFor(() => {
           expect(
-            screen.getByText('"This is not an object"')
+            screen.getByText('"This is not an object"'),
           ).toBeInTheDocument();
         });
       }
@@ -687,7 +689,7 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
@@ -702,14 +704,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Check that LogsDataTable receives the correct props
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });
@@ -719,14 +721,14 @@ describe("Logs", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
 
       // Check that columns are generated correctly
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search messages...")
+          screen.getByPlaceholderText("Search messages..."),
         ).toBeInTheDocument();
       });
     });

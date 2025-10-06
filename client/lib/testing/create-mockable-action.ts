@@ -7,7 +7,7 @@ const vitestMocks = new Map<string, (...args: any[]) => any>();
 
 export function setVitestMock(
   actionName: string,
-  mockFn: (...args: any[]) => any
+  mockFn: (...args: any[]) => any,
 ): void {
   vitestMocks.set(actionName, mockFn);
 }
@@ -16,7 +16,7 @@ export function clearVitestMocks(): void {
 }
 
 async function getMock(
-  actionName: string
+  actionName: string,
 ): Promise<{ isMocked: true; data: any } | { isMocked: false }> {
   if (process.env.NODE_ENV === "test") {
     if (vitestMocks.has(actionName)) {

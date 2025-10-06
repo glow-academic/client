@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -54,7 +54,7 @@ describe("PersonaResponseTimes", () => {
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -70,7 +70,7 @@ describe("PersonaResponseTimes", () => {
 
     it("should render with props", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -86,7 +86,7 @@ describe("PersonaResponseTimes", () => {
 
     it("should have correct accessibility attributes", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -104,7 +104,7 @@ describe("PersonaResponseTimes", () => {
   describe("Data Display", () => {
     it("should display formatted response time when data is available", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -128,7 +128,9 @@ describe("PersonaResponseTimes", () => {
     });
 
     it("should display 'No data' when no data is available", async () => {
-      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(mockNoDataResult);
+      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
+        mockNoDataResult,
+      );
 
       render(<PersonaResponseTimes {...mockProps} />);
 
@@ -205,7 +207,7 @@ describe("PersonaResponseTimes", () => {
   describe("User Interactions", () => {
     it("should open dialog when card is clicked", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -221,14 +223,14 @@ describe("PersonaResponseTimes", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Persona Response Time Trend")
+          screen.getByText("Persona Response Time Trend"),
         ).toBeInTheDocument();
       });
     });
 
     it("should close dialog when close button is clicked", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -245,7 +247,7 @@ describe("PersonaResponseTimes", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Persona Response Time Trend")
+          screen.getByText("Persona Response Time Trend"),
         ).toBeInTheDocument();
       });
 
@@ -255,7 +257,7 @@ describe("PersonaResponseTimes", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Persona Response Time Trend")
+          screen.queryByText("Persona Response Time Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -264,7 +266,7 @@ describe("PersonaResponseTimes", () => {
   describe("Dialog Content", () => {
     it("should display chart when data is available", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -281,21 +283,23 @@ describe("PersonaResponseTimes", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Persona Response Time Trend")
+          screen.getByText("Persona Response Time Trend"),
         ).toBeInTheDocument();
         // Chart should be rendered - look for the ResponsiveContainer instead of img role
         expect(
-          screen.getByText("Persona Response Time Trend")
+          screen.getByText("Persona Response Time Trend"),
         ).toBeInTheDocument();
         // Check for chart container
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
 
     it("should display no data message in dialog when no data is available", async () => {
-      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(mockNoDataResult);
+      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
+        mockNoDataResult,
+      );
 
       render(<PersonaResponseTimes {...mockProps} />);
 
@@ -312,8 +316,8 @@ describe("PersonaResponseTimes", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No data available for the selected date range and profile"
-          )
+            "No data available for the selected date range and profile",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -327,7 +331,9 @@ describe("PersonaResponseTimes", () => {
           { date: "01/03", value: 25, count: 4 },
         ],
       };
-      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(resultWithTrend);
+      (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
+        resultWithTrend,
+      );
 
       render(<PersonaResponseTimes {...mockProps} />);
 
@@ -344,10 +350,10 @@ describe("PersonaResponseTimes", () => {
       await waitFor(() => {
         // Check that the dialog opens and chart is rendered
         expect(
-          screen.getByText("Persona Response Time Trend")
+          screen.getByText("Persona Response Time Trend"),
         ).toBeInTheDocument();
         expect(
-          document.querySelector(".recharts-responsive-container")
+          document.querySelector(".recharts-responsive-container"),
         ).toBeInTheDocument();
       });
     });
@@ -366,12 +372,10 @@ describe("PersonaResponseTimes", () => {
       };
 
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
-      render(
-        <PersonaResponseTimes {...propsWithDifferentThresholds} />
-      );
+      render(<PersonaResponseTimes {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -390,7 +394,7 @@ describe("PersonaResponseTimes", () => {
       };
 
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...propsWithoutProfile} />);
@@ -411,7 +415,7 @@ describe("PersonaResponseTimes", () => {
       };
 
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...propsWithEmptyCohorts} />);
@@ -454,7 +458,7 @@ describe("PersonaResponseTimes", () => {
   describe("Utility Function Integration", () => {
     it("should call calculatePersonaResponseTimes with correct parameters", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);
@@ -469,15 +473,17 @@ describe("PersonaResponseTimes", () => {
           mockProps.dateEnd,
           mockProps.profileId,
           expect.any(Array), // cohorts
-          mockProps.cohortIds
+          mockProps.cohortIds,
         );
       });
     });
 
     it("should handle utility function errors gracefully", async () => {
-      (calculatePersonaResponseTimes as unknown as Mock).mockImplementation(() => {
-        throw new Error("Utility function error");
-      });
+      (calculatePersonaResponseTimes as unknown as Mock).mockImplementation(
+        () => {
+          throw new Error("Utility function error");
+        },
+      );
 
       render(<PersonaResponseTimes {...mockProps} />);
 
@@ -531,7 +537,7 @@ describe("PersonaResponseTimes", () => {
   describe("Responsive Behavior", () => {
     it("should maintain layout on different screen sizes", async () => {
       (calculatePersonaResponseTimes as unknown as Mock).mockReturnValue(
-        mockAnalyticsResult
+        mockAnalyticsResult,
       );
 
       render(<PersonaResponseTimes {...mockProps} />);

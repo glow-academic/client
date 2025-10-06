@@ -32,8 +32,10 @@ import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 export default function Parameters() {
   const router = useRouter();
 
-  const {data: parameters = [], isLoading: parametersLoading} = useParameters();
-  const {data: parameterItems = [], isLoading: parameterItemsLoading} = useParameterItems();
+  const { data: parameters = [], isLoading: parametersLoading } =
+    useParameters();
+  const { data: parameterItems = [], isLoading: parameterItemsLoading } =
+    useParameterItems();
 
   // Get table columns and filter options
   const {

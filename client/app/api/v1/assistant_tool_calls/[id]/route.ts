@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { assistantToolCallRepo, AssistantToolCallUpdateSchema } from "@/lib/repos/assistantToolCallRepo";
+import {
+  assistantToolCallRepo,
+  AssistantToolCallUpdateSchema,
+} from "@/lib/repos/assistantToolCallRepo";
 import type { AssistantToolCallUpdate } from "@/lib/repos/assistantToolCallRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => assistantToolCallRepo.find(id),
@@ -12,11 +18,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch assistantToolCall",
         subject: { entityType: "assistant_tool_calls", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = AssistantToolCallUpdateSchema.safeParse(json);
@@ -32,19 +41,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "assistant_tool_calls", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await assistantToolCallRepo.remove(id); return {}; },
+    async () => {
+      await assistantToolCallRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.assistant_tool_calls.delete.failed", {
         message: "Failed to delete assistantToolCall",
         subject: { entityType: "assistant_tool_calls", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }

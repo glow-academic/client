@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -41,7 +41,7 @@ vi.mock(
         createdAt: "2024-01-15T10:00:00Z",
       },
     ]),
-  })
+  }),
 );
 
 vi.mock(
@@ -54,7 +54,7 @@ vi.mock(
         createdAt: "2024-01-15T10:00:00Z",
       },
     ]),
-  })
+  }),
 );
 
 vi.mock(
@@ -68,7 +68,7 @@ vi.mock(
         score: 85,
       },
     ]),
-  })
+  }),
 );
 
 vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
@@ -168,7 +168,7 @@ describe("FirstAttemptPassRate", () => {
           mockProps.dateEnd,
           mockProps.profileId,
           expect.any(Array), // cohorts
-          mockProps.cohortIds
+          mockProps.cohortIds,
         );
       });
     });
@@ -276,7 +276,7 @@ describe("FirstAttemptPassRate", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("First Attempt Pass Rate Trend")
+          screen.getByText("First Attempt Pass Rate Trend"),
         ).toBeInTheDocument();
       });
     });
@@ -304,13 +304,13 @@ describe("FirstAttemptPassRate", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("First Attempt Pass Rate Trend")
+          screen.getByText("First Attempt Pass Rate Trend"),
         ).toBeInTheDocument();
       });
 
       // Should show no data message
       expect(
-        screen.getByText(/No data available for the selected cohorts/)
+        screen.getByText(/No data available for the selected cohorts/),
       ).toBeInTheDocument();
     });
   });
@@ -327,9 +327,7 @@ describe("FirstAttemptPassRate", () => {
         },
       };
 
-      render(
-        <FirstAttemptPassRate {...propsWithDifferentThresholds} />
-      );
+      render(<FirstAttemptPassRate {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {

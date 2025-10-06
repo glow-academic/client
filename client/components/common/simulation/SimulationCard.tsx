@@ -89,7 +89,7 @@ export default function SimulationCard({
   const isEmulatingAnother = Boolean(
     effectiveProfile?.id &&
       activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id
+      effectiveProfile.id !== activeProfile.id,
   );
 
   // Get persona configuration and icon based on persona data
@@ -289,7 +289,7 @@ export default function SimulationCard({
                       window.dispatchEvent(
                         new CustomEvent("simulationButtonPressed", {
                           detail: { simulationId: id },
-                        })
+                        }),
                       );
                       onStartSimulation(id);
                     }}
@@ -322,7 +322,7 @@ export default function SimulationCard({
                 window.dispatchEvent(
                   new CustomEvent("simulationButtonPressed", {
                     detail: { simulationId: id },
-                  })
+                  }),
                 );
                 onStartSimulation(id);
               }}

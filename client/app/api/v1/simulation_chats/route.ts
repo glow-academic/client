@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationChatRepo, SimulationChatCreateSchema } from "@/lib/repos/simulationChatRepo";
+import {
+  simulationChatRepo,
+  SimulationChatCreateSchema,
+} from "@/lib/repos/simulationChatRepo";
 import type { SimulationChatCreate } from "@/lib/repos/simulationChatRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_chats",
         subject: { entityType: "simulation_chats" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_chats" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -1,7 +1,7 @@
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { screen, waitFor } from '@/test/custom-render';
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -98,9 +98,7 @@ describe("CompletionPercentage", () => {
         },
       };
 
-      render(
-        <CompletionPercentage {...propsWithDifferentThresholds} />
-      );
+      render(<CompletionPercentage {...propsWithDifferentThresholds} />);
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -237,7 +235,7 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
     });
@@ -258,7 +256,7 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
@@ -267,7 +265,7 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Completion Percentage Trend")
+          screen.queryByText("Completion Percentage Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -288,13 +286,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // Check if trend analysis section exists
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -314,13 +312,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // Check if chart container exists
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
   });
@@ -385,13 +383,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // Should show no data message with profile context
       expect(
-        screen.getByText(/No data available for the selected cohorts/)
+        screen.getByText(/No data available for the selected cohorts/),
       ).toBeInTheDocument();
     });
 
@@ -417,13 +415,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // Should show no data message without profile context
       expect(
-        screen.getByText(/No data available for the selected cohorts/)
+        screen.getByText(/No data available for the selected cohorts/),
       ).toBeInTheDocument();
       expect(screen.queryByText(/and profile/)).not.toBeInTheDocument();
     });
@@ -465,7 +463,7 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
@@ -473,7 +471,7 @@ describe("CompletionPercentage", () => {
       await user.keyboard("{Escape}");
       await waitFor(() => {
         expect(
-          screen.queryByText("Completion Percentage Trend")
+          screen.queryByText("Completion Percentage Trend"),
         ).not.toBeInTheDocument();
       });
 
@@ -481,7 +479,7 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
     });
@@ -534,13 +532,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // Should render chart container and potentially trend analysis
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -582,7 +580,7 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
@@ -590,7 +588,7 @@ describe("CompletionPercentage", () => {
       // This should trigger the rendering of the trend analysis section (lines 274-278)
       // Look for the trend analysis text that should be displayed
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*increased.*over the past/
+        /Completion percentage.*increased.*over the past/,
       );
 
       // If trend analysis text is found, verify it's in the correct container
@@ -603,7 +601,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open and chart is rendered
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -643,13 +641,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis should be displayed with decrease direction
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*decreased.*over the past/
+        /Completion percentage.*decreased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -661,7 +659,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -698,13 +696,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis should be displayed with 3 days period
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*over the past 3 days/
+        /Completion percentage.*over the past 3 days/,
       );
 
       if (trendAnalysisText) {
@@ -716,7 +714,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -750,13 +748,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis should be displayed with 1 week period
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*over the past 1 week/
+        /Completion percentage.*over the past 1 week/,
       );
 
       if (trendAnalysisText) {
@@ -768,7 +766,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -802,13 +800,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis should be displayed with 1 month period
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*over the past 1 month/
+        /Completion percentage.*over the past 1 month/,
       );
 
       if (trendAnalysisText) {
@@ -820,7 +818,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -846,12 +844,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container that would trigger tooltip formatter
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -876,12 +874,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container with data that would trigger tooltip formatter
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -906,12 +904,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container with data that would trigger tooltip formatter
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -936,12 +934,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container with ResponsiveContainer and LineChart
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -979,13 +977,13 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis should be displayed in the dialog
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*increased.*over the past/
+        /Completion percentage.*increased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -997,7 +995,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -1036,14 +1034,14 @@ describe("CompletionPercentage", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
 
       // The trend analysis section should be rendered
       // This should trigger the rendering of the trend analysis section (lines 274-278)
       const trendAnalysisText = screen.queryByText(
-        /Completion percentage.*increased.*over the past/
+        /Completion percentage.*increased.*over the past/,
       );
 
       if (trendAnalysisText) {
@@ -1055,7 +1053,7 @@ describe("CompletionPercentage", () => {
       } else {
         // If not found, at least verify the dialog is open and chart is rendered
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       }
     });
@@ -1081,12 +1079,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container with data
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
 
@@ -1111,12 +1109,12 @@ describe("CompletionPercentage", () => {
       await user.click(card);
       await waitFor(() => {
         expect(
-          screen.getByText("Completion Percentage Trend")
+          screen.getByText("Completion Percentage Trend"),
         ).toBeInTheDocument();
       });
       // Should render chart container with tooltip formatter execution
       expect(
-        screen.getByText("Completion Percentage Trend")
+        screen.getByText("Completion Percentage Trend"),
       ).toBeInTheDocument();
     });
   });

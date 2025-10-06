@@ -45,7 +45,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "utils/test.js"
-, "__tests__/hooks/use-agent-columns.test.tsx", "__tests__/hooks/use-cohort-columns.test.tsx"  ],
+    "utils/test.js",
+    "__tests__/hooks/use-agent-columns.test.tsx",
+    "__tests__/hooks/use-cohort-columns.test.tsx"
+  ],
   "exclude": ["node_modules"]
 }

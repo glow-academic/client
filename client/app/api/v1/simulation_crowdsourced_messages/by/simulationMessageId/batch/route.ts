@@ -12,13 +12,22 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   return handle(
-    () => simulationCrowdsourcedMessageRepo.listBySimulationMessages(parsed.data.ids),
+    () =>
+      simulationCrowdsourcedMessageRepo.listBySimulationMessages(
+        parsed.data.ids,
+      ),
     (e: unknown) =>
-      log.error("api.simulation_crowdsourced_messages.by.simulationMessageId.batch.failed", {
-        message: "Failed to fetch by foreign key batch",
-        subject: { entityType: "simulation_crowdsourced_messages" },
-        context: { foreignKey: "simulationMessageId", count: parsed.data.ids.length },
-        error: e,
-      })
+      log.error(
+        "api.simulation_crowdsourced_messages.by.simulationMessageId.batch.failed",
+        {
+          message: "Failed to fetch by foreign key batch",
+          subject: { entityType: "simulation_crowdsourced_messages" },
+          context: {
+            foreignKey: "simulationMessageId",
+            count: parsed.data.ids.length,
+          },
+          error: e,
+        },
+      ),
   );
 }

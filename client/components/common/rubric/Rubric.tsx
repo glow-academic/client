@@ -44,8 +44,12 @@ export default function Rubric({ rubricId }: RubricProps) {
   };
 
   const { data: rubric, isLoading: rubricLoading } = useRubric(rubricId!);
-  const { data: standardGroups, isLoading: standardGroupsLoading } = useStandardGroupsByRubricId(rubricId!);
-  const { data: standards, isLoading: standardsLoading } = useStandardsByStandardGroupIdBatch(standardGroups!.map((group) => group.id));
+  const { data: standardGroups, isLoading: standardGroupsLoading } =
+    useStandardGroupsByRubricId(rubricId!);
+  const { data: standards, isLoading: standardsLoading } =
+    useStandardsByStandardGroupIdBatch(
+      standardGroups!.map((group) => group.id),
+    );
 
   const isLoading = rubricLoading || standardGroupsLoading || standardsLoading;
 

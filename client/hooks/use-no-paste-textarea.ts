@@ -8,7 +8,7 @@ interface UseNoPasteTextareaOptions {
 
 export function useNoPasteTextarea(
   textareaRef: React.RefObject<HTMLTextAreaElement | null>,
-  options: UseNoPasteTextareaOptions = {}
+  options: UseNoPasteTextareaOptions = {},
 ) {
   const {
     onPasteAttempt,
@@ -84,7 +84,7 @@ export function useNoPasteTextarea(
   // Enhanced keydown handler with burst detection
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
-    onSendMessage?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+    onSendMessage?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void,
   ) => {
     const isModifier = e.metaKey || e.ctrlKey;
     const key = e.key.toLowerCase();
@@ -107,7 +107,7 @@ export function useNoPasteTextarea(
   const handleChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
     onValueChange: (value: string) => void,
-    sanitizeInput?: (value: string) => string
+    sanitizeInput?: (value: string) => string,
   ) => {
     const next = e.target.value;
     const prev = prevValueRef.current;

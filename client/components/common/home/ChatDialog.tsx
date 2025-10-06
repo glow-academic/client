@@ -47,7 +47,10 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
-  const { data: chat } = useAssistantChat(currentChatId!, currentChatId !== undefined);
+  const { data: chat } = useAssistantChat(
+    currentChatId!,
+    currentChatId !== undefined,
+  );
 
   if (uiState !== "expanded") {
     return null;
@@ -104,7 +107,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
+                          new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>

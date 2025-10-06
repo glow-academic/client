@@ -33,7 +33,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         }
         // get simulation for attempt
         const attemptSimulation = await simulationRepo.find(
-          attemptData?.simulationId
+          attemptData?.simulationId,
         );
         // Attempts don't have a title, so we'll use a generic name with timestamp
         return attemptSimulation?.title || `Attempt ${id.substring(0, 8)}...`;
@@ -144,7 +144,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!id || !context) {
     return Response.json(
       { error: "Missing required fields: id and context" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -159,6 +159,6 @@ export async function POST(req: Request): Promise<Response> {
         subject: { entityType: "breadcrumb", entityId: id },
         context: { id, context },
         error: e,
-      })
+      }),
   );
 }

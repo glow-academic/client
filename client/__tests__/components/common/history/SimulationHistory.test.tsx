@@ -58,7 +58,7 @@ describe("SimulationHistory", () => {
         data={mockHistoryData}
         showExport={true}
         showArchive={false}
-      />
+      />,
     );
 
     // Check that the component renders without crashing
@@ -72,7 +72,7 @@ describe("SimulationHistory", () => {
         data={mockHistoryData}
         showExport={false}
         showArchive={false}
-      />
+      />,
     );
 
     // Check that the component renders without crashing
@@ -86,7 +86,7 @@ describe("SimulationHistory", () => {
         data={mockHistoryData}
         showExport={false}
         showArchive={true}
-      />
+      />,
     );
 
     // Check that the component renders without crashing
@@ -101,7 +101,7 @@ describe("SimulationHistory", () => {
         showExport={false}
         showArchive={false}
         isLoading={true}
-      />
+      />,
     );
 
     // Should show loading skeleton instead of data
@@ -115,7 +115,7 @@ describe("SimulationHistory", () => {
         showExport={false}
         showArchive={false}
         isLoading={false}
-      />
+      />,
     );
 
     // Should show "No results" message

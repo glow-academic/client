@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { parameterItemRepo, ParameterItemCreateSchema } from "@/lib/repos/parameterItemRepo";
+import {
+  parameterItemRepo,
+  ParameterItemCreateSchema,
+} from "@/lib/repos/parameterItemRepo";
 import type { ParameterItemCreate } from "@/lib/repos/parameterItemRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list parameter_items",
         subject: { entityType: "parameter_items" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

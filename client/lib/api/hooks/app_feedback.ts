@@ -2,7 +2,11 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { AppFeedback, AppFeedbackCreate, AppFeedbackUpdate } from "@/lib/repos/appFeedbackRepo";
+import type {
+  AppFeedback,
+  AppFeedbackCreate,
+  AppFeedbackUpdate,
+} from "@/lib/repos/appFeedbackRepo";
 import { appFeedbackKeys, appFeedbackKeysByProfileId } from "@/lib/api/keys";
 
 export function useAppFeedbacks(filters?: unknown) {
@@ -15,7 +19,11 @@ export function useAppFeedbacks(filters?: unknown) {
 export function useCreateAppFeedback() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AppFeedbackCreate) => api<AppFeedback>("/api/v1/app_feedback", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: AppFeedbackCreate) =>
+      api<AppFeedback>("/api/v1/app_feedback", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: appFeedbackKeys.all }),
   });
 }
@@ -37,7 +45,10 @@ export function useUpdateAppFeedback(id?: number) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<AppFeedback>(`/api/v1/app_feedback/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<AppFeedback>(`/api/v1/app_feedback/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: number } | undefined)?.id;
@@ -58,7 +69,9 @@ export function useDeleteAppFeedback(id?: number) {
       if (resolvedId === undefined || resolvedId === null) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/app_feedback/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/app_feedback/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: appFeedbackKeys.all }),
   });
@@ -67,7 +80,8 @@ export function useDeleteAppFeedback(id?: number) {
 export function useAppFeedbackByProfileId(id: number) {
   return useQuery<AppFeedback[]>({
     queryKey: appFeedbackKeysByProfileId.one(id),
-    queryFn: () => api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/${id}`),
+    queryFn: () =>
+      api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/${id}`),
     enabled: id !== undefined && id !== null,
   });
 }
@@ -75,7 +89,11 @@ export function useAppFeedbackByProfileId(id: number) {
 export function useAppFeedbackByProfileIdBatch(ids: number[]) {
   return useQuery<AppFeedback[]>({
     queryKey: appFeedbackKeysByProfileId.many(ids),
-    queryFn: () => api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AppFeedback[]>(`/api/v1/app_feedback/by/profileId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

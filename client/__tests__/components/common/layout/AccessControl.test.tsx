@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -98,7 +98,7 @@ describe("AccessControl", () => {
       render(
         <AccessControl pathname="test-pathname">
           <div>fallback</div>
-        </AccessControl>
+        </AccessControl>,
       );
 
       await waitFor(() => {
@@ -135,7 +135,7 @@ describe("AccessControl", () => {
       render(
         <AccessControl pathname="/admin">
           <div>admin-content</div>
-        </AccessControl>
+        </AccessControl>,
       );
 
       await waitFor(() => {

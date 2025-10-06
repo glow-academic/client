@@ -35,7 +35,7 @@ export function useStaffColumns({
   onEditUser,
   currentUserRole,
 }: UseStaffColumnsProps) {
-  const {data: cohorts} = useCohorts();
+  const { data: cohorts } = useCohorts();
 
   // Create filter options
   const roleOptions = useMemo(() => {
@@ -92,7 +92,7 @@ export function useStaffColumns({
         label: "Inactive",
       },
     ],
-    []
+    [],
   );
 
   const lastActiveOptions = useMemo(
@@ -150,7 +150,7 @@ export function useStaffColumns({
         label: "Last 3 Months",
       },
     ],
-    []
+    [],
   );
 
   // Helper function to get initials from name
@@ -200,7 +200,7 @@ export function useStaffColumns({
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60),
     );
 
     if (diffInMinutes < 1) return "Just now";
@@ -335,54 +335,54 @@ export function useStaffColumns({
                 return lastActiveDate >= hourAgo;
               case "last_2_hours":
                 const twoHoursAgo = new Date(
-                  now.getTime() - 2 * 60 * 60 * 1000
+                  now.getTime() - 2 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= twoHoursAgo;
               case "last_4_hours":
                 const fourHoursAgo = new Date(
-                  now.getTime() - 4 * 60 * 60 * 1000
+                  now.getTime() - 4 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= fourHoursAgo;
               case "last_8_hours":
                 const eightHoursAgo = new Date(
-                  now.getTime() - 8 * 60 * 60 * 1000
+                  now.getTime() - 8 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= eightHoursAgo;
               case "last_12_hours":
                 const twelveHoursAgo = new Date(
-                  now.getTime() - 12 * 60 * 60 * 1000
+                  now.getTime() - 12 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= twelveHoursAgo;
               case "today":
                 return lastActiveDate.toDateString() === now.toDateString();
               case "last_2_days":
                 const twoDaysAgo = new Date(
-                  now.getTime() - 2 * 24 * 60 * 60 * 1000
+                  now.getTime() - 2 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= twoDaysAgo;
               case "last_3_days":
                 const threeDaysAgo = new Date(
-                  now.getTime() - 3 * 24 * 60 * 60 * 1000
+                  now.getTime() - 3 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= threeDaysAgo;
               case "last_week":
                 const weekAgo = new Date(
-                  now.getTime() - 7 * 24 * 60 * 60 * 1000
+                  now.getTime() - 7 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= weekAgo;
               case "last_2_weeks":
                 const twoWeeksAgo = new Date(
-                  now.getTime() - 14 * 24 * 60 * 60 * 1000
+                  now.getTime() - 14 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= twoWeeksAgo;
               case "last_month":
                 const monthAgo = new Date(
-                  now.getTime() - 30 * 24 * 60 * 60 * 1000
+                  now.getTime() - 30 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= monthAgo;
               case "last_3_months":
                 const threeMonthsAgo = new Date(
-                  now.getTime() - 90 * 24 * 60 * 60 * 1000
+                  now.getTime() - 90 * 24 * 60 * 60 * 1000,
                 );
                 return lastActiveDate >= threeMonthsAgo;
               default:

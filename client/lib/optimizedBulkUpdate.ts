@@ -14,7 +14,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -57,7 +57,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -111,7 +111,7 @@ export class OptimizedBulkUpdate {
           .map((field) => {
             const cases = group
               .map(
-                (item) => `WHEN id = '${item.id}' THEN '${item.values[field]}'`
+                (item) => `WHEN id = '${item.id}' THEN '${item.values[field]}'`,
               )
               .join(" ");
             return `${field} = CASE ${cases} ELSE ${field} END`;
@@ -138,7 +138,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     if (!Array.isArray(updates) || updates.length === 0) return [];
 

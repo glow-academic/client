@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { fireEvent, screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { fireEvent, screen, waitFor } from "@/test/custom-render";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -53,7 +53,9 @@ describe("MessagesPerSession", () => {
 
   describe("basic render smoke-test", () => {
     it("renders without crashing", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -67,7 +69,9 @@ describe("MessagesPerSession", () => {
     });
 
     it("should render with props", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -81,7 +85,9 @@ describe("MessagesPerSession", () => {
     });
 
     it("should have correct accessibility attributes", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -97,7 +103,9 @@ describe("MessagesPerSession", () => {
 
   describe("Data Display", () => {
     it("should display average messages per session when data is available", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -107,7 +115,9 @@ describe("MessagesPerSession", () => {
     });
 
     it("should display 'No data' when no data is available", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockNoDataResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockNoDataResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -183,7 +193,9 @@ describe("MessagesPerSession", () => {
 
   describe("User Interactions", () => {
     it("should open dialog when card is clicked", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -198,13 +210,15 @@ describe("MessagesPerSession", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Messages Per Session Trend")
+          screen.getByText("Messages Per Session Trend"),
         ).toBeInTheDocument();
       });
     });
 
     it("should close dialog when close button is clicked", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -220,7 +234,7 @@ describe("MessagesPerSession", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Messages Per Session Trend")
+          screen.getByText("Messages Per Session Trend"),
         ).toBeInTheDocument();
       });
 
@@ -230,7 +244,7 @@ describe("MessagesPerSession", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Messages Per Session Trend")
+          screen.queryByText("Messages Per Session Trend"),
         ).not.toBeInTheDocument();
       });
     });
@@ -238,7 +252,9 @@ describe("MessagesPerSession", () => {
 
   describe("Dialog Content", () => {
     it("should display chart when data is available", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -254,7 +270,7 @@ describe("MessagesPerSession", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("Messages Per Session Trend")
+          screen.getByText("Messages Per Session Trend"),
         ).toBeInTheDocument();
         // Chart should be rendered
         expect(screen.getByTestId("line-chart")).toBeInTheDocument();
@@ -262,7 +278,9 @@ describe("MessagesPerSession", () => {
     });
 
     it("should display no data message in dialog when no data is available", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockNoDataResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockNoDataResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -279,8 +297,8 @@ describe("MessagesPerSession", () => {
       await waitFor(() => {
         expect(
           screen.getByText(
-            "No data available for the selected date range and profile"
-          )
+            "No data available for the selected date range and profile",
+          ),
         ).toBeInTheDocument();
       });
     });
@@ -294,7 +312,9 @@ describe("MessagesPerSession", () => {
           { date: "01/03", value: 15, count: 4 },
         ],
       };
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(resultWithTrend);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        resultWithTrend,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -326,7 +346,9 @@ describe("MessagesPerSession", () => {
         },
       };
 
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...propsWithDifferentThresholds} />);
 
@@ -346,7 +368,9 @@ describe("MessagesPerSession", () => {
         profileId: undefined,
       };
 
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...propsWithoutProfile} />);
 
@@ -365,7 +389,9 @@ describe("MessagesPerSession", () => {
         cohortIds: [],
       };
 
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...propsWithEmptyCohorts} />);
 
@@ -393,7 +419,9 @@ describe("MessagesPerSession", () => {
 
   describe("Utility Function Integration", () => {
     it("should call calculateMessagesPerSession with correct parameters", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -407,15 +435,17 @@ describe("MessagesPerSession", () => {
           mockProps.dateEnd,
           mockProps.profileId,
           expect.any(Array), // cohorts
-          mockProps.cohortIds
+          mockProps.cohortIds,
         );
       });
     });
 
     it("should handle utility function errors gracefully", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockImplementation(() => {
-        throw new Error("Utility function error");
-      });
+      (calculateMessagesPerSession as unknown as Mock).mockImplementation(
+        () => {
+          throw new Error("Utility function error");
+        },
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 
@@ -427,7 +457,9 @@ describe("MessagesPerSession", () => {
 
   describe("Responsive Behavior", () => {
     it("should maintain layout on different screen sizes", async () => {
-      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(mockAnalyticsResult);
+      (calculateMessagesPerSession as unknown as Mock).mockReturnValue(
+        mockAnalyticsResult,
+      );
 
       render(<MessagesPerSession {...mockProps} />);
 

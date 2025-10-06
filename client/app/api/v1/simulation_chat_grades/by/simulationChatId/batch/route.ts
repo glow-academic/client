@@ -17,8 +17,11 @@ export async function POST(req: Request) {
       log.error("api.simulation_chat_grades.by.simulationChatId.batch.failed", {
         message: "Failed to fetch by foreign key batch",
         subject: { entityType: "simulation_chat_grades" },
-        context: { foreignKey: "simulationChatId", count: parsed.data.ids.length },
+        context: {
+          foreignKey: "simulationChatId",
+          count: parsed.data.ids.length,
+        },
         error: e,
-      })
+      }),
   );
 }

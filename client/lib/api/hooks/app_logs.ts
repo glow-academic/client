@@ -2,8 +2,12 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { AppLog, AppLogCreate, AppLogUpdate } from "@/lib/repos/appLogRepo";
-import { appLogKeys  } from "@/lib/api/keys";
+import type {
+  AppLog,
+  AppLogCreate,
+  AppLogUpdate,
+} from "@/lib/repos/appLogRepo";
+import { appLogKeys } from "@/lib/api/keys";
 
 export function useAppLogs(filters?: unknown) {
   return useQuery({
@@ -15,7 +19,11 @@ export function useAppLogs(filters?: unknown) {
 export function useCreateAppLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AppLogCreate) => api<AppLog>("/api/v1/app_logs", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: AppLogCreate) =>
+      api<AppLog>("/api/v1/app_logs", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.all }),
   });
 }
@@ -37,7 +45,10 @@ export function useUpdateAppLog(id?: number) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<AppLog>(`/api/v1/app_logs/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<AppLog>(`/api/v1/app_logs/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: number } | undefined)?.id;
@@ -63,4 +74,3 @@ export function useDeleteAppLog(id?: number) {
     onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.all }),
   });
 }
-

@@ -43,7 +43,10 @@ export default function ChatWidget({ up }: { up: boolean }) {
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
-  const { data: chat } = useAssistantChat(currentChatId!, currentChatId !== undefined);
+  const { data: chat } = useAssistantChat(
+    currentChatId!,
+    currentChatId !== undefined,
+  );
 
   if (uiState !== "widget") {
     return null;
@@ -99,7 +102,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime()
+                          new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>

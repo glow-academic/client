@@ -124,11 +124,13 @@
 
 /* Flip3D styles for Firefox/Zen compatibility */
 .flip3d {
-  display: grid;               /* stack children */
+  display: grid; /* stack children */
   perspective: 1000px;
-  --dir: 1;                    /* default */
+  --dir: 1; /* default */
 }
-.flip3d[data-dir="-1"] { --dir: -1; } /* reverse */
+.flip3d[data-dir="-1"] {
+  --dir: -1;
+} /* reverse */
 
 .flip3d > .face {
   grid-area: 1 / 1;
@@ -158,15 +160,26 @@
   inset: 0;
   border-radius: 1rem; /* ~ rounded-2xl */
   padding: 1px;
-  background: linear-gradient(90deg, rgba(124,58,237,0.8), rgba(59,130,246,0.8), rgba(124,58,237,0.8));
+  background: linear-gradient(
+    90deg,
+    rgba(124, 58, 237, 0.8),
+    rgba(59, 130, 246, 0.8),
+    rgba(124, 58, 237, 0.8)
+  );
   background-size: 300% 100%;
   animation: gradient-move 4s linear infinite;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask-composite: exclude;
 }
 
 @keyframes gradient-move {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
 }

@@ -108,7 +108,7 @@ export function DataTableViewOptions<TData>({
               column.id !== "search" && // Always hide search column
               column.id !== "profileId" && // Hide faceting columns
               column.id !== "simulationId" &&
-              column.id !== "scenarios"
+              column.id !== "scenarios",
           )
           .map((column) => {
             return (

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!targetProfileId) {
     return NextResponse.json(
       { error: "Missing targetProfileId" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

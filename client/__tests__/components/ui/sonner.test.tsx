@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { ToasterProps } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 

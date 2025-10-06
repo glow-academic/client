@@ -28,13 +28,13 @@ function refactorFile(filePath) {
   // 1) Replace testing-library import with custom renderer
   content = content.replace(
     /from\s+["']@testing-library\/react["']/g,
-    "from '@/test/custom-render'"
+    "from '@/test/custom-render'",
   );
 
   // 2) Replace renderWithMocks import with render from custom renderer
   content = content.replace(
     /import\s*\{\s*renderWithMocks\s*\}\s*from\s*["']@\/test\/renderWithMocks["']/g,
-    "import { render } from '@/test/custom-render'"
+    "import { render } from '@/test/custom-render'",
   );
 
   // 3) Replace calls to renderWithMocks( with render(

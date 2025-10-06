@@ -2,7 +2,11 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { Simulation, SimulationCreate, SimulationUpdate } from "@/lib/repos/simulationRepo";
+import type {
+  Simulation,
+  SimulationCreate,
+  SimulationUpdate,
+} from "@/lib/repos/simulationRepo";
 import { simulationKeys, simulationKeysByRubricId } from "@/lib/api/keys";
 
 export function useSimulations(filters?: unknown) {
@@ -15,7 +19,11 @@ export function useSimulations(filters?: unknown) {
 export function useCreateSimulation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: SimulationCreate) => api<Simulation>("/api/v1/simulations", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: SimulationCreate) =>
+      api<Simulation>("/api/v1/simulations", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
   });
 }
@@ -33,11 +41,18 @@ export function useUpdateSimulation(id?: string) {
   return useMutation({
     mutationFn: (patch: SimulationUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Simulation>(`/api/v1/simulations/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
+      return api<Simulation>(`/api/v1/simulations/${resolvedId}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -55,10 +70,16 @@ export function useDeleteSimulation(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
+      if (
+        resolvedId === undefined ||
+        resolvedId === null ||
+        resolvedId === ""
+      ) {
         throw new Error("Missing id for delete");
       }
-      return api<void>(`/api/v1/simulations/${resolvedId}`, { method: "DELETE" });
+      return api<void>(`/api/v1/simulations/${resolvedId}`, {
+        method: "DELETE",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: simulationKeys.all }),
   });
@@ -75,7 +96,11 @@ export function useSimulationsByRubricId(id: string) {
 export function useSimulationsByRubricIdBatch(ids: string[]) {
   return useQuery<Simulation[]>({
     queryKey: simulationKeysByRubricId.many(ids),
-    queryFn: () => api<Simulation[]>(`/api/v1/simulations/by/rubricId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<Simulation[]>(`/api/v1/simulations/by/rubricId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock NewSimulation component
@@ -30,7 +30,7 @@ describe("NewSimulationPage", () => {
   it("renders the NewSimulation component inside a wrapper", () => {
     render(<NewSimulationPage />);
     const wrapper = screen.getByTestId(
-      "new-simulation-component"
+      "new-simulation-component",
     ).parentElement;
     expect(wrapper).toHaveClass("space-y-6");
   });

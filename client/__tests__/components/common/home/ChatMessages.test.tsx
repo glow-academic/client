@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen, waitFor } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -45,7 +45,7 @@ vi.mock("@/utils/analytics/header", () => ({
 // Mock the query functions that the component depends on
 vi.mock("@/utils/queries/assistant_messages/get-assistant-messages-by-chat");
 vi.mock(
-  "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat"
+  "@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat",
 );
 
 import { AssistantMessage, AssistantToolCall } from "@/types";
@@ -139,7 +139,7 @@ describe("ChatMessages", () => {
       await waitFor(() => {
         expect(screen.getByText("Hello")).toBeInTheDocument();
         expect(
-          screen.getByText("I'm doing well, thank you!")
+          screen.getByText("I'm doing well, thank you!"),
         ).toBeInTheDocument();
       });
     });
@@ -171,7 +171,7 @@ describe("ChatMessages", () => {
       await waitFor(() => {
         expect(screen.getByText("Hello")).toBeInTheDocument();
         expect(
-          screen.getByText("I'm doing well, thank you!")
+          screen.getByText("I'm doing well, thank you!"),
         ).toBeInTheDocument();
       });
     });
@@ -215,7 +215,7 @@ describe("ChatMessages", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByTestId("chat-starter-prompts")
+          screen.queryByTestId("chat-starter-prompts"),
         ).not.toBeInTheDocument();
       });
     });
@@ -271,7 +271,7 @@ describe("ChatMessages", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText("I'm doing well, thank you!")
+          screen.getByText("I'm doing well, thank you!"),
         ).toBeInTheDocument();
       });
     });
@@ -326,7 +326,7 @@ describe("ChatMessages", () => {
       await waitFor(() => {
         expect(screen.getByTestId("markdown")).toBeInTheDocument();
         expect(
-          screen.getByText("**Bold text** and *italic text*")
+          screen.getByText("**Bold text** and *italic text*"),
         ).toBeInTheDocument();
       });
     });
@@ -353,7 +353,7 @@ describe("ChatMessages", () => {
 
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce(
-        mockToolCalls
+        mockToolCalls,
       );
 
       render(<ChatMessages {...mockProps} />);
@@ -385,7 +385,7 @@ describe("ChatMessages", () => {
 
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce(
-        mockToolCalls
+        mockToolCalls,
       );
 
       render(<ChatMessages {...mockProps} />);
@@ -416,7 +416,7 @@ describe("ChatMessages", () => {
 
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce(
-        mockToolCalls
+        mockToolCalls,
       );
 
       render(<ChatMessages {...mockProps} />);
@@ -462,7 +462,7 @@ describe("ChatMessages", () => {
 
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce(mockMessages);
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce(
-        mockToolCalls
+        mockToolCalls,
       );
 
       render(<ChatMessages {...mockProps} />);
@@ -478,7 +478,7 @@ describe("ChatMessages", () => {
     it("shows loading skeleton when messages are loading", async () => {
       // Mock the query functions to return promises that don't resolve immediately
       vi.mocked(getAssistantMessagesByChat).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
       vi.mocked(getAssistantToolCallsByChat).mockResolvedValueOnce([]);
 
@@ -493,7 +493,7 @@ describe("ChatMessages", () => {
       // Mock the query functions to return promises that don't resolve immediately
       vi.mocked(getAssistantMessagesByChat).mockResolvedValueOnce([]);
       vi.mocked(getAssistantToolCallsByChat).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
 
       render(<ChatMessages {...mockProps} />);

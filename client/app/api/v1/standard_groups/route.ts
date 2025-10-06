@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { standardGroupRepo, StandardGroupCreateSchema } from "@/lib/repos/standardGroupRepo";
+import {
+  standardGroupRepo,
+  StandardGroupCreateSchema,
+} from "@/lib/repos/standardGroupRepo";
 import type { StandardGroupCreate } from "@/lib/repos/standardGroupRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list standard_groups",
         subject: { entityType: "standard_groups" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "standard_groups" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

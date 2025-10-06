@@ -49,7 +49,8 @@ export async function getSimulatableProfiles() {
           .where(ne(profiles.id, userProfile.id));
         // Filter out superadmin and admin profiles
         simulatableProfiles = simulatableProfiles.filter(
-          (profile) => profile.role !== "superadmin" && profile.role !== "admin"
+          (profile) =>
+            profile.role !== "superadmin" && profile.role !== "admin",
         );
         break;
 
@@ -64,7 +65,7 @@ export async function getSimulatableProfiles() {
           (profile) =>
             profile.role !== "superadmin" &&
             profile.role !== "admin" &&
-            profile.role !== "instructional"
+            profile.role !== "instructional",
         );
         break;
       case "ta":

@@ -1,5 +1,5 @@
 import { Separator } from "@/components/ui/separator";
-import { render } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
 import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————

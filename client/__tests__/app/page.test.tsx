@@ -1,5 +1,5 @@
-import { render } from '@/test/custom-render';
-import { screen } from '@/test/custom-render';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
 import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -36,7 +36,7 @@ describe("LoginPage", () => {
       // Check metadata structure
       expect(metadata.description).toContain("Login to GLOW");
       expect(metadata.description).toContain(
-        "Graduate Learning Orientation Workshop"
+        "Graduate Learning Orientation Workshop",
       );
     });
   });

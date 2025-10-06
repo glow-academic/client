@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ModelUpdate = Partial<ModelCreate>;
 export const ModelCreateSchema = createInsertSchema(models);
 export const ModelUpdateSchema = ModelCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const modelRepo = {
   async create(payload: ModelCreate) {
@@ -26,27 +27,39 @@ export const modelRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(models).orderBy(models.createdAt ?? models.id);
+    return db
+      .select()
+      .from(models)
+      .orderBy(models.createdAt ?? models.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(models).where(eq(models.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("Model with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(models)
+      .where(eq(models.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("Model with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: ModelUpdate) {
     const db = await getDb();
-    const rows = await db.update(models).set(patch).where(eq(models.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Model with id " + id + " not found");
+    const rows = await db
+      .update(models)
+      .set(patch)
+      .where(eq(models.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("Model with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
     const rows = await db.delete(models).where(eq(models.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("Model with id " + id + " not found");
+    if (!rows[0])
+      throw HttpError.notFound("Model with id " + id + " not found");
   },
-
-
 };

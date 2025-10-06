@@ -26,7 +26,7 @@ export interface RandomizeResponse {
 }
 
 export async function randomizeScenario(
-  params: RandomizeParams
+  params: RandomizeParams,
 ): Promise<RandomizeResponse> {
   try {
     const formData = new FormData();
@@ -37,12 +37,12 @@ export async function randomizeScenario(
 
     if (params.documentIds && params.documentIds.length > 0) {
       params.documentIds.forEach(
-        (id) => id && formData.append("document_ids", id)
+        (id) => id && formData.append("document_ids", id),
       );
     }
     if (params.parameterItemIds && params.parameterItemIds.length > 0) {
       params.parameterItemIds.forEach(
-        (id) => id && formData.append("parameter_item_ids", id)
+        (id) => id && formData.append("parameter_item_ids", id),
       );
     }
     if (params.targets && params.targets.length > 0) {

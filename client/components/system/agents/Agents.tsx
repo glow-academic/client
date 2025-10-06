@@ -19,7 +19,7 @@ import { useAgents } from "@/lib/api/hooks/agents";
 export default function Agents() {
   const router = useRouter();
 
-  const {data: agents = []} = useAgents();
+  const { data: agents = [] } = useAgents();
 
   // Get table columns and filter options
   const { columns, reasoningOptions, modelOptions, temperatureOptions } =

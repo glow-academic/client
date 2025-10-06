@@ -3,7 +3,10 @@ import { standardRepo, StandardUpdateSchema } from "@/lib/repos/standardRepo";
 import type { StandardUpdate } from "@/lib/repos/standardRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => standardRepo.find(id),
@@ -12,11 +15,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         message: "Failed to fetch standard",
         subject: { entityType: "standards", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = StandardUpdateSchema.safeParse(json);
@@ -32,19 +38,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         subject: { entityType: "standards", entityId: String(id) },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
-    async () => { await standardRepo.remove(id); return {}; },
+    async () => {
+      await standardRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.standards.delete.failed", {
         message: "Failed to delete standard",
         subject: { entityType: "standards", entityId: String(id) },
         error: e,
-      })
+      }),
   );
 }
