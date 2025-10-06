@@ -23,17 +23,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { useDepartments } from "@/contexts/departments-context";
 import { useParameterColumns } from "@/hooks/use-parameter-columns";
+import { useParameterItems } from "@/lib/api/hooks/parameter_items";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import { Parameter, ParameterItem } from "@/types";
 import { ParametersDataTable } from "./ParametersDataTable";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 
 export default function Parameters() {
   const router = useRouter();
+  const { selectedDepartmentIds } = useDepartments();
 
-  const { data: parameters = [], isLoading: parametersLoading } =
-    useParameters();
+  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { data: parameterItems = [], isLoading: parameterItemsLoading } =
     useParameterItems();
 
@@ -55,7 +58,7 @@ export default function Parameters() {
       acc[item.parameterId]!.push(item);
       return acc;
     },
-    {} as Record<string, ParameterItem[]>,
+    {} as Record<string, ParameterItem[]>
   );
 
   const getParameterIcon = (parameter: Parameter) => {
@@ -76,7 +79,7 @@ export default function Parameters() {
   const renderParameterCard = (parameter: Parameter) => {
     const items = parameterItemsByParameter[parameter.id] || [];
     const count = items.length;
-    const isLoading = parametersLoading || parameterItemsLoading;
+    const isLoading = parameterItemsLoading;
 
     const renderPreview = (items: ParameterItem[]) => {
       if (parameter.numerical) {
@@ -218,7 +221,7 @@ export default function Parameters() {
     </div>
   );
 
-  const isLoading = parametersLoading || parameterItemsLoading;
+  const isLoading = parameterItemsLoading;
 
   if (isLoading) {
     return (

@@ -11,15 +11,19 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDepartments } from "@/contexts/departments-context";
 import { useAgentColumns } from "@/hooks/use-agent-columns";
+import { useAgentsByDepartmentIdBatch } from "@/lib/api/hooks/agents";
 import { Agent } from "@/types";
 import { AgentsDataTable } from "./AgentsDataTable";
-import { useAgents } from "@/lib/api/hooks/agents";
 
 export default function Agents() {
   const router = useRouter();
+  const { selectedDepartmentIds } = useDepartments();
 
-  const { data: agents = [] } = useAgents();
+  const { data: agents = [] } = useAgentsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
 
   // Get table columns and filter options
   const { columns, reasoningOptions, modelOptions, temperatureOptions } =

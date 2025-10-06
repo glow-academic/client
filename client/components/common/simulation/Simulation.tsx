@@ -43,9 +43,9 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParameters } from "@/lib/api/hooks/parameters";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
+import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import {
   useCreateSimulation,
   useSimulation,
@@ -122,23 +122,22 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
     simulationId!
   );
-  const { data: rubrics = [], isLoading: isLoadingRubrics } = useRubrics();
-  const { data: scenarios = [], isLoading: isLoadingScenarios } =
-    useScenarios();
-  const { data: parameters = [], isLoading: isLoadingParameters } =
-    useParameters();
+  const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
+  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
     useParameterItems();
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
     selectedDepartmentIds
   );
 
-  const isLoading =
-    isLoadingSimulation ||
-    isLoadingRubrics ||
-    isLoadingScenarios ||
-    isLoadingParameters ||
-    isLoadingParameterItems;
+  const isLoading = isLoadingSimulation || isLoadingParameterItems;
 
   // Determine readonly based on permissions and usage
   const isDefaultNonSuperadmin =

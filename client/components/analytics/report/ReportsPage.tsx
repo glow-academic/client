@@ -24,7 +24,7 @@ import {
 } from "@/lib/analytics";
 import { useAnalyticsReportsBundle } from "@/lib/api/hooks/analytics";
 import { useProfiles } from "@/lib/api/hooks/profiles";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
 import { useMemo } from "react";
@@ -59,7 +59,9 @@ export default function ReportsPage() {
     isLoading,
     isError,
   } = useAnalyticsReportsBundle(filters, rqOpts);
-  const { data: allScenarios } = useScenarios();
+  const { data: allScenarios } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
   const { data: allSimulations } = useSimulationsByDepartmentIdBatch(
     selectedDepartmentIds
   );

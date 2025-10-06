@@ -39,6 +39,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useDepartments } from "@/contexts/departments-context";
+import { useModels } from "@/lib/api/hooks/models";
+import {
+  useCreatePersona,
+  usePersona,
+  useUpdatePersona,
+} from "@/lib/api/hooks/personas";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
@@ -49,13 +57,6 @@ import {
 import { Check, ChevronsUpDown } from "lucide-react";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
-import {
-  useCreatePersona,
-  usePersona,
-  useUpdatePersona,
-} from "@/lib/api/hooks/personas";
-import { useModels } from "@/lib/api/hooks/models";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
 
 interface FormData {
   name?: string;
@@ -82,6 +83,7 @@ export default function Persona({
   mode = personaId ? "edit" : "create",
 }: PersonaProps) {
   const router = useRouter();
+  const { selectedDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!personaId;
   const { effectiveProfile } = useProfile();
 
@@ -100,7 +102,7 @@ export default function Persona({
       guardrailActive: false,
       imageInputActive: false,
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,7 +114,9 @@ export default function Persona({
 
   const { data: models, isLoading: isModelsLoading } = useModels();
 
-  const { data: scenarios = [] } = useScenarios();
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    selectedDepartmentIds
+  );
 
   const { mutate: createPersona } = useCreatePersona();
   const { mutate: updatePersona } = useUpdatePersona();
@@ -130,7 +134,7 @@ export default function Persona({
     }
 
     const inUse = scenarios.some(
-      (scenario) => scenario.personaId === persona.id,
+      (scenario) => scenario.personaId === persona.id
     );
     if (!isAdmin && inUse) {
       return true;
@@ -234,7 +238,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -604,7 +608,7 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0",
+                                          : "opacity-0"
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
@@ -639,7 +643,7 @@ export default function Persona({
                                     "mr-2 h-4 w-4",
                                     formData.icon === iconName
                                       ? "opacity-100"
-                                      : "opacity-0",
+                                      : "opacity-0"
                                   )}
                                 />
                                 <IconComponent className="mr-2 h-4 w-4" />
