@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
 import { useUpdateSimulationAttempts } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
 import { toast } from "sonner";
@@ -102,6 +103,7 @@ export function DataTable<TData, TValue>({
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
+  const { mutate: refreshAnalytics } = useRefreshAnalytics();
 
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
@@ -247,22 +249,37 @@ export function DataTable<TData, TValue>({
         updates: attemptsToUpdate,
       });
 
-      // Log success for each attempt
-      for (const attempt of attemptsToUpdate) {
-        await log.info("simulation_attempt.bulk_archive.success", {
-          message: `Simulation attempt ${archiveAction ? "archived" : "unarchived"}`,
-          subject: { entityType: "simulation_attempt", entityId: attempt.id },
-          context: {
-            component: "DataTable",
-            function: "executeBulkArchive",
-            action: archiveAction ? "archive" : "unarchive",
-          },
-        });
-      }
+      // Log success for bulk operation (single log entry instead of individual ones)
+      await log.info("simulation_attempt.bulk_archive.success", {
+        message: `${attemptsToUpdate.length} simulation attempts ${archiveAction ? "archived" : "unarchived"}`,
+        subject: { entityType: "simulation_attempts" },
+        context: {
+          component: "DataTable",
+          function: "executeBulkArchive",
+          action: archiveAction ? "archive" : "unarchive",
+          count: attemptsToUpdate.length,
+        },
+      });
 
       toast.success(
         `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
       );
+
+      // Refresh analytics data after archive status change
+      refreshAnalytics(undefined, {
+        onError: (error) => {
+          log.error("analytics.refresh.after_archive.failed", {
+            message: "Failed to refresh analytics after archive status change",
+            error,
+            context: {
+              component: "DataTable",
+              function: "executeBulkArchive",
+              action: archiveAction ? "archive" : "unarchive",
+              count: attemptsToUpdate.length,
+            },
+          });
+        },
+      });
 
       // Clear selection after success
       table.resetRowSelection();
@@ -284,7 +301,12 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table, updateSimulationAttemptsMutation]);
+  }, [
+    archiveAction,
+    table,
+    updateSimulationAttemptsMutation,
+    refreshAnalytics,
+  ]);
 
   return (
     <div className="space-y-4">
