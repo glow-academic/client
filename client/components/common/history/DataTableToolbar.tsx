@@ -21,6 +21,7 @@ export interface DataTableToolbarProps<TData> {
   showArchive?: boolean;
   selectedAttempts?: string[];
   onBulkArchive?: (archive: boolean) => Promise<void>;
+  onSelectAllVisibleRows?: () => void;
   cohortData?: Array<{
     name: string;
     passed: boolean;
@@ -41,8 +42,9 @@ export function DataTableToolbar<TData>({
   showExport = true,
   showAll = false,
   showArchive = false,
-  selectedAttempts = [],
+  selectedAttempts: _selectedAttempts = [],
   onBulkArchive,
+  onSelectAllVisibleRows,
   cohortData = [],
 }: DataTableToolbarProps<TData>) {
   // Check if any filters are active
@@ -53,29 +55,31 @@ export function DataTableToolbar<TData>({
   const scenariosColumn = table.getColumn("scenarios");
 
   // Helper functions to normalize id and archived fields
-  const getRowId = (o: unknown) => {
-    const obj = o as Record<string, unknown>;
-    return String(obj["id"] ?? obj["attemptId"] ?? "");
-  };
   const getArchived = (o: unknown) => {
     const obj = o as Record<string, unknown>;
     return Boolean(obj["archived"] ?? obj["isArchived"] ?? false);
   };
 
-  // Calculate archive/unarchive counts
-  const archiveCount = selectedAttempts.filter((attemptId) => {
-    const row = table
-      .getRowModel()
-      .rows.find((r) => getRowId(r.original) === attemptId);
-    return row && !getArchived(row.original);
-  }).length;
+  // Calculate archive/unarchive counts from selected rows
+  const selectedRows = table.getSelectedRowModel().flatRows;
+  let archiveCount = 0,
+    unarchiveCount = 0;
+  for (const r of selectedRows) {
+    if (getArchived(r.original)) unarchiveCount++;
+    else archiveCount++;
+  }
 
-  const unarchiveCount = selectedAttempts.filter((attemptId) => {
-    const row = table
-      .getRowModel()
-      .rows.find((r) => getRowId(r.original) === attemptId);
-    return row && getArchived(row.original);
-  }).length;
+  // Detect if this is page selection vs filtered selection
+  const pageCount = table.getRowModel().rows.length;
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  const selectedCount = selectedRows.length;
+
+  const isPageSelection =
+    selectedCount > 0 &&
+    selectedCount ===
+      table.getRowModel().rows.filter((r) => r.getIsSelected()).length;
+
+  const ofLabel = isPageSelection ? pageCount : filteredCount;
 
   return (
     <>
@@ -130,8 +134,23 @@ export function DataTableToolbar<TData>({
           )}
         </div>
         <div className="flex items-center space-x-2">
+          {/* Select All Rows button - only show when showArchive is true, some rows are selected, but not all filtered */}
+          {showArchive &&
+            selectedRows.length > 0 &&
+            selectedRows.length < table.getFilteredRowModel().rows.length &&
+            onSelectAllVisibleRows && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSelectAllVisibleRows}
+                className="h-8"
+              >
+                Select All Rows
+              </Button>
+            )}
+
           {/* Bulk archive buttons - only show when showArchive is true and items are selected */}
-          {showArchive && selectedAttempts.length > 0 && (
+          {showArchive && selectedRows.length > 0 && (
             <>
               {archiveCount > 0 && (
                 <Button
@@ -141,7 +160,7 @@ export function DataTableToolbar<TData>({
                   className="h-8"
                 >
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive {archiveCount} of {selectedAttempts.length}
+                  Archive {archiveCount} of {ofLabel}
                 </Button>
               )}
               {unarchiveCount > 0 && (
@@ -152,7 +171,7 @@ export function DataTableToolbar<TData>({
                   className="h-8"
                 >
                   <Unlock className="mr-2 h-4 w-4" />
-                  Unarchive {unarchiveCount} of {selectedAttempts.length}
+                  Unarchive {unarchiveCount} of {ofLabel}
                 </Button>
               )}
             </>

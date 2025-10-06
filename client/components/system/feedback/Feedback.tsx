@@ -21,15 +21,21 @@ import {
   useCrowdsourcedRubricFeedbackColumns,
 } from "@/hooks/use-crowdsourced-rubric-feedback-columns";
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
+import { useAppFeedbacks } from "@/lib/api/hooks/app_feedback";
+import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useSimulationChatCrowdsourcedFeedbacks } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
+import { useSimulationChatFeedbacks } from "@/lib/api/hooks/simulation_chat_feedbacks";
+import { useSimulationCrowdsourcedMessages } from "@/lib/api/hooks/simulation_crowdsourced_messages";
+import { useSimulationMessages } from "@/lib/api/hooks/simulation_messages";
+import {
+  appFeedbackKeys,
+  profileKeys,
+  simulationChatCrowdsourcedFeedbackKeys,
+  simulationCrowdsourcedMessageKeys,
+} from "@/lib/api/keys";
 import { CrowdsourcedMessagesDataTable } from "./CrowdsourcedMessagesDataTable";
 import { CrowdsourcedRubricFeedbackDataTable } from "./CrowdsourcedRubricFeedbackDataTable";
 import { FeedbackDataTable } from "./FeedbackDataTable";
-import { useAppFeedbacks } from "@/lib/api/hooks/app_feedback";
-import { useProfiles } from "@/lib/api/hooks/profiles";
-import { useSimulationCrowdsourcedMessages } from "@/lib/api/hooks/simulation_crowdsourced_messages";
-import { useSimulationChatCrowdsourcedFeedbacks } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
-import { useSimulationMessages } from "@/lib/api/hooks/simulation_messages";
-import { useSimulationChatFeedbacks } from "@/lib/api/hooks/simulation_chat_feedbacks";
 
 // Removed dialog; no actions column anymore
 
@@ -50,20 +56,6 @@ export default function Feedback() {
     useSimulationChatCrowdsourcedFeedbacks();
   const { data: simulationMessages } = useSimulationMessages();
   const { data: simulationChatFeedbacks } = useSimulationChatFeedbacks();
-
-  // Get unique profile IDs from all datasets
-  const profileIds = useMemo(() => {
-    const ids = new Set<string>();
-    (feedbackData ?? []).forEach((f) => f.profileId && ids.add(f.profileId));
-    (crowdsourcedMessages ?? []).forEach(
-      (m) => m.profileId && ids.add(m.profileId),
-    );
-    (crowdsourcedRubricFeedbacks ?? []).forEach(
-      (r) => r.profileId && ids.add(r.profileId),
-    );
-    return Array.from(ids);
-  }, [feedbackData, crowdsourcedMessages, crowdsourcedRubricFeedbacks]);
-
   const { data: profiles = [] } = useProfiles();
 
   const profileMap = useMemo(() => {
@@ -112,7 +104,7 @@ export default function Feedback() {
       if (!profile) return "Unknown User";
       return `${profile.firstName} ${profile.lastName}`;
     },
-    [profileMap],
+    [profileMap]
   );
 
   const getAuthorAlias = useCallback(
@@ -122,7 +114,7 @@ export default function Feedback() {
       if (!profile) return "";
       return profile.alias;
     },
-    [profileMap],
+    [profileMap]
   );
 
   // Feedback type helpers removed (no longer used)
@@ -211,14 +203,14 @@ export default function Feedback() {
     setIsRefreshing(true);
     try {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app_feedback"] }),
+        queryClient.invalidateQueries({ queryKey: appFeedbackKeys.all }),
         queryClient.invalidateQueries({
-          queryKey: ["simulation_crowdsourced_messages"],
+          queryKey: simulationCrowdsourcedMessageKeys.all,
         }),
         queryClient.invalidateQueries({
-          queryKey: ["simulation_chat_crowdsourced_feedbacks"],
+          queryKey: simulationChatCrowdsourcedFeedbackKeys.all,
         }),
-        queryClient.invalidateQueries({ queryKey: ["profiles", profileIds] }),
+        queryClient.invalidateQueries({ queryKey: profileKeys.all }),
       ]);
       await log.info("feedback.refresh.success", {
         message: "Feedback data refreshed successfully",

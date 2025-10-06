@@ -1,17 +1,17 @@
 // AUTO-GENERATED minimal hooks for personas
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  personaKeys,
+  personaKeysByDepartmentId,
+  personaKeysByModelId,
+} from "@/lib/api/keys";
 import type {
   Persona,
   PersonaCreate,
   PersonaUpdate,
 } from "@/lib/repos/personaRepo";
-import {
-  personaKeys,
-  personaKeysByModelId,
-  personaKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function usePersonas(filters?: unknown) {
   return useQuery({

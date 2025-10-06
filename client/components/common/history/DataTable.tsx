@@ -37,9 +37,9 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
 import { useUpdateSimulationAttempts } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -90,33 +90,20 @@ export function DataTable<TData, TValue>({
       scenarios: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Default to descending order by date
   ]);
 
-  // State for selected attempts when showArchive is true
-  const [selectedAttempts, setSelectedAttempts] = React.useState<string[]>([]);
+  // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
   const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
-    null,
+    null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
-  const queryClient = useQueryClient();
   const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
-
-  // Handle attempt selection
-  const _handleAttemptSelect = React.useCallback(
-    (attemptId: string, checked: boolean) => {
-      if (checked) {
-        setSelectedAttempts((prev) => [...prev, attemptId]);
-      } else {
-        setSelectedAttempts((prev) => prev.filter((id) => id !== attemptId));
-      }
-    },
-    [],
-  );
+  const { mutate: refreshAnalytics } = useRefreshAnalytics();
 
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
@@ -129,110 +116,11 @@ export function DataTable<TData, TValue>({
     return Boolean(obj["archived"] ?? obj["isArchived"] ?? false);
   };
 
-  // Handle select all
-  const _handleSelectAll = React.useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        setSelectedAttempts(data.map((item) => String(getRowId(item))));
-      } else {
-        setSelectedAttempts([]);
-      }
-    },
-    [data],
-  );
-
-  // Calculate archive/unarchive counts
-  const { archiveCount, unarchiveCount } = React.useMemo(() => {
-    const archiveCount = selectedAttempts.filter((attemptId) => {
-      const item = data.find((it) => String(getRowId(it)) === attemptId);
-      return item && !getArchived(item);
-    }).length;
-
-    const unarchiveCount = selectedAttempts.filter((attemptId) => {
-      const item = data.find((it) => String(getRowId(it)) === attemptId);
-      return item && getArchived(item);
-    }).length;
-
-    return { archiveCount, unarchiveCount };
-  }, [selectedAttempts, data]);
-
   // Handle bulk archive
   const handleBulkArchive = React.useCallback(async (archive: boolean) => {
     setArchiveAction(archive);
     setShowArchiveDialog(true);
   }, []);
-
-  // Execute bulk archive
-  const executeBulkArchive = React.useCallback(async () => {
-    if (archiveAction === null) return;
-
-    const attemptsToUpdate = selectedAttempts.filter((attemptId) => {
-      const item = data.find((it) => String(getRowId(it)) === attemptId);
-      if (!item) return false;
-
-      const isCurrentlyArchived = getArchived(item);
-      return archiveAction ? !isCurrentlyArchived : isCurrentlyArchived;
-    });
-
-    if (attemptsToUpdate.length === 0) return;
-
-    setIsArchiving(true);
-    try {
-      // Use bulk update for efficiency
-      await updateSimulationAttemptsMutation.mutateAsync({
-        updates: attemptsToUpdate.map((attemptId) => ({
-          id: attemptId,
-          archived: archiveAction,
-        })),
-      });
-
-      // Log success for each attempt
-      for (const attemptId of attemptsToUpdate) {
-        await log.info("simulation_attempt.bulk_archive.success", {
-          message: `Simulation attempt ${archiveAction ? "archived" : "unarchived"}`,
-          subject: { entityType: "simulation_attempt", entityId: attemptId },
-          context: {
-            component: "DataTable",
-            function: "executeBulkArchive",
-            action: archiveAction ? "archive" : "unarchive",
-          },
-        });
-      }
-
-      toast.success(
-        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`,
-      );
-
-      // Only close dialog and reset state after successful completion
-      setSelectedAttempts([]);
-      setShowArchiveDialog(false);
-      setArchiveAction(null);
-
-      // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
-    } catch (error) {
-      await log.error("simulation_attempt.bulk_archive.failed", {
-        message: "Error bulk archiving simulation attempts",
-        subject: { entityType: "simulation_attempt" },
-        context: {
-          component: "DataTable",
-          function: "executeBulkArchive",
-          action: archiveAction ? "archive" : "unarchive",
-          count: attemptsToUpdate.length,
-        },
-        error,
-      });
-      toast.error("Failed to update simulation archive status");
-    } finally {
-      setIsArchiving(false);
-    }
-  }, [
-    archiveAction,
-    selectedAttempts,
-    data,
-    queryClient,
-    updateSimulationAttemptsMutation,
-  ]);
 
   // Add checkbox column when showArchive is true
   const columnsWithCheckbox = React.useMemo(() => {
@@ -247,19 +135,23 @@ export function DataTable<TData, TValue>({
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
           onCheckedChange={(value) => {
-            table.toggleAllPageRowsSelected(!!value);
-            _handleSelectAll(!!value);
+            if (value) {
+              // select just the current page
+              table.toggleAllPageRowsSelected(true);
+            } else {
+              // clear *all* selection, not only the page
+              table.resetRowSelection();
+            }
           }}
           aria-label="Select all"
           className="translate-y-[2px]"
         />
       ),
       cell: ({ row }) => {
-        const rid = String(getRowId(row.original));
         return (
           <Checkbox
-            checked={selectedAttempts.includes(rid)}
-            onCheckedChange={(value) => _handleAttemptSelect(rid, !!value)}
+            checked={row.getIsSelected()}
+            onCheckedChange={(val) => row.toggleSelected(!!val)}
             aria-label="Select row"
             className="translate-y-[2px]"
           />
@@ -270,13 +162,7 @@ export function DataTable<TData, TValue>({
     };
 
     return [checkboxColumn, ...columns];
-  }, [
-    columns,
-    showArchive,
-    selectedAttempts,
-    _handleSelectAll,
-    _handleAttemptSelect,
-  ]);
+  }, [columns, showArchive]);
 
   const table = useReactTable({
     data,
@@ -298,6 +184,7 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    getRowId: (row, index) => getRowId(row) || String(index),
     initialState: {
       columnVisibility: {
         search: false,
@@ -307,6 +194,119 @@ export function DataTable<TData, TValue>({
       },
     },
   });
+
+  // Extract row selection state for dependency tracking
+  const rowSelectionState = table.getState().rowSelection;
+
+  // Derive selectedAttempts from table selection (single source of truth)
+  const selectedAttempts = React.useMemo(() => {
+    return table
+      .getSelectedRowModel()
+      .flatRows.map((r) => getRowId(r.original));
+  }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle select all visible rows (for the "Select All Rows" button)
+  const handleSelectAllVisibleRows = React.useCallback(() => {
+    // Select all filtered rows (respects filters, ignores pagination)
+    const visible = table.getFilteredRowModel().rows;
+    const next: Record<string, boolean> = {};
+    visible.forEach((r) => {
+      next[r.id] = true;
+    });
+    table.setRowSelection(next);
+  }, [table]);
+
+  // Calculate archive/unarchive counts from selected rows
+  const { archiveCount, unarchiveCount } = React.useMemo(() => {
+    const selectedRows = table.getSelectedRowModel().flatRows;
+    let a = 0,
+      u = 0;
+    for (const r of selectedRows) {
+      if (getArchived(r.original)) u++;
+      else a++;
+    }
+    return { archiveCount: a, unarchiveCount: u };
+  }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Execute bulk archive
+  const executeBulkArchive = React.useCallback(async () => {
+    if (archiveAction === null) return;
+
+    const selectedRows = table.getSelectedRowModel().flatRows;
+    const attemptsToUpdate = selectedRows
+      .map((r) => r.original)
+      .filter((item) => {
+        const isArchived = getArchived(item);
+        return archiveAction ? !isArchived : isArchived;
+      })
+      .map((item) => ({ id: getRowId(item), archived: archiveAction }));
+
+    if (attemptsToUpdate.length === 0) return;
+
+    setIsArchiving(true);
+    try {
+      await updateSimulationAttemptsMutation.mutateAsync({
+        updates: attemptsToUpdate,
+      });
+
+      // Log success for bulk operation (single log entry instead of individual ones)
+      await log.info("simulation_attempt.bulk_archive.success", {
+        message: `${attemptsToUpdate.length} simulation attempts ${archiveAction ? "archived" : "unarchived"}`,
+        subject: { entityType: "simulation_attempts" },
+        context: {
+          component: "DataTable",
+          function: "executeBulkArchive",
+          action: archiveAction ? "archive" : "unarchive",
+          count: attemptsToUpdate.length,
+        },
+      });
+
+      toast.success(
+        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
+      );
+
+      // Refresh analytics data after archive status change
+      refreshAnalytics(undefined, {
+        onError: (error) => {
+          log.error("analytics.refresh.after_archive.failed", {
+            message: "Failed to refresh analytics after archive status change",
+            error,
+            context: {
+              component: "DataTable",
+              function: "executeBulkArchive",
+              action: archiveAction ? "archive" : "unarchive",
+              count: attemptsToUpdate.length,
+            },
+          });
+        },
+      });
+
+      // Clear selection after success
+      table.resetRowSelection();
+      setShowArchiveDialog(false);
+      setArchiveAction(null);
+    } catch (error) {
+      await log.error("simulation_attempt.bulk_archive.failed", {
+        message: "Error bulk archiving simulation attempts",
+        subject: { entityType: "simulation_attempt" },
+        context: {
+          component: "DataTable",
+          function: "executeBulkArchive",
+          action: archiveAction ? "archive" : "unarchive",
+          count: attemptsToUpdate.length,
+        },
+        error,
+      });
+      toast.error("Failed to update simulation archive status");
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [
+    archiveAction,
+    table,
+    updateSimulationAttemptsMutation,
+    refreshAnalytics,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -320,6 +320,7 @@ export function DataTable<TData, TValue>({
         showArchive={showArchive}
         selectedAttempts={selectedAttempts}
         onBulkArchive={handleBulkArchive}
+        onSelectAllVisibleRows={handleSelectAllVisibleRows}
         cohortData={cohortData}
       />
       <div className="rounded-md border">
@@ -338,7 +339,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -357,7 +358,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

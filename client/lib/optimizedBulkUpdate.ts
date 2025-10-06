@@ -1,6 +1,6 @@
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { HttpError } from "@/utils/HttpError";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // Generic optimized bulk update utilities
 export class OptimizedBulkUpdate {
@@ -14,7 +14,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string,
+    entityName: string
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -57,7 +57,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string,
+    entityName: string
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -106,23 +106,42 @@ export class OptimizedBulkUpdate {
 
         const fields = Object.keys(firstItem.values);
 
+        // Check if we have any fields to update
+        if (fields.length === 0) {
+          throw new Error(`No fields to update for ${entityName} bulk update`);
+        }
+
         // Build CASE WHEN statements for each field
         const caseStatements = fields
           .map((field) => {
             const cases = group
-              .map(
-                (item) => `WHEN id = '${item.id}' THEN '${item.values[field]}'`,
-              )
+              .map((item) => {
+                const value = item.values[field];
+                // Handle boolean values properly for SQL
+                const sqlValue =
+                  typeof value === "boolean"
+                    ? value
+                      ? "true"
+                      : "false"
+                    : `'${value}'`;
+                return `WHEN id = '${item.id}' THEN ${sqlValue}`;
+              })
               .join(" ");
             return `${field} = CASE ${cases} ELSE ${field} END`;
           })
           .join(", ");
 
-        const rows = await db
-          .update(table)
-          .set(sql.raw(caseStatements))
-          .where(inArray(table.id, ids))
-          .returning();
+        // Check if we have valid case statements
+        if (!caseStatements || caseStatements.trim() === "") {
+          throw new Error(
+            `No valid fields to update for ${entityName} bulk update. Fields: ${JSON.stringify(fields)}, Group: ${JSON.stringify(group)}`
+          );
+        }
+
+        // Use raw SQL query instead of Drizzle ORM for complex CASE statements
+        const idList = ids.map((id) => `'${id}'`).join(",");
+        const query = `UPDATE simulation_attempts SET ${caseStatements} WHERE id IN (${idList}) RETURNING *`;
+        const rows = await db.execute(sql.raw(query));
 
         results.push(...(rows as T[]));
       }
@@ -138,7 +157,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string,
+    entityName: string
   ): Promise<T[]> {
     if (!Array.isArray(updates) || updates.length === 0) return [];
 

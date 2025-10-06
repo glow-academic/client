@@ -1,17 +1,17 @@
 // AUTO-GENERATED minimal hooks for simulation_chats
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  simulationChatKeys,
+  simulationChatKeysByAttemptId,
+  simulationChatKeysByScenarioId,
+} from "@/lib/api/keys";
 import type {
   SimulationChat,
   SimulationChatCreate,
   SimulationChatUpdate,
 } from "@/lib/repos/simulationChatRepo";
-import {
-  simulationChatKeys,
-  simulationChatKeysByScenarioId,
-  simulationChatKeysByAttemptId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationChats(filters?: unknown) {
   return useQuery({

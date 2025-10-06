@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for rubrics
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { rubricKeys, rubricKeysByDepartmentId } from "@/lib/api/keys";
 import type {
   Rubric,
   RubricCreate,
   RubricUpdate,
 } from "@/lib/repos/rubricRepo";
-import { rubricKeys, rubricKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useRubrics(filters?: unknown) {
   return useQuery({
