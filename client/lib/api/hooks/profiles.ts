@@ -1,13 +1,17 @@
 // AUTO-GENERATED minimal hooks for profiles
 // Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import { profileKeys, profileKeysByUserId } from "@/lib/api/keys";
 import type {
   Profile,
   ProfileCreate,
   ProfileUpdate,
 } from "@/lib/repos/profileRepo";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  profileKeys,
+  profileKeysByUserId,
+  profileKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function useProfiles(filters?: unknown) {
   return useQuery({
@@ -108,6 +112,26 @@ export function useProfilesByUserIdBatch(ids: string[]) {
     queryKey: profileKeysByUserId.many(ids),
     queryFn: () =>
       api<Profile[]>(`/api/v1/profiles/by/userId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useProfilesByDepartmentId(id: string) {
+  return useQuery<Profile[]>({
+    queryKey: profileKeysByDepartmentId.one(id),
+    queryFn: () => api<Profile[]>(`/api/v1/profiles/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useProfilesByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Profile[]>({
+    queryKey: profileKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Profile[]>(`/api/v1/profiles/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),

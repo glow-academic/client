@@ -1,5 +1,5 @@
-import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { documents } from "@/utils/drizzle/schema";
@@ -65,6 +65,23 @@ export const documentRepo = {
       .returning();
     if (!rows[0])
       throw HttpError.notFound("Document with id " + id + " not found");
+  },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(documents)
+      .where(eq(documents.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(documents)
+      .where(inArray(documents.departmentId, departmentIds));
   },
 
   async updateMany(updates: Array<{ id: string } & DocumentUpdate>) {

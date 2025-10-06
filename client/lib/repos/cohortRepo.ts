@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { cohorts } from "@/utils/drizzle/schema";
@@ -62,6 +62,23 @@ export const cohortRepo = {
     const rows = await db.delete(cohorts).where(eq(cohorts.id, id)).returning();
     if (!rows[0])
       throw HttpError.notFound("Cohort with id " + id + " not found");
+  },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(cohorts)
+      .where(eq(cohorts.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(cohorts)
+      .where(inArray(cohorts.departmentId, departmentIds));
   },
 
   async updateMany(updates: Array<{ id: string } & CohortUpdate>) {

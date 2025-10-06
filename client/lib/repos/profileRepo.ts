@@ -1,5 +1,5 @@
-import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
@@ -76,6 +76,23 @@ export const profileRepo = {
     const db = await getDb();
     if (!Array.isArray(userIds) || userIds.length === 0) return [];
     return db.select().from(profiles).where(inArray(profiles.userId, userIds));
+  },
+
+  async listByDepartment(departmentId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.departmentId, departmentId));
+  },
+
+  async listByDepartments(departmentIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
+    return db
+      .select()
+      .from(profiles)
+      .where(inArray(profiles.departmentId, departmentIds));
   },
 
   async createMany(payloads: ProfileCreate[]) {

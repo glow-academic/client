@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for cohorts
 // Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import { cohortKeys } from "@/lib/api/keys";
 import type {
   Cohort,
   CohortCreate,
   CohortUpdate,
 } from "@/lib/repos/cohortRepo";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/keys";
 
 export function useCohorts(filters?: unknown) {
   return useQuery({
@@ -80,6 +80,26 @@ export function useDeleteCohort(id?: string) {
       return api<void>(`/api/v1/cohorts/${resolvedId}`, { method: "DELETE" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: cohortKeys.all }),
+  });
+}
+
+export function useCohortsByDepartmentId(id: string) {
+  return useQuery<Cohort[]>({
+    queryKey: cohortKeysByDepartmentId.one(id),
+    queryFn: () => api<Cohort[]>(`/api/v1/cohorts/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useCohortsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Cohort[]>({
+    queryKey: cohortKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Cohort[]>(`/api/v1/cohorts/by/departmentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 

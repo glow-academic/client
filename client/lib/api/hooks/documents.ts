@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for documents
 // Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import { documentKeys } from "@/lib/api/keys";
 import type {
   Document,
   DocumentCreate,
   DocumentUpdate,
 } from "@/lib/repos/documentRepo";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { documentKeys, documentKeysByDepartmentId } from "@/lib/api/keys";
 
 export function useDocuments(filters?: unknown) {
   return useQuery({
@@ -80,6 +80,26 @@ export function useDeleteDocument(id?: string) {
       return api<void>(`/api/v1/documents/${resolvedId}`, { method: "DELETE" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: documentKeys.all }),
+  });
+}
+
+export function useDocumentsByDepartmentId(id: string) {
+  return useQuery<Document[]>({
+    queryKey: documentKeysByDepartmentId.one(id),
+    queryFn: () => api<Document[]>(`/api/v1/documents/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useDocumentsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Document[]>({
+    queryKey: documentKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Document[]>(`/api/v1/documents/by/departmentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
 
