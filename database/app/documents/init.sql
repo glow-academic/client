@@ -19,5 +19,5 @@ CREATE TABLE documents (
     file_id    TEXT        NULL,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
     tags TEXT[]        NOT NULL DEFAULT '{}', -- tags to associate and search each document
-    department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
+    department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );

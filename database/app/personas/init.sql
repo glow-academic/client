@@ -23,5 +23,5 @@ CREATE TABLE personas (
   active BOOLEAN NOT NULL DEFAULT FALSE,
   guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
   image_input_active BOOLEAN NOT NULL DEFAULT FALSE,
-  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
+  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );

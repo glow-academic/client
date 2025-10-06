@@ -65,7 +65,7 @@ export const providers = pgTable("providers", {
 	description: text().notNull(),
 	apiKey: text("api_key").notNull(),
 	baseUrl: text("base_url"),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.departmentId],
@@ -105,7 +105,7 @@ export const documents = pgTable("documents", {
 	fileId: text("file_id"),
 	active: boolean().default(true).notNull(),
 	tags: text().array().default([""]).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.departmentId],
@@ -140,7 +140,7 @@ export const rubrics = pgTable("rubrics", {
 	passPoints: integer("pass_points").notNull(),
 	defaultRubric: boolean("default_rubric").default(false).notNull(),
 	active: boolean().default(true).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	index("rubrics_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -297,7 +297,7 @@ export const personas = pgTable("personas", {
 	active: boolean().default(false).notNull(),
 	guardrailActive: boolean("guardrail_active").default(false).notNull(),
 	imageInputActive: boolean("image_input_active").default(false).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	index("personas_id_idx").using("btree", table.id.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -323,7 +323,7 @@ export const agents = pgTable("agents", {
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
 	type: agentType().notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
@@ -347,7 +347,7 @@ export const modelRuns = pgTable("model_runs", {
 	personaId: uuid("persona_id"),
 	agentId: uuid("agent_id"),
 	profileId: uuid("profile_id"),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
@@ -398,7 +398,7 @@ export const parameters = pgTable("parameters", {
 	numerical: boolean().default(false).notNull(),
 	active: boolean().default(false).notNull(),
 	defaultParameter: boolean("default_parameter").default(false).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.departmentId],
@@ -421,7 +421,7 @@ export const scenarios = pgTable("scenarios", {
 	generated: boolean().default(false).notNull(),
 	parentId: uuid("parent_id"),
 	active: boolean().default(true).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	index("scenarios_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
@@ -448,7 +448,7 @@ export const simulations = pgTable("simulations", {
 	rubricId: uuid("rubric_id").notNull(),
 	defaultSimulation: boolean("default_simulation").default(false).notNull(),
 	practiceSimulation: boolean("practice_simulation").default(false).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	index("simulations_id_active_idx").using("btree", table.id.asc().nullsLast().op("bool_ops"), table.active.asc().nullsLast().op("bool_ops")),
 	foreignKey({
@@ -623,7 +623,7 @@ export const cohorts = pgTable("cohorts", {
 	profileIds: uuid("profile_ids").array().default(["RAY"]).notNull(),
 	defaultCohort: boolean("default_cohort").default(false).notNull(),
 	simulationIds: uuid("simulation_ids").array().default(["RAY"]).notNull(),
-	departmentId: uuid("department_id"),
+	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.departmentId],

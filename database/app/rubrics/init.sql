@@ -15,7 +15,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     pass_points INTEGER     NOT NULL,
     default_rubric BOOLEAN     NOT NULL DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
-    department_id UUID        NULL REFERENCES departments(id) ON DELETE CASCADE DEFAULT NULL
+    department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
   );
 
 

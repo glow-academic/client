@@ -18,7 +18,7 @@ CREATE TABLE agents (
   model_id UUID DEFAULT NULL REFERENCES models(id) ON DELETE SET NULL,
   reasoning reasoning_effort DEFAULT NULL,
   type agent_type NOT NULL,
-  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
+  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE model_runs (
@@ -31,7 +31,7 @@ CREATE TABLE model_runs (
   persona_id   UUID        NULL REFERENCES personas(id),
   agent_id     UUID        NULL REFERENCES agents(id),
   profile_id   UUID        NULL REFERENCES profiles(id),
-  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
+  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE debug_info (

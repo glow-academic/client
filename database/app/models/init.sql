@@ -13,7 +13,7 @@ CREATE TABLE providers (
   description TEXT        NOT NULL,
   api_key TEXT        NOT NULL, -- This will be encrypted when stored in the database
   base_url TEXT        NULL DEFAULT NULL, -- If there is a custom model provider
-  department_id UUID        REFERENCES departments(id) ON DELETE CASCADE
+  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE models (
