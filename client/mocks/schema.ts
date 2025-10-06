@@ -590,3 +590,13 @@ export const verificationToken = [
     token: "token_1",
   },
 ];
+
+export const departments = [
+  {
+    id: "b7e8f2c1-3a4d-4e2b-9c6f-2a1e5d7f8c9b",
+    createdAt: "2025-08-11T14:49:01.164Z",
+    updatedAt: "2025-08-11T14:49:01.164Z",
+    title: "Department 1",
+    description: "Description for department 1",
+  },
+];

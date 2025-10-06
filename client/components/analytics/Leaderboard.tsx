@@ -789,6 +789,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                                 userId: null,
                                 viewedChat: false,
                                 viewedIntro: false,
+                                departmentId: null
                               }
                             : undefined
                         }
