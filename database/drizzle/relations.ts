@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, departments, providers, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, parameters, parameterItems, models, personas, agents, modelRuns, debugInfo, scenarios, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages, cohorts } from "./schema";
+import { users, profiles, departments, providers, models, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, parameters, parameterItems, personas, agents, modelRuns, debugInfo, scenarios, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages, cohorts } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -28,6 +28,7 @@ export const departmentsRelations = relations(departments, ({many}) => ({
 	documents: many(documents),
 	rubrics: many(rubrics),
 	personas: many(personas),
+	agents: many(agents),
 	modelRuns: many(modelRuns),
 	parameters: many(parameters),
 	scenarios: many(scenarios),
@@ -35,11 +36,22 @@ export const departmentsRelations = relations(departments, ({many}) => ({
 	cohorts: many(cohorts),
 }));
 
-export const providersRelations = relations(providers, ({one}) => ({
+export const providersRelations = relations(providers, ({one, many}) => ({
 	department: one(departments, {
 		fields: [providers.departmentId],
 		references: [departments.id]
 	}),
+	models: many(models),
+}));
+
+export const modelsRelations = relations(models, ({one, many}) => ({
+	provider: one(providers, {
+		fields: [models.providerId],
+		references: [providers.id]
+	}),
+	personas: many(personas),
+	agents: many(agents),
+	modelRuns: many(modelRuns),
 }));
 
 export const documentsRelations = relations(documents, ({one}) => ({
@@ -133,16 +145,14 @@ export const personasRelations = relations(personas, ({one, many}) => ({
 	scenarios: many(scenarios),
 }));
 
-export const modelsRelations = relations(models, ({many}) => ({
-	personas: many(personas),
-	agents: many(agents),
-	modelRuns: many(modelRuns),
-}));
-
 export const agentsRelations = relations(agents, ({one, many}) => ({
 	model: one(models, {
 		fields: [agents.modelId],
 		references: [models.id]
+	}),
+	department: one(departments, {
+		fields: [agents.departmentId],
+		references: [departments.id]
 	}),
 	modelRuns: many(modelRuns),
 }));

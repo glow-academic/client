@@ -1,6 +1,7 @@
 import { pgTable, serial, varchar, timestamp, text, foreignKey, uuid, integer, boolean, doublePrecision, bigint, index, jsonb, real, primaryKey, pgMaterializedView, numeric, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
+export const agentType = pgEnum("agent_type", ['title', 'scenario', 'classify', 'assistant', 'grade', 'guardrail'])
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
 export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read', 'update', 'delete'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
@@ -45,7 +46,7 @@ export const profiles = pgTable("profiles", {
 			columns: [table.departmentId],
 			foreignColumns: [departments.id],
 			name: "profiles_department_id_fkey"
-		}).onDelete("cascade"),
+		}).onDelete("set null"),
 ]);
 
 export const departments = pgTable("departments", {
@@ -73,6 +74,25 @@ export const providers = pgTable("providers", {
 		}).onDelete("cascade"),
 ]);
 
+export const models = pgTable("models", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	providerId: uuid("provider_id").notNull(),
+	active: boolean().default(true).notNull(),
+	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
+	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
+	customModel: boolean("custom_model").default(false).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.providerId],
+			foreignColumns: [providers.id],
+			name: "models_provider_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const documents = pgTable("documents", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -93,19 +113,6 @@ export const documents = pgTable("documents", {
 			name: "documents_department_id_fkey"
 		}).onDelete("cascade"),
 ]);
-
-export const models = pgTable("models", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	providerId: uuid("provider_id").notNull(),
-	active: boolean().default(true).notNull(),
-	inputPpm: doublePrecision("input_ppm").default(0).notNull(),
-	outputPpm: doublePrecision("output_ppm").default(0).notNull(),
-	customModel: boolean("custom_model").default(false).notNull(),
-});
 
 export const accounts = pgTable("accounts", {
 	id: serial().primaryKey().notNull(),
@@ -218,7 +225,7 @@ export const assistantChats = pgTable("assistant_chats", {
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
 			name: "assistant_chats_profile_id_fkey"
-		}),
+		}).onDelete("cascade"),
 ]);
 
 export const assistantMessages = pgTable("assistant_messages", {
@@ -235,7 +242,7 @@ export const assistantMessages = pgTable("assistant_messages", {
 			columns: [table.chatId],
 			foreignColumns: [assistantChats.id],
 			name: "assistant_messages_chat_id_fkey"
-		}),
+		}).onDelete("cascade"),
 ]);
 
 export const assistantToolCalls = pgTable("assistant_tool_calls", {
@@ -254,7 +261,7 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 			columns: [table.chatId],
 			foreignColumns: [assistantChats.id],
 			name: "assistant_tool_calls_chat_id_fkey"
-		}),
+		}).onDelete("cascade"),
 ]);
 
 export const parameterItems = pgTable("parameter_items", {
@@ -315,12 +322,19 @@ export const agents = pgTable("agents", {
 	temperature: real().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
+	type: agentType().notNull(),
+	departmentId: uuid("department_id"),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
 			name: "agents_model_id_fkey"
-		}),
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.departmentId],
+			foreignColumns: [departments.id],
+			name: "agents_department_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const modelRuns = pgTable("model_runs", {
@@ -339,7 +353,7 @@ export const modelRuns = pgTable("model_runs", {
 			columns: [table.modelId],
 			foreignColumns: [models.id],
 			name: "model_runs_model_id_fkey"
-		}),
+		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.personaId],
 			foreignColumns: [personas.id],
