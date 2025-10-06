@@ -39,7 +39,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useUpdateSimulationAttempts } from "@/lib/api/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -90,7 +89,7 @@ export function DataTable<TData, TValue>({
       scenarios: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Default to descending order by date
@@ -100,10 +99,9 @@ export function DataTable<TData, TValue>({
   const [selectedAttempts, setSelectedAttempts] = React.useState<string[]>([]);
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
   const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
-    null,
+    null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
-  const queryClient = useQueryClient();
   const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
 
   // Handle attempt selection
@@ -115,7 +113,7 @@ export function DataTable<TData, TValue>({
         setSelectedAttempts((prev) => prev.filter((id) => id !== attemptId));
       }
     },
-    [],
+    []
   );
 
   // Helper functions to normalize id and archived fields
@@ -138,7 +136,7 @@ export function DataTable<TData, TValue>({
         setSelectedAttempts([]);
       }
     },
-    [data],
+    [data]
   );
 
   // Calculate archive/unarchive counts
@@ -200,7 +198,7 @@ export function DataTable<TData, TValue>({
       }
 
       toast.success(
-        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`,
+        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
       );
 
       // Only close dialog and reset state after successful completion
@@ -208,8 +206,7 @@ export function DataTable<TData, TValue>({
       setShowArchiveDialog(false);
       setArchiveAction(null);
 
-      // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["simulationAttempts"] });
+      // Note: useUpdateSimulationAttempts mutation already handles invalidation automatically
     } catch (error) {
       await log.error("simulation_attempt.bulk_archive.failed", {
         message: "Error bulk archiving simulation attempts",
@@ -230,7 +227,6 @@ export function DataTable<TData, TValue>({
     archiveAction,
     selectedAttempts,
     data,
-    queryClient,
     updateSimulationAttemptsMutation,
   ]);
 
@@ -338,7 +334,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -357,7 +353,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}
