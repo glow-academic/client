@@ -7,7 +7,7 @@ DB_PASSWORD="mypassword"
 DB_NAME="mydb"
 DB_HOST="localhost"
 DB_PORT="5432"
-BACKUP_FILE="/Users/ashoksaravanan/Coding/glow/history/database_backup_20250911_133356.sql"
+BACKUP_FILE="/Users/alexandersiladie/Documents/GitHub/glow/history/database_backup_20250911_133356.sql"
 
 # Set password for psql
 export PGPASSWORD="$DB_PASSWORD"

@@ -14,6 +14,7 @@ GUARDRAIL_PROMPT=$(cat "$(dirname "$0")/prompts/guardrail.md" | sed "s/'/''/g")
 SCENARIO_PROMPT=$(cat "$(dirname "$0")/prompts/scenario.md" | sed "s/'/''/g")
 CLASSIFY_PROMPT=$(cat "$(dirname "$0")/prompts/classify.md" | sed "s/'/''/g")
 TITLE_PROMPT=$(cat "$(dirname "$0")/prompts/title.md" | sed "s/'/''/g")
+HINT_PROMPT=$(cat "$(dirname "$0")/prompts/hint.md" | sed "s/'/''/g")
 
 # Resolve target path to database/seed/default/agents.sql
 TARGET_DIR="$SCRIPT_DIR/../../seed/default"
@@ -51,6 +52,10 @@ INSERT INTO personas (id, name, description, system_prompt, temperature, default
   -- Insert Title Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'Helps generate titles for chat interactions.', '$TITLE_PROMPT', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
+
+  -- Insert Hint Agent
+  INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Hint', 'Provides helpful hints to guide users toward solutions without giving away the answer.', '$HINT_PROMPT', 0.0, '33333333-cccc-cccc-cccc-333333333333', 'low');
 
 -- Insert Guardrail Agent
 INSERT INTO agents (id, name, description, system_prompt, temperature, model_id, reasoning) VALUES

@@ -19,6 +19,7 @@ from app.db import get_session
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
+from app.services.agents.collection.hint import run_hint_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
@@ -588,6 +589,73 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 
 
+async def handle_get_hints(sid: str, data: Dict[str, Any]) -> None:
+    """
+    Handle hint requests via WebSocket
+    Generates GTA response suggestions based on student messages
+    """
+    try:
+        chat_id = data.get("chat_id")
+        student_message = data.get("student_message")
+
+        if not chat_id:
+            await emit_error(sid, "Missing chat_id")
+            return
+
+        if not student_message:
+            await emit_error(sid, "Missing student_message")
+            return
+
+        logger.info(f"Received hint request from {sid} for chat {chat_id}")
+
+        # Create a new session for this operation
+        db_session = next(get_session())
+
+        try:
+            # Verify the chat exists
+            chat = db_session.exec(
+                select(SimulationChats).where(SimulationChats.id == chat_id)
+            ).one_or_none()
+            if not chat:
+                await emit_error(sid, "Chat not found")
+                return
+
+            # Get the attempt to find the profile
+            attempt = db_session.exec(
+                select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+            ).one_or_none()
+            profile_id = attempt.profile_id if attempt else None
+
+            # Run the hint agent
+            hints = await run_hint_agent(
+                student_message=student_message,
+                chat_id=chat_id,
+                session=db_session,
+                profile_id=str(profile_id) if profile_id else None
+            )
+
+            # Emit success response with hints
+            sio_instance = get_sio_instance()
+            await sio_instance.emit(
+                "hints_received",
+                {
+                    "success": True,
+                    "chat_id": chat_id,
+                    "hints": hints,
+                },
+                room=sid,
+            )
+
+            logger.info(f"Successfully generated {len(hints)} hints for chat {chat_id}")
+
+        finally:
+            db_session.close()
+
+    except Exception as e:
+        logger.error(f"Error getting hints for {sid}: {str(e)}")
+        await emit_error(sid, f"Failed to get hints: {str(e)}")
+
+
 async def process_simulation_message_websocket(
     chat_id: uuid.UUID,
     message: str = "",
@@ -749,6 +817,8 @@ async def process_simulation_message_websocket(
                 room=f"simulation_{chat_id}",
             )
 
+            # HINT agent
+
             await sio_instance.emit(
                 "simulation_message_error",
                 {"chat_id": str(chat_id), "error": error_text},
@@ -880,5 +950,10 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
     async def continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         """Continue to next chat in simulation"""
         await handle_continue_simulation(sid, data)
+
+    @sio.event  # type: ignore
+    async def get_hints(sid: str, data: Dict[str, Any]) -> None:
+        """Get GTA response suggestions for practice conversations"""
+        await handle_get_hints(sid, data)
 
     logger.info("Successfully registered simulation WebSocket event handlers")
