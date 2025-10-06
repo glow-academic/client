@@ -1,17 +1,17 @@
 // AUTO-GENERATED minimal hooks for profiles
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  profileKeys,
+  profileKeysByDepartmentId,
+  profileKeysByUserId,
+} from "@/lib/api/keys";
 import type {
   Profile,
   ProfileCreate,
   ProfileUpdate,
 } from "@/lib/repos/profileRepo";
-import {
-  profileKeys,
-  profileKeysByUserId,
-  profileKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useProfiles(filters?: unknown) {
   return useQuery({

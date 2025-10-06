@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for documents
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { documentKeys, documentKeysByDepartmentId } from "@/lib/api/keys";
 import type {
   Document,
   DocumentCreate,
   DocumentUpdate,
 } from "@/lib/repos/documentRepo";
-import { documentKeys, documentKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDocuments(filters?: unknown) {
   return useQuery({

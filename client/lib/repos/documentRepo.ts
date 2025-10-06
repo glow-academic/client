@@ -1,5 +1,5 @@
-import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { documents } from "@/utils/drizzle/schema";
@@ -88,7 +88,7 @@ export const documentRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       documents,
       updates,
-      "Document",
+      "Document"
     );
   },
 

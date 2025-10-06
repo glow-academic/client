@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for cohorts
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/keys";
 import type {
   Cohort,
   CohortCreate,
   CohortUpdate,
 } from "@/lib/repos/cohortRepo";
-import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCohorts(filters?: unknown) {
   return useQuery({

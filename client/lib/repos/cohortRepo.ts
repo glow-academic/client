@@ -1,5 +1,5 @@
-import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { cohorts } from "@/utils/drizzle/schema";
