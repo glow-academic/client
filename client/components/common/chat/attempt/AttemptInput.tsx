@@ -27,9 +27,7 @@ import {
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useHint } from "@/lib/api/hooks/hints";
 import { log } from "@/utils/logger";
-import HintDisplay from "../HintDisplay";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -45,13 +43,9 @@ export default function AttemptInput({
   const { isConnected } = useWebSocket();
 
   const [newMessage, setNewMessage] = useState("");
-  const [hints, setHints] = useState<string[]>([]);
-  const [hintsLoading, setHintsLoading] = useState(false);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const { getHints, isLoading: hintsHookLoading } = useHint();
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -88,59 +82,7 @@ export default function AttemptInput({
     return "Send message";
   };
 
-  // Auto-generate hints when student sends a message
-  const generateHintsForLatestMessage = useCallback(async () => {
-    const currentChat = simulationContext?.currentChat;
-    if (!currentChat || !simulationContext?.simulation?.practiceSimulation) {
-      return;
-    }
-
-    const studentMessages = currentChat.messages?.filter(
-      (msg) => msg.role === "user"
-    );
-
-    if (!studentMessages || studentMessages.length === 0) {
-      return;
-    }
-
-    const lastStudentMessage = studentMessages[studentMessages.length - 1];
-
-    try {
-      setHintsLoading(true);
-      const hints = await getHints({
-        chat_id: currentChat.id,
-        student_message: lastStudentMessage.content,
-      });
-      setHints(hints);
-    } catch (error) {
-      console.error("Hint error:", error);
-      setHints([]);
-    } finally {
-      setHintsLoading(false);
-    }
-  }, [
-    simulationContext?.currentChat,
-    simulationContext?.simulation?.practiceSimulation,
-    getHints,
-  ]);
-
-  // Watch for new student messages and auto-generate hints
-  useEffect(() => {
-    if (simulationContext?.currentChat?.messages) {
-      const userMessages = simulationContext.currentChat.messages.filter(
-        (msg) => msg.role === "user"
-      );
-      if (userMessages.length > 0) {
-        generateHintsForLatestMessage();
-      }
-    }
-  }, [simulationContext?.currentChat?.messages, generateHintsForLatestMessage]);
-
-  const handleSelectHint = (hint: string) => {
-    setNewMessage(hint);
-    textareaRef.current?.focus();
-  };
-
+  // --- Handlers ---
   const handleSendMessage = async (
     e:
       | React.FormEvent<HTMLFormElement>
@@ -336,18 +278,6 @@ export default function AttemptInput({
 
         {/* Removed "Time's up!" message - allow users to continue with negative timer */}
       </CardFooter>
-
-      {/* Hint Display Modal - Always visible for practice simulations */}
-      {simulationContext?.simulation?.practiceSimulation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <HintDisplay
-            hints={hints}
-            isLoading={hintsLoading || hintsHookLoading}
-            onClose={() => {}} // No close button needed since it's always visible
-            onSelectHint={handleSelectHint}
-          />
-        </div>
-      )}
     </TooltipProvider>
   );
 }
