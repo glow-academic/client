@@ -196,7 +196,7 @@ export default function AttemptInput({
                   setNewMessage(sanitizeInputLength(value)),
                 )
               }
-              placeholder="Type your $\Sigma$essage (LaTeX supported)"
+              placeholder="Type your message (LaTeX supported)"
               disabled={simulationContext?.readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}

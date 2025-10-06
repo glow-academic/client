@@ -58,10 +58,11 @@ class Departments(_Base, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     title: str = Field(sa_column=Column('title', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
     cohorts: list['Cohorts'] = Relationship(back_populates='department')
     documents: list['Documents'] = Relationship(back_populates='department')
+    parameters: list['Parameters'] = Relationship(back_populates='department')
     personas: list['Personas'] = Relationship(back_populates='department')
     profiles: list['Profiles'] = Relationship(back_populates='department')
     providers: list['Providers'] = Relationship(back_populates='department')
@@ -90,23 +91,6 @@ class Models(_Base, table=True):
     agents: list['Agents'] = Relationship(back_populates='model')
     personas: list['Personas'] = Relationship(back_populates='model')
     model_runs: list['ModelRuns'] = Relationship(back_populates='model')
-
-
-class Parameters(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='parameters_pkey'),
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
-    name: str = Field(sa_column=Column('name', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False))
-    numerical: bool = Field(sa_column=Column('numerical', Boolean, nullable=False, default=False))
-    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=False))
-    default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, nullable=False, default=False))
-
-    parameter_items: list['ParameterItems'] = Relationship(back_populates='parameter')
 
 
 class Sessions(_Base, table=True):
@@ -207,11 +191,10 @@ class Documents(_Base, table=True):
     department: Optional['Departments'] = Relationship(back_populates='documents')
 
 
-class ParameterItems(_Base, table=True):
-    __tablename__ = 'parameter_items'
+class Parameters(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
-        PrimaryKeyConstraint('id', name='parameter_items_pkey')
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='parameters_department_id_fkey'),
+        PrimaryKeyConstraint('id', name='parameters_pkey')
     )
 
     id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
@@ -219,11 +202,13 @@ class ParameterItems(_Base, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     name: str = Field(sa_column=Column('name', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False))
-    value: str = Field(sa_column=Column('value', Text, nullable=False))
-    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid, nullable=False))
-    default_item: bool = Field(sa_column=Column('default_item', Boolean, nullable=False, default=False))
+    numerical: bool = Field(sa_column=Column('numerical', Boolean, nullable=False, default=False))
+    active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=False))
+    default_parameter: bool = Field(sa_column=Column('default_parameter', Boolean, nullable=False, default=False))
+    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
-    parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
+    department: Optional['Departments'] = Relationship(back_populates='parameters')
+    parameter_items: list['ParameterItems'] = Relationship(back_populates='parameter')
 
 
 class Personas(_Base, table=True):
@@ -396,6 +381,25 @@ class ModelRuns(_Base, table=True):
     persona: Optional['Personas'] = Relationship(back_populates='model_runs')
     profile: Optional['Profiles'] = Relationship(back_populates='model_runs')
     debug_info: list['DebugInfo'] = Relationship(back_populates='model_run')
+
+
+class ParameterItems(_Base, table=True):
+    __tablename__ = 'parameter_items'
+    __table_args__ = (
+        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
+        PrimaryKeyConstraint('id', name='parameter_items_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    name: str = Field(sa_column=Column('name', Text, nullable=False))
+    description: str = Field(sa_column=Column('description', Text, nullable=False))
+    value: str = Field(sa_column=Column('value', Text, nullable=False))
+    parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid, nullable=False))
+    default_item: bool = Field(sa_column=Column('default_item', Boolean, nullable=False, default=False))
+
+    parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
 
 
 class Scenarios(_Base, table=True):
