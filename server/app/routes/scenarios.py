@@ -40,7 +40,7 @@ async def new_scenario(
                 document_ids = None
 
         # Run the scenario agent to generate title and description
-        title, description, _ = await run_scenario_agent(
+        title, description, objectives, _ = await run_scenario_agent(
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
@@ -56,6 +56,7 @@ async def new_scenario(
                 "message": "Scenario generated successfully",
                 "title": title,
                 "description": description,
+                "objectives": objectives,
             },
         )
 
@@ -109,7 +110,7 @@ async def create_practice_scenario(
 
         # Generate scenario description and name using AI if needed
         if not filled_scenario.description or filled_scenario.description.strip() == "":
-            name, description, _ = await run_scenario_agent(
+            name, description, objectives, _ = await run_scenario_agent(
                 persona_id=filled_scenario.persona_id,
                 document_ids=filled_scenario.document_ids,
                 parameter_item_ids=filled_scenario.parameter_item_ids,
@@ -119,6 +120,7 @@ async def create_practice_scenario(
             )
             filled_scenario.name = name
             filled_scenario.description = description
+            filled_scenario.objectives = objectives
 
         # Update the base scenario in the database
         session.add(filled_scenario)
@@ -134,6 +136,7 @@ async def create_practice_scenario(
                     "id": str(filled_scenario.id),
                     "name": filled_scenario.name,
                     "description": filled_scenario.description,
+                    "objectives": filled_scenario.objectives,
                     "personaId": str(filled_scenario.persona_id) if filled_scenario.persona_id else None,
                     "documentIds": [str(doc_id) for doc_id in (filled_scenario.document_ids or [])],
                     "parameterItemIds": [str(param_id) for param_id in (filled_scenario.parameter_item_ids or [])],

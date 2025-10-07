@@ -355,8 +355,7 @@ async def run_scenario_agent(
             )
             logger.info(f"Emitted scenario generation completion event for group {group_id}")
 
-        # Clean up socket context
-        global _scenario_sio_instance, _scenario_group_id
+        # Clean up socket context (global already declared at top of try block)
         _scenario_sio_instance = None
         _scenario_group_id = None
         
@@ -381,8 +380,7 @@ async def run_scenario_agent(
             except Exception as emit_error:
                 logger.warning(f"Failed to emit error event: {emit_error}")
         
-        # Clean up socket context
-        global _scenario_sio_instance, _scenario_group_id
+        # Clean up socket context (global already declared at top of try block)
         _scenario_sio_instance = None
         _scenario_group_id = None
         

@@ -7,6 +7,7 @@ Supports text and audio message processing with real-time streaming
 # Note: This file now requires``.
 # Please add it to your requirements.txt.
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from app.db import get_session
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
+from app.services.agents.collection.hint import run_hint_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
@@ -157,7 +159,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Generate scenario description if empty
             if not scenario.description or scenario.description == "":
-                name, description, trace_id = await run_scenario_agent(
+                name, description, objectives, trace_id = await run_scenario_agent(
                     persona_id=scenario.persona_id,
                     document_ids=scenario.document_ids,
                     parameter_item_ids=scenario.parameter_item_ids,
@@ -167,6 +169,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 )
                 scenario.name = name
                 scenario.description = description
+                scenario.objectives = objectives
                 chat_title = scenario.name
             else:
                 chat_title = scenario.name
@@ -349,7 +352,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 is_new_scenario = scenario.id != old_scenario.id
                 
                 if not scenario.description or scenario.description == "":
-                    name, description, trace_id = await run_scenario_agent(
+                    name, description, objectives, trace_id = await run_scenario_agent(
                         persona_id=scenario.persona_id,
                         document_ids=scenario.document_ids,
                         parameter_item_ids=scenario.parameter_item_ids,
@@ -359,6 +362,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     )
                     scenario.name = name
                     scenario.description = description
+                    scenario.objectives = objectives
                     chat_title = scenario.name
                 else:
                     chat_title = scenario.name
@@ -590,6 +594,31 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 
 
+async def _generate_hints_background(
+    chat_id: uuid.UUID,
+    message_id: uuid.UUID,
+    sio_instance: Any,
+) -> None:
+    """
+    Background task to generate hints for a completed simulation message.
+    Runs independently and emits progress via Socket.IO.
+    """
+    db_session = next(get_session())
+    try:
+        logger.info(f"Background hint generation started for message {message_id}")
+        hint_ids = await run_hint_agent(
+            chat_id=chat_id,
+            message_id=message_id,
+            session=db_session,
+            sio_instance=sio_instance,
+        )
+        logger.info(f"Background hint generation completed: {len(hint_ids)} hints created")
+    except Exception as e:
+        logger.error(f"Background hint generation failed for message {message_id}: {e}", exc_info=True)
+    finally:
+        db_session.close()
+
+
 async def process_simulation_message_websocket(
     chat_id: uuid.UUID,
     message: str = "",
@@ -804,6 +833,16 @@ async def process_simulation_message_websocket(
                     "final_content": accumulated_content,
                 },
                 room=f"simulation_{chat_id}",
+            )
+            
+            # 8. Trigger hint generation for this message (fire and forget)
+            logger.info(f"Triggering hint generation for message {assistant_message.id}")
+            asyncio.create_task(
+                _generate_hints_background(
+                    chat_id=chat_id,
+                    message_id=assistant_message.id,
+                    sio_instance=sio_instance
+                )
             )
 
     except Exception as e:

@@ -25,6 +25,25 @@ logger = logging.getLogger(__name__)
 hint_results: dict[str, Any] = {}
 hint_progress: dict[str, bool] = {}
 
+# Context for socket routing
+_hint_sio_instance: Any = None
+_hint_chat_id: uuid.UUID | None = None
+
+
+async def _emit_hint_progress(event_data: dict[str, Any]) -> None:
+    """Helper to emit hint generation progress via Socket.IO if available."""
+    global _hint_sio_instance, _hint_chat_id
+    
+    if _hint_sio_instance and _hint_chat_id:
+        try:
+            await _hint_sio_instance.emit(
+                "hint_generation_progress",
+                event_data,
+                room=f"simulation_{_hint_chat_id}",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to emit hint progress: {e}")
+
 
 def create_hint_function(hint_number: int) -> Any:
     """Create a function tool for providing a specific hint."""
@@ -129,6 +148,7 @@ async def run_hint_agent(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
     session: Session = Depends(get_session),
+    sio_instance: Any = None,
 ) -> List[uuid.UUID]:
     """
     Generate 3 helpful hints for a GTA based on simulation conversation history.
@@ -142,10 +162,12 @@ async def run_hint_agent(
         List of SimulationHints IDs (up to 3)
     """
     try:
-        # Clear previous results
-        global hint_results, hint_progress
+        # Clear previous results and set up socket context
+        global hint_results, hint_progress, _hint_sio_instance, _hint_chat_id
         hint_results.clear()
         hint_progress.clear()
+        _hint_sio_instance = sio_instance
+        _hint_chat_id = chat_id
         
         # Get the simulation message
         message = session.exec(
@@ -170,6 +192,14 @@ async def run_hint_agent(
         logger.info(
             f"Starting hint generation for chat {chat_id}, message {message_id}"
         )
+        
+        # Emit start event
+        await _emit_hint_progress({
+            "type": "start",
+            "message": "Starting hint generation",
+            "chat_id": str(chat_id),
+            "message_id": str(message_id),
+        })
         
         # Build input items
         input_items: list[TResponseInputItem] = []
@@ -278,10 +308,46 @@ async def run_hint_agent(
             f"in chat {chat_id}"
         )
         
+        # Emit completion event
+        await _emit_hint_progress({
+            "type": "complete",
+            "message": "Hint generation completed successfully",
+            "chat_id": str(chat_id),
+            "message_id": str(message_id),
+            "hint_ids": [str(hid) for hid in hint_ids],
+            "hints_count": len(hint_ids),
+        })
+        
+        # Clean up socket context
+        _hint_sio_instance = None
+        _hint_chat_id = None
+        
         return hint_ids
         
     except Exception as e:
         logger.error(f"Error in run_hint_agent: {str(e)}", exc_info=True)
+        
+        # Emit error event
+        if sio_instance:
+            try:
+                await sio_instance.emit(
+                    "hint_generation_progress",
+                    {
+                        "type": "error",
+                        "message": f"Hint generation failed: {str(e)}",
+                        "error": str(e),
+                        "chat_id": str(chat_id),
+                        "message_id": str(message_id),
+                    },
+                    room=f"simulation_{chat_id}",
+                )
+            except Exception as emit_error:
+                logger.warning(f"Failed to emit error event: {emit_error}")
+        
+        # Clean up socket context
+        _hint_sio_instance = None
+        _hint_chat_id = None
+        
         session.rollback()
         raise
 

@@ -588,8 +588,7 @@ async def run_grade_agent(
             except Exception as emit_error:
                 logger.warning(f"Failed to emit error event: {emit_error}")
         
-        # Clean up socket context
-        global _grading_sio_instance, _grading_chat_id
+        # Clean up socket context (global already declared at top of try block)
         _grading_sio_instance = None
         _grading_chat_id = None
         
