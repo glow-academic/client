@@ -24,9 +24,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
+import { useSimulationHintsBySimulationMessageId } from "@/lib/api/hooks/simulation_hints";
+import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
 import { log } from "@/utils/logger";
 
 export interface AttemptInputProps {
@@ -43,6 +46,46 @@ export default function AttemptInput({
   const { isConnected } = useWebSocket();
 
   const [newMessage, setNewMessage] = useState("");
+
+  // Fetch simulation messages for the current chat using the proper hook
+  const { data: messages = [] } = useSimulationMessagesByChatId(
+    simulationContext?.currentChat?.id ?? ""
+  );
+
+  // Get the most recent assistant message
+  const latestAssistantMessage = messages
+    .filter((msg) => msg.type === "response")
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
+
+  // Fetch hints for the latest assistant message
+  const {
+    data: hintsData = [],
+    isLoading: hintsHookLoading,
+    refetch: refetchHints,
+  } = useSimulationHintsBySimulationMessageId(latestAssistantMessage?.id ?? "");
+
+  // Listen for hint generation progress via console logs (WebSocket emits to console)
+  useEffect(() => {
+    // Set up polling to refetch hints periodically for practice simulations
+    if (
+      simulationContext?.simulation?.practiceSimulation &&
+      latestAssistantMessage?.id
+    ) {
+      const interval = setInterval(() => {
+        refetchHints();
+      }, 3000); // Poll every 3 seconds
+
+      return () => clearInterval(interval);
+    }
+    return undefined;
+  }, [
+    simulationContext?.simulation?.practiceSimulation,
+    latestAssistantMessage?.id,
+    refetchHints,
+  ]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -87,7 +130,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>,
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -111,12 +154,17 @@ export default function AttemptInput({
           chatId: simulationContext.currentChat.id,
           isTourMessage: false,
         },
-      }),
+      })
     );
 
     simulationContext?.sendMessage(messageToSend);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
+
+  const handleSelectHint = (hint: string) => {
+    setNewMessage(hint);
+    textareaRef.current?.focus();
+  };
 
   // --- Effects ---
   useEffect(() => {
@@ -135,7 +183,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight,
+          maxTextareaHeight
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
@@ -193,7 +241,7 @@ export default function AttemptInput({
               value={newMessage}
               onChange={(e) =>
                 pastePrevention.handleChange(e, (value) =>
-                  setNewMessage(sanitizeInputLength(value)),
+                  setNewMessage(sanitizeInputLength(value))
                 )
               }
               placeholder="Type your message (LaTeX supported)"
@@ -278,6 +326,17 @@ export default function AttemptInput({
 
         {/* Removed "Time's up!" message - allow users to continue with negative timer */}
       </CardFooter>
+
+      {/* Hint Display Modal - Always visible for practice simulations */}
+      {simulationContext?.simulation?.practiceSimulation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <HintDisplay
+            hints={hintsData}
+            isLoading={hintsHookLoading}
+            onSelectHint={handleSelectHint}
+          />
+        </div>
+      )}
     </TooltipProvider>
   );
 }

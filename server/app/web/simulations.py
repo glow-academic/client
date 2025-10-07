@@ -835,15 +835,28 @@ async def process_simulation_message_websocket(
                 room=f"simulation_{chat_id}",
             )
             
-            # 8. Trigger hint generation for this message (fire and forget)
-            logger.info(f"Triggering hint generation for message {assistant_message.id}")
-            asyncio.create_task(
-                _generate_hints_background(
-                    chat_id=chat_id,
-                    message_id=assistant_message.id,
-                    sio_instance=sio_instance
-                )
-            )
+            # 8. Trigger hint generation for practice simulations only (fire and forget)
+            # Get the simulation via attempt to check if it's a practice simulation
+            attempt = db_session.exec(
+                select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+            ).one_or_none()
+            
+            if attempt:
+                simulation = db_session.exec(
+                    select(Simulations).where(Simulations.id == attempt.simulation_id)
+                ).one_or_none()
+                
+                if simulation and simulation.practice_simulation:
+                    logger.info(f"Triggering hint generation for practice message {assistant_message.id}")
+                    asyncio.create_task(
+                        _generate_hints_background(
+                            chat_id=chat_id,
+                            message_id=assistant_message.id,
+                            sio_instance=sio_instance
+                        )
+                    )
+                else:
+                    logger.debug(f"Skipping hint generation for non-practice simulation")
 
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
