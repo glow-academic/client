@@ -87,7 +87,7 @@ interface DashboardProps {
 
 export default function Dashboard({ profileId }: DashboardProps) {
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const {
     startDate,
@@ -210,13 +210,13 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
   // Fetch all simulations and rubrics
   const { data: allSimulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: allRubrics = [] } = useRubricsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: allParameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: allParameterItems = [] } = useParameterItems();
 

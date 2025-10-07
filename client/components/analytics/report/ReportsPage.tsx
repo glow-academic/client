@@ -38,7 +38,7 @@ export default function ReportsPage() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const filters = useMemo(
     () => ({
@@ -60,10 +60,10 @@ export default function ReportsPage() {
     isError,
   } = useAnalyticsReportsBundle(filters, rqOpts);
   const { data: allScenarios } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: allSimulations } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: allProfiles = [] } = useProfiles();
 

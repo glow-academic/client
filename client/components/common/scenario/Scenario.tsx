@@ -45,8 +45,10 @@ import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
@@ -83,7 +85,7 @@ export default function Scenario({
 }: ScenarioProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!scenarioId;
 
   // Mutation hooks
@@ -99,6 +101,10 @@ export default function Scenario({
     description: "",
     defaultScenario: false,
     practiceScenario: false,
+    departmentId:
+      effectiveProfile?.role === "superadmin"
+        ? ""
+        : effectiveProfile?.departmentId || "",
   };
 
   const [formData, setFormData] =
@@ -115,19 +121,20 @@ export default function Scenario({
   const [noDocuments, setNoDocuments] = useState(false);
 
   const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [] } = useParameterItems();
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenario, isLoading } = useScenario(scenarioId!);
+  const { data: departments = [] } = useDepartmentsHook();
 
   // Load scenario data if editing
   useEffect(() => {
@@ -140,6 +147,7 @@ export default function Scenario({
         description: scenario.description || "",
         defaultScenario: scenario.defaultScenario ?? false,
         practiceScenario: scenario.practiceScenario ?? false,
+        departmentId: scenario.departmentId,
       };
       setFormData(scenarioData);
       setOriginalFormData(scenarioData); // Set original data for comparison
@@ -171,7 +179,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -180,7 +188,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return false;
 
     const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active,
+      (sim: Simulation) => sim.active
     );
 
     const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
@@ -250,7 +258,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | boolean | null,
+    value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -433,7 +441,7 @@ export default function Scenario({
         context: { component: "Scenario", function: "handleGenerateScenario" },
       });
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -441,6 +449,12 @@ export default function Scenario({
   };
 
   const handleSubmit = async () => {
+    // Department validation for superadmins
+    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
+      toast.error("Department selection is required for superadmin users");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -452,7 +466,8 @@ export default function Scenario({
         parameterItemIds: formData.parameterItemIds,
         defaultScenario: formData.defaultScenario || false,
         practiceScenario: formData.practiceScenario || false,
-        departmentId: effectiveProfile?.departmentId || "",
+        departmentId:
+          formData.departmentId || effectiveProfile?.departmentId || "",
       };
 
       if (isEditMode) {
@@ -480,7 +495,7 @@ export default function Scenario({
         },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -515,10 +530,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id),
+    formData.documentIds?.includes(doc.id)
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId,
+    (persona) => persona.id === formData.personaId
   );
 
   return (
@@ -774,7 +789,7 @@ export default function Scenario({
               onMultiSelect={(selectedDocs) =>
                 handleInputChange(
                   "documentIds",
-                  selectedDocs.map((doc) => doc.id),
+                  selectedDocs.map((doc) => doc.id)
                 )
               }
               disabled={isReadonly || noDocuments}
@@ -996,6 +1011,42 @@ export default function Scenario({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
+            {/* Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <DepartmentSelector
+                  departments={departments.map((dept) => ({
+                    id: dept.id,
+                    title: dept.title as string,
+                    ...(dept.description && { description: dept.description }),
+                  }))}
+                  selectedDepartment={
+                    formData?.departmentId
+                      ? (() => {
+                          const dept = departments.find(
+                            (d) => d.id === formData.departmentId
+                          );
+                          return dept
+                            ? {
+                                id: dept.id,
+                                title: dept.title as string,
+                                ...(dept.description && {
+                                  description: dept.description,
+                                }),
+                              }
+                            : null;
+                        })()
+                      : null
+                  }
+                  onSelect={(department) =>
+                    handleInputChange("departmentId", department?.id || "")
+                  }
+                  placeholder="Select department"
+                  disabled={isReadonly}
+                />
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-sm font-medium">Default Scenario</Label>

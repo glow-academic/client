@@ -48,16 +48,16 @@ export default function Rubrics() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const deleteRubricMutation = useDeleteRubric();
 
   const { data: rubrics = [], isLoading: isRubricsLoading } =
-    useRubricsByDepartmentIdBatch(selectedDepartmentIds);
+    useRubricsByDepartmentIdBatch(effectiveDepartmentIds);
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Check if a rubric is being used by any simulations

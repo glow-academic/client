@@ -30,6 +30,7 @@ import {
 } from "@/components/common/rubric/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -42,6 +43,7 @@ import {
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
@@ -73,6 +75,7 @@ interface FormData {
   active?: boolean;
   defaultSimulation?: boolean;
   practiceSimulation?: boolean;
+  departmentId?: string | null;
 }
 
 interface FormErrors {
@@ -80,11 +83,12 @@ interface FormErrors {
   timeLimit?: string;
   rubricId?: string;
   cohortIds?: string[];
+  departmentId?: string;
 }
 
 export default function Simulation({ simulationId }: SimulationProps) {
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createSimulationMutation = useCreateSimulation();
@@ -92,7 +96,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
+    null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -111,8 +115,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
       active: true,
       defaultSimulation: false,
       practiceSimulation: false,
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? ""
+          : effectiveProfile?.departmentId || "",
     }),
-    [],
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -120,22 +128,23 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
-    simulationId!,
+    simulationId!
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
     useParameterItems();
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
+  const { data: departments = [] } = useDepartmentsHook();
 
   const isLoading = isLoadingSimulation || isLoadingParameterItems;
 
@@ -152,7 +161,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     if (!targetId) return false;
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(targetId),
+        cohort.simulationIds && cohort.simulationIds.includes(targetId)
     );
   }, [cohorts, simulationId, editingSimulationId]);
 
@@ -175,6 +184,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         active: simulation.active,
         defaultSimulation: simulation.defaultSimulation ?? false,
         practiceSimulation: simulation.practiceSimulation ?? false,
+        departmentId: simulation.departmentId,
       };
       setFormData(simulationData);
       setOriginalFormData(simulationData); // Set original data for comparison
@@ -186,7 +196,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null,
+    value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -243,6 +253,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
       newErrors.rubricId = "Rubric is required";
     }
 
+    // Department validation for superadmins
+    if (effectiveProfile?.role === "superadmin" && !formData?.departmentId) {
+      newErrors.departmentId =
+        "Department selection is required for superadmin users";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -271,15 +287,22 @@ export default function Simulation({ simulationId }: SimulationProps) {
           ? practiceScenarioIds
           : regularScenarioIds;
 
-        await updateSimulationMutation.mutateAsync({
+        const updatePayload = {
           id: targetSimulationId,
-          ...formData,
-          scenarioIds: scenarioIdsToSave,
+          title: formData?.title || "",
           description: formData?.description ?? "",
+          timeLimit: formData?.timeLimit || null,
+          rubricId: formData?.rubricId || "",
+          scenarioIds: scenarioIdsToSave,
+          active: formData?.active ?? true,
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
+          departmentId:
+            formData?.departmentId || effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
-        });
+        };
+
+        await updateSimulationMutation.mutateAsync(updatePayload);
         toast.success("Simulation updated successfully!");
       } else {
         // Save only the scenarios that correspond to the current practiceSimulation state
@@ -296,7 +319,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
           active: formData?.active || true,
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
-          departmentId: effectiveProfile?.departmentId || "",
+          departmentId:
+            formData?.departmentId || effectiveProfile?.departmentId || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -308,7 +332,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -350,7 +374,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // Maintain separate state for regular and practice scenarios
   const [regularScenarioIds, setRegularScenarioIds] = React.useState<string[]>(
-    [],
+    []
   );
   const [practiceScenarioIds, setPracticeScenarioIds] = React.useState<
     string[]
@@ -451,11 +475,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
     scenario.parameterItemIds.forEach((parameterItemId) => {
       const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId,
+        (item) => item.id === parameterItemId
       );
       if (parameterItem) {
         const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId,
+          (param) => param.id === parameterItem.parameterId
         );
         if (parameter && !parameter.numerical) {
           // Only show non-numerical parameters
@@ -511,6 +535,50 @@ export default function Simulation({ simulationId }: SimulationProps) {
           )}
         </div>
 
+        {/* Department Selection - Only for superadmin */}
+        {effectiveProfile?.role === "superadmin" && (
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            {formData?.departmentId !== undefined && !isLoading ? (
+              <DepartmentSelector
+                departments={departments.map((dept) => ({
+                  id: dept.id,
+                  title: dept.title as string,
+                  ...(dept.description && { description: dept.description }),
+                }))}
+                selectedDepartment={
+                  formData?.departmentId
+                    ? (() => {
+                        const dept = departments.find(
+                          (d) => d.id === formData.departmentId
+                        );
+                        return dept
+                          ? {
+                              id: dept.id,
+                              title: dept.title as string,
+                              ...(dept.description && {
+                                description: dept.description,
+                              }),
+                            }
+                          : null;
+                      })()
+                    : null
+                }
+                onSelect={(department) =>
+                  handleInputChange("departmentId", department?.id || "")
+                }
+                placeholder="Select department"
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+            {errors.departmentId && (
+              <p className="text-sm text-destructive">{errors.departmentId}</p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="timeLimit">Minutes Allowed</Label>
@@ -524,7 +592,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 onChange={(e) =>
                   handleInputChange(
                     "timeLimit",
-                    parseInt(e.target.value) || null,
+                    parseInt(e.target.value) || null
                   )
                 }
                 className={errors.timeLimit ? "border-destructive" : ""}
@@ -552,7 +620,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   <span className="truncate text-left">
                     {(() => {
                       const selected = rubrics.find(
-                        (r: Rubric) => r.id === formData.rubricId,
+                        (r: Rubric) => r.id === formData.rubricId
                       );
                       return selected ? selected.name : "No rubric selected";
                     })()}
@@ -570,7 +638,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           description: r.description,
                           points: r.points,
                           active: r.active,
-                        }) as RubricPickerItem,
+                        }) as RubricPickerItem
                     )}
                   placeholder="Select a rubric..."
                   onSelect={(selected) =>
@@ -578,7 +646,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   }
                   selectedRubrics={(() => {
                     const selected = rubrics.find(
-                      (r: Rubric) => r.id === formData.rubricId,
+                      (r: Rubric) => r.id === formData.rubricId
                     );
                     return selected
                       ? [
@@ -699,7 +767,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {selectedScenarios.map((scenario) => {
                 const originalScenario = scenarios.find(
-                  (s: Scenario) => s.id === scenario.id,
+                  (s: Scenario) => s.id === scenario.id
                 );
                 if (!originalScenario) return null;
 
@@ -741,10 +809,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
                                   onClick={() => {
                                     const newSelectedScenarios =
                                       selectedScenarios.filter(
-                                        (s) => s.id !== scenario.id,
+                                        (s) => s.id !== scenario.id
                                       );
                                     handleScenarioSelection(
-                                      newSelectedScenarios,
+                                      newSelectedScenarios
                                     );
                                   }}
                                   className="h-6 w-6 p-0"

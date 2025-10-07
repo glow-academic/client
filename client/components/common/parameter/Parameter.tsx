@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import {
   useCreateParameterItem,
   useCreateParameterItems,
@@ -55,6 +57,7 @@ interface FormData {
   numerical?: boolean;
   active?: boolean;
   defaultParameter?: boolean;
+  departmentId?: string | null;
 }
 
 interface ParameterItemFormData {
@@ -79,7 +82,7 @@ export default function Parameter({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -88,8 +91,12 @@ export default function Parameter({
       numerical: false,
       active: false,
       defaultParameter: false,
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? ""
+          : effectiveProfile?.departmentId || "",
     }),
-    [],
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,20 +106,21 @@ export default function Parameter({
   >([]);
 
   const { data: parameter, isLoading: isLoadingParameter } = useParameter(
-    parameterId!,
+    parameterId!
   );
   const { data: parameterItems, isLoading: isLoadingParameterItems } =
     useParameterItemsByParameterId(parameterId!);
 
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: sims = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: allScenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
+  const { data: departments = [] } = useDepartmentsHook();
 
   // Mutation hooks
   const createParameterMutation = useCreateParameter();
@@ -130,14 +138,14 @@ export default function Parameter({
       (c.simulationIds || []).forEach((id) => activeSimulationIds.add(id));
     });
     const activeSimulations = sims.filter(
-      (s) => s.active && activeSimulationIds.has(s.id),
+      (s) => s.active && activeSimulationIds.has(s.id)
     );
     const scenarioIds = new Set<string>();
     activeSimulations.forEach((s) => {
       (s.scenarioIds || []).forEach((id) => scenarioIds.add(id));
     });
     const relevantScenarios = (allScenarios || []).filter((sc) =>
-      scenarioIds.has(sc.id),
+      scenarioIds.has(sc.id)
     );
     const ids = new Set<string>();
     relevantScenarios.forEach((sc: { parameterItemIds: string[] | null }) => {
@@ -177,6 +185,7 @@ export default function Parameter({
         numerical: parameter.numerical,
         active: parameter.active,
         defaultParameter: parameter.defaultParameter ?? false,
+        departmentId: parameter.departmentId,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -231,6 +240,8 @@ export default function Parameter({
           numerical: formData.numerical,
           active: formData.active,
           defaultParameter: formData.defaultParameter || false,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
         });
 
@@ -268,13 +279,13 @@ export default function Parameter({
         // Execute bulk operations
         if (itemsToDelete.length > 0) {
           promises.push(
-            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete }),
+            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete })
           );
         }
 
         if (itemsToCreate.length > 0) {
           promises.push(
-            createParameterItemsMutation.mutateAsync({ items: itemsToCreate }),
+            createParameterItemsMutation.mutateAsync({ items: itemsToCreate })
           );
         }
 
@@ -282,7 +293,7 @@ export default function Parameter({
           promises.push(
             updateParameterItemsMutation.mutateAsync({
               updates: itemsToUpdate,
-            }),
+            })
           );
         }
 
@@ -296,6 +307,8 @@ export default function Parameter({
           numerical: formData.numerical || false,
           active: formData.active || false,
           defaultParameter: formData.defaultParameter || false,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
         });
 
         // Create parameter items for the new parameter
@@ -310,7 +323,7 @@ export default function Parameter({
                   value: formData.numerical || false ? item.value : item.name,
                   parameterId: newParameter.id,
                   defaultItem: !!item.defaultItem,
-                }),
+                })
               );
             }
           });
@@ -324,7 +337,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -334,7 +347,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -382,9 +395,14 @@ export default function Parameter({
       errors.push("Parameter description is required");
     }
 
+    // Department validation for superadmin
+    if (effectiveProfile?.role === "superadmin" && !formData?.departmentId) {
+      errors.push("Department selection is required for superadmin users");
+    }
+
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted,
+      (item) => !item.isDeleted
     );
 
     activeItems.forEach((item, index) => {
@@ -402,7 +420,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`,
+            `Parameter item ${index + 1}: Value must be a valid number`
           );
         }
       }
@@ -456,6 +474,51 @@ export default function Parameter({
                 <Skeleton className="h-10 w-full" />
               )}
             </div>
+
+            {/* Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentId !== undefined && !isLoading ? (
+                  <DepartmentSelector
+                    departments={departments.map((dept) => ({
+                      id: dept.id,
+                      title: dept.title as string,
+                      ...(dept.description && {
+                        description: dept.description,
+                      }),
+                    }))}
+                    selectedDepartment={
+                      formData?.departmentId
+                        ? (() => {
+                            const dept = departments.find(
+                              (d) => d.id === formData.departmentId
+                            );
+                            return dept
+                              ? {
+                                  id: dept.id,
+                                  title: dept.title as string,
+                                  ...(dept.description && {
+                                    description: dept.description,
+                                  }),
+                                }
+                              : null;
+                          })()
+                        : null
+                    }
+                    onSelect={(department) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentId: department?.id || "",
+                      }))
+                    }
+                    placeholder="Select department"
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+            )}
 
             <div className="flex items-center space-x-2">
               {formData?.numerical !== undefined && !isLoading ? (
@@ -551,7 +614,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm"
@@ -565,7 +628,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm min-h-[96px]"
@@ -582,7 +645,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm"
@@ -602,7 +665,7 @@ export default function Parameter({
                                         handleParameterItemInputChange(
                                           itemIndex,
                                           "defaultItem",
-                                          Boolean(checked),
+                                          Boolean(checked)
                                         )
                                       }
                                       aria-label="Save as system item"
@@ -638,7 +701,7 @@ export default function Parameter({
                           </div>
                         </TableCell>
                       </TableRow>
-                    ),
+                    )
                   )}
                 </TableBody>
               </Table>
@@ -684,7 +747,7 @@ export default function Parameter({
                         defaultItem: item.defaultItem ?? false,
                         isNew: false,
                         isDeleted: false,
-                      })),
+                      }))
                     ))
               }
             >

@@ -169,12 +169,12 @@ export default function StaffManager({
   const isCohortMode = Boolean(cohortId);
 
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
     useProfiles();
   const { data: allCohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Mutation hooks

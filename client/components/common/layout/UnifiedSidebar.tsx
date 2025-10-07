@@ -205,7 +205,7 @@ export function UnifiedSidebar({
 
   // Use the profile context
   const { activeProfile, effectiveProfile, isLoading } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const { update } = useSession();
 
   // Get simulatable profiles for the dropdown
@@ -218,7 +218,7 @@ export function UnifiedSidebar({
   });
 
   const { data: cohorts } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Extract stable profile ID to avoid complex dependency expressions

@@ -56,12 +56,12 @@ export default function DocumentViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const {
     data: docs = [],
     isLoading,
     error: queryError,
-  } = useDocumentsByDepartmentIdBatch(selectedDepartmentIds);
+  } = useDocumentsByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Memoize documentsToUse to prevent unnecessary re-renders
   const documentsToUse = useMemo(() => {

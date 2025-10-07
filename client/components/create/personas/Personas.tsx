@@ -75,17 +75,17 @@ export default function Personas() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createPersonaMutation = useCreatePersona();
   const deletePersonaMutation = useDeletePersona();
 
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Get table columns and filter options

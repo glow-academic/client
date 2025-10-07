@@ -93,7 +93,7 @@ export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
   const { effectiveProfile, activeProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
@@ -126,7 +126,7 @@ export default function TATour() {
   }, [tourState]);
 
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Get TA's assigned cohorts

@@ -51,15 +51,15 @@ import { Cohort } from "@/types";
 export default function Cohorts() {
   const router = useRouter();
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Fetch cohorts data
   const { data: cohorts = [], isLoading: loadingCohorts } =
-    useCohortsByDepartmentIdBatch(selectedDepartmentIds);
+    useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Fetch profiles data for role checking
   const { data: profiles = [], isLoading: loadingProfiles } =
-    useProfilesByDepartmentIdBatch(selectedDepartmentIds);
+    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Mutation hooks
   const createCohortMutation = useCreateCohort();

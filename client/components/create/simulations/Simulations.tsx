@@ -48,23 +48,23 @@ export function Simulations() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const createSimulationMutation = useCreateSimulation();
   const deleteSimulationMutation = useDeleteSimulation();
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Check if a simulation is being used by any cohorts

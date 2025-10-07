@@ -32,10 +32,10 @@ import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
   const router = useRouter();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: parameterItems = [], isLoading: parameterItemsLoading } =
     useParameterItems();

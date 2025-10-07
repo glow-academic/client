@@ -41,7 +41,7 @@ export default function Rubric({ rubricId }: RubricProps) {
     defaultRubric: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    departmentId: null,
+    departmentId: "",
   };
 
   const { data: rubric, isLoading: rubricLoading } = useRubric(rubricId!);

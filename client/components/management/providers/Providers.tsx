@@ -70,7 +70,7 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
@@ -78,13 +78,13 @@ export default function Providers() {
 
   const { data: models = [] } = useModels();
   const { data: providers = [] } = useProvidersByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { data: agents = [] } = useAgentsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Get filter options

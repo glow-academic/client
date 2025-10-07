@@ -48,9 +48,9 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalytics();
 
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
     useRefreshAnalytics();

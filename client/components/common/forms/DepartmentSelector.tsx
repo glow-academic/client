@@ -1,6 +1,6 @@
 /**
- * DepartmentPicker.tsx
- * Used to pick departments for filtering analytics
+ * DepartmentSelector.tsx
+ * Single department selection component for forms
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -8,7 +8,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -39,71 +39,35 @@ export interface Department {
   description?: string;
 }
 
-export interface DepartmentPickerProps extends PopoverProps {
+export interface DepartmentSelectorProps extends PopoverProps {
   departments: Department[];
+  selectedDepartment?: Department | null;
+  onSelect?: (department: Department | null) => void;
   placeholder?: string;
-  onSelect?: (departments: Department[]) => void;
-  selectedDepartments?: Department[];
-  hideSelectedChips?: boolean;
+  disabled?: boolean;
 }
 
-export function DepartmentPicker({
+export function DepartmentSelector({
   departments,
-  placeholder = "All departments",
+  selectedDepartment,
   onSelect,
-  selectedDepartments = [],
-  hideSelectedChips = true,
+  placeholder = "Select department...",
+  disabled = false,
   ...props
-}: DepartmentPickerProps) {
+}: DepartmentSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [peekedDepartment, setPeekedDepartment] = React.useState<
     Department | undefined
   >(departments[0]);
 
   const handleSelect = (department: Department) => {
-    const isSelected = selectedDepartments.some((d) => d.id === department.id);
-    let newSelectedDepartments: Department[];
-
-    if (isSelected) {
-      // Remove from selection
-      newSelectedDepartments = selectedDepartments.filter(
-        (d) => d.id !== department.id
-      );
-    } else {
-      // Add to selection
-      newSelectedDepartments = [...selectedDepartments, department];
-    }
-
-    onSelect?.(newSelectedDepartments);
-    // Don't close popover in multi-select mode
-  };
-
-  // Allow clearing selection
-  const handleClear = () => {
-    onSelect?.([]);
+    onSelect?.(department);
     setOpen(false);
   };
 
-  // Remove individual item
-  const handleRemoveItem = (
-    departmentToRemove: Department,
-    e: React.MouseEvent
-  ) => {
-    e.stopPropagation();
-    const newSelectedDepartments = selectedDepartments.filter(
-      (d) => d.id !== departmentToRemove.id
-    );
-    onSelect?.(newSelectedDepartments);
-  };
-
-  const getButtonText = () => {
-    if (selectedDepartments.length === 0) {
-      return placeholder;
-    }
-    if (selectedDepartments.length === 1) {
-      return selectedDepartments[0]!.title;
-    }
-    return `${selectedDepartments.length} departments selected`;
+  const handleClear = () => {
+    onSelect?.(null);
+    setOpen(false);
   };
 
   const getSearchNotFoundMessage = () => {
@@ -112,39 +76,20 @@ export function DepartmentPicker({
 
   return (
     <div>
-      {/* Show selected items */}
-      {selectedDepartments.length > 0 && !hideSelectedChips && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {selectedDepartments.map((department) => (
-            <div
-              key={department.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-            >
-              <span>{department.title}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(department, e)}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
+            variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select departments"
+            aria-label="Select department"
             className="w-full justify-between"
-            size="sm"
+            disabled={disabled}
           >
-            {getButtonText()}
-            <ChevronsUpDown className="opacity-50" />
+            <span className="truncate text-left">
+              {selectedDepartment ? selectedDepartment.title : placeholder}
+            </span>
+            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">
@@ -157,7 +102,7 @@ export function DepartmentPicker({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedDepartment?.title || "Department selected"}
+                  {peekedDepartment?.title || "No department selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedDepartment?.description || "No description available"}
@@ -169,13 +114,14 @@ export function DepartmentPicker({
                 <CommandInput placeholder="Search departments..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedDepartments.length > 0 && (
+
+                {selectedDepartment && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
                       className="text-muted-foreground"
                     >
-                      Clear All
+                      Clear selection
                     </CommandItem>
                   </CommandGroup>
                 )}
@@ -184,9 +130,7 @@ export function DepartmentPicker({
                     <DepartmentItem
                       key={department.id}
                       department={department}
-                      isSelected={selectedDepartments.some(
-                        (d) => d.id === department.id
-                      )}
+                      isSelected={selectedDepartment?.id === department.id}
                       onPeek={(department) => setPeekedDepartment(department)}
                       onSelect={() => handleSelect(department)}
                     />
@@ -236,9 +180,21 @@ function DepartmentItem({
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">{department.title}</div>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{department.title}</div>
+            {department.description && (
+              <div className="text-xs text-muted-foreground mt-1">
+                {department.description}
+              </div>
+            )}
+          </div>
+        </div>
         <Check
-          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+          className={cn(
+            "ml-auto flex-shrink-0",
+            isSelected ? "opacity-100" : "opacity-0"
+          )}
         />
       </div>
     </CommandItem>

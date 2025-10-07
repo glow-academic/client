@@ -19,10 +19,10 @@ import { AgentsDataTable } from "./AgentsDataTable";
 
 export default function Agents() {
   const router = useRouter();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   const { data: agents = [] } = useAgentsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds,
   );
 
   // Get table columns and filter options

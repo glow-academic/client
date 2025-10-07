@@ -63,20 +63,20 @@ export function PracticeCustomizeDialog({
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // API calls - only made when dialog is open
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds
+    effectiveDepartmentIds
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds
+    effectiveDepartmentIds
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds
+    effectiveDepartmentIds
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [] } = useParameterItems();
 

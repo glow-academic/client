@@ -8,6 +8,8 @@
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsAPI } from "@/lib/api/hooks/departments";
+import type { Department } from "@/lib/repos/departmentRepo";
 import { log } from "@/utils/logger";
 import React, {
   createContext,
@@ -26,10 +28,13 @@ export interface DepartmentsContextType {
   // Utility functions
   clearDepartmentFilters: () => void;
   hasActiveDepartmentFilters: boolean;
+
+  // Computed property that returns all department IDs when empty array means "all"
+  effectiveDepartmentIds: string[];
 }
 
 const DepartmentsContext = createContext<DepartmentsContextType | undefined>(
-  undefined,
+  undefined
 );
 
 interface DepartmentsProviderProps {
@@ -38,10 +43,13 @@ interface DepartmentsProviderProps {
 
 export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
   const { effectiveProfile } = useProfile();
+  const { data: allDepartments = [] } = useDepartmentsAPI() as {
+    data: Department[];
+  };
 
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
   // Initialize department selection based on user role
@@ -81,19 +89,29 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
 
   const hasActiveDepartmentFilters = selectedDepartmentIds.length > 0;
 
+  // When selectedDepartmentIds is empty, return all department IDs
+  const effectiveDepartmentIds = useMemo(() => {
+    if (selectedDepartmentIds.length === 0) {
+      return allDepartments.map((dept: Department) => dept.id);
+    }
+    return selectedDepartmentIds;
+  }, [selectedDepartmentIds, allDepartments]);
+
   const value: DepartmentsContextType = useMemo(
     () => ({
       selectedDepartmentIds,
       setSelectedDepartmentIds,
       clearDepartmentFilters,
       hasActiveDepartmentFilters,
+      effectiveDepartmentIds,
     }),
     [
       selectedDepartmentIds,
       setSelectedDepartmentIds,
       clearDepartmentFilters,
       hasActiveDepartmentFilters,
-    ],
+      effectiveDepartmentIds,
+    ]
   );
 
   return (

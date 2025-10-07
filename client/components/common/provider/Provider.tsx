@@ -14,11 +14,14 @@ import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
 import { updateProviderWithEncryption } from "@/utils/model/update-provider-with-encryption";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useCreateProvider, useProvider } from "@/lib/api/hooks/providers";
 import { log } from "@/utils/logger";
 
@@ -37,10 +40,13 @@ interface FormData {
   description?: string;
   apiKey?: string;
   baseUrl?: string;
+  departmentId?: string | null;
 }
 
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
+  const { data: departments = [] } = useDepartmentsHook();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -55,8 +61,12 @@ export default function Provider({ providerId }: ProviderProps) {
       description: "",
       apiKey: "",
       baseUrl: "",
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? ""
+          : effectiveProfile?.departmentId || "",
     }),
-    [],
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -64,7 +74,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(
     providerId!,
-    !!providerId,
+    !!providerId
   );
 
   // Mutation hooks
@@ -78,6 +88,7 @@ export default function Provider({ providerId }: ProviderProps) {
         description: provider.description,
         apiKey: "",
         baseUrl: provider.baseUrl || "",
+        departmentId: provider.departmentId,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -88,7 +99,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined,
+    value: string | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -129,6 +140,12 @@ export default function Provider({ providerId }: ProviderProps) {
       return;
     }
 
+    // Department validation for superadmin
+    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
+      toast.error("Department selection is required for superadmin users");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -140,6 +157,7 @@ export default function Provider({ providerId }: ProviderProps) {
           description?: string;
           apiKey?: string;
           baseUrl?: string;
+          departmentId?: string;
         } = {};
 
         if (formData.name !== provider.name) {
@@ -152,6 +170,11 @@ export default function Provider({ providerId }: ProviderProps) {
 
         if (formData.baseUrl !== (provider.baseUrl || "")) {
           updateData.baseUrl = formData.baseUrl || "";
+        }
+
+        if (formData.departmentId !== provider.departmentId) {
+          updateData.departmentId =
+            formData.departmentId || effectiveProfile?.departmentId || "";
         }
 
         // Only include API key if user is editing it and entered a new one
@@ -172,6 +195,8 @@ export default function Provider({ providerId }: ProviderProps) {
           description: formData.description!,
           apiKey: formData.apiKey!,
           baseUrl: formData.baseUrl || "",
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -186,7 +211,7 @@ export default function Provider({ providerId }: ProviderProps) {
       toast.success(
         isEditMode && providerId
           ? "Provider updated successfully!"
-          : "Provider created successfully!",
+          : "Provider created successfully!"
       );
       router.push(`/management/providers`);
     } catch (error) {
@@ -198,7 +223,7 @@ export default function Provider({ providerId }: ProviderProps) {
         context: { component: "Provider", isEditMode, providerId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -285,6 +310,46 @@ export default function Provider({ providerId }: ProviderProps) {
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
         </div>
+
+        {/* Department Selection - Only for superadmin */}
+        {effectiveProfile?.role === "superadmin" && (
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            {formData?.departmentId !== undefined && !isLoading ? (
+              <DepartmentSelector
+                departments={departments.map((dept) => ({
+                  id: dept.id,
+                  title: dept.title as string,
+                  ...(dept.description && { description: dept.description }),
+                }))}
+                selectedDepartment={
+                  formData?.departmentId
+                    ? (() => {
+                        const dept = departments.find(
+                          (d) => d.id === formData.departmentId
+                        );
+                        return dept
+                          ? {
+                              id: dept.id,
+                              title: dept.title as string,
+                              ...(dept.description && {
+                                description: dept.description,
+                              }),
+                            }
+                          : null;
+                      })()
+                    : null
+                }
+                onSelect={(department) =>
+                  handleInputChange("departmentId", department?.id || "")
+                }
+                placeholder="Select department"
+              />
+            ) : (
+              <Skeleton className="h-10 w-full" />
+            )}
+          </div>
+        )}
 
         {/* API Key Field */}
         <div className="space-y-2">

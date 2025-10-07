@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { TagSelector } from "@/components/common/tags/TagSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDepartments } from "@/contexts/departments-context";
+import { useProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { DocumentType } from "@/types";
 import { inferMimeFromName } from "@/utils/mime-map";
@@ -28,6 +32,7 @@ import { extractKnownTagsFromDocuments } from "@/utils/tags/search-tags";
 export type FileClassification = {
   type: DocumentType;
   tags: string[];
+  departmentId?: string;
 };
 
 export interface UploadClassificationDialogProps {
@@ -36,7 +41,7 @@ export interface UploadClassificationDialogProps {
   onClose: () => void;
   onConfirm: (
     perFile: Record<string, FileClassification>,
-    defaultsForZip: FileClassification,
+    defaultsForZip: FileClassification
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
@@ -60,14 +65,16 @@ export function UploadClassificationDialog({
   onAddFiles,
   onRemoveFile,
 }: UploadClassificationDialogProps) {
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveProfile } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
   const { data: existingDocuments = [] } = useDocumentsByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
+  const { data: departments = [] } = useDepartmentsHook();
 
   const knownTags = React.useMemo(
     () => extractKnownTagsFromDocuments(existingDocuments),
-    [existingDocuments],
+    [existingDocuments]
   );
 
   // Per-file classification state (keyed by file.name)
@@ -80,6 +87,10 @@ export function UploadClassificationDialog({
   });
   // Additive apply-to-all temporary tags displayed below the input
   const [applyAllTempTags, setApplyAllTempTags] = React.useState<string[]>([]);
+  // Department selection state
+  const [selectedDepartmentId, setSelectedDepartmentId] = React.useState<
+    string | null
+  >(null);
 
   React.useEffect(() => {
     // Initialize defaults for new files
@@ -114,8 +125,8 @@ export function UploadClassificationDialog({
   const applyTypeToAll = (type: DocumentType) => {
     setPerFile((prev) =>
       Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }]),
-      ),
+        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
+      )
     );
     setZipDefaults((p) => ({ ...p, type }));
   };
@@ -126,11 +137,11 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const merged = Array.from(
-            new Set([...(v.tags ?? []), ...incomingTags]),
+            new Set([...(v.tags ?? []), ...incomingTags])
           );
           return [k, { ...v, tags: merged }];
-        }),
-      ),
+        })
+      )
     );
     setZipDefaults((p) => ({
       ...p,
@@ -144,11 +155,11 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const nextTags = (v.tags ?? []).filter(
-            (t) => !tagsToRemove.includes(t),
+            (t) => !tagsToRemove.includes(t)
           );
           return [k, { ...v, tags: nextTags }];
-        }),
-      ),
+        })
+      )
     );
     setZipDefaults((p) => ({
       ...p,
@@ -214,6 +225,44 @@ export function UploadClassificationDialog({
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Department Selection - Only for superadmin */}
+        {effectiveProfile?.role === "superadmin" && (
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="department">Department</Label>
+            <DepartmentSelector
+              departments={departments.map((dept) => ({
+                id: dept.id,
+                title: dept.title as string,
+                ...(dept.description && {
+                  description: dept.description,
+                }),
+              }))}
+              selectedDepartment={
+                selectedDepartmentId
+                  ? (() => {
+                      const dept = departments.find(
+                        (d) => d.id === selectedDepartmentId
+                      );
+                      return dept
+                        ? {
+                            id: dept.id,
+                            title: dept.title as string,
+                            ...(dept.description && {
+                              description: dept.description,
+                            }),
+                          }
+                        : null;
+                    })()
+                  : null
+              }
+              onSelect={(department) =>
+                setSelectedDepartmentId(department?.id || null)
+              }
+              placeholder="Select department"
+            />
           </div>
         )}
 
@@ -385,7 +434,7 @@ export function UploadClassificationDialog({
                 variant="secondary"
                 onClick={() => {
                   const el = document.getElementById(
-                    "upload-dialog-file-input",
+                    "upload-dialog-file-input"
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}
@@ -399,7 +448,29 @@ export function UploadClassificationDialog({
               </Button>
               <Button
                 type="button"
-                onClick={() => onConfirm(perFile, zipDefaults)}
+                onClick={() => {
+                  // Include department information in the classification
+                  const perFileWithDepartment = Object.fromEntries(
+                    Object.entries(perFile).map(
+                      ([fileName, classification]) => [
+                        fileName,
+                        {
+                          ...classification,
+                          ...(selectedDepartmentId && {
+                            departmentId: selectedDepartmentId,
+                          }),
+                        },
+                      ]
+                    )
+                  );
+                  const zipDefaultsWithDepartment = {
+                    ...zipDefaults,
+                    ...(selectedDepartmentId && {
+                      departmentId: selectedDepartmentId,
+                    }),
+                  };
+                  onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);
+                }}
               >
                 Start Upload
               </Button>

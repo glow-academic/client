@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { useProfile } from "@/contexts/profile-context";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -40,6 +41,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useModels } from "@/lib/api/hooks/models";
 import {
   useCreatePersona,
@@ -71,6 +73,7 @@ interface FormData {
   defaultPersona?: boolean;
   guardrailActive?: boolean;
   imageInputActive?: boolean;
+  departmentId?: string | null;
 }
 
 export interface PersonaProps {
@@ -83,7 +86,7 @@ export default function Persona({
   mode = personaId ? "edit" : "create",
 }: PersonaProps) {
   const router = useRouter();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!personaId;
   const { effectiveProfile } = useProfile();
 
@@ -101,8 +104,12 @@ export default function Persona({
       defaultPersona: false,
       guardrailActive: false,
       imageInputActive: false,
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? null
+          : effectiveProfile?.departmentId || null,
     }),
-    [],
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,9 +120,10 @@ export default function Persona({
   const { data: persona, isLoading: isLoadingPersona } = usePersona(personaId!);
 
   const { data: models, isLoading: isModelsLoading } = useModels();
+  const { data: departments = [] } = useDepartmentsHook();
 
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds,
+    effectiveDepartmentIds
   );
 
   const { mutate: createPersona } = useCreatePersona();
@@ -134,7 +142,7 @@ export default function Persona({
     }
 
     const inUse = scenarios.some(
-      (scenario) => scenario.personaId === persona.id,
+      (scenario) => scenario.personaId === persona.id
     );
     if (!isAdmin && inUse) {
       return true;
@@ -166,6 +174,7 @@ export default function Persona({
         defaultPersona: persona.defaultPersona ?? false,
         guardrailActive: persona.guardrailActive ?? false,
         imageInputActive: persona.imageInputActive ?? false,
+        departmentId: persona.departmentId,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -196,6 +205,12 @@ export default function Persona({
       return;
     }
 
+    // Department validation for superadmins
+    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
+      toast.error("Department selection is required for superadmin users");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -214,6 +229,8 @@ export default function Persona({
           defaultPersona: formData.defaultPersona ?? false,
           guardrailActive: formData.guardrailActive ?? false,
           imageInputActive: formData.imageInputActive ?? false,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
         });
         toast.success("Persona updated successfully!");
@@ -231,6 +248,8 @@ export default function Persona({
           defaultPersona: formData.defaultPersona ?? false,
           guardrailActive: formData.guardrailActive ?? false,
           imageInputActive: formData.imageInputActive ?? false,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
         });
         toast.success("Persona created successfully!");
       }
@@ -238,7 +257,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -345,6 +364,50 @@ export default function Persona({
               <Skeleton className="h-10 w-full" />
             )}
           </div>
+
+          {/* Department Selection - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              {formData?.departmentId !== undefined && !isLoading ? (
+                <DepartmentSelector
+                  departments={departments.map((dept) => ({
+                    id: dept.id,
+                    title: dept.title as string,
+                    ...(dept.description && { description: dept.description }),
+                  }))}
+                  selectedDepartment={
+                    formData?.departmentId
+                      ? (() => {
+                          const dept = departments.find(
+                            (d) => d.id === formData.departmentId
+                          );
+                          return dept
+                            ? {
+                                id: dept.id,
+                                title: dept.title as string,
+                                ...(dept.description && {
+                                  description: dept.description,
+                                }),
+                              }
+                            : null;
+                        })()
+                      : null
+                  }
+                  onSelect={(department) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      departmentId: department?.id || null,
+                    }))
+                  }
+                  placeholder="Select department"
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
+          )}
 
           {/* Active/Inactive and Default Persona Switches */}
           <div className="space-y-4">
@@ -608,7 +671,7 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0",
+                                          : "opacity-0"
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
@@ -643,7 +706,7 @@ export default function Persona({
                                     "mr-2 h-4 w-4",
                                     formData.icon === iconName
                                       ? "opacity-100"
-                                      : "opacity-0",
+                                      : "opacity-0"
                                   )}
                                 />
                                 <IconComponent className="mr-2 h-4 w-4" />
