@@ -115,17 +115,17 @@ export default function Scenario({
   const [noDocuments, setNoDocuments] = useState(false);
 
   const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: parameterItems = [] } = useParameterItems();
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: scenario, isLoading } = useScenario(scenarioId!);
 
@@ -171,7 +171,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -180,7 +180,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return false;
 
     const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active
+      (sim: Simulation) => sim.active,
     );
 
     const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
@@ -250,7 +250,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | boolean | null
+    value: string | string[] | boolean | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -433,7 +433,7 @@ export default function Scenario({
         context: { component: "Scenario", function: "handleGenerateScenario" },
       });
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -480,7 +480,7 @@ export default function Scenario({
         },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -515,10 +515,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id)
+    formData.documentIds?.includes(doc.id),
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId
+    (persona) => persona.id === formData.personaId,
   );
 
   return (
@@ -774,7 +774,7 @@ export default function Scenario({
               onMultiSelect={(selectedDocs) =>
                 handleInputChange(
                   "documentIds",
-                  selectedDocs.map((doc) => doc.id)
+                  selectedDocs.map((doc) => doc.id),
                 )
               }
               disabled={isReadonly || noDocuments}

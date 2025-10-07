@@ -3,7 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
 import type { Agent, AgentCreate, AgentUpdate } from "@/lib/repos/agentRepo";
-import { agentKeys, agentKeysByModelId } from "@/lib/api/keys";
+import {
+  agentKeys,
+  agentKeysByModelId,
+  agentKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function useAgents(filters?: unknown) {
   return useQuery({
@@ -92,6 +96,26 @@ export function useAgentsByModelIdBatch(ids: string[]) {
     queryKey: agentKeysByModelId.many(ids),
     queryFn: () =>
       api<Agent[]>(`/api/v1/agents/by/modelId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    enabled: Array.isArray(ids) && ids.length > 0,
+  });
+}
+
+export function useAgentsByDepartmentId(id: string) {
+  return useQuery<Agent[]>({
+    queryKey: agentKeysByDepartmentId.one(id),
+    queryFn: () => api<Agent[]>(`/api/v1/agents/by/departmentId/${id}`),
+    enabled: id !== undefined && id !== null && id !== "",
+  });
+}
+
+export function useAgentsByDepartmentIdBatch(ids: string[]) {
+  return useQuery<Agent[]>({
+    queryKey: agentKeysByDepartmentId.many(ids),
+    queryFn: () =>
+      api<Agent[]>(`/api/v1/agents/by/departmentId/batch`, {
         method: "POST",
         body: JSON.stringify({ ids }),
       }),

@@ -55,23 +55,23 @@ export function Simulations() {
   const deleteSimulationMutation = useDeleteSimulation();
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
     );
   };
 

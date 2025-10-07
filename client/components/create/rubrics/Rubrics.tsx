@@ -57,7 +57,7 @@ export default function Rubrics() {
     useRubricsByDepartmentIdBatch(selectedDepartmentIds);
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Check if a rubric is being used by any simulations

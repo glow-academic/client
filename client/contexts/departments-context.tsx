@@ -29,7 +29,7 @@ export interface DepartmentsContextType {
 }
 
 const DepartmentsContext = createContext<DepartmentsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface DepartmentsProviderProps {
@@ -41,7 +41,7 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
 
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Initialize department selection based on user role
@@ -93,7 +93,7 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
       setSelectedDepartmentIds,
       clearDepartmentFilters,
       hasActiveDepartmentFilters,
-    ]
+    ],
   );
 
   return (

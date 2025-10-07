@@ -36,7 +36,7 @@ export interface UploadClassificationDialogProps {
   onClose: () => void;
   onConfirm: (
     perFile: Record<string, FileClassification>,
-    defaultsForZip: FileClassification
+    defaultsForZip: FileClassification,
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
@@ -62,12 +62,12 @@ export function UploadClassificationDialog({
 }: UploadClassificationDialogProps) {
   const { selectedDepartmentIds } = useDepartments();
   const { data: existingDocuments = [] } = useDocumentsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   const knownTags = React.useMemo(
     () => extractKnownTagsFromDocuments(existingDocuments),
-    [existingDocuments]
+    [existingDocuments],
   );
 
   // Per-file classification state (keyed by file.name)
@@ -114,8 +114,8 @@ export function UploadClassificationDialog({
   const applyTypeToAll = (type: DocumentType) => {
     setPerFile((prev) =>
       Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
-      )
+        Object.entries(prev).map(([k, v]) => [k, { ...v, type }]),
+      ),
     );
     setZipDefaults((p) => ({ ...p, type }));
   };
@@ -126,11 +126,11 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const merged = Array.from(
-            new Set([...(v.tags ?? []), ...incomingTags])
+            new Set([...(v.tags ?? []), ...incomingTags]),
           );
           return [k, { ...v, tags: merged }];
-        })
-      )
+        }),
+      ),
     );
     setZipDefaults((p) => ({
       ...p,
@@ -144,11 +144,11 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const nextTags = (v.tags ?? []).filter(
-            (t) => !tagsToRemove.includes(t)
+            (t) => !tagsToRemove.includes(t),
           );
           return [k, { ...v, tags: nextTags }];
-        })
-      )
+        }),
+      ),
     );
     setZipDefaults((p) => ({
       ...p,
@@ -385,7 +385,7 @@ export function UploadClassificationDialog({
                 variant="secondary"
                 onClick={() => {
                   const el = document.getElementById(
-                    "upload-dialog-file-input"
+                    "upload-dialog-file-input",
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}

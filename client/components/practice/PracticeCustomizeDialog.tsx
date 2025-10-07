@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDepartments } from "@/contexts/departments-context";
-import { useProfile } from "@/contexts/profile-context";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
@@ -64,7 +63,6 @@ export function PracticeCustomizeDialog({
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
-  const { effectiveProfile } = useProfile();
   const { selectedDepartmentIds } = useDepartments();
 
   // API calls - only made when dialog is open

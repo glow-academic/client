@@ -50,7 +50,7 @@ export function AnalyticsFilters({
 
   const { selectedDepartmentIds } = useDepartments();
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
     useRefreshAnalytics();
@@ -146,7 +146,7 @@ export function AnalyticsFilters({
       if (simulationFilters.includes("archived")) vals.push("archived");
       // When all three are enabled functionally, start with empty to indicate "All simulations"
       return vals.length === 3 ? [] : vals;
-    }
+    },
   );
 
   // Keep local selection in sync when context flags change externally
@@ -191,7 +191,7 @@ export function AnalyticsFilters({
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id)
+    selectedCohortIds.includes(cohort.id),
   );
 
   // Automatically filter available roles and remove invalid selections when cohorts are selected
@@ -200,7 +200,7 @@ export function AnalyticsFilters({
       // When cohorts are selected, only allow "ta" and "instructional" roles
       // Remove any existing selections that aren't "ta" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "ta" || role === "instructional"
+        (role) => role === "ta" || role === "instructional",
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);

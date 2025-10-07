@@ -22,7 +22,7 @@ export default function Agents() {
   const { selectedDepartmentIds } = useDepartments();
 
   const { data: agents = [] } = useAgentsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Get table columns and filter options

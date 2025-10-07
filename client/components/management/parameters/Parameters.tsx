@@ -35,7 +35,7 @@ export default function Parameters() {
   const { selectedDepartmentIds } = useDepartments();
 
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: parameterItems = [], isLoading: parameterItemsLoading } =
     useParameterItems();
@@ -58,7 +58,7 @@ export default function Parameters() {
       acc[item.parameterId]!.push(item);
       return acc;
     },
-    {} as Record<string, ParameterItem[]>
+    {} as Record<string, ParameterItem[]>,
   );
 
   const getParameterIcon = (parameter: Parameter) => {

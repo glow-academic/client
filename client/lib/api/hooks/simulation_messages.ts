@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for simulation_messages
 // Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import {
-  simulationMessageKeys,
-  simulationMessageKeysByChatId,
-} from "@/lib/api/keys";
 import type {
   SimulationMessage,
   SimulationMessageCreate,
   SimulationMessageUpdate,
 } from "@/lib/repos/simulationMessageRepo";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  simulationMessageKeys,
+  simulationMessageKeysByChatId,
+} from "@/lib/api/keys";
 
 export function useSimulationMessages(filters?: unknown) {
   return useQuery({
@@ -55,7 +55,7 @@ export function useUpdateSimulationMessage(id?: string) {
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
       return api<SimulationMessage>(
         `/api/v1/simulation_messages/${resolvedId}`,
-        { method: "PATCH", body: JSON.stringify(body) }
+        { method: "PATCH", body: JSON.stringify(body) },
       );
     },
     onSuccess: (_data, variables) => {

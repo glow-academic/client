@@ -48,7 +48,7 @@ export default function ReportsPage() {
       roles: selectedRoles,
       simulationFilters,
     }),
-    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters]
+    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters],
   );
 
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
@@ -60,10 +60,10 @@ export default function ReportsPage() {
     isError,
   } = useAnalyticsReportsBundle(filters, rqOpts);
   const { data: allScenarios } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: allSimulations } = useSimulationsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: allProfiles = [] } = useProfiles();
 
@@ -78,7 +78,7 @@ export default function ReportsPage() {
         firstName: p.firstName,
         lastName: p.lastName,
         alias: p.alias,
-      })
+      }),
     );
     return m;
   }, [allProfiles]);
@@ -107,7 +107,7 @@ export default function ReportsPage() {
           red: number;
           yellow: number;
           green: number;
-        }
+        },
       ) => {
         if (!metric.hasData) {
           return {
@@ -138,11 +138,11 @@ export default function ReportsPage() {
               const metricData = m as AverageScoreMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 60, yellow: 75, green: 85 }
+            { gray: 0, red: 60, yellow: 75, green: 85 },
           ),
           hover: profile.metrics.averageScore.hover,
         },
@@ -154,11 +154,11 @@ export default function ReportsPage() {
               const metricData = m as CompletionPercentageMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 60, yellow: 75, green: 85 }
+            { gray: 0, red: 60, yellow: 75, green: 85 },
           ),
           hover: profile.metrics.completionPercentage.hover,
         },
@@ -170,11 +170,11 @@ export default function ReportsPage() {
               const metricData = m as FirstAttemptPassRateMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 60, yellow: 75, green: 85 }
+            { gray: 0, red: 60, yellow: 75, green: 85 },
           ),
           hover: profile.metrics.firstAttemptPassRate.hover,
         },
@@ -186,11 +186,11 @@ export default function ReportsPage() {
               const metricData = m as HighestScoreMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 70, yellow: 80, green: 90 }
+            { gray: 0, red: 70, yellow: 80, green: 90 },
           ),
           hover: profile.metrics.highestScore.hover,
         },
@@ -202,11 +202,11 @@ export default function ReportsPage() {
               const metricData = m as MessagesPerSessionMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}`,
-            { gray: 0, red: 5, yellow: 8, green: 12 }
+            { gray: 0, red: 5, yellow: 8, green: 12 },
           ),
           hover: profile.metrics.messagesPerSession.hover,
         },
@@ -218,11 +218,11 @@ export default function ReportsPage() {
               const metricData = m as PersonaResponseTimesMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}s`,
-            { gray: 0, red: 300, yellow: 180, green: 60 }
+            { gray: 0, red: 300, yellow: 180, green: 60 },
           ),
           hover: profile.metrics.personaResponseTimes.hover,
         },
@@ -234,11 +234,11 @@ export default function ReportsPage() {
               const metricData = m as SessionEfficiencyMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 60, yellow: 75, green: 85 }
+            { gray: 0, red: 60, yellow: 75, green: 85 },
           ),
           hover: profile.metrics.sessionEfficiency.hover,
         },
@@ -250,11 +250,11 @@ export default function ReportsPage() {
               const metricData = m as StagnationRateMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}%`,
-            { gray: 0, red: 25, yellow: 15, green: 5 }
+            { gray: 0, red: 25, yellow: 15, green: 5 },
           ),
           hover: profile.metrics.stagnationRate.hover,
         },
@@ -266,11 +266,11 @@ export default function ReportsPage() {
               const metricData = m as TimeSpentMetricResponse;
               return computeCurrent(
                 metricData.method,
-                metricData.dataPoints || []
+                metricData.dataPoints || [],
               );
             },
             (n) => `${n}m`,
-            { gray: 0, red: 90, yellow: 60, green: 30 }
+            { gray: 0, red: 90, yellow: 60, green: 30 },
           ),
           hover: profile.metrics.timeSpent.hover,
         },
@@ -284,11 +284,11 @@ export default function ReportsPage() {
                 metricData.method,
                 metricData.dataPoints || [],
                 "value",
-                metricData.keyField as "attemptId"
+                metricData.keyField as "attemptId",
               );
             },
             (n) => `${n}`,
-            { gray: 0, red: 3, yellow: 5, green: 8 }
+            { gray: 0, red: 3, yellow: 5, green: 8 },
           ),
           hover: profile.metrics.totalAttempts.hover,
         },

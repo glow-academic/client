@@ -104,7 +104,7 @@ export default function DocumentViewer({
             {
               method: "GET",
               credentials: "include",
-            }
+            },
           );
         }
 

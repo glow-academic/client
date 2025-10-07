@@ -78,7 +78,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
   const [draggedSimulation, setDraggedSimulation] = useState<string | null>(
-    null
+    null,
   );
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
@@ -108,7 +108,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     (profiles: EditableProfile[]) => {
       setStaffProfiles(profiles);
     },
-    []
+    [],
   );
 
   const memoizedSetProfilesToDelete = useCallback((profileIds: string[]) => {
@@ -117,7 +117,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   // Fetch cohorts for the list mode
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   const { data: profiles = [], isLoading: isLoadingProfiles } =
@@ -136,7 +136,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     useParameterItems();
 
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Mutation hooks
@@ -163,7 +163,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       if (!target) return false;
       return !!(target.profileIds && target.profileIds.length > 0);
     },
-    [currentCohort]
+    [currentCohort],
   );
 
   const canEditThisCohort = useMemo(() => {
@@ -185,7 +185,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     if (isAdmin) return true;
 
     const isUserInCohort = currentCohort.profileIds?.includes(
-      effectiveProfile?.id || ""
+      effectiveProfile?.id || "",
     );
 
     return isUserInCohort || !isCohortInUse(currentCohort);
@@ -220,7 +220,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       return [];
     }
     return transformedSimulations.filter((sim) =>
-      formData.simulationIds?.includes(sim.id)
+      formData.simulationIds?.includes(sim.id),
     );
   }, [formData.simulationIds, transformedSimulations, simulations.length]);
 
@@ -233,7 +233,7 @@ export default function Cohort({ cohortId }: CohortProps) {
         simulationIds,
       }));
     },
-    []
+    [],
   );
 
   // Load cohort data if editing
@@ -246,7 +246,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       isEditMode
     ) {
       const cohortToEdit = cohorts.find(
-        (c: CohortType) => c.id === targetCohortId
+        (c: CohortType) => c.id === targetCohortId,
       );
       if (cohortToEdit) {
         const cohortData = {
@@ -289,7 +289,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
         // Load staff profiles
         const cohortProfiles = profiles.filter((profile: Profile) =>
-          cohortToEdit.profileIds?.includes(profile.id)
+          cohortToEdit.profileIds?.includes(profile.id),
         );
 
         setStaffProfiles((prev) => {
@@ -321,7 +321,7 @@ export default function Cohort({ cohortId }: CohortProps) {
       staffProfiles.length === 0
     ) {
       const currentUserProfile = profiles.find(
-        (profile: Profile) => profile.id === effectiveProfile.id
+        (profile: Profile) => profile.id === effectiveProfile.id,
       );
       if (currentUserProfile) {
         setStaffProfiles([currentUserProfile]);
@@ -359,7 +359,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const handleInputChange = (
     field: keyof Partial<CohortType>,
-    value: string | boolean | string[] | null
+    value: string | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -378,7 +378,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const handleDragStartSimulation = (
     e: React.DragEvent,
-    simulationId: string
+    simulationId: string,
   ) => {
     setDraggedSimulation(simulationId);
     e.dataTransfer.effectAllowed = "move";
@@ -420,7 +420,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     // For instructional users, ensure they are always in the cohort
     if (effectiveProfile?.role === "instructional" && !isEditMode) {
       const isUserInCohort = staffProfiles.some(
-        (profile) => profile.id === effectiveProfile.id
+        (profile) => profile.id === effectiveProfile.id,
       );
       if (!isUserInCohort) {
         newErrors.title = "You must be included in the cohort to create it";
@@ -481,7 +481,7 @@ export default function Cohort({ cohortId }: CohortProps) {
     } catch (error) {
       const targetCohortId = cohortId || editingCohortId;
       toast.error(
-        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -697,7 +697,7 @@ export default function Cohort({ cohortId }: CohortProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {formData.simulationIds?.map((simulationId) => {
                 const simulation = simulations.find(
-                  (s: Simulation) => s.id === simulationId
+                  (s: Simulation) => s.id === simulationId,
                 );
                 if (!simulation) return null;
 
@@ -768,7 +768,7 @@ export default function Cohort({ cohortId }: CohortProps) {
                                 .slice(0, 4)
                                 .map((scenarioId) => {
                                   const scenario = scenarios.find(
-                                    (s) => s.id === scenarioId
+                                    (s) => s.id === scenarioId,
                                   );
                                   return (
                                     <Badge
@@ -861,7 +861,7 @@ export default function Cohort({ cohortId }: CohortProps) {
               <ul className="mt-2 list-disc list-inside">
                 {formData.simulationIds?.map((simId) => {
                   const sim = simulations.find(
-                    (s: Simulation) => s.id === simId
+                    (s: Simulation) => s.id === simId,
                   );
                   return (
                     <li key={simId} className="text-sm">

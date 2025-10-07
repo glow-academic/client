@@ -174,7 +174,7 @@ export default function StaffManager({
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
     useProfiles();
   const { data: allCohorts = [] } = useCohortsByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Mutation hooks
@@ -358,7 +358,7 @@ export default function StaffManager({
               ).trim();
               if (!alias) {
                 toast.error(
-                  `Row ${index + 1}: Missing required field 'alias'. Please ensure all rows have an alias value.`
+                  `Row ${index + 1}: Missing required field 'alias'. Please ensure all rows have an alias value.`,
                 );
                 continue;
               }
@@ -367,7 +367,7 @@ export default function StaffManager({
               const role: RoleValue = "ta";
 
               const existing = allProfiles.find(
-                (p: Profile) => p.alias.toLowerCase() === alias.toLowerCase()
+                (p: Profile) => p.alias.toLowerCase() === alias.toLowerCase(),
               );
 
               if (existing) {
@@ -385,7 +385,7 @@ export default function StaffManager({
                   });
                 } else {
                   toast.error(
-                    `Row ${index + 1}: Profile with alias "${alias}" already exists in this cohort.`
+                    `Row ${index + 1}: Profile with alias "${alias}" already exists in this cohort.`,
                   );
                 }
               } else {
@@ -393,7 +393,7 @@ export default function StaffManager({
                   const ok = await validateAlias(alias);
                   if (!ok) {
                     toast.error(
-                      `Row ${index + 1}: Alias "${alias}" already exists in the system. Please use a unique alias.`
+                      `Row ${index + 1}: Alias "${alias}" already exists in the system. Please use a unique alias.`,
                     );
                     continue;
                   }
@@ -408,7 +408,7 @@ export default function StaffManager({
                   });
                 } else {
                   toast.warning(
-                    `Row ${index + 1}: Skipping "${alias}" - firstName and lastName are required for creating new profiles. Please provide both fields.`
+                    `Row ${index + 1}: Skipping "${alias}" - firstName and lastName are required for creating new profiles. Please provide both fields.`,
                   );
                 }
               }
@@ -432,7 +432,7 @@ export default function StaffManager({
                 }
               } catch (error) {
                 toast.error(
-                  "Failed to create some profiles in the database. Please check your data and try again."
+                  "Failed to create some profiles in the database. Please check your data and try again.",
                 );
                 log.error("staff.bulk_create.failed", {
                   message: "Error creating profiles",
@@ -448,11 +448,11 @@ export default function StaffManager({
             if (newSel.length > 0) {
               setSelectedProfiles(newSel);
               toast.success(
-                `Successfully processed ${newSel.length} profile(s) from CSV file.`
+                `Successfully processed ${newSel.length} profile(s) from CSV file.`,
               );
             } else {
               toast.error(
-                "No valid profiles found in CSV. Please check that your file contains the required columns and data."
+                "No valid profiles found in CSV. Please check that your file contains the required columns and data.",
               );
             }
           } else {
@@ -479,36 +479,36 @@ export default function StaffManager({
 
               if (!firstName || !lastName || !alias) {
                 toast.error(
-                  `Row ${index + 1}: Missing required fields. Please ensure all rows have firstName, lastName, and alias values.`
+                  `Row ${index + 1}: Missing required fields. Please ensure all rows have firstName, lastName, and alias values.`,
                 );
                 continue;
               }
               if (!role) {
                 toast.error(
-                  `Row ${index + 1}: Missing required field 'role'. Please ensure all rows have a role value.`
+                  `Row ${index + 1}: Missing required field 'role'. Please ensure all rows have a role value.`,
                 );
                 continue;
               }
               if (!availableRoles.find((ar) => ar.value === role)) {
                 toast.error(
-                  `Row ${index + 1}: Invalid role "${role}". Valid roles are: ${availableRoles.map((r) => r.value).join(", ")}`
+                  `Row ${index + 1}: Invalid role "${role}". Valid roles are: ${availableRoles.map((r) => r.value).join(", ")}`,
                 );
                 continue;
               }
 
               const existsLocal = allProfiles.find(
-                (p: Profile) => p.alias.toLowerCase() === alias.toLowerCase()
+                (p: Profile) => p.alias.toLowerCase() === alias.toLowerCase(),
               );
               if (existsLocal) {
                 toast.error(
-                  `Row ${index + 1}: Profile with alias "${alias}" already exists in the system. Please use a unique alias.`
+                  `Row ${index + 1}: Profile with alias "${alias}" already exists in the system. Please use a unique alias.`,
                 );
                 continue;
               }
               const ok = await validateAlias(alias);
               if (!ok) {
                 toast.error(
-                  `Row ${index + 1}: Alias "${alias}" already exists in the system. Please use a unique alias.`
+                  `Row ${index + 1}: Alias "${alias}" already exists in the system. Please use a unique alias.`,
                 );
                 continue;
               }
@@ -526,17 +526,17 @@ export default function StaffManager({
             if (newProfiles.length > 0) {
               setCsvPreview(newProfiles);
               toast.success(
-                `Successfully processed ${newProfiles.length} profile(s) from CSV file.`
+                `Successfully processed ${newProfiles.length} profile(s) from CSV file.`,
               );
             } else {
               toast.error(
-                "No valid profiles found in CSV. Please check that your file contains the required columns and data."
+                "No valid profiles found in CSV. Please check that your file contains the required columns and data.",
               );
             }
           }
         } catch (error) {
           toast.error(
-            `Error parsing CSV file: ${error instanceof Error ? error.message : "Unknown error occurred. Please check your file format."}`
+            `Error parsing CSV file: ${error instanceof Error ? error.message : "Unknown error occurred. Please check your file format."}`,
           );
         }
       };
@@ -550,7 +550,7 @@ export default function StaffManager({
       availableRoles,
       validateAlias,
       createProfilesMutation,
-    ]
+    ],
   );
 
   const handleCsvInputChange = useCallback(
@@ -560,7 +560,7 @@ export default function StaffManager({
         if (file) handleCsvUpload(file);
       }
     },
-    [handleCsvUpload]
+    [handleCsvUpload],
   );
 
   // Validation functions
@@ -638,27 +638,27 @@ export default function StaffManager({
     }
     const existsLocal = allProfiles.find(
       (p: Profile) =>
-        p.alias.toLowerCase() === manualProfileGlobal.alias.toLowerCase()
+        p.alias.toLowerCase() === manualProfileGlobal.alias.toLowerCase(),
     );
     if (existsLocal) {
       toast.error(
-        "This alias already exists in the system. Please choose a different alias."
+        "This alias already exists in the system. Please choose a different alias.",
       );
       return;
     }
     const dupInPreview = csvPreview.find(
-      (p) => p.alias.toLowerCase() === manualProfileGlobal.alias.toLowerCase()
+      (p) => p.alias.toLowerCase() === manualProfileGlobal.alias.toLowerCase(),
     );
     if (dupInPreview) {
       toast.error(
-        "This alias is already in your preview list. Please choose a different alias."
+        "This alias is already in your preview list. Please choose a different alias.",
       );
       return;
     }
     const ok = await validateAlias(manualProfileGlobal.alias.trim());
     if (!ok) {
       toast.error(
-        "This alias already exists in the system. Please choose a different alias."
+        "This alias already exists in the system. Please choose a different alias.",
       );
       return;
     }
@@ -676,7 +676,7 @@ export default function StaffManager({
       },
     ]);
     toast.success(
-      `Added to preview: ${manualProfileGlobal.firstName} ${manualProfileGlobal.lastName} (${manualProfileGlobal.alias})`
+      `Added to preview: ${manualProfileGlobal.firstName} ${manualProfileGlobal.lastName} (${manualProfileGlobal.alias})`,
     );
     setManualProfileGlobal({
       firstName: "",
@@ -700,7 +700,7 @@ export default function StaffManager({
     }
     const existing = allProfiles.find(
       (p: Profile) =>
-        p.alias.toLowerCase() === manualProfileCohort.alias.toLowerCase()
+        p.alias.toLowerCase() === manualProfileCohort.alias.toLowerCase(),
     );
     if (existing) {
       if (
@@ -717,18 +717,18 @@ export default function StaffManager({
         };
         setSelectedProfiles((prev) => [...prev, newProfile]);
         toast.success(
-          `Added existing profile: ${existing.firstName} ${existing.lastName} (${existing.alias})`
+          `Added existing profile: ${existing.firstName} ${existing.lastName} (${existing.alias})`,
         );
       } else {
         toast.error(
-          "This profile already exists in the current cohort. Please select a different profile."
+          "This profile already exists in the current cohort. Please select a different profile.",
         );
       }
     } else {
       const ok = await validateAlias(manualProfileCohort.alias.trim());
       if (!ok) {
         toast.error(
-          "This alias already exists in the system. Please choose a different alias."
+          "This alias already exists in the system. Please choose a different alias.",
         );
         return;
       }
@@ -754,13 +754,13 @@ export default function StaffManager({
             };
             setSelectedProfiles((prev) => [...prev, np]);
             toast.success(
-              `Successfully created and added new profile: ${c.firstName} ${c.lastName} (${c.alias})`
+              `Successfully created and added new profile: ${c.firstName} ${c.lastName} (${c.alias})`,
             );
           }
         }
       } catch (error) {
         toast.error(
-          "Failed to create profile in the database. Please check your information and try again."
+          "Failed to create profile in the database. Please check your information and try again.",
         );
         log.error("staff.create_profile.failed", {
           message: "Error creating profile",
@@ -795,7 +795,7 @@ export default function StaffManager({
           lastName: p.lastName,
           alias: p.alias,
           role: p.role,
-        }))
+        })),
       );
       const idMap = new Map<string, string>();
       csvPreview.forEach((p, idx) => {
@@ -832,11 +832,11 @@ export default function StaffManager({
               updatedAt: new Date().toISOString(),
             });
             cohortUpdateMessages.push(
-              `Added ${profiles.length} profile(s) to cohort "${cohortName}"`
+              `Added ${profiles.length} profile(s) to cohort "${cohortName}"`,
             );
           } else {
             warningMessages.push(
-              `Cohort "${cohortName}" not found. Profiles were created but not assigned to a cohort.`
+              `Cohort "${cohortName}" not found. Profiles were created but not assigned to a cohort.`,
             );
           }
         }
@@ -857,7 +857,7 @@ export default function StaffManager({
         toast.warning(message);
       });
       toast.success(
-        `Successfully created ${csvPreview.length} staff member(s)!`
+        `Successfully created ${csvPreview.length} staff member(s)!`,
       );
       // Always close the dialog after creating staff members
       if (onDone) onDone();
@@ -883,12 +883,12 @@ export default function StaffManager({
 
   const removeFromPreview = useCallback(
     (id: string) => setCsvPreview((prev) => prev.filter((p) => p.id !== id)),
-    []
+    [],
   );
   const removeSelectedProfile = useCallback(
     (id: string) =>
       setSelectedProfiles((prev) => prev.filter((p) => p.id !== id)),
-    []
+    [],
   );
 
   // Derived lists for cohort search
@@ -899,7 +899,7 @@ export default function StaffManager({
         !cohortExistingIds.includes(p.id) &&
         !selectedProfiles.find((sp) => sp.id === p.id) &&
         (p.role === "instructional" || p.role === "ta") &&
-        !p.defaultProfile
+        !p.defaultProfile,
     );
   }, [isCohortMode, allProfiles, cohortExistingIds, selectedProfiles]);
 
@@ -909,7 +909,7 @@ export default function StaffManager({
       (p) =>
         p.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.alias.toLowerCase().includes(searchQuery.toLowerCase())
+        p.alias.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [isCohortMode, availableProfiles, searchQuery]);
 
@@ -926,7 +926,7 @@ export default function StaffManager({
       const exists = prev.find((p) => p.id === profile.id);
       if (exists) {
         toast.error(
-          "This profile is already selected. Please choose a different profile."
+          "This profile is already selected. Please choose a different profile.",
         );
         return prev;
       }
@@ -937,7 +937,7 @@ export default function StaffManager({
   const confirmAndAddToCohort = useCallback(() => {
     if (selectedProfiles.length === 0) {
       toast.error(
-        "No profiles selected. Please select at least one profile to add to the cohort."
+        "No profiles selected. Please select at least one profile to add to the cohort.",
       );
       return;
     }
@@ -946,7 +946,7 @@ export default function StaffManager({
     setSearchQuery("");
     setActiveTab("csv");
     toast.success(
-      `Successfully added ${selectedProfiles.length} profile(s) to the cohort.`
+      `Successfully added ${selectedProfiles.length} profile(s) to the cohort.`,
     );
     // Always close the dialog after adding profiles
     if (onDone) onDone();
@@ -1545,14 +1545,14 @@ export default function StaffManager({
                       new Set(
                         csvPreview
                           .map((u) => u.cohortName)
-                          .filter(Boolean) as string[]
-                      )
+                          .filter(Boolean) as string[],
+                      ),
                     ).map((cohortName) => {
                       const userCount = csvPreview.filter(
-                        (u) => u.cohortName === cohortName
+                        (u) => u.cohortName === cohortName,
                       ).length;
                       const cohort = allCohorts.find(
-                        (c) => c.title === cohortName
+                        (c) => c.title === cohortName,
                       );
                       return (
                         <div

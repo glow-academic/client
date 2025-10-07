@@ -82,10 +82,10 @@ export default function Personas() {
   const deletePersonaMutation = useDeletePersona();
 
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   // Get table columns and filter options
@@ -317,7 +317,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDeleteClick(
                       persona.id,
-                      persona.name || "Unnamed Persona"
+                      persona.name || "Unnamed Persona",
                     )
                   }
                 >

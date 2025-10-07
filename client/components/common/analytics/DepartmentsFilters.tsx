@@ -26,7 +26,7 @@ export function DepartmentsFilters() {
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
-    selectedDepartmentIds.includes(department.id)
+    selectedDepartmentIds.includes(department.id),
   );
 
   const handleDepartmentSelect = (departments: typeof departmentOptions) => {

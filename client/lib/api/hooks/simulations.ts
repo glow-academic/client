@@ -1,17 +1,17 @@
 // AUTO-GENERATED minimal hooks for simulations
 // Safe to edit: generator will SKIP unless --force-hooks
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import {
-  simulationKeys,
-  simulationKeysByDepartmentId,
-  simulationKeysByRubricId,
-} from "@/lib/api/keys";
 import type {
   Simulation,
   SimulationCreate,
   SimulationUpdate,
 } from "@/lib/repos/simulationRepo";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  simulationKeys,
+  simulationKeysByRubricId,
+  simulationKeysByDepartmentId,
+} from "@/lib/api/keys";
 
 export function useSimulations(filters?: unknown) {
   return useQuery({
@@ -109,7 +109,7 @@ export function useSimulationsByRubricIdBatch(ids: string[]) {
   });
 }
 
-export function useSimulationsByDepartmentId(id: string)  {
+export function useSimulationsByDepartmentId(id: string) {
   return useQuery<Simulation[]>({
     queryKey: simulationKeysByDepartmentId.one(id),
     queryFn: () =>

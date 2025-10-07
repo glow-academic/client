@@ -589,3 +589,14 @@ export const simulationKeysByDepartmentId = {
   many: (ids: Array<string | number>) =>
     ["simulations:by:departmentId:batch", ids.map(String).sort()] as const,
 };
+
+export const agentKeysByDepartmentId = {
+  one: (id: string | number) => ["agents:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["agents:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const modelKeysByProviderId = {
+  one: (id: string | number) => ["models:by:providerId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["models:by:providerId:batch", ids.map(String).sort()] as const,
+};

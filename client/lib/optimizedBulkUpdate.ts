@@ -14,7 +14,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -57,7 +57,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     const db = await this.getDb();
 
@@ -134,7 +134,7 @@ export class OptimizedBulkUpdate {
         // Check if we have valid case statements
         if (!caseStatements || caseStatements.trim() === "") {
           throw new Error(
-            `No valid fields to update for ${entityName} bulk update. Fields: ${JSON.stringify(fields)}, Group: ${JSON.stringify(group)}`
+            `No valid fields to update for ${entityName} bulk update. Fields: ${JSON.stringify(fields)}, Group: ${JSON.stringify(group)}`,
           );
         }
 
@@ -157,7 +157,7 @@ export class OptimizedBulkUpdate {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     table: any,
     updates: Array<{ id: string } & Record<string, unknown>>,
-    entityName: string
+    entityName: string,
   ): Promise<T[]> {
     if (!Array.isArray(updates) || updates.length === 0) return [];
 

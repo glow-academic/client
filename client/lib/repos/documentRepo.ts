@@ -88,7 +88,7 @@ export const documentRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       documents,
       updates,
-      "Document"
+      "Document",
     );
   },
 

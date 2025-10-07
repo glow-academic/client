@@ -104,7 +104,7 @@ export default function Feedback() {
       if (!profile) return "Unknown User";
       return `${profile.firstName} ${profile.lastName}`;
     },
-    [profileMap]
+    [profileMap],
   );
 
   const getAuthorAlias = useCallback(
@@ -114,7 +114,7 @@ export default function Feedback() {
       if (!profile) return "";
       return profile.alias;
     },
-    [profileMap]
+    [profileMap],
   );
 
   // Feedback type helpers removed (no longer used)

@@ -102,7 +102,7 @@ export default function Persona({
       guardrailActive: false,
       imageInputActive: false,
     }),
-    []
+    [],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,7 +115,7 @@ export default function Persona({
   const { data: models, isLoading: isModelsLoading } = useModels();
 
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    selectedDepartmentIds
+    selectedDepartmentIds,
   );
 
   const { mutate: createPersona } = useCreatePersona();
@@ -134,7 +134,7 @@ export default function Persona({
     }
 
     const inUse = scenarios.some(
-      (scenario) => scenario.personaId === persona.id
+      (scenario) => scenario.personaId === persona.id,
     );
     if (!isAdmin && inUse) {
       return true;
@@ -238,7 +238,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -608,7 +608,7 @@ export default function Persona({
                                         "mr-2 h-4 w-4",
                                         formData.icon === iconName
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                     <IconComponent className="mr-2 h-4 w-4" />
@@ -643,7 +643,7 @@ export default function Persona({
                                     "mr-2 h-4 w-4",
                                     formData.icon === iconName
                                       ? "opacity-100"
-                                      : "opacity-0"
+                                      : "opacity-0",
                                   )}
                                 />
                                 <IconComponent className="mr-2 h-4 w-4" />

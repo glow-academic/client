@@ -98,7 +98,7 @@ export default function Staff() {
     useCohortsByDepartmentIdBatch(selectedDepartmentIds);
 
   const { data: recentRuns = [] } = useModelRunsByProfileIdBatch(
-    allProfiles.map((p: Profile) => p.id)
+    allProfiles.map((p: Profile) => p.id),
   );
 
   // Listen for layout "Create Staff" button broadcast
@@ -125,7 +125,7 @@ export default function Staff() {
     }
 
     return allProfiles.filter((profile: Profile) =>
-      allowedRoles.includes(profile.role)
+      allowedRoles.includes(profile.role),
     );
   }, [allProfiles, effectiveProfile?.role]);
 
@@ -134,7 +134,7 @@ export default function Staff() {
     return staffUsers.map((profile: Profile) => {
       // Find cohorts this user belongs to
       const userCohorts = allCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profile.id)
+        cohort.profileIds.includes(profile.id),
       );
 
       // Compute requests in last 24h for this profile
@@ -146,7 +146,7 @@ export default function Staff() {
         (r) =>
           r.profileId === profile.id &&
           r.createdAt &&
-          new Date(r.createdAt).getTime() >= dayAgo
+          new Date(r.createdAt).getTime() >= dayAgo,
       ).length;
 
       return {
@@ -163,7 +163,7 @@ export default function Staff() {
         lastActiveFormatted: formatLastActive(profile.lastActive),
         roleDisplayName: getRoleDisplayName(profile.role),
         defaultProfile: Boolean(
-          (profile as unknown as { defaultProfile?: boolean }).defaultProfile
+          (profile as unknown as { defaultProfile?: boolean }).defaultProfile,
         ),
         reqPerDay:
           (profile as unknown as { reqPerDay?: number | null }).reqPerDay ??
@@ -177,7 +177,7 @@ export default function Staff() {
   const counts = React.useMemo(() => {
     const activeStaff = staffUsers.filter((profile: Profile) => profile.active);
     const inactiveStaff = staffUsers.filter(
-      (profile: Profile) => !profile.active
+      (profile: Profile) => !profile.active,
     );
 
     const baseCounts = {
@@ -185,13 +185,13 @@ export default function Staff() {
       active: activeStaff.length,
       inactive: inactiveStaff.length,
       instructional: staffUsers.filter(
-        (profile: Profile) => profile.role === "instructional"
+        (profile: Profile) => profile.role === "instructional",
       ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
       admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
         .length,
       superadmin: staffUsers.filter(
-        (profile: Profile) => profile.role === "superadmin"
+        (profile: Profile) => profile.role === "superadmin",
       ).length,
       guest: staffUsers.filter((profile: Profile) => profile.role === "guest")
         .length,
@@ -230,7 +230,7 @@ export default function Staff() {
         if (effectiveProfile?.role === "superadmin") {
           // For superadmins, show both superadmins and admins
           filteredStaff = staffData.filter(
-            (staff) => staff.role === "superadmin" || staff.role === "admin"
+            (staff) => staff.role === "superadmin" || staff.role === "admin",
           );
           title = `Superadmins/Admins (${filteredStaff.length})`;
         } else {
@@ -241,7 +241,7 @@ export default function Staff() {
         break;
       case "instructional":
         filteredStaff = staffData.filter(
-          (staff) => staff.role === "instructional"
+          (staff) => staff.role === "instructional",
         );
         title = `Instructional Staff (${filteredStaff.length})`;
         break;
@@ -276,7 +276,7 @@ export default function Staff() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60),
     );
 
     if (diffInMinutes < 1) return "Just now";
@@ -404,7 +404,7 @@ export default function Staff() {
         selectedStaffIds={selectedStaffIds}
         onStaffSelect={(id, checked) =>
           setSelectedStaffIds((prev) =>
-            checked ? [...prev, id] : prev.filter((x) => x !== id)
+            checked ? [...prev, id] : prev.filter((x) => x !== id),
           )
         }
         onSelectAll={(checked, visibleRowIds) => {
@@ -422,7 +422,7 @@ export default function Staff() {
           } else {
             // Deselect all visible rows
             setSelectedStaffIds((prev) =>
-              prev.filter((id) => !visibleRowIds?.includes(id))
+              prev.filter((id) => !visibleRowIds?.includes(id)),
             );
           }
         }}
@@ -431,7 +431,7 @@ export default function Staff() {
           window.open(
             `/analytics/reports/p/${staff.id}`,
             "_blank",
-            "noopener,noreferrer"
+            "noopener,noreferrer",
           );
         }}
         onEdit={(staff) => setEditProfileId(staff.id)}
@@ -677,13 +677,13 @@ export default function Staff() {
           </AlertDialogHeader>
           {(() => {
             const selected = staffData.filter((s) =>
-              selectedStaffIds.includes(s.id)
+              selectedStaffIds.includes(s.id),
             );
             const nonDeletable = selected.filter(
-              (s) => s.defaultProfile || s.id === effectiveProfile?.id
+              (s) => s.defaultProfile || s.id === effectiveProfile?.id,
             );
             const deletable = selected.filter(
-              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id
+              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id,
             );
             const impactedCohorts = deletable.map((s) => ({
               staff: s,
@@ -765,7 +765,7 @@ export default function Staff() {
                       (s) =>
                         selectedStaffIds.includes(s.id) &&
                         !s.defaultProfile &&
-                        s.id !== effectiveProfile?.id
+                        s.id !== effectiveProfile?.id,
                     )
                     .map((s) => s.id);
                   if (deletableIds.length === 0) {
@@ -812,7 +812,7 @@ export default function Staff() {
               const canDelete =
                 !staff.defaultProfile && staff.id !== effectiveProfile?.id;
               const cohorts = allCohorts.filter((c) =>
-                c.profileIds.includes(staff.id)
+                c.profileIds.includes(staff.id),
               );
 
               if (!canDelete) {
@@ -884,7 +884,7 @@ export default function Staff() {
                   toast.error(
                     deleteStaffMember.id === effectiveProfile?.id
                       ? "You cannot delete your own account."
-                      : "Default profiles cannot be deleted."
+                      : "Default profiles cannot be deleted.",
                   );
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);
