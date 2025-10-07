@@ -49,7 +49,7 @@ export interface DepartmentPickerProps extends PopoverProps {
 
 export function DepartmentPicker({
   departments,
-  placeholder = "All departments",
+  placeholder = "Departments",
   onSelect,
   selectedDepartments = [],
   hideSelectedChips = true,

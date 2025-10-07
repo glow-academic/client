@@ -41,7 +41,7 @@ export function DepartmentsFilters() {
           departments={departmentOptions}
           selectedDepartments={selectedDepartments}
           onSelect={handleDepartmentSelect}
-          placeholder="All departments"
+          placeholder="Departments"
           hideSelectedChips={true}
         />
       </div>

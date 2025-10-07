@@ -23,7 +23,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { useProfile } from "@/contexts/profile-context";
 import {
   useAgent,
   useCreateAgent,
@@ -56,7 +55,6 @@ interface FormErrors {
 
 export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -185,8 +183,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             formData.reasoning === "none" || !formData.reasoning
               ? null
               : formData.reasoning,
-          departmentId: effectiveProfile?.departmentId || "",
-          type: "assistant",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
