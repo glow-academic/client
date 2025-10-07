@@ -2,27 +2,37 @@ import logging
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, List
 
-from agents import Runner, TResponseInputItem, trace
+from agents import (Runner, ToolsToFinalOutputResult, TResponseInputItem,
+                    function_tool, trace)
 from app.db import get_session
-from app.models import (Agents, DebugInfo, ModelRuns, Models, Providers,
-                        Rubrics, Scenarios, SimulationAttempts,
-                        SimulationChatFeedbacks, SimulationChatGrades,
-                        SimulationChats, SimulationMessages, Simulations,
-                        StandardGroups, Standards)
+from app.models import (Agents, ModelRuns, Models, Providers, Rubrics,
+                        Scenarios, SimulationAttempts, SimulationChatFeedbacks,
+                        SimulationChatGrades, SimulationChats,
+                        SimulationMessages, Simulations, StandardGroups,
+                        Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
+from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
-from pydantic import BaseModel, Field, create_model
+from pydantic import Field
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
+
+# Global storage for grading results
+grading_results: dict[str, Any] = {}
+grading_progress: dict[str, bool] = {}
+
+# Socket.IO instance for progress emissions (set per grading run)
+_grading_sio_instance: Any = None
+_grading_chat_id: uuid.UUID | None = None
 
 
 def create_safe_field_name(short_name: str) -> str:
@@ -40,49 +50,139 @@ def create_safe_field_name(short_name: str) -> str:
     return safe_name
 
 
-def create_dynamic_rubric_model(
-    standard_groups: List[StandardGroups],
-) -> type[BaseModel]:
-    """
-    Create a dynamic Pydantic model based on the rubric's standard groups.
+async def _emit_grading_progress(event_data: dict[str, Any]) -> None:
+    """Helper to emit grading progress via Socket.IO if available."""
+    global _grading_sio_instance, _grading_chat_id
+    
+    if _grading_sio_instance and _grading_chat_id:
+        try:
+            await _grading_sio_instance.emit(
+                "simulation_grading_progress",
+                event_data,
+                room=f"simulation_{_grading_chat_id}",
+            )
+            logger.info(f"Emitted grading progress: {event_data.get('type')}")
+        except Exception as e:
+            logger.warning(f"Failed to emit grading progress: {e}")
 
-    Args:
-        standard_groups: List of standard groups for this rubric
 
-    Returns:
-        Dynamic Pydantic model class
-    """
-    fields: dict[str, Any] = {}
+def create_grading_function(
+    standard_group: StandardGroups, 
+    standards: List[Standards],
+    chat_id: uuid.UUID
+) -> Any:
+    """Create a function tool for grading a specific standard group."""
+    safe_name = create_safe_field_name(standard_group.short_name)
+    
+    # Get standards for this group and build rating scale
+    group_standards = [s for s in standards if s.standard_group_id == standard_group.id]
+    group_standards.sort(key=lambda x: x.points, reverse=True)
+    
+    rating_scale = "\n".join([
+        f"  {std.points} - {std.name}: {std.description}" 
+        for std in group_standards
+    ])
+    
+    full_description = f"{standard_group.description}\n\nRating Scale:\n{rating_scale}"
+    score_description = f"Score for {standard_group.name} (1-5)"
+    feedback_description = f"Feedback explaining the score for {standard_group.name}"
+    
+    async def grade_standard_group(
+        score: int = Field(ge=1, le=5, description=score_description),
+        feedback: str = Field(default="", description=feedback_description),
+    ) -> str:
+        f"""Grade the conversation on: {standard_group.name}
+        
+        {full_description}
+        
+        Args:
+            score: Integer score from 1-5 based on the rubric criteria above
+            feedback: Brief feedback explaining the score with specific examples
+            
+        Returns:
+            Confirmation message
+        """
+        grading_results[safe_name] = {"score": score, "feedback": feedback}
+        grading_progress[safe_name] = True
+        
+        # Emit progress event
+        await _emit_grading_progress({
+            "type": "standard_graded",
+            "chat_id": str(chat_id),
+            "standard_group_name": standard_group.name,
+            "standard_group_short_name": standard_group.short_name,
+            "score": score,
+            "feedback_preview": feedback[:100] + "..." if len(feedback) > 100 else feedback,
+            "completed_count": sum(1 for v in grading_progress.values() if v),
+            "total_count": len(grading_progress),
+        })
+        
+        logger.info(f"✓ Graded {standard_group.name}: {score}/5 - {feedback[:50]}...")
+        return f"Graded {standard_group.name} with score {score}"
+    
+    grade_standard_group.__name__ = f"grade_{safe_name}"
+    return function_tool(grade_standard_group)
 
+
+def create_summary_function(chat_id: uuid.UUID) -> Any:
+    """Create a function tool for recording the overall summary."""
+    
+    async def record_summary(
+        summary: str = Field(description="Overall evaluation summary synthesizing main strengths and areas for improvement")
+    ) -> str:
+        """Record the overall evaluation summary after grading all standards.
+        
+        This should be a 2-3 sentence summary that synthesizes the TA's main strengths 
+        and areas for improvement based on the rubric evaluation.
+        
+        Args:
+            summary: Overall summary of the evaluation
+            
+        Returns:
+            Confirmation message
+        """
+        grading_results["summary"] = summary
+        grading_progress["summary"] = True
+        
+        # Emit progress event
+        await _emit_grading_progress({
+            "type": "summary_recorded",
+            "chat_id": str(chat_id),
+            "message": "Overall summary recorded",
+            "summary_preview": summary[:150] + "..." if len(summary) > 150 else summary,
+        })
+        
+        logger.info(f"✓ Recorded summary: {summary[:100]}...")
+        return "Summary recorded successfully"
+    
+    return function_tool(record_summary)
+
+
+def create_grading_tools(
+    standard_groups: List[StandardGroups], 
+    standards: List[Standards],
+    chat_id: uuid.UUID
+) -> list[Any]:
+    """Create all grading function tools for the standard groups."""
+    tools = []
+    
     for group in standard_groups:
-        # Create safe field names by removing special characters and spaces
-        safe_name = create_safe_field_name(group.short_name)
-
-        # Create field for the score (1-5)
-        score_field_name = f"{safe_name}_score"
-        fields[score_field_name] = (
-            int,
-            Field(ge=1, le=5, description=f"Score for {group.name} (1-5)"),
-        )
-
-        # Create field for the feedback
-        feedback_field_name = f"{safe_name}_feedback"
-        fields[feedback_field_name] = (
-            str,
-            Field(description=f"Feedback for {group.name}"),
-        )
-
-    # Add overall fields
-    fields["summary"] = (str, Field(description="Overall evaluation summary"))
-
-    # Optional internal debug field (never shown to end users)
-    fields["debug_info"] = (Optional[str], Field(default=None, description="Optional internal debug info"))
-
-    return create_model("DynamicRubricGrade", **fields)  # type: ignore
+        tool = create_grading_function(group, standards, chat_id)
+        tools.append(tool)
+        logger.info(f"Created grading tool for: {group.name}")
+    
+    # Add summary tool
+    tools.append(create_summary_function(chat_id))
+    logger.info("Created summary tool")
+    
+    logger.info(f"Total grading tools created: {len(tools)}")
+    return tools
 
 
 async def run_grade_agent(
-    simulation_chat_id: uuid.UUID, session: Session = Depends(get_session)
+    simulation_chat_id: uuid.UUID, 
+    session: Session = Depends(get_session),
+    sio_instance: Any = None
 ) -> str:
     """
     This function is used to run the grading agent for simulation chats.
@@ -90,11 +190,19 @@ async def run_grade_agent(
 
     Args:
         simulation_chat_id: The ID of the simulation chat
+        session: Database session
+        sio_instance: Optional Socket.IO instance for progress events
 
     Returns:
         A string of the simulation_chat_grade id.
     """
     try:
+        # Clear previous results and set up socket context
+        global grading_results, grading_progress, _grading_sio_instance, _grading_chat_id
+        grading_results.clear()
+        grading_progress.clear()
+        _grading_sio_instance = sio_instance
+        _grading_chat_id = simulation_chat_id
         # find agent with name of "Grade"
         agent = session.exec(select(Agents).where(Agents.name == "Grade")).one()
         if not agent:
@@ -168,6 +276,21 @@ async def run_grade_agent(
             f"Found {len(standard_groups)} standard groups and {len(standards)} standards"
         )
 
+        # Emit grading start event
+        if sio_instance:
+            await sio_instance.emit(
+                "simulation_grading_progress",
+                {
+                    "type": "start",
+                    "chat_id": str(simulation_chat_id),
+                    "message": "Starting grading process",
+                    "rubric_name": rubric.name,
+                    "standards_count": len(standard_groups),
+                },
+                room=f"simulation_{simulation_chat_id}",
+            )
+            logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
+
         # Build dynamic rubric using utility function
         rubric_input = get_dynamic_rubric(
             rubric, list(standard_groups), list(standards)
@@ -230,20 +353,31 @@ async def run_grade_agent(
         input_items.insert(0, time_message)
         input_items.insert(0, rubric_input) # add rubric message before time message
 
+        # Create grading tools for each standard group
+        grading_tools = create_grading_tools(list(standard_groups), list(standards), simulation_chat_id)
+        # Add debug_info tool from utils
+        grading_tools.append(debug_info_tool)
+        logger.info(f"Created {len(grading_tools)} grading tools (including debug_info)")
 
-        # Create dynamic Pydantic model for the rubric
-        DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
-
-        # Log the expected field names for debugging and keep score fields separate
-        expected_score_fields: list[str] = []
-        expected_feedback_fields: list[str] = []
-        for group in standard_groups:
-            safe_name = create_safe_field_name(group.short_name)
-            expected_score_fields.append(f"{safe_name}_score")
-            expected_feedback_fields.append(f"{safe_name}_feedback")
-        logger.info(
-            f"Expected model fields (scores): {expected_score_fields}; (feedback): {expected_feedback_fields}"
-        )
+        # Create tool use behavior to check when all required tools are called
+        def tool_use_behavior(
+            context: Any, tool_results: list[Any]
+        ) -> ToolsToFinalOutputResult:
+            # Build list of required tools (all standard groups + summary, debug_info is optional)
+            required_tools = ["summary"]
+            for group in standard_groups:
+                safe_name = create_safe_field_name(group.short_name)
+                required_tools.append(safe_name)
+            
+            # Check if all required tools have been called
+            completed_required = all(
+                grading_progress.get(tool, False) for tool in required_tools
+            )
+            
+            logger.info(
+                f"Tool use check: required={required_tools}, completed={completed_required}, progress={grading_progress}"
+            )
+            return ToolsToFinalOutputResult(is_final_output=completed_required)
 
         # getting the model from the agent's model_id
         model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
@@ -266,7 +400,9 @@ async def run_grade_agent(
             base_url=provider.base_url,
             api_key=provider.api_key,
             reasoning=agent.reasoning,
-            output_type=DynamicRubric,
+            tools=grading_tools,
+            parallel_tool_calls=False,
+            tool_use_behavior=tool_use_behavior,
             custom_model=model.custom_model,
         )
 
@@ -302,16 +438,9 @@ async def run_grade_agent(
         model_run.output_tokens = usage.output_tokens
         session.commit()
 
-        grading_result = result.final_output_as(DynamicRubric)
+        # Extract results from the global storage
+        grading_result = grading_results
 
-        # Store debug info if present on dynamic rubric
-        if hasattr(grading_result, "debug_info") and getattr(grading_result, "debug_info"):
-            debug = DebugInfo(
-                model_run_id=model_run.id,
-                content=getattr(grading_result, "debug_info") or "",
-            )
-            session.add(debug)
-            session.commit()
         logger.info("Grading agent completed successfully")
 
         # Log the time calculation
@@ -324,19 +453,23 @@ async def run_grade_agent(
                 f"Time calculation: created={chat_created_at}, completed={chat_completed_at}, taken={actual_time_taken}s"
             )
 
-        # calculate overall score, sum over only the numeric score fields
+        # Calculate overall score from tool call results
         overall_score = 0
-        for score_field in expected_score_fields:
-            value = getattr(grading_result, score_field, 0)
+        for group in standard_groups:
+            safe_name = create_safe_field_name(group.short_name)
+            group_data = grading_result.get(safe_name, {})
+            score = group_data.get("score", 0)
             try:
-                overall_score += int(value)
+                overall_score += int(score)
             except (TypeError, ValueError):
                 logger.warning(
-                    f"Non-integer value for {score_field} ('{value}'); treating as 0 in overall score"
+                    f"Non-integer value for {group.short_name} ('{score}'); treating as 0"
                 )
+
         passed = overall_score >= rubric.pass_points
 
-        summary = getattr(grading_result, "summary", "")
+        # Get summary from tool call results
+        summary = grading_result.get("summary", "")
 
         # Create the simulation chat grade record
         simulation_chat_grade = SimulationChatGrades(
@@ -354,16 +487,13 @@ async def run_grade_agent(
         # Create feedback records for each standard group
         feedback_count = 0
         for group in standard_groups:
-            # Create safe field names (same logic as in model creation)
             safe_name = create_safe_field_name(group.short_name)
 
-            # Get the score and feedback for this group
-            score_field = f"{safe_name}_score"
-            feedback_field = f"{safe_name}_feedback"
-
             try:
-                group_score = getattr(grading_result, score_field, 0)
-                group_feedback = getattr(grading_result, feedback_field, "")
+                # Get the score and feedback from tool call results
+                group_data = grading_result.get(safe_name, {})
+                group_score = group_data.get("score", 0)
+                group_feedback = group_data.get("feedback", "")
 
                 logger.info(
                     f"Group {group.short_name}: score={group_score}, feedback_length={len(group_feedback)}"
@@ -394,7 +524,7 @@ async def run_grade_agent(
                         f"No matching standard found for group {group.short_name} with score {group_score}"
                     )
 
-            except AttributeError as e:
+            except Exception as e:
                 logger.error(
                     f"Failed to get grading data for group {group.short_name}: {e}"
                 )
@@ -406,6 +536,25 @@ async def run_grade_agent(
         chat.completed = True
         session.add(chat)
 
+        # Emit grading completion event
+        if sio_instance:
+            await sio_instance.emit(
+                "simulation_grading_progress",
+                {
+                    "type": "complete",
+                    "chat_id": str(simulation_chat_id),
+                    "message": "Grading completed successfully",
+                    "grade_id": str(simulation_chat_grade.id),
+                    "total_score": overall_score,
+                    "passed": passed,
+                    "standards_graded": feedback_count,
+                    "time_taken": actual_time_taken,
+                    "summary": summary,
+                },
+                room=f"simulation_{simulation_chat_id}",
+            )
+            logger.info(f"Emitted grading completion event for chat {simulation_chat_id}")
+
         # Commit all changes
         session.commit()
         session.refresh(simulation_chat_grade)
@@ -413,9 +562,36 @@ async def run_grade_agent(
         logger.info(
             f"Grading completed successfully with grade ID: {simulation_chat_grade.id}"
         )
+        
+        # Clean up socket context
+        _grading_sio_instance = None
+        _grading_chat_id = None
+        
         return str(simulation_chat_grade.id)
 
     except Exception as e:
         logger.error(f"Error in run_grade_agent: {str(e)}", exc_info=True)
+        
+        # Emit error event
+        if sio_instance:
+            try:
+                await sio_instance.emit(
+                    "simulation_grading_progress",
+                    {
+                        "type": "error",
+                        "chat_id": str(simulation_chat_id),
+                        "message": f"Grading failed: {str(e)}",
+                        "error": str(e),
+                    },
+                    room=f"simulation_{simulation_chat_id}",
+                )
+            except Exception as emit_error:
+                logger.warning(f"Failed to emit error event: {emit_error}")
+        
+        # Clean up socket context
+        global _grading_sio_instance, _grading_chat_id
+        _grading_sio_instance = None
+        _grading_chat_id = None
+        
         session.rollback()
         raise

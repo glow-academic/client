@@ -32,10 +32,12 @@ class GenericAgent:
         custom_model: bool,
         base_url: str | None,
         reasoning: str | None,
-        output_type: type[BaseModel] | None = None,
+        tools: list[Tool] = [],
+        parallel_tool_calls: bool = False,
+        tool_use_behavior: Any | None = None,
         mcp_servers: list[MCPServer] | None = None,
         output_guardrails: list[Any] | None = None,
-    ):
+    ) -> None:
         self.agent_name = agent_name
         self.system_prompt = system_prompt
         self.temperature = temperature
@@ -43,7 +45,9 @@ class GenericAgent:
         self.model_provider = model_provider
         self.model_name = model_name
         self.model = f"{model_provider}/{model_name}"
-        self.output_type = output_type
+        self.tools = tools
+        self.parallel_tool_calls = parallel_tool_calls
+        self.tool_use_behavior = tool_use_behavior
         self.mcp_servers = mcp_servers or []
         self.output_guardrails: list[Any] = output_guardrails or []
         self.base_url = base_url
@@ -66,32 +70,34 @@ class GenericAgent:
         self.api_key = decrypt_api_key(api_key)
 
     def agent(self) -> Agent[DebugContext]:
-        # If an output_type is specified, we avoid attaching the debug_info tool
-        # to maintain compatibility with providers that don't support tools with
-        # structured JSON outputs (e.g., Vertex/Gemini).
-        tools_param: list[Tool] = [] if self.output_type is not None else [debug_info]  # type: ignore[assignment]
-
-
         model = f"{self.model_provider}/{self.model}" if self.custom_model else self.model
 
         base_url = self.base_url if self.custom_model else None
 
-        return Agent[DebugContext](
-            name=f"{self.agent_name} Agent",
-            instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
-            model=LitellmModel(
+        agent_kwargs: dict[str, Any] = {
+            "name": f"{self.agent_name} Agent",
+            "instructions": f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
+            "model": LitellmModel(
                 model=model,
                 api_key=self.api_key,
                 base_url=base_url
             ),
-            model_settings=ModelSettings(
+            "model_settings": ModelSettings(
                 temperature=self.temperature,
                 include_usage=True,
                 reasoning=self.reasoning,
                 extra_body=self.extra_body,
             ),
-            output_type=self.output_type,
-            mcp_servers=self.mcp_servers,
-            tools=tools_param,
-            output_guardrails=self.output_guardrails,  # type: ignore[arg-type]
-        )
+            "mcp_servers": self.mcp_servers,
+            "tools": self.tools,
+            "output_guardrails": self.output_guardrails,  # type: ignore[arg-type]
+        }
+
+        # Add optional parameters if provided
+        if self.parallel_tool_calls is not None:
+            agent_kwargs["parallel_tool_calls"] = self.parallel_tool_calls
+        
+        if self.tool_use_behavior is not None:
+            agent_kwargs["tool_use_behavior"] = self.tool_use_behavior
+
+        return Agent[DebugContext](**agent_kwargs)
