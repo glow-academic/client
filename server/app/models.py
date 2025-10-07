@@ -65,7 +65,9 @@ class Departments(_Base, table=True):
     classify_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('classify_agent_id', Uuid, nullable=False))
     assistant_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('assistant_agent_id', Uuid, nullable=False))
     grade_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('grade_agent_id', Uuid, nullable=False))
-    guardrail_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('guardrail_agent_id', Uuid, nullable=False))
+    input_guardrail_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('input_guardrail_agent_id', Uuid, nullable=False))
+    output_guardrail_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('output_guardrail_agent_id', Uuid, nullable=False))
+    hint_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('hint_agent_id', Uuid, nullable=False))
 
     cohorts: list['Cohorts'] = Relationship(back_populates='department')
     documents: list['Documents'] = Relationship(back_populates='department')
@@ -327,6 +329,7 @@ class ParameterItems(_Base, table=True):
     value: str = Field(sa_column=Column('value', Text, nullable=False))
     parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid, nullable=False))
     default_item: bool = Field(sa_column=Column('default_item', Boolean, nullable=False, default=False))
+    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
 
     parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
 
@@ -555,6 +558,7 @@ class Scenarios(_Base, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     name: str = Field(sa_column=Column('name', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False))
+    objectives: list[str] = Field(sa_column=Column('objectives', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
     default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, nullable=False, default=False))
     practice_scenario: bool = Field(sa_column=Column('practice_scenario', Boolean, nullable=False, default=False))
     generated: bool = Field(sa_column=Column('generated', Boolean, nullable=False, default=False))
@@ -653,6 +657,7 @@ class SimulationMessages(_Base, table=True):
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
     simulation_crowdsourced_messages: list['SimulationCrowdsourcedMessages'] = Relationship(back_populates='simulation_message')
+    simulation_hints: list['SimulationHints'] = Relationship(back_populates='simulation_message')
 
 
 class SimulationChatFeedbacks(_Base, table=True):
@@ -692,6 +697,22 @@ class SimulationCrowdsourcedMessages(_Base, table=True):
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_crowdsourced_messages')
     simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_crowdsourced_messages')
+
+
+class SimulationHints(_Base, table=True):
+    __tablename__ = 'simulation_hints'
+    __table_args__ = (
+        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', name='simulation_hints_simulation_message_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulation_hints_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
+    hint: str = Field(sa_column=Column('hint', Text, nullable=False))
+    simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid, nullable=False))
+
+    simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_hints')
 
 
 class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):

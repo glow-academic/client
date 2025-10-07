@@ -102,8 +102,8 @@ VALUES (
     '55555555-eeee-eeee-eeee-555555555555',
     '66666666-ffff-ffff-ffff-666666666666',
     'cccccccc-dddd-dddd-dddd-cccccccccccc',
-    'dddddddd-eeee-eeee-eeee-dddddddddddddd',
-    'ffffffff-gggg-gggg-gggg-ffffffffffffffff'
+    'eeeeeeee-1111-1111-1111-eeeeeeeeeeee',
+    '11111111-ffff-ffff-ffff-111111111111'
 )
 ON CONFLICT ("id") DO NOTHING;
 

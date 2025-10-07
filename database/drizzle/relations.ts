@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, profiles, departments, providers, models, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, parameters, parameterItems, personas, agents, modelRuns, debugInfo, scenarios, simulations, simulationAttempts, simulationChats, simulationMessages, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages, cohorts } from "./schema";
+import { users, profiles, departments, providers, models, documents, rubrics, standardGroups, standards, appFeedback, assistantChats, assistantMessages, assistantToolCalls, parameters, parameterItems, personas, agents, modelRuns, debugInfo, scenarios, simulations, simulationAttempts, simulationChats, simulationMessages, simulationHints, simulationChatGrades, simulationChatFeedbacks, simulationChatCrowdsourcedFeedbacks, simulationCrowdsourcedMessages, cohorts } from "./schema";
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
 	user: one(users, {
@@ -237,7 +237,15 @@ export const simulationMessagesRelations = relations(simulationMessages, ({one, 
 		fields: [simulationMessages.chatId],
 		references: [simulationChats.id]
 	}),
+	simulationHints: many(simulationHints),
 	simulationCrowdsourcedMessages: many(simulationCrowdsourcedMessages),
+}));
+
+export const simulationHintsRelations = relations(simulationHints, ({one}) => ({
+	simulationMessage: one(simulationMessages, {
+		fields: [simulationHints.simulationMessageId],
+		references: [simulationMessages.id]
+	}),
 }));
 
 export const simulationChatGradesRelations = relations(simulationChatGrades, ({one, many}) => ({
