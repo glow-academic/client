@@ -555,7 +555,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/create/personas") {
       return (
-        <Button onClick={() => router.push("/create/personas/new")} size="sm">
+        <Button
+          onClick={() => router.push("/create/personas/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Persona
         </Button>
@@ -640,18 +643,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/departments") {
-      return (
-        <Button
-          onClick={() => router.push("/management/departments/new")}
-          size="sm"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Department
-        </Button>
-      );
-    }
-
     if (pathname === "/management/providers") {
       return (
         <Button
@@ -672,6 +663,27 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Parameter
+        </Button>
+      );
+    }
+
+    if (pathname === "/system/agents") {
+      return (
+        <Button onClick={() => router.push("/system/agents/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Agent
+        </Button>
+      );
+    }
+
+    if (pathname === "/system/departments") {
+      return (
+        <Button
+          onClick={() => router.push("/system/departments/new")}
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Department
         </Button>
       );
     }
@@ -741,7 +753,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Department Filters - Show for superadmin users */}
-            {canShowDepartmentsFilters && <DepartmentsFilters />}
+            {canShowDepartmentsFilters && (
+              <DepartmentsFilters />
+            )}
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
@@ -751,7 +765,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               />
             )}
 
-            {actionButton && <div className="px-4">{actionButton}</div>}
+            {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
           {/* Practice Customize Dialog */}
           {customizeOpen && (

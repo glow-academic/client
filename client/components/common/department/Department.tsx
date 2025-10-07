@@ -6,7 +6,7 @@
  */
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,7 @@ const REQUIRED_AGENT_TYPES = [
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasInitialized = useRef(false);
 
   const isEditMode = !!departmentId;
 
@@ -114,22 +115,26 @@ export default function Department({ departmentId }: DepartmentProps) {
 
   // Initialize form when department data loads or in create mode
   useEffect(() => {
-    if (isEditMode && department && departmentAgents.length > 0) {
-      // Map existing agents by type
+    if (department && isEditMode && !hasInitialized.current) {
+      // Map existing agents by type (handle case where no agents exist)
       const agentsByType: Record<string, string> = {};
-      departmentAgents.forEach((agent: Agent) => {
-        agentsByType[agent.type] = agent.id;
-      });
+      if (departmentAgents.length > 0) {
+        departmentAgents.forEach((agent: Agent) => {
+          agentsByType[agent.type] = agent.id;
+        });
+      }
 
       setFormData({
         title: department.title,
         description: department.description || "",
         agents: agentsByType,
       });
-    } else if (!isEditMode) {
+      hasInitialized.current = true;
+    } else if (!isEditMode && !hasInitialized.current) {
       setFormData(initialFormData);
+      hasInitialized.current = true;
     }
-  }, [isEditMode, department, departmentAgents, initialFormData]);
+  }, [department, isEditMode, initialFormData, departmentAgents]);
 
   const isLoading = isDepartmentLoading || isAgentsLoading;
 
@@ -346,6 +351,9 @@ export default function Department({ departmentId }: DepartmentProps) {
                         />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="no-agents-available" disabled>
+                          No {agentType.label.toLowerCase()} available
+                        </SelectItem>
                         {departmentAgents
                           .filter(
                             (agent: Agent) => agent.type === agentType.type
@@ -359,8 +367,14 @@ export default function Department({ departmentId }: DepartmentProps) {
                     </Select>
                   ) : (
                     <div className="w-full p-3 text-sm text-muted-foreground bg-muted rounded-md border">
-                      No {agentType.label.toLowerCase()} available for this
-                      department
+                      <div className="flex items-center gap-2">
+                        <span>⚠️</span>
+                        <span>
+                          No {agentType.label.toLowerCase()} available for this
+                          department. You'll need to create agents of this type
+                          first.
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

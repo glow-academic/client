@@ -1,13 +1,13 @@
 /**
  * SystemAgent.tsx
- * Used to edit system agents only (edit mode only)
+ * Used to create and edit system agents
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
@@ -25,9 +25,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useAgent, useUpdateAgent } from "@/lib/api/hooks/agents";
+import {
+  useAgent,
+  useCreateAgent,
+  useUpdateAgent,
+} from "@/lib/api/hooks/agents";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useModels } from "@/lib/api/hooks/models";
+import { log } from "@/utils/logger";
 import MarkdownEditor from "../viewers/MarkdownEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
 
@@ -42,7 +47,14 @@ interface SystemAgentFormData {
 }
 
 export interface SystemAgentProps {
-  agentId: string;
+  agentId?: string;
+}
+
+interface FormErrors {
+  name?: string;
+  description?: string;
+  systemPrompt?: string;
+  modelId?: string;
 }
 
 export default function SystemAgent({ agentId }: SystemAgentProps) {
@@ -51,18 +63,37 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId);
+  const isEditMode = !!agentId;
 
+  const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId!);
   const { data: models, isLoading: isModelsLoading } = useModels();
   const { data: departments = [] } = useDepartmentsHook();
 
+  const { mutate: createAgent } = useCreateAgent();
   const { mutate: updateAgent } = useUpdateAgent();
 
   const isLoading = isLoadingAgent || isModelsLoading;
 
+  const initialFormData: SystemAgentFormData = useMemo(
+    () => ({
+      name: "",
+      description: "",
+      systemPrompt: "",
+      temperature: 0.7,
+      modelId: "",
+      reasoning: "none",
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? ""
+          : effectiveProfile?.departmentId || "",
+    }),
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
+  );
+
   useEffect(() => {
-    if (agent) {
+    if (isEditMode && agent) {
       setFormData({
         name: agent.name,
         description: agent.description,
@@ -78,29 +109,56 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | undefined) || "none",
         departmentId: agent.departmentId,
       });
+    } else if (!isEditMode) {
+      setFormData(initialFormData);
     }
-  }, [agent]);
+  }, [isEditMode, agent, initialFormData]);
+
+  const handleInputChange = (
+    field: keyof SystemAgentFormData,
+    value: string | number | null | undefined
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const resetFormAndState = () => {
+    setFormData(initialFormData);
+    setErrors({});
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validation
     if (!formData?.name) {
-      toast.error("Agent name is required");
+      setErrors((prev) => ({ ...prev, name: "Agent name is required" }));
       return;
     }
 
     if (!formData?.description) {
-      toast.error("Agent description is required");
+      setErrors((prev) => ({
+        ...prev,
+        description: "Agent description is required",
+      }));
       return;
     }
 
-    if (!formData.systemPrompt) {
-      toast.error("System prompt is required");
+    if (!formData?.systemPrompt) {
+      setErrors((prev) => ({
+        ...prev,
+        systemPrompt: "System prompt is required",
+      }));
       return;
     }
 
-    if (!formData.modelId || formData.modelId === "") {
-      toast.error("Model selection is required");
+    if (!formData?.modelId || formData.modelId === "") {
+      setErrors((prev) => ({
+        ...prev,
+        modelId: "Model selection is required",
+      }));
       return;
     }
 
@@ -113,25 +171,67 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     setIsSubmitting(true);
 
     try {
-      await updateAgent({
-        id: agentId,
-        name: formData.name,
-        description: formData.description,
-        systemPrompt: formData.systemPrompt,
-        temperature: Number(formData.temperature),
-        modelId: formData.modelId,
-        reasoning:
-          formData.reasoning === "none" || !formData.reasoning
-            ? null
-            : formData.reasoning,
-        departmentId:
-          formData.departmentId || effectiveProfile?.departmentId || "",
-        updatedAt: new Date().toISOString(),
-      });
-      toast.success("Agent updated successfully!");
+      let result;
+      if (isEditMode && agentId && agent) {
+        // Update existing agent
+        await updateAgent({
+          id: agentId,
+          name: formData.name,
+          description: formData.description,
+          systemPrompt: formData.systemPrompt,
+          temperature: Number(formData.temperature),
+          modelId: formData.modelId,
+          reasoning:
+            formData.reasoning === "none" || !formData.reasoning
+              ? null
+              : formData.reasoning,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
+          updatedAt: new Date().toISOString(),
+        });
+        result = true;
+      } else {
+        // Create new agent
+        result = await createAgent({
+          name: formData.name!,
+          description: formData.description!,
+          systemPrompt: formData.systemPrompt!,
+          temperature: Number(formData.temperature),
+          modelId: formData.modelId!,
+          reasoning:
+            formData.reasoning === "none" || !formData.reasoning
+              ? null
+              : formData.reasoning,
+          departmentId:
+            formData.departmentId || effectiveProfile?.departmentId || "",
+          type: "assistant",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      if (!result) {
+        toast.error(`Failed to ${isEditMode ? "update" : "create"} agent`);
+        return;
+      }
+
+      resetFormAndState();
+      toast.success(
+        isEditMode
+          ? "Agent updated successfully!"
+          : "Agent created successfully!"
+      );
       router.push("/system/agents");
     } catch (error) {
-      toast.error(`Failed to update agent: ${error}`);
+      const message = `Error ${isEditMode ? "updating" : "creating"} agent:`;
+      log.error("agent.save.failed", {
+        message,
+        error,
+        context: { component: "SystemAgent", isEditMode, agentId },
+      });
+      toast.error(
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -147,14 +247,16 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="e.g., Enthusiastic Student Agent"
+                className={errors.name ? "border-destructive" : ""}
                 required
               />
             ) : (
               <Skeleton className="h-10 w-full" />
+            )}
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
             )}
           </div>
 
@@ -165,17 +267,18 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
+                  handleInputChange("description", e.target.value)
                 }
                 placeholder="Detailed behavior description and personality traits"
                 rows={4}
+                className={errors.description ? "border-destructive" : ""}
                 required
               />
             ) : (
               <Skeleton className="h-10 w-full" />
+            )}
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
             )}
           </div>
 
@@ -209,10 +312,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                       : null
                   }
                   onSelect={(department) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      departmentId: department?.id || null,
-                    }))
+                    handleInputChange("departmentId", department?.id || null)
                   }
                   placeholder="Select department"
                 />
@@ -230,14 +330,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   <Select
                     value={formData?.modelId}
                     onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        modelId: value,
-                      }))
+                      handleInputChange("modelId", value)
                     }
                     required
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      className={errors.modelId ? "border-destructive" : ""}
+                    >
                       <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
                     <SelectContent>
@@ -250,6 +349,9 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                         ))}
                     </SelectContent>
                   </Select>
+                  {errors.modelId && (
+                    <p className="text-sm text-destructive">{errors.modelId}</p>
+                  )}
                 </div>
               </>
             ) : (
@@ -265,15 +367,10 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   <Select
                     value={formData?.reasoning || "none"}
                     onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        reasoning: value as
-                          | "none"
-                          | "minimal"
-                          | "low"
-                          | "medium"
-                          | "high",
-                      }))
+                      handleInputChange(
+                        "reasoning",
+                        value as "none" | "minimal" | "low" | "medium" | "high"
+                      )
                     }
                   >
                     <SelectTrigger>
@@ -311,10 +408,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   step={0.01}
                   value={[formData?.temperature || 0]}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      temperature: value[0] || 0,
-                    }))
+                    handleInputChange("temperature", value[0] || 0)
                   }
                   className="w-full"
                 />
@@ -336,10 +430,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   <MarkdownEditor
                     value={formData?.systemPrompt || ""}
                     onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        systemPrompt: value,
-                      }))
+                      handleInputChange("systemPrompt", value)
                     }
                     placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
                     className="h-full"
@@ -350,21 +441,29 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   conversations. You can use markdown formatting for better
                   organization.
                 </p>
+                {errors.systemPrompt && (
+                  <p className="text-sm text-destructive">
+                    {errors.systemPrompt}
+                  </p>
+                )}
               </>
             ) : (
               <Skeleton className="h-[500px] w-full" />
             )}
           </div>
 
-          {/* Debug Info Section */}
-          <div className="space-y-2">
-            <Label>Debug Info</Label>
-            <AgentDebugInfo agentId={agentId} />
-            <p className="text-sm text-muted-foreground">
-              These are debug instructions provided by the model, when it
-              believed the prompt/tools was not clear or needed to be improved.
-            </p>
-          </div>
+          {/* Debug Info Section - Only show in edit mode */}
+          {isEditMode && agentId && (
+            <div className="space-y-2">
+              <Label>Debug Info</Label>
+              <AgentDebugInfo agentId={agentId} />
+              <p className="text-sm text-muted-foreground">
+                These are debug instructions provided by the model, when it
+                believed the prompt/tools was not clear or needed to be
+                improved.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-2 justify-end">
             <Button
@@ -376,7 +475,16 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               Back
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Agent"}
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  {isEditMode ? "Updating..." : "Creating..."}
+                </>
+              ) : isEditMode ? (
+                "Update Agent"
+              ) : (
+                "Create Agent"
+              )}
             </Button>
           </div>
         </form>

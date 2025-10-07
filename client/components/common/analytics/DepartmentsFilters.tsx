@@ -34,7 +34,7 @@ export function DepartmentsFilters() {
   };
 
   return (
-    <div className="px-4">
+    <div className="pr-0">
       <div className="flex items-center gap-2">
         {/* Department Picker */}
         <DepartmentPicker
