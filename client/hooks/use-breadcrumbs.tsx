@@ -215,6 +215,8 @@ export function useBreadcrumbs(pathname: string) {
             context = "report";
           } else if (prevSegment === "p" && segments.includes("parameters")) {
             context = "parameter";
+          } else if (prevSegment === "d" && segments.includes("departments")) {
+            context = "department";
           }
 
           if (context) {
@@ -265,6 +267,9 @@ export function useBreadcrumbs(pathname: string) {
                   break;
                 case "parameter":
                   title = "Parameter";
+                  break;
+                case "department":
+                  title = "Department";
                   break;
                 default:
                   title =
@@ -355,6 +360,9 @@ export function useBreadcrumbs(pathname: string) {
               break;
 
             // System subsections
+            case "departments":
+              title = "Departments";
+              break;
             case "agents":
               title = "Agents";
               break;

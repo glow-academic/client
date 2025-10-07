@@ -29,7 +29,7 @@ export function useResolveBreadcrumb() {
           {
             method: "POST",
             body: JSON.stringify({ id, context }),
-          },
+          }
         );
 
         log.info("api.breadcrumbs.resolve.success", {
@@ -73,6 +73,8 @@ export function useResolveBreadcrumb() {
             return "Report";
           case "parameter":
             return "Parameter";
+          case "department":
+            return "Department";
           default:
             return id.length > 10 ? `${id.substring(0, 8)}...` : id;
         }

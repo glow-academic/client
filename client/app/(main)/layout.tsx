@@ -438,8 +438,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   ]);
 
   const canShowDepartmentsFilters = useMemo(() => {
-    return effectiveProfile?.role === "superadmin";
-  }, [effectiveProfile?.role]);
+    return (
+      effectiveProfile?.role === "superadmin" && !pathname.startsWith("/system")
+    );
+  }, [effectiveProfile?.role, pathname]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
