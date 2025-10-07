@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -15,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useCreateRubric, useUpdateRubric } from "@/lib/api/hooks/rubrics";
 import { Rubric as RubricType } from "@/types";
 import { log } from "@/utils/logger";
@@ -36,6 +39,8 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
+  const { data: departments = [] } = useDepartmentsHook();
 
   // Mutation hooks
   const createRubricMutation = useCreateRubric();
@@ -46,16 +51,33 @@ export default function RubricDetails({
     active: rubric.active ?? true,
     points: rubric.points || 0,
     passPoints: rubric.passPoints || 0,
+    departmentId:
+      rubric.departmentId ||
+      (effectiveProfile?.role === "superadmin"
+        ? ""
+        : effectiveProfile?.departmentId || ""),
   });
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleDepartmentChange = (
+    department: { id: string; title: string; description?: string } | null
+  ) => {
+    setFormData((prev) => ({ ...prev, departmentId: department?.id || "" }));
+  };
+
   const handleSave = async () => {
+    // Department validation for superadmin
+    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
+      toast.error("Department selection is required for superadmin users");
+      return;
+    }
+
     try {
       if (isCreateMode) {
         const data = await createRubricMutation.mutateAsync(formData);
@@ -78,7 +100,7 @@ export default function RubricDetails({
         context: { component: "RubricDetails", rubricId },
       });
       toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
       );
     }
   };
@@ -91,6 +113,11 @@ export default function RubricDetails({
       active: rubric.active ?? true,
       points: rubric.points,
       passPoints: rubric.passPoints,
+      departmentId:
+        rubric.departmentId ||
+        (effectiveProfile?.role === "superadmin"
+          ? ""
+          : effectiveProfile?.departmentId || ""),
     });
   };
 
@@ -123,6 +150,43 @@ export default function RubricDetails({
                   disabled={updateRubricMutation.isPending || isReadonly}
                 />
               </div>
+
+              {/* Department Selection - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <DepartmentSelector
+                    departments={departments.map((dept) => ({
+                      id: dept.id,
+                      title: dept.title as string,
+                      ...(dept.description && {
+                        description: dept.description,
+                      }),
+                    }))}
+                    selectedDepartment={
+                      formData.departmentId
+                        ? (() => {
+                            const dept = departments.find(
+                              (d) => d.id === formData.departmentId
+                            );
+                            return dept
+                              ? {
+                                  id: dept.id,
+                                  title: dept.title as string,
+                                  ...(dept.description && {
+                                    description: dept.description,
+                                  }),
+                                }
+                              : null;
+                          })()
+                        : null
+                    }
+                    onSelect={handleDepartmentChange}
+                    placeholder="Select department"
+                    disabled={updateRubricMutation.isPending || isReadonly}
+                  />
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Switch
                   id="active"
