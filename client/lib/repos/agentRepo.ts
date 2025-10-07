@@ -1,5 +1,6 @@
-import { eq, inArray } from "drizzle-orm";
+
 import { createInsertSchema } from "drizzle-zod";
+import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { agents } from "@/utils/drizzle/schema";
@@ -14,9 +15,7 @@ export type AgentUpdate = Partial<AgentCreate>;
 export const AgentCreateSchema = createInsertSchema(agents);
 export const AgentUpdateSchema = AgentCreateSchema.partial();
 
-async function getDb() {
-  return drizzleDb;
-}
+async function getDb() { return drizzleDb; }
 
 export const agentRepo = {
   async create(payload: AgentCreate) {
@@ -27,40 +26,26 @@ export const agentRepo = {
 
   async list() {
     const db = await getDb();
-    return db
-      .select()
-      .from(agents)
-      .orderBy(agents.createdAt ?? agents.id);
+    return db.select().from(agents).orderBy(agents.createdAt ?? agents.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db
-      .select()
-      .from(agents)
-      .where(eq(agents.id, id))
-      .limit(1);
-    if (!rows[0])
-      throw HttpError.notFound("Agent with id " + id + " not found");
+    const rows = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+    if (!rows[0]) throw HttpError.notFound("Agent with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: AgentUpdate) {
     const db = await getDb();
-    const rows = await db
-      .update(agents)
-      .set(patch)
-      .where(eq(agents.id, id))
-      .returning();
-    if (!rows[0])
-      throw HttpError.notFound("Agent with id " + id + " not found");
+    const rows = await db.update(agents).set(patch).where(eq(agents.id, id)).returning();
+    if (!rows[0]) throw HttpError.notFound("Agent with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
     const rows = await db.delete(agents).where(eq(agents.id, id)).returning();
-    if (!rows[0])
-      throw HttpError.notFound("Agent with id " + id + " not found");
+    if (!rows[0]) throw HttpError.notFound("Agent with id " + id + " not found");
   },
 
   async listByModel(modelId: string) {
@@ -72,22 +57,5 @@ export const agentRepo = {
     const db = await getDb();
     if (!Array.isArray(modelIds) || modelIds.length === 0) return [];
     return db.select().from(agents).where(inArray(agents.modelId, modelIds));
-  },
-
-  async listByDepartment(departmentId: string) {
-    const db = await getDb();
-    return db
-      .select()
-      .from(agents)
-      .where(eq(agents.departmentId, departmentId));
-  },
-
-  async listByDepartments(departmentIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
-    return db
-      .select()
-      .from(agents)
-      .where(inArray(agents.departmentId, departmentIds));
   },
 };

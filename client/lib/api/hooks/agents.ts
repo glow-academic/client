@@ -3,11 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
 import type { Agent, AgentCreate, AgentUpdate } from "@/lib/repos/agentRepo";
-import {
-  agentKeys,
-  agentKeysByModelId,
-  agentKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { agentKeys, agentKeysByModelId } from "@/lib/api/keys";
 
 export function useAgents(filters?: unknown) {
   return useQuery({
@@ -19,11 +15,7 @@ export function useAgents(filters?: unknown) {
 export function useCreateAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AgentCreate) =>
-      api<Agent>("/api/v1/agents", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }),
+    mutationFn: (payload: AgentCreate) => api<Agent>("/api/v1/agents", { method: "POST", body: JSON.stringify(payload) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: agentKeys.all }),
   });
 }
@@ -41,18 +33,11 @@ export function useUpdateAgent(id?: string) {
   return useMutation({
     mutationFn: (patch: AgentUpdate & { id?: string }) => {
       const resolvedId = id ?? (patch as unknown as { id?: string })?.id;
-      if (
-        resolvedId === undefined ||
-        resolvedId === null ||
-        resolvedId === ""
-      ) {
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
         throw new Error("Missing id for update");
       }
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
-      return api<Agent>(`/api/v1/agents/${resolvedId}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
+      return api<Agent>(`/api/v1/agents/${resolvedId}`, { method: "PATCH", body: JSON.stringify(body) });
     },
     onSuccess: (_data, variables) => {
       const resolvedId = id ?? (variables as { id?: string } | undefined)?.id;
@@ -70,11 +55,7 @@ export function useDeleteAgent(id?: string) {
   return useMutation({
     mutationFn: (arg?: { id?: string } | string) => {
       const resolvedId = id ?? (typeof arg === "object" ? arg?.id : arg);
-      if (
-        resolvedId === undefined ||
-        resolvedId === null ||
-        resolvedId === ""
-      ) {
+      if (resolvedId === undefined || resolvedId === null || resolvedId === "") {
         throw new Error("Missing id for delete");
       }
       return api<void>(`/api/v1/agents/${resolvedId}`, { method: "DELETE" });
@@ -94,31 +75,7 @@ export function useAgentsByModelId(id: string) {
 export function useAgentsByModelIdBatch(ids: string[]) {
   return useQuery<Agent[]>({
     queryKey: agentKeysByModelId.many(ids),
-    queryFn: () =>
-      api<Agent[]>(`/api/v1/agents/by/modelId/batch`, {
-        method: "POST",
-        body: JSON.stringify({ ids }),
-      }),
-    enabled: Array.isArray(ids) && ids.length > 0,
-  });
-}
-
-export function useAgentsByDepartmentId(id: string) {
-  return useQuery<Agent[]>({
-    queryKey: agentKeysByDepartmentId.one(id),
-    queryFn: () => api<Agent[]>(`/api/v1/agents/by/departmentId/${id}`),
-    enabled: id !== undefined && id !== null && id !== "",
-  });
-}
-
-export function useAgentsByDepartmentIdBatch(ids: string[]) {
-  return useQuery<Agent[]>({
-    queryKey: agentKeysByDepartmentId.many(ids),
-    queryFn: () =>
-      api<Agent[]>(`/api/v1/agents/by/departmentId/batch`, {
-        method: "POST",
-        body: JSON.stringify({ ids }),
-      }),
+    queryFn: () => api<Agent[]>(`/api/v1/agents/by/modelId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
