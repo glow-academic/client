@@ -24,7 +24,6 @@ import {
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useDepartments } from "@/contexts/departments-context";
-import { useAgentsByDepartmentIdBatch } from "@/lib/api/hooks/agents";
 import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
 import { useModelRuns } from "@/lib/api/hooks/model_runs";
 import { useModels } from "@/lib/api/hooks/models";
@@ -35,6 +34,7 @@ import { Agent, Model, ModelRun, Persona } from "@/types";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
 import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
+import { useAgents } from "@/lib/api/hooks/agents";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -71,9 +71,7 @@ export default function Pricing() {
   const { effectiveDepartmentIds } = useDepartments();
   const { data: models = [], isLoading: modelsLoading } = useModels();
   const { data: runs = [], isLoading: runsLoading } = useModelRuns();
-  const { data: agents = [] } = useAgentsByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
+  const { data: agents = [] } = useAgents();
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
     effectiveDepartmentIds,
   );

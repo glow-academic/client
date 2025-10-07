@@ -447,16 +447,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Determine action button based on current path
   const getActionButton = () => {
-    // Don't show create buttons on the creation pages themselves
-    if (
-      pathname.includes("/t/") ||
-      pathname.includes("/s/") ||
-      pathname.includes("/p/") ||
-      pathname.includes("/u/")
-    ) {
-      return null;
-    }
-
     if (simulationContext) {
       const {
         endChat,

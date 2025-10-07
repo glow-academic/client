@@ -40,6 +40,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useModels } from "@/lib/api/hooks/models";
@@ -56,8 +62,8 @@ import {
   PERSONA_ICON_MAP,
   PERSONA_ICONS,
 } from "@/utils/persona-icons";
-import { Check, ChevronsUpDown } from "lucide-react";
-import MarkdownEditor from "../viewers/MarkdownEditor";
+import { Bug, Check, ChevronsUpDown, Eye } from "lucide-react";
+import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import PersonaDebugInfo from "./PersonaDebugInfo";
 
 interface FormData {
@@ -116,6 +122,9 @@ export default function Persona({
   const [formData, setFormData] = useState<FormData>();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
+    "editor"
+  );
 
   const { data: persona, isLoading: isLoadingPersona } = usePersona(personaId!);
 
@@ -277,175 +286,156 @@ export default function Persona({
   }, [formData?.name]);
 
   return (
-    <div className="space-y-6 py-4 px-4">
-      {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-yellow-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
-                Persona is read-only
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                <p>
-                  {persona?.defaultPersona
-                    ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
-                    : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
-                </p>
+    <TooltipProvider>
+      <div className="space-y-6 py-4 px-4">
+        {isReadonly && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-yellow-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Persona is read-only
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>
+                    {persona?.defaultPersona
+                      ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
+                      : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="w-full">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Persona Name *</Label>
-            {formData?.name !== undefined && !isLoading ? (
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  setFormData((prev) => {
-                    const updatedData = { ...prev, name: newName };
-
-                    // Auto-suggest icon if no icon is selected yet or if it's the default
-                    if (!prev?.icon || prev.icon === "Zap") {
-                      const suggestions = getSuggestedIconsForPersona(newName);
-                      if (suggestions.length > 0) {
-                        updatedData.icon = suggestions[0] || "Zap";
-                      }
-                    }
-
-                    return updatedData;
-                  });
-                }}
-                placeholder="e.g., Enthusiastic Student"
-                required
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            {formData?.description !== undefined && !isLoading ? (
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Detailed behavior description and personality traits"
-                rows={4}
-                required
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
-
-          {/* Department Selection - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
+        <div className="w-full">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              {formData?.departmentId !== undefined && !isLoading ? (
-                <DepartmentSelector
-                  departments={departments.map((dept) => ({
-                    id: dept.id,
-                    title: dept.title as string,
-                    ...(dept.description && { description: dept.description }),
-                  }))}
-                  selectedDepartment={
-                    formData?.departmentId
-                      ? (() => {
-                          const dept = departments.find(
-                            (d) => d.id === formData.departmentId
-                          );
-                          return dept
-                            ? {
-                                id: dept.id,
-                                title: dept.title as string,
-                                ...(dept.description && {
-                                  description: dept.description,
-                                }),
-                              }
-                            : null;
-                        })()
-                      : null
-                  }
-                  onSelect={(department) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      departmentId: department?.id || null,
-                    }))
-                  }
-                  placeholder="Select department"
+              <Label htmlFor="name">Persona Name *</Label>
+              {formData?.name !== undefined && !isLoading ? (
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setFormData((prev) => {
+                      const updatedData = { ...prev, name: newName };
+
+                      // Auto-suggest icon if no icon is selected yet or if it's the default
+                      if (!prev?.icon || prev.icon === "Zap") {
+                        const suggestions =
+                          getSuggestedIconsForPersona(newName);
+                        if (suggestions.length > 0) {
+                          updatedData.icon = suggestions[0] || "Zap";
+                        }
+                      }
+
+                      return updatedData;
+                    });
+                  }}
+                  placeholder="e.g., Enthusiastic Student"
+                  required
                   disabled={isReadonly}
                 />
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
             </div>
-          )}
 
-          {/* Active/Inactive and Default Persona Switches */}
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="active" className="text-sm">
-                Persona Active
-              </Label>
-              {formData?.active !== undefined && !isLoading ? (
-                <Switch
-                  id="active"
-                  checked={formData.active ?? true}
-                  onCheckedChange={(checked) =>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              {formData?.description !== undefined && !isLoading ? (
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      active: checked,
+                      description: e.target.value,
                     }))
                   }
+                  placeholder="Detailed behavior description and personality traits"
+                  rows={4}
+                  required
                   disabled={isReadonly}
                 />
               ) : (
-                <Skeleton className="h-6 w-11" />
+                <Skeleton className="h-10 w-full" />
               )}
             </div>
 
-            {/* Default Persona Switch - Only for superadmin */}
+            {/* Department Selection - Only for superadmin */}
             {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentId !== undefined && !isLoading ? (
+                  <DepartmentSelector
+                    departments={departments.map((dept) => ({
+                      id: dept.id,
+                      title: dept.title as string,
+                      ...(dept.description && {
+                        description: dept.description,
+                      }),
+                    }))}
+                    selectedDepartment={
+                      formData?.departmentId
+                        ? (() => {
+                            const dept = departments.find(
+                              (d) => d.id === formData.departmentId
+                            );
+                            return dept
+                              ? {
+                                  id: dept.id,
+                                  title: dept.title as string,
+                                  ...(dept.description && {
+                                    description: dept.description,
+                                  }),
+                                }
+                              : null;
+                          })()
+                        : null
+                    }
+                    onSelect={(department) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentId: department?.id || null,
+                      }))
+                    }
+                    placeholder="Select department"
+                    disabled={isReadonly}
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+            )}
+
+            {/* Active/Inactive and Default Persona Switches */}
+            <div className="space-y-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="defaultPersona" className="text-sm">
-                  Default Persona
+                <Label htmlFor="active" className="text-sm">
+                  Persona Active
                 </Label>
-                {formData?.defaultPersona !== undefined && !isLoading ? (
+                {formData?.active !== undefined && !isLoading ? (
                   <Switch
-                    id="defaultPersona"
-                    checked={formData.defaultPersona ?? false}
+                    id="active"
+                    checked={formData.active ?? true}
                     onCheckedChange={(checked) =>
                       setFormData((prev) => ({
                         ...prev,
-                        defaultPersona: checked,
+                        active: checked,
                       }))
                     }
                     disabled={isReadonly}
@@ -454,392 +444,476 @@ export default function Persona({
                   <Skeleton className="h-6 w-11" />
                 )}
               </div>
-            )}
 
-            {/* Guardrail Active Switch - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="guardrailActive" className="text-sm">
-                  Guardrail Active
-                </Label>
-                {formData?.guardrailActive !== undefined && !isLoading ? (
-                  <Switch
-                    id="guardrailActive"
-                    checked={formData.guardrailActive ?? false}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        guardrailActive: checked,
-                      }))
-                    }
-                    disabled={isReadonly}
-                  />
-                ) : (
-                  <Skeleton className="h-6 w-11" />
-                )}
-              </div>
-            )}
-
-            {/* Image Input Active Switch - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="imageInputActive" className="text-sm">
-                  Image Input Active
-                </Label>
-                {formData?.imageInputActive !== undefined && !isLoading ? (
-                  <Switch
-                    id="imageInputActive"
-                    checked={formData.imageInputActive ?? false}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        imageInputActive: checked,
-                      }))
-                    }
-                    disabled={isReadonly}
-                  />
-                ) : (
-                  <Skeleton className="h-6 w-11" />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Color and Icon Selection Row */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {/* Color Picker */}
-            <div className="space-y-2">
-              <Label htmlFor="color">Persona Color</Label>
-              {formData?.color !== undefined && !isLoading ? (
-                <Popover
-                  open={colorPickerOpen}
-                  onOpenChange={setColorPickerOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
+              {/* Default Persona Switch - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="defaultPersona" className="text-sm">
+                    Default Persona
+                  </Label>
+                  {formData?.defaultPersona !== undefined && !isLoading ? (
+                    <Switch
+                      id="defaultPersona"
+                      checked={formData.defaultPersona ?? false}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          defaultPersona: checked,
+                        }))
+                      }
                       disabled={isReadonly}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-4 h-4 rounded border"
-                          style={{ backgroundColor: formData.color }}
-                        />
-                        <span>{formData.color}</span>
-                      </div>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-4">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="colorInput">Hex Color</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="colorInput"
-                            value={formData.color}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Allow any hex value (with or without #, any length)
-                              if (
-                                value === "" ||
-                                /^#?[0-9A-Fa-f]*$/.test(value)
-                              ) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  color: value.startsWith("#")
-                                    ? value
-                                    : `#${value}`,
-                                }));
-                              }
-                            }}
-                            placeholder="#000000"
-                            className="flex-1"
-                          />
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+              )}
+
+              {/* Guardrail Active Switch - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="guardrailActive" className="text-sm">
+                    Guardrail Active
+                  </Label>
+                  {formData?.guardrailActive !== undefined && !isLoading ? (
+                    <Switch
+                      id="guardrailActive"
+                      checked={formData.guardrailActive ?? false}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          guardrailActive: checked,
+                        }))
+                      }
+                      disabled={isReadonly}
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+              )}
+
+              {/* Image Input Active Switch - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="imageInputActive" className="text-sm">
+                    Image Input Active
+                  </Label>
+                  {formData?.imageInputActive !== undefined && !isLoading ? (
+                    <Switch
+                      id="imageInputActive"
+                      checked={formData.imageInputActive ?? false}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          imageInputActive: checked,
+                        }))
+                      }
+                      disabled={isReadonly}
+                    />
+                  ) : (
+                    <Skeleton className="h-6 w-11" />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Color and Icon Selection Row */}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {/* Color Picker */}
+              <div className="space-y-2">
+                <Label htmlFor="color">Persona Color</Label>
+                {formData?.color !== undefined && !isLoading ? (
+                  <Popover
+                    open={colorPickerOpen}
+                    onOpenChange={setColorPickerOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                        disabled={isReadonly}
+                      >
+                        <div className="flex items-center gap-2">
                           <div
-                            className="w-10 h-10 rounded border"
+                            className="w-4 h-4 rounded border"
                             style={{ backgroundColor: formData.color }}
                           />
+                          <span>{formData.color}</span>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Preset Colors</Label>
-                        <div className="grid grid-cols-8 gap-2">
-                          {[
-                            "#ef4444",
-                            "#f97316",
-                            "#eab308",
-                            "#22c55e",
-                            "#06b6d4",
-                            "#3b82f6",
-                            "#8b5cf6",
-                            "#ec4899",
-                            "#dc2626",
-                            "#ea580c",
-                            "#ca8a04",
-                            "#16a34a",
-                            "#0891b2",
-                            "#2563eb",
-                            "#7c3aed",
-                            "#db2777",
-                            "#b91c1c",
-                            "#c2410c",
-                            "#a16207",
-                            "#15803d",
-                            "#0e7490",
-                            "#1d4ed8",
-                            "#6d28d9",
-                            "#be185d",
-                            "#991b1b",
-                            "#9a3412",
-                            "#854d0e",
-                            "#166534",
-                            "#155e75",
-                            "#1e40af",
-                            "#581c87",
-                            "#9d174d",
-                          ].map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                              style={{ backgroundColor: color }}
-                              onClick={() => {
-                                setFormData((prev) => ({ ...prev, color }));
-                                setColorPickerOpen(false);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-
-            {/* Icon Picker */}
-            <div className="space-y-2">
-              <Label htmlFor="icon">Persona Icon</Label>
-              {formData?.icon !== undefined && !isLoading ? (
-                <Popover open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                      disabled={isReadonly}
-                    >
-                      <div className="flex items-center gap-2">
-                        {IconComponent && <IconComponent className="w-4 h-4" />}
-                        <span>{formData.icon}</span>
-                        <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
-                      </div>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-0">
-                    <Command>
-                      <CommandInput placeholder="Search icons..." />
-                      <CommandList>
-                        <CommandEmpty>No icon found.</CommandEmpty>
-                        {_suggestedIcons.length > 0 && (
-                          <CommandGroup heading="Suggested for this persona">
-                            {_suggestedIcons
-                              .slice(0, 6)
-                              .map((iconName: string) => {
-                                const IconComponent =
-                                  PERSONA_ICON_MAP[
-                                    iconName as keyof typeof PERSONA_ICON_MAP
-                                  ];
-                                if (!IconComponent) return null;
-
-                                return (
-                                  <CommandItem
-                                    key={iconName}
-                                    value={iconName}
-                                    onSelect={() => {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        icon: iconName,
-                                      }));
-                                      setIconPickerOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        formData.icon === iconName
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <IconComponent className="mr-2 h-4 w-4" />
-                                    {iconName}
-                                  </CommandItem>
-                                );
-                              })}
-                          </CommandGroup>
-                        )}
-                        <CommandGroup heading="All Icons">
-                          {PERSONA_ICONS.map((iconName: string) => {
-                            const IconComponent =
-                              PERSONA_ICON_MAP[
-                                iconName as keyof typeof PERSONA_ICON_MAP
-                              ];
-                            if (!IconComponent) return null;
-
-                            return (
-                              <CommandItem
-                                key={iconName}
-                                value={iconName}
-                                onSelect={() => {
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="colorInput">Hex Color</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="colorInput"
+                              value={formData.color}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow any hex value (with or without #, any length)
+                                if (
+                                  value === "" ||
+                                  /^#?[0-9A-Fa-f]*$/.test(value)
+                                ) {
                                   setFormData((prev) => ({
                                     ...prev,
-                                    icon: iconName,
+                                    color: value.startsWith("#")
+                                      ? value
+                                      : `#${value}`,
                                   }));
-                                  setIconPickerOpen(false);
+                                }
+                              }}
+                              placeholder="#000000"
+                              className="flex-1"
+                            />
+                            <div
+                              className="w-10 h-10 rounded border"
+                              style={{ backgroundColor: formData.color }}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Preset Colors</Label>
+                          <div className="grid grid-cols-8 gap-2">
+                            {[
+                              "#ef4444",
+                              "#f97316",
+                              "#eab308",
+                              "#22c55e",
+                              "#06b6d4",
+                              "#3b82f6",
+                              "#8b5cf6",
+                              "#ec4899",
+                              "#dc2626",
+                              "#ea580c",
+                              "#ca8a04",
+                              "#16a34a",
+                              "#0891b2",
+                              "#2563eb",
+                              "#7c3aed",
+                              "#db2777",
+                              "#b91c1c",
+                              "#c2410c",
+                              "#a16207",
+                              "#15803d",
+                              "#0e7490",
+                              "#1d4ed8",
+                              "#6d28d9",
+                              "#be185d",
+                              "#991b1b",
+                              "#9a3412",
+                              "#854d0e",
+                              "#166534",
+                              "#155e75",
+                              "#1e40af",
+                              "#581c87",
+                              "#9d174d",
+                            ].map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className="w-8 h-8 rounded border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                                style={{ backgroundColor: color }}
+                                onClick={() => {
+                                  setFormData((prev) => ({ ...prev, color }));
+                                  setColorPickerOpen(false);
                                 }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    formData.icon === iconName
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                <IconComponent className="mr-2 h-4 w-4" />
-                                {iconName}
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+
+              {/* Icon Picker */}
+              <div className="space-y-2">
+                <Label htmlFor="icon">Persona Icon</Label>
+                {formData?.icon !== undefined && !isLoading ? (
+                  <Popover
+                    open={iconPickerOpen}
+                    onOpenChange={setIconPickerOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                        disabled={isReadonly}
+                      >
+                        <div className="flex items-center gap-2">
+                          {IconComponent && (
+                            <IconComponent className="w-4 h-4" />
+                          )}
+                          <span>{formData.icon}</span>
+                          <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+                        </div>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-0">
+                      <Command>
+                        <CommandInput placeholder="Search icons..." />
+                        <CommandList>
+                          <CommandEmpty>No icon found.</CommandEmpty>
+                          {_suggestedIcons.length > 0 && (
+                            <CommandGroup heading="Suggested for this persona">
+                              {_suggestedIcons
+                                .slice(0, 6)
+                                .map((iconName: string) => {
+                                  const IconComponent =
+                                    PERSONA_ICON_MAP[
+                                      iconName as keyof typeof PERSONA_ICON_MAP
+                                    ];
+                                  if (!IconComponent) return null;
+
+                                  return (
+                                    <CommandItem
+                                      key={iconName}
+                                      value={iconName}
+                                      onSelect={() => {
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          icon: iconName,
+                                        }));
+                                        setIconPickerOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          formData.icon === iconName
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      <IconComponent className="mr-2 h-4 w-4" />
+                                      {iconName}
+                                    </CommandItem>
+                                  );
+                                })}
+                            </CommandGroup>
+                          )}
+                          <CommandGroup heading="All Icons">
+                            {PERSONA_ICONS.map((iconName: string) => {
+                              const IconComponent =
+                                PERSONA_ICON_MAP[
+                                  iconName as keyof typeof PERSONA_ICON_MAP
+                                ];
+                              if (!IconComponent) return null;
+
+                              return (
+                                <CommandItem
+                                  key={iconName}
+                                  value={iconName}
+                                  onSelect={() => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      icon: iconName,
+                                    }));
+                                    setIconPickerOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.icon === iconName
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  <IconComponent className="mr-2 h-4 w-4" />
+                                  {iconName}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+            </div>
+
+            <div className={`grid gap-4 grid-cols-1`}>
+              {formData?.modelId !== undefined && !isLoading ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="modelId">Text Model *</Label>
+                    <Select
+                      value={formData?.modelId}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          modelId: value,
+                        }))
+                      }
+                      required
+                      disabled={isReadonly}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {models
+                          ?.filter((model) => model.active)
+                          ?.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               ) : (
                 <Skeleton className="h-10 w-full" />
               )}
             </div>
-          </div>
 
-          <div className={`grid gap-4 grid-cols-1`}>
-            {formData?.modelId !== undefined && !isLoading ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="modelId">Text Model *</Label>
-                  <Select
-                    value={formData?.modelId}
+            <div className={`grid gap-4 grid-cols-1`}>
+              {formData?.reasoning !== undefined && !isLoading ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="reasoning">Reasoning Effort</Label>
+                    <Select
+                      value={formData?.reasoning || "none"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          reasoning: value as
+                            | "none"
+                            | "minimal"
+                            | "low"
+                            | "medium"
+                            | "high",
+                        }))
+                      }
+                      disabled={isReadonly}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reasoning effort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="temperature">
+                Temperature:{" "}
+                {formData?.temperature !== undefined
+                  ? formData.temperature.toFixed(2)
+                  : "0.00"}
+              </Label>
+              {formData?.temperature !== undefined && !isLoading ? (
+                <>
+                  <Slider
+                    id="temperature"
+                    data-testid="temperature-slider"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={[formData?.temperature || 0]}
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        modelId: value,
+                        temperature: value[0] || 0,
                       }))
                     }
-                    required
+                    className="w-full"
                     disabled={isReadonly}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models
-                        ?.filter((model) => model.active)
-                        ?.map((model) => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Deterministic</span>
+                    <span>Creative</span>
+                  </div>
+                </>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
+            </div>
 
-          <div className={`grid gap-4 grid-cols-1`}>
-            {formData?.reasoning !== undefined && !isLoading ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="reasoning">Reasoning Effort</Label>
-                  <Select
-                    value={formData?.reasoning || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        reasoning: value as
-                          | "none"
-                          | "minimal"
-                          | "low"
-                          | "medium"
-                          | "high",
-                      }))
-                    }
-                    disabled={isReadonly}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reasoning effort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="minimal">Minimal</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="systemPrompt">System Prompt *</Label>
+                <div className="flex gap-2">
+                  {formData?.systemPrompt !== undefined && !isLoading && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant={
+                              editorMode === "preview" ? "default" : "secondary"
+                            }
+                            size="sm"
+                            onClick={() =>
+                              setEditorMode(
+                                editorMode === "preview" ? "editor" : "preview"
+                              )
+                            }
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Preview</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      {isEditMode &&
+                        effectiveProfile?.role === "superadmin" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant={
+                                  editorMode === "debug"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  setEditorMode(
+                                    editorMode === "debug" ? "editor" : "debug"
+                                  )
+                                }
+                                className="h-8 w-8 p-0"
+                              >
+                                <Bug className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Debug</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                    </>
+                  )}
                 </div>
-              </>
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="temperature">
-              Temperature:{" "}
-              {formData?.temperature !== undefined
-                ? formData.temperature.toFixed(2)
-                : "0.00"}
-            </Label>
-            {formData?.temperature !== undefined && !isLoading ? (
-              <>
-                <Slider
-                  id="temperature"
-                  data-testid="temperature-slider"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={[formData?.temperature || 0]}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      temperature: value[0] || 0,
-                    }))
-                  }
-                  className="w-full"
-                  disabled={isReadonly}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Deterministic</span>
-                  <span>Creative</span>
-                </div>
-              </>
-            ) : (
-              <Skeleton className="h-10 w-full" />
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="systemPrompt">System Prompt *</Label>
-            {formData?.systemPrompt !== undefined && !isLoading ? (
-              <>
-                <div className="h-[500px] overflow-auto">
-                  <MarkdownEditor
+              </div>
+              {formData?.systemPrompt !== undefined && !isLoading ? (
+                <div className="h-[500px]">
+                  <UnifiedPromptEditor
                     value={formData?.systemPrompt || ""}
                     onChange={(value) =>
                       setFormData((prev) => ({
@@ -850,48 +924,46 @@ export default function Persona({
                     placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
                     disabled={isReadonly}
                     className="h-full"
+                    debugContent={
+                      isEditMode && effectiveProfile?.role === "superadmin" ? (
+                        <PersonaDebugInfo personaId={personaId!} />
+                      ) : undefined
+                    }
+                    activeMode={editorMode}
                   />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  This prompt defines the persona's behavior and personality in
-                  conversations. You can use markdown formatting for better
-                  organization.
-                </p>
-              </>
-            ) : (
-              <Skeleton className="h-100 w-full" />
-            )}
-          </div>
-
-          {/* Debug Info Section - Only for superadmin and edit mode */}
-          {isEditMode && effectiveProfile?.role === "superadmin" && (
-            <div className="space-y-2">
-              <Label>Debug Info</Label>
-              <PersonaDebugInfo personaId={personaId!} />
+              ) : (
+                <Skeleton className="h-[500px] w-full" />
+              )}
+              <p className="text-sm text-muted-foreground">
+                This prompt defines the persona's behavior and personality in
+                conversations. You can use markdown formatting for better
+                organization.
+              </p>
             </div>
-          )}
 
-          <div className="flex gap-2 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/create/personas")}
-              disabled={isSubmitting}
-            >
-              Back
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isReadonly}>
-              {isSubmitting
-                ? isEditMode
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditMode
-                  ? "Update Persona"
-                  : "Create Persona"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/create/personas")}
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isReadonly}>
+                {isSubmitting
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Creating..."
+                  : isEditMode
+                    ? "Update Persona"
+                    : "Create Persona"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

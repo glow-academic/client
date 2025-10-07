@@ -40,7 +40,6 @@ import {
 import { useDepartments } from "@/contexts/departments-context";
 
 import { useProviderColumns } from "@/hooks/use-provider-columns";
-import { useAgentsByDepartmentIdBatch } from "@/lib/api/hooks/agents";
 import { useDeleteModel, useModels } from "@/lib/api/hooks/models";
 import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
 import {
@@ -49,6 +48,7 @@ import {
 } from "@/lib/api/hooks/providers";
 import { Model, Provider } from "@/types";
 import { ProvidersDataTable } from "./ProvidersDataTable";
+import { useAgents } from "@/lib/api/hooks/agents";
 
 interface ProviderGroup {
   provider: Provider;
@@ -83,9 +83,7 @@ export default function Providers() {
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: agents = [] } = useAgentsByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
+  const { data: agents = [] } = useAgents()
 
   // Get filter options
   const { columns, providerOptions, customModelOptions, statusOptions } =
