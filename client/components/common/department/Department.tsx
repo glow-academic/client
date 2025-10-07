@@ -43,7 +43,9 @@ interface FormErrors {
   classifyAgentId?: string;
   assistantAgentId?: string;
   gradeAgentId?: string;
-  guardrailAgentId?: string;
+  inputGuardrailAgentId?: string;
+  outputGuardrailAgentId?: string;
+  hintAgentId?: string;
 }
 
 interface FormData {
@@ -55,10 +57,12 @@ interface FormData {
   classifyAgentId?: string;
   assistantAgentId?: string;
   gradeAgentId?: string;
-  guardrailAgentId?: string;
+  inputGuardrailAgentId?: string;
+  outputGuardrailAgentId?: string;
+  hintAgentId?: string;
 }
 
-// Define the 6 required agent types
+// Define the 8 required agent types
 const REQUIRED_AGENT_TYPES = [
   {
     type: "title",
@@ -91,10 +95,22 @@ const REQUIRED_AGENT_TYPES = [
     description: "Grades and evaluates submissions",
   },
   {
-    type: "guardrail",
-    field: "guardrailAgentId",
-    label: "Guardrail Agent",
-    description: "Ensures content safety and compliance",
+    type: "input_guardrail",
+    field: "inputGuardrailAgentId",
+    label: "Input Guardrail Agent",
+    description: "Validates student input for safety and compliance",
+  },
+  {
+    type: "output_guardrail",
+    field: "outputGuardrailAgentId",
+    label: "Output Guardrail Agent",
+    description: "Validates simulation output for safety and compliance",
+  },
+  {
+    type: "hint",
+    field: "hintAgentId",
+    label: "Hint Agent",
+    description: "Provides hints and guidance to students",
   },
 ] as const;
 
@@ -114,7 +130,9 @@ export default function Department({ departmentId }: DepartmentProps) {
       classifyAgentId: "",
       assistantAgentId: "",
       gradeAgentId: "",
-      guardrailAgentId: "",
+      inputGuardrailAgentId: "",
+      outputGuardrailAgentId: "",
+      hintAgentId: "",
     }),
     []
   );
@@ -149,7 +167,9 @@ export default function Department({ departmentId }: DepartmentProps) {
         classifyAgentId: department.classifyAgentId || "",
         assistantAgentId: department.assistantAgentId || "",
         gradeAgentId: department.gradeAgentId || "",
-        guardrailAgentId: department.guardrailAgentId || "",
+        inputGuardrailAgentId: department.inputGuardrailAgentId || "",
+        outputGuardrailAgentId: department.outputGuardrailAgentId || "",
+        hintAgentId: department.hintAgentId || "",
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -188,7 +208,7 @@ export default function Department({ departmentId }: DepartmentProps) {
       return;
     }
 
-    // Validate that all 6 agent types are selected
+    // Validate that all 8 agent types are selected
     if (!formData) {
       toast.error("Form data is not available");
       return;
@@ -225,7 +245,9 @@ export default function Department({ departmentId }: DepartmentProps) {
           classifyAgentId: formData.classifyAgentId!,
           assistantAgentId: formData.assistantAgentId!,
           gradeAgentId: formData.gradeAgentId!,
-          guardrailAgentId: formData.guardrailAgentId!,
+          inputGuardrailAgentId: formData.inputGuardrailAgentId!,
+          outputGuardrailAgentId: formData.outputGuardrailAgentId!,
+          hintAgentId: formData.hintAgentId!,
           updatedAt: new Date().toISOString(),
         });
       } else {
@@ -238,7 +260,9 @@ export default function Department({ departmentId }: DepartmentProps) {
           classifyAgentId: formData.classifyAgentId!,
           assistantAgentId: formData.assistantAgentId!,
           gradeAgentId: formData.gradeAgentId!,
-          guardrailAgentId: formData.guardrailAgentId!,
+          inputGuardrailAgentId: formData.inputGuardrailAgentId!,
+          outputGuardrailAgentId: formData.outputGuardrailAgentId!,
+          hintAgentId: formData.hintAgentId!,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });

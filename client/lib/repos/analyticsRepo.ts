@@ -80,7 +80,7 @@ const MetricResponseFallback: MetricResponse = {
 // Helper to execute metric functions
 async function executeMetricFunction(
   fnName: string,
-  filters: AnalyticsFilters,
+  filters: AnalyticsFilters
 ): Promise<MetricResponse> {
   const db = await getDb();
 
@@ -89,6 +89,7 @@ async function executeMetricFunction(
   const rolesParam = toProfileRoleArray(filters.roles);
   const simFiltersParam = toTextArray(filters.simulationFilters);
   const profileIdParam = filters.profileId ?? null; // uuid or null
+  const departmentIdsParam = toUuidArray(filters.departmentIds);
 
   // Call the SQL function directly
   const rows = await db.execute<MetricRow>(
@@ -98,8 +99,9 @@ async function executeMetricFunction(
           ${cohortIdsParam},            -- uuid[] | NULL
           ${rolesParam},                -- profile_role[] | NULL
           ${simFiltersParam},           -- text[] | NULL
-          ${profileIdParam}::uuid
-        ) AS result`,
+          ${profileIdParam}::uuid,
+          ${departmentIdsParam}         -- uuid[] | NULL
+        ) AS result`
   );
 
   // Coerce unknown -> safe parse
@@ -112,7 +114,7 @@ async function executeMetricFunction(
 async function executePrimaryFunction<T>(
   fnName: string,
   filters: AnalyticsFilters,
-  additionalParams: SQL[] = [],
+  additionalParams: SQL[] = []
 ): Promise<T> {
   const db = await getDb();
 
@@ -121,6 +123,7 @@ async function executePrimaryFunction<T>(
   const rolesParam = toProfileRoleArray(filters.roles);
   const simFiltersParam = toTextArray(filters.simulationFilters);
   const profileIdParam = filters.profileId ?? null; // uuid or null
+  const departmentIdsParam = toUuidArray(filters.departmentIds);
 
   // Build the SQL with additional parameters
   const baseParams = [
@@ -130,11 +133,12 @@ async function executePrimaryFunction<T>(
     rolesParam || sql`NULL`,
     simFiltersParam || sql`NULL`,
     sql`${profileIdParam}::uuid`,
+    departmentIdsParam || sql`NULL`,
   ];
 
   // Call the SQL function directly
   const rows = await db.execute<MetricRow>(
-    sql`SELECT ${sql.raw(fnName)}(${sql.join([...baseParams, ...additionalParams], sql`, `)}) AS result`,
+    sql`SELECT ${sql.raw(fnName)}(${sql.join([...baseParams, ...additionalParams], sql`, `)}) AS result`
   );
 
   return rows?.[0]?.result as T;
@@ -147,17 +151,17 @@ export const analyticsRepo = {
   },
 
   async getCompletionPercentage(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction("analytics_completion_percentage_fn", filters);
   },
 
   async getFirstAttemptPassRate(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction(
       "analytics_first_attempt_pass_rate_fn",
-      filters,
+      filters
     );
   },
 
@@ -166,22 +170,22 @@ export const analyticsRepo = {
   },
 
   async getMessagesPerSession(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction("analytics_messages_per_session_fn", filters);
   },
 
   async getPersonaResponseTimes(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction(
       "analytics_persona_response_times_fn",
-      filters,
+      filters
     );
   },
 
   async getSessionEfficiency(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction("analytics_session_efficiency_fn", filters);
   },
@@ -200,7 +204,7 @@ export const analyticsRepo = {
 
   // Leaderboard Analytics (3 metrics)
   async getImprovementPerDay(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<MetricResponse> {
     return executeMetricFunction("analytics_improvement_per_day_fn", filters);
   },
@@ -215,11 +219,11 @@ export const analyticsRepo = {
 
   // Primary Analytics (3 complex metrics)
   async getRubricHeatmap(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<RubricHeatmapResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_rubric_heatmap_fn",
-      filters,
+      filters
     );
     return RubricHeatmapResponseSchema.parse(result);
   },
@@ -227,144 +231,144 @@ export const analyticsRepo = {
   async getGrowthData(filters: AnalyticsFilters): Promise<GrowthDataResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_growth_data_fn",
-      filters,
+      filters
     );
     return GrowthDataResponseSchema.parse(result);
   },
 
   async getPersonaPerformance(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<PersonaPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_persona_performance_fn",
-      filters,
+      filters
     );
     return PersonaPerformanceResponseSchema.parse(result);
   },
 
   // Secondary Analytics (3 complex metrics)
   async getAttemptImprovement(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<AttemptImprovementResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_attempt_improvement_fn",
-      filters,
+      filters
     );
     return AttemptImprovementResponseSchema.parse(result);
   },
 
   async getCohortPerformance(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<CohortPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_cohort_performance_fn",
-      filters,
+      filters
     );
     return CohortPerformanceResponseSchema.parse(result);
   },
 
   async getSkillPerformance(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<SkillPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_skill_performance_fn",
-      filters,
+      filters
     );
     return SkillPerformanceResponseSchema.parse(result);
   },
 
   // Footer Analytics (4 new metrics)
   async getScenarioPerformance(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<ScenarioPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_scenario_performance_fn",
-      filters,
+      filters
     );
     return ScenarioPerformanceResponseSchema.parse(result);
   },
 
   async getScenarioStats(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<ScenarioStatsResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_scenario_stats_fn",
-      filters,
+      filters
     );
     return ScenarioStatsResponseSchema.parse(result);
   },
 
   async getSimulationComposition(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<SimulationCompositionResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_simulation_composition_fn",
-      filters,
+      filters
     );
     return SimulationCompositionResponseSchema.parse(result);
   },
 
   async getSimulationPerformance(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<SimulationPerformanceResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_simulation_performance_fn",
-      filters,
+      filters
     );
     return SimulationPerformanceResponseSchema.parse(result);
   },
 
   // Home Analytics
   async getHomeOverview(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<HomeOverviewResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_home_overview_fn",
-      filters,
+      filters
     );
     return HomeOverviewResponseSchema.parse(result);
   },
 
   // History Analytics
   async getAttemptHistory(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<AttemptHistoryResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_attempt_history_fn",
-      filters,
+      filters
     );
     return AttemptHistoryResponseSchema.parse(result);
   },
 
   // Practice Analytics
   async getPracticeOverview(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<PracticeOverviewResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_practice_overview_fn",
-      filters,
+      filters
     );
     return PracticeOverviewResponseSchema.parse(result);
   },
 
   // Reports Bundle Analytics
   async getReportsBundle(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<ReportsBundleResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_reports_bundle_fn",
-      filters,
+      filters
     );
     return ReportsBundleResponseSchema.parse(result);
   },
 
   // Leaderboard Bundle Analytics
   async getLeaderboardBundle(
-    filters: AnalyticsFilters,
+    filters: AnalyticsFilters
   ): Promise<LeaderboardBundleResponse> {
     const result = await executePrimaryFunction<unknown>(
       "analytics_leaderboard_bundle_fn",
-      filters,
+      filters
     );
     return LeaderboardBundleResponseSchema.parse(result);
   },
