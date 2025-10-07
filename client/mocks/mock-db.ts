@@ -75,9 +75,6 @@ export class MockDb {
   getAgentsByModel(modelId: string) { 
     return this.agents.filter(item => item.modelId === modelId); 
   }
-  getAgentsByDepartment(departmentId: string) { 
-    return this.agents.filter(item => item.departmentId === departmentId); 
-  }
 
   // AGENTS Mutations
   createAgent(data: Partial<Agent>) {
