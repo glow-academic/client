@@ -5,6 +5,7 @@
  * 06/07/2025
  */
 "use client";
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
 import {
   useDeleteProfile,
@@ -61,7 +63,7 @@ export default function Staff() {
     StaffData[]
   >([]);
   const { effectiveProfile } = useProfile();
-  const { selectedDepartmentIds } = useDepartments();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Mutation hooks
   const deleteProfileMutation = useDeleteProfile();
@@ -82,6 +84,9 @@ export default function Staff() {
   const [bulkRole, setBulkRole] = React.useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = React.useState<string>("");
   const [bulkUnlimited, setBulkUnlimited] = React.useState<boolean>(false);
+  const [bulkDepartmentId, setBulkDepartmentId] = React.useState<string | null>(
+    null
+  );
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -95,10 +100,11 @@ export default function Staff() {
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
     useProfiles();
   const { data: allCohorts = [], isLoading: isLoadingCohorts } =
-    useCohortsByDepartmentIdBatch(selectedDepartmentIds);
+    useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: departments = [] } = useDepartmentsHook();
 
   const { data: recentRuns = [] } = useModelRunsByProfileIdBatch(
-    allProfiles.map((p: Profile) => p.id),
+    allProfiles.map((p: Profile) => p.id)
   );
 
   // Listen for layout "Create Staff" button broadcast
@@ -125,7 +131,7 @@ export default function Staff() {
     }
 
     return allProfiles.filter((profile: Profile) =>
-      allowedRoles.includes(profile.role),
+      allowedRoles.includes(profile.role)
     );
   }, [allProfiles, effectiveProfile?.role]);
 
@@ -134,7 +140,7 @@ export default function Staff() {
     return staffUsers.map((profile: Profile) => {
       // Find cohorts this user belongs to
       const userCohorts = allCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profile.id),
+        cohort.profileIds.includes(profile.id)
       );
 
       // Compute requests in last 24h for this profile
@@ -146,7 +152,7 @@ export default function Staff() {
         (r) =>
           r.profileId === profile.id &&
           r.createdAt &&
-          new Date(r.createdAt).getTime() >= dayAgo,
+          new Date(r.createdAt).getTime() >= dayAgo
       ).length;
 
       return {
@@ -163,7 +169,7 @@ export default function Staff() {
         lastActiveFormatted: formatLastActive(profile.lastActive),
         roleDisplayName: getRoleDisplayName(profile.role),
         defaultProfile: Boolean(
-          (profile as unknown as { defaultProfile?: boolean }).defaultProfile,
+          (profile as unknown as { defaultProfile?: boolean }).defaultProfile
         ),
         reqPerDay:
           (profile as unknown as { reqPerDay?: number | null }).reqPerDay ??
@@ -177,7 +183,7 @@ export default function Staff() {
   const counts = React.useMemo(() => {
     const activeStaff = staffUsers.filter((profile: Profile) => profile.active);
     const inactiveStaff = staffUsers.filter(
-      (profile: Profile) => !profile.active,
+      (profile: Profile) => !profile.active
     );
 
     const baseCounts = {
@@ -185,13 +191,13 @@ export default function Staff() {
       active: activeStaff.length,
       inactive: inactiveStaff.length,
       instructional: staffUsers.filter(
-        (profile: Profile) => profile.role === "instructional",
+        (profile: Profile) => profile.role === "instructional"
       ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
       admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
         .length,
       superadmin: staffUsers.filter(
-        (profile: Profile) => profile.role === "superadmin",
+        (profile: Profile) => profile.role === "superadmin"
       ).length,
       guest: staffUsers.filter((profile: Profile) => profile.role === "guest")
         .length,
@@ -230,7 +236,7 @@ export default function Staff() {
         if (effectiveProfile?.role === "superadmin") {
           // For superadmins, show both superadmins and admins
           filteredStaff = staffData.filter(
-            (staff) => staff.role === "superadmin" || staff.role === "admin",
+            (staff) => staff.role === "superadmin" || staff.role === "admin"
           );
           title = `Superadmins/Admins (${filteredStaff.length})`;
         } else {
@@ -241,7 +247,7 @@ export default function Staff() {
         break;
       case "instructional":
         filteredStaff = staffData.filter(
-          (staff) => staff.role === "instructional",
+          (staff) => staff.role === "instructional"
         );
         title = `Instructional Staff (${filteredStaff.length})`;
         break;
@@ -276,7 +282,7 @@ export default function Staff() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60),
+      (now.getTime() - date.getTime()) / (1000 * 60)
     );
 
     if (diffInMinutes < 1) return "Just now";
@@ -404,7 +410,7 @@ export default function Staff() {
         selectedStaffIds={selectedStaffIds}
         onStaffSelect={(id, checked) =>
           setSelectedStaffIds((prev) =>
-            checked ? [...prev, id] : prev.filter((x) => x !== id),
+            checked ? [...prev, id] : prev.filter((x) => x !== id)
           )
         }
         onSelectAll={(checked, visibleRowIds) => {
@@ -422,7 +428,7 @@ export default function Staff() {
           } else {
             // Deselect all visible rows
             setSelectedStaffIds((prev) =>
-              prev.filter((id) => !visibleRowIds?.includes(id)),
+              prev.filter((id) => !visibleRowIds?.includes(id))
             );
           }
         }}
@@ -431,7 +437,7 @@ export default function Staff() {
           window.open(
             `/analytics/reports/p/${staff.id}`,
             "_blank",
-            "noopener,noreferrer",
+            "noopener,noreferrer"
           );
         }}
         onEdit={(staff) => setEditProfileId(staff.id)}
@@ -612,6 +618,42 @@ export default function Staff() {
                 </Label>
               </div>
             </div>
+
+            {/* Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <DepartmentSelector
+                  departments={departments.map((dept) => ({
+                    id: dept.id,
+                    title: dept.title as string,
+                    ...(dept.description && { description: dept.description }),
+                  }))}
+                  selectedDepartment={
+                    bulkDepartmentId
+                      ? (() => {
+                          const dept = departments.find(
+                            (d) => d.id === bulkDepartmentId
+                          );
+                          return dept
+                            ? {
+                                id: dept.id,
+                                title: dept.title as string,
+                                ...(dept.description && {
+                                  description: dept.description,
+                                }),
+                              }
+                            : null;
+                        })()
+                      : null
+                  }
+                  onSelect={(department) =>
+                    setBulkDepartmentId(department?.id || null)
+                  }
+                  placeholder="Select department"
+                />
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button
@@ -623,6 +665,18 @@ export default function Staff() {
             <Button
               onClick={async () => {
                 if (selectedStaffIds.length === 0) return;
+
+                // Department validation for superadmin
+                if (
+                  effectiveProfile?.role === "superadmin" &&
+                  !bulkDepartmentId
+                ) {
+                  toast.error(
+                    "Department selection is required for superadmin users"
+                  );
+                  return;
+                }
+
                 const updates: Record<string, unknown> = {
                   updatedAt: new Date().toISOString(),
                 };
@@ -633,6 +687,8 @@ export default function Staff() {
                   const num = Number(bulkReqPerDay);
                   updates["reqPerDay"] = Number.isNaN(num) ? null : num;
                 }
+                if (bulkDepartmentId)
+                  updates["departmentId"] = bulkDepartmentId;
                 try {
                   if (Object.keys(updates).length > 0) {
                     // Use bulk update for efficiency
@@ -648,6 +704,7 @@ export default function Staff() {
                   setSelectedStaffIds([]);
                   setBulkRole("__keep__");
                   setBulkReqPerDay("");
+                  setBulkDepartmentId(null);
                 } catch {
                   toast.error("Failed to update staff");
                 }
@@ -677,13 +734,13 @@ export default function Staff() {
           </AlertDialogHeader>
           {(() => {
             const selected = staffData.filter((s) =>
-              selectedStaffIds.includes(s.id),
+              selectedStaffIds.includes(s.id)
             );
             const nonDeletable = selected.filter(
-              (s) => s.defaultProfile || s.id === effectiveProfile?.id,
+              (s) => s.defaultProfile || s.id === effectiveProfile?.id
             );
             const deletable = selected.filter(
-              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id,
+              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id
             );
             const impactedCohorts = deletable.map((s) => ({
               staff: s,
@@ -765,7 +822,7 @@ export default function Staff() {
                       (s) =>
                         selectedStaffIds.includes(s.id) &&
                         !s.defaultProfile &&
-                        s.id !== effectiveProfile?.id,
+                        s.id !== effectiveProfile?.id
                     )
                     .map((s) => s.id);
                   if (deletableIds.length === 0) {
@@ -812,7 +869,7 @@ export default function Staff() {
               const canDelete =
                 !staff.defaultProfile && staff.id !== effectiveProfile?.id;
               const cohorts = allCohorts.filter((c) =>
-                c.profileIds.includes(staff.id),
+                c.profileIds.includes(staff.id)
               );
 
               if (!canDelete) {
@@ -884,7 +941,7 @@ export default function Staff() {
                   toast.error(
                     deleteStaffMember.id === effectiveProfile?.id
                       ? "You cannot delete your own account."
-                      : "Default profiles cannot be deleted.",
+                      : "Default profiles cannot be deleted."
                   );
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);

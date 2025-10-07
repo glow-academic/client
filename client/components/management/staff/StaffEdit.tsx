@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import {
   useDeleteProfile,
   useProfile,
@@ -48,6 +50,7 @@ type FormData = {
   alias?: string;
   role?: string;
   reqPerDay?: number | "";
+  departmentId?: string;
 };
 
 export interface StaffEditProps {
@@ -63,7 +66,7 @@ export interface StaffEditProps {
 const useStaffEditBusinessLogic = (
   profileId: string,
   redirectOnSuccess: boolean,
-  onDone?: () => void,
+  onDone?: () => void
 ) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,6 +91,12 @@ const useStaffEditBusinessLogic = (
 
   const handleSubmit = useCallback(
     async (formData: FormData) => {
+      // Department validation for superadmin
+      if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
+        toast.error("Department selection is required for superadmin users");
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const parsedReqPerDay =
@@ -101,6 +110,7 @@ const useStaffEditBusinessLogic = (
           alias: formData.alias || "",
           role: formData.role as ProfileRole,
           reqPerDay: parsedReqPerDay,
+          departmentId: formData.departmentId || "",
         });
         setHasChanges(false);
         toast.success("User updated successfully");
@@ -124,7 +134,14 @@ const useStaffEditBusinessLogic = (
         setIsSubmitting(false);
       }
     },
-    [profileId, router, redirectOnSuccess, onDone, updateProfileMutation],
+    [
+      profileId,
+      router,
+      redirectOnSuccess,
+      onDone,
+      updateProfileMutation,
+      effectiveProfile?.role,
+    ]
   );
 
   const handleDelete = useCallback(async () => {
@@ -177,6 +194,7 @@ export default function StaffEdit({
   const [formData, setFormData] = useState<FormData>({});
   const [toggleDefault, setToggleDefault] = useState<boolean | null>(null);
   const [unlimited, setUnlimited] = useState<boolean>(false);
+  const { data: departments = [] } = useDepartmentsHook();
 
   const {
     targetUser,
@@ -200,6 +218,7 @@ export default function StaffEdit({
         alias: targetUser.alias,
         role: targetUser.role,
         reqPerDay: targetUser.reqPerDay ?? "",
+        departmentId: targetUser.departmentId || "",
       });
       setUnlimited(targetUser.reqPerDay == null);
       setToggleDefault(targetUser.defaultProfile ?? null);
@@ -220,7 +239,7 @@ export default function StaffEdit({
       }
       await handleSubmit(payload);
     },
-    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser],
+    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser]
   );
 
   const handleFormInputChange = useCallback(
@@ -228,7 +247,7 @@ export default function StaffEdit({
       setFormData((prev) => ({ ...prev, [field]: value }));
       handleInputChange(String(field), String(value));
     },
-    [handleInputChange],
+    [handleInputChange]
   );
 
   return (
@@ -363,7 +382,7 @@ export default function StaffEdit({
                         const num = parseInt(val, 10);
                         handleFormInputChange(
                           "reqPerDay",
-                          Number.isNaN(num) ? "" : num,
+                          Number.isNaN(num) ? "" : num
                         );
                       }
                     }}
@@ -393,6 +412,52 @@ export default function StaffEdit({
                 <Skeleton className="h-10 w-full" />
               )}
             </div>
+
+            {/* Department Selection - Only for superadmin */}
+            {effectiveProfile?.role === "superadmin" && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentId !== undefined && !isLoading ? (
+                  <DepartmentSelector
+                    departments={departments.map((dept) => ({
+                      id: dept.id,
+                      title: dept.title as string,
+                      ...(dept.description && {
+                        description: dept.description,
+                      }),
+                    }))}
+                    selectedDepartment={
+                      formData?.departmentId
+                        ? (() => {
+                            const dept = departments.find(
+                              (d) => d.id === formData.departmentId
+                            );
+                            return dept
+                              ? {
+                                  id: dept.id,
+                                  title: dept.title as string,
+                                  ...(dept.description && {
+                                    description: dept.description,
+                                  }),
+                                }
+                              : null;
+                          })()
+                        : null
+                    }
+                    onSelect={(department) =>
+                      handleFormInputChange(
+                        "departmentId",
+                        department?.id || ""
+                      )
+                    }
+                    placeholder="Select department"
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <Skeleton className="h-10 w-full" />
+                )}
+              </div>
+            )}
             {!hideDelete && (
               <div className="space-y-2">
                 <AlertDialog>
