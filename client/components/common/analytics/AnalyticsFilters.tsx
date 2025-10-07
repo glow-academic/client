@@ -218,7 +218,7 @@ export function AnalyticsFilters({
   };
 
   return (
-    <div className="px-4">
+    <div className="pr-4">
       <div className="flex items-center gap-2">
         {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
         {!homePage && (

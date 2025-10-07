@@ -2,10 +2,7 @@
 // It imports modular mocks and sets up the dynamic mock database.
 
 import { afterEach, beforeEach, vi } from "vitest";
-import {
-  setVitestMock,
-  clearVitestMocks,
-} from "@/lib/testing/create-mockable-action";
+import { setVitestMock, clearVitestMocks } from "@/lib/testing/create-mockable-action";
 import { MockDb } from "@/mocks/mock-db";
 import "@testing-library/jest-dom";
 
