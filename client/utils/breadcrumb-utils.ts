@@ -114,6 +114,12 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "management";
 
     case "system":
+      if (second === "departments") {
+        if (third === "d" && fourth) {
+          return `department-${fourth}`;
+        }
+        return "departments";
+      }
       if (second === "agents") {
         if (third === "a" && fourth) {
           return `agent-${fourth}`;
@@ -208,6 +214,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "reports":
         title = "Reports";
+        break;
+      case "departments":
+        title = "Departments";
         break;
       case "agents":
         title = "Agents";

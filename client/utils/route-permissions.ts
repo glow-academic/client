@@ -318,7 +318,19 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         path: "/system",
         roles: ["superadmin"],
         title: "System Overview",
-        redirectTo: "/system/agents",
+        redirectTo: "/system/departments",
+      },
+      {
+        path: "/system/departments",
+        roles: ["superadmin"],
+        title: "Departments",
+        redirectTo: "/system/departments",
+      },
+      {
+        path: "/system/departments/d/[departmentId]",
+        roles: ["superadmin"],
+        title: "Edit Department",
+        redirectTo: "/system/departments",
       },
       {
         path: "/system/agents",
@@ -377,7 +389,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
 // Helper function to check if a user has access to a specific path
 export const hasRouteAccess = (
   pathname: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   // Handle dynamic routes by converting them to pattern matches
   const normalizedPath = normalizePathForMatching(pathname);
@@ -398,7 +410,7 @@ export const hasRouteAccess = (
 
 // Helper function to get route permission for a specific path
 export const getRoutePermission = (
-  pathname: string,
+  pathname: string
 ): RoutePermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -415,7 +427,7 @@ export const getRoutePermission = (
 
 // Helper function to get section permission for a specific path
 export const getSectionPermission = (
-  pathname: string,
+  pathname: string
 ): SectionPermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -531,7 +543,7 @@ export const getAvailableSubsectionsForRole = (role: ProfileRole): string[] => {
 // Helper function to check if a section is available for a role
 export const isSectionAvailableForRole = (
   section: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   return getAvailableSectionsForRole(role).includes(section);
 };

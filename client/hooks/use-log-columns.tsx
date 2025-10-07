@@ -24,7 +24,7 @@ export interface AppLog {
 export interface UseLogColumnsProps {
   onViewLog: (log: AppLog) => void;
   resolveActorName?: (
-    actor: Record<string, unknown> | null | undefined,
+    actor: Record<string, unknown> | null | undefined
   ) => string | null;
 }
 
