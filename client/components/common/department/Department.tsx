@@ -335,11 +335,6 @@ export default function Department({ departmentId }: DepartmentProps) {
 
         {/* Agents Field */}
         <div className="space-y-4">
-          <Label className="text-base font-medium">Required Agents *</Label>
-          <p className="text-sm text-muted-foreground">
-            Select one agent for each required type. All agents must be
-            assigned.
-          </p>
           {!isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {REQUIRED_AGENT_TYPES.map((agentType) => {
