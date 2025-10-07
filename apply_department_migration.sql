@@ -1,14 +1,6 @@
 -- Apply department support migration (0019_add_department_support.sql)
 -- This migration adds department_id columns and creates the departments table
 
--- Create agent_type enum if it doesn't exist
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'agent_type') THEN
-        CREATE TYPE agent_type AS ENUM ('assistant', 'grade', 'scenario', 'classify', 'title', 'guardrail');
-    END IF;
-END $$;
-
 -- Add department_id column to all specified tables (if not exists)
 DO $$ 
 BEGIN
@@ -39,19 +31,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'model_runs' AND column_name = 'department_id') THEN
         ALTER TABLE "model_runs" ADD COLUMN "department_id" uuid;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'department_id') THEN
-        ALTER TABLE "agents" ADD COLUMN "department_id" uuid;
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'parameters' AND column_name = 'department_id') THEN
         ALTER TABLE "parameters" ADD COLUMN "department_id" uuid;
-    END IF;
-END $$;
-
--- Add type column to agents table (if not exists)
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agents' AND column_name = 'type') THEN
-        ALTER TABLE "agents" ADD COLUMN "type" agent_type NOT NULL DEFAULT 'assistant';
     END IF;
 END $$;
 
@@ -61,12 +42,41 @@ CREATE TABLE IF NOT EXISTS "departments" (
     "created_at" timestamp with time zone DEFAULT now() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
     "title" text NOT NULL,
-    "description" text
+    "description" text NOT NULL,
+    "active" boolean DEFAULT true NOT NULL,
+    "title_agent_id" uuid NOT NULL,
+    "scenario_agent_id" uuid NOT NULL,
+    "classify_agent_id" uuid NOT NULL,
+    "assistant_agent_id" uuid NOT NULL,
+    "grade_agent_id" uuid NOT NULL,
+    "guardrail_agent_id" uuid NOT NULL
 );
 
+-- Create default agents for the CS department
+INSERT INTO "agents" ("id", "name", "description", "system_prompt", "temperature") 
+VALUES 
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Assistant', 'Default Assistant Agent', 'You are a helpful assistant.', 0.7),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Grade', 'Default Grade Agent', 'You are a grading assistant.', 0.7),
+    ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Scenario', 'Default Scenario Agent', 'You are a scenario assistant.', 0.7),
+    ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Classify', 'Default Classify Agent', 'You are a classification assistant.', 0.7),
+    ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Title', 'Default Title Agent', 'You are a title generation assistant.', 0.7),
+    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Guardrail', 'Default Guardrail Agent', 'You are a guardrail assistant.', 0.7)
+ON CONFLICT ("id") DO NOTHING;
+
 -- Insert CS department if it doesn't exist
-INSERT INTO "departments" ("id", "title", "description") 
-VALUES ('33333333-3333-3333-3333-333333333333', 'Computer Science', 'Computer Science Department')
+INSERT INTO "departments" ("id", "title", "description", "active", "title_agent_id", "scenario_agent_id", "classify_agent_id", "assistant_agent_id", "grade_agent_id", "guardrail_agent_id") 
+VALUES (
+    '33333333-3333-3333-3333-333333333333', 
+    'Computer Science', 
+    'Computer Science Department',
+    true,
+    'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+    'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    'dddddddd-dddd-dddd-dddd-dddddddddddd',
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'ffffffff-ffff-ffff-ffff-ffffffffffff'
+)
 ON CONFLICT ("id") DO NOTHING;
 
 -- Insert Google provider if it doesn't exist
@@ -83,16 +93,7 @@ UPDATE "providers" SET "department_id" = '33333333-3333-3333-3333-333333333333' 
 UPDATE "scenarios" SET "department_id" = '33333333-3333-3333-3333-333333333333' WHERE "department_id" IS NULL;
 UPDATE "personas" SET "department_id" = '33333333-3333-3333-3333-333333333333' WHERE "department_id" IS NULL;
 UPDATE "model_runs" SET "department_id" = '33333333-3333-3333-3333-333333333333' WHERE "department_id" IS NULL;
-UPDATE "agents" SET "department_id" = '33333333-3333-3333-3333-333333333333' WHERE "department_id" IS NULL;
 UPDATE "parameters" SET "department_id" = '33333333-3333-3333-3333-333333333333' WHERE "department_id" IS NULL;
-
--- Set agent types based on agent names
-UPDATE "agents" SET "type" = 'assistant' WHERE "name" = 'Assistant';
-UPDATE "agents" SET "type" = 'grade' WHERE "name" = 'Grade';
-UPDATE "agents" SET "type" = 'scenario' WHERE "name" = 'Scenario';
-UPDATE "agents" SET "type" = 'classify' WHERE "name" = 'Classify';
-UPDATE "agents" SET "type" = 'title' WHERE "name" = 'Title';
-UPDATE "agents" SET "type" = 'guardrail' WHERE "name" = 'Guardrail';
 
 -- Add NOT NULL constraints to department_id columns (except profiles and rubrics)
 ALTER TABLE "simulations" ALTER COLUMN "department_id" SET NOT NULL;
@@ -143,9 +144,6 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'model_runs_department_id_fkey') THEN
         ALTER TABLE "model_runs" ADD CONSTRAINT "model_runs_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE cascade;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'agents_department_id_fkey') THEN
-        ALTER TABLE "agents" ADD CONSTRAINT "agents_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE cascade;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'parameters_department_id_fkey') THEN
         ALTER TABLE "parameters" ADD CONSTRAINT "parameters_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE cascade;

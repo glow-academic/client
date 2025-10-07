@@ -6,7 +6,7 @@
  */
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useAgentsByDepartmentId } from "@/lib/api/hooks/agents";
+import { useAgents } from "@/lib/api/hooks/agents";
 import {
   useCreateDepartment,
   useDepartment,
@@ -37,44 +38,61 @@ export interface DepartmentProps {
 interface FormErrors {
   title?: string;
   description?: string;
-  agents?: string;
+  titleAgentId?: string;
+  scenarioAgentId?: string;
+  classifyAgentId?: string;
+  assistantAgentId?: string;
+  gradeAgentId?: string;
+  guardrailAgentId?: string;
 }
 
 interface FormData {
   title?: string;
   description?: string;
-  agents?: Record<string, string>;
+  active?: boolean;
+  titleAgentId?: string;
+  scenarioAgentId?: string;
+  classifyAgentId?: string;
+  assistantAgentId?: string;
+  gradeAgentId?: string;
+  guardrailAgentId?: string;
 }
 
 // Define the 6 required agent types
 const REQUIRED_AGENT_TYPES = [
   {
     type: "title",
+    field: "titleAgentId",
     label: "Title Agent",
     description: "Generates titles for simulations",
   },
   {
     type: "scenario",
+    field: "scenarioAgentId",
     label: "Scenario Agent",
     description: "Creates simulation scenarios",
   },
   {
     type: "classify",
+    field: "classifyAgentId",
     label: "Classify Agent",
     description: "Classifies and categorizes content",
   },
   {
     type: "assistant",
+    field: "assistantAgentId",
     label: "Assistant Agent",
     description: "Provides general assistance",
   },
   {
     type: "grade",
+    field: "gradeAgentId",
     label: "Grade Agent",
     description: "Grades and evaluates submissions",
   },
   {
     type: "guardrail",
+    field: "guardrailAgentId",
     label: "Guardrail Agent",
     description: "Ensures content safety and compliance",
   },
@@ -83,7 +101,6 @@ const REQUIRED_AGENT_TYPES = [
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const hasInitialized = useRef(false);
 
   const isEditMode = !!departmentId;
 
@@ -91,12 +108,18 @@ export default function Department({ departmentId }: DepartmentProps) {
     () => ({
       title: "",
       description: "",
-      agents: {},
+      active: true,
+      titleAgentId: "",
+      scenarioAgentId: "",
+      classifyAgentId: "",
+      assistantAgentId: "",
+      gradeAgentId: "",
+      guardrailAgentId: "",
     }),
     []
   );
 
-  const [formData, setFormData] = useState<FormData>({});
+  const [formData, setFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Data fetching
@@ -105,62 +128,41 @@ export default function Department({ departmentId }: DepartmentProps) {
     !!departmentId
   );
 
-  // Get agents for this department
-  const { data: departmentAgents = [], isLoading: isAgentsLoading } =
-    useAgentsByDepartmentId(departmentId!);
+  // Get all agents for selection
+  const { data: agents = [], isLoading: isAgentsLoading } = useAgents();
 
   // Mutation hooks
   const createDepartmentMutation = useCreateDepartment();
   const updateDepartmentMutation = useUpdateDepartment(departmentId);
 
+  const isLoading = isDepartmentLoading || isAgentsLoading;
+
   // Initialize form when department data loads or in create mode
   useEffect(() => {
-    if (department && isEditMode && !hasInitialized.current) {
-      // Map existing agents by type (handle case where no agents exist)
-      const agentsByType: Record<string, string> = {};
-      if (departmentAgents.length > 0) {
-        departmentAgents.forEach((agent: Agent) => {
-          agentsByType[agent.type] = agent.id;
-        });
-      }
-
+    if (department && isEditMode) {
       setFormData({
         title: department.title,
         description: department.description || "",
-        agents: agentsByType,
+        active: department.active ?? true,
+        titleAgentId: department.titleAgentId || "",
+        scenarioAgentId: department.scenarioAgentId || "",
+        classifyAgentId: department.classifyAgentId || "",
+        assistantAgentId: department.assistantAgentId || "",
+        gradeAgentId: department.gradeAgentId || "",
+        guardrailAgentId: department.guardrailAgentId || "",
       });
-      hasInitialized.current = true;
-    } else if (!isEditMode && !hasInitialized.current) {
+    } else if (!isEditMode) {
       setFormData(initialFormData);
-      hasInitialized.current = true;
     }
-  }, [department, isEditMode, initialFormData, departmentAgents]);
-
-  const isLoading = isDepartmentLoading || isAgentsLoading;
+  }, [department, isEditMode, initialFormData]);
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const handleAgentChange = (agentType: string, agentId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      agents: {
-        ...prev.agents,
-        [agentType]: agentId,
-      },
-    }));
-    if (errors.agents) {
-      setErrors((prev) => {
-        const { agents: _agents, ...rest } = prev;
-        return rest;
-      });
     }
   };
 
@@ -173,12 +175,12 @@ export default function Department({ departmentId }: DepartmentProps) {
     e.preventDefault();
 
     // Validation
-    if (!formData.title) {
+    if (!formData?.title) {
       setErrors((prev) => ({ ...prev, title: "Title is required" }));
       return;
     }
 
-    if (!formData.description) {
+    if (!formData?.description) {
       setErrors((prev) => ({
         ...prev,
         description: "Description is required",
@@ -187,17 +189,25 @@ export default function Department({ departmentId }: DepartmentProps) {
     }
 
     // Validate that all 6 agent types are selected
+    if (!formData) {
+      toast.error("Form data is not available");
+      return;
+    }
+
     const missingAgents = REQUIRED_AGENT_TYPES.filter(
       (agentType) =>
-        !formData.agents?.[agentType.type] ||
-        formData.agents?.[agentType.type] === "no-agents-available"
+        !formData[agentType.field as keyof FormData] ||
+        formData[agentType.field as keyof FormData] === ""
     );
 
     if (missingAgents.length > 0) {
-      setErrors((prev) => ({
-        ...prev,
-        agents: `Please select agents for: ${missingAgents.map((a) => a.label).join(", ")}`,
-      }));
+      const firstMissing = missingAgents[0];
+      if (firstMissing) {
+        setErrors((prev) => ({
+          ...prev,
+          [firstMissing.field]: `Please select a ${firstMissing.label.toLowerCase()}`,
+        }));
+      }
       return;
     }
 
@@ -205,53 +215,32 @@ export default function Department({ departmentId }: DepartmentProps) {
 
     try {
       let result;
-      if (isEditMode && departmentId && department) {
-        // Prepare update data - only include changed fields
-        const updateData: {
-          title?: string;
-          description?: string;
-        } = {};
-
-        if (formData.title !== department.title) {
-          updateData.title = formData.title;
-        }
-
-        if (formData.description !== (department.description || "")) {
-          updateData.description = formData.description;
-        }
-
-        result = await updateDepartmentMutation.mutateAsync(updateData);
-
-        // TODO: Handle agent updates separately
-        // For now, we'll just log the agent selections
-        // In a real implementation, you might need to:
-        // 1. Update agent department assignments
-        // 2. Create/update agent-department relationships
-        // 3. Handle agent type assignments
-        log.info("department.agents.selected", {
-          message: "Agent selections made",
-          context: {
-            component: "Department",
-            departmentId,
-            agents: formData.agents,
-          },
+      if (isEditMode && departmentId) {
+        result = await updateDepartmentMutation.mutateAsync({
+          title: formData.title!,
+          description: formData.description!,
+          active: formData.active,
+          titleAgentId: formData.titleAgentId!,
+          scenarioAgentId: formData.scenarioAgentId!,
+          classifyAgentId: formData.classifyAgentId!,
+          assistantAgentId: formData.assistantAgentId!,
+          gradeAgentId: formData.gradeAgentId!,
+          guardrailAgentId: formData.guardrailAgentId!,
+          updatedAt: new Date().toISOString(),
         });
       } else {
         result = await createDepartmentMutation.mutateAsync({
           title: formData.title!,
           description: formData.description!,
+          active: formData.active ?? true,
+          titleAgentId: formData.titleAgentId!,
+          scenarioAgentId: formData.scenarioAgentId!,
+          classifyAgentId: formData.classifyAgentId!,
+          assistantAgentId: formData.assistantAgentId!,
+          gradeAgentId: formData.gradeAgentId!,
+          guardrailAgentId: formData.guardrailAgentId!,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        });
-
-        // TODO: Handle agent assignments for new departments
-        // For now, we'll just log the agent selections
-        log.info("department.agents.selected", {
-          message: "Agent selections made for new department",
-          context: {
-            component: "Department",
-            agents: formData.agents,
-          },
         });
       }
 
@@ -262,7 +251,7 @@ export default function Department({ departmentId }: DepartmentProps) {
 
       resetFormAndState();
       toast.success(
-        isEditMode && departmentId
+        isEditMode
           ? "Department updated successfully!"
           : "Department created successfully!"
       );
@@ -287,14 +276,15 @@ export default function Department({ departmentId }: DepartmentProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title Field */}
         <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          {formData.title !== undefined && !isLoading ? (
+          <Label htmlFor="title">Title *</Label>
+          {formData?.title !== undefined && !isLoading ? (
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               placeholder="Enter department title"
               className={errors.title ? "border-destructive" : ""}
+              required
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -306,8 +296,8 @@ export default function Department({ departmentId }: DepartmentProps) {
 
         {/* Description Field */}
         <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          {formData.description !== undefined && !isLoading ? (
+          <Label htmlFor="description">Description *</Label>
+          {formData?.description !== undefined && !isLoading ? (
             <Textarea
               id="description"
               value={formData.description}
@@ -315,6 +305,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               placeholder="Enter department description"
               rows={3}
               className={errors.description ? "border-destructive" : ""}
+              required
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -324,61 +315,90 @@ export default function Department({ departmentId }: DepartmentProps) {
           )}
         </div>
 
+        {/* Active Switch */}
+        <div className="space-y-2">
+          <Label htmlFor="active" className="text-sm">
+            Department Active
+          </Label>
+          {formData?.active !== undefined && !isLoading ? (
+            <Switch
+              id="active"
+              checked={formData.active ?? true}
+              onCheckedChange={(checked) =>
+                handleInputChange("active", checked)
+              }
+            />
+          ) : (
+            <Skeleton className="h-6 w-11" />
+          )}
+        </div>
+
         {/* Agents Field */}
         <div className="space-y-4">
+          <Label className="text-base font-medium">Required Agents *</Label>
+          <p className="text-sm text-muted-foreground">
+            Select one agent for each required type. All agents must be
+            assigned.
+          </p>
           {!isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {REQUIRED_AGENT_TYPES.map((agentType) => (
-                <div key={agentType.type} className="space-y-2">
-                  <Label
-                    htmlFor={`agent-${agentType.type}`}
-                    className="text-sm font-medium"
-                  >
-                    {agentType.label}
-                  </Label>
-                  {departmentAgents.filter(
-                    (agent: Agent) => agent.type === agentType.type
-                  ).length > 0 ? (
-                    <Select
-                      value={formData.agents?.[agentType.type] || ""}
-                      onValueChange={(value) =>
-                        handleAgentChange(agentType.type, value)
-                      }
+              {REQUIRED_AGENT_TYPES.map((agentType) => {
+                // For now, show all agents since we don't have type filtering
+                // In a real implementation, you might want to filter by agent type
+                const availableAgents = agents;
+                const fieldValue =
+                  (formData?.[agentType.field as keyof FormData] as string) ||
+                  "";
+                const fieldError = errors[agentType.field as keyof FormErrors];
+
+                return (
+                  <div key={agentType.type} className="space-y-2">
+                    <Label
+                      htmlFor={`agent-${agentType.field}`}
+                      className="text-sm font-medium"
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={`Select ${agentType.label}`}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-agents-available" disabled>
-                          No {agentType.label.toLowerCase()} available
-                        </SelectItem>
-                        {departmentAgents
-                          .filter(
-                            (agent: Agent) => agent.type === agentType.type
+                      {agentType.label}
+                    </Label>
+                    {availableAgents.length > 0 ? (
+                      <Select
+                        value={fieldValue}
+                        onValueChange={(value) =>
+                          handleInputChange(
+                            agentType.field as keyof FormData,
+                            value
                           )
-                          .map((agent: Agent) => (
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={`Select ${agentType.label}`}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableAgents.map((agent: Agent) => (
                             <SelectItem key={agent.id} value={agent.id}>
                               {agent.name}
                             </SelectItem>
                           ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="w-full p-3 text-sm text-muted-foreground bg-muted rounded-md border">
-                      <div className="flex items-center gap-2">
-                        <span>⚠️</span>
-                        <span>
-                          No {agentType.label.toLowerCase()} available for this
-                          department. You'll need to create agents of this type
-                          first.
-                        </span>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="w-full p-3 text-sm text-muted-foreground bg-muted rounded-md border">
+                        <div className="flex items-center gap-2">
+                          <span>⚠️</span>
+                          <span>
+                            No agents available. You'll need to create agents
+                            first.
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                    {fieldError && (
+                      <p className="text-sm text-destructive">{fieldError}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -390,10 +410,6 @@ export default function Department({ departmentId }: DepartmentProps) {
                 </div>
               ))}
             </div>
-          )}
-
-          {errors.agents && (
-            <p className="text-sm text-destructive">{errors.agents}</p>
           )}
         </div>
 

@@ -170,7 +170,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             formData.reasoning === "none" || !formData.reasoning
               ? null
               : formData.reasoning,
-          departmentId: effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
         });
         result = true;
