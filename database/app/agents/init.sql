@@ -5,8 +5,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE agent_type AS ENUM ('title', 'scenario', 'classify', 'assistant', 'grade', 'guardrail');
-
 CREATE TABLE agents (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -16,9 +14,7 @@ CREATE TABLE agents (
   system_prompt     TEXT        NOT NULL,
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID DEFAULT NULL REFERENCES models(id) ON DELETE SET NULL,
-  reasoning reasoning_effort DEFAULT NULL,
-  type agent_type NOT NULL,
-  department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
+  reasoning reasoning_effort DEFAULT NULL
 );
 
 CREATE TABLE model_runs (

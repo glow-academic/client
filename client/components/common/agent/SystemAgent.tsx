@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +29,6 @@ import {
   useCreateAgent,
   useUpdateAgent,
 } from "@/lib/api/hooks/agents";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useModels } from "@/lib/api/hooks/models";
 import { log } from "@/utils/logger";
 import MarkdownEditor from "../viewers/MarkdownEditor";
@@ -43,7 +41,6 @@ interface SystemAgentFormData {
   temperature?: number;
   modelId?: string;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
-  departmentId?: string | null;
 }
 
 export interface SystemAgentProps {
@@ -69,7 +66,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId!);
   const { data: models, isLoading: isModelsLoading } = useModels();
-  const { data: departments = [] } = useDepartmentsHook();
 
   const { mutate: createAgent } = useCreateAgent();
   const { mutate: updateAgent } = useUpdateAgent();
@@ -84,12 +80,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       temperature: 0.7,
       modelId: "",
       reasoning: "none",
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? ""
-          : effectiveProfile?.departmentId || "",
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId]
+    []
   );
 
   useEffect(() => {
@@ -107,7 +99,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             | "medium"
             | "high"
             | undefined) || "none",
-        departmentId: agent.departmentId,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
@@ -162,12 +153,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       return;
     }
 
-    // Department validation for superadmins
-    if (effectiveProfile?.role === "superadmin" && !formData.departmentId) {
-      toast.error("Department selection is required for superadmin users");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -185,8 +170,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             formData.reasoning === "none" || !formData.reasoning
               ? null
               : formData.reasoning,
-          departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+          departmentId: effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
         });
         result = true;
@@ -202,8 +186,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
             formData.reasoning === "none" || !formData.reasoning
               ? null
               : formData.reasoning,
-          departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+          departmentId: effectiveProfile?.departmentId || "",
           type: "assistant",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -281,46 +264,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
               <p className="text-sm text-destructive">{errors.description}</p>
             )}
           </div>
-
-          {/* Department Selection - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              {formData?.departmentId !== undefined && !isLoading ? (
-                <DepartmentSelector
-                  departments={departments.map((dept) => ({
-                    id: dept.id,
-                    title: dept.title as string,
-                    ...(dept.description && { description: dept.description }),
-                  }))}
-                  selectedDepartment={
-                    formData?.departmentId
-                      ? (() => {
-                          const dept = departments.find(
-                            (d) => d.id === formData.departmentId
-                          );
-                          return dept
-                            ? {
-                                id: dept.id,
-                                title: dept.title as string,
-                                ...(dept.description && {
-                                  description: dept.description,
-                                }),
-                              }
-                            : null;
-                        })()
-                      : null
-                  }
-                  onSelect={(department) =>
-                    handleInputChange("departmentId", department?.id || null)
-                  }
-                  placeholder="Select department"
-                />
-              ) : (
-                <Skeleton className="h-10 w-full" />
-              )}
-            </div>
-          )}
 
           <div className={`grid gap-4 grid-cols-1`}>
             {formData?.modelId !== undefined && !isLoading ? (

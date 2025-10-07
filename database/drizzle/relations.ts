@@ -28,7 +28,6 @@ export const departmentsRelations = relations(departments, ({many}) => ({
 	documents: many(documents),
 	rubrics: many(rubrics),
 	personas: many(personas),
-	agents: many(agents),
 	modelRuns: many(modelRuns),
 	parameters: many(parameters),
 	scenarios: many(scenarios),
@@ -149,10 +148,6 @@ export const agentsRelations = relations(agents, ({one, many}) => ({
 	model: one(models, {
 		fields: [agents.modelId],
 		references: [models.id]
-	}),
-	department: one(departments, {
-		fields: [agents.departmentId],
-		references: [departments.id]
 	}),
 	modelRuns: many(modelRuns),
 }));

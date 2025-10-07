@@ -1,7 +1,6 @@
 import { pgTable, serial, varchar, timestamp, text, foreignKey, uuid, integer, boolean, doublePrecision, bigint, index, jsonb, real, primaryKey, pgMaterializedView, numeric, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-export const agentType = pgEnum("agent_type", ['title', 'scenario', 'classify', 'assistant', 'grade', 'guardrail'])
 export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'assistant'])
 export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read', 'update', 'delete'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
@@ -54,7 +53,14 @@ export const departments = pgTable("departments", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
-	description: text(),
+	description: text().notNull(),
+	active: boolean().default(true).notNull(),
+	titleAgentId: uuid("title_agent_id").notNull(),
+	scenarioAgentId: uuid("scenario_agent_id").notNull(),
+	classifyAgentId: uuid("classify_agent_id").notNull(),
+	assistantAgentId: uuid("assistant_agent_id").notNull(),
+	gradeAgentId: uuid("grade_agent_id").notNull(),
+	guardrailAgentId: uuid("guardrail_agent_id").notNull(),
 });
 
 export const providers = pgTable("providers", {
@@ -322,19 +328,12 @@ export const agents = pgTable("agents", {
 	temperature: real().notNull(),
 	modelId: uuid("model_id"),
 	reasoning: reasoningEffort(),
-	type: agentType().notNull(),
-	departmentId: uuid("department_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
 			name: "agents_model_id_fkey"
 		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.departmentId],
-			foreignColumns: [departments.id],
-			name: "agents_department_id_fkey"
-		}).onDelete("cascade"),
 ]);
 
 export const modelRuns = pgTable("model_runs", {

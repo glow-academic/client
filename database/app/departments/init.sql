@@ -10,5 +10,12 @@ CREATE TABLE departments (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
-  description TEXT        NULL
+  description TEXT        NOT NULL,
+  active BOOLEAN     NOT NULL DEFAULT TRUE,
+  title_agent_id UUID        NOT NULL,
+  scenario_agent_id UUID        NOT NULL,
+  classify_agent_id UUID        NOT NULL,
+  assistant_agent_id UUID        NOT NULL,
+  grade_agent_id UUID        NOT NULL,
+  guardrail_agent_id UUID        NOT NULL
 );
