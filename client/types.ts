@@ -61,6 +61,8 @@ export type SimulationCrowdsourcedMessage = InferSelectModel<typeof schema.simul
 export type NewSimulationCrowdsourcedMessage = InferInsertModel<typeof schema.simulationCrowdsourcedMessages>;
 export type Cohort = InferSelectModel<typeof schema.cohorts>;
 export type NewCohort = InferInsertModel<typeof schema.cohorts>;
+export type Migration = InferSelectModel<typeof schema.migrations>;
+export type NewMigration = InferInsertModel<typeof schema.migrations>;
 
 export type AssistantMessageType = (typeof schema.assistantMessageType.enumValues)[number];
 export type AssistantToolType = (typeof schema.assistantToolType.enumValues)[number];

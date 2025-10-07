@@ -155,6 +155,13 @@
       "when": 1759849554101,
       "tag": "0021_complete_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1759874655296,
+      "tag": "0022_rapid_sandman",
+      "breakpoints": true
     }
   ]
 }

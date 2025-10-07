@@ -1,8 +1,8 @@
 
 import * as mockSchema from './schema';
 import { faker } from '@faker-js/faker';
-import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDebugInfo, createMockDepartment, createMockDocument, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatCrowdsourcedFeedback, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationCrowdsourcedMessage, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
-import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, DebugInfo, Department, Document, ModelRun, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatCrowdsourcedFeedback, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationCrowdsourcedMessage, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
+import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohort, createMockDebugInfo, createMockDepartment, createMockDocument, createMockMigration, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfile, createMockProvider, createMockRubric, createMockScenario, createMockSimulationAttempt, createMockSimulationChatCrowdsourcedFeedback, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationCrowdsourcedMessage, createMockSimulationHint, createMockSimulationMessage, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
+import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, Cohort, DebugInfo, Department, Document, Migration, ModelRun, Model, ParameterItem, Parameter, Persona, Profile, Provider, Rubric, Scenario, SimulationAttempt, SimulationChatCrowdsourcedFeedback, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationCrowdsourcedMessage, SimulationHint, SimulationMessage, Simulation, StandardGroup, Standard } from '@/types';
 
 // A type-safe, in-memory database for testing
 export class MockDb {
@@ -16,6 +16,7 @@ export class MockDb {
   debugInfo: DebugInfo[];
   departments: Department[];
   documents: Document[];
+  migrations: Migration[];
   modelRuns: ModelRun[];
   models: Model[];
   parameterItems: ParameterItem[];
@@ -31,6 +32,7 @@ export class MockDb {
   simulationChatGrades: SimulationChatGrade[];
   simulationChats: SimulationChat[];
   simulationCrowdsourcedMessages: SimulationCrowdsourcedMessage[];
+  simulationHints: SimulationHint[];
   simulationMessages: SimulationMessage[];
   simulations: Simulation[];
   standardGroups: StandardGroup[];
@@ -48,6 +50,7 @@ export class MockDb {
     this.debugInfo = JSON.parse(JSON.stringify(mockSchema.debugInfo));
     this.departments = JSON.parse(JSON.stringify(mockSchema.departments));
     this.documents = JSON.parse(JSON.stringify(mockSchema.documents));
+    this.migrations = JSON.parse(JSON.stringify(mockSchema.migrations));
     this.modelRuns = JSON.parse(JSON.stringify(mockSchema.modelRuns));
     this.models = JSON.parse(JSON.stringify(mockSchema.models));
     this.parameterItems = JSON.parse(JSON.stringify(mockSchema.parameterItems));
@@ -63,6 +66,7 @@ export class MockDb {
     this.simulationChatGrades = JSON.parse(JSON.stringify(mockSchema.simulationChatGrades));
     this.simulationChats = JSON.parse(JSON.stringify(mockSchema.simulationChats));
     this.simulationCrowdsourcedMessages = JSON.parse(JSON.stringify(mockSchema.simulationCrowdsourcedMessages));
+    this.simulationHints = JSON.parse(JSON.stringify(mockSchema.simulationHints));
     this.simulationMessages = JSON.parse(JSON.stringify(mockSchema.simulationMessages));
     this.simulations = JSON.parse(JSON.stringify(mockSchema.simulations));
     this.standardGroups = JSON.parse(JSON.stringify(mockSchema.standardGroups));
@@ -320,6 +324,29 @@ export class MockDb {
     const itemIndex = this.documents.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.documents.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
+  // MIGRATIONS Queries
+  getAllMigrations() { return this.migrations; }
+  getMigration(id: number) { return this.migrations.find(item => item.id === id) || null; }
+
+  // MIGRATIONS Mutations
+  createMigration(data: Partial<Migration>) {
+    const newItem = createMockMigration({ ...data, id: data.id ?? faker.number.int() });
+    this.migrations.push(newItem);
+    return newItem;
+  }
+  updateMigration(id: number, data: Partial<Migration>) {
+    const itemIndex = this.migrations.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.migrations[itemIndex] = { ...this.migrations[itemIndex], ...data } as Migration;
+    return this.migrations[itemIndex];
+  }
+  deleteMigration(id: number) {
+    const itemIndex = this.migrations.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.migrations.splice(itemIndex, 1);
     return deletedItem[0];
   }
 
@@ -746,6 +773,32 @@ export class MockDb {
     const itemIndex = this.simulationCrowdsourcedMessages.findIndex(item => item.id === id);
     if (itemIndex === -1) return null;
     const deletedItem = this.simulationCrowdsourcedMessages.splice(itemIndex, 1);
+    return deletedItem[0];
+  }
+
+  // SIMULATIONHINTS Queries
+  getAllSimulationHints() { return this.simulationHints; }
+  getSimulationHint(id: string) { return this.simulationHints.find(item => item.id === id) || null; }
+  getSimulationHintsBySimulationMessage(simulationMessageId: string) { 
+    return this.simulationHints.filter(item => item.simulationMessageId === simulationMessageId); 
+  }
+
+  // SIMULATIONHINTS Mutations
+  createSimulationHint(data: Partial<SimulationHint>) {
+    const newItem = createMockSimulationHint({ ...data, id: data.id ?? faker.string.uuid() });
+    this.simulationHints.push(newItem);
+    return newItem;
+  }
+  updateSimulationHint(id: string, data: Partial<SimulationHint>) {
+    const itemIndex = this.simulationHints.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    this.simulationHints[itemIndex] = { ...this.simulationHints[itemIndex], ...data } as SimulationHint;
+    return this.simulationHints[itemIndex];
+  }
+  deleteSimulationHint(id: string) {
+    const itemIndex = this.simulationHints.findIndex(item => item.id === id);
+    if (itemIndex === -1) return null;
+    const deletedItem = this.simulationHints.splice(itemIndex, 1);
     return deletedItem[0];
   }
 
