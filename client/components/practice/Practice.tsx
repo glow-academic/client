@@ -28,9 +28,11 @@ import {
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
+import { useDepartments } from "@/contexts/departments-context";
 
 export default function Practice() {
   const router = useRouter();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -65,6 +67,7 @@ export default function Practice() {
       )[],
       // Always pass profileId for practice (personal view)
       profileId: effectiveProfile?.id,
+      departmentIds: effectiveDepartmentIds,
     });
 
   // Fetch history data for the current user
@@ -81,6 +84,7 @@ export default function Practice() {
       )[],
       // Only show current user's history
       profileId: effectiveProfile?.id,
+      departmentIds: effectiveDepartmentIds,
     });
 
   // Use data directly from the hook

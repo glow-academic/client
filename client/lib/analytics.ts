@@ -10,6 +10,7 @@ export const AnalyticsFiltersSchema = z.object({
     .array(z.enum(["general", "practice", "archived"]))
     .optional(),
   profileId: z.string().optional(),
+  departmentIds: z.array(z.string()).optional(),
 });
 
 // Method types for analytics computation
@@ -403,15 +404,6 @@ export const SkillPerformanceResponseSchema = z.object({
   validRubricIds: z.array(z.string()),
 });
 
-// Extended Analytics Filters for Secondary Functions
-export const AttemptImprovementFiltersSchema = AnalyticsFiltersSchema.extend({
-  simulationIds: z.array(z.string()).optional(),
-});
-
-export const SkillPerformanceFiltersSchema = AnalyticsFiltersSchema.extend({
-  rubricId: z.string().optional(),
-});
-
 // Type exports
 export type AttemptImprovementData = z.infer<
   typeof AttemptImprovementDataSchema
@@ -436,13 +428,6 @@ export type SkillStandardFact = z.infer<typeof SkillStandardFactSchema>;
 export type SkillPackage = z.infer<typeof SkillPackageSchema>;
 export type SkillPerformanceResponse = z.infer<
   typeof SkillPerformanceResponseSchema
->;
-
-export type AttemptImprovementFilters = z.infer<
-  typeof AttemptImprovementFiltersSchema
->;
-export type SkillPerformanceFilters = z.infer<
-  typeof SkillPerformanceFiltersSchema
 >;
 
 // Footer Analytics Types

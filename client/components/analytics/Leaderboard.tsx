@@ -42,6 +42,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
+import { useDepartments } from "@/contexts/departments-context";
 
 // Helper function to get initials from name
 const getInitials = (firstName: string, lastName: string): string => {
@@ -54,6 +55,7 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
   const {
     startDate,
     endDate,
@@ -72,6 +74,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohortIds: cohortId ? [cohortId] : selectedCohortIds,
       roles: selectedRoles as unknown as string[],
       simulationFilters,
+      departmentIds: effectiveDepartmentIds,
       // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
     }),
     [
@@ -81,6 +84,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       selectedCohortIds,
       selectedRoles,
       simulationFilters,
+      effectiveDepartmentIds,
     ],
   );
 

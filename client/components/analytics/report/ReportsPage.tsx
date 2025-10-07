@@ -47,8 +47,9 @@ export default function ReportsPage() {
       cohortIds: selectedCohortIds,
       roles: selectedRoles,
       simulationFilters,
+      departmentIds: effectiveDepartmentIds,
     }),
-    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters],
+    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters, effectiveDepartmentIds],
   );
 
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);

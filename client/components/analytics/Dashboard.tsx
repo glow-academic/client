@@ -126,6 +126,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       roles: selectedRoles,
       simulationFilters,
       profileId,
+      departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
@@ -134,6 +135,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
+      effectiveDepartmentIds,
     ],
   );
 

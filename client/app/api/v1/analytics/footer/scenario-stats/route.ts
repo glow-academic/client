@@ -1,18 +1,12 @@
 import { AnalyticsFiltersSchema } from "@/lib/analytics";
 import { analyticsRepo } from "@/lib/repos/analyticsRepo";
 import { log } from "@/utils/logger";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-const ScenarioStatsFiltersSchema = AnalyticsFiltersSchema.extend({
-  parameterId: z.string().uuid().optional(),
-  simulationIds: z.array(z.string().uuid()).optional(),
-});
+import { NextRequest, NextResponse } from "next/server";  
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const filters = ScenarioStatsFiltersSchema.parse(body);
+    const filters = AnalyticsFiltersSchema.parse(body);
 
     const result = await analyticsRepo.getScenarioStats(filters);
 

@@ -31,9 +31,11 @@ import SimulationProgress, {
 } from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
+import { useDepartments } from "@/contexts/departments-context";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
   const {
     startDate,
     endDate,
@@ -59,6 +61,7 @@ export default function Home() {
         effectiveProfile?.role !== "superadmin" &&
         effectiveProfile?.role !== "instructional" &&
         effectiveProfile?.id && { profileId: effectiveProfile.id }),
+      departmentIds: effectiveDepartmentIds,
     });
 
   // Fetch history data for the current user
@@ -75,6 +78,7 @@ export default function Home() {
       )[],
       // Only show current user's history
       profileId: effectiveProfile?.id,
+      departmentIds: effectiveDepartmentIds,
     });
 
   const { isConnected, emitStartSimulation, startingSimulationId } =
