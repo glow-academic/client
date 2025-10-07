@@ -9,7 +9,8 @@ CREATE OR REPLACE FUNCTION analytics_first_attempt_pass_rate_fn(
   p_cohort_ids      uuid[],
   p_roles           profile_role[],
   p_sim_filters     text[],
-  p_profile_id      uuid
+  p_profile_id      uuid,
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -46,6 +47,7 @@ earliest_attempt_all_time AS MATERIALIZED (
     (w.want_practice AND a.is_practice = TRUE) OR
     (w.want_archived AND a.is_archived = TRUE)
   )
+  AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
   AND (
     pr.profile_id IS NOT NULL
     OR cardinality(pr.roles) = 0

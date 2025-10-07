@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION analytics_attempt_history_fn(
   p_cohort_ids      uuid[],
   p_roles           profile_role[],
   p_sim_filters     text[],
-  p_profile_id      uuid
+  p_profile_id      uuid,
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -41,6 +42,7 @@ base_general AS (
   CROSS JOIN want w
   WHERE w.want_general
     AND a.is_general = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND a.attempt_created_at >= pr.start_at
     AND a.attempt_created_at <  pr.end_at
     /* Explicit profile_id overrides roles; otherwise apply roles if provided */
@@ -59,6 +61,7 @@ base_practice AS (
   CROSS JOIN want w
   WHERE w.want_practice
     AND a.is_practice = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND a.attempt_created_at >= pr.start_at
     AND a.attempt_created_at <  pr.end_at
     AND (
@@ -76,6 +79,7 @@ base_archived_only AS (
   CROSS JOIN want w
   WHERE w.want_archived 
     AND NOT w.want_nonarchived_or_any
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND a.attempt_created_at >= pr.start_at
     AND a.attempt_created_at <  pr.end_at
     AND (
@@ -95,6 +99,7 @@ base_archived_other AS (
     AND w.want_nonarchived_or_any
     AND a.is_general = FALSE
     AND a.is_practice = FALSE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND a.attempt_created_at >= pr.start_at
     AND a.attempt_created_at <  pr.end_at
     AND (

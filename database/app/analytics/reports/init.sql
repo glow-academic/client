@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION analytics_reports_bundle_fn(
   p_cohort_ids   uuid[],
   p_roles        profile_role[],
   p_sim_filters  text[],              -- e.g. ['general'] or ['general','practice','archived']
-  p_profile_id   uuid
+  p_profile_id   uuid,
+  p_department_ids uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -47,7 +48,7 @@ SELECT jsonb_build_object(
           -- 1) Average Score
           'averageScore', (
             WITH m AS (
-              SELECT analytics_average_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_average_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::numeric AS v
@@ -80,7 +81,7 @@ SELECT jsonb_build_object(
           -- 2) Completion %
           'completionPercentage', (
             WITH m AS (
-              SELECT analytics_completion_percentage_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_completion_percentage_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS bin
@@ -110,7 +111,7 @@ SELECT jsonb_build_object(
           -- 3) First Attempt Pass Rate
           'firstAttemptPassRate', (
             WITH m AS (
-              SELECT analytics_first_attempt_pass_rate_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_first_attempt_pass_rate_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS bin
@@ -140,7 +141,7 @@ SELECT jsonb_build_object(
           -- 4) Highest Score (plus top list)
           'highestScore', (
             WITH m AS (
-              SELECT analytics_highest_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_highest_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT ROUND((e->>'value')::numeric)::int AS v
@@ -164,7 +165,7 @@ SELECT jsonb_build_object(
           -- 5) Messages per Session
           'messagesPerSession', (
             WITH m AS (
-              SELECT analytics_messages_per_session_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_messages_per_session_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS v
@@ -194,7 +195,7 @@ SELECT jsonb_build_object(
           -- 6) Persona Response Times (seconds)
           'personaResponseTimes', (
             WITH m AS (
-              SELECT analytics_persona_response_times_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_persona_response_times_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS v
@@ -224,7 +225,7 @@ SELECT jsonb_build_object(
           -- 7) Session Efficiency (hover mirrors your UI fields)
           'sessionEfficiency', (
             WITH m AS (
-              SELECT analytics_session_efficiency_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_session_efficiency_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS eff
@@ -251,7 +252,7 @@ SELECT jsonb_build_object(
           -- 8) Stagnation Rate
           'stagnationRate', (
             WITH m AS (
-              SELECT analytics_stagnation_rate_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_stagnation_rate_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS bin
@@ -281,7 +282,7 @@ SELECT jsonb_build_object(
           -- 9) Time Spent (seconds)
           'timeSpent', (
             WITH m AS (
-              SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::numeric AS minutes
@@ -343,7 +344,7 @@ SELECT jsonb_build_object(
           -- 10) Total Attempts (+ hover derived from its dataPoints)
           'totalAttempts', (
             WITH m AS (
-              SELECT analytics_total_attempts_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_total_attempts_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'attemptId')::text AS attempt_id,

@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION analytics_messages_per_session_fn(
   p_cohort_ids      uuid[],
   p_roles           profile_role[],
   p_sim_filters     text[],
-  p_profile_id      uuid
+  p_profile_id      uuid,
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -40,6 +41,7 @@ base AS MATERIALIZED (
   CROSS JOIN params pr
   WHERE a.chat_created_at >= pr.start_at
     AND a.chat_created_at <  pr.end_at
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     -- role filter (matches ORIGINAL server-side: by profile role, unless direct profileId is set)
     AND (
       pr.profile_id IS NOT NULL

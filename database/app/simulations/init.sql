@@ -54,6 +54,14 @@ CREATE TABLE simulation_messages (
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
+CREATE TABLE simulation_hints (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  hint TEXT        NOT NULL,
+  simulation_message_id UUID        NOT NULL REFERENCES simulation_messages(id)  ON DELETE CASCADE
+);
+
 CREATE TABLE simulation_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),

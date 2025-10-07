@@ -145,7 +145,16 @@ SELECT
   sa.created_at                 AS attempt_created_at, -- use for date filters like TS did
   pcs.profile_cohort_ids        AS profile_cohort_ids, -- cohortIds "true membership"
   COALESCE(array_length(sim.scenario_ids, 1), 0) AS sim_scenario_count, -- simulation's expected scenario count
-  lg.created_at                 AS grade_created_at -- grade creation time for stagnation metric
+  lg.created_at                 AS grade_created_at, -- grade creation time for stagnation metric
+  
+  -- Department ID coalesced from all relevant tables
+  COALESCE(
+    pr.department_id,
+    sim.department_id,
+    r.department_id,
+    s.department_id,
+    p.department_id
+  ) AS department_id
 FROM simulation_chats sc
 JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
@@ -350,6 +359,10 @@ CREATE INDEX IF NOT EXISTS standards_group_idx
 -- Group ↔ rubric
 CREATE INDEX IF NOT EXISTS standard_groups_rubric_idx
   ON standard_groups (rubric_id);
+
+-- Department ID index for filtering by department
+CREATE INDEX IF NOT EXISTS analytics_department_id_idx
+  ON analytics (department_id);
 
 -- Smart refresh: non-concurrent the first time, concurrent thereafter
 DO $$

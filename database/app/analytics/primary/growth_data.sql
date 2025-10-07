@@ -9,7 +9,8 @@ CREATE OR REPLACE FUNCTION analytics_growth_data_fn(
   p_cohort_ids   uuid[],
   p_roles        profile_role[],
   p_sim_filters  text[],
-  p_profile_id   uuid
+  p_profile_id   uuid,
+  p_department_ids uuid[]
 ) RETURNS jsonb
 LANGUAGE sql STABLE AS $$
 WITH
@@ -27,7 +28,7 @@ avg_score AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_average_score_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_average_score_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -36,7 +37,7 @@ pass_rate AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_first_attempt_pass_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_first_attempt_pass_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -45,7 +46,7 @@ completion AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_completion_percentage_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_completion_percentage_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -54,7 +55,7 @@ msgs AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_messages_per_session_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_messages_per_session_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -63,7 +64,7 @@ resp AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_persona_response_times_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_persona_response_times_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -72,7 +73,7 @@ eff AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_session_efficiency_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_session_efficiency_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -81,7 +82,7 @@ stagn AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_stagnation_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_stagnation_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -90,7 +91,7 @@ time_spent AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_time_spent_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_time_spent_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),
@@ -99,7 +100,7 @@ attempts AS (
   FROM spine s
   LEFT JOIN LATERAL (
     SELECT * FROM jsonb_to_recordset(
-      (SELECT analytics_total_attempts_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id)->'trendData')
+      (SELECT analytics_total_attempts_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
     ) AS t(date text, value int, count int)
   ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
 ),

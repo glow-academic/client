@@ -4,7 +4,8 @@ CREATE OR REPLACE FUNCTION analytics_home_overview_fn(
   p_cohort_ids      uuid[],          -- optional filter
   p_roles           profile_role[],  -- optional filter
   p_sim_filters     text[],          -- optional filter: ['general','practice','archived']
-  p_profile_id      uuid             -- TA view if set; Instructional/Admin if NULL
+  p_profile_id      uuid,            -- TA view if set; Instructional/Admin if NULL
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -54,6 +55,7 @@ filt AS (
   FROM analytics a
   WHERE a.chat_created_at >= p_start
     AND a.chat_created_at <  p_end
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND (p_roles IS NULL OR a.profile_role = ANY (p_roles))
     AND (
       p_sim_filters IS NULL OR (

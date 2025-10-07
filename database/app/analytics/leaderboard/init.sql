@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION analytics_leaderboard_bundle_fn(
   p_cohort_ids   uuid[],
   p_roles        profile_role[],
   p_sim_filters  text[],              -- e.g. ['general'] or ['general','practice','archived']
-  p_profile_id   uuid
+  p_profile_id   uuid,
+  p_department_ids uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -52,7 +53,7 @@ SELECT jsonb_build_object(
           -- 1) Total Attempts (count distinct attempts per profile)
           'totalAttempts', (
             WITH m AS (
-              SELECT analytics_total_attempts_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_total_attempts_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'attemptId')::text AS attempt_id
@@ -78,7 +79,7 @@ SELECT jsonb_build_object(
           -- 2) Highest Score Average
           'highestScoreAvg', (
             WITH m AS (
-              SELECT analytics_highest_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_highest_score_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT ROUND((e->>'value')::numeric)::int AS v
@@ -111,7 +112,7 @@ SELECT jsonb_build_object(
           -- 3) Messages per Session
           'messagesPerSession', (
             WITH m AS (
-              SELECT analytics_messages_per_session_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_messages_per_session_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS v
@@ -141,7 +142,7 @@ SELECT jsonb_build_object(
           -- 4) Persona Response Times (seconds)
           'personaResponseSeconds', (
             WITH m AS (
-              SELECT analytics_persona_response_times_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_persona_response_times_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS v
@@ -171,7 +172,7 @@ SELECT jsonb_build_object(
           -- 5) Time Spent (minutes)
           'timeSpentMinutes', (
             WITH m AS (
-              SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_time_spent_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::numeric AS minutes
@@ -197,7 +198,7 @@ SELECT jsonb_build_object(
           -- 6) Improvement Rate per Day
           'improvementRatePerDay', (
             WITH m AS (
-              SELECT analytics_improvement_per_day_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_improvement_per_day_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             )
             SELECT jsonb_build_object(
               'hasData', COALESCE((m.j->>'hasData')::boolean, false),
@@ -211,7 +212,7 @@ SELECT jsonb_build_object(
           -- 7) Perfect Score Count
           'perfectScoreCount', (
             WITH m AS (
-              SELECT analytics_perfect_scores_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_perfect_scores_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::int AS count
@@ -239,7 +240,7 @@ SELECT jsonb_build_object(
           -- 8) Quickest Pass (minutes)
           'quickestPassMinutes', (
             WITH m AS (
-              SELECT analytics_quickest_pass_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid) AS j
+              SELECT analytics_quickest_pass_fn(p_start, p_end, p_cohort_ids, p_roles, p_sim_filters, pid, p_department_ids) AS j
             ),
             pts AS (
               SELECT (e->>'value')::numeric AS minutes

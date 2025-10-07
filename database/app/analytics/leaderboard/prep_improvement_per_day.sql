@@ -10,7 +10,8 @@ CREATE OR REPLACE FUNCTION analytics_improvement_per_day_fn(
   p_cohort_ids      uuid[],
   p_roles           profile_role[],
   p_sim_filters     text[],
-  p_profile_id      uuid
+  p_profile_id      uuid,
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -20,6 +21,7 @@ WITH filt AS (
   FROM analytics a
   WHERE a.chat_created_at >= p_start
     AND a.chat_created_at <  p_end
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND (p_cohort_ids  IS NULL OR a.cohort_ids && p_cohort_ids)
     AND (p_roles       IS NULL OR a.profile_role = ANY (p_roles))
     AND (p_sim_filters IS NULL OR (

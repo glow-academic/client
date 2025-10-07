@@ -36,6 +36,41 @@ BEGIN
     END IF;
 END $$;
 
+-- Add tags column to parameter_items if it does not exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'parameter_items'
+          AND column_name = 'tags'
+    ) THEN
+        ALTER TABLE parameter_items ADD COLUMN tags TEXT[] NOT NULL DEFAULT '{}';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'scenarios'
+          AND column_name = 'objectives'
+    ) THEN
+        ALTER TABLE scenarios ADD COLUMN objectives TEXT[] NOT NULL DEFAULT '{}';
+    END IF;
+END $$;
+
+
+
+CREATE TABLE IF NOT EXISTS "simulation_hints" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now(),
+    "updated_at" timestamptz NOT NULL DEFAULT now(),
+    "hint" text NOT NULL,
+    "simulation_message_id" uuid NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE
+);
+
 -- Create departments table if it doesn't exist
 CREATE TABLE IF NOT EXISTS "departments" (
     "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -49,11 +84,13 @@ CREATE TABLE IF NOT EXISTS "departments" (
     "classify_agent_id" uuid NOT NULL,
     "assistant_agent_id" uuid NOT NULL,
     "grade_agent_id" uuid NOT NULL,
-    "guardrail_agent_id" uuid NOT NULL
+    "output_guardrail_agent_id" uuid NOT NULL,
+    "input_guardrail_agent_id" uuid NOT NULL,
+    "hint_agent_id" uuid NOT NULL
 );
 
 -- Insert CS department if it doesn't exist
-INSERT INTO "departments" ("id", "title", "description", "active", "title_agent_id", "scenario_agent_id", "classify_agent_id", "assistant_agent_id", "grade_agent_id", "guardrail_agent_id") 
+INSERT INTO "departments" ("id", "title", "description", "active", "title_agent_id", "scenario_agent_id", "classify_agent_id", "assistant_agent_id", "grade_agent_id", "output_guardrail_agent_id", "input_guardrail_agent_id", "hint_agent_id") 
 VALUES (
     '33333333-3333-3333-3333-333333333333', 
     'Computer Science', 
@@ -64,7 +101,9 @@ VALUES (
     '99999999-9999-9999-9999-999999999999',
     '55555555-eeee-eeee-eeee-555555555555',
     '66666666-ffff-ffff-ffff-666666666666',
-    'cccccccc-dddd-dddd-dddd-cccccccccccc'
+    'cccccccc-dddd-dddd-dddd-cccccccccccc',
+    'dddddddd-eeee-eeee-eeee-dddddddddddddd',
+    'ffffffff-gggg-gggg-gggg-ffffffffffffffff'
 )
 ON CONFLICT ("id") DO NOTHING;
 

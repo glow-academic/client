@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION analytics_practice_overview_fn(
   p_cohort_ids uuid[],
   p_roles      profile_role[],
   p_sim_filters text[],
-  p_profile_id uuid
+  p_profile_id uuid,
+  p_department_ids uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -56,6 +57,7 @@ filt_all AS (
   FROM analytics a
   WHERE a.profile_id = p_profile_id
     AND a.is_practice = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
 ),
 
 -- 4) Per-attempt progression (completed-only average - lifetime data)

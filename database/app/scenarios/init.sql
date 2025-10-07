@@ -25,7 +25,8 @@ CREATE TABLE parameter_items (
   description TEXT        NOT NULL,
   value TEXT        NOT NULL,
   parameter_id UUID        NOT NULL REFERENCES parameters(id) ON DELETE CASCADE,
-  default_item BOOLEAN     NOT NULL DEFAULT FALSE
+  default_item BOOLEAN     NOT NULL DEFAULT FALSE,
+  tags TEXT[]        NOT NULL DEFAULT '{}'
 );
   
 CREATE TABLE scenarios (
@@ -34,6 +35,7 @@ CREATE TABLE scenarios (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
+  objectives TEXT[]        NOT NULL DEFAULT '{}',
   persona_id UUID         NULL REFERENCES personas(id)  ON DELETE SET NULL DEFAULT NULL,
   parameter_item_ids UUID[] NULL DEFAULT NULL,
   document_ids UUID[] NULL DEFAULT NULL, 

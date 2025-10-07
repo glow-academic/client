@@ -17,5 +17,7 @@ CREATE TABLE departments (
   classify_agent_id UUID        NOT NULL,
   assistant_agent_id UUID        NOT NULL,
   grade_agent_id UUID        NOT NULL,
-  guardrail_agent_id UUID        NOT NULL
+  input_guardrail_agent_id UUID        NOT NULL,
+  output_guardrail_agent_id UUID        NOT NULL,
+  hint_agent_id UUID        NOT NULL
 );

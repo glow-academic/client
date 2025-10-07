@@ -10,7 +10,8 @@ CREATE OR REPLACE FUNCTION analytics_persona_response_times_fn(
   p_cohort_ids      uuid[],
   p_roles           profile_role[],
   p_sim_filters     text[],
-  p_profile_id      uuid
+  p_profile_id      uuid,
+  p_department_ids  uuid[]
 ) RETURNS jsonb
 LANGUAGE sql
 STABLE
@@ -40,6 +41,7 @@ filt AS (
   CROSS JOIN want w
   WHERE a.chat_created_at >= pr.start_at
     AND a.chat_created_at < pr.end_at
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
     AND (
       pr.profile_id IS NOT NULL
       OR cardinality(pr.roles) = 0
