@@ -35,7 +35,7 @@ export default function Parameters() {
   const { effectiveDepartmentIds } = useDepartments();
 
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [], isLoading: parameterItemsLoading } =
     useParameterItems();
@@ -58,7 +58,7 @@ export default function Parameters() {
       acc[item.parameterId]!.push(item);
       return acc;
     },
-    {} as Record<string, ParameterItem[]>,
+    {} as Record<string, ParameterItem[]>
   );
 
   const getParameterIcon = (parameter: Parameter) => {
@@ -103,11 +103,6 @@ export default function Parameters() {
                     Value: {item.value}
                   </p>
                 </div>
-                {item.defaultItem && (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                )}
               </div>
             ))}
             {items.length > 3 && (
@@ -132,11 +127,6 @@ export default function Parameters() {
                     {item.description}
                   </p>
                 </div>
-                {item.defaultItem && (
-                  <Badge variant="secondary" className="text-xs">
-                    Default
-                  </Badge>
-                )}
               </div>
             ))}
             {items.length > 3 && (
@@ -162,14 +152,19 @@ export default function Parameters() {
                 <Badge variant="outline">
                   {count} {count === 1 ? "item" : "items"}
                 </Badge>
-                {parameter.numerical && (
+                {parameter.defaultParameter && (
                   <Badge variant="secondary" className="text-xs">
+                    Default
+                  </Badge>
+                )}
+                {parameter.numerical && (
+                  <Badge variant="default" className="text-xs">
                     Numerical
                   </Badge>
                 )}
-                {parameter.active && (
-                  <Badge variant="default" className="text-xs">
-                    Active
+                {!parameter.active && (
+                  <Badge variant="secondary" className="text-xs">
+                    Inactive
                   </Badge>
                 )}
               </div>
