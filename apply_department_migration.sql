@@ -52,30 +52,19 @@ CREATE TABLE IF NOT EXISTS "departments" (
     "guardrail_agent_id" uuid NOT NULL
 );
 
--- Create default agents for the CS department
-INSERT INTO "agents" ("id", "name", "description", "system_prompt", "temperature") 
-VALUES 
-    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Assistant', 'Default Assistant Agent', 'You are a helpful assistant.', 0.7),
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Grade', 'Default Grade Agent', 'You are a grading assistant.', 0.7),
-    ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Scenario', 'Default Scenario Agent', 'You are a scenario assistant.', 0.7),
-    ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Classify', 'Default Classify Agent', 'You are a classification assistant.', 0.7),
-    ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Title', 'Default Title Agent', 'You are a title generation assistant.', 0.7),
-    ('ffffffff-ffff-ffff-ffff-ffffffffffff', 'Guardrail', 'Default Guardrail Agent', 'You are a guardrail assistant.', 0.7)
-ON CONFLICT ("id") DO NOTHING;
-
 -- Insert CS department if it doesn't exist
 INSERT INTO "departments" ("id", "title", "description", "active", "title_agent_id", "scenario_agent_id", "classify_agent_id", "assistant_agent_id", "grade_agent_id", "guardrail_agent_id") 
 VALUES (
     '33333333-3333-3333-3333-333333333333', 
     'Computer Science', 
-    'Computer Science Department',
+    'Innovative base of knowledge in the emerging field of computing',
     true,
-    'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
-    'cccccccc-cccc-cccc-cccc-cccccccccccc',
-    'dddddddd-dddd-dddd-dddd-dddddddddddd',
-    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-    'ffffffff-ffff-ffff-ffff-ffffffffffff'
+    '88888888-8888-8888-8888-888888888888',
+    '99999999-9999-9999-9999-999999999999',
+    '55555555-eeee-eeee-eeee-555555555555',
+    '66666666-ffff-ffff-ffff-666666666666',
+    'cccccccc-dddd-dddd-dddd-cccccccccccc'
 )
 ON CONFLICT ("id") DO NOTHING;
 
@@ -103,7 +92,6 @@ ALTER TABLE "providers" ALTER COLUMN "department_id" SET NOT NULL;
 ALTER TABLE "scenarios" ALTER COLUMN "department_id" SET NOT NULL;
 ALTER TABLE "personas" ALTER COLUMN "department_id" SET NOT NULL;
 ALTER TABLE "model_runs" ALTER COLUMN "department_id" SET NOT NULL;
-ALTER TABLE "agents" ALTER COLUMN "department_id" SET NOT NULL;
 ALTER TABLE "parameters" ALTER COLUMN "department_id" SET NOT NULL;
 ALTER TABLE "rubrics" ALTER COLUMN "department_id" SET NOT NULL;
 
