@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
@@ -24,6 +24,7 @@ export interface LogsDataTableToolbarProps {
   setDateRange: (range: DateRange | undefined) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
+  onBulkDelete: () => void;
 }
 
 export function LogsDataTableToolbar({
@@ -39,6 +40,7 @@ export function LogsDataTableToolbar({
   setDateRange,
   onRefresh,
   isRefreshing,
+  onBulkDelete,
 }: LogsDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -155,6 +157,15 @@ export function LogsDataTableToolbar({
             createdAtColumn?.setFilterValue(range);
           }}
         />
+        {/* Bulk Delete Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBulkDelete}
+          className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
         {/* Refresh Button */}
         <Button
           variant="outline"

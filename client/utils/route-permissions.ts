@@ -327,6 +327,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/system/departments",
       },
       {
+        path: "/system/departments/new",
+        roles: ["superadmin"],
+        title: "Create Department",
+        redirectTo: "/system/departments",
+      },
+      {
         path: "/system/departments/d/[departmentId]",
         roles: ["superadmin"],
         title: "Edit Department",

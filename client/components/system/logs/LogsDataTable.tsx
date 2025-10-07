@@ -34,6 +34,7 @@ export interface LogsDataTableProps {
   functionOptions: { value: string; label: string }[];
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
+  onBulkDelete: () => void;
 }
 
 export function LogsDataTable({
@@ -50,6 +51,7 @@ export function LogsDataTable({
   functionOptions,
   dateRange,
   setDateRange,
+  onBulkDelete,
 }: LogsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -63,7 +65,7 @@ export function LogsDataTable({
       function: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true }, // Default to descending order by date
@@ -119,6 +121,7 @@ export function LogsDataTable({
         setDateRange={setDateRange}
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
+        onBulkDelete={onBulkDelete}
       />
       <div className="border rounded-lg">
         <table className="w-full">

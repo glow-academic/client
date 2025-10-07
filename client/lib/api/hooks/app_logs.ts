@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for app_logs
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { appLogKeys } from "@/lib/api/keys";
 import type {
   AppLog,
   AppLogCreate,
   AppLogUpdate,
 } from "@/lib/repos/appLogRepo";
-import { appLogKeys } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAppLogs(filters?: unknown) {
   return useQuery({
@@ -71,6 +71,18 @@ export function useDeleteAppLog(id?: number) {
       }
       return api<void>(`/api/v1/app_logs/${resolvedId}`, { method: "DELETE" });
     },
+    onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.all }),
+  });
+}
+
+export function useDeleteAppLogs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { ids: number[] }) =>
+      api<AppLog[]>(`/api/v1/app_logs/bulk-delete`, {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: appLogKeys.all }),
   });
 }

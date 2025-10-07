@@ -1,5 +1,5 @@
+import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { eq } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { appLogs } from "@/utils/drizzle/schema";
@@ -61,5 +61,10 @@ export const appLogRepo = {
     const rows = await db.delete(appLogs).where(eq(appLogs.id, id)).returning();
     if (!rows[0])
       throw HttpError.notFound("AppLog with id " + id + " not found");
+  },
+
+  async removeMany(ids: number[]) {
+    const db = await getDb();
+    return db.delete(appLogs).where(inArray(appLogs.id, ids)).returning();
   },
 };

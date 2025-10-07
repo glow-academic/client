@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { AppLog, useLogColumns } from "@/hooks/use-log-columns";
 import type { DateRange } from "react-day-picker";
+import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
 import { LogsDataTable } from "./LogsDataTable";
 
 import {
@@ -27,6 +28,7 @@ export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: logsData = [] } = useAppLogs(); // TODO: need some limiting here
@@ -58,6 +60,15 @@ export default function Logs() {
     setSelectedLog(log);
   };
 
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleBulkDeleteSuccess = () => {
+    // The query will be invalidated by the mutation hook
+    // Dialog will close automatically after successful deletion
+  };
+
   type ProfileRow = { id?: string; firstName?: string; lastName?: string };
   const profileIdToName = useMemo(() => {
     const map = new Map<string, string>();
@@ -84,7 +95,7 @@ export default function Logs() {
       const userId = actor["userId"] as string | undefined;
       return explicit ?? profileId ?? userId ?? null;
     },
-    [profileIdToName],
+    [profileIdToName]
   );
 
   const { columns, levelOptions } = useLogColumns({
@@ -112,7 +123,7 @@ export default function Logs() {
 
     const getContextString = (
       ctx: unknown,
-      key: string,
+      key: string
     ): string | undefined => {
       if (!ctx || typeof ctx !== "object") return undefined;
       const value = (ctx as Record<string, unknown>)[key];
@@ -126,7 +137,7 @@ export default function Logs() {
       const component = getContextString(l.context, "component");
       const fn = getContextString(l.context, "function");
       const actor = resolveActorName(
-        l.actor as Record<string, unknown> | null | undefined,
+        l.actor as Record<string, unknown> | null | undefined
       );
       if (provider) providers.add(provider);
       if (model) models.add(model);
@@ -175,6 +186,7 @@ export default function Logs() {
         setDateRange={setDateRange}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        onBulkDelete={handleBulkDelete}
       />
 
       {/* Detail Dialog */}
@@ -226,6 +238,14 @@ export default function Logs() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Delete Dialog */}
+      <BulkDeleteLogsDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+        logs={logsData}
+        onSuccess={handleBulkDeleteSuccess}
+      />
     </div>
   );
 }
