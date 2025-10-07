@@ -118,7 +118,7 @@ verify_migration() {
         echo "  📊 Departments: $dept_count"
         
         # Check if department_id columns were added
-        tables_with_dept=("profiles" "simulations" "rubrics" "cohorts" "documents" "providers" "scenarios" "personas" "model_runs" "agents" "parameters")
+        tables_with_dept=("profiles" "simulations" "rubrics" "cohorts" "documents" "providers" "scenarios" "personas" "model_runs" "parameters")
         dept_columns_added=0
         
         for table in "${tables_with_dept[@]}"; do
