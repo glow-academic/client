@@ -423,7 +423,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const isReportPage = useMemo(() => {
     return pathname.startsWith("/analytics/reports/p");
   }, [pathname]);
-  
+
   const isSystemPage = useMemo(() => {
     return pathname.startsWith("/system");
   }, [pathname]);
@@ -534,12 +534,30 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               disabled={
                 endChatLoading || (simulation?.timeLimit ? !isActive : false)
               }
-              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-hidden"
               data-tour-end-chat
             >
-              {endChatLoading && endingAction === "endChat"
-                ? "Ending..."
-                : buttonLabel}
+              {/* Grading progress overlay - fills from left to right */}
+              {simulationContext?.isGrading &&
+                simulationContext?.gradingProgress && (
+                  <span
+                    className="absolute inset-0 bg-blue-500/20 transition-all duration-300 ease-out"
+                    style={{
+                      width: `${
+                        (simulationContext.gradingProgress.completed /
+                          simulationContext.gradingProgress.total) *
+                        100
+                      }%`,
+                    }}
+                  />
+                )}
+
+              {/* Button text */}
+              <span className="relative z-10">
+                {endChatLoading && endingAction === "endChat"
+                  ? "Ending..."
+                  : buttonLabel}
+              </span>
             </Button>
           </div>
         )

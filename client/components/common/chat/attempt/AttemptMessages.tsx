@@ -145,7 +145,7 @@ export default function AttemptMessages({
   const canRate = useMemo(() => {
     const role = effectiveProfile?.role;
     return (
-      role === "instructional" || role === "admin" || role === "superadmin"
+      role === "instructional" || role === "admin" || role === "superadmin" || role === "ta"
     );
   }, [effectiveProfile?.role]);
 

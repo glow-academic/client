@@ -506,6 +506,35 @@ export function WebSocketProvider({
         }
       );
 
+      // Grading progress
+      socket.on(
+        "simulation_grading_progress",
+        (data: {
+          type: string;
+          chat_id: string;
+          standard_group_name?: string;
+          standard_group_short_name?: string;
+          score?: number;
+          feedback_preview?: string;
+          completed_count?: number;
+          total_count?: number;
+          message?: string;
+          grade_id?: string;
+          total_score?: number;
+          passed?: boolean;
+          standards_graded?: number;
+          time_taken?: number;
+          summary?: string;
+        }) => {
+          // Dispatch DOM event for SimulationContext to listen to
+          window.dispatchEvent(
+            new CustomEvent("simulationGradingProgress", {
+              detail: data,
+            })
+          );
+        }
+      );
+
       // Simulation message cancellation
       socket.on(
         "simulation_message_cancelled",

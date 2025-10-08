@@ -25,26 +25,6 @@ logger = logging.getLogger(__name__)
 scenario_results: dict[str, Any] = {}
 scenario_progress: dict[str, bool] = {}
 
-# Socket.IO instance for progress emissions (set per scenario generation run)
-_scenario_sio_instance: Any = None
-_scenario_group_id: uuid.UUID | None = None
-
-
-async def _emit_scenario_progress(event_data: dict[str, Any]) -> None:
-    """Helper to emit scenario generation progress via Socket.IO if available."""
-    global _scenario_sio_instance, _scenario_group_id
-    
-    if _scenario_sio_instance and _scenario_group_id:
-        try:
-            await _scenario_sio_instance.emit(
-                "scenario_generation_progress",
-                event_data,
-                room=f"scenario_generation_{_scenario_group_id}",
-            )
-            logger.info(f"Emitted scenario generation progress: {event_data.get('type')}")
-        except Exception as e:
-            logger.warning(f"Failed to emit scenario generation progress: {e}")
-
 
 def create_title_description_function(group_id: uuid.UUID | None) -> Any:
     """Create a function tool for setting scenario title and description."""
@@ -72,15 +52,6 @@ def create_title_description_function(group_id: uuid.UUID | None) -> Any:
         scenario_results["title"] = title
         scenario_results["description"] = scenario
         scenario_progress["title_description"] = True
-        
-        # Emit progress event
-        await _emit_scenario_progress({
-            "type": "title_description_set",
-            "group_id": str(group_id) if group_id else None,
-            "message": "Title and description generated",
-            "title": title,
-            "description_preview": scenario[:100] + "..." if len(scenario) > 100 else scenario,
-        })
         
         logger.info(f"✓ Set title: {title}")
         logger.info(f"✓ Set description: {scenario[:100]}...")
@@ -122,15 +93,6 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
         
         scenario_results["objectives"] = objectives
         scenario_progress["objectives"] = True
-        
-        # Emit progress event
-        await _emit_scenario_progress({
-            "type": "objectives_set",
-            "group_id": str(group_id) if group_id else None,
-            "message": f"Generated {len(objectives)} learning objectives",
-            "objectives_count": len(objectives),
-            "objectives": objectives,
-        })
         
         logger.info(f"✓ Set {len(objectives)} objectives: {objectives}")
         return f"Set {len(objectives)} learning objectives successfully"
@@ -179,12 +141,10 @@ async def run_scenario_agent(
         A tuple of (title, description, objectives, trace_id).
     """
     try:
-        # Clear previous results and set up socket context
-        global scenario_results, scenario_progress, _scenario_sio_instance, _scenario_group_id
+        # Clear previous results
+        global scenario_results, scenario_progress
         scenario_results.clear()
         scenario_progress.clear()
-        _scenario_sio_instance = sio_instance
-        _scenario_group_id = group_id
 
         # Get the agent to get its name for the agent
         if persona_id is None:
@@ -282,22 +242,6 @@ async def run_scenario_agent(
         clean_input_items = [item for item in input_items if item is not None]
         logger.info(f"Input items: {clean_input_items}")
 
-        # Emit scenario generation start event
-        if sio_instance:
-            await sio_instance.emit(
-                "scenario_generation_progress",
-                {
-                    "type": "start",
-                    "group_id": str(group_id) if group_id else None,
-                    "message": "Starting scenario generation",
-                    "has_persona": persona_id is not None,
-                    "document_count": len(document_ids) if document_ids else 0,
-                    "parameter_count": len(parameter_item_ids) if parameter_item_ids else 0,
-                },
-                room=f"scenario_generation_{group_id}",
-            )
-            logger.info(f"Emitted scenario generation start event for group {group_id}")
-
         # generate a trace id for the scenario
         trace_id = gen_trace_id()
 
@@ -345,51 +289,9 @@ async def run_scenario_agent(
         title = scenario_result.get("title", "")
         description = scenario_result.get("description", "")
         objectives = scenario_result.get("objectives", [])
-
-        # Emit scenario generation completion event
-        if sio_instance:
-            await sio_instance.emit(
-                "scenario_generation_progress",
-                {
-                    "type": "complete",
-                    "group_id": str(group_id) if group_id else None,
-                    "message": "Scenario generation completed successfully",
-                    "title": title,
-                    "description": description,
-                    "objectives": objectives,
-                    "trace_id": trace_id,
-                },
-                room=f"scenario_generation_{group_id}",
-            )
-            logger.info(f"Emitted scenario generation completion event for group {group_id}")
-
-        # Clean up socket context (global already declared at top of try block)
-        _scenario_sio_instance = None
-        _scenario_group_id = None
         
         return title, description, objectives, trace_id
 
     except Exception as e:
         logger.error(f"Error in run_scenario_agent: {str(e)}", exc_info=True)
-        
-        # Emit error event
-        if sio_instance:
-            try:
-                await sio_instance.emit(
-                    "scenario_generation_progress",
-                    {
-                        "type": "error",
-                        "group_id": str(group_id) if group_id else None,
-                        "message": f"Scenario generation failed: {str(e)}",
-                        "error": str(e),
-                    },
-                    room=f"scenario_generation_{group_id}",
-                )
-            except Exception as emit_error:
-                logger.warning(f"Failed to emit error event: {emit_error}")
-        
-        # Clean up socket context (global already declared at top of try block)
-        _scenario_sio_instance = None
-        _scenario_group_id = None
-        
         raise
