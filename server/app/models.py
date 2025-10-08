@@ -119,7 +119,7 @@ class VerificationToken(_Base, table=True):
 
 class Cohorts(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='cohorts_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='cohorts_department_id_fkey'),
         PrimaryKeyConstraint('id', name='cohorts_pkey')
     )
 
@@ -139,7 +139,7 @@ class Cohorts(_Base, table=True):
 
 class Documents(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='documents_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='documents_department_id_fkey'),
         PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
@@ -161,7 +161,7 @@ class Documents(_Base, table=True):
 
 class Parameters(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='parameters_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='parameters_department_id_fkey'),
         PrimaryKeyConstraint('id', name='parameters_pkey')
     )
 
@@ -181,8 +181,8 @@ class Parameters(_Base, table=True):
 
 class Profiles(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='SET NULL', name='profiles_department_id_fkey'),
-        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='profiles_user_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='SET NULL', onupdate='CASCADE', name='profiles_department_id_fkey'),
+        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', onupdate='CASCADE', name='profiles_user_id_fkey'),
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
@@ -215,7 +215,7 @@ class Profiles(_Base, table=True):
 
 class Providers(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='providers_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='providers_department_id_fkey'),
         PrimaryKeyConstraint('id', name='providers_pkey')
     )
 
@@ -234,7 +234,7 @@ class Providers(_Base, table=True):
 
 class Rubrics(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='rubrics_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='rubrics_department_id_fkey'),
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
         Index('rubrics_id_idx', 'id')
     )
@@ -259,7 +259,7 @@ class Rubrics(_Base, table=True):
 class AppFeedback(_Base, table=True):
     __tablename__ = 'app_feedback'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='app_feedback_profile_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='app_feedback_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='app_feedback_pkey')
     )
 
@@ -275,7 +275,7 @@ class AppFeedback(_Base, table=True):
 class AssistantChats(_Base, table=True):
     __tablename__ = 'assistant_chats'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='assistant_chats_profile_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_chats_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_chats_pkey')
     )
 
@@ -293,7 +293,7 @@ class AssistantChats(_Base, table=True):
 
 class Models(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE', name='models_provider_id_fkey'),
+        ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE', onupdate='CASCADE', name='models_provider_id_fkey'),
         PrimaryKeyConstraint('id', name='models_pkey')
     )
 
@@ -317,7 +317,7 @@ class Models(_Base, table=True):
 class ParameterItems(_Base, table=True):
     __tablename__ = 'parameter_items'
     __table_args__ = (
-        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
+        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', onupdate='CASCADE', name='parameter_items_parameter_id_fkey'),
         PrimaryKeyConstraint('id', name='parameter_items_pkey')
     )
 
@@ -336,8 +336,8 @@ class ParameterItems(_Base, table=True):
 
 class Simulations(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='simulations_department_id_fkey'),
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulations_department_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulations_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='simulations_pkey'),
         Index('simulations_id_active_idx', 'id', 'active')
     )
@@ -363,7 +363,7 @@ class Simulations(_Base, table=True):
 class StandardGroups(_Base, table=True):
     __tablename__ = 'standard_groups'
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='standard_groups_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='standard_groups_pkey'),
         Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
         Index('standard_groups_rubric_idx', 'id', 'rubric_id')
@@ -384,7 +384,7 @@ class StandardGroups(_Base, table=True):
 
 class Agents(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', name='agents_model_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', onupdate='CASCADE', name='agents_model_id_fkey'),
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
@@ -405,7 +405,7 @@ class Agents(_Base, table=True):
 class AssistantMessages(_Base, table=True):
     __tablename__ = 'assistant_messages'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', name='assistant_messages_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_messages_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_messages_pkey')
     )
 
@@ -424,7 +424,7 @@ class AssistantMessages(_Base, table=True):
 class AssistantToolCalls(_Base, table=True):
     __tablename__ = 'assistant_tool_calls'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', name='assistant_tool_calls_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_tool_calls_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
     )
 
@@ -444,8 +444,8 @@ class AssistantToolCalls(_Base, table=True):
 
 class Personas(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='personas_department_id_fkey'),
-        ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='personas_department_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], onupdate='CASCADE', name='personas_model_id_fkey'),
         PrimaryKeyConstraint('id', name='personas_pkey'),
         Index('personas_id_idx', 'id')
     )
@@ -476,8 +476,8 @@ class Personas(_Base, table=True):
 class SimulationAttempts(_Base, table=True):
     __tablename__ = 'simulation_attempts'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_attempts_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_attempts_simulation_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
         Index('simulation_attempts_archived_idx', 'archived'),
         Index('simulation_attempts_id_profile_archived_idx', 'id', 'profile_id', 'archived', 'infinite_mode'),
@@ -499,7 +499,7 @@ class SimulationAttempts(_Base, table=True):
 
 class Standards(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', name='standards_standard_group_id_fkey'),
+        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', onupdate='CASCADE', name='standards_standard_group_id_fkey'),
         PrimaryKeyConstraint('id', name='standards_pkey'),
         Index('standards_group_idx', 'standard_group_id')
     )
@@ -518,11 +518,11 @@ class Standards(_Base, table=True):
 class ModelRuns(_Base, table=True):
     __tablename__ = 'model_runs'
     __table_args__ = (
-        ForeignKeyConstraint(['agent_id'], ['agents.id'], name='model_runs_agent_id_fkey'),
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='model_runs_department_id_fkey'),
-        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', name='model_runs_model_id_fkey'),
-        ForeignKeyConstraint(['persona_id'], ['personas.id'], name='model_runs_persona_id_fkey'),
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], name='model_runs_profile_id_fkey'),
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], onupdate='CASCADE', name='model_runs_agent_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='model_runs_department_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', onupdate='CASCADE', name='model_runs_model_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], onupdate='CASCADE', name='model_runs_persona_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], onupdate='CASCADE', name='model_runs_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='model_runs_pkey')
     )
 
@@ -547,8 +547,8 @@ class ModelRuns(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='scenarios_department_id_fkey'),
-        ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='scenarios_department_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', onupdate='CASCADE', name='scenarios_persona_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey'),
         Index('scenarios_id_active_idx', 'id', 'active')
     )
@@ -577,7 +577,7 @@ class Scenarios(_Base, table=True):
 class DebugInfo(_Base, table=True):
     __tablename__ = 'debug_info'
     __table_args__ = (
-        ForeignKeyConstraint(['model_run_id'], ['model_runs.id'], name='debug_info_model_run_id_fkey'),
+        ForeignKeyConstraint(['model_run_id'], ['model_runs.id'], onupdate='CASCADE', name='debug_info_model_run_id_fkey'),
         PrimaryKeyConstraint('id', name='debug_info_pkey')
     )
 
@@ -592,8 +592,8 @@ class DebugInfo(_Base, table=True):
 class SimulationChats(_Base, table=True):
     __tablename__ = 'simulation_chats'
     __table_args__ = (
-        ForeignKeyConstraint(['attempt_id'], ['simulation_attempts.id'], ondelete='CASCADE', name='simulation_chats_attempt_id_fkey'),
-        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='simulation_chats_scenario_id_fkey'),
+        ForeignKeyConstraint(['attempt_id'], ['simulation_attempts.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chats_attempt_id_fkey'),
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chats_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chats_pkey'),
         Index('simulation_chats_id_created_idx', 'id', 'created_at')
     )
@@ -617,8 +617,8 @@ class SimulationChats(_Base, table=True):
 class SimulationChatGrades(_Base, table=True):
     __tablename__ = 'simulation_chat_grades'
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
-        ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
+        ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey'),
         Index('scg_chat_created_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
@@ -642,7 +642,7 @@ class SimulationChatGrades(_Base, table=True):
 class SimulationMessages(_Base, table=True):
     __tablename__ = 'simulation_messages'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_messages_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_messages_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_messages_pkey'),
         Index('simulation_messages_chat_created_type_idx', 'chat_id', 'created_at', 'type')
     )
@@ -663,8 +663,8 @@ class SimulationMessages(_Base, table=True):
 class SimulationChatFeedbacks(_Base, table=True):
     __tablename__ = 'simulation_chat_feedbacks'
     __table_args__ = (
-        ForeignKeyConstraint(['simulation_chat_grade_id'], ['simulation_chat_grades.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_simulation_chat_grade_id_fkey'),
-        ForeignKeyConstraint(['standard_id'], ['standards.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_standard_id_fkey'),
+        ForeignKeyConstraint(['simulation_chat_grade_id'], ['simulation_chat_grades.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_feedbacks_simulation_chat_grade_id_fkey'),
+        ForeignKeyConstraint(['standard_id'], ['standards.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_feedbacks_standard_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey'),
         Index('scf_grade_idx', 'simulation_chat_grade_id')
     )
@@ -684,8 +684,8 @@ class SimulationChatFeedbacks(_Base, table=True):
 class SimulationCrowdsourcedMessages(_Base, table=True):
     __tablename__ = 'simulation_crowdsourced_messages'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_crowdsourced_messages_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', name='simulation_crowdsourced_messages_simulation_message_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_crowdsourced_messages_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_crowdsourced_messages_simulation_message_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_crowdsourced_messages_pkey')
     )
 
@@ -702,7 +702,7 @@ class SimulationCrowdsourcedMessages(_Base, table=True):
 class SimulationHints(_Base, table=True):
     __tablename__ = 'simulation_hints'
     __table_args__ = (
-        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', name='simulation_hints_simulation_message_id_fkey'),
+        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_hints_simulation_message_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_hints_pkey')
     )
 
@@ -718,8 +718,8 @@ class SimulationHints(_Base, table=True):
 class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):
     __tablename__ = 'simulation_chat_crowdsourced_feedbacks'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_chat_crowdsourced_feedbacks_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_chat_feedback_id'], ['simulation_chat_feedbacks.id'], ondelete='CASCADE', name='simulation_chat_crowdsourced_f_simulation_chat_feedback_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_crowdsourced_feedbacks_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_chat_feedback_id'], ['simulation_chat_feedbacks.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_crowdsourced_f_simulation_chat_feedback_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_crowdsourced_feedbacks_pkey')
     )
 

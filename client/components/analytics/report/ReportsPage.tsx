@@ -23,7 +23,7 @@ import {
   TotalAttemptsMetricResponse,
 } from "@/lib/analytics";
 import { useAnalyticsReportsBundle } from "@/lib/api/hooks/analytics";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
 import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
@@ -66,7 +66,7 @@ export default function ReportsPage() {
   const { data: allSimulations } = useSimulationsByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: allProfiles = [] } = useProfiles();
+  const { data: allProfiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Profile lookup map for names
   const profileMap = useMemo(() => {

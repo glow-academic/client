@@ -4,12 +4,16 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { Parameter, ParameterItem, Scenario } from "@/types";
+import { useDepartments } from "@/contexts/departments-context";
 
 export function useParameterColumns() {
+  const { effectiveDepartmentIds } = useDepartments();
   const { data: parameterItems = [] } = useParameterItems();
-  const { data: scenarios = [] } = useScenarios();
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    effectiveDepartmentIds
+  );
 
   const columns = useMemo<ColumnDef<Parameter>[]>(
     () => [

@@ -25,10 +25,10 @@ import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useDepartments } from "@/contexts/departments-context";
 import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
-import { useModelRuns } from "@/lib/api/hooks/model_runs";
+import { useModelRunsByDepartmentIdBatch } from "@/lib/api/hooks/model_runs";
 import { useModels } from "@/lib/api/hooks/models";
 import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
 import type { DebugInfo } from "@/types";
 import { Agent, Model, ModelRun, Persona } from "@/types";
 import { Loader2 } from "lucide-react";
@@ -70,12 +70,14 @@ export default function Pricing() {
 
   const { effectiveDepartmentIds } = useDepartments();
   const { data: models = [], isLoading: modelsLoading } = useModels();
-  const { data: runs = [], isLoading: runsLoading } = useModelRuns();
+  const { data: runs = [], isLoading: runsLoading } = useModelRunsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
   const { data: agents = [] } = useAgents();
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: profiles = [] } = useProfiles();
+  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]);

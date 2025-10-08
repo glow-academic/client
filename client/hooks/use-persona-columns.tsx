@@ -4,11 +4,15 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Model, Persona, Scenario } from "@/types";
-import { useScenarios } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { useModels } from "@/lib/api/hooks/models";
+import { useDepartments } from "@/contexts/departments-context";
 
 export function usePersonaColumns() {
-  const { data: scenarios = [] } = useScenarios();
+  const { effectiveDepartmentIds } = useDepartments();
+  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+    effectiveDepartmentIds
+  );
   const { data: models = [] } = useModels();
 
   // Create filter options

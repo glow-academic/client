@@ -4,14 +4,16 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Cohort, Persona, Scenario, Simulation } from "@/types";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import { useCohorts } from "@/lib/api/hooks/cohorts";
-import { usePersonas } from "@/lib/api/hooks/personas";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
+import { useDepartments } from "@/contexts/departments-context";
 
 export function useScenarioColumns() {
-  const { data: simulations = [] } = useSimulations();
-  const { data: cohorts = [] } = useCohorts();
-  const { data: personas = [] } = usePersonas();
+  const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(effectiveDepartmentIds);
 
   const columns = useMemo<ColumnDef<Scenario>[]>(
     () => [

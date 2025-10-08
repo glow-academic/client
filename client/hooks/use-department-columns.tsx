@@ -3,19 +3,14 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
 
-import { useDepartments } from "@/lib/api/hooks/departments";
-import { useModelRunsByDepartmentIdBatch } from "@/lib/api/hooks/model_runs";
+import { useModelRuns } from "@/lib/api/hooks/model_runs";
 import { useModels } from "@/lib/api/hooks/models";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import { Department, Model, ModelRun, Profile } from "@/types";
 
 export function useDepartmentColumns() {
-  const { data: departments = [] } = useDepartments();
-  const departmentIds = departments.map((dept: Department) => dept.id);
-  const { data: profilesByDepartment = [] } =
-    useProfilesByDepartmentIdBatch(departmentIds);
-  const { data: modelRunsByDepartment = [] } =
-    useModelRunsByDepartmentIdBatch(departmentIds);
+  const {data: profiles = []} = useProfiles();
+  const {data: modelRuns = []} = useModelRuns();
   const { data: models = [] } = useModels();
 
   // Create filter options for total price spent
@@ -62,7 +57,7 @@ export function useDepartmentColumns() {
   // Helper function to calculate total price spent for a department
   const calculateTotalPriceSpent = useCallback(
     (departmentId: string): number => {
-      const departmentRuns = modelRunsByDepartment.filter(
+      const departmentRuns = modelRuns.filter(
         (run: ModelRun) => run.departmentId === departmentId
       );
 
@@ -81,18 +76,18 @@ export function useDepartmentColumns() {
       }
       return totalSpend;
     },
-    [modelRunsByDepartment, modelIdToMeta]
+    [modelRuns, modelIdToMeta]
   );
 
   // Helper function to get staff count for a department
   const getStaffCount = useCallback(
     (departmentId: string): number => {
-      const departmentProfiles = profilesByDepartment.filter(
+      const departmentProfiles = profiles.filter(
         (profile: Profile) => profile.departmentId === departmentId
       );
       return departmentProfiles.length;
     },
-    [profilesByDepartment]
+    [profiles]
   );
 
   // Create columns for the data table

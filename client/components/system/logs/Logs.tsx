@@ -32,7 +32,6 @@ export default function Logs() {
   const queryClient = useQueryClient();
 
   const { data: logsData = [] } = useAppLogs(); // TODO: need some limiting here
-
   const { data: profilesData = [] } = useProfiles();
 
   const handleRefresh = async () => {

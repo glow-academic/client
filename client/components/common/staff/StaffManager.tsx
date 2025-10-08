@@ -35,7 +35,7 @@ import {
   useUpdateCohorts,
 } from "@/lib/api/hooks/cohorts";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
-import { useCreateProfiles, useProfiles } from "@/lib/api/hooks/profiles";
+import { useCreateProfiles, useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { profileRole } from "@/utils/drizzle/schema";
@@ -176,7 +176,7 @@ export default function StaffManager({
   const { data: departments = [] } = useDepartmentsHook();
 
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
-    useProfiles();
+    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
   const { data: allCohorts = [] } = useCohortsByDepartmentIdBatch(
     effectiveDepartmentIds
   );

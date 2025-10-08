@@ -43,7 +43,7 @@ import { useModelRunsByProfileIdBatch } from "@/lib/api/hooks/model_runs";
 import {
   useDeleteProfile,
   useDeleteProfiles,
-  useProfiles,
+  useProfilesByDepartmentIdBatch,
   useUpdateProfiles,
 } from "@/lib/api/hooks/profiles";
 import { Profile } from "@/types";
@@ -98,7 +98,7 @@ export default function Staff() {
     React.useState<StaffData | null>(null);
 
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
-    useProfiles();
+    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
   const { data: allCohorts = [], isLoading: isLoadingCohorts } =
     useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
   const { data: departments = [] } = useDepartmentsHook();

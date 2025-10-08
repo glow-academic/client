@@ -13,23 +13,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartmentColumns } from "@/hooks/use-department-columns";
-import { useDepartments } from "@/lib/api/hooks/departments";
-import { useModelRunsByDepartmentIdBatch } from "@/lib/api/hooks/model_runs";
+import { useModelRuns } from "@/lib/api/hooks/model_runs";
 import { useModels } from "@/lib/api/hooks/models";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
+import { useProfiles } from "@/lib/api/hooks/profiles";
 import { Department, Model, ModelRun } from "@/types";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
+import { useDepartments } from "@/lib/api/hooks/departments";
 
 export default function Departments() {
   const router = useRouter();
-  const { data: departments = [] } = useDepartments();
-
-  // Get profiles and model runs for each department to calculate staff counts and pricing
-  const departmentIds = departments.map((dept: Department) => dept.id);
-  const { data: profilesByDepartment = [] } =
-    useProfilesByDepartmentIdBatch(departmentIds);
-  const { data: modelRunsByDepartment = [] } =
-    useModelRunsByDepartmentIdBatch(departmentIds);
+  const {data: departments = []} = useDepartments();
+  const { data: profiles = [] } =
+    useProfiles();
+  const { data: modelRuns = [] } =
+    useModelRuns();
   const { data: models = [] } = useModels();
 
   // Get table columns and filter options
@@ -54,7 +51,7 @@ export default function Departments() {
   // Helper function to calculate total price spent for a department
   const calculateTotalPriceSpent = useCallback(
     (departmentId: string): number => {
-      const departmentRuns = modelRunsByDepartment.filter(
+      const departmentRuns = modelRuns.filter(
         (run: ModelRun) => run.departmentId === departmentId
       );
 
@@ -73,18 +70,18 @@ export default function Departments() {
       }
       return totalSpend;
     },
-    [modelRunsByDepartment, modelIdToMeta]
+    [modelRuns, modelIdToMeta]
   );
 
   // Helper function to get staff count for a department
   const getStaffCount = useCallback(
     (departmentId: string): number => {
-      const departmentProfiles = profilesByDepartment.filter(
+      const departmentProfiles = profiles.filter(
         (profile) => profile.departmentId === departmentId
       );
       return departmentProfiles.length;
     },
-    [profilesByDepartment]
+    [profiles]
   );
 
   const renderDepartmentCard = (department: Department) => (

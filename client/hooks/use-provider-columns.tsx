@@ -4,10 +4,12 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Model, Provider } from "@/types";
-import { useProviders } from "@/lib/api/hooks/providers";
+import { useProvidersByDepartmentIdBatch } from "@/lib/api/hooks/providers";
+import { useDepartments } from "@/contexts/departments-context";
 
 export function useProviderColumns() {
-  const { data: providers = [] } = useProviders();
+  const { effectiveDepartmentIds } = useDepartments();
+  const { data: providers = [] } = useProvidersByDepartmentIdBatch(effectiveDepartmentIds);
 
   const columns = useMemo<ColumnDef<Model>[]>(
     () => [

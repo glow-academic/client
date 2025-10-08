@@ -15,9 +15,9 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
-import { useDocuments } from "@/lib/api/hooks/documents";
+import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { useUpdateProfile } from "@/lib/api/hooks/profiles";
-import { useRubrics } from "@/lib/api/hooks/rubrics";
+import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
 import { useScenario } from "@/lib/api/hooks/scenarios";
 import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
@@ -263,7 +263,9 @@ export function SimulationProvider({
     attempt?.simulationId || "",
     attempt !== undefined && attempt !== null
   );
-  const { data: rubrics = [] } = useRubrics();
+  const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
+    effectiveDepartmentIds
+  );
   const { data: standardGroups = [] } = useStandardGroupsByRubricIdBatch(
     rubrics.map((rubric) => rubric.id)
   );
@@ -296,7 +298,9 @@ export function SimulationProvider({
     currentChat?.scenarioId || "",
     currentChat !== null
   );
-  const { data: documents = [] } = useDocuments();
+  const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
+    effectiveDepartmentIds
+  );
 
   // Filter documents for the current attempt's class
   const scenarioDocuments = useMemo(() => {

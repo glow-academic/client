@@ -4,12 +4,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
 import { Cohort, Profile, Simulation } from "@/types";
-import { useSimulations } from "@/lib/api/hooks/simulations";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
+import { useDepartments } from "@/contexts/departments-context";
 
 export function useCohortColumns() {
-  const { data: simulations = [] } = useSimulations();
-  const { data: profiles = [] } = useProfiles();
+  const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
 
   const columns = useMemo<ColumnDef<Cohort>[]>(
     () => [
