@@ -487,7 +487,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             simulation_grade_id = None
             if len(messages) >= 2:
                 sio_instance = get_sio_instance()
-                simulation_grade_id = await run_grade_agent(chat_id, db_session, sio_instance)
+                simulation_grade_id = await run_grade_agent(chat_id, department_id, db_session, sio_instance)
 
             # Mark the current chat as completed
             chat.completed = True
@@ -513,7 +513,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                                 f"End all: Running grading for chat {str(existing_chat.id)}"
                             )
                             sio_instance = get_sio_instance()
-                            await run_grade_agent(existing_chat.id, db_session, sio_instance)
+                            await run_grade_agent(existing_chat.id, department_id, db_session, sio_instance)
                         existing_chat.completed = True
                         db_session.add(existing_chat)
                         incomplete_chats_processed += 1
