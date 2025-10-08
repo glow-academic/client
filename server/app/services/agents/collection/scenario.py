@@ -155,6 +155,7 @@ def create_scenario_tools(group_id: uuid.UUID | None) -> list[Any]:
 
 
 async def run_scenario_agent(
+    department_id: uuid.UUID,
     persona_id: uuid.UUID | None = None,
     document_ids: List[uuid.UUID] | None = None,
     parameter_item_ids: List[uuid.UUID] | None = None,
@@ -309,6 +310,7 @@ async def run_scenario_agent(
             output_tokens=0,
             profile_id=final_profile_id,
             agent_id=scenario_agent.id,
+            department_id=department_id,
         )
         session.add(model_run)
         session.commit()

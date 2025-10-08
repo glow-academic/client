@@ -147,6 +147,7 @@ def _build_hint_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, uuid.U
 async def run_hint_agent(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
+    department_id: uuid.UUID,
     session: Session = Depends(get_session),
     sio_instance: Any = None,
 ) -> List[uuid.UUID]:
@@ -252,6 +253,7 @@ async def run_hint_agent(
             output_tokens=0,
             profile_id=final_profile_id,
             agent_id=agent_id,
+            department_id=department_id,
         )
         session.add(model_run)
         session.commit()

@@ -379,6 +379,7 @@ async def finalize_upload(
         is_csv = body.get("csv", False)
         test = body.get("test", False)
         profile_id = body.get("profile_id")
+        department_id = body.get("department_id")
         
         logger.info(f"TUS finalize called: file_id={file_id}, is_csv={is_csv}, test={test}, profile_id={profile_id}")
         logger.info(f"TUS finalize body: {body}")
@@ -596,6 +597,7 @@ async def finalize_upload(
                         document_ids = [UUID(doc["id"]) for doc in extracted_documents]
                         classification_result = await run_classify_agent(
                             document_ids,
+                            department_id,
                             test,
                             session,
                             profile_id,

@@ -19,6 +19,7 @@ import {
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/contexts/analytics-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import {
@@ -28,7 +29,6 @@ import {
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
-import { useDepartments } from "@/contexts/departments-context";
 
 export default function Practice() {
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function Practice() {
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
@@ -126,14 +126,14 @@ export default function Practice() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener,
+      handleSimulationStarted as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener,
+        handleSimulationStarted as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -151,9 +151,15 @@ export default function Practice() {
           return;
         }
 
+        // Validate department_id is available
+        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+          toast.error("No department found. Please contact support.");
+          return;
+        }
+
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           log.error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
@@ -194,6 +200,7 @@ export default function Practice() {
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
+          department_id: effectiveDepartmentIds[0],
         });
 
         // timeout...
@@ -235,7 +242,8 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ],
+      effectiveDepartmentIds,
+    ]
   );
 
   // Loading state

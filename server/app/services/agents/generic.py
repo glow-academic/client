@@ -74,30 +74,29 @@ class GenericAgent:
 
         base_url = self.base_url if self.custom_model else None
 
-        agent_kwargs: dict[str, Any] = {
-            "name": f"{self.agent_name} Agent",
-            "instructions": f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
-            "model": LitellmModel(
+        # Create agent with basic parameters
+        agent_instance = Agent[DebugContext](
+            name=f"{self.agent_name} Agent",
+            instructions=f"{self.system_prompt}\n\n{DEBUG_INFO_TOOL_SUFFIX}",
+            model=LitellmModel(
                 model=model,
                 api_key=self.api_key,
                 base_url=base_url
             ),
-            "model_settings": ModelSettings(
+            model_settings=ModelSettings(
                 temperature=self.temperature,
                 include_usage=True,
                 reasoning=self.reasoning,
                 extra_body=self.extra_body,
+                parallel_tool_calls=self.parallel_tool_calls,
             ),
-            "mcp_servers": self.mcp_servers,
-            "tools": self.tools,
-            "output_guardrails": self.output_guardrails,  # type: ignore[arg-type]
-        }
+            mcp_servers=self.mcp_servers,
+            tools=self.tools,
+            output_guardrails=self.output_guardrails,
+        )
 
-        # Add optional parameters if provided
-        if self.parallel_tool_calls is not None:
-            agent_kwargs["parallel_tool_calls"] = self.parallel_tool_calls
-        
+        # Set optional properties if provided
         if self.tool_use_behavior is not None:
-            agent_kwargs["tool_use_behavior"] = self.tool_use_behavior
+            agent_instance.tool_use_behavior = self.tool_use_behavior
 
-        return Agent[DebugContext](**agent_kwargs)
+        return agent_instance

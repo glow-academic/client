@@ -25,6 +25,7 @@ async def new_scenario(
     parameter_item_ids: List[uuid.UUID] | None = Form(None),
     session: Session = Depends(get_session),
     profile_id: uuid.UUID | None = Form(None),
+    department_id: uuid.UUID = Form(...),
 ) -> JSONResponse:
     """
     This endpoint creates a new scenario using AI generation.
@@ -41,6 +42,7 @@ async def new_scenario(
 
         # Run the scenario agent to generate title and description
         title, description, objectives, _ = await run_scenario_agent(
+            department_id=department_id,
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
@@ -77,6 +79,7 @@ async def create_practice_scenario(
     parameter_item_ids: List[uuid.UUID] | None = Form(None),
     session: Session = Depends(get_session),
     profile_id: uuid.UUID | None = Form(None),
+    department_id: uuid.UUID = Form(...),
 ) -> JSONResponse:
     """
     Create a practice scenario by finding the base practice scenario for the persona
@@ -106,11 +109,12 @@ async def create_practice_scenario(
             )
 
         # Use randomly_fill_scenario_attributes to fill any missing attributes
-        filled_scenario = await randomly_fill_scenario_attributes(base_scenario, session)
+        filled_scenario = await randomly_fill_scenario_attributes(base_scenario, session, department_id)
 
         # Generate scenario description and name using AI if needed
         if not filled_scenario.description or filled_scenario.description.strip() == "":
             name, description, objectives, _ = await run_scenario_agent(
+                department_id=department_id,
                 persona_id=filled_scenario.persona_id,
                 document_ids=filled_scenario.document_ids,
                 parameter_item_ids=filled_scenario.parameter_item_ids,

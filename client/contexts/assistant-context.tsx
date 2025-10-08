@@ -3,6 +3,7 @@
  * Provides functionality for creating chats, sending messages, and real-time updates
  */
 "use client";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useAssistantChatsByProfileId,
@@ -70,6 +71,7 @@ interface AssistantProviderProps {
 
 export function AssistantProvider({ children }: AssistantProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
+  const { effectiveDepartmentIds } = useDepartments();
   const [currentChatId, setCurrentChatId] = useState<string>();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -90,7 +92,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const { data: chats = [], isLoading: isLoadingChats } =
     useAssistantChatsByProfileId(
-      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "",
+      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || ""
     );
 
   // Create new chat mutation
@@ -137,11 +139,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     // Add event listeners
     window.addEventListener(
       "assistant_message_complete",
-      handleAssistantMessageComplete,
+      handleAssistantMessageComplete
     );
     window.addEventListener(
       "assistant_message_cancelled",
-      handleAssistantMessageCancelled,
+      handleAssistantMessageCancelled
     );
     window.addEventListener("assistant_error", handleAssistantError);
 
@@ -149,11 +151,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Remove event listeners
       window.removeEventListener(
         "assistant_message_complete",
-        handleAssistantMessageComplete,
+        handleAssistantMessageComplete
       );
       window.removeEventListener(
         "assistant_message_cancelled",
-        handleAssistantMessageCancelled,
+        handleAssistantMessageCancelled
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
@@ -316,6 +318,13 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
           });
         }
 
+        // Validate department_id is available
+        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+          toast.error("No department found. Please contact support.");
+          setIsSendingMessage(false);
+          return;
+        }
+
         // Check if this is the first message in the chat
         // If we just created a new chat or if the existing chat has title "New Chat"
         const isNewlyCreatedChat = !currentChatId; // We just created this chat
@@ -334,7 +343,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
               messageLength: message.length,
             },
           });
-          emitStartAssistant({ chat_id: chatId, initial_message: message });
+          emitStartAssistant({
+            chat_id: chatId,
+            initial_message: message,
+            department_id: effectiveDepartmentIds[0],
+          });
         }
         // 2️⃣ For subsequent messages, deliver the text via the best transport:
 
@@ -381,7 +394,8 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
-    ],
+      effectiveDepartmentIds,
+    ]
   );
 
   const stopMessage = useCallback(() => {

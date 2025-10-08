@@ -158,6 +158,7 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
     try:
         chat_id = data.get("chat_id")
         message = data.get("message")
+        department_id = data.get("department_id")
         assistant_audio_enabled = data.get("assistant_audio_enabled", False)
         sketch_data = data.get("sketch_data")
 
@@ -165,6 +166,10 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
             logger.error(
                 f"Missing chat_id or both message and sketch_data in request from {sid}"
             )
+            return
+
+        if not department_id:
+            logger.error(f"Missing department_id in request from {sid}")
             return
 
         logger.info(
@@ -180,6 +185,7 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         await process_simulation_message_websocket(
             chat_id=uuid.UUID(chat_id),
             message=message or "",
+            department_id=department_id,
             is_retry=is_retry,
         )
 
@@ -238,6 +244,11 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
     try:
         chat_id = data.get("chat_id")
         message = data.get("message")
+        department_id = data.get("department_id")
+
+        if not department_id:
+            logger.error(f"Missing department_id in request from {sid}")
+            return
 
         if not chat_id or not message:
             logger.error(f"Missing chat_id or message in request from {sid}")
@@ -251,7 +262,7 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
         from app.web.assistants import process_assistant_message_websocket
 
         await process_assistant_message_websocket(
-            chat_id=uuid.UUID(chat_id), message=message
+            chat_id=uuid.UUID(chat_id), message=message, department_id=department_id
         )
 
         logger.info(f"Completed processing send_assistant_message for {chat_id}")

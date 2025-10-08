@@ -14,11 +14,10 @@ from typing import Any, Dict
 import socketio  # type: ignore
 from agents import gen_trace_id
 from app.db import get_session
-from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
-from app.services.agents.collection.assistant import (
-    cancel_assistant_run,
-    run_assistant_agent,
-)
+from app.models import (AssistantChats, AssistantMessages, AssistantToolCalls,
+                        Profiles)
+from app.services.agents.collection.assistant import (cancel_assistant_run,
+                                                      run_assistant_agent)
 from app.services.agents.collection.title import run_title_agent
 from sqlmodel import select
 
@@ -46,10 +45,16 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
         chat_id = data.get("chat_id")
         initial_message = data.get("initial_message")
+        department_id = data.get("department_id")
 
         if not chat_id or not initial_message:
             logger.error(f"Missing chat_id or initial_message in request from {sid}")
             await emit_assistant_error(sid, "Missing chat_id or initial_message")
+            return
+
+        if not department_id:
+            logger.error(f"Missing department_id in request from {sid}")
+            await emit_assistant_error(sid, "Missing department_id - please refresh the page")
             return
 
         logger.info(f"Processing assistant start: chat_id={chat_id}, sid={sid}")
@@ -78,7 +83,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
             # Update the title with the title agent
             chat_title = await run_title_agent(
-                uuid.UUID(chat_id), initial_message, db_session
+                uuid.UUID(chat_id), initial_message, department_id, db_session
             )
             logger.info(f"Chat title: {chat_title}")
 
@@ -173,6 +178,7 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
 async def process_assistant_message_websocket(
     chat_id: uuid.UUID,
     message: str,
+    department_id: uuid.UUID,
 ) -> None:
     """
     Process an assistant message and stream the response via WebSocket
@@ -222,7 +228,7 @@ async def process_assistant_message_websocket(
         logger.info(f"Processing assistant message for chat {chat_id}")
 
         # 3. Stream the assistant response
-        async for token in run_assistant_agent(chat_id, db_session):
+        async for token in run_assistant_agent(chat_id, department_id, db_session):
             logger.info(
                 f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})"
             )

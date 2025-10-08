@@ -54,10 +54,17 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         scenario_id_override = data.get("scenario_id")
         infinite = bool(data.get("infinite", False))
         infinite_time_limit = data.get("infinite_time_limit")
+        department_id = data.get("department_id")
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
             await emit_error(sid, "Missing simulation_id")
+            return
+
+        # Validate department_id is not null
+        if not department_id:
+            logger.error(f"Missing department_id in request from {sid}")
+            await emit_error(sid, "Missing department_id - please refresh the page")
             return
 
         # If the client indicates guest (empty/"null"/None), register under default guest profile
@@ -152,7 +159,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 return
 
             # Randomly fill any null attributes in the scenario
-            scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
+            scenario = await randomly_fill_scenario_attributes(old_scenario, db_session, department_id)
 
             # Check if we got a new scenario or the original one
             is_new_scenario = scenario.id != old_scenario.id
@@ -160,6 +167,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Generate scenario description if empty
             if not scenario.description or scenario.description == "":
                 name, description, objectives, trace_id = await run_scenario_agent(
+                    department_id=department_id,
                     persona_id=scenario.persona_id,
                     document_ids=scenario.document_ids,
                     parameter_item_ids=scenario.parameter_item_ids,
@@ -333,6 +341,11 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         chat_id = data.get("chat_id")
         attempt_id = data.get("attempt_id")
         end_all = data.get("end_all", False)
+        department_id = data.get("department_id")
+
+        if not department_id:
+            await emit_error(sid, "Missing department_id")
+            return
 
         if not chat_id or not attempt_id:
             await emit_error(sid, "Missing chat_id or attempt_id")
@@ -345,14 +358,16 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Local helpers to reduce duplication
             async def prepare_and_persist_scenario(
                 old_scenario: Scenarios,
+                department_id: uuid.UUID,
             ) -> Tuple[Scenarios, str, str]:
-                scenario = await randomly_fill_scenario_attributes(old_scenario, db_session)
+                scenario = await randomly_fill_scenario_attributes(old_scenario, db_session, department_id)
                 
                 # Check if we got a new scenario or the original one
                 is_new_scenario = scenario.id != old_scenario.id
                 
                 if not scenario.description or scenario.description == "":
                     name, description, objectives, trace_id = await run_scenario_agent(
+                        department_id=scenario.department_id,
                         persona_id=scenario.persona_id,
                         document_ids=scenario.document_ids,
                         parameter_item_ids=scenario.parameter_item_ids,
@@ -384,7 +399,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 if not old_next_scenario:
                     return None
 
-                scenario, chat_title, trace_id = await prepare_and_persist_scenario(old_next_scenario)
+                scenario, chat_title, trace_id = await prepare_and_persist_scenario(old_next_scenario, department_id)
 
                 next_chat = SimulationChats(
                     created_at=datetime.now(timezone.utc),
@@ -597,6 +612,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 async def _generate_hints_background(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
+    department_id: uuid.UUID,
     sio_instance: Any,
 ) -> None:
     """
@@ -609,6 +625,7 @@ async def _generate_hints_background(
         hint_ids = await run_hint_agent(
             chat_id=chat_id,
             message_id=message_id,
+            department_id=department_id,
             session=db_session,
             sio_instance=sio_instance,
         )
@@ -621,6 +638,7 @@ async def _generate_hints_background(
 
 async def process_simulation_message_websocket(
     chat_id: uuid.UUID,
+    department_id: uuid.UUID,
     message: str = "",
     is_retry: bool = False,
 ) -> None:
@@ -711,7 +729,7 @@ async def process_simulation_message_websocket(
             # We poll for a cancellation flag bound to this chat's active run ID
             from app.extensions import get_active_run, is_run_cancelled
 
-            async for token in run_simulation_agent(chat_id, db_session):
+            async for token in run_simulation_agent(chat_id, department_id, db_session):
                 # Check cancellation BEFORE processing this token to avoid emitting it
                 try:
                     run_id = await get_active_run(str(chat_id))
@@ -852,6 +870,7 @@ async def process_simulation_message_websocket(
                         _generate_hints_background(
                             chat_id=chat_id,
                             message_id=assistant_message.id,
+                            department_id=department_id,
                             sio_instance=sio_instance
                         )
                     )

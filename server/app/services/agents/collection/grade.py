@@ -423,6 +423,7 @@ async def run_grade_agent(
             output_tokens=0,
             profile_id=final_profile_id,
             agent_id=agent.id,
+            department_id=simulation.department_id,
         )
         session.add(model_run)
         session.commit()

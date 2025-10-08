@@ -26,6 +26,7 @@ from sqlmodel import Session, select
 
 async def run_simulation_agent(
     chat_id: uuid.UUID,
+    department_id: uuid.UUID,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -51,7 +52,7 @@ async def run_simulation_agent(
 
     if simulation_chat:
         # Handle simulation chat
-        async for token in _handle_simulation_chat(simulation_chat, session):
+        async for token in _handle_simulation_chat(simulation_chat, department_id, session):
             yield token
     else:
         raise ValueError(f"Chat not found with ID: {chat_id}")
@@ -73,7 +74,7 @@ async def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_simulation_chat(
-    chat: SimulationChats, session: Session
+    chat: SimulationChats, department_id: uuid.UUID, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
@@ -136,7 +137,7 @@ async def _handle_simulation_chat(
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
     output_guards = (
-        get_output_guardrails(chat.id, conversation_history, session)
+        get_output_guardrails(chat.id, department_id, conversation_history, session)
         if persona.guardrail_active
         else None
     )
@@ -169,6 +170,7 @@ async def _handle_simulation_chat(
         output_tokens=0,
         profile_id=final_profile_id,
         persona_id=persona.id,
+        department_id=scenario.department_id,
     )
     session.add(model_run)
     session.commit()

@@ -67,11 +67,13 @@ export interface WebSocketContextType {
     scenario_id?: string | null;
     infinite?: boolean;
     infinite_time_limit?: number | null;
+    department_id: string;
   }) => void;
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string;
     isRetry?: boolean;
+    department_id: string;
   }) => void;
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
@@ -84,6 +86,7 @@ export interface WebSocketContextType {
   emitStartAssistant: (data: {
     chat_id: string;
     initial_message: string;
+    department_id: string;
   }) => void;
   emitSendAssistantMessage: (data: {
     chat_id: string;
@@ -1214,6 +1217,7 @@ export function WebSocketProvider({
       scenario_id?: string | null;
       infinite?: boolean;
       infinite_time_limit?: number | null;
+      department_id: string;
     }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.start.skip_not_connected", {
@@ -1234,6 +1238,9 @@ export function WebSocketProvider({
         ...(data.infinite_time_limit !== undefined && {
           infinite_time_limit: data.infinite_time_limit,
         }),
+        ...(data.department_id !== undefined && {
+          department_id: data.department_id,
+        }),
       };
 
       setStartingSimulationId(data.simulation_id);
@@ -1244,7 +1251,7 @@ export function WebSocketProvider({
   );
 
   const emitSendSimulationMessage = useCallback(
-    (data: { chat_id: string; message: string; isRetry?: boolean }) => {
+    (data: { chat_id: string; message: string; isRetry?: boolean; department_id: string }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.send.skip_not_connected", {
           context: { function: "emitSendSimulationMessage" },
@@ -1254,7 +1261,7 @@ export function WebSocketProvider({
 
       setIsSendingSimulationMessage(true);
       log.debug("ws.emit.send_simulation_message", {
-        context: { chatId: data.chat_id, isRetry: data.isRetry },
+        context: { chatId: data.chat_id, isRetry: data.isRetry, departmentId: data.department_id },
       });
       socketRef.current.emit("send_simulation_message", data);
     },
@@ -1297,7 +1304,11 @@ export function WebSocketProvider({
 
   // Assistant event emitters
   const emitStartAssistant = useCallback(
-    (data: { chat_id: string; initial_message: string }) => {
+    (data: {
+      chat_id: string;
+      initial_message: string;
+      department_id: string;
+    }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.assistant.start.skip_not_connected", {
           context: { function: "emitStartAssistant" },

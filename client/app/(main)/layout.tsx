@@ -43,7 +43,10 @@ import TATour from "@/components/home/TATour";
 import { PracticeCustomizeDialog } from "@/components/practice/PracticeCustomizeDialog";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
-import { DepartmentsProvider } from "@/contexts/departments-context";
+import {
+  DepartmentsProvider,
+  useDepartments,
+} from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   SimulationProvider,
@@ -78,6 +81,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -545,10 +549,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/create/personas") {
       return (
-        <Button
-          onClick={() => router.push("/create/personas/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/create/personas/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Persona
         </Button>
@@ -743,9 +744,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Department Filters - Show for superadmin users */}
-            {canShowDepartmentsFilters && (
-              <DepartmentsFilters />
-            )}
+            {canShowDepartmentsFilters && <DepartmentsFilters />}
 
             {/* Analytics Filters - Show in top right for analytics pages */}
             {canShowAnalyticsFilters && (
@@ -771,6 +770,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     );
                     return;
                   }
+                  if (
+                    effectiveDepartmentIds.length === 0 ||
+                    !effectiveDepartmentIds[0]
+                  ) {
+                    toast.error("No department found. Please contact support.");
+                    return;
+                  }
                   const profileIdForEmit =
                     effectiveProfile?.role === "guest"
                       ? ""
@@ -783,6 +789,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     profile_id: profileIdForEmit,
                     infinite: true,
                     infinite_time_limit: params.timeLimit,
+                    department_id: effectiveDepartmentIds[0],
                   });
                   setCustomizeOpen(false);
                 } else {

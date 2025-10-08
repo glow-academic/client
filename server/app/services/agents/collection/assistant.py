@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 async def run_assistant_agent(
     chat_id: uuid.UUID,
+    department_id: uuid.UUID,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -65,7 +66,7 @@ async def run_assistant_agent(
         ) as domain_server:
             mcp_servers = [domain_server]
             async for token in _handle_assistant_chat(
-                assistant_chat, mcp_servers, session
+                assistant_chat, mcp_servers, department_id, session
             ):
                 yield token
     else:
@@ -88,7 +89,7 @@ async def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_assistant_chat(
-    chat: AssistantChats, mcp_servers: list[MCPServer], session: Session
+    chat: AssistantChats, mcp_servers: list[MCPServer], department_id: uuid.UUID, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
@@ -188,6 +189,7 @@ async def _handle_assistant_chat(
         output_tokens=0,
         profile_id=final_profile_id,
         agent_id=agent.id,
+        department_id=department_id,
     )
     session.add(model_run)
     session.commit()

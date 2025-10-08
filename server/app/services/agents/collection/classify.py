@@ -80,6 +80,7 @@ def create_classification_tools() -> list[Any]:
 
 async def run_classify_agent(
     document_ids: list[uuid.UUID],
+    department_id: uuid.UUID,
     test: bool = False,
     session: Session = Depends(get_session),
     profile_id: uuid.UUID | None = None,
@@ -211,6 +212,7 @@ async def run_classify_agent(
                     output_tokens=0,
                     profile_id=final_profile_id,
                     agent_id=agent.id,
+                    department_id=department_id,
                 )
                 session.add(model_run)
                 session.commit()

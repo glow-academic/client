@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 
 
 async def run_title_agent(
-    chat_id: uuid.UUID, initial_message: str, session: Session = Depends(get_session)
+    chat_id: uuid.UUID, initial_message: str, department_id: uuid.UUID, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the title agent for simulation chats.
@@ -70,6 +70,7 @@ async def run_title_agent(
         output_tokens=0,
         profile_id=final_profile_id,
         agent_id=agent.id,
+        department_id=department_id,
     )
     session.add(model_run)
     session.commit()

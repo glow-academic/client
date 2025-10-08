@@ -110,6 +110,7 @@ def _build_guardrail_agent(session: Session, agent_name: str) -> tuple[GenericAg
 
 def get_input_guardrails(
     chat_id: uuid.UUID,
+    department_id: uuid.UUID,
     input_items: List[TResponseInputItem],
     session: Session = Depends(get_session),
 ) -> List[InputGuardrail[TContext]]:
@@ -170,6 +171,7 @@ def get_input_guardrails(
                 output_tokens=0,
                 profile_id=final_profile_id,
                 agent_id=agent_id,
+                department_id=department_id,
             )
             session.add(model_run)
             session.commit()
@@ -212,6 +214,7 @@ def get_input_guardrails(
 
 def get_output_guardrails(
     chat_id: uuid.UUID,
+    department_id: uuid.UUID,
     input_items: List[TResponseInputItem],
     session: Session = Depends(get_session),
 ) -> List[OutputGuardrail[TContext]]:
@@ -272,6 +275,7 @@ def get_output_guardrails(
                 output_tokens=0,
                 profile_id=final_profile_id,
                 agent_id=agent_id,
+                department_id=department_id,
             )
             session.add(model_run)
             session.commit()

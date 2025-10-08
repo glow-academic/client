@@ -89,7 +89,7 @@ def get_parameter_item_info(
 
 
 async def randomly_fill_scenario_attributes(
-    scenario: Scenarios, session: Session
+    scenario: Scenarios, session: Session, department_id: uuid.UUID
 ) -> Scenarios:
     """
     Randomly fill null attributes of a scenario with available options from the database.
@@ -97,6 +97,7 @@ async def randomly_fill_scenario_attributes(
     Args:
         scenario: The scenario object with potentially null attributes
         session: Database session
+        department_id: The department ID to use when creating a new scenario
 
     Returns:
         Updated scenario object with randomly selected values for null attributes
@@ -304,6 +305,7 @@ async def randomly_fill_scenario_attributes(
         persona_id=scenario_persona_id,
         document_ids=scenario_documents,
         parameter_item_ids=scenario_parameter_item_ids,
+        department_id=department_id,
         generated=True,
         parent_id=scenario.id,  # since we are creating a new scenario, we need to set the parent_id to the original scenario
     )

@@ -50,6 +50,7 @@ import React, {
 import { toast } from "sonner";
 import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
+import { useDepartments } from "./departments-context";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -184,6 +185,8 @@ export function SimulationProvider({
     emitStopSimulation,
     emitContinueSimulation,
   } = useWebSocket();
+
+  const { effectiveDepartmentIds } = useDepartments();
 
   // Use the profile context to access the effective profile
   const { effectiveProfile } = useProfile();
@@ -822,6 +825,10 @@ export function SimulationProvider({
     async (message: string, isRetry?: boolean) => {
       if (readOnly) return;
       if (!message.trim() || !currentChat || isSendingMessage) return;
+      if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+        toast.error("No department found. Please contact support.");
+        return;
+      }
 
       setIsSendingMessage(true);
 
@@ -830,6 +837,7 @@ export function SimulationProvider({
           chat_id: currentChat.id,
           message: message,
           ...(isRetry && { isRetry }),
+          department_id: effectiveDepartmentIds[0],
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
@@ -839,7 +847,7 @@ export function SimulationProvider({
       // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
       // to ensure proper state management with server responses
     },
-    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly],
+    [currentChat, isSendingMessage, emitSendSimulationMessage, readOnly, effectiveDepartmentIds],
   );
 
   // Stop message function
