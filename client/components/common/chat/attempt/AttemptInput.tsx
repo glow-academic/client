@@ -14,7 +14,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Loader2, Send, Square } from "lucide-react";
+import { Lightbulb, Loader2, Send, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -24,13 +24,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Popover
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { useSimulationHintsBySimulationMessageId } from "@/lib/api/hooks/simulation_hints";
 import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
+import { simulationHintKeysBySimulationMessageId } from "@/lib/api/keys";
 import { log } from "@/utils/logger";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -44,8 +53,10 @@ export default function AttemptInput({
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const simulationContext = useSimulation();
   const { isConnected } = useWebSocket();
+  const queryClient = useQueryClient();
 
   const [newMessage, setNewMessage] = useState("");
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   // Fetch simulation messages for the current chat using the proper hook
   const { data: messages = [] } = useSimulationMessagesByChatId(
@@ -61,30 +72,50 @@ export default function AttemptInput({
     )[0];
 
   // Fetch hints for the latest assistant message
-  const {
-    data: hintsData = [],
-    isLoading: hintsHookLoading,
-    refetch: refetchHints,
-  } = useSimulationHintsBySimulationMessageId(latestAssistantMessage?.id ?? "");
+  const { data: hintsData = [], isLoading: hintsHookLoading } =
+    useSimulationHintsBySimulationMessageId(latestAssistantMessage?.id ?? "");
 
-  // Listen for hint generation progress via console logs (WebSocket emits to console)
+  // Listen for hint generation progress via WebSocket events
   useEffect(() => {
-    // Set up polling to refetch hints periodically for practice simulations
     if (
-      simulationContext?.simulation?.practiceSimulation &&
-      latestAssistantMessage?.id
+      !simulationContext?.simulation?.practiceSimulation ||
+      !latestAssistantMessage?.id
     ) {
-      const interval = setInterval(() => {
-        refetchHints();
-      }, 3000); // Poll every 3 seconds
-
-      return () => clearInterval(interval);
+      return;
     }
-    return undefined;
+
+    const handleHintGenerationProgress = (event: CustomEvent) => {
+      const data = event.detail;
+
+      // Only handle hints for the current message
+      if (data.message_id === latestAssistantMessage.id) {
+        if (data.type === "complete" && data.hint_ids) {
+          // Invalidate the hints query cache to trigger a refetch
+          queryClient.invalidateQueries({
+            queryKey: simulationHintKeysBySimulationMessageId.one(
+              latestAssistantMessage.id
+            ),
+          });
+        }
+      }
+    };
+
+    // Listen for hint generation events
+    window.addEventListener(
+      "hint_generation_progress",
+      handleHintGenerationProgress as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "hint_generation_progress",
+        handleHintGenerationProgress as EventListener
+      );
+    };
   }, [
     simulationContext?.simulation?.practiceSimulation,
     latestAssistantMessage?.id,
-    refetchHints,
+    queryClient,
   ]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
@@ -164,11 +195,13 @@ export default function AttemptInput({
   const handleSelectHint = (hint: string) => {
     setNewMessage(hint);
     textareaRef.current?.focus();
+    setIsPopoverOpen(false); // Close popover after selection
   };
 
   // --- Effects ---
   useEffect(() => {
     setNewMessage("");
+    setIsPopoverOpen(false); // Close popover when chat changes
   }, [simulationContext?.currentChat?.id]);
 
   // Auto-resize the textarea based on content
@@ -273,6 +306,55 @@ export default function AttemptInput({
           </div>
 
           <div className="flex gap-2">
+            {/* Hints toggle button - only show for practice simulations */}
+            {simulationContext?.simulation?.practiceSimulation && (
+              <Popover
+                open={isPopoverOpen}
+                onOpenChange={setIsPopoverOpen}
+                modal={false}
+              >
+                <motion.div
+                  layout
+                  key="hints-btn"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          className="min-h-[40px] h-[40px] px-3"
+                          variant={isPopoverOpen ? "secondary" : "outline"}
+                        >
+                          <Lightbulb className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{isPopoverOpen ? "Hide Hints" : "Show Hints"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
+                <PopoverContent
+                  className="w-96 p-0 -translate-y-20 -translate-x-30"
+                  align="end"
+                  side="right"
+                  sideOffset={8}
+                  onInteractOutside={(e) => e.preventDefault()}
+                  onEscapeKeyDown={(e) => e.preventDefault()}
+                >
+                  <HintDisplay
+                    hints={hintsData}
+                    isLoading={hintsHookLoading}
+                    onSelectHint={handleSelectHint}
+                    onClose={() => setIsPopoverOpen(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+
             {/* Always show the send/stop button, just disable as needed */}
             <motion.div
               layout
@@ -326,17 +408,6 @@ export default function AttemptInput({
 
         {/* Removed "Time's up!" message - allow users to continue with negative timer */}
       </CardFooter>
-
-      {/* Hint Display Modal - Always visible for practice simulations */}
-      {simulationContext?.simulation?.practiceSimulation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <HintDisplay
-            hints={hintsData}
-            isLoading={hintsHookLoading}
-            onSelectHint={handleSelectHint}
-          />
-        </div>
-      )}
     </TooltipProvider>
   );
 }

@@ -1,18 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface HintDisplayProps {
   hints: Array<{ id: string; hint: string }>;
   isLoading?: boolean;
   onSelectHint: (hint: string) => void;
+  onClose?: () => void;
 }
 
 export default function HintDisplay({
   hints,
   isLoading = false,
   onSelectHint,
+  onClose,
 }: HintDisplayProps) {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -22,9 +24,21 @@ export default function HintDisplay({
   return (
     <Card className="w-full max-w-md mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          GTA Suggestions
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        <CardTitle className="text-lg font-semibold flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            Hints
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -66,7 +80,7 @@ export default function HintDisplay({
           ))
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
-            Send a message to get GTA response suggestions
+            Send a message to get hints
           </p>
         )}
       </CardContent>

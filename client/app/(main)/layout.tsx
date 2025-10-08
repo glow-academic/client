@@ -423,6 +423,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const isReportPage = useMemo(() => {
     return pathname.startsWith("/analytics/reports/p");
   }, [pathname]);
+  
+  const isSystemPage = useMemo(() => {
+    return pathname.startsWith("/system");
+  }, [pathname]);
+
+  const isChatPage = useMemo(() => {
+    return pathname.startsWith("/practice/a") || pathname.startsWith("/home/a");
+  }, [pathname]);
 
   const canShowAnalyticsFilters = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
@@ -443,9 +451,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   const canShowDepartmentsFilters = useMemo(() => {
     return (
-      effectiveProfile?.role === "superadmin" && !pathname.startsWith("/system")
+      effectiveProfile?.role === "superadmin" && !isSystemPage && !isChatPage
     );
-  }, [effectiveProfile?.role, pathname]);
+  }, [effectiveProfile?.role, isSystemPage, isChatPage]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 

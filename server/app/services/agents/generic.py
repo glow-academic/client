@@ -74,6 +74,16 @@ class GenericAgent:
 
         base_url = self.base_url if self.custom_model else None
 
+        self.model_settings = ModelSettings(
+            temperature=self.temperature,
+            include_usage=True,
+            reasoning=self.reasoning,
+            extra_body=self.extra_body,
+        )
+
+        if len(self.tools) > 0:
+            self.model_settings.parallel_tool_calls = self.parallel_tool_calls
+
         # Create agent with basic parameters
         agent_instance = Agent[DebugContext](
             name=f"{self.agent_name} Agent",
@@ -83,13 +93,7 @@ class GenericAgent:
                 api_key=self.api_key,
                 base_url=base_url
             ),
-            model_settings=ModelSettings(
-                temperature=self.temperature,
-                include_usage=True,
-                reasoning=self.reasoning,
-                extra_body=self.extra_body,
-                parallel_tool_calls=self.parallel_tool_calls,
-            ),
+            model_settings=self.model_settings,
             mcp_servers=self.mcp_servers,
             tools=self.tools,
             output_guardrails=self.output_guardrails,

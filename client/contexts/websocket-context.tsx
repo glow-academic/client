@@ -497,20 +497,12 @@ export function WebSocketProvider({
           hints_count?: number;
           error?: string;
         }) => {
-          console.log("🔮 Hint generation progress:", data);
-
-          // You can add more sophisticated handling here later
-          if (data.type === "complete") {
-            console.log(
-              `✅ Generated ${data.hints_count} hints for message ${data.message_id}`
-            );
-          } else if (data.type === "error") {
-            console.error(`❌ Hint generation error: ${data.error}`);
-          } else if (data.type === "start") {
-            console.log(
-              `🚀 Starting hint generation for message ${data.message_id}`
-            );
-          }
+          // Dispatch DOM event for components to listen to
+          window.dispatchEvent(
+            new CustomEvent("hint_generation_progress", {
+              detail: data,
+            })
+          );
         }
       );
 
@@ -1251,7 +1243,12 @@ export function WebSocketProvider({
   );
 
   const emitSendSimulationMessage = useCallback(
-    (data: { chat_id: string; message: string; isRetry?: boolean; department_id: string }) => {
+    (data: {
+      chat_id: string;
+      message: string;
+      isRetry?: boolean;
+      department_id: string;
+    }) => {
       if (!socketRef.current || !isConnected) {
         log.error("ws.simulation.send.skip_not_connected", {
           context: { function: "emitSendSimulationMessage" },
@@ -1261,7 +1258,11 @@ export function WebSocketProvider({
 
       setIsSendingSimulationMessage(true);
       log.debug("ws.emit.send_simulation_message", {
-        context: { chatId: data.chat_id, isRetry: data.isRetry, departmentId: data.department_id },
+        context: {
+          chatId: data.chat_id,
+          isRetry: data.isRetry,
+          departmentId: data.department_id,
+        },
       });
       socketRef.current.emit("send_simulation_message", data);
     },
