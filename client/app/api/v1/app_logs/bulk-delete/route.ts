@@ -11,7 +11,7 @@ export async function DELETE(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = BulkDeleteBody.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   return handle(
     () => appLogRepo.removeMany(parsed.data.ids),

@@ -1120,7 +1120,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = ${typeName}CreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as ${typeName}Create;
   return handle(
@@ -1173,7 +1173,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const json = await req.json().catch(() => ({}));
   const parsed = ${typeName}UpdateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const patch = parsed.data as unknown as ${typeName}Update;
   return handle(
@@ -1312,7 +1312,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = Body.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   return handle(
     () => ${singularName}Repo.listBy${relTypeName}s(parsed.data.ids),

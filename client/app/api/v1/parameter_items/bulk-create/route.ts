@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = BulkCreateBody.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   return handle(
     () => parameterItemRepo.createMany(parsed.data.items),
@@ -24,6 +24,6 @@ export async function POST(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { count: parsed.data.items.length },
         error: e,
-      }),
+      })
   );
 }

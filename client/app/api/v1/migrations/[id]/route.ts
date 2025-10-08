@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { migrationRepo, MigrationUpdateSchema } from "@/lib/repos/migrationRepo";
 import type { MigrationUpdate } from "@/lib/repos/migrationRepo";
+import {
+  migrationRepo,
+  MigrationUpdateSchema,
+} from "@/lib/repos/migrationRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   return handle(
     () => migrationRepo.find(+id),
@@ -16,12 +22,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = MigrationUpdateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const patch = parsed.data as unknown as MigrationUpdate;
   return handle(
@@ -36,10 +45,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   return handle(
-    async () => { await migrationRepo.remove(+id); return {}; },
+    async () => {
+      await migrationRepo.remove(+id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.migrations.delete.failed", {
         message: "Failed to delete migration",

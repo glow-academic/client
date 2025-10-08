@@ -1,9 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import {
-  simulationCrowdsourcedMessageRepo,
-  SimulationCrowdsourcedMessageCreateSchema,
-} from "@/lib/repos/simulationCrowdsourcedMessageRepo";
 import type { SimulationCrowdsourcedMessageCreate } from "@/lib/repos/simulationCrowdsourcedMessageRepo";
+import {
+  SimulationCrowdsourcedMessageCreateSchema,
+  simulationCrowdsourcedMessageRepo,
+} from "@/lib/repos/simulationCrowdsourcedMessageRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_crowdsourced_messages",
         subject: { entityType: "simulation_crowdsourced_messages" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = SimulationCrowdsourcedMessageCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as SimulationCrowdsourcedMessageCreate;
   return handle(
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_crowdsourced_messages" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

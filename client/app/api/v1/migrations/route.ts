@@ -1,6 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import { migrationRepo, MigrationCreateSchema } from "@/lib/repos/migrationRepo";
 import type { MigrationCreate } from "@/lib/repos/migrationRepo";
+import {
+  MigrationCreateSchema,
+  migrationRepo,
+} from "@/lib/repos/migrationRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -19,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = MigrationCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as MigrationCreate;
   return handle(

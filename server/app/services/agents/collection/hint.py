@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import Any, List
 
-from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
+from agents import Runner, Tool, ToolsToFinalOutputResult, function_tool, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.models import (Agents, ModelRuns, Models, Providers, Scenarios,
@@ -45,37 +45,43 @@ async def _emit_hint_progress(event_data: dict[str, Any]) -> None:
             logger.warning(f"Failed to emit hint progress: {e}")
 
 
-def create_hint_function(hint_number: int) -> Any:
+def create_hint_function(hint_number: int) -> Tool:
     """Create a function tool for providing a specific hint."""
     
     async def provide_hint(
         hint: str = Field(
-            description=f"Hint {hint_number}: A concise, practical teaching strategy or communication tip for the GTA"
+            description=(
+                f"A concise, practical teaching strategy or communication tip for the GTA. "
+                f"This is hint #{hint_number} of 3 required hints. "
+                f"Make it distinct from the other hints and focused on a different aspect "
+                f"of helping the student (e.g., content explanation, emotional support, pedagogical approach)."
+            )
         )
     ) -> str:
-        f"""Provide hint #{hint_number} for the GTA.
+        """Provide a strategic hint for the GTA.
         
         This hint should help the GTA better address the student's needs or communication style.
         Focus on teaching strategies, clarification techniques, empathy, or encouragement.
+        Each hint should cover a different aspect of the interaction.
         
         Args:
-            hint: Practical, actionable hint for the GTA
+            hint: Practical, actionable hint for the GTA (distinct from other hints)
             
         Returns:
-            Confirmation message
+            Confirmation message indicating the hint was recorded
         """
         hint_results[f"hint_{hint_number}"] = hint
         hint_progress[f"hint_{hint_number}"] = True
         
         logger.info(f"✓ Hint {hint_number} recorded: {hint[:80]}...")
-        return f"Hint {hint_number} recorded successfully"
+        return f"Hint {hint_number} recorded successfully. Continue until all 3 hints are provided."
     
     # Set unique function name
     provide_hint.__name__ = f"provide_hint_{hint_number}"
     return function_tool(provide_hint)
 
 
-def create_hint_tools() -> list[Any]:
+def create_hint_tools() -> list[Tool]:
     """Create all tools needed for hint generation."""
     tools = []
     
@@ -131,8 +137,11 @@ def _build_hint_agent(session: Session, department_id: uuid.UUID) -> tuple[Gener
         logger.info(
             f"Tool use behavior check: hint_1={hint_1_complete}, "
             f"hint_2={hint_2_complete}, hint_3={hint_3_complete}, "
-            f"all_complete={all_hints_complete}"
+            f"all_complete={all_hints_complete}, "
+            f"tool_results_count={len(tool_results)}"
         )
+        
+        # Return False to continue until all 3 hints are provided
         return ToolsToFinalOutputResult(is_final_output=all_hints_complete)
 
     return GenericAgent(

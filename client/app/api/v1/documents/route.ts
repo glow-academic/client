@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api/route-factory";
-import { documentRepo, DocumentCreateSchema } from "@/lib/repos/documentRepo";
 import type { DocumentCreate } from "@/lib/repos/documentRepo";
+import { DocumentCreateSchema, documentRepo } from "@/lib/repos/documentRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list documents",
         subject: { entityType: "documents" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = DocumentCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as DocumentCreate;
   return handle(
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "documents" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

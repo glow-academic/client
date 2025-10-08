@@ -1,9 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import {
-  parameterItemRepo,
-  ParameterItemCreateSchema,
-} from "@/lib/repos/parameterItemRepo";
 import type { ParameterItemCreate } from "@/lib/repos/parameterItemRepo";
+import {
+  ParameterItemCreateSchema,
+  parameterItemRepo,
+} from "@/lib/repos/parameterItemRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list parameter_items",
         subject: { entityType: "parameter_items" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = ParameterItemCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as ParameterItemCreate;
   return handle(
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

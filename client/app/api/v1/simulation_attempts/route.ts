@@ -1,9 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import {
-  simulationAttemptRepo,
-  SimulationAttemptCreateSchema,
-} from "@/lib/repos/simulationAttemptRepo";
 import type { SimulationAttemptCreate } from "@/lib/repos/simulationAttemptRepo";
+import {
+  SimulationAttemptCreateSchema,
+  simulationAttemptRepo,
+} from "@/lib/repos/simulationAttemptRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_attempts",
         subject: { entityType: "simulation_attempts" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = SimulationAttemptCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as SimulationAttemptCreate;
   return handle(
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_attempts" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

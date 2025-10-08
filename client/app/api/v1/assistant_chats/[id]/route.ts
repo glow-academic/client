@@ -1,14 +1,14 @@
 import { handle } from "@/lib/api/route-factory";
+import type { AssistantChatUpdate } from "@/lib/repos/assistantChatRepo";
 import {
   assistantChatRepo,
   AssistantChatUpdateSchema,
 } from "@/lib/repos/assistantChatRepo";
-import type { AssistantChatUpdate } from "@/lib/repos/assistantChatRepo";
 import { log } from "@/utils/logger";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   return handle(
@@ -18,19 +18,19 @@ export async function GET(
         message: "Failed to fetch assistantChat",
         subject: { entityType: "assistant_chats", entityId: String(id) },
         error: e,
-      }),
+      })
   );
 }
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = AssistantChatUpdateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const patch = parsed.data as unknown as AssistantChatUpdate;
   return handle(
@@ -41,13 +41,13 @@ export async function PATCH(
         subject: { entityType: "assistant_chats", entityId: String(id) },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   return handle(
@@ -60,6 +60,6 @@ export async function DELETE(
         message: "Failed to delete assistantChat",
         subject: { entityType: "assistant_chats", entityId: String(id) },
         error: e,
-      }),
+      })
   );
 }

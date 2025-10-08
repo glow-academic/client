@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api/route-factory";
-import { cohortRepo, CohortCreateSchema } from "@/lib/repos/cohortRepo";
 import type { CohortCreate } from "@/lib/repos/cohortRepo";
+import { CohortCreateSchema, cohortRepo } from "@/lib/repos/cohortRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list cohorts",
         subject: { entityType: "cohorts" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = CohortCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as CohortCreate;
   return handle(
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "cohorts" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

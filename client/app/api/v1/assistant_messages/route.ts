@@ -1,9 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import {
-  assistantMessageRepo,
-  AssistantMessageCreateSchema,
-} from "@/lib/repos/assistantMessageRepo";
 import type { AssistantMessageCreate } from "@/lib/repos/assistantMessageRepo";
+import {
+  AssistantMessageCreateSchema,
+  assistantMessageRepo,
+} from "@/lib/repos/assistantMessageRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list assistant_messages",
         subject: { entityType: "assistant_messages" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = AssistantMessageCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as AssistantMessageCreate;
   return handle(
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "assistant_messages" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

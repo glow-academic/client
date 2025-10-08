@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api/route-factory";
-import { modelRepo, ModelCreateSchema } from "@/lib/repos/modelRepo";
 import type { ModelCreate } from "@/lib/repos/modelRepo";
+import { ModelCreateSchema, modelRepo } from "@/lib/repos/modelRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list models",
         subject: { entityType: "models" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = ModelCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as ModelCreate;
   return handle(
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "models" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

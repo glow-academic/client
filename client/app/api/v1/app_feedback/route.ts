@@ -1,9 +1,9 @@
 import { handle } from "@/lib/api/route-factory";
-import {
-  appFeedbackRepo,
-  AppFeedbackCreateSchema,
-} from "@/lib/repos/appFeedbackRepo";
 import type { AppFeedbackCreate } from "@/lib/repos/appFeedbackRepo";
+import {
+  AppFeedbackCreateSchema,
+  appFeedbackRepo,
+} from "@/lib/repos/appFeedbackRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list app_feedback",
         subject: { entityType: "app_feedback" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = AppFeedbackCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as AppFeedbackCreate;
   return handle(
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_feedback" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

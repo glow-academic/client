@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api/route-factory";
-import { appLogRepo, AppLogCreateSchema } from "@/lib/repos/appLogRepo";
 import type { AppLogCreate } from "@/lib/repos/appLogRepo";
+import { AppLogCreateSchema, appLogRepo } from "@/lib/repos/appLogRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list app_logs",
         subject: { entityType: "app_logs" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = AppLogCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as AppLogCreate;
   return handle(
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_logs" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

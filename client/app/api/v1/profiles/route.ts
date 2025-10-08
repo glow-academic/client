@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api/route-factory";
-import { profileRepo, ProfileCreateSchema } from "@/lib/repos/profileRepo";
 import type { ProfileCreate } from "@/lib/repos/profileRepo";
+import { ProfileCreateSchema, profileRepo } from "@/lib/repos/profileRepo";
 import { log } from "@/utils/logger";
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list profiles",
         subject: { entityType: "profiles" },
         error: e,
-      }),
+      })
   );
 }
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = ProfileCreateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const payload = parsed.data as unknown as ProfileCreate;
   return handle(
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "profiles" },
         context: { body: json },
         error: e,
-      }),
+      })
   );
 }

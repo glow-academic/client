@@ -24,7 +24,7 @@ const Body = z.object({
         defaultProfile: z.boolean().optional(),
         viewedIntro: z.boolean().optional(),
         viewedChat: z.boolean().optional(),
-      }),
+      })
     )
     .min(1),
 });
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = Body.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   return handle(
     () => profileRepo.createMany(parsed.data.profiles as ProfileCreate[]),
@@ -43,6 +43,6 @@ export async function POST(req: Request) {
         subject: { entityType: "profiles" },
         context: { count: parsed.data.profiles.length },
         error: e,
-      }),
+      })
   );
 }

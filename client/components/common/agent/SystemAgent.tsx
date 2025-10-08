@@ -75,8 +75,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId!);
   const { data: models, isLoading: isModelsLoading } = useModels();
 
-  const { mutate: createAgent } = useCreateAgent();
-  const { mutate: updateAgent } = useUpdateAgent();
+  const { mutateAsync: createAgent } = useCreateAgent();
+  const { mutateAsync: updateAgent } = useUpdateAgent();
 
   const isLoading = isLoadingAgent || isModelsLoading;
 
@@ -153,7 +153,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       return;
     }
 
-    if (!formData?.modelId || formData.modelId === "") {
+    if (!formData?.modelId || formData.modelId.trim().length === 0) {
       setErrors((prev) => ({
         ...prev,
         modelId: "Model selection is required",
@@ -164,7 +164,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     setIsSubmitting(true);
 
     try {
-      let result;
       if (isEditMode && agentId && agent) {
         // Update existing agent
         await updateAgent({
@@ -173,52 +172,45 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
           description: formData.description,
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
-          modelId: formData.modelId,
+          modelId:
+            formData.modelId && formData.modelId !== ""
+              ? formData.modelId
+              : undefined,
           reasoning:
-            formData.reasoning === "none" || !formData.reasoning
-              ? null
-              : formData.reasoning,
-          updatedAt: new Date().toISOString(),
+            formData.reasoning && formData.reasoning !== "none"
+              ? formData.reasoning
+              : undefined,
         });
-        result = true;
       } else {
         // Create new agent
-        result = await createAgent({
+        await createAgent({
           name: formData.name!,
           description: formData.description!,
           systemPrompt: formData.systemPrompt!,
           temperature: Number(formData.temperature),
           modelId: formData.modelId!,
           reasoning:
-            formData.reasoning === "none" || !formData.reasoning
-              ? null
-              : formData.reasoning,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+            formData.reasoning && formData.reasoning !== "none"
+              ? formData.reasoning
+              : undefined,
         });
       }
 
-      if (!result) {
-        toast.error(`Failed to ${isEditMode ? "update" : "create"} agent`);
-        return;
-      }
-
-      resetFormAndState();
       toast.success(
         isEditMode
           ? "Agent updated successfully!"
           : "Agent created successfully!"
       );
+      resetFormAndState();
       router.push("/system/agents");
     } catch (error) {
-      const message = `Error ${isEditMode ? "updating" : "creating"} agent:`;
+      const msg = error instanceof Error ? error.message : "Unknown error";
       log.error("agent.save.failed", {
-        message,
         error,
         context: { component: "SystemAgent", isEditMode, agentId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
       );
     } finally {
       setIsSubmitting(false);

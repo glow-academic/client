@@ -1,9 +1,15 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationHintRepo, SimulationHintUpdateSchema } from "@/lib/repos/simulationHintRepo";
 import type { SimulationHintUpdate } from "@/lib/repos/simulationHintRepo";
+import {
+  simulationHintRepo,
+  SimulationHintUpdateSchema,
+} from "@/lib/repos/simulationHintRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   return handle(
     () => simulationHintRepo.find(id),
@@ -16,12 +22,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   );
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const json = await req.json().catch(() => ({}));
   const parsed = SimulationHintUpdateSchema.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   const patch = parsed.data as unknown as SimulationHintUpdate;
   return handle(
@@ -36,10 +45,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   );
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   return handle(
-    async () => { await simulationHintRepo.remove(id); return {}; },
+    async () => {
+      await simulationHintRepo.remove(id);
+      return {};
+    },
     (e: unknown) =>
       log.error("api.simulation_hints.delete.failed", {
         message: "Failed to delete simulationHint",

@@ -15,7 +15,7 @@ export async function PATCH(req: Request) {
   const json = await req.json().catch(() => ({}));
   const parsed = BulkUpdateBody.safeParse(json);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.message }, { status: 400 });
   }
 
   const updates = parsed.data.updates as Array<
@@ -30,6 +30,6 @@ export async function PATCH(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { count: updates.length },
         error: e,
-      }),
+      })
   );
 }
