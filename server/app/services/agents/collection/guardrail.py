@@ -64,11 +64,31 @@ def create_guardrail_tools() -> list[Any]:
     return tools
 
 
-def _build_guardrail_agent(session: Session, agent_name: str) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
-    """Create the internal agent that powers the guardrail from DB-configured Agent named 'Guardrail'."""
-    agent_row = session.exec(select(Agents).where(Agents.name == "Guardrail")).one()
+def _build_guardrail_agent(session: Session, department_id: uuid.UUID, guardrail_type: str) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
+    """Create the internal agent that powers the guardrail from the department's configured guardrail agent.
+    
+    Args:
+        session: Database session
+        department_id: Department ID to get the guardrail agent from
+        guardrail_type: Either "input" or "output" to determine which guardrail agent to use
+    """
+    # Get department to access guardrail agent IDs
+    from app.models import Departments
+    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+    if not department:
+        raise ValueError(f"Department with ID {department_id} not found")
+    
+    # Get the appropriate guardrail agent based on type
+    if guardrail_type == "input":
+        agent_id = department.input_guardrail_agent_id
+    elif guardrail_type == "output":
+        agent_id = department.output_guardrail_agent_id
+    else:
+        raise ValueError(f"Invalid guardrail_type: {guardrail_type}. Must be 'input' or 'output'")
+    
+    agent_row = session.exec(select(Agents).where(Agents.id == agent_id)).one()
     if not agent_row:
-        raise ValueError("Guardrail agent not found")
+        raise ValueError(f"{guardrail_type.capitalize()} guardrail agent with ID {agent_id} not found")
 
     model = session.exec(select(Models).where(Models.id == agent_row.model_id)).one()
     if not model:
@@ -93,7 +113,7 @@ def _build_guardrail_agent(session: Session, agent_name: str) -> tuple[GenericAg
         return ToolsToFinalOutputResult(is_final_output=evaluation_complete)
 
     return GenericAgent(
-        agent_name=agent_name,
+        agent_name=agent_row.name,
         system_prompt=agent_row.system_prompt,
         temperature=agent_row.temperature,
         model_name=model.name,
@@ -122,7 +142,7 @@ def get_input_guardrails(
         guardrail_results.clear()
         guardrail_progress.clear()
         
-        guardrail_agent, agent_id, model_id = _build_guardrail_agent(session, "Input Guardrail")
+        guardrail_agent, agent_id, model_id = _build_guardrail_agent(session, department_id, "input")
         
         db_session = next(get_session())
         try:
@@ -226,7 +246,7 @@ def get_output_guardrails(
         guardrail_results.clear()
         guardrail_progress.clear()
         
-        guardrail_agent, agent_id, model_id = _build_guardrail_agent(session, "Output Guardrail")
+        guardrail_agent, agent_id, model_id = _build_guardrail_agent(session, department_id, "output")
         
         db_session = next(get_session())
         try:

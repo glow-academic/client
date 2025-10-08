@@ -209,10 +209,16 @@ async def run_scenario_agent(
         else:
             parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
 
-        # find agent with name of "Scenario"
-        scenario_agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
+        # Get department to access scenario_agent_id
+        from app.models import Departments
+        department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+        if not department:
+            raise ValueError(f"Department with ID {department_id} not found")
+        
+        # Get the scenario agent configured for this department
+        scenario_agent = session.exec(select(Agents).where(Agents.id == department.scenario_agent_id)).one()
         if not scenario_agent:
-            raise ValueError("Scenario agent not found")
+            raise ValueError(f"Scenario agent with ID {department.scenario_agent_id} not found")
 
         # getting the model from the agent's model_id
         model = session.exec(

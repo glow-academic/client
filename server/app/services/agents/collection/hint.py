@@ -90,12 +90,19 @@ def create_hint_tools() -> list[Any]:
     return tools
 
 
-def _build_hint_agent(session: Session) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
-    """Create the hint generation agent from DB-configured Agent named 'Hint'."""
+def _build_hint_agent(session: Session, department_id: uuid.UUID) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
+    """Create the hint generation agent from the department's configured hint agent."""
     
-    agent_row = session.exec(select(Agents).where(Agents.name == "Hint")).one()
+    # Get department to access hint_agent_id
+    from app.models import Departments
+    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+    if not department:
+        raise ValueError(f"Department with ID {department_id} not found")
+    
+    # Get the hint agent configured for this department
+    agent_row = session.exec(select(Agents).where(Agents.id == department.hint_agent_id)).one()
     if not agent_row:
-        raise ValueError("Hint agent not found")
+        raise ValueError(f"Hint agent with ID {department.hint_agent_id} not found")
 
     model = session.exec(select(Models).where(Models.id == agent_row.model_id)).one()
     if not model:
@@ -244,7 +251,7 @@ async def run_hint_agent(
             raise ValueError(error_message)
         
         # Build hint agent
-        hint_agent, agent_id, model_id = _build_hint_agent(session)
+        hint_agent, agent_id, model_id = _build_hint_agent(session, department_id)
         
         # Create model run
         model_run = ModelRuns(

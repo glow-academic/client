@@ -181,6 +181,7 @@ def create_grading_tools(
 
 async def run_grade_agent(
     simulation_chat_id: uuid.UUID, 
+    department_id: uuid.UUID,
     session: Session = Depends(get_session),
     sio_instance: Any = None
 ) -> str:
@@ -203,10 +204,16 @@ async def run_grade_agent(
         grading_progress.clear()
         _grading_sio_instance = sio_instance
         _grading_chat_id = simulation_chat_id
-        # find agent with name of "Grade"
-        agent = session.exec(select(Agents).where(Agents.name == "Grade")).one()
+        # Get department to access grade_agent_id
+        from app.models import Departments
+        department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+        if not department:
+            raise ValueError(f"Department with ID {department_id} not found")
+        
+        # Get the grade agent configured for this department
+        agent = session.exec(select(Agents).where(Agents.id == department.grade_agent_id)).one()
         if not agent:
-            raise ValueError("Grade agent not found")
+            raise ValueError(f"Grade agent with ID {department.grade_agent_id} not found")
 
         # get the chat from the simulation_chat_id
         chat = session.exec(

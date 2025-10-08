@@ -106,10 +106,16 @@ async def run_classify_agent(
     for category in DEFAULT_CATEGORIES:
         classification_results[category] = []
 
-    # find agent with name of "Classify"
-    agent = session.exec(select(Agents).where(Agents.name == "Classify")).one()
+    # Get department to access classify_agent_id
+    from app.models import Departments
+    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+    if not department:
+        raise ValueError(f"Department with ID {department_id} not found")
+    
+    # Get the classify agent configured for this department
+    agent = session.exec(select(Agents).where(Agents.id == department.classify_agent_id)).one()
     if not agent:
-        raise ValueError("Classify agent not found")
+        raise ValueError(f"Classify agent with ID {department.classify_agent_id} not found")
 
     # get all the documents for the class that haven't been classified yet
     # Note: Since there's no 'classified' field in the model, we'll classify all documents

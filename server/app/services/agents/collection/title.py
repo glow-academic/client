@@ -19,10 +19,16 @@ async def run_title_agent(
     Returns a string of the simulation_chat_title id.
     """
 
-    # find agent with name of "Title"
-    agent = session.exec(select(Agents).where(Agents.name == "Title")).one()
+    # Get department to access title_agent_id
+    from app.models import Departments
+    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
+    if not department:
+        raise ValueError(f"Department with ID {department_id} not found")
+    
+    # Get the title agent configured for this department
+    agent = session.exec(select(Agents).where(Agents.id == department.title_agent_id)).one()
     if not agent:
-        raise ValueError("Title agent not found")
+        raise ValueError(f"Title agent with ID {department.title_agent_id} not found")
 
     # find chat with id
     chat = session.exec(
