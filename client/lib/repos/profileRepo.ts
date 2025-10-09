@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
@@ -83,7 +83,12 @@ export const profileRepo = {
     return db
       .select()
       .from(profiles)
-      .where(eq(profiles.departmentId, departmentId));
+      .where(
+        or(
+          eq(profiles.departmentId, departmentId),
+          and(isNull(profiles.departmentId), eq(profiles.role, "superadmin"))
+        )
+      );
   },
 
   async listByDepartments(departmentIds: string[]) {
@@ -92,7 +97,12 @@ export const profileRepo = {
     return db
       .select()
       .from(profiles)
-      .where(inArray(profiles.departmentId, departmentIds));
+      .where(
+        or(
+          inArray(profiles.departmentId, departmentIds),
+          and(isNull(profiles.departmentId), eq(profiles.role, "superadmin"))
+        )
+      );
   },
 
   async createMany(payloads: ProfileCreate[]) {
@@ -106,7 +116,7 @@ export const profileRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       profiles,
       updates,
-      "Profile",
+      "Profile"
     );
   },
 
