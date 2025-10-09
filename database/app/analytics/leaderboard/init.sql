@@ -34,7 +34,8 @@ roster AS (
   WHERE
     (cardinality(params.roles) = 0 OR p.role = ANY(params.roles)) AND
     (cardinality(params.cohort_ids) = 0 OR p.id = ANY(c.profile_ids)) AND
-    (p_profile_id IS NULL OR p.id = p_profile_id)
+    (p_profile_id IS NULL OR p.id = p_profile_id) AND
+    (cardinality(p_department_ids) = 0 OR p.department_id = ANY(p_department_ids))
 ),
 profiles_set AS (
   SELECT DISTINCT profile_id AS pid FROM roster

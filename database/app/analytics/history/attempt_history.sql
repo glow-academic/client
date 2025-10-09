@@ -157,7 +157,8 @@ attempt_rollup AS (
     MAX(a.sim_scenario_count) AS sim_scenario_count,
     SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
     array_agg(DISTINCT a.persona_id)      FILTER (WHERE a.persona_id      IS NOT NULL) AS persona_ids_distinct,
-    array_agg(DISTINCT a.leaf_scenario_id)FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen
+    array_agg(DISTINCT a.leaf_scenario_id)FILTER (WHERE a.leaf_scenario_id IS NOT NULL) AS leaf_scenarios_seen,
+    MIN(a.department_id::text)::uuid AS department_id
   FROM cohort_scoped a
   GROUP BY a.attempt_id, a.simulation_id
 ),
@@ -201,6 +202,7 @@ final_rows AS (
     aj.infinite_mode,
     aj.infinite_mode_time_limit,
     aj.attempt_date,
+    aj.department_id,
     CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
     COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
     CASE
@@ -291,7 +293,8 @@ SELECT COALESCE(
       'showView',              fr.show_view,
       'showContinue',          fr.show_continue,
       'practiceSimulation',    COALESCE(fr.practice_simulation, false),
-      'passPct',               fr.pass_pct
+      'passPct',               fr.pass_pct,
+      'department_id',         fr.department_id::text
     )
     ORDER BY fr.attempt_date DESC, fr.attempt_id
   ),

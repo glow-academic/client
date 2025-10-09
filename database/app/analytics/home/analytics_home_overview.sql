@@ -29,6 +29,7 @@ sim_meta AS (
             OR  ('archived'  = ANY (p_sim_filters))) END AS sim_kind_ok
   FROM simulations s
   JOIN rubrics r ON r.id = s.rubric_id
+  WHERE (cardinality(p_department_ids) = 0 OR s.department_id = ANY(p_department_ids))
 ),
 -- ---------------- Pick a representative persona color/icon for a sim (from its scenarios)
 sim_persona_meta AS (
@@ -144,6 +145,7 @@ cohort_sim AS (
   FROM cohorts c
   JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
   WHERE (p_cohort_ids IS NULL OR c.id = ANY(p_cohort_ids))
+    AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))
 ),
 
 -- ---------------- Simulation display order from cohort arrays
@@ -171,6 +173,7 @@ ta_primary_cohort AS (
   JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
   WHERE p_profile_id = ANY (c.profile_ids)
     AND (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
+    AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))
 ),
 
 -- ---------------- Cohort membership exploded & filtered by cohorts/roles
@@ -186,6 +189,7 @@ cohort_membership AS (
   LEFT JOIN profiles pr ON pr.id = pids.profile_id
   WHERE (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
     AND (p_roles      IS NULL OR pr.role = ANY (p_roles))
+    AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))
 ),
 
 /* ========================== TA VIEW ========================== */

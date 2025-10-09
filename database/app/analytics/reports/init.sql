@@ -31,7 +31,8 @@ roster AS (
   WHERE
     (cardinality(params.roles) = 0 OR p.role = ANY(params.roles)) AND
     (cardinality(params.cohort_ids) = 0 OR p.id = ANY(c.profile_ids)) AND
-    (p_profile_id IS NULL OR p.id = p_profile_id)
+    (p_profile_id IS NULL OR p.id = p_profile_id) AND
+    (cardinality(p_department_ids) = 0 OR p.department_id = ANY(p_department_ids))
 ),
 profiles_set AS (
   SELECT DISTINCT profile_id AS pid FROM roster
@@ -312,6 +313,7 @@ SELECT jsonb_build_object(
                 AND a.chat_created_at >= pr.start_at
                 AND a.chat_created_at < pr.end_at
                 AND a.chat_created_at IS NOT NULL
+                AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
             ),
             stats2 AS (
               SELECT

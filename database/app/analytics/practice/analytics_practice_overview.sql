@@ -28,6 +28,7 @@ sim_meta AS (
   JOIN rubrics r ON r.id = s.rubric_id
   WHERE s.active = TRUE
     AND s.practice_simulation = TRUE
+    AND (cardinality(p_department_ids) = 0 OR s.department_id = ANY(p_department_ids))
 ),
 
 -- 2) Persona color/icon
@@ -45,6 +46,7 @@ sim_persona_meta AS (
     LEFT JOIN LATERAL unnest(s.scenario_ids) AS sid(scenario_id) ON TRUE
     LEFT JOIN scenarios sc ON sc.id = sid.scenario_id
     WHERE s.practice_simulation = TRUE
+      AND (cardinality(p_department_ids) = 0 OR s.department_id = ANY(p_department_ids))
     GROUP BY s.id, sc.persona_id
   ) sm
   LEFT JOIN personas p ON p.id = sm.persona_id
@@ -102,7 +104,9 @@ sim_pass_pct AS (
               ELSE 70 END AS pass_pct
   FROM simulations s
   JOIN rubrics r ON r.id = s.rubric_id
-  WHERE s.practice_simulation = TRUE AND s.active = TRUE
+  WHERE s.practice_simulation = TRUE 
+    AND s.active = TRUE
+    AND (cardinality(p_department_ids) = 0 OR s.department_id = ANY(p_department_ids))
 ),
 
 -- 8) Final items
