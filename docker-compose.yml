@@ -230,6 +230,7 @@ services:
   # --------------------
   nginx:
     image: nginx:1.25
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
     env_file:
       - .env
     volumes:
@@ -246,7 +247,7 @@ services:
 
   docker-gen:
     image: jwilder/docker-gen:0.7.6
-    container_name: glow-docker-gen
+    container_name: ${COMPOSE_PROJECT_NAME}-docker-gen
     restart: unless-stopped
     environment:
     - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
@@ -255,7 +256,7 @@ services:
       - ./web/templates:/etc/docker-gen/templates:ro
       - ./web/generated:/etc/nginx/conf.d/generated:rw
     command: >
-      -notify-sighup glow-nginx
+      -notify-sighup ${COMPOSE_PROJECT_NAME}-nginx
       -watch
       /etc/docker-gen/templates/api_socketio.upstream.tmpl
       /etc/nginx/conf.d/generated/api_socketio.upstream.conf
