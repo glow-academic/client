@@ -152,11 +152,30 @@ else
   # Copy the main initialization script for fresh database
   log_info "📋 Setting up main database schema..."
   if [ -f "/docker-entrypoint-initdb.d/app/init.sql" ]; then
-    # Create a Docker-specific version with correct paths
-    log_info "🔄 Generating Docker-specific init.sql with container paths..."
+    # Transform all relative paths to absolute paths for Docker context
+    # This handles both top-level includes and nested includes within subdirectories
+    log_info "🔄 Generating Docker-specific init.sql with absolute paths..."
+    
+    # First transform top-level app/init.sql
     sed -e 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
         -e 's|\\i seed/|\\i /docker-entrypoint-initdb.d/seed/|g' \
       /docker-entrypoint-initdb.d/app/init.sql > /docker-entrypoint-initdb.d/10-main-init.sql
+    
+    # Then transform all nested SQL files that contain \i directives
+    find /docker-entrypoint-initdb.d/app -name "*.sql" -type f | while read -r sqlfile; do
+      # Skip if already processed
+      if [ "$sqlfile" = "/docker-entrypoint-initdb.d/app/init.sql" ]; then
+        continue
+      fi
+      
+      # Transform paths in-place for nested files
+      sed -i.bak \
+        -e 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
+        -e 's|\\i seed/|\\i /docker-entrypoint-initdb.d/seed/|g' \
+        "$sqlfile"
+      rm -f "${sqlfile}.bak"
+    done
+    
     log_success "✅ Docker-specific initialization script prepared"
   else
     log_warning "⚠️  Main init.sql not found"
