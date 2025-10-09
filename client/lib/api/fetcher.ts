@@ -9,15 +9,22 @@ export class ApiError extends Error {
 
 export async function api<T>(
   input: RequestInfo,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<T> {
+  // Prepend the basePath prefix to relative URLs
+  const prefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+  const url =
+    typeof input === "string" && input.startsWith("/")
+      ? `${prefix}${input}`
+      : input;
+
   // Don't set Content-Type header for FormData - browser will set it automatically
   const headers =
     init?.body instanceof FormData
       ? init?.headers || {}
       : { "Content-Type": "application/json", ...(init?.headers || {}) };
 
-  const res = await fetch(input, {
+  const res = await fetch(url, {
     ...init,
     headers,
   });
