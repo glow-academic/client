@@ -16,6 +16,7 @@ export interface DataTableRowActionsProps {
   id: string;
   profileId: string;
   simulationId?: string;
+  departmentId?: string;
   scenarios: Array<{ completed: boolean }>;
   interactionIds: string[];
   isPractice?: boolean;
@@ -32,6 +33,7 @@ export function DataTableRowActions({
   id,
   profileId,
   simulationId,
+  departmentId,
   scenarios: _scenarios,
   interactionIds: _interactionIds,
   isPractice = false,
@@ -103,7 +105,7 @@ export function DataTableRowActions({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (disabledForEmulation || !isConnected) return;
+                if (disabledForEmulation || !isConnected || !departmentId) return;
                 setIsRetrying(true);
                 try {
                   const profileIdForEmit =
@@ -114,6 +116,7 @@ export function DataTableRowActions({
                     simulation_id: String(simulationId),
                     profile_id: profileIdForEmit,
                     scenario_id: null, // optional: pick first scenario id if you want
+                    department_id: departmentId,
                   });
                 } finally {
                   setTimeout(() => setIsRetrying(false), 2000);

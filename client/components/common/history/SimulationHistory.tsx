@@ -35,6 +35,7 @@ export interface HistoryDataItem {
   personaColors: string[];
   score: number | null; // nullable
   simulation_id: string;
+  department_id: string;
   scenario_ids: string[];
   scenario_titles: string[] | undefined;
   isArchived: boolean;
@@ -488,6 +489,7 @@ export default function SimulationHistory({
               id={item.attemptId}
               profileId={item.profileId}
               simulationId={item.simulation_id}
+              departmentId={item.department_id}
               scenarios={[]} // No need to pass scenarios anymore
               interactionIds={item.scenario_ids}
               isPractice={item.practiceSimulation || false}

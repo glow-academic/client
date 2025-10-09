@@ -843,7 +843,7 @@ export function SimulationProvider({
     async (message: string, isRetry?: boolean) => {
       if (readOnly) return;
       if (!message.trim() || !currentChat || isSendingMessage) return;
-      if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+      if (!scenario?.departmentId) {
         toast.error("No department found. Please contact support.");
         return;
       }
@@ -855,7 +855,7 @@ export function SimulationProvider({
           chat_id: currentChat.id,
           message: message,
           ...(isRetry && { isRetry }),
-          department_id: effectiveDepartmentIds[0],
+          department_id: scenario?.departmentId,
         });
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
@@ -870,7 +870,7 @@ export function SimulationProvider({
       isSendingMessage,
       emitSendSimulationMessage,
       readOnly,
-      effectiveDepartmentIds,
+      scenario?.departmentId,
     ]
   );
 

@@ -663,6 +663,7 @@ export const AttemptHistoryRowSchema = z.object({
   personaColors: z.array(z.string()),
   score: z.number().nullable(),
   simulation_id: z.string(),
+  department_id: z.string(),
   scenario_ids: z.array(z.string()),
   scenario_titles: z.array(z.string()).optional(), // <-- ADD THIS FIELD
   isArchived: z.boolean(),

@@ -579,9 +579,6 @@ export const cohorts = [
   },
 ];
 
-// MIGRATIONS MOCK DATA
-export const migrations = [];
-
 // VERIFICATIONTOKEN MOCK DATA
 export const verificationToken = [
   {
@@ -598,5 +595,23 @@ export const departments = [
     updatedAt: "2025-08-11T14:49:01.164Z",
     title: "Department 1",
     description: "Description for department 1",
+  },
+];
+
+// SIMULATIONHINTS MOCK DATA
+export const simulationHints = [
+  {
+    id: "12345678-1234-1234-1234-123456789012",
+    createdAt: "2025-08-11T14:49:01.164Z",
+    updatedAt: "2025-08-11T14:49:01.164Z",
+    hint: "hint_1",
+    simulationMessageId: "simulationMessageId_1",
+  },
+  {
+    id: "12345678-1234-1234-1234-123456789012",
+    createdAt: "2025-08-11T14:49:01.164Z",
+    updatedAt: "2025-08-11T14:49:01.164Z",
+    hint: "hint_2",
+    simulationMessageId: "simulationMessageId_2",
   },
 ];

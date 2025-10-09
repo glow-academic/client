@@ -29,10 +29,12 @@ import {
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import PracticeZone from "./PracticeZone";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
 export default function Practice() {
   const router = useRouter();
   const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -196,11 +198,16 @@ export default function Practice() {
             isConnected,
           },
         });
+        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        if (!departmentId) {
+          toast.error("No department found. Please contact support.");
+          return;
+        }
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: effectiveDepartmentIds[0],
+          department_id: departmentId,
         });
 
         // timeout...
@@ -243,6 +250,7 @@ export default function Practice() {
       loadingToastId,
       activeProfile,
       effectiveDepartmentIds,
+      simulations,
     ]
   );
 
@@ -425,6 +433,7 @@ export default function Practice() {
                       personaColors: item.personaColors,
                       score: item.score,
                       simulation_id: item.simulation_id,
+                      department_id: item.department_id,
                       scenario_titles: item.scenario_titles,
                       scenario_ids: item.scenario_ids,
                       isArchived: item.isArchived,

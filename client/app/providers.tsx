@@ -1,6 +1,7 @@
 // app/providers.tsx
 "use client";
 
+import { DepartmentsProvider } from "@/contexts/departments-context";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
 import { useProfilesByUserId } from "@/lib/api/hooks/profiles";
@@ -48,8 +49,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider basePath={`${appPrefix}/api/auth`}>
       <QueryClientProvider client={queryClient}>
         <RoleAndWebSocketProviderWrapper>
-          {children}
-          <Toaster />
+          <DepartmentsProvider>
+            {children}
+            <Toaster />
+          </DepartmentsProvider>
         </RoleAndWebSocketProviderWrapper>
       </QueryClientProvider>
     </SessionProvider>

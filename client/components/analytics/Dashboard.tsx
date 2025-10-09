@@ -1692,6 +1692,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
                 scenario_titles: item.scenario_titles,
                 score: item.score,
                 simulation_id: item.simulation_id,
+                department_id: item.department_id,
                 scenario_ids: item.scenario_ids,
                 isArchived: item.isArchived,
                 showView: item.showView,

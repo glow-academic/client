@@ -158,7 +158,7 @@ export function DocumentPicker({
         classified: false,
         fileId: null,
         tags: [],
-        departmentId: null,
+        departmentId: "",
       });
     }
     setOpen(false);

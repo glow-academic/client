@@ -601,11 +601,6 @@ export const modelKeysByProviderId = {
     ["models:by:providerId:batch", ids.map(String).sort()] as const,
 };
 
-export const migrationKeys = {
-  all: ["migrations"] as const,
-  list: (filters?: unknown) => [...migrationKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...migrationKeys.all, String(id)] as const,
-};
 export const simulationHintKeys = {
   all: ["simulation_hints"] as const,
   list: (filters?: unknown) => [...simulationHintKeys.all, { filters }] as const,

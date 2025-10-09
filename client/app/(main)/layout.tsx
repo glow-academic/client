@@ -43,10 +43,7 @@ import TATour from "@/components/home/TATour";
 import { PracticeCustomizeDialog } from "@/components/practice/PracticeCustomizeDialog";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import { AssistantProvider } from "@/contexts/assistant-context";
-import {
-  DepartmentsProvider,
-  useDepartments,
-} from "@/contexts/departments-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   SimulationProvider,
@@ -66,6 +63,7 @@ import {
   isMainScreen,
 } from "@/utils/navigation-utils";
 import * as tus from "tus-js-client";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -82,6 +80,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -796,10 +795,8 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     );
                     return;
                   }
-                  if (
-                    effectiveDepartmentIds.length === 0 ||
-                    !effectiveDepartmentIds[0]
-                  ) {
+                  const departmentId = simulations?.find(simulation => simulation.id === params.simulationId)?.departmentId;
+                  if (!departmentId) {
                     toast.error("No department found. Please contact support.");
                     return;
                   }
@@ -815,7 +812,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     profile_id: profileIdForEmit,
                     infinite: true,
                     infinite_time_limit: params.timeLimit,
-                    department_id: effectiveDepartmentIds[0],
+                    department_id: departmentId,
                   });
                   setCustomizeOpen(false);
                 } else {
@@ -1025,15 +1022,13 @@ export default function MainLayout({
   return (
     <TourProvider>
       <AnalyticsProvider>
-        <DepartmentsProvider>
-          {attemptId ? (
-            <SimulationProvider attemptId={attemptId}>
-              <MainLayoutContent>{children}</MainLayoutContent>
-            </SimulationProvider>
-          ) : (
+        {attemptId ? (
+          <SimulationProvider attemptId={attemptId}>
             <MainLayoutContent>{children}</MainLayoutContent>
-          )}
-        </DepartmentsProvider>
+          </SimulationProvider>
+        ) : (
+          <MainLayoutContent>{children}</MainLayoutContent>
+        )}
       </AnalyticsProvider>
     </TourProvider>
   );

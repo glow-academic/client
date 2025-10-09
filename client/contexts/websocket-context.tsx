@@ -136,6 +136,8 @@ export function WebSocketProvider({
     }
   }
 
+
+
   // Loading states for debugging
   const [startingSimulationId, setStartingSimulationId] = useState<
     string | null
@@ -1247,7 +1249,6 @@ export function WebSocketProvider({
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
-
       // Normalize nullish → ""
       const payload = {
         simulation_id: data.simulation_id,
@@ -1259,9 +1260,7 @@ export function WebSocketProvider({
         ...(data.infinite_time_limit !== undefined && {
           infinite_time_limit: data.infinite_time_limit,
         }),
-        ...(data.department_id !== undefined && {
-          department_id: data.department_id,
-        }),
+        department_id: data.department_id,
       };
 
       setStartingSimulationId(data.simulation_id);

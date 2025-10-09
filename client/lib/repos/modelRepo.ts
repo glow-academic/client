@@ -1,5 +1,5 @@
+import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { eq } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { models } from "@/utils/drizzle/schema";
@@ -61,5 +61,19 @@ export const modelRepo = {
     const rows = await db.delete(models).where(eq(models.id, id)).returning();
     if (!rows[0])
       throw HttpError.notFound("Model with id " + id + " not found");
+  },
+
+  async listByProvider(providerId: string) {
+    const db = await getDb();
+    return db.select().from(models).where(eq(models.providerId, providerId));
+  },
+
+  async listByProviders(providerIds: string[]) {
+    const db = await getDb();
+    if (!Array.isArray(providerIds) || providerIds.length === 0) return [];
+    return db
+      .select()
+      .from(models)
+      .where(inArray(models.providerId, providerIds));
   },
 };

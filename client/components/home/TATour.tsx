@@ -28,6 +28,7 @@ import {
   simulationMessageKeys,
 } from "@/lib/api/keys";
 import { createTATourSteps } from "@/utils/tour-steps";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
 // Guide Button Component
 function GuideButton() {
@@ -94,6 +95,7 @@ export default function TATour() {
   const pathname = usePathname();
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
@@ -360,9 +362,17 @@ export default function TATour() {
             function: "handleStartPracticeSimulation",
           },
         });
+
+        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        if (!departmentId) {
+          toast.error("No department found. Please contact support.");
+          return;
+        }
+
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: String(effectiveProfile.id),
+          department_id: departmentId,
         });
 
         // Set timeout for simulation start
@@ -392,6 +402,7 @@ export default function TATour() {
       effectiveProfile?.id,
       emitStartSimulation,
       setLoadingSimulation,
+      simulations,
     ],
   );
 

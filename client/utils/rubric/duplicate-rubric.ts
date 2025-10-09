@@ -32,6 +32,7 @@ export async function duplicateRubric(rubricId: string, newName: string) {
           passPoints: rubric.passPoints,
           defaultRubric: false, // Duplicated rubrics are never default
           active: false, // Start as inactive for safety
+          departmentId: rubric.departmentId,
         })
         .returning();
 

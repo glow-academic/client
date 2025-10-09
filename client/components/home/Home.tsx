@@ -32,10 +32,12 @@ import SimulationProgress, {
 } from "../common/cohort/SimulationProgress";
 import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
   const {
     startDate,
     endDate,
@@ -197,11 +199,16 @@ export default function Home() {
             isConnected,
           },
         });
+        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        if (!departmentId) {
+          toast.error("No department found. Please contact support.");
+          return;
+        }
 
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: effectiveDepartmentIds[0],
+          department_id: departmentId,
         });
 
         // timeout...
@@ -241,6 +248,7 @@ export default function Home() {
       emitStartSimulation,
       loadingToastId,
       effectiveDepartmentIds,
+      simulations,
     ]
   );
 
@@ -733,6 +741,7 @@ export default function Home() {
                   scenario_titles: item.scenario_titles,
                   score: item.score,
                   simulation_id: item.simulation_id,
+                  department_id: item.department_id,
                   scenario_ids: item.scenario_ids,
                   isArchived: item.isArchived,
                   showView: item.showView,
