@@ -210,8 +210,12 @@ export function UnifiedSidebar({
 
   // Get simulatable profiles for the dropdown
   const { data: simulatableProfiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["simulatableProfiles", activeProfile?.id],
-    queryFn: () => getSimulatableProfiles(),
+    queryKey: [
+      "simulatableProfiles",
+      activeProfile?.id,
+      effectiveDepartmentIds,
+    ],
+    queryFn: () => getSimulatableProfiles(effectiveDepartmentIds),
     enabled:
       !!activeProfile &&
       ["superadmin", "admin", "instructional"].includes(activeProfile.role),
@@ -593,7 +597,10 @@ export function UnifiedSidebar({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ targetProfileId: profileId }),
+          body: JSON.stringify({
+            targetProfileId: profileId,
+            departmentIds: effectiveDepartmentIds,
+          }),
         });
         if (!r.ok) {
           const msg = (await r.json().catch(() => ({})))?.error || "Forbidden";
@@ -1070,6 +1077,7 @@ export function UnifiedSidebar({
                     credentials: "include",
                     body: JSON.stringify({
                       targetProfileId: effectiveProfile.id,
+                      departmentIds: effectiveDepartmentIds,
                     }),
                   });
                   if (!r.ok) {

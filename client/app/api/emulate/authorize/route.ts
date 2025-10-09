@@ -9,10 +9,10 @@ export async function POST(req: Request) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { targetProfileId } = await req.json().catch(() => ({}));
-  if (!targetProfileId) {
+  const { targetProfileId, departmentIds } = await req.json().catch(() => ({}));
+  if (!targetProfileId || !departmentIds) {
     return NextResponse.json(
-      { error: "Missing targetProfileId" },
+      { error: "Missing targetProfileId or departmentIds" },
       { status: 400 },
     );
   }
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
   const allowed = await canEmulate({
     requesterRole: session.user.role!,
     targetProfileId,
+    departmentIds,
   });
 
   await log.info("auth.emulate.authorize", {
