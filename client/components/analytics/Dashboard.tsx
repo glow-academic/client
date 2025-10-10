@@ -288,6 +288,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       // For dashboard, show all users' history (no profileId filter)
       // unless it's a specific profile view
       ...(profileId && { profileId }),
+      departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
@@ -296,6 +297,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
+      effectiveDepartmentIds,
     ],
   );
 
