@@ -42,12 +42,15 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
+import { useScenarioTrees } from "@/lib/api/hooks/scenario_tree";
 import {
   useCreateScenario,
   useDeleteScenario,
   useScenariosByDepartmentIdBatch,
 } from "@/lib/api/hooks/scenarios";
+import { useSimulationScenarios } from "@/lib/api/hooks/simulation_scenarios";
 import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+import type { ScenarioTree } from "@/lib/repos/scenarioTreeRepo";
 import { Scenario } from "@/types";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
@@ -66,7 +69,7 @@ export function Scenarios() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const { effectiveDepartmentIds } = useDepartments();
 
@@ -75,66 +78,66 @@ export function Scenarios() {
   const deleteScenarioMutation = useDeleteScenario();
 
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+  const { data: treeEdges = [] } = useScenarioTrees();
+  const { data: allSimulationScenarios = [] } = useSimulationScenarios();
+  const { data: _simulations = [] } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds
   );
-  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds,
+  const { data: _parameters = [] } = useParametersByDepartmentIdBatch(
+    effectiveDepartmentIds
   );
-  const { data: parameterItems = [] } = useParameterItems();
+  const { data: _parameterItems = [] } = useParameterItems();
 
-  // Group scenarios by parent_id
+  // Group scenarios using scenario_tree junction table
   const groupedScenarios = useMemo(() => {
     const groups: GroupedScenario[] = [];
-    const parentMap = new Map<string, Scenario>();
-    const childMap = new Map<string, Scenario[]>();
 
-    // First pass: identify parents and collect children
-    scenarios.forEach((scenario) => {
-      if (scenario.generated && scenario.parentId) {
-        // This is a generated scenario with a parent
-        if (!childMap.has(scenario.parentId)) {
-          childMap.set(scenario.parentId, []);
-        }
-        childMap.get(scenario.parentId)!.push(scenario);
-      } else if (!scenario.generated) {
-        // This is a parent scenario
-        parentMap.set(scenario.id, scenario);
-      }
+    // Find root scenarios (self-edges in scenario_tree where parent_id === child_id)
+    const rootScenarioIds = treeEdges
+      .filter((edge: ScenarioTree) => edge.parentId === edge.childId)
+      .map((edge: ScenarioTree) => edge.childId);
+
+    // Build groups for each root
+    rootScenarioIds.forEach((rootId: string) => {
+      const parentScenario = scenarios.find((s) => s.id === rootId);
+      if (!parentScenario) return;
+
+      // Find children (edges where parent is this root but not self-edge)
+      const childrenIds = treeEdges
+        .filter(
+          (edge: ScenarioTree) =>
+            edge.parentId === rootId && edge.parentId !== edge.childId
+        )
+        .map((edge: ScenarioTree) => edge.childId);
+
+      const children = scenarios.filter((s) => childrenIds.includes(s.id));
+
+      groups.push({
+        parent: parentScenario,
+        children: children,
+      });
     });
 
-    // Second pass: create groups
-    parentMap.forEach((parent) => {
-      const children = childMap.get(parent.id) || [];
-      if (children.length > 0) {
-        // Only create groups for parents that have generated children
-        groups.push({ parent, children });
-      } else {
-        // Parent with no children - add as standalone
-        groups.push({ parent, children: [] });
-      }
-    });
+    // Add standalone scenarios that aren't in the tree at all
+    const scenariosInTree = new Set([
+      ...treeEdges.map((e: ScenarioTree) => e.parentId),
+      ...treeEdges.map((e: ScenarioTree) => e.childId),
+    ]);
 
-    // Add standalone generated scenarios (those without parents or with missing parents)
     scenarios.forEach((scenario) => {
-      if (
-        scenario.generated &&
-        (!scenario.parentId || !parentMap.has(scenario.parentId))
-      ) {
+      if (!scenariosInTree.has(scenario.id)) {
         groups.push({ parent: scenario, children: [] });
       }
     });
 
     return groups;
-  }, [scenarios]);
+  }, [scenarios, treeEdges]);
 
-  // Check if a scenario is being used by any simulations
+  // Check if a scenario is being used by any simulations via junction table
   const isScenarioInUse = (scenarioId: string) => {
-    return simulations.some(
-      (sim) => sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
-    );
+    return allSimulationScenarios.some((ss) => ss.scenarioId === scenarioId);
   };
 
   // Check if user can edit (fully immutable)
@@ -254,49 +257,14 @@ export function Scenarios() {
     });
   };
 
-  // Build badges for a scenario's non-numerical parameters (similar to Simulation page)
-  const getScenarioParameterBadges = (scenario: Scenario) => {
-    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
-      return [] as {
-        parameterName: string;
-        value: string;
-        parameterId: string;
-      }[];
-    }
-
-    const badges: {
-      parameterName: string;
-      value: string;
-      parameterId: string;
-    }[] = [];
-
-    scenario.parameterItemIds.forEach((parameterItemId) => {
-      const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId,
-      );
-      if (parameterItem) {
-        const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId,
-        );
-        if (parameter && !parameter.numerical) {
-          badges.push({
-            parameterName: parameter.name,
-            value: parameterItem.value,
-            parameterId: parameter.id,
-          });
-        }
-      }
-    });
-
-    return badges;
-  };
+  // TODO: Add parameter badge display (load from scenario_parameter_items junction)
 
   const renderScenarioCard = (
     scenario: Scenario,
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void,
+    onToggleCollapse?: () => void
   ) => (
     <Card
       key={scenario.id}
@@ -326,47 +294,15 @@ export function Scenarios() {
                 {scenario.name || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {scenario.practiceScenario && (
-                  <Badge variant="default" className="text-xs">
-                    Practice
-                  </Badge>
-                )}
+                {/* Practice is now simulation-level only */}
                 {!scenario.generated &&
                   !scenario.defaultScenario &&
-                  !scenario.practiceScenario &&
                   !scenario.active && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
               </div>
             </div>
-            {/* Parameter badges under the title */}
-            {(() => {
-              const parameterBadges = getScenarioParameterBadges(scenario);
-              if (parameterBadges.length > 0) {
-                return (
-                  <div className="mt-2 flex items-center gap-1 flex-wrap">
-                    {parameterBadges.slice(0, 4).map((badge) => (
-                      <Tooltip key={badge.parameterId}>
-                        <TooltipTrigger asChild>
-                          <Badge variant="secondary" className="text-xs">
-                            {badge.value}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{badge.parameterName}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                    {parameterBadges.length > 4 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{parameterBadges.length - 4}
-                      </Badge>
-                    )}
-                  </div>
-                );
-              }
-              return null;
-            })()}
+            {/* Parameter badges - TODO: Load from junction table */}
           </div>
           <div className="flex gap-2 items-center ml-4">
             {scenario.generated ? (
@@ -450,7 +386,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDeleteClick(
                         scenario.id,
-                        scenario.name || "Unnamed Scenario",
+                        scenario.name || "Unnamed Scenario"
                       )
                     }
                   >
@@ -464,14 +400,16 @@ export function Scenarios() {
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {scenario.description || "Scenario will be dynamically generated."}
+          {scenario.problemStatement ||
+            "Scenario will be dynamically generated."}
         </p>
         {!isChild && (
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
             {
-              simulations.filter((s) => s.scenarioIds?.includes(scenario.id))
-                .length
+              allSimulationScenarios.filter(
+                (ss) => ss.scenarioId === scenario.id
+              ).length
             }{" "}
             simulations
           </div>
@@ -495,7 +433,7 @@ export function Scenarios() {
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.id),
+            () => toggleGroupCollapse(group.parent.id)
           )}
 
           {/* Child Scenarios */}

@@ -13,20 +13,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartmentColumns } from "@/hooks/use-department-columns";
+import { useDepartments } from "@/lib/api/hooks/departments";
 import { useModelRuns } from "@/lib/api/hooks/model_runs";
 import { useModels } from "@/lib/api/hooks/models";
+import { useProfileDepartments } from "@/lib/api/hooks/profile_departments";
 import { useProfiles } from "@/lib/api/hooks/profiles";
 import { Department, Model, ModelRun } from "@/types";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
-import { useDepartments } from "@/lib/api/hooks/departments";
 
 export default function Departments() {
   const router = useRouter();
-  const {data: departments = []} = useDepartments();
-  const { data: profiles = [] } =
-    useProfiles();
-  const { data: modelRuns = [] } =
-    useModelRuns();
+  const { data: departments = [] } = useDepartments();
+  const { data: profiles = [] } = useProfiles();
+  const { data: profileDepartments = [] } = useProfileDepartments();
+  const { data: modelRuns = [] } = useModelRuns();
   const { data: models = [] } = useModels();
 
   // Get table columns and filter options
@@ -73,15 +73,15 @@ export default function Departments() {
     [modelRuns, modelIdToMeta]
   );
 
-  // Helper function to get staff count for a department
+  // Helper function to get staff count for a department (via profile_departments junction)
   const getStaffCount = useCallback(
     (departmentId: string): number => {
-      const departmentProfiles = profiles.filter(
-        (profile) => profile.departmentId === departmentId
+      const departmentProfileLinks = profileDepartments.filter(
+        (pd) => pd.departmentId === departmentId
       );
-      return departmentProfiles.length;
+      return departmentProfileLinks.length;
     },
-    [profiles]
+    [profileDepartments]
   );
 
   const renderDepartmentCard = (department: Department) => (

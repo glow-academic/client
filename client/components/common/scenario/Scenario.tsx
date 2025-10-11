@@ -54,6 +54,18 @@ import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
 import {
+  useCreateScenarioDocument,
+  useScenarioDocumentsByScenarioId,
+} from "@/lib/api/hooks/scenario_documents";
+import {
+  useCreateScenarioObjective,
+  useScenarioObjectivesByScenarioId,
+} from "@/lib/api/hooks/scenario_objectives";
+import {
+  useCreateScenarioParameterItem,
+  useScenarioParameterItemsByScenarioId,
+} from "@/lib/api/hooks/scenario_parameter_items";
+import {
   useCreateScenario,
   useScenario,
   useUpdateScenario,
@@ -91,20 +103,27 @@ export default function Scenario({
   // Mutation hooks
   const createScenarioMutation = useCreateScenario();
   const updateScenarioMutation = useUpdateScenario();
+  const createScenarioObjectiveMutation = useCreateScenarioObjective();
+  const createScenarioParameterItemMutation = useCreateScenarioParameterItem();
+  const createScenarioDocumentMutation = useCreateScenarioDocument();
+
+  // Load linked data from junction tables
+  const { data: linkedObjectives = [] } = useScenarioObjectivesByScenarioId(
+    scenarioId || ""
+  );
+  const { data: linkedParameterItems = [] } =
+    useScenarioParameterItemsByScenarioId(scenarioId || "");
+  const { data: linkedDocuments = [] } = useScenarioDocumentsByScenarioId(
+    scenarioId || ""
+  );
 
   // Form data state
   const initialFormData: Partial<ScenarioType> = {
-    documentIds: [],
     personaId: null,
-    parameterItemIds: [],
     name: "",
-    description: "",
+    problemStatement: "",
     defaultScenario: false,
-    practiceScenario: false,
-    departmentId:
-      effectiveProfile?.role === "superadmin"
-        ? ""
-        : effectiveProfile?.departmentId || "",
+    departmentId: "",
   };
 
   const [formData, setFormData] =
@@ -119,6 +138,35 @@ export default function Scenario({
   const [originalFormData, setOriginalFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
+
+  // State for junction data (managed separately from scenario)
+  const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
+  const [currentParameterItemIds, setCurrentParameterItemIds] = useState<
+    string[]
+  >([]);
+  const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
+
+  // Sync junction data when linked data loads
+  useEffect(() => {
+    if (linkedObjectives.length > 0) {
+      const sorted = [...linkedObjectives].sort((a, b) => a.idx - b.idx);
+      setCurrentObjectives(sorted.map((o) => o.objective));
+    }
+  }, [linkedObjectives]);
+
+  useEffect(() => {
+    if (linkedParameterItems.length > 0) {
+      setCurrentParameterItemIds(
+        linkedParameterItems.map((lpi) => lpi.parameterItemId)
+      );
+    }
+  }, [linkedParameterItems]);
+
+  useEffect(() => {
+    if (linkedDocuments.length > 0) {
+      setCurrentDocumentIds(linkedDocuments.map((ld) => ld.documentId));
+    }
+  }, [linkedDocuments]);
 
   const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
     effectiveDepartmentIds
@@ -140,13 +188,10 @@ export default function Scenario({
   useEffect(() => {
     if (isEditMode && scenario) {
       const scenarioData = {
-        documentIds: scenario.documentIds || [],
         personaId: scenario.personaId,
-        parameterItemIds: scenario.parameterItemIds || [],
         name: scenario.name || "",
-        description: scenario.description || "",
+        problemStatement: scenario.problemStatement || "",
         defaultScenario: scenario.defaultScenario ?? false,
-        practiceScenario: scenario.practiceScenario ?? false,
         departmentId: scenario.departmentId,
       };
       setFormData(scenarioData);
@@ -199,7 +244,7 @@ export default function Scenario({
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
     // If we have a scenario description, mark all sections as completed
-    if (formData.description && formData.description.trim()) {
+    if (formData.problemStatement && formData.problemStatement.trim()) {
       return "completed";
     }
 
@@ -207,15 +252,11 @@ export default function Scenario({
       case "persona":
         return formData.personaId ? "completed" : "active";
       case "documents":
-        return !formData.documentIds
-          ? "pending"
-          : formData.documentIds && formData.documentIds.length > 0
-            ? "completed"
-            : "active";
+        return currentDocumentIds.length > 0 ? "completed" : "active";
       case "parameters":
         return !formData.personaId
           ? "pending"
-          : formData.parameterItemIds && formData.parameterItemIds.length > 0
+          : currentParameterItemIds.length > 0
             ? "completed"
             : "active";
       case "content":
@@ -268,14 +309,14 @@ export default function Scenario({
       setIsRandomizingParameters(true);
       const resp = await randomizeScenario({
         name: formData.name || "",
-        description: formData.description || "",
+        problemStatement: formData.problemStatement || "",
         personaId: formData.personaId || null,
-        documentIds: (formData.documentIds as string[]) || [],
-        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        documentIds: currentDocumentIds,
+        parameterItemIds: currentParameterItemIds,
         targets: ["parameters"],
       });
       if (!resp.success) throw new Error(resp.message);
-      handleInputChange("parameterItemIds", resp.parameterItemIds || []);
+      setCurrentParameterItemIds(resp.parameterItemIds || []);
       toast.success("Parameter suggestions applied");
     } catch (error) {
       log.error("scenario.parameters.randomize.failed", {
@@ -312,10 +353,10 @@ export default function Scenario({
       setIsRandomizingPersona(true);
       const resp = await randomizeScenario({
         name: formData.name || "",
-        description: formData.description || "",
+        problemStatement: formData.problemStatement || "",
         personaId: formData.personaId || null,
-        documentIds: (formData.documentIds as string[]) || [],
-        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        documentIds: currentDocumentIds,
+        parameterItemIds: currentParameterItemIds,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
@@ -357,14 +398,14 @@ export default function Scenario({
       }
       const resp = await randomizeScenario({
         name: formData.name || "",
-        description: formData.description || "",
+        problemStatement: formData.problemStatement || "",
         personaId: formData.personaId || null,
-        documentIds: (formData.documentIds as string[]) || [],
-        parameterItemIds: (formData.parameterItemIds as string[]) || [],
+        documentIds: currentDocumentIds,
+        parameterItemIds: currentParameterItemIds,
         targets: ["documents"],
       });
       if (!resp.success) throw new Error(resp.message);
-      handleInputChange("documentIds", resp.documentIds || []);
+      setCurrentDocumentIds(resp.documentIds || []);
       toast.success("Document suggestions applied");
     } catch (error) {
       log.error("scenario.documents.randomize.failed", {
@@ -415,8 +456,8 @@ export default function Scenario({
     try {
       const result = await newScenario({
         personaId: formData.personaId || null,
-        documentIds: formData.documentIds || [],
-        parameterItemIds: formData.parameterItemIds || [],
+        documentIds: currentDocumentIds,
+        parameterItemIds: currentParameterItemIds,
         profileId: effectiveProfile?.id || null,
       });
 
@@ -428,8 +469,12 @@ export default function Scenario({
         setFormData((prev) => ({
           ...prev,
           name: result.title || prev.name || "",
-          description: result.description || prev.description || "",
+          problemStatement: result.description || prev.problemStatement || "",
         }));
+        // Update objectives if returned
+        if (result.objectives) {
+          setCurrentObjectives(result.objectives);
+        }
         toast.success("Scenario generated successfully!");
       } else {
         throw new Error("No scenario content was generated");
@@ -460,25 +505,62 @@ export default function Scenario({
     try {
       const payload = {
         name: formData.name?.trim() || "",
-        description: formData.description?.trim() || "",
+        problemStatement: formData.problemStatement?.trim() || "",
         personaId: formData.personaId,
-        documentIds: formData.documentIds,
-        parameterItemIds: formData.parameterItemIds,
         defaultScenario: formData.defaultScenario || false,
-        practiceScenario: formData.practiceScenario || false,
-        departmentId:
-          formData.departmentId || effectiveProfile?.departmentId || "",
+        departmentId: formData.departmentId || effectiveDepartmentIds[0] || "",
       };
 
       if (isEditMode) {
+        // UPDATE mode
         await updateScenarioMutation.mutateAsync({
           id: scenarioId!,
           ...payload,
           updatedAt: new Date().toISOString(),
         });
+
+        // Note: Junction table management (objectives, params, docs) requires API updates
+        // TODO: Add batch update endpoints for junction tables
+
         toast.success("Scenario updated successfully!");
       } else {
-        await createScenarioMutation.mutateAsync(payload);
+        // CREATE mode
+        const newScenario = await createScenarioMutation.mutateAsync(payload);
+
+        // Create junction records if scenario was created successfully
+        if (newScenario?.id) {
+          // Create objectives
+          for (let i = 0; i < currentObjectives.length; i++) {
+            if (currentObjectives[i]?.trim()) {
+              await createScenarioObjectiveMutation.mutateAsync({
+                scenarioId: newScenario.id,
+                idx: i + 1,
+                objective: currentObjectives[i],
+              });
+            }
+          }
+
+          // Create parameter item links
+          for (const paramItemId of currentParameterItemIds) {
+            if (paramItemId) {
+              await createScenarioParameterItemMutation.mutateAsync({
+                scenarioId: newScenario.id,
+                parameterItemId: paramItemId,
+              });
+            }
+          }
+
+          // Create document links
+          for (const docId of currentDocumentIds) {
+            if (docId) {
+              await createScenarioDocumentMutation.mutateAsync({
+                scenarioId: newScenario.id,
+                documentId: docId,
+              });
+            }
+          }
+        }
+
         toast.success("Scenario created successfully!");
       }
 
@@ -530,7 +612,7 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    formData.documentIds?.includes(doc.id)
+    currentDocumentIds.includes(doc.id)
   );
   const selectedPersona = personas.find(
     (persona) => persona.id === formData.personaId
@@ -787,10 +869,7 @@ export default function Scenario({
               multiSelect={true}
               selectedDocuments={selectedDocuments}
               onMultiSelect={(selectedDocs) =>
-                handleInputChange(
-                  "documentIds",
-                  selectedDocs.map((doc) => doc.id)
-                )
+                setCurrentDocumentIds(selectedDocs.map((doc) => doc.id))
               }
               disabled={isReadonly || noDocuments}
             />
@@ -871,9 +950,9 @@ export default function Scenario({
             <ParameterSelector
               parameters={parameters}
               parameterItems={parameterItems}
-              selectedParameterItemIds={formData.parameterItemIds || []}
+              selectedParameterItemIds={currentParameterItemIds}
               onParameterItemIdsChange={(parameterItemIds) =>
-                handleInputChange("parameterItemIds", parameterItemIds)
+                setCurrentParameterItemIds(parameterItemIds)
               }
               disabled={isReadonly}
             />
@@ -922,9 +1001,11 @@ export default function Scenario({
                 {isGeneratingScenario ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {formData.description ? "Regenerating..." : "Generating..."}
+                    {formData.problemStatement
+                      ? "Regenerating..."
+                      : "Generating..."}
                   </>
-                ) : formData.description ? (
+                ) : formData.problemStatement ? (
                   "Regenerate"
                 ) : (
                   "Generate"
@@ -949,9 +1030,9 @@ export default function Scenario({
             <div className="space-y-2">
               <Textarea
                 id="description"
-                value={formData.description || ""}
+                value={formData.problemStatement || ""}
                 onChange={(e) =>
-                  handleInputChange("description", e.target.value)
+                  handleInputChange("problemStatement", e.target.value)
                 }
                 placeholder="Enter a custom scenario description or leave blank to auto-generate..."
                 className="min-h-[120px]"

@@ -9,6 +9,7 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import { useDepartments as useDepartmentsAPI } from "@/lib/api/hooks/departments";
+import { useProfileDepartmentsByProfileId } from "@/lib/api/hooks/profile_departments";
 import type { Department } from "@/lib/repos/departmentRepo";
 import { log } from "@/utils/logger";
 import React, {
@@ -47,9 +48,20 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
     data: Department[];
   };
 
+  // Fetch all departments for this profile from profile_departments junction
+  const { data: profileDepartments = [] } = useProfileDepartmentsByProfileId(
+    effectiveProfile?.id || ""
+  );
+
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
     []
+  );
+
+  // Get all department IDs from profile_departments (no primary filtering)
+  const userDepartmentIds = useMemo(
+    () => profileDepartments.map((pd) => pd.departmentId),
+    [profileDepartments]
   );
 
   // Initialize department selection based on user role
@@ -63,22 +75,22 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
           context: { component: "DepartmentsProvider" },
         });
       }
-    } else if (effectiveProfile?.departmentId) {
-      // For non-superadmin users, default to their department only
+    } else if (userDepartmentIds.length > 0) {
+      // For non-superadmin users, default to all their departments
       if (selectedDepartmentIds.length === 0) {
-        setSelectedDepartmentIds([effectiveProfile.departmentId]);
+        setSelectedDepartmentIds(userDepartmentIds);
         log.info("departments.initialization.user", {
-          message: "Non-superadmin user - defaulting to their department",
+          message: "Non-superadmin user - defaulting to their departments",
           context: {
             component: "DepartmentsProvider",
-            departmentId: effectiveProfile.departmentId,
+            departmentIds: userDepartmentIds,
           },
         });
       }
     }
   }, [
     effectiveProfile?.role,
-    effectiveProfile?.departmentId,
+    userDepartmentIds,
     selectedDepartmentIds,
     setSelectedDepartmentIds,
   ]);

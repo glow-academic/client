@@ -233,63 +233,16 @@ export function SimulationPicker({
     });
   }, [filteredSimulations]);
 
-  // Get scenario badges for a simulation (aggregated from all scenarios)
-  const getSimulationScenarioBadges = (simulation: Simulation) => {
-    if (!simulation.scenarioIds || simulation.scenarioIds.length === 0) {
-      return [];
-    }
-
-    // Collect all parameter items from all scenarios in this simulation with frequency tracking
-    const parameterFrequency = new Map<
-      string,
-      {
-        parameterName: string;
-        value: string;
-        parameterId: string;
-        count: number;
-      }
-    >();
-
-    simulation.scenarioIds.forEach((scenarioId) => {
-      const scenario = scenarios.find((s) => s.id === scenarioId);
-      if (scenario?.parameterItemIds) {
-        scenario.parameterItemIds.forEach((parameterItemId: string) => {
-          const parameterItem = parameterItems.find(
-            (item) => item.id === parameterItemId,
-          );
-          if (parameterItem) {
-            const parameter = parameters.find(
-              (param) => param.id === parameterItem.parameterId,
-            );
-            if (parameter && !parameter.numerical) {
-              // Use parameter name as key to avoid duplicates
-              const key = parameter.name;
-              const existing = parameterFrequency.get(key);
-              if (existing) {
-                existing.count += 1;
-              } else {
-                parameterFrequency.set(key, {
-                  parameterName: parameter.name,
-                  value: parameterItem.value,
-                  parameterId: parameter.id,
-                  count: 1,
-                });
-              }
-            }
-          }
-        });
-      }
-    });
-
-    // Sort by frequency (most used first) and return top 3
-    return Array.from(parameterFrequency.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3)
-      .map(({ parameterName, value, parameterId }) => ({
-        parameterName,
-        value,
-        parameterId,
-      }));
+  // Get scenario badges for a simulation
+  // TODO: Load from simulation_scenarios and scenario_parameter_items junctions
+  const _getSimulationScenarioBadges = (_simulation: Simulation) => {
+    // Badges require loading from multiple junction tables which adds complexity
+    // Returning empty for now - can be enhanced with dedicated hooks later
+    return [] as {
+      parameterName: string;
+      value: string;
+      parameterId: string;
+    }[];
   };
 
   const handleSelect = (simulation: Simulation) => {
@@ -299,7 +252,7 @@ export function SimulationPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedSimulations = selectedSimulations.filter(
-        (s) => s.id !== simulation.id,
+        (s) => s.id !== simulation.id
       );
     } else {
       if (singleSelect) {
@@ -327,11 +280,11 @@ export function SimulationPicker({
   // Remove individual item
   const handleRemoveItem = (
     simulationToRemove: Simulation,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.stopPropagation();
     const newSelectedSimulations = selectedSimulations.filter(
-      (s) => s.id !== simulationToRemove.id,
+      (s) => s.id !== simulationToRemove.id
     );
     onSelect?.(newSelectedSimulations);
   };
@@ -499,7 +452,7 @@ export function SimulationPicker({
                             filterPersonaIds.length > 0 ||
                               filterParameterItemIds.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground",
+                              : "text-muted-foreground"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -539,7 +492,7 @@ export function SimulationPicker({
                                   )}
                                   {personaOptions.map((p) => {
                                     const checked = filterPersonaIds.includes(
-                                      p.id,
+                                      p.id
                                     );
                                     return (
                                       <label
@@ -556,7 +509,7 @@ export function SimulationPicker({
                                                 return [...prev, p.id];
                                               }
                                               return prev.filter(
-                                                (x) => x !== p.id,
+                                                (x) => x !== p.id
                                               );
                                             });
                                           }}
@@ -604,9 +557,9 @@ export function SimulationPicker({
                                                   return [...prev, opt.id];
                                                 }
                                                 return prev.filter(
-                                                  (x) => x !== opt.id,
+                                                  (x) => x !== opt.id
                                                 );
-                                              },
+                                              }
                                             );
                                           }}
                                         />
@@ -675,7 +628,7 @@ export function SimulationPicker({
                       key={simulation.id}
                       simulation={simulation}
                       isSelected={selectedSimulations.some(
-                        (s) => s.id === simulation.id,
+                        (s) => s.id === simulation.id
                       )}
                       onPeek={(simulation) => setPeekedSimulation(simulation)}
                       onSelect={() => handleSelect(simulation)}
@@ -738,7 +691,7 @@ function SimulationItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

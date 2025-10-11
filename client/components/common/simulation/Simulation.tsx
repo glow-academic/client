@@ -31,23 +31,21 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohortSimulations } from "@/lib/api/hooks/cohort_simulations";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
 import { useParameterItems } from "@/lib/api/hooks/parameter_items";
 import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
 import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
 import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+import {
+  useCreateSimulationScenario,
+  useSimulationScenariosBySimulationId,
+} from "@/lib/api/hooks/simulation_scenarios";
 import {
   useCreateSimulation,
   useSimulation,
@@ -71,11 +69,14 @@ interface FormData {
   timeLimit?: number | null;
   rubricId?: string;
   cohortIds?: string[];
-  scenarioIds?: string[];
   active?: boolean;
   defaultSimulation?: boolean;
   practiceSimulation?: boolean;
   departmentId?: string | null;
+  outputGuardrailActive?: boolean;
+  inputGuardrailActive?: boolean;
+  imageInputActive?: boolean;
+  hintsEnabled?: boolean;
 }
 
 interface FormErrors {
@@ -93,6 +94,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   // Mutation hooks
   const createSimulationMutation = useCreateSimulation();
   const updateSimulationMutation = useUpdateSimulation();
+  const createSimulationScenarioMutation = useCreateSimulationScenario();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -104,6 +106,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const isEditMode = !!simulationId;
 
+  // Load linked scenarios from junction table
+  const { data: linkedScenarios = [] } = useSimulationScenariosBySimulationId(
+    simulationId || editingSimulationId || ""
+  );
+
   const initialFormData: FormData = useMemo(
     () => ({
       title: "",
@@ -111,16 +118,16 @@ export default function Simulation({ simulationId }: SimulationProps) {
       timeLimit: 15,
       rubricId: "",
       cohortIds: [],
-      scenarioIds: [],
       active: true,
       defaultSimulation: false,
       practiceSimulation: false,
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? ""
-          : effectiveProfile?.departmentId || "",
+      departmentId: "",
+      outputGuardrailActive: false,
+      inputGuardrailActive: false,
+      imageInputActive: false,
+      hintsEnabled: false,
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId]
+    []
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -141,10 +148,12 @@ export default function Simulation({ simulationId }: SimulationProps) {
   );
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
     useParameterItems();
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+  // Load cohorts (for display, not currently used in logic)
+  const { data: _cohorts = [] } = useCohortsByDepartmentIdBatch(
     effectiveDepartmentIds
   );
   const { data: departments = [] } = useDepartmentsHook();
+  const { data: allCohortSimulations = [] } = useCohortSimulations();
 
   const isLoading = isLoadingSimulation || isLoadingParameterItems;
 
@@ -159,11 +168,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const isInUse = useMemo(() => {
     const targetId = simulationId || editingSimulationId;
     if (!targetId) return false;
-    return cohorts.some(
-      (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(targetId)
-    );
-  }, [cohorts, simulationId, editingSimulationId]);
+    // Check if simulation is linked to any cohort via junction table
+    return allCohortSimulations.some((cs) => cs.simulationId === targetId);
+  }, [allCohortSimulations, simulationId, editingSimulationId]);
 
   const isReadonly = useMemo(() => {
     if (!isEditMode) return false; // creating new simulation is editable
@@ -180,11 +187,14 @@ export default function Simulation({ simulationId }: SimulationProps) {
         description: simulation.description,
         timeLimit: simulation.timeLimit,
         rubricId: simulation.rubricId,
-        scenarioIds: simulation.scenarioIds,
         active: simulation.active,
         defaultSimulation: simulation.defaultSimulation ?? false,
         practiceSimulation: simulation.practiceSimulation ?? false,
         departmentId: simulation.departmentId,
+        outputGuardrailActive: simulation.outputGuardrailActive ?? false,
+        inputGuardrailActive: simulation.inputGuardrailActive ?? false,
+        imageInputActive: simulation.imageInputActive ?? false,
+        hintsEnabled: simulation.hintsEnabled ?? false,
       };
       setFormData(simulationData);
       setOriginalFormData(simulationData); // Set original data for comparison
@@ -214,12 +224,27 @@ export default function Simulation({ simulationId }: SimulationProps) {
     e.dataTransfer.dropEffect = "move";
   };
 
+  // State for managing scenario IDs (extracted from junction table)
+  const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
+
+  // Update currentScenarioIds when linkedScenarios changes
+  useEffect(() => {
+    if (linkedScenarios.length > 0) {
+      const sortedScenarios = [...linkedScenarios].sort(
+        (a, b) => a.position - b.position
+      );
+      setCurrentScenarioIds(sortedScenarios.map((ls) => ls.scenarioId));
+    } else {
+      setCurrentScenarioIds([]);
+    }
+  }, [linkedScenarios]);
+
   const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
 
     if (!draggedScenario) return;
 
-    const newOrder = [...(formData?.scenarioIds || [])];
+    const newOrder = [...currentScenarioIds];
     const draggedIndex = newOrder.findIndex((id) => id === draggedScenario);
     const targetIndex = newOrder.findIndex((id) => id === targetScenarioId);
 
@@ -229,7 +254,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
       newOrder.splice(insertIndex, 0, removed!);
 
-      setFormData((prev) => ({ ...prev, scenarioIds: newOrder }));
+      setCurrentScenarioIds(newOrder);
     }
 
     setDraggedScenario(null);
@@ -282,48 +307,66 @@ export default function Simulation({ simulationId }: SimulationProps) {
       const targetSimulationId = simulationId || editingSimulationId;
 
       if (targetSimulationId) {
-        // Save only the scenarios that correspond to the current practiceSimulation state
-        const scenarioIdsToSave = formData?.practiceSimulation
-          ? practiceScenarioIds
-          : regularScenarioIds;
-
+        // UPDATE mode - update simulation metadata
         const updatePayload = {
           id: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
           timeLimit: formData?.timeLimit || null,
           rubricId: formData?.rubricId || "",
-          scenarioIds: scenarioIdsToSave,
           active: formData?.active ?? true,
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
           departmentId:
-            formData?.departmentId || effectiveProfile?.departmentId || "",
+            formData?.departmentId || effectiveDepartmentIds[0] || "",
+          outputGuardrailActive: formData?.outputGuardrailActive || false,
+          inputGuardrailActive: formData?.inputGuardrailActive || false,
+          imageInputActive: formData?.imageInputActive || false,
+          hintsEnabled: formData?.hintsEnabled || false,
           updatedAt: new Date().toISOString(),
         };
 
         await updateSimulationMutation.mutateAsync(updatePayload);
+
+        // Note: Junction table scenario management requires API endpoint updates
+        // For now, scenarios are managed separately through the UI
+        // TODO: Add batch update endpoint for simulation_scenarios
+
         toast.success("Simulation updated successfully!");
       } else {
-        // Save only the scenarios that correspond to the current practiceSimulation state
-        const scenarioIdsToSave = formData?.practiceSimulation
-          ? practiceScenarioIds
-          : regularScenarioIds;
-
-        await createSimulationMutation.mutateAsync({
+        // CREATE mode - create simulation first, then junction records
+        const newSimulation = await createSimulationMutation.mutateAsync({
           title: formData?.title || "",
           description: formData?.description ?? "",
           rubricId: formData?.rubricId || "",
-          scenarioIds: scenarioIdsToSave,
           timeLimit: formData?.timeLimit || null,
           active: formData?.active || true,
           defaultSimulation: formData?.defaultSimulation || false,
           practiceSimulation: formData?.practiceSimulation || false,
           departmentId:
-            formData?.departmentId || effectiveProfile?.departmentId || "",
+            formData?.departmentId || effectiveDepartmentIds[0] || "",
+          outputGuardrailActive: formData?.outputGuardrailActive || false,
+          inputGuardrailActive: formData?.inputGuardrailActive || false,
+          imageInputActive: formData?.imageInputActive || false,
+          hintsEnabled: formData?.hintsEnabled || false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+
+        // Create junction records for scenarios
+        if (newSimulation?.id) {
+          for (let i = 0; i < currentScenarioIds.length; i++) {
+            const scenarioId = currentScenarioIds[i];
+            if (scenarioId) {
+              await createSimulationScenarioMutation.mutateAsync({
+                simulationId: newSimulation.id,
+                scenarioId: scenarioId,
+                position: i + 1,
+              });
+            }
+          }
+        }
+
         toast.success("Simulation created successfully!");
       }
 
@@ -362,74 +405,28 @@ export default function Simulation({ simulationId }: SimulationProps) {
     return scenarios.map((scenario) => ({
       id: scenario.id,
       title: scenario.name,
-      description: scenario.description,
+      description: scenario.problemStatement,
       active: scenario.active,
       defaultScenario: scenario.defaultScenario,
-      practiceScenario: scenario.practiceScenario,
-      parameterItemIds: scenario.parameterItemIds || [],
-      parentId: scenario.parentId,
+      practiceScenario: false, // practice is simulation-level only now
+      parameterItemIds: [], // managed via junction table
+      parentId: null, // managed via scenario_tree junction
       updatedAt: scenario.updatedAt,
     }));
   }, [scenarios]);
 
-  // Maintain separate state for regular and practice scenarios
-  const [regularScenarioIds, setRegularScenarioIds] = React.useState<string[]>(
-    []
-  );
-  const [practiceScenarioIds, setPracticeScenarioIds] = React.useState<
-    string[]
-  >([]);
-
-  // Initialize separate state from formData.scenarioIds
-  React.useEffect(() => {
-    if (!formData?.scenarioIds || formData.scenarioIds.length === 0) {
-      setRegularScenarioIds([]);
-      setPracticeScenarioIds([]);
-      return;
-    }
-
-    const regularIds: string[] = [];
-    const practiceIds: string[] = [];
-
-    formData.scenarioIds.forEach((scenarioId) => {
-      const scenario = scenarios.find((s) => s.id === scenarioId);
-      if (scenario?.practiceScenario) {
-        practiceIds.push(scenarioId);
-      } else {
-        regularIds.push(scenarioId);
-      }
-    });
-
-    setRegularScenarioIds(regularIds);
-    setPracticeScenarioIds(practiceIds);
-  }, [formData?.scenarioIds, scenarios]);
-
   // Handle scenario selection from picker
   const handleScenarioSelection = (scenarios: SimulationScenario[]) => {
     const scenarioIds = scenarios.map((scenario) => scenario.id);
-
-    // Update the appropriate state based on current mode
-    if (formData?.practiceSimulation) {
-      setPracticeScenarioIds(scenarioIds);
-    } else {
-      setRegularScenarioIds(scenarioIds);
-    }
+    setCurrentScenarioIds(scenarioIds);
   };
 
-  // Combine scenarios based on current mode for display
+  // Combine scenarios for display
   const selectedScenarios = React.useMemo(() => {
-    const currentIds = formData?.practiceSimulation
-      ? practiceScenarioIds
-      : regularScenarioIds;
-    return currentIds
-      ?.map((id) => transformedScenarios.find((s) => s.id === id))
+    return currentScenarioIds
+      .map((id) => transformedScenarios.find((s) => s.id === id))
       .filter(Boolean) as SimulationScenario[];
-  }, [
-    formData?.practiceSimulation,
-    practiceScenarioIds,
-    regularScenarioIds,
-    transformedScenarios,
-  ]);
+  }, [currentScenarioIds, transformedScenarios]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -438,9 +435,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
     const current = formData;
     const original = originalFormData;
 
-    // Get current scenario IDs from the separate state
-    const currentScenarioIds = [...regularScenarioIds, ...practiceScenarioIds];
-    const originalScenarioIds = original.scenarioIds || [];
+    // Get original scenario IDs from linkedScenarios
+    const originalScenarioIds = linkedScenarios
+      .sort((a, b) => a.position - b.position)
+      .map((ls) => ls.scenarioId);
 
     return (
       current.title !== original.title ||
@@ -450,50 +448,22 @@ export default function Simulation({ simulationId }: SimulationProps) {
       current.active !== original.active ||
       current.defaultSimulation !== original.defaultSimulation ||
       current.practiceSimulation !== original.practiceSimulation ||
-      JSON.stringify(currentScenarioIds.sort()) !==
-        JSON.stringify(originalScenarioIds.sort())
+      current.departmentId !== original.departmentId ||
+      current.outputGuardrailActive !== original.outputGuardrailActive ||
+      current.inputGuardrailActive !== original.inputGuardrailActive ||
+      current.imageInputActive !== original.imageInputActive ||
+      current.hintsEnabled !== original.hintsEnabled ||
+      JSON.stringify(currentScenarioIds) !== JSON.stringify(originalScenarioIds)
     );
   }, [
     formData,
     originalFormData,
     isEditMode,
-    regularScenarioIds,
-    practiceScenarioIds,
+    currentScenarioIds,
+    linkedScenarios,
   ]);
 
-  // Get parameter badges for a scenario
-  const getScenarioParameterBadges = (scenario: Scenario) => {
-    if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
-      return [];
-    }
-
-    const badges: {
-      parameterName: string;
-      value: string;
-      parameterId: string;
-    }[] = [];
-
-    scenario.parameterItemIds.forEach((parameterItemId) => {
-      const parameterItem = parameterItems.find(
-        (item) => item.id === parameterItemId
-      );
-      if (parameterItem) {
-        const parameter = parameters.find(
-          (param) => param.id === parameterItem.parameterId
-        );
-        if (parameter && !parameter.numerical) {
-          // Only show non-numerical parameters
-          badges.push({
-            parameterName: parameter.name,
-            value: parameterItem.value,
-            parameterId: parameter.id,
-          });
-        }
-      }
-    });
-
-    return badges;
-  };
+  // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
   return (
     <div className="space-y-6">
@@ -734,6 +704,79 @@ export default function Simulation({ simulationId }: SimulationProps) {
               )}
             </div>
           )}
+
+          {/* Guardrails and Features */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="outputGuardrailActive" className="text-sm">
+              Output Guardrail Active
+            </Label>
+            {formData?.outputGuardrailActive !== undefined && !isLoading ? (
+              <Switch
+                id="outputGuardrailActive"
+                checked={formData.outputGuardrailActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("outputGuardrailActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="inputGuardrailActive" className="text-sm">
+              Input Guardrail Active
+            </Label>
+            {formData?.inputGuardrailActive !== undefined && !isLoading ? (
+              <Switch
+                id="inputGuardrailActive"
+                checked={formData.inputGuardrailActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("inputGuardrailActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="imageInputActive" className="text-sm">
+              Image Input Active
+            </Label>
+            {formData?.imageInputActive !== undefined && !isLoading ? (
+              <Switch
+                id="imageInputActive"
+                checked={formData.imageInputActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("imageInputActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="hintsEnabled" className="text-sm">
+              Hints Enabled
+            </Label>
+            {formData?.hintsEnabled !== undefined && !isLoading ? (
+              <Switch
+                id="hintsEnabled"
+                checked={formData.hintsEnabled ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("hintsEnabled", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
         </div>
 
         {/* Scenarios */}
@@ -829,43 +872,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           <p className="text-xs text-muted-foreground line-clamp-3">
                             {scenario.description || "No description provided"}
                           </p>
-                          {/* Parameter badges */}
-                          {(() => {
-                            const parameterBadges =
-                              getScenarioParameterBadges(originalScenario);
-                            if (parameterBadges.length > 0) {
-                              return (
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  {parameterBadges.slice(0, 4).map((badge) => (
-                                    <TooltipProvider key={badge.parameterId}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs"
-                                          >
-                                            {badge.value}
-                                          </Badge>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{badge.parameterName}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ))}
-                                  {parameterBadges.length > 4 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      +{parameterBadges.length - 4}
-                                    </Badge>
-                                  )}
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
+                          {/* Parameter badges - TODO: Load from junction table */}
                         </div>
                       </div>
                     </div>

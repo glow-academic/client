@@ -18,6 +18,7 @@ import { log } from "@/utils/logger";
 import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
 import { useUpdateProfile } from "@/lib/api/hooks/profiles";
 import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
+import { useScenarioDocumentsByScenarioId } from "@/lib/api/hooks/scenario_documents";
 import { useScenario } from "@/lib/api/hooks/scenarios";
 import { useSimulationAttempt } from "@/lib/api/hooks/simulation_attempts";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
@@ -302,13 +303,17 @@ export function SimulationProvider({
     effectiveDepartmentIds
   );
 
-  // Filter documents for the current attempt's class
+  // Load scenario documents from junction table
+  const { data: scenarioDocLinks = [] } = useScenarioDocumentsByScenarioId(
+    currentChat?.scenarioId || ""
+  );
+
+  // Filter documents for the current scenario using junction table
   const scenarioDocuments = useMemo(() => {
-    if (!scenario || !documents) return [];
-    return documents.filter((doc: Document) =>
-      scenario.documentIds?.includes(doc.id)
-    );
-  }, [documents, scenario]);
+    if (!documents || scenarioDocLinks.length === 0) return [];
+    const docIds = scenarioDocLinks.map((link) => link.documentId);
+    return documents.filter((doc: Document) => docIds.includes(doc.id));
+  }, [documents, scenarioDocLinks]);
 
   // Helper function to calculate actual time taken from database timestamps
   const calculateActualTimeTaken = useCallback(
@@ -491,9 +496,9 @@ export function SimulationProvider({
   }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
 
   // Determine if this is a single chat attempt and calculate expected chat count
-  // TODO: Store expectedChatCount in attempt record to prevent drift when scenarios are added later
-  const expectedChatCount =
-    simulation?.scenarioIds?.length || chats?.length || 1;
+  // Note: scenarioIds now in junction table. Use chat count as proxy.
+  // TODO: Store expectedChatCount in attempt record or load from simulation_scenarios
+  const expectedChatCount = chats?.length || 1;
   const isSingleChatAttempt = expectedChatCount === 1;
   const isLastAttempt = currentChatIndex === expectedChatCount - 1;
 

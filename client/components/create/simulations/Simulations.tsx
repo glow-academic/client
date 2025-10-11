@@ -55,23 +55,23 @@ export function Simulations() {
   const deleteSimulationMutation = useDeleteSimulation();
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
     );
   };
 
@@ -191,7 +191,7 @@ export function Simulations() {
         title: `${simulation.title} Copy`,
         timeLimit: simulation.timeLimit,
         active: false,
-        scenarioIds: simulation.scenarioIds,
+        // scenarioIds managed via simulation_scenarios junction now
         rubricId: simulation.rubricId,
         departmentId: effectiveProfile?.departmentId || "",
         defaultSimulation: false, // Duplicated simulations are not default
@@ -321,7 +321,8 @@ export function Simulations() {
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
-          {simulation.scenarioIds?.length || 0} scenarios
+          {/* TODO: Load scenario count from simulation_scenarios junction */}{" "}
+          scenarios
         </div>
       </CardContent>
     </Card>

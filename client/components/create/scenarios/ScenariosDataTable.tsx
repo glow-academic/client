@@ -26,7 +26,7 @@ export interface ScenariosDataTableProps {
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
   renderGroupedScenarios: (
-    filteredGroups?: { parent: Scenario; children: Scenario[] }[],
+    filteredGroups?: { parent: Scenario; children: Scenario[] }[]
   ) => React.ReactNode;
 }
 
@@ -42,7 +42,7 @@ export function ScenariosDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
@@ -92,18 +92,13 @@ export function ScenariosDataTable({
 
     for (const parentId of orderedParentIds) {
       const parent = data.find(
-        (scenario) => !scenario.generated && scenario.id === parentId,
+        (scenario) => !scenario.generated && scenario.id === parentId
       );
       if (!parent) continue;
 
-      const children = data
-        .filter(
-          (scenario) => scenario.generated && scenario.parentId === parentId,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        );
+      // Note: parentId removed in BCNF migration, hierarchy now in scenario_tree junction
+      // TODO: Load children from scenario_tree if grouping is needed
+      const children = data.filter(() => false); // No automatic grouping for now
 
       groups.push({ parent, children });
     }

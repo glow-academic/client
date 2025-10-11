@@ -41,6 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import { useScenarioTrees } from "@/lib/api/hooks/scenario_tree";
 import { cn } from "@/lib/utils";
 import { Parameter, ParameterItem } from "@/types";
 
@@ -97,36 +98,37 @@ export function SimulationScenarioPicker({
     string[]
   >([]);
 
-  // Get current selection based on practice simulation mode
-  const currentSelection = React.useMemo(() => {
-    if (isPracticeSimulation) {
-      return selectedScenarios.filter(
-        (scenario) => scenario.practiceScenario === true,
-      );
-    } else {
-      return selectedScenarios.filter(
-        (scenario) => scenario.practiceScenario !== true,
-      );
-    }
-  }, [selectedScenarios, isPracticeSimulation]);
+  // Load scenario tree to identify roots
+  const { data: treeEdges = [] } = useScenarioTrees();
 
-  // Filter scenarios based on practice simulation toggle and other criteria, then sort by updatedAt
+  // Get root scenario IDs (self-edges)
+  const rootScenarioIds = React.useMemo(() => {
+    return treeEdges
+      .filter((edge) => edge.parentId === edge.childId)
+      .map((edge) => edge.childId);
+  }, [treeEdges]);
+
+  // Practice mode is now simulation-level only, no filtering needed on scenarios
+  const currentSelection = selectedScenarios;
+
+  // Filter scenarios to show only roots (from scenario_tree), and apply active filter
   const baseScenarios = React.useMemo(() => {
     const filtered = (
       showOnlyActive
         ? scenarios.filter((scenario) => scenario.active)
         : scenarios
     ).filter((scenario) => {
-      // Only show parent scenarios (parentId is null)
-      if (scenario.parentId !== null) return false;
+      // Only show root scenarios (those in tree with self-edge or not in tree at all)
+      // If no tree edges loaded yet, show all scenarios
+      if (treeEdges.length === 0) return true;
 
-      // If practice simulation is enabled, only show practice scenarios
-      if (isPracticeSimulation) {
-        return scenario.practiceScenario === true;
-      }
+      const isRoot = rootScenarioIds.includes(scenario.id);
+      const inTree = treeEdges.some(
+        (e) => e.childId === scenario.id || e.parentId === scenario.id
+      );
 
-      // If practice simulation is disabled, exclude practice scenarios
-      return scenario.practiceScenario !== true;
+      // Show if it's a root OR not in tree at all (standalone)
+      return isRoot || !inTree;
     });
 
     // Sort by updatedAt desc, then title
@@ -138,7 +140,7 @@ export function SimulationScenarioPicker({
       const bt = typeof b.title === "string" ? b.title : "";
       return at.localeCompare(bt);
     });
-  }, [scenarios, showOnlyActive, isPracticeSimulation]);
+  }, [scenarios, showOnlyActive, treeEdges, rootScenarioIds]);
 
   // Create a map of parameter items by ID for quick lookup
   const parameterItemsMap = React.useMemo(() => {
@@ -147,7 +149,7 @@ export function SimulationScenarioPicker({
         acc[item.id] = item;
         return acc;
       },
-      {} as Record<string, ParameterItem>,
+      {} as Record<string, ParameterItem>
     );
   }, [parameterItems]);
 
@@ -158,7 +160,7 @@ export function SimulationScenarioPicker({
         acc[param.id] = param;
         return acc;
       },
-      {} as Record<string, Parameter>,
+      {} as Record<string, Parameter>
     );
   }, [parameters]);
 
@@ -198,7 +200,7 @@ export function SimulationScenarioPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedScenarios = selectedScenarios.filter(
-        (s) => s.id !== scenario.id,
+        (s) => s.id !== scenario.id
       );
     } else {
       // Add to selection
@@ -218,11 +220,11 @@ export function SimulationScenarioPicker({
   // Remove individual item
   const handleRemoveItem = (
     scenarioToRemove: SimulationScenario,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.stopPropagation();
     const newSelectedScenarios = selectedScenarios.filter(
-      (s) => s.id !== scenarioToRemove.id,
+      (s) => s.id !== scenarioToRemove.id
     );
     onSelect?.(newSelectedScenarios);
   };
@@ -368,7 +370,7 @@ export function SimulationScenarioPicker({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        ),
+                        )
                       )}
                     </>
                   )}
@@ -395,7 +397,7 @@ export function SimulationScenarioPicker({
                             "relative hover:bg-accent overflow-visible h-8 w-8 p-0",
                             filterParameterItemIds.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground",
+                              : "text-muted-foreground"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -451,9 +453,9 @@ export function SimulationScenarioPicker({
                                                   return [...prev, opt.id];
                                                 }
                                                 return prev.filter(
-                                                  (x) => x !== opt.id,
+                                                  (x) => x !== opt.id
                                                 );
-                                              },
+                                              }
                                             );
                                           }}
                                         />
@@ -512,7 +514,7 @@ export function SimulationScenarioPicker({
                 <CommandGroup heading="Scenarios">
                   {filteredScenarios.map((scenario) => {
                     const isSelected = selectedScenarios.some(
-                      (s) => s.id === scenario.id,
+                      (s) => s.id === scenario.id
                     );
 
                     return (
@@ -582,7 +584,7 @@ function ScenarioItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>
