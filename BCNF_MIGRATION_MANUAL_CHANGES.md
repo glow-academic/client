@@ -21,6 +21,23 @@ This document covers **only manual code changes** after the BCNF migration is ap
 
 ---
 
+## 🎯 Migration Progress
+
+| Layer | Status | Files |
+|-------|--------|-------|
+| **Database Schema** | ✅ **COMPLETE** | All 8 app/*.sql files updated |
+| **Database Seed Data** | ✅ **COMPLETE** | All 8 seed/*.sql files updated |
+| **Analytics SQL (9 files)** | ✅ **COMPLETE** | All views/functions updated |
+| **Server Models** | ❌ **PENDING** | models.py needs junction classes |
+| **Server Business Logic** | ❌ **PENDING** | ~20 files need updates |
+| **Client Components** | ❌ **PENDING** | ~20 files need updates |
+| **Crowdsourcing Cleanup** | ❌ **PENDING** | ~5 files to delete/update |
+
+**Database is ready!** ✅ You can run `yarn migrate` successfully.  
+**Application code** needs ~60 file updates to work with new schema.
+
+---
+
 ## 📊 Additional Schema Changes
 
 The migration includes these additional normalizations:
@@ -626,29 +643,82 @@ if not effective_dept:
 - [ ] Regenerate models, routes, repos, hooks (auto-generated)
 - [ ] Verify `profile_departments` table created
 
-### Phase 2: Server Business Logic
-- [ ] Update `server/app/web/simulations.py` (simulation start)
-- [ ] Update `server/app/routes/scenarios.py` (scenario creation)
-- [ ] Update all department agent access (8 roles × multiple files)
-- [ ] Update `/server/app/services/agents/collection/scenario.py`
-- [ ] Update all MCP tools (scenario_overview, simulation_overview, cohort_overview)
-- [ ] Update analytics utility functions
+### Phase 2: Server Business Logic (~25 files)
 
-### Phase 3: Client Components
-- [ ] Update `Scenario.tsx` (problemStatement, junction APIs)
-- [ ] Update `Simulation.tsx` (guardrails, hints, tags)
-- [ ] Update `SimulationScenarioPicker.tsx` (remove parentId, practiceScenario)
-- [ ] Update `Cohort.tsx` (junction-based management)
-- [ ] Update `Department.tsx` (dynamic agent roles)
-- [ ] Update `Scenarios.tsx` (hierarchy from scenario_tree)
-- [ ] Update `simulation-context.tsx` (document filtering)
-- [ ] Update profile components (M:N department management)
-- [ ] Add department multi-select with primary toggle
+**Models (1 file)**:
+- [ ] `server/app/models.py` - Add 12 junction model classes, update Scenarios/Simulations/Cohorts/Departments
 
-### Phase 4: Analytics & Views
-- [ ] Update all SQL view files (9 files)
-- [ ] Replace array operations with junction joins
-- [ ] Update field names (description → problem_statement)
+**Department Agent Access (8 files)** - Replace `department.<role>_agent_id` with junction queries:
+- [ ] `server/app/services/agents/collection/scenario.py` (Line 179)
+- [ ] `server/app/services/agents/collection/simulation.py`
+- [ ] `server/app/services/agents/collection/hint.py`
+- [ ] `server/app/services/agents/collection/grade.py`
+- [ ] `server/app/services/agents/collection/classify.py`
+- [ ] `server/app/services/agents/collection/guardrail.py`
+- [ ] `server/app/services/agents/collection/assistant.py`
+- [ ] `server/app/services/agents/collection/title.py`
+
+**Array Column Usage (6 files)**:
+- [ ] `server/app/web/simulations.py` - scenario_ids access (Line 123)
+- [ ] `server/app/routes/scenarios.py` - objectives, parameter_item_ids, document_ids
+- [ ] `server/app/utils/scenario.py` - parameter_item_ids, document_ids, description
+- [ ] `server/app/utils/analytics.py` - Various array accesses
+- [ ] `server/app/services/agents/collection/hint.py` - May use scenario arrays
+- [ ] `server/app/services/agents/collection/simulation.py` - May use arrays
+
+**MCP Tools (7 files)**:
+- [ ] `server/app/services/mcp/tools/lookup/scenario_overview.py` - objectives, params, docs
+- [ ] `server/app/services/mcp/tools/lookup/simulation_overview.py` - scenario_ids
+- [ ] `server/app/services/mcp/tools/lookup/cohort_overview.py` - profile_ids, simulation_ids
+- [ ] `server/app/services/mcp/tools/lookup/persona_overview.py` - scenario data
+- [ ] `server/app/services/mcp/tools/search/find_scenarios.py` - Search logic
+- [ ] `server/app/services/mcp/tools/search/find_cohorts.py` - Cohort arrays
+- [ ] Other MCP analytics tools - Verify no array usage
+
+### Phase 3: Client Components (~25 files)
+
+**Major Components (6 files)** - Core UI updates:
+- [ ] `client/components/common/scenario/Scenario.tsx` (41 occurrences) - problemStatement, objectives junction, param/doc junctions
+- [ ] `client/components/common/simulation/Simulation.tsx` (30 occurrences) - scenarioIds junction, new flags UI
+- [ ] `client/components/create/scenarios/Scenarios.tsx` (15 occurrences) - parentId → scenario_tree hierarchy
+- [ ] `client/components/common/simulation/SimulationScenarioPicker.tsx` (13 occurrences) - Remove parentId/practiceScenario filters
+- [ ] `client/components/common/cohort/Cohort.tsx` (8 occurrences) - profileIds, simulationIds → junctions
+- [ ] `client/components/common/cohort/SimulationPicker.tsx` (9 occurrences) - Update array patterns
+
+**Secondary Components (8 files)**:
+- [ ] `client/components/practice/PracticeCustomizeDialog.tsx` (5 occurrences)
+- [ ] `client/components/common/parameter/Parameter.tsx` (5 occurrences)
+- [ ] `client/components/create/scenarios/ScenariosDataTable.tsx` (3 occurrences)
+- [ ] `client/components/management/parameters/ParametersDataTableToolbar.tsx` (3 occurrences)
+- [ ] `client/components/common/chat/attempt/AttemptChat.tsx` (3 occurrences)
+- [ ] `client/components/create/simulations/Simulations.tsx` (2 occurrences)
+- [ ] `client/components/create/documents/Documents.tsx` (2 occurrences)
+- [ ] `client/components/common/history/SimulationHistory.tsx` (2 occurrences)
+
+**Minor Components (4 files)**:
+- [ ] `client/components/common/scenario/ParameterSelector.tsx` (1 occurrence)
+- [ ] `client/components/common/history/BrightspaceExportButton.tsx` (1 occurrence)
+- [ ] `client/components/analytics/report/ReportsDataTable.tsx` (1 occurrence)
+- [ ] `client/components/common/analytics/footer/SimulationPerformance.tsx` (1 occurrence)
+
+**Contexts & Utilities (3 files)**:
+- [ ] `client/contexts/simulation-context.tsx` - scenario.documentIds filtering
+- [ ] `client/utils/api/scenarios/*.ts` - Various scenario API utilities
+- [ ] Profile management components - M:N department handling
+
+### Phase 4: Analytics & Views ✅ COMPLETED
+- [x] Update all SQL view files (9 files) - ✅ All updated!
+  - [x] `/database/app/analytics/init.sql` - Main analytics MV
+  - [x] `/database/app/analytics/leaderboard/init.sql` - Leaderboard bundle
+  - [x] `/database/app/analytics/reports/init.sql` - Reports bundle
+  - [x] `/database/app/analytics/secondary/cohort_performance.sql`
+  - [x] `/database/app/analytics/footer/simulation_composition.sql`
+  - [x] `/database/app/analytics/footer/scenario_stats.sql`
+  - [x] `/database/app/analytics/footer/scenario_performance.sql`
+  - [x] `/database/app/analytics/home/analytics_home_overview.sql`
+  - [x] `/database/app/analytics/practice/analytics_practice_overview.sql`
+- [x] Replace array operations with junction joins - ✅ Done
+- [x] Update field names (description → problem_statement) - ✅ Done
 
 ### Phase 5: Cleanup & Verification
 - [ ] Delete 2 crowdsourcing component files
@@ -730,21 +800,35 @@ UNION ALL SELECT 'department_agents', COUNT(*) FROM department_agents;
 
 ## 📈 Summary
 
-**Tables Added**: 12 (11 junctions + 1 pivot)  
-**Views Added**: 2 (tag discovery views)  
-**Columns Dropped**: ~30 (arrays, denormalized references, old tags, department agents)  
-**Columns Added**: 4 simulation flags (guardrails, image input, hints)  
-**Tables Dropped**: 2 (crowdsourcing)  
-**Integrity Constraints**: 4 unique indexes for BCNF enforcement (tree structure, unique positions, unique tags, one primary dept)
+**Database Layer**: ✅ **100% Complete**  
+**Application Code**: ❌ **60 files pending**
 
-**Key Changes**:
-- ✅ All arrays converted to junction tables
+### Database Changes (All Complete):
+- ✅ **12 tables added** (11 junctions + 1 pivot)
+- ✅ **2 views added** (tag discovery views)
+- ✅ **~30 columns dropped** (arrays, denormalized refs, old tags)
+- ✅ **4 columns added** (simulation flags: guardrails, image input, hints)
+- ✅ **2 tables dropped** (crowdsourcing)
+- ✅ **4 integrity constraints** (tree structure, unique positions, unique tags, one primary dept)
+- ✅ **9 analytics views updated** (all SQL functions working with junctions)
+- ✅ **8 seed files updated** (all junction data properly inserted)
+
+### Application Code Pending:
+- ❌ **1 models file** (server/app/models.py)
+- ❌ **~25 server files** (8 agent services + 6 business logic + 7 MCP tools + utilities)
+- ❌ **~25 client files** (6 major + 8 secondary + 4 minor components + contexts/utils)
+- ❌ **5 crowdsourcing files** (delete/cleanup)
+
+**Key Architectural Changes**:
+- ✅ All arrays → junction tables (BCNF compliant)
 - ✅ `scenarios.description` → `scenarios.problem_statement`
 - ✅ `profiles.department_id` → `profile_departments` M:N
 - ✅ 8 department agent columns → `department_agents` pivot
 - ✅ Document/parameter tags → simulation-level only
-- ❌ No per-simulation agent overrides (all via department)
+- ✅ No per-simulation agent overrides (all via department)
 
-**Estimated Effort**: 20-30 hours (manual changes only, excluding tests)  
+**Estimated Remaining Effort**: 20-30 hours (application code only)  
 **Updated**: 2025-10-11
+
+**Status**: Database schema is production-ready. Application code migration can begin after schema regeneration.
 

@@ -405,31 +405,6 @@ export const simulationAttemptKeysBySimulationId = {
       ids.map(String).sort(),
     ] as const,
 };
-export const simulationChatCrowdsourcedFeedbackKeysByProfileId = {
-  one: (id: string | number) =>
-    [
-      "simulation_chat_crowdsourced_feedbacks:by:profileId",
-      String(id),
-    ] as const,
-  many: (ids: Array<string | number>) =>
-    [
-      "simulation_chat_crowdsourced_feedbacks:by:profileId:batch",
-      ids.map(String).sort(),
-    ] as const,
-};
-export const simulationChatCrowdsourcedFeedbackKeysBySimulationChatFeedbackId =
-  {
-    one: (id: string | number) =>
-      [
-        "simulation_chat_crowdsourced_feedbacks:by:simulationChatFeedbackId",
-        String(id),
-      ] as const,
-    many: (ids: Array<string | number>) =>
-      [
-        "simulation_chat_crowdsourced_feedbacks:by:simulationChatFeedbackId:batch",
-        ids.map(String).sort(),
-      ] as const,
-  };
 export const simulationChatFeedbackKeysByStandardId = {
   one: (id: string | number) =>
     ["simulation_chat_feedbacks:by:standardId", String(id)] as const,
@@ -477,27 +452,6 @@ export const simulationChatKeysByAttemptId = {
     ["simulation_chats:by:attemptId", String(id)] as const,
   many: (ids: Array<string | number>) =>
     ["simulation_chats:by:attemptId:batch", ids.map(String).sort()] as const,
-};
-export const simulationCrowdsourcedMessageKeysBySimulationMessageId = {
-  one: (id: string | number) =>
-    [
-      "simulation_crowdsourced_messages:by:simulationMessageId",
-      String(id),
-    ] as const,
-  many: (ids: Array<string | number>) =>
-    [
-      "simulation_crowdsourced_messages:by:simulationMessageId:batch",
-      ids.map(String).sort(),
-    ] as const,
-};
-export const simulationCrowdsourcedMessageKeysByProfileId = {
-  one: (id: string | number) =>
-    ["simulation_crowdsourced_messages:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) =>
-    [
-      "simulation_crowdsourced_messages:by:profileId:batch",
-      ids.map(String).sort(),
-    ] as const,
 };
 export const simulationMessageKeysByChatId = {
   one: (id: string | number) =>
@@ -609,4 +563,152 @@ export const simulationHintKeys = {
 export const simulationHintKeysBySimulationMessageId = {
   one: (id: string | number) => ["simulation_hints:by:simulationMessageId", String(id)] as const,
   many: (ids: Array<string | number>) => ["simulation_hints:by:simulationMessageId:batch", ids.map(String).sort()] as const,
+};
+export const cohortProfileKeys = {
+  all: ["cohort_profiles"] as const,
+  list: (filters?: unknown) => [...cohortProfileKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...cohortProfileKeys.all, String(id)] as const,
+};
+export const cohortSimulationKeys = {
+  all: ["cohort_simulations"] as const,
+  list: (filters?: unknown) => [...cohortSimulationKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...cohortSimulationKeys.all, String(id)] as const,
+};
+export const departmentAgentKeys = {
+  all: ["department_agents"] as const,
+  list: (filters?: unknown) => [...departmentAgentKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...departmentAgentKeys.all, String(id)] as const,
+};
+export const profileDepartmentKeys = {
+  all: ["profile_departments"] as const,
+  list: (filters?: unknown) => [...profileDepartmentKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...profileDepartmentKeys.all, String(id)] as const,
+};
+export const scenarioDocumentKeys = {
+  all: ["scenario_documents"] as const,
+  list: (filters?: unknown) => [...scenarioDocumentKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...scenarioDocumentKeys.all, String(id)] as const,
+};
+export const scenarioObjectiveKeys = {
+  all: ["scenario_objectives"] as const,
+  list: (filters?: unknown) => [...scenarioObjectiveKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...scenarioObjectiveKeys.all, String(id)] as const,
+};
+export const scenarioParameterItemKeys = {
+  all: ["scenario_parameter_items"] as const,
+  list: (filters?: unknown) => [...scenarioParameterItemKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...scenarioParameterItemKeys.all, String(id)] as const,
+};
+export const scenarioTreeKeys = {
+  all: ["scenario_tree"] as const,
+  list: (filters?: unknown) => [...scenarioTreeKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...scenarioTreeKeys.all, String(id)] as const,
+};
+export const simulationScenarioKeys = {
+  all: ["simulation_scenarios"] as const,
+  list: (filters?: unknown) => [...simulationScenarioKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...simulationScenarioKeys.all, String(id)] as const,
+};
+export const simulationTagDocumentKeys = {
+  all: ["simulation_tag_documents"] as const,
+  list: (filters?: unknown) => [...simulationTagDocumentKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...simulationTagDocumentKeys.all, String(id)] as const,
+};
+export const simulationTagParameterItemKeys = {
+  all: ["simulation_tag_parameter_items"] as const,
+  list: (filters?: unknown) => [...simulationTagParameterItemKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...simulationTagParameterItemKeys.all, String(id)] as const,
+};
+export const simulationTagKeys = {
+  all: ["simulation_tags"] as const,
+  list: (filters?: unknown) => [...simulationTagKeys.all, { filters }] as const,
+  detail: (id: string | number) => [...simulationTagKeys.all, String(id)] as const,
+};
+export const cohortProfileKeysByCohortId = {
+  one: (id: string | number) => ["cohort_profiles:by:cohortId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["cohort_profiles:by:cohortId:batch", ids.map(String).sort()] as const,
+};
+export const cohortProfileKeysByProfileId = {
+  one: (id: string | number) => ["cohort_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["cohort_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+};
+export const cohortSimulationKeysByCohortId = {
+  one: (id: string | number) => ["cohort_simulations:by:cohortId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["cohort_simulations:by:cohortId:batch", ids.map(String).sort()] as const,
+};
+export const cohortSimulationKeysBySimulationId = {
+  one: (id: string | number) => ["cohort_simulations:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["cohort_simulations:by:simulationId:batch", ids.map(String).sort()] as const,
+};
+export const departmentAgentKeysByDepartmentId = {
+  one: (id: string | number) => ["department_agents:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["department_agents:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const departmentAgentKeysByAgentId = {
+  one: (id: string | number) => ["department_agents:by:agentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["department_agents:by:agentId:batch", ids.map(String).sort()] as const,
+};
+export const profileDepartmentKeysByProfileId = {
+  one: (id: string | number) => ["profile_departments:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["profile_departments:by:profileId:batch", ids.map(String).sort()] as const,
+};
+export const profileDepartmentKeysByDepartmentId = {
+  one: (id: string | number) => ["profile_departments:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["profile_departments:by:departmentId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioDocumentKeysByScenarioId = {
+  one: (id: string | number) => ["scenario_documents:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_documents:by:scenarioId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioDocumentKeysByDocumentId = {
+  one: (id: string | number) => ["scenario_documents:by:documentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_documents:by:documentId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioObjectiveKeysByScenarioId = {
+  one: (id: string | number) => ["scenario_objectives:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_objectives:by:scenarioId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioParameterItemKeysByScenarioId = {
+  one: (id: string | number) => ["scenario_parameter_items:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_parameter_items:by:scenarioId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioParameterItemKeysByParameterItemId = {
+  one: (id: string | number) => ["scenario_parameter_items:by:parameterItemId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_parameter_items:by:parameterItemId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioTreeKeysByParentId = {
+  one: (id: string | number) => ["scenario_tree:by:parentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_tree:by:parentId:batch", ids.map(String).sort()] as const,
+};
+export const scenarioTreeKeysByChildId = {
+  one: (id: string | number) => ["scenario_tree:by:childId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["scenario_tree:by:childId:batch", ids.map(String).sort()] as const,
+};
+export const simulationScenarioKeysBySimulationId = {
+  one: (id: string | number) => ["simulation_scenarios:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_scenarios:by:simulationId:batch", ids.map(String).sort()] as const,
+};
+export const simulationScenarioKeysByScenarioId = {
+  one: (id: string | number) => ["simulation_scenarios:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_scenarios:by:scenarioId:batch", ids.map(String).sort()] as const,
+};
+export const simulationTagDocumentKeysByDocumentId = {
+  one: (id: string | number) => ["simulation_tag_documents:by:documentId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_tag_documents:by:documentId:batch", ids.map(String).sort()] as const,
+};
+export const simulationTagDocumentKeysBySimulationId = {
+  one: (id: string | number) => ["simulation_tag_documents:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_tag_documents:by:simulationId:batch", ids.map(String).sort()] as const,
+};
+export const simulationTagParameterItemKeysByParameterItemId = {
+  one: (id: string | number) => ["simulation_tag_parameter_items:by:parameterItemId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_tag_parameter_items:by:parameterItemId:batch", ids.map(String).sort()] as const,
+};
+export const simulationTagParameterItemKeysBySimulationId = {
+  one: (id: string | number) => ["simulation_tag_parameter_items:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_tag_parameter_items:by:simulationId:batch", ids.map(String).sort()] as const,
+};
+export const simulationTagKeysBySimulationId = {
+  one: (id: string | number) => ["simulation_tags:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) => ["simulation_tags:by:simulationId:batch", ids.map(String).sort()] as const,
 };

@@ -60,23 +60,16 @@ class Departments(_Base, table=True):
     title: str = Field(sa_column=Column('title', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False))
     active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    title_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('title_agent_id', Uuid, nullable=False))
-    scenario_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_agent_id', Uuid, nullable=False))
-    classify_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('classify_agent_id', Uuid, nullable=False))
-    assistant_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('assistant_agent_id', Uuid, nullable=False))
-    grade_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('grade_agent_id', Uuid, nullable=False))
-    input_guardrail_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('input_guardrail_agent_id', Uuid, nullable=False))
-    output_guardrail_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('output_guardrail_agent_id', Uuid, nullable=False))
-    hint_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('hint_agent_id', Uuid, nullable=False))
 
     cohorts: list['Cohorts'] = Relationship(back_populates='department')
     documents: list['Documents'] = Relationship(back_populates='department')
     parameters: list['Parameters'] = Relationship(back_populates='department')
-    profiles: list['Profiles'] = Relationship(back_populates='department')
     providers: list['Providers'] = Relationship(back_populates='department')
     rubrics: list['Rubrics'] = Relationship(back_populates='department')
+    profile_departments: list['ProfileDepartments'] = Relationship(back_populates='department')
     simulations: list['Simulations'] = Relationship(back_populates='department')
     personas: list['Personas'] = Relationship(back_populates='department')
+    department_agents: list['DepartmentAgents'] = Relationship(back_populates='department')
     model_runs: list['ModelRuns'] = Relationship(back_populates='department')
     scenarios: list['Scenarios'] = Relationship(back_populates='department')
 
@@ -119,7 +112,7 @@ class VerificationToken(_Base, table=True):
 
 class Cohorts(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='cohorts_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='cohorts_department_id_fkey'),
         PrimaryKeyConstraint('id', name='cohorts_pkey')
     )
 
@@ -128,18 +121,18 @@ class Cohorts(_Base, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     title: str = Field(sa_column=Column('title', Text, nullable=False))
     active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    profile_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
     default_cohort: bool = Field(sa_column=Column('default_cohort', Boolean, nullable=False, default=False))
-    simulation_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
     department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, nullable=False))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
     department: Optional['Departments'] = Relationship(back_populates='cohorts')
+    profile: list['Profiles'] = Relationship(back_populates='cohort')
+    simulation: list['Simulations'] = Relationship(back_populates='cohort')
 
 
 class Documents(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='documents_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='documents_department_id_fkey'),
         PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
@@ -152,16 +145,17 @@ class Documents(_Base, table=True):
     type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), nullable=False, default=r'homework'))
     classified: bool = Field(sa_column=Column('classified', Boolean, nullable=False, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
     department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, nullable=False))
     file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
     department: Optional['Departments'] = Relationship(back_populates='documents')
+    simulation_tags: list['SimulationTags'] = Relationship(back_populates='document')
+    scenario: list['Scenarios'] = Relationship(back_populates='document')
 
 
 class Parameters(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='parameters_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='parameters_department_id_fkey'),
         PrimaryKeyConstraint('id', name='parameters_pkey')
     )
 
@@ -181,8 +175,7 @@ class Parameters(_Base, table=True):
 
 class Profiles(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='SET NULL', onupdate='CASCADE', name='profiles_department_id_fkey'),
-        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', onupdate='CASCADE', name='profiles_user_id_fkey'),
+        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='profiles_user_id_fkey'),
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
@@ -201,21 +194,19 @@ class Profiles(_Base, table=True):
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
     last_active: Optional[datetime] = Field(default=None, sa_column=Column('last_active', DateTime(True)))
     req_per_day: Optional[int] = Field(default=None, sa_column=Column('req_per_day', Integer))
-    department_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('department_id', Uuid(as_uuid=True)))
 
-    department: Optional['Departments'] = Relationship(back_populates='profiles')
+    cohort: list['Cohorts'] = Relationship(back_populates='profile')
     user: Optional['Users'] = Relationship(back_populates='profiles')
     app_feedback: list['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: list['AssistantChats'] = Relationship(back_populates='profile')
+    profile_departments: list['ProfileDepartments'] = Relationship(back_populates='profile')
     simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='profile')
     model_runs: list['ModelRuns'] = Relationship(back_populates='profile')
-    simulation_crowdsourced_messages: list['SimulationCrowdsourcedMessages'] = Relationship(back_populates='profile')
-    simulation_chat_crowdsourced_feedbacks: list['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='profile')
 
 
 class Providers(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='providers_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='providers_department_id_fkey'),
         PrimaryKeyConstraint('id', name='providers_pkey')
     )
 
@@ -234,7 +225,7 @@ class Providers(_Base, table=True):
 
 class Rubrics(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='rubrics_department_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='rubrics_department_id_fkey'),
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
         Index('rubrics_id_idx', 'id')
     )
@@ -259,7 +250,7 @@ class Rubrics(_Base, table=True):
 class AppFeedback(_Base, table=True):
     __tablename__ = 'app_feedback'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='app_feedback_profile_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='app_feedback_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='app_feedback_pkey')
     )
 
@@ -275,7 +266,7 @@ class AppFeedback(_Base, table=True):
 class AssistantChats(_Base, table=True):
     __tablename__ = 'assistant_chats'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_chats_profile_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='assistant_chats_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_chats_pkey')
     )
 
@@ -291,9 +282,21 @@ class AssistantChats(_Base, table=True):
     assistant_tool_calls: list['AssistantToolCalls'] = Relationship(back_populates='chat')
 
 
+t_cohort_profiles = Table(
+    'cohort_profiles', ,
+    Column('cohort_id', Uuid, primary_key=True),
+    Column('profile_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE', name='cohort_profiles_cohort_id_fkey'),
+    ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='cohort_profiles_profile_id_fkey'),
+    PrimaryKeyConstraint('cohort_id', 'profile_id', name='cohort_profiles_pkey'),
+    Index('cohort_profiles_cohort_id_idx', 'cohort_id'),
+    Index('cohort_profiles_profile_id_idx', 'profile_id')
+)
+
+
 class Models(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE', onupdate='CASCADE', name='models_provider_id_fkey'),
+        ForeignKeyConstraint(['provider_id'], ['providers.id'], ondelete='CASCADE', name='models_provider_id_fkey'),
         PrimaryKeyConstraint('id', name='models_pkey')
     )
 
@@ -317,7 +320,7 @@ class Models(_Base, table=True):
 class ParameterItems(_Base, table=True):
     __tablename__ = 'parameter_items'
     __table_args__ = (
-        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', onupdate='CASCADE', name='parameter_items_parameter_id_fkey'),
+        ForeignKeyConstraint(['parameter_id'], ['parameters.id'], ondelete='CASCADE', name='parameter_items_parameter_id_fkey'),
         PrimaryKeyConstraint('id', name='parameter_items_pkey')
     )
 
@@ -329,15 +332,36 @@ class ParameterItems(_Base, table=True):
     value: str = Field(sa_column=Column('value', Text, nullable=False))
     parameter_id: Mapped[uuid.UUID] = Field(sa_column=Column('parameter_id', Uuid, nullable=False))
     default_item: bool = Field(sa_column=Column('default_item', Boolean, nullable=False, default=False))
-    tags: list[str] = Field(sa_column=Column('tags', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
 
     parameter: Optional['Parameters'] = Relationship(back_populates='parameter_items')
+    simulation_tags: list['SimulationTags'] = Relationship(back_populates='parameter_item')
+    scenario: list['Scenarios'] = Relationship(back_populates='parameter_item')
+
+
+class ProfileDepartments(_Base, table=True):
+    __tablename__ = 'profile_departments'
+    __table_args__ = (
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='profile_departments_department_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='profile_departments_profile_id_fkey'),
+        PrimaryKeyConstraint('profile_id', 'department_id', name='profile_departments_pkey'),
+        Index('profile_departments_department_id_idx', 'department_id'),
+        Index('profile_departments_one_primary_per_profile', 'profile_id', unique=True),
+        Index('profile_departments_profile_id_is_primary_idx', 'profile_id', 'is_primary')
+    )
+
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, primary_key=True))
+    department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, primary_key=True))
+    is_primary: bool = Field(sa_column=Column('is_primary', Boolean, nullable=False, default=False))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
+
+    department: Optional['Departments'] = Relationship(back_populates='profile_departments')
+    profile: Optional['Profiles'] = Relationship(back_populates='profile_departments')
 
 
 class Simulations(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulations_department_id_fkey'),
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulations_rubric_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='simulations_department_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='simulations_pkey'),
         Index('simulations_id_active_idx', 'id', 'active')
     )
@@ -348,22 +372,28 @@ class Simulations(_Base, table=True):
     title: str = Field(sa_column=Column('title', Text, nullable=False))
     description: str = Field(sa_column=Column('description', Text, nullable=False, default=r'No description provided'))
     active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
-    scenario_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), nullable=False))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid, nullable=False))
     default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, nullable=False, default=False))
     practice_simulation: bool = Field(sa_column=Column('practice_simulation', Boolean, nullable=False, default=False))
     department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, nullable=False))
+    output_guardrail_active: bool = Field(sa_column=Column('output_guardrail_active', Boolean, nullable=False, default=False))
+    input_guardrail_active: bool = Field(sa_column=Column('input_guardrail_active', Boolean, nullable=False, default=False))
+    image_input_active: bool = Field(sa_column=Column('image_input_active', Boolean, nullable=False, default=False))
+    hints_enabled: bool = Field(sa_column=Column('hints_enabled', Boolean, nullable=False, default=False))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
+    cohort: list['Cohorts'] = Relationship(back_populates='simulation')
     department: Optional['Departments'] = Relationship(back_populates='simulations')
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
     simulation_attempts: list['SimulationAttempts'] = Relationship(back_populates='simulation')
+    simulation_tags: list['SimulationTags'] = Relationship(back_populates='simulation')
+    simulation_scenarios: list['SimulationScenarios'] = Relationship(back_populates='simulation')
 
 
 class StandardGroups(_Base, table=True):
     __tablename__ = 'standard_groups'
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='standard_groups_rubric_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='standard_groups_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='standard_groups_pkey'),
         Index('standard_groups_id_rubric_idx', 'id', 'rubric_id'),
         Index('standard_groups_rubric_idx', 'id', 'rubric_id')
@@ -384,7 +414,7 @@ class StandardGroups(_Base, table=True):
 
 class Agents(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', onupdate='CASCADE', name='agents_model_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', name='agents_model_id_fkey'),
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
@@ -399,13 +429,14 @@ class Agents(_Base, table=True):
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('minimal', 'low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
+    department_agents: list['DepartmentAgents'] = Relationship(back_populates='agent')
     model_runs: list['ModelRuns'] = Relationship(back_populates='agent')
 
 
 class AssistantMessages(_Base, table=True):
     __tablename__ = 'assistant_messages'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_messages_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', name='assistant_messages_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_messages_pkey')
     )
 
@@ -424,7 +455,7 @@ class AssistantMessages(_Base, table=True):
 class AssistantToolCalls(_Base, table=True):
     __tablename__ = 'assistant_tool_calls'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='assistant_tool_calls_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], ondelete='CASCADE', name='assistant_tool_calls_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
     )
 
@@ -442,10 +473,22 @@ class AssistantToolCalls(_Base, table=True):
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
 
 
+t_cohort_simulations = Table(
+    'cohort_simulations', ,
+    Column('cohort_id', Uuid, primary_key=True),
+    Column('simulation_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE', name='cohort_simulations_cohort_id_fkey'),
+    ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='cohort_simulations_simulation_id_fkey'),
+    PrimaryKeyConstraint('cohort_id', 'simulation_id', name='cohort_simulations_pkey'),
+    Index('cohort_simulations_cohort_id_idx', 'cohort_id'),
+    Index('cohort_simulations_simulation_id_idx', 'simulation_id')
+)
+
+
 class Personas(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='personas_department_id_fkey'),
-        ForeignKeyConstraint(['model_id'], ['models.id'], onupdate='CASCADE', name='personas_model_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='personas_department_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], name='personas_model_id_fkey'),
         PrimaryKeyConstraint('id', name='personas_pkey'),
         Index('personas_id_idx', 'id')
     )
@@ -476,8 +519,8 @@ class Personas(_Base, table=True):
 class SimulationAttempts(_Base, table=True):
     __tablename__ = 'simulation_attempts'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_attempts_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_attempts_simulation_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey'),
         Index('simulation_attempts_archived_idx', 'archived'),
         Index('simulation_attempts_id_profile_archived_idx', 'id', 'profile_id', 'archived', 'infinite_mode'),
@@ -497,9 +540,28 @@ class SimulationAttempts(_Base, table=True):
     simulation_chats: list['SimulationChats'] = Relationship(back_populates='attempt')
 
 
+class SimulationTags(_Base, table=True):
+    __tablename__ = 'simulation_tags'
+    __table_args__ = (
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_tags_simulation_id_fkey'),
+        PrimaryKeyConstraint('simulation_id', 'idx', name='simulation_tags_pkey'),
+        Index('simulation_tags_simulation_id_idx', 'simulation_id'),
+        Index('simulation_tags_text_idx', 'simulation_id'),
+        Index('simulation_tags_unique_text_per_sim', 'simulation_id', unique=True)
+    )
+
+    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid, primary_key=True))
+    idx: int = Field(sa_column=Column('idx', Integer, primary_key=True))
+    tag: str = Field(sa_column=Column('tag', Text, nullable=False))
+
+    document: list['Documents'] = Relationship(back_populates='simulation_tags')
+    parameter_item: list['ParameterItems'] = Relationship(back_populates='simulation_tags')
+    simulation: Optional['Simulations'] = Relationship(back_populates='simulation_tags')
+
+
 class Standards(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', onupdate='CASCADE', name='standards_standard_group_id_fkey'),
+        ForeignKeyConstraint(['standard_group_id'], ['standard_groups.id'], ondelete='CASCADE', name='standards_standard_group_id_fkey'),
         PrimaryKeyConstraint('id', name='standards_pkey'),
         Index('standards_group_idx', 'standard_group_id')
     )
@@ -515,14 +577,32 @@ class Standards(_Base, table=True):
     simulation_chat_feedbacks: list['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
 
 
+class DepartmentAgents(_Base, table=True):
+    __tablename__ = 'department_agents'
+    __table_args__ = (
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='department_agents_agent_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='department_agents_department_id_fkey'),
+        PrimaryKeyConstraint('department_id', 'role', name='department_agents_pkey'),
+        Index('department_agents_agent_id_idx', 'agent_id'),
+        Index('department_agents_department_id_role_idx', 'department_id', 'role')
+    )
+
+    department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, primary_key=True))
+    role: str = Field(sa_column=Column('role', Text, primary_key=True))
+    agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('agent_id', Uuid, nullable=False))
+
+    agent: Optional['Agents'] = Relationship(back_populates='department_agents')
+    department: Optional['Departments'] = Relationship(back_populates='department_agents')
+
+
 class ModelRuns(_Base, table=True):
     __tablename__ = 'model_runs'
     __table_args__ = (
-        ForeignKeyConstraint(['agent_id'], ['agents.id'], onupdate='CASCADE', name='model_runs_agent_id_fkey'),
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='model_runs_department_id_fkey'),
-        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', onupdate='CASCADE', name='model_runs_model_id_fkey'),
-        ForeignKeyConstraint(['persona_id'], ['personas.id'], onupdate='CASCADE', name='model_runs_persona_id_fkey'),
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], onupdate='CASCADE', name='model_runs_profile_id_fkey'),
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], name='model_runs_agent_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='model_runs_department_id_fkey'),
+        ForeignKeyConstraint(['model_id'], ['models.id'], ondelete='SET NULL', name='model_runs_model_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], name='model_runs_persona_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], name='model_runs_profile_id_fkey'),
         PrimaryKeyConstraint('id', name='model_runs_pkey')
     )
 
@@ -547,8 +627,8 @@ class ModelRuns(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', onupdate='CASCADE', name='scenarios_department_id_fkey'),
-        ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', onupdate='CASCADE', name='scenarios_persona_id_fkey'),
+        ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='CASCADE', name='scenarios_department_id_fkey'),
+        ForeignKeyConstraint(['persona_id'], ['personas.id'], ondelete='SET NULL', name='scenarios_persona_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey'),
         Index('scenarios_id_active_idx', 'id', 'active')
     )
@@ -557,27 +637,54 @@ class Scenarios(_Base, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('updated_at', DateTime(True), nullable=False))
     name: str = Field(sa_column=Column('name', Text, nullable=False))
-    description: str = Field(sa_column=Column('description', Text, nullable=False))
-    objectives: list[str] = Field(sa_column=Column('objectives', ARRAY(Text()), nullable=False, server_default=text("'{}'::text[]")))
+    problem_statement: str = Field(sa_column=Column('problem_statement', Text, nullable=False))
     default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, nullable=False, default=False))
-    practice_scenario: bool = Field(sa_column=Column('practice_scenario', Boolean, nullable=False, default=False))
     generated: bool = Field(sa_column=Column('generated', Boolean, nullable=False, default=False))
     active: bool = Field(sa_column=Column('active', Boolean, nullable=False, default=True))
     department_id: Mapped[uuid.UUID] = Field(sa_column=Column('department_id', Uuid, nullable=False))
     persona_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('persona_id', Uuid(as_uuid=True)))
-    parameter_item_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('parameter_item_ids', ARRAY(Uuid(as_uuid=True))))
-    document_ids: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('document_ids', ARRAY(Uuid(as_uuid=True))))
-    parent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('parent_id', Uuid(as_uuid=True)))
 
+    document: list['Documents'] = Relationship(back_populates='scenario')
+    parameter_item: list['ParameterItems'] = Relationship(back_populates='scenario')
     department: Optional['Departments'] = Relationship(back_populates='scenarios')
     persona: Optional['Personas'] = Relationship(back_populates='scenarios')
+    parent: list['Scenarios'] = Relationship(back_populates='child')
+    child: list['Scenarios'] = Relationship(back_populates='parent')
+    scenario_objectives: list['ScenarioObjectives'] = Relationship(back_populates='scenario')
     simulation_chats: list['SimulationChats'] = Relationship(back_populates='scenario')
+    simulation_scenarios: list['SimulationScenarios'] = Relationship(back_populates='scenario')
+
+
+t_simulation_tag_documents = Table(
+    'simulation_tag_documents', ,
+    Column('simulation_id', Uuid, primary_key=True),
+    Column('tag_idx', Integer, primary_key=True),
+    Column('document_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['document_id'], ['documents.id'], ondelete='CASCADE', name='simulation_tag_documents_document_id_fkey'),
+    ForeignKeyConstraint(['simulation_id', 'tag_idx'], ['simulation_tags.simulation_id', 'simulation_tags.idx'], ondelete='CASCADE', name='simulation_tag_documents_tag_fk'),
+    PrimaryKeyConstraint('simulation_id', 'tag_idx', 'document_id', name='simulation_tag_documents_pkey'),
+    Index('simulation_tag_documents_document_id_idx', 'document_id'),
+    Index('simulation_tag_documents_simulation_id_tag_idx_idx', 'simulation_id', 'tag_idx')
+)
+
+
+t_simulation_tag_parameter_items = Table(
+    'simulation_tag_parameter_items', ,
+    Column('simulation_id', Uuid, primary_key=True),
+    Column('tag_idx', Integer, primary_key=True),
+    Column('parameter_item_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['parameter_item_id'], ['parameter_items.id'], ondelete='CASCADE', name='simulation_tag_parameter_items_parameter_item_id_fkey'),
+    ForeignKeyConstraint(['simulation_id', 'tag_idx'], ['simulation_tags.simulation_id', 'simulation_tags.idx'], ondelete='CASCADE', name='simulation_tag_parameter_items_tag_fk'),
+    PrimaryKeyConstraint('simulation_id', 'tag_idx', 'parameter_item_id', name='simulation_tag_parameter_items_pkey'),
+    Index('simulation_tag_parameter_items_parameter_item_id_idx', 'parameter_item_id'),
+    Index('simulation_tag_parameter_items_simulation_id_tag_idx_idx', 'simulation_id', 'tag_idx')
+)
 
 
 class DebugInfo(_Base, table=True):
     __tablename__ = 'debug_info'
     __table_args__ = (
-        ForeignKeyConstraint(['model_run_id'], ['model_runs.id'], onupdate='CASCADE', name='debug_info_model_run_id_fkey'),
+        ForeignKeyConstraint(['model_run_id'], ['model_runs.id'], name='debug_info_model_run_id_fkey'),
         PrimaryKeyConstraint('id', name='debug_info_pkey')
     )
 
@@ -589,11 +696,63 @@ class DebugInfo(_Base, table=True):
     model_run: Optional['ModelRuns'] = Relationship(back_populates='debug_info')
 
 
+t_scenario_documents = Table(
+    'scenario_documents', ,
+    Column('scenario_id', Uuid, primary_key=True),
+    Column('document_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['document_id'], ['documents.id'], ondelete='CASCADE', name='scenario_documents_document_id_fkey'),
+    ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_documents_scenario_id_fkey'),
+    PrimaryKeyConstraint('scenario_id', 'document_id', name='scenario_documents_pkey'),
+    Index('scenario_documents_document_id_idx', 'document_id'),
+    Index('scenario_documents_scenario_id_idx', 'scenario_id')
+)
+
+
+class ScenarioObjectives(_Base, table=True):
+    __tablename__ = 'scenario_objectives'
+    __table_args__ = (
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_objectives_scenario_id_fkey'),
+        PrimaryKeyConstraint('scenario_id', 'idx', name='scenario_objectives_pkey'),
+        Index('scenario_objectives_scenario_id_idx', 'scenario_id')
+    )
+
+    scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid, primary_key=True))
+    idx: int = Field(sa_column=Column('idx', Integer, primary_key=True))
+    objective: str = Field(sa_column=Column('objective', Text, nullable=False))
+
+    scenario: Optional['Scenarios'] = Relationship(back_populates='scenario_objectives')
+
+
+t_scenario_parameter_items = Table(
+    'scenario_parameter_items', ,
+    Column('scenario_id', Uuid, primary_key=True),
+    Column('parameter_item_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['parameter_item_id'], ['parameter_items.id'], ondelete='CASCADE', name='scenario_parameter_items_parameter_item_id_fkey'),
+    ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_parameter_items_scenario_id_fkey'),
+    PrimaryKeyConstraint('scenario_id', 'parameter_item_id', name='scenario_parameter_items_pkey'),
+    Index('scenario_parameter_items_parameter_item_id_idx', 'parameter_item_id'),
+    Index('scenario_parameter_items_scenario_id_idx', 'scenario_id')
+)
+
+
+t_scenario_tree = Table(
+    'scenario_tree', ,
+    Column('parent_id', Uuid, primary_key=True),
+    Column('child_id', Uuid, primary_key=True),
+    ForeignKeyConstraint(['child_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_tree_child_id_fkey'),
+    ForeignKeyConstraint(['parent_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_tree_parent_id_fkey'),
+    PrimaryKeyConstraint('parent_id', 'child_id', name='scenario_tree_pkey'),
+    Index('scenario_tree_child_id_idx', 'child_id'),
+    Index('scenario_tree_one_parent_per_child', 'child_id', unique=True),
+    Index('scenario_tree_parent_id_idx', 'parent_id')
+)
+
+
 class SimulationChats(_Base, table=True):
     __tablename__ = 'simulation_chats'
     __table_args__ = (
-        ForeignKeyConstraint(['attempt_id'], ['simulation_attempts.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chats_attempt_id_fkey'),
-        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chats_scenario_id_fkey'),
+        ForeignKeyConstraint(['attempt_id'], ['simulation_attempts.id'], ondelete='CASCADE', name='simulation_chats_attempt_id_fkey'),
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='simulation_chats_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chats_pkey'),
         Index('simulation_chats_id_created_idx', 'id', 'created_at')
     )
@@ -614,11 +773,30 @@ class SimulationChats(_Base, table=True):
     simulation_messages: list['SimulationMessages'] = Relationship(back_populates='chat')
 
 
+class SimulationScenarios(_Base, table=True):
+    __tablename__ = 'simulation_scenarios'
+    __table_args__ = (
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='simulation_scenarios_scenario_id_fkey'),
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_scenarios_simulation_id_fkey'),
+        PrimaryKeyConstraint('simulation_id', 'scenario_id', name='simulation_scenarios_pkey'),
+        Index('simulation_scenarios_position_uniq', 'simulation_id', 'position', unique=True),
+        Index('simulation_scenarios_scenario_id_idx', 'scenario_id'),
+        Index('simulation_scenarios_simulation_id_idx', 'simulation_id')
+    )
+
+    simulation_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_id', Uuid, primary_key=True))
+    scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid, primary_key=True))
+    position: int = Field(sa_column=Column('position', Integer, nullable=False, default=1))
+
+    scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_scenarios')
+    simulation: Optional['Simulations'] = Relationship(back_populates='simulation_scenarios')
+
+
 class SimulationChatGrades(_Base, table=True):
     __tablename__ = 'simulation_chat_grades'
     __table_args__ = (
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
-        ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulation_chat_grades_rubric_id_fkey'),
+        ForeignKeyConstraint(['simulation_chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_chat_grades_simulation_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey'),
         Index('scg_chat_created_idx', 'simulation_chat_id', 'created_at'),
         Index('scg_chat_rubric_created_idx', 'simulation_chat_id', 'rubric_id', 'created_at'),
@@ -642,7 +820,7 @@ class SimulationChatGrades(_Base, table=True):
 class SimulationMessages(_Base, table=True):
     __tablename__ = 'simulation_messages'
     __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_messages_chat_id_fkey'),
+        ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_messages_chat_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_messages_pkey'),
         Index('simulation_messages_chat_created_type_idx', 'chat_id', 'created_at', 'type')
     )
@@ -656,15 +834,14 @@ class SimulationMessages(_Base, table=True):
     completed: bool = Field(sa_column=Column('completed', Boolean, nullable=False, default=False))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
-    simulation_crowdsourced_messages: list['SimulationCrowdsourcedMessages'] = Relationship(back_populates='simulation_message')
     simulation_hints: list['SimulationHints'] = Relationship(back_populates='simulation_message')
 
 
 class SimulationChatFeedbacks(_Base, table=True):
     __tablename__ = 'simulation_chat_feedbacks'
     __table_args__ = (
-        ForeignKeyConstraint(['simulation_chat_grade_id'], ['simulation_chat_grades.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_feedbacks_simulation_chat_grade_id_fkey'),
-        ForeignKeyConstraint(['standard_id'], ['standards.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_feedbacks_standard_id_fkey'),
+        ForeignKeyConstraint(['simulation_chat_grade_id'], ['simulation_chat_grades.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_simulation_chat_grade_id_fkey'),
+        ForeignKeyConstraint(['standard_id'], ['standards.id'], ondelete='CASCADE', name='simulation_chat_feedbacks_standard_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey'),
         Index('scf_grade_idx', 'simulation_chat_grade_id')
     )
@@ -678,31 +855,12 @@ class SimulationChatFeedbacks(_Base, table=True):
 
     simulation_chat_grade: Optional['SimulationChatGrades'] = Relationship(back_populates='simulation_chat_feedbacks')
     standard: Optional['Standards'] = Relationship(back_populates='simulation_chat_feedbacks')
-    simulation_chat_crowdsourced_feedbacks: list['SimulationChatCrowdsourcedFeedbacks'] = Relationship(back_populates='simulation_chat_feedback')
-
-
-class SimulationCrowdsourcedMessages(_Base, table=True):
-    __tablename__ = 'simulation_crowdsourced_messages'
-    __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_crowdsourced_messages_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_crowdsourced_messages_simulation_message_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_crowdsourced_messages_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid, nullable=False))
-    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, nullable=False))
-    response: bool = Field(sa_column=Column('response', Boolean, nullable=False))
-
-    profile: Optional['Profiles'] = Relationship(back_populates='simulation_crowdsourced_messages')
-    simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_crowdsourced_messages')
 
 
 class SimulationHints(_Base, table=True):
     __tablename__ = 'simulation_hints'
     __table_args__ = (
-        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_hints_simulation_message_id_fkey'),
+        ForeignKeyConstraint(['simulation_message_id'], ['simulation_messages.id'], ondelete='CASCADE', name='simulation_hints_simulation_message_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_hints_pkey')
     )
 
@@ -713,22 +871,3 @@ class SimulationHints(_Base, table=True):
     simulation_message_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_message_id', Uuid, nullable=False))
 
     simulation_message: Optional['SimulationMessages'] = Relationship(back_populates='simulation_hints')
-
-
-class SimulationChatCrowdsourcedFeedbacks(_Base, table=True):
-    __tablename__ = 'simulation_chat_crowdsourced_feedbacks'
-    __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_crowdsourced_feedbacks_profile_id_fkey'),
-        ForeignKeyConstraint(['simulation_chat_feedback_id'], ['simulation_chat_feedbacks.id'], ondelete='CASCADE', onupdate='CASCADE', name='simulation_chat_crowdsourced_f_simulation_chat_feedback_id_fkey'),
-        PrimaryKeyConstraint('id', name='simulation_chat_crowdsourced_feedbacks_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(default_factory=uuid.uuid4, sa_column=Column('id', Uuid, primary_key=True))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column('created_at', DateTime(True), nullable=False))
-    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid, nullable=False))
-    simulation_chat_feedback_id: Mapped[uuid.UUID] = Field(sa_column=Column('simulation_chat_feedback_id', Uuid, nullable=False))
-    total: int = Field(sa_column=Column('total', Integer, nullable=False))
-    feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
-
-    profile: Optional['Profiles'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')
-    simulation_chat_feedback: Optional['SimulationChatFeedbacks'] = Relationship(back_populates='simulation_chat_crowdsourced_feedbacks')
