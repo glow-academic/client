@@ -18,6 +18,8 @@ CREATE TABLE documents (
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     file_id    TEXT        NULL,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
-    tags TEXT[]        NOT NULL DEFAULT '{}', -- tags to associate and search each document
     department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
+
+-- Note: Document tags are now managed via simulation_tags → simulation_tag_documents
+-- See simulations/init.sql for tag-related tables

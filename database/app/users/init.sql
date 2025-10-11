@@ -71,6 +71,22 @@ CREATE TABLE profiles (
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT FALSE,
   last_active TIMESTAMPTZ,
-  req_per_day INTEGER     NULL DEFAULT NULL, -- model requests per day, null means unlimited
-  department_id UUID        NULL DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL
+  req_per_day INTEGER     NULL DEFAULT NULL -- model requests per day, null means unlimited
 );
+
+-- Profile ↔ Department M:N relationship (BCNF normalization)
+CREATE TABLE profile_departments (
+  profile_id    UUID NOT NULL REFERENCES profiles(id)    ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (profile_id, department_id)
+);
+
+CREATE INDEX ON profile_departments (department_id);
+CREATE INDEX ON profile_departments (profile_id, is_primary);
+
+-- Enforce max one primary department per profile
+CREATE UNIQUE INDEX profile_departments_one_primary_per_profile
+  ON profile_departments (profile_id)
+  WHERE is_primary;

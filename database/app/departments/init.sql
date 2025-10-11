@@ -11,13 +11,16 @@ CREATE TABLE departments (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  active BOOLEAN     NOT NULL DEFAULT TRUE,
-  title_agent_id UUID        NOT NULL,
-  scenario_agent_id UUID        NOT NULL,
-  classify_agent_id UUID        NOT NULL,
-  assistant_agent_id UUID        NOT NULL,
-  grade_agent_id UUID        NOT NULL,
-  input_guardrail_agent_id UUID        NOT NULL,
-  output_guardrail_agent_id UUID        NOT NULL,
-  hint_agent_id UUID        NOT NULL
+  active BOOLEAN     NOT NULL DEFAULT TRUE
 );
+
+-- Department agents pivot table (BCNF normalization)
+CREATE TABLE department_agents (
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  role          TEXT NOT NULL,
+  agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  PRIMARY KEY (department_id, role)
+);
+
+CREATE INDEX ON department_agents (agent_id);
+CREATE INDEX ON department_agents (department_id, role);

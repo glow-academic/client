@@ -316,14 +316,9 @@ const { data: linkedScenarios } = useSimulationScenarios(simulationId);
     onCheckedChange={(checked) => handleInputChange("hintsEnabled", checked)}
   />
 </FormField>
-
-{/* Optional: Agent overrides */}
-<AgentPicker
-  label="Input Guardrail Agent Override"
-  selectedAgentId={formData.inputGuardrailAgentId}
-  onSelect={(agentId) => handleInputChange("inputGuardrailAgentId", agentId)}
-/>
 ```
+
+**Note**: Agent selection (which agents to use for guardrails, hints, etc.) is now managed at the department level via the `department_agents` junction table. No per-simulation agent override columns exist.
 
 **Add tag-based resource management**:
 ```tsx
@@ -737,9 +732,18 @@ UNION ALL SELECT 'department_agents', COUNT(*) FROM department_agents;
 
 **Tables Added**: 12 (11 junctions + 1 pivot)  
 **Views Added**: 2 (tag discovery views)  
-**Columns Dropped**: ~30 (arrays, denormalized references, old tags)  
+**Columns Dropped**: ~30 (arrays, denormalized references, old tags, department agents)  
+**Columns Added**: 4 simulation flags (guardrails, image input, hints)  
 **Tables Dropped**: 2 (crowdsourcing)  
-**Integrity Constraints**: 3 unique indexes for BCNF enforcement
+**Integrity Constraints**: 4 unique indexes for BCNF enforcement (tree structure, unique positions, unique tags, one primary dept)
+
+**Key Changes**:
+- ✅ All arrays converted to junction tables
+- ✅ `scenarios.description` → `scenarios.problem_statement`
+- ✅ `profiles.department_id` → `profile_departments` M:N
+- ✅ 8 department agent columns → `department_agents` pivot
+- ✅ Document/parameter tags → simulation-level only
+- ❌ No per-simulation agent overrides (all via department)
 
 **Estimated Effort**: 20-30 hours (manual changes only, excluding tests)  
 **Updated**: 2025-10-11

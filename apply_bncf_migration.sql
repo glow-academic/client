@@ -79,14 +79,12 @@ SELECT id, department_id, TRUE
 FROM profiles
 WHERE department_id IS NOT NULL;
 
--- 4) New simulation flags (guardrails/image/hints) + optional agent overrides
+-- 4) New simulation flags (guardrails/image/hints)
 ALTER TABLE simulations
   ADD COLUMN output_guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN input_guardrail_active  BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN image_input_active      BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN hints_enabled           BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN input_guardrail_agent_id  UUID REFERENCES agents(id),
-  ADD COLUMN output_guardrail_agent_id UUID REFERENCES agents(id);
+  ADD COLUMN hints_enabled           BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 5) Rename scenarios.description -> problem_statement
 ALTER TABLE scenarios RENAME COLUMN description TO problem_statement;
@@ -198,37 +196,8 @@ SET image_input_active = ps.any_img
 FROM per_sim ps
 WHERE s.id = ps.simulation_id;
 
--- Optional: inherit department agent defaults if empty
-WITH epd AS (
-  SELECT sa.simulation_id,
-         sa.profile_id,
-         COALESCE(
-           (SELECT pd1.department_id
-              FROM profile_departments pd1
-             WHERE pd1.profile_id = sa.profile_id AND pd1.is_primary
-             LIMIT 1),
-           (SELECT pd2.department_id
-              FROM profile_departments pd2
-             WHERE pd2.profile_id = sa.profile_id
-             ORDER BY pd2.created_at ASC
-             LIMIT 1)
-         ) AS department_id
-  FROM simulation_attempts sa
-  GROUP BY sa.simulation_id, sa.profile_id
-)
-UPDATE simulations s
-SET input_guardrail_agent_id  = d.input_guardrail_agent_id,
-    output_guardrail_agent_id = d.output_guardrail_agent_id
-FROM departments d
-WHERE s.input_guardrail_agent_id  IS NULL
-  AND s.output_guardrail_agent_id IS NULL
-  AND d.id = (
-       SELECT COALESCE(epd.department_id, sim.department_id)
-       FROM simulations sim
-       LEFT JOIN epd ON epd.simulation_id = sim.id
-       WHERE sim.id = s.id
-       LIMIT 1
-  );
+-- Note: Guardrail agent selection is now handled via department_agents junction table
+-- No per-simulation agent override columns needed
 
 -- 9) Drop / tighten old columns for BCNF & "no nulls"
 -- Remove arrays

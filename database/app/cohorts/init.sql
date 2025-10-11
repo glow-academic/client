@@ -12,8 +12,26 @@ CREATE TABLE cohorts (
   title      TEXT        NOT NULL,
   description TEXT        NULL,
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-  profile_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], 
   default_cohort BOOLEAN     NOT NULL           DEFAULT FALSE,
-  simulation_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
+
+-- Cohort → Profiles junction table (BCNF normalization)
+CREATE TABLE cohort_profiles (
+  cohort_id  UUID NOT NULL REFERENCES cohorts(id)    ON DELETE CASCADE,
+  profile_id UUID NOT NULL REFERENCES profiles(id)   ON DELETE CASCADE,
+  PRIMARY KEY (cohort_id, profile_id)
+);
+
+CREATE INDEX ON cohort_profiles (profile_id);
+CREATE INDEX ON cohort_profiles (cohort_id);
+
+-- Cohort → Simulations junction table (BCNF normalization)
+CREATE TABLE cohort_simulations (
+  cohort_id    UUID NOT NULL REFERENCES cohorts(id)      ON DELETE CASCADE,
+  simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
+  PRIMARY KEY (cohort_id, simulation_id)
+);
+
+CREATE INDEX ON cohort_simulations (simulation_id);
+CREATE INDEX ON cohort_simulations (cohort_id);
