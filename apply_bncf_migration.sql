@@ -92,81 +92,68 @@ ALTER TABLE scenarios RENAME COLUMN description TO problem_statement;
 -- 6) Backfill junctions from arrays (keeping order where useful)
 
 -- simulations.scenario_ids[] -> simulation_scenarios
-WITH exploded AS (
-  SELECT s.id AS simulation_id
-       , unnest(s.scenario_ids) WITH ORDINALITY AS (scenario_id, position)
-  FROM simulations s
-)
 INSERT INTO simulation_scenarios (simulation_id, scenario_id, position)
-SELECT simulation_id, scenario_id, position
-FROM exploded
+SELECT s.id AS simulation_id, 
+       (unnest_data).scenario_id, 
+       (unnest_data).position
+FROM simulations s,
+     LATERAL unnest(s.scenario_ids) WITH ORDINALITY AS unnest_data(scenario_id, position)
 ON CONFLICT DO NOTHING;
 
 -- scenarios.objectives[] -> scenario_objectives
-WITH exploded AS (
-  SELECT sc.id AS scenario_id
-       , unnest(sc.objectives) WITH ORDINALITY AS (objective, idx)
-  FROM scenarios sc
-)
 INSERT INTO scenario_objectives (scenario_id, idx, objective)
-SELECT scenario_id, idx, objective
-FROM exploded
-WHERE objective IS NOT NULL AND btrim(objective) <> ''
+SELECT sc.id AS scenario_id,
+       (unnest_data).idx,
+       (unnest_data).objective
+FROM scenarios sc,
+     LATERAL unnest(sc.objectives) WITH ORDINALITY AS unnest_data(objective, idx)
+WHERE (unnest_data).objective IS NOT NULL AND btrim((unnest_data).objective) <> ''
 ON CONFLICT DO NOTHING;
 
 -- scenarios.parameter_item_ids[] -> scenario_parameter_items
-WITH exploded AS (
-  SELECT sc.id AS scenario_id
-       , unnest(sc.parameter_item_ids) AS parameter_item_id
-  FROM scenarios sc
-)
 INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id)
-SELECT scenario_id, parameter_item_id
-FROM exploded
-WHERE parameter_item_id IS NOT NULL
+SELECT sc.id AS scenario_id,
+       unnest_data.parameter_item_id
+FROM scenarios sc,
+     LATERAL unnest(sc.parameter_item_ids) AS unnest_data(parameter_item_id)
+WHERE unnest_data.parameter_item_id IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- scenarios.document_ids[] -> scenario_documents
-WITH exploded AS (
-  SELECT sc.id AS scenario_id
-       , unnest(sc.document_ids) AS document_id
-  FROM scenarios sc
-)
 INSERT INTO scenario_documents (scenario_id, document_id)
-SELECT scenario_id, document_id
-FROM exploded
-WHERE document_id IS NOT NULL
+SELECT sc.id AS scenario_id,
+       unnest_data.document_id
+FROM scenarios sc,
+     LATERAL unnest(sc.document_ids) AS unnest_data(document_id)
+WHERE unnest_data.document_id IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- cohorts.profile_ids[] -> cohort_profiles
-WITH exploded AS (
-  SELECT c.id AS cohort_id
-       , unnest(c.profile_ids) AS profile_id
-  FROM cohorts c
-)
 INSERT INTO cohort_profiles (cohort_id, profile_id)
-SELECT cohort_id, profile_id
-FROM exploded
-WHERE profile_id IS NOT NULL
+SELECT c.id AS cohort_id,
+       unnest_data.profile_id
+FROM cohorts c,
+     LATERAL unnest(c.profile_ids) AS unnest_data(profile_id)
+WHERE unnest_data.profile_id IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- cohorts.simulation_ids[] -> cohort_simulations
-WITH exploded AS (
-  SELECT c.id AS cohort_id
-       , unnest(c.simulation_ids) AS simulation_id
-  FROM cohorts c
-)
 INSERT INTO cohort_simulations (cohort_id, simulation_id)
-SELECT cohort_id, simulation_id
-FROM exploded
-WHERE simulation_id IS NOT NULL
+SELECT c.id AS cohort_id,
+       unnest_data.simulation_id
+FROM cohorts c,
+     LATERAL unnest(c.simulation_ids) AS unnest_data(simulation_id)
+WHERE unnest_data.simulation_id IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- 7) Scenario hierarchy backfill -> scenario_tree
 -- Self-edge for roots, direct edges for existing parent links
+-- Only insert if both parent and child exist
 INSERT INTO scenario_tree (parent_id, child_id)
-SELECT COALESCE(parent_id, id) AS parent_id, id AS child_id
-FROM scenarios
+SELECT COALESCE(s.parent_id, s.id) AS parent_id, s.id AS child_id
+FROM scenarios s
+WHERE s.parent_id IS NULL 
+   OR EXISTS (SELECT 1 FROM scenarios WHERE id = s.parent_id)
 ON CONFLICT DO NOTHING;
 
 -- 8) Set "output guardrail"/"image input" on simulations based on persona/department defaults (best-effort heuristic)
@@ -200,6 +187,9 @@ WHERE s.id = ps.simulation_id;
 -- No per-simulation agent override columns needed
 
 -- 9) Drop / tighten old columns for BCNF & "no nulls"
+-- First drop the old analytics MV that depends on array columns
+DROP MATERIALIZED VIEW IF EXISTS analytics CASCADE;
+
 -- Remove arrays
 ALTER TABLE simulations DROP COLUMN scenario_ids;
 
@@ -444,6 +434,7 @@ CREATE INDEX ON simulation_tag_parameter_items (simulation_id, tag_idx);
 -- Attach existing scenario-level docs/params to the *first* tag of each simulation (idx=1),
 -- but only when that first tag exists. Comment out if you prefer manual tagging.
 
+-- Insert simulation_tag_documents
 WITH first_tag AS (
   SELECT st.simulation_id, st.idx
   FROM simulation_tags st
@@ -454,12 +445,6 @@ sim_docs AS (
   FROM simulation_scenarios ss
   JOIN scenario_documents sd ON sd.scenario_id = ss.scenario_id
   GROUP BY ss.simulation_id, sd.document_id
-),
-sim_params AS (
-  SELECT ss.simulation_id, spi.parameter_item_id
-  FROM simulation_scenarios ss
-  JOIN scenario_parameter_items spi ON spi.scenario_id = ss.scenario_id
-  GROUP BY ss.simulation_id, spi.parameter_item_id
 )
 INSERT INTO simulation_tag_documents (simulation_id, tag_idx, document_id)
 SELECT d.simulation_id, ft.idx, d.document_id
@@ -467,6 +452,18 @@ FROM sim_docs d
 JOIN first_tag ft ON ft.simulation_id = d.simulation_id
 ON CONFLICT DO NOTHING;
 
+-- Insert simulation_tag_parameter_items
+WITH first_tag AS (
+  SELECT st.simulation_id, st.idx
+  FROM simulation_tags st
+  WHERE st.idx = 1
+),
+sim_params AS (
+  SELECT ss.simulation_id, spi.parameter_item_id
+  FROM simulation_scenarios ss
+  JOIN scenario_parameter_items spi ON spi.scenario_id = ss.scenario_id
+  GROUP BY ss.simulation_id, spi.parameter_item_id
+)
 INSERT INTO simulation_tag_parameter_items (simulation_id, tag_idx, parameter_item_id)
 SELECT p.simulation_id, ft.idx, p.parameter_item_id
 FROM sim_params p
@@ -487,16 +484,39 @@ CREATE INDEX ON department_agents (agent_id);
 -- ALTER TABLE department_agents ADD CONSTRAINT department_agents_role_chk
 -- CHECK (role IN ('title','scenario','classify','assistant','grade','input_guardrail','output_guardrail','hint'));
 
--- Backfill from denormalized columns on departments
+-- Backfill from denormalized columns on departments (only if agent exists)
 INSERT INTO department_agents (department_id, role, agent_id)
-SELECT id, 'title',           title_agent_id        FROM departments
-UNION ALL SELECT id, 'scenario',        scenario_agent_id      FROM departments
-UNION ALL SELECT id, 'classify',        classify_agent_id      FROM departments
-UNION ALL SELECT id, 'assistant',       assistant_agent_id     FROM departments
-UNION ALL SELECT id, 'grade',           grade_agent_id         FROM departments
-UNION ALL SELECT id, 'input_guardrail', input_guardrail_agent_id FROM departments
-UNION ALL SELECT id, 'output_guardrail',output_guardrail_agent_id FROM departments
-UNION ALL SELECT id, 'hint',            hint_agent_id          FROM departments;
+SELECT id, 'title', title_agent_id FROM departments
+  WHERE title_agent_id IS NOT NULL 
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.title_agent_id)
+UNION ALL 
+SELECT id, 'scenario', scenario_agent_id FROM departments
+  WHERE scenario_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.scenario_agent_id)
+UNION ALL 
+SELECT id, 'classify', classify_agent_id FROM departments
+  WHERE classify_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.classify_agent_id)
+UNION ALL 
+SELECT id, 'assistant', assistant_agent_id FROM departments
+  WHERE assistant_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.assistant_agent_id)
+UNION ALL 
+SELECT id, 'grade', grade_agent_id FROM departments
+  WHERE grade_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.grade_agent_id)
+UNION ALL 
+SELECT id, 'input_guardrail', input_guardrail_agent_id FROM departments
+  WHERE input_guardrail_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.input_guardrail_agent_id)
+UNION ALL 
+SELECT id, 'output_guardrail', output_guardrail_agent_id FROM departments
+  WHERE output_guardrail_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.output_guardrail_agent_id)
+UNION ALL 
+SELECT id, 'hint', hint_agent_id FROM departments
+  WHERE hint_agent_id IS NOT NULL
+    AND EXISTS (SELECT 1 FROM agents WHERE id = departments.hint_agent_id);
 
 -- Drop the old agent columns (schema is now BCNF and future-proof)
 ALTER TABLE departments
