@@ -19,7 +19,7 @@ sim_meta AS (
     s.description                  AS simulation_description,
     s.time_limit,
     s.rubric_id,
-    COALESCE(cardinality(s.scenario_ids),0) AS num_scenarios,
+    COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
     r.points                       AS rubric_points,
     r.pass_points                  AS rubric_pass_points,
     -- filter by sim type flags (practice/general). 'archived' is attempt-level, keep sims.
@@ -43,8 +43,8 @@ sim_persona_meta AS (
       sc.persona_id,
       COUNT(*) AS cnt
     FROM simulations s
-    LEFT JOIN LATERAL unnest(s.scenario_ids) AS sid(scenario_id) ON TRUE
-    LEFT JOIN scenarios sc ON sc.id = sid.scenario_id
+    LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+    LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
     GROUP BY s.id, sc.persona_id
   ) sm
   LEFT JOIN personas p ON p.id = sm.persona_id
@@ -71,7 +71,7 @@ filt AS (
 -- ---------------- Expected scenarios per simulation
 sim_expected AS (
   SELECT s.id AS simulation_id,
-         COALESCE(cardinality(s.scenario_ids),0) AS expected_scenarios
+         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS expected_scenarios
   FROM simulations s
 ),
 
@@ -141,38 +141,37 @@ user_sim_status AS (
 
 -- ---------------- Cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (
-  SELECT c.id AS cohort_id, c.title AS cohort_title, sids.simulation_id
+  SELECT c.id AS cohort_id, c.title AS cohort_title, cs.simulation_id
   FROM cohorts c
-  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
+  JOIN cohort_simulations cs ON cs.cohort_id = c.id
   WHERE (p_cohort_ids IS NULL OR c.id = ANY(p_cohort_ids))
     AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))
 ),
 
--- ---------------- Simulation display order from cohort arrays
+-- ---------------- Simulation display order (using simulation_id as default ordering)
 sim_display_order AS (
   SELECT
     cs.simulation_id,
-    MIN(array_position(c.simulation_ids, cs.simulation_id)) AS order_idx
+    ROW_NUMBER() OVER (ORDER BY cs.simulation_id) AS order_idx
   FROM cohort_sim cs
-  JOIN cohorts c ON c.id = cs.cohort_id
   GROUP BY cs.simulation_id
 ),
 
--- ---------------- TA primary cohort (deterministic by array position)
+-- ---------------- TA primary cohort (deterministic by cohort_id)
 ta_primary_cohort AS (
   SELECT
     c.id          AS cohort_id,
     c.title       AS cohort_title,
-    sids.simulation_id,
-    array_position(c.simulation_ids, sids.simulation_id) AS order_idx,
+    cs.simulation_id,
+    ROW_NUMBER() OVER (ORDER BY c.id, cs.simulation_id) AS order_idx,
     ROW_NUMBER() OVER (
-      PARTITION BY sids.simulation_id
-      ORDER BY array_position(c.simulation_ids, sids.simulation_id)
+      PARTITION BY cs.simulation_id
+      ORDER BY c.id
     ) AS rn
   FROM cohorts c
-  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
-  WHERE p_profile_id = ANY (c.profile_ids)
-    AND (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
+  JOIN cohort_simulations cs ON cs.cohort_id = c.id
+  JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = p_profile_id
+  WHERE (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
     AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))
 ),
 
@@ -181,12 +180,12 @@ cohort_membership AS (
   SELECT
     c.id    AS cohort_id,
     c.title AS cohort_title,
-    sids.simulation_id,
-    pids.profile_id
+    cs.simulation_id,
+    cp.profile_id
   FROM cohorts c
-  JOIN LATERAL unnest(c.simulation_ids) AS sids(simulation_id) ON TRUE
-  JOIN LATERAL unnest(c.profile_ids)    AS pids(profile_id)    ON TRUE
-  LEFT JOIN profiles pr ON pr.id = pids.profile_id
+  JOIN cohort_simulations cs ON cs.cohort_id = c.id
+  JOIN cohort_profiles cp ON cp.cohort_id = c.id
+  LEFT JOIN profiles pr ON pr.id = cp.profile_id
   WHERE (p_cohort_ids IS NULL OR c.id = ANY (p_cohort_ids))
     AND (p_roles      IS NULL OR pr.role = ANY (p_roles))
     AND (cardinality(p_department_ids) = 0 OR c.department_id = ANY(p_department_ids))

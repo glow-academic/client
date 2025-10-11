@@ -171,7 +171,7 @@ attempt_joined AS (
     sa.infinite_mode,
     sa.infinite_mode_time_limit,
     s.title                             AS simulation_name,
-    s.scenario_ids                      AS scenario_ids_assigned,
+    ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
     s.practice_simulation               AS practice_simulation,
     r.id                                AS rubric_id,
     r.points                            AS rubric_points,

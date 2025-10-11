@@ -250,9 +250,8 @@ CREATE UNIQUE INDEX simulation_scenarios_position_uniq
   ON simulation_scenarios(simulation_id, position);
 
 -- Prevent duplicate tag text within a simulation (case-insensitive)
-ALTER TABLE simulation_tags
-  ADD CONSTRAINT simulation_tags_unique_text_per_sim
-  UNIQUE (simulation_id, lower(tag));
+CREATE UNIQUE INDEX simulation_tags_unique_text_per_sim
+  ON simulation_tags (simulation_id, lower(tag));
 
 -- Fast lookups by tag text within a simulation
 CREATE INDEX simulation_tags_text_idx

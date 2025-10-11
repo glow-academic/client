@@ -158,7 +158,8 @@ nums AS (
 num_map AS (
   SELECT s.id AS scenario_id, pi.parameter_id, pi.value::numeric AS level
   FROM scenarios s
-  JOIN parameter_items pi ON pi.id = ANY (s.parameter_item_ids)
+  JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
+  JOIN parameter_items pi ON pi.id = spi.parameter_item_id
   JOIN nums n ON n.id = pi.parameter_id
   WHERE s.active = TRUE
 ),

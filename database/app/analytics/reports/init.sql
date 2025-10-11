@@ -27,12 +27,17 @@ roster AS (
   SELECT DISTINCT p.id AS profile_id
   FROM profiles p
   CROSS JOIN params params
-  LEFT JOIN cohorts c ON c.id = ANY(params.cohort_ids)
   WHERE
     (cardinality(params.roles) = 0 OR p.role = ANY(params.roles)) AND
-    (cardinality(params.cohort_ids) = 0 OR p.id = ANY(c.profile_ids)) AND
+    (cardinality(params.cohort_ids) = 0 OR EXISTS (
+      SELECT 1 FROM cohort_profiles cp
+      WHERE cp.profile_id = p.id AND cp.cohort_id = ANY(params.cohort_ids)
+    )) AND
     (p_profile_id IS NULL OR p.id = p_profile_id) AND
-    (cardinality(p_department_ids) = 0 OR p.department_id = ANY(p_department_ids))
+    (cardinality(p_department_ids) = 0 OR EXISTS (
+      SELECT 1 FROM profile_departments pd
+      WHERE pd.profile_id = p.id AND pd.department_id = ANY(p_department_ids)
+    ))
 ),
 profiles_set AS (
   SELECT DISTINCT profile_id AS pid FROM roster

@@ -161,7 +161,8 @@ cat_map AS (
          s.id  AS scenario_id
   FROM parameter_items pi
   JOIN param_ids p ON p.id = pi.parameter_id
-  JOIN scenarios s ON pi.id = ANY (s.parameter_item_ids)
+  JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+  JOIN scenarios s ON s.id = spi.scenario_id
   WHERE s.active = TRUE
 ),
 -- limit topology to scenarios that actually appear in the filtered data

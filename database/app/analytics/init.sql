@@ -1,14 +1,15 @@
 -- Adjust schema name if needed (e.g., public)
 CREATE MATERIALIZED VIEW IF NOT EXISTS analytics AS
 WITH RECURSIVE scenario_roots AS (
-  -- Map every scenario.id to its root_id (follow parents to the top)
-  SELECT id, parent_id, id AS root_id
-  FROM scenarios
-  WHERE parent_id IS NULL
-  UNION ALL
-  SELECT s.id, s.parent_id, sr.root_id
+  -- Map every scenario.id to its root_id using scenario_tree (self-edge = root)
+  SELECT s.id, st.parent_id, s.id AS root_id
   FROM scenarios s
-  JOIN scenario_roots sr ON s.parent_id = sr.id
+  JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = s.id -- self-edge = root
+  UNION ALL
+  SELECT s1.id, st.parent_id, sr.root_id
+  FROM scenarios s1
+  JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id
+  JOIN scenario_roots sr ON st.parent_id = sr.id
 ),
 root_map AS (
   SELECT s.id AS leaf_scenario_id,
@@ -36,32 +37,26 @@ active_scenarios AS (
 ),
 -- expand cohorts; we'll filter active where needed
 cohorts_expanded AS (
-  SELECT c.id, c.active, c.simulation_ids, c.profile_ids
-  FROM cohorts c
+  SELECT c.id, c.active FROM cohorts c
 ),
--- sims -> active cohorts (like your old cohorts_by_sim but active-only)
+-- sims -> active cohorts using junction table
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
-         ARRAY(
-           SELECT DISTINCT c.id
-           FROM cohorts_expanded c
-           WHERE c.active = TRUE AND s.id = ANY (c.simulation_ids)
-         ) AS cohort_ids
+         ARRAY(SELECT DISTINCT c.id FROM cohorts c
+               JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
+               WHERE c.active = TRUE) AS cohort_ids
   FROM active_sims s
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
 profile_cohorts_for_sim AS (
-  SELECT
-    sa.id AS attempt_id,
-    sa.profile_id,
-    sa.simulation_id,
-    ARRAY(
-      SELECT c.id
-      FROM cohorts_expanded c
-      WHERE c.active = TRUE
-        AND sa.simulation_id = ANY (c.simulation_ids)
-        AND sa.profile_id    = ANY (c.profile_ids)
-    ) AS profile_cohort_ids
+  SELECT sa.id AS attempt_id, sa.profile_id, sa.simulation_id,
+         ARRAY(
+           SELECT c.id
+           FROM cohorts c
+           JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
+           JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = sa.profile_id
+           WHERE c.active = TRUE
+         ) AS profile_cohort_ids
   FROM simulation_attempts sa
 ),
 -- Message counts per chat (total + by type)
@@ -97,6 +92,22 @@ message_deltas_agg AS (
          ARRAY_REMOVE(array_agg(delta_seconds ORDER BY created_at), NULL) AS message_time_taken_seconds
   FROM message_deltas
   GROUP BY chat_id
+),
+effective_profile_department AS (
+  -- Choose the primary department if set; otherwise earliest assignment
+  SELECT pd.profile_id,
+         COALESCE(
+           (SELECT pd1.department_id
+              FROM profile_departments pd1
+             WHERE pd1.profile_id = pd.profile_id AND pd1.is_primary
+             LIMIT 1),
+           (SELECT pd2.department_id
+              FROM profile_departments pd2
+             WHERE pd2.profile_id = pd.profile_id
+             ORDER BY pd2.created_at ASC
+             LIMIT 1)
+         ) AS department_id
+  FROM (SELECT DISTINCT profile_id FROM simulation_attempts) pd
 )
 SELECT
   -- *** original columns kept in the same order as your "Old def" ***
@@ -144,17 +155,11 @@ SELECT
   -- *** new trailing columns (safe append) ***
   sa.created_at                 AS attempt_created_at, -- use for date filters like TS did
   pcs.profile_cohort_ids        AS profile_cohort_ids, -- cohortIds "true membership"
-  COALESCE(array_length(sim.scenario_ids, 1), 0) AS sim_scenario_count, -- simulation's expected scenario count
+  (SELECT COUNT(*) FROM simulation_scenarios ss WHERE ss.simulation_id = sim.id)::int AS sim_scenario_count, -- simulation's expected scenario count
   lg.created_at                 AS grade_created_at, -- grade creation time for stagnation metric
   
-  -- Department ID coalesced from all relevant tables
-  COALESCE(
-    pr.department_id,
-    sim.department_id,
-    r.department_id,
-    s.department_id,
-    p.department_id
-  ) AS department_id
+  -- Department ID coalesced from all relevant tables (using profile_departments junction)
+  COALESCE(epd.department_id, sim.department_id, r.department_id, s.department_id, p.department_id) AS department_id
 FROM simulation_chats sc
 JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
@@ -168,6 +173,7 @@ LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
+LEFT JOIN effective_profile_department epd ON epd.profile_id = sa.profile_id
 WITH NO DATA;
 
 -- Unique index required for CONCURRENT refresh

@@ -181,7 +181,8 @@ sim_scenarios_seen AS (
   SELECT s.id AS simulation_id,
          COUNT(DISTINCT sc.id)::int AS scenario_count
   FROM simulations s
-  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+  JOIN scenarios sc ON sc.id = ss_link.scenario_id
   JOIN scen_seen ss ON ss.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE
   GROUP BY s.id
@@ -194,9 +195,11 @@ sim_param_items_seen AS (
     pi.id AS parameter_item_id,
     COUNT(a.chat_id)::int AS cnt
   FROM simulations s
-  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+  JOIN scenarios sc ON sc.id = ss_link.scenario_id
   JOIN scen_seen ss ON ss.scenario_id = sc.id
-  JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
+  JOIN scenario_parameter_items spi ON spi.scenario_id = sc.id
+  JOIN parameter_items pi ON pi.id = spi.parameter_item_id
   JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = FALSE
   JOIN analytics a ON a.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE
@@ -210,9 +213,11 @@ sim_param_nums_seen AS (
     pi.value::numeric AS most_common_level,
     COUNT(a.chat_id)::int AS chat_count
   FROM simulations s
-  JOIN scenarios sc ON sc.id = ANY (s.scenario_ids)
+  JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+  JOIN scenarios sc ON sc.id = ss_link.scenario_id
   JOIN scen_seen ss ON ss.scenario_id = sc.id
-  JOIN parameter_items pi ON pi.id = ANY (sc.parameter_item_ids)
+  JOIN scenario_parameter_items spi ON spi.scenario_id = sc.id
+  JOIN parameter_items pi ON pi.id = spi.parameter_item_id
   JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = TRUE
   JOIN analytics a ON a.scenario_id = sc.id
   WHERE s.active = TRUE AND sc.active = TRUE

@@ -14,13 +14,5 @@ CREATE TABLE departments (
   active BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
--- Department agents pivot table (BCNF normalization)
-CREATE TABLE department_agents (
-  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-  role          TEXT NOT NULL,
-  agent_id      UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-  PRIMARY KEY (department_id, role)
-);
-
-CREATE INDEX ON department_agents (agent_id);
-CREATE INDEX ON department_agents (department_id, role);
+-- Note: department_agents junction table is created in app/agents/init.sql
+-- after the agents table exists (to satisfy foreign key dependency)

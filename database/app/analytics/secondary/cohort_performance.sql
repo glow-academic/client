@@ -154,7 +154,11 @@ filt_x AS (
   LATERAL unnest(f.cohort_ids) AS c_id
 ),
 cohort_list AS (
-  SELECT DISTINCT c.id, c.title, c.profile_ids, c.simulation_ids
+  SELECT DISTINCT 
+    c.id, 
+    c.title,
+    ARRAY(SELECT cp.profile_id FROM cohort_profiles cp WHERE cp.cohort_id = c.id) AS profile_ids,
+    ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id) AS simulation_ids
   FROM cohorts c
   JOIN (SELECT DISTINCT c_id FROM filt_x) fx ON fx.c_id = c.id
 ),

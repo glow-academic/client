@@ -20,7 +20,7 @@ sim_meta AS (
     s.description                   AS simulation_description,
     NULL::int                       AS time_limit,                -- ∞
     s.rubric_id,
-    COALESCE(cardinality(s.scenario_ids),0) AS num_scenarios,
+    COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
     r.points                        AS rubric_points,
     r.pass_points                   AS rubric_pass_points,
     s.updated_at                    AS updated_at                 -- keep for ordering
@@ -43,8 +43,8 @@ sim_persona_meta AS (
       sc.persona_id,
       COUNT(*) AS cnt
     FROM simulations s
-    LEFT JOIN LATERAL unnest(s.scenario_ids) AS sid(scenario_id) ON TRUE
-    LEFT JOIN scenarios sc ON sc.id = sid.scenario_id
+    LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+    LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
     WHERE s.practice_simulation = TRUE
       AND (cardinality(p_department_ids) = 0 OR s.department_id = ANY(p_department_ids))
     GROUP BY s.id, sc.persona_id
