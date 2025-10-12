@@ -86,7 +86,7 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
         scenario_links = session.exec(
             select(SimulationScenarios)
             .where(SimulationScenarios.simulation_id == simulation.id)
-            .order_by(SimulationScenarios.position)
+            .order_by("position")
         ).all()
         
         scenarios_data = []

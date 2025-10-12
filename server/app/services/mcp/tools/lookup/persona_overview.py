@@ -42,8 +42,8 @@ def persona_overview(persona_id: str) -> Dict[str, Any]:
         if not persona:
             return {"error": f"Persona not found: {persona_id}"}
 
-        # Get associated scenarios (agents are linked directly to scenarios)
-        scenarios_stmt = select(Scenarios).where(Scenarios.parent_id == persona_uuid)
+        # Get associated scenarios (personas are linked directly to scenarios)
+        scenarios_stmt = select(Scenarios).where(Scenarios.persona_id == persona_uuid)
         scenarios = session.exec(scenarios_stmt).all()
 
         scenario_list = []
@@ -52,7 +52,7 @@ def persona_overview(persona_id: str) -> Dict[str, Any]:
                 {
                     "id": str(scenario.id),
                     "name": scenario.name,
-                    "description": scenario.description,
+                    "problem_statement": scenario.problem_statement,
                     "default_scenario": scenario.default_scenario,
                     "created_at": scenario.created_at.isoformat()
                     if scenario.created_at

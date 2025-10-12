@@ -34,7 +34,6 @@ from sqlalchemy import func, literal, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
-
 # ---------------------------
 # Normalization helpers
 # ---------------------------
@@ -185,7 +184,7 @@ def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
                     "title": c.title,
                     "active": c.active,
                     "description": c.description,
-                    "profile_count": len(c.profile_ids or []),
+                    "profile_count": 0,  # TODO: query cohort_profiles junction for count
                     "score": score,
                 }
             )

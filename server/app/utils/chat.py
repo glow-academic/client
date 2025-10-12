@@ -180,5 +180,5 @@ def get_chat_scenario(chat: SimulationChats, session: Session) -> TResponseInput
 
     return {
         "role": "user",
-        "content": f"The following is the scenario for the chat: {scenario.description}",
+        "content": f"The following is the scenario for the chat: {scenario.problem_statement}",
     }

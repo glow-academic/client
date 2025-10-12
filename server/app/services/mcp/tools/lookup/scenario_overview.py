@@ -42,14 +42,21 @@ def scenario_overview(scenario_id: str) -> Dict[str, Any]:
         if not scenario:
             return {"error": f"Scenario not found: {scenario_id}"}
 
-        # Get associated simulations (scenarios are linked via scenario_ids array in simulations)
-        # Query all simulations and filter in Python due to array complexity
-        simulations_stmt = select(Simulations)
-        all_simulations = session.exec(simulations_stmt).all()
-
+        # Get associated simulations via simulation_scenarios junction
+        from app.models import SimulationScenarios
+        sim_links = session.exec(
+            select(SimulationScenarios)
+            .where(SimulationScenarios.scenario_id == scenario_uuid)
+        ).all()
+        
         simulation_list = []
-        for sim in all_simulations:
-            if scenario_uuid in sim.scenario_ids:
+        if sim_links:
+            sim_ids = [link.simulation_id for link in sim_links]
+            simulations = session.exec(
+                select(Simulations).where(Simulations.id.in_(sim_ids))
+            ).all()
+            
+            for sim in simulations:
                 simulation_list.append(
                     {
                         "id": str(sim.id),

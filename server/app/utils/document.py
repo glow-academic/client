@@ -102,7 +102,8 @@ def get_document_info(
             continue
 
         full_path = os.path.join(UPLOAD_FOLDER, document.file_path)
-        tags_display = ", ".join(document.tags or [])
+        # Note: document.tags removed in BCNF migration (now via simulation_tags)
+        tags_display = ""  # document.tags removed
         mime_lower = (document.mime_type or "").lower()
 
         is_pdf = document.file_path.lower().endswith(".pdf") or "pdf" in mime_lower

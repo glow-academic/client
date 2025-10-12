@@ -7,14 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Profiles,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Profiles, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -48,12 +42,20 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
         if not cohort:
             return {"error": f"Cohort not found: {cohort_id}"}
 
-        # Get cohort members
+        # Get cohort members via cohort_profiles junction
+        from app.models import t_cohort_profiles
+        from sqlalchemy import select as sa_select
+        
+        profile_ids = [row[0] for row in session.execute(
+            sa_select(t_cohort_profiles.c.profile_id)
+            .where(t_cohort_profiles.c.cohort_id == cohort_uuid)
+        ).fetchall()]
+        
         cohort_members = []
-        for profile_id in cohort.profile_ids:
-            profile = session.get(Profiles, profile_id)
-            if profile:
-                cohort_members.append(profile)
+        if profile_ids:
+            cohort_members = list(session.exec(
+                select(Profiles).where(Profiles.id.in_(profile_ids))
+            ).all())
 
         # Get simulations for this cohort using cohort.simulation_ids
         cohort_simulations = []

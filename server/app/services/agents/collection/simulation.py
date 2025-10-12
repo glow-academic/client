@@ -104,8 +104,17 @@ async def _handle_simulation_chat(
     show_images = persona.image_input_active
 
     input_items: list[TResponseInputItem] = []
-    if scenario.document_ids:
-        document_info = get_document_info(scenario.document_ids, show_images, session)
+    # Load document IDs from junction table
+    from app.models import t_scenario_documents
+    from sqlalchemy import select as sa_select
+    
+    doc_ids = [row[0] for row in session.execute(
+        sa_select(t_scenario_documents.c.document_id)
+        .where(t_scenario_documents.c.scenario_id == scenario.id)
+    ).fetchall()]
+    
+    if doc_ids:
+        document_info = get_document_info(doc_ids, show_images, session)
         input_items.append(document_info)
 
     # Get all the messages for the chat_id, order by created_at

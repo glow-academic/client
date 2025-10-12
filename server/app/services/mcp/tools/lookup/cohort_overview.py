@@ -47,15 +47,17 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
         }
 
         # Load profiles from cohort_profiles junction table
-        from app.models import CohortProfiles
-        profile_links = session.exec(
-            select(CohortProfiles)
-            .where(CohortProfiles.cohort_id == cohort_uuid)
-        ).all()
+        from app.models import t_cohort_profiles
+        from sqlalchemy import select as sa_select
+        
+        profile_links = session.execute(
+            sa_select(t_cohort_profiles.c.profile_id)
+            .where(t_cohort_profiles.c.cohort_id == cohort_uuid)
+        ).fetchall()
         
         roster = []
         if profile_links:
-            profile_ids = [link.profile_id for link in profile_links]
+            profile_ids = [row[0] for row in profile_links]
             profiles_stmt = select(Profiles).where(Profiles.id.in_(profile_ids))
             profiles = session.exec(profiles_stmt).all()
 
@@ -71,15 +73,16 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
             ]
 
         # Load simulations from cohort_simulations junction table
-        from app.models import CohortSimulations
-        sim_links = session.exec(
-            select(CohortSimulations)
-            .where(CohortSimulations.cohort_id == cohort_uuid)
-        ).all()
+        from app.models import t_cohort_simulations
+        
+        sim_links = session.execute(
+            sa_select(t_cohort_simulations.c.simulation_id)
+            .where(t_cohort_simulations.c.cohort_id == cohort_uuid)
+        ).fetchall()
         
         cohort_sims: list[Simulations] = []
         if sim_links:
-            simulation_ids = [link.simulation_id for link in sim_links]
+            simulation_ids = [row[0] for row in sim_links]
             sims_stmt = select(Simulations).where(
                 Simulations.id.in_(simulation_ids), Simulations.active
             )

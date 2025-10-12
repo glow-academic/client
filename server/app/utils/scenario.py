@@ -118,8 +118,21 @@ async def randomly_fill_scenario_attributes(
     else:
         scenario_persona_id = scenario.persona_id
 
-    # Document selection if documents is null
-    if scenario.document_ids is None:
+    # Load existing documents and parameters from junction tables
+    from app.models import t_scenario_documents, t_scenario_parameter_items
+    from sqlalchemy import select as sa_select
+    
+    existing_doc_ids = [row[0] for row in session.execute(
+        sa_select(t_scenario_documents.c.document_id)
+        .where(t_scenario_documents.c.scenario_id == scenario.id)
+    ).fetchall()]
+    
+    existing_param_ids = [row[0] for row in session.execute(
+        sa_select(t_scenario_parameter_items.c.parameter_item_id)
+        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
+    ).fetchall()]
+    
+    if not existing_doc_ids:
         # Only select from active documents
         active_documents = session.exec(select(Documents).where(Documents.active)).all()
 
@@ -132,8 +145,8 @@ async def randomly_fill_scenario_attributes(
             return [t for t in _norm(s).split(" ") if t]
 
         if active_documents:
-            # Build scenario signal text from name/description
-            scenario_text = f"{scenario.name or ''} {scenario.description or ''}"
+            # Build scenario signal text from name/problem_statement
+            scenario_text = f"{scenario.name or ''} {scenario.problem_statement or ''}"
             scenario_tokens = set(_tokens(scenario_text))
 
             known_types = [
@@ -149,11 +162,8 @@ async def randomly_fill_scenario_attributes(
 
             def _score(doc: Documents) -> float:
                 score = 0.0
-                tag_tokens: set[str] = set()
-                for tag in (doc.tags or []):
-                    tag_tokens.update(_tokens(tag))
-                overlap = scenario_tokens.intersection(tag_tokens)
-                score += 5.0 * len(overlap)
+                # Note: doc.tags removed in BCNF migration
+                # Tags now managed via simulation_tags junction
                 name_tokens = set(_tokens(doc.name or ""))
                 score += 2.0 * len(scenario_tokens.intersection(name_tokens))
                 doc_type = (doc.type or "").lower()
@@ -168,7 +178,8 @@ async def randomly_fill_scenario_attributes(
             # Build clusters per tag and choose one tag to ensure all selected share the same tag
             tag_to_docs: dict[str, list[Documents]] = {}
             for d in active_documents:
-                tags = d.tags or ["__untagged__"]
+                # Note: doc.tags removed in BCNF migration - defaulting to untagged
+                tags = ["__untagged__"]  # d.tags removed
                 if len(tags) == 0:
                     tags = ["__untagged__"]
                 for t in tags:
@@ -203,10 +214,10 @@ async def randomly_fill_scenario_attributes(
             scenario_documents = []
             logger.info("No active documents found")
     else:
-        scenario_documents = scenario.document_ids
+        scenario_documents = existing_doc_ids  # Use IDs from junction table
 
-    # Random parameter item selection if parameter_item_ids is null or empty
-    if scenario.parameter_item_ids is None or len(scenario.parameter_item_ids) == 0:
+    # Random parameter item selection if no parameters linked via junction
+    if not existing_param_ids:
         # Get all active parameters
         active_parameters = session.exec(
             select(Parameters).where(Parameters.active)
@@ -245,10 +256,10 @@ async def randomly_fill_scenario_attributes(
         ).all()
         active_param_ids = {param.id for param in active_parameters}
 
-        # Get all parameter items for the provided IDs
+        # Get all parameter items for the existing IDs from junction
         existing_param_items = session.exec(
             select(ParameterItems).where(
-                ParameterItems.id.in_(scenario.parameter_item_ids)
+                ParameterItems.id.in_(existing_param_ids)
             )
         ).all()
 
@@ -286,20 +297,21 @@ async def randomly_fill_scenario_attributes(
                     logger.warning(f"No parameter items found for parameter {param_id}")
 
     # Load current linked docs/params from junction tables for comparison
-    from app.models import (ScenarioDocuments, ScenarioParameterItems,
-                            ScenarioTree)
+    from app.models import (t_scenario_documents, t_scenario_parameter_items,
+                            t_scenario_tree)
+    from sqlalchemy import select as sa_select
     
-    current_doc_links = session.exec(
-        select(ScenarioDocuments)
-        .where(ScenarioDocuments.scenario_id == scenario.id)
-    ).all()
-    current_doc_ids = sorted([link.document_id for link in current_doc_links])
+    current_doc_links = session.execute(
+        sa_select(t_scenario_documents.c.document_id)
+        .where(t_scenario_documents.c.scenario_id == scenario.id)
+    ).fetchall()
+    current_doc_ids = sorted([row[0] for row in current_doc_links])
     
-    current_param_links = session.exec(
-        select(ScenarioParameterItems)
-        .where(ScenarioParameterItems.scenario_id == scenario.id)
-    ).all()
-    current_param_ids = sorted([link.parameter_item_id for link in current_param_links])
+    current_param_links = session.execute(
+        sa_select(t_scenario_parameter_items.c.parameter_item_id)
+        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
+    ).fetchall()
+    current_param_ids = sorted([row[0] for row in current_param_links])
     
     # Compare with new values
     new_docs = sorted(scenario_documents or [])
@@ -322,24 +334,28 @@ async def randomly_fill_scenario_attributes(
     session.flush()  # Get the new scenario ID
     
     # Create scenario_tree edge (parent -> child)
-    session.add(ScenarioTree(
-        parent_id=scenario.id,
-        child_id=new_scenario.id,
-    ))
+    session.execute(
+        t_scenario_tree.insert().values(
+            parent_id=scenario.id,
+            child_id=new_scenario.id,
+        )
+    )
     
     # Create junction records for documents
-    for doc_id in (scenario_documents or []):
-        session.add(ScenarioDocuments(
-            scenario_id=new_scenario.id,
-            document_id=doc_id,
-        ))
+    if scenario_documents:
+        session.execute(
+            t_scenario_documents.insert(),
+            [{"scenario_id": new_scenario.id, "document_id": doc_id} 
+             for doc_id in scenario_documents]
+        )
     
     # Create junction records for parameter items
-    for param_id in (scenario_parameter_item_ids or []):
-        session.add(ScenarioParameterItems(
-            scenario_id=new_scenario.id,
-            parameter_item_id=param_id,
-        ))
+    if scenario_parameter_item_ids:
+        session.execute(
+            t_scenario_parameter_items.insert(),
+            [{"scenario_id": new_scenario.id, "parameter_item_id": param_id} 
+             for param_id in scenario_parameter_item_ids]
+        )
     
     return new_scenario
 
@@ -443,8 +459,7 @@ def suggest_randomized_sections(
         )
         for d in current_documents:
             context_tokens.update(_tokens(d.name))
-            for tag in (d.tags or []):
-                context_tokens.update(_tokens(tag))
+            # Note: doc.tags removed in BCNF migration
             context_tokens.add(_norm(d.type))
             # Include current document content to help parameter/persona choice
             try:
@@ -493,11 +508,7 @@ def suggest_randomized_sections(
 
         def score_doc(doc: Documents) -> float:
             score = 0.0
-            tag_tokens: set[str] = set()
-            for tag in (doc.tags or []):
-                tag_tokens.update(_tokens(tag))
-            overlap = context_tokens.intersection(tag_tokens)
-            score += 5.0 * len(overlap)
+            # Note: doc.tags removed in BCNF migration
             name_overlap = context_tokens.intersection(set(_tokens(doc.name or "")))
             score += 2.0 * len(name_overlap)
             d_type = (doc.type or "").lower()
@@ -519,7 +530,8 @@ def suggest_randomized_sections(
             # Ensure all selected share the same tag
             tag_to_docs: dict[str, list[Documents]] = {}
             for d in active_documents:
-                tags = d.tags or ["__untagged__"]
+                # Note: doc.tags removed in BCNF migration
+                tags = ["__untagged__"]  # d.tags removed
                 if len(tags) == 0:
                     tags = ["__untagged__"]
                 for t in tags:

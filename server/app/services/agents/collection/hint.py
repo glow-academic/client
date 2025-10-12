@@ -215,10 +215,17 @@ async def run_hint_agent(
         input_items: list[TResponseInputItem] = []
         
         # Add document info if available (no images needed for hints)
-        if scenario.document_ids:
-            document_info = get_document_info(
-                scenario.document_ids, False, session
-            )
+        # Load document IDs from junction table
+        from app.models import t_scenario_documents
+        from sqlalchemy import select as sa_select
+        
+        doc_ids = [row[0] for row in session.execute(
+            sa_select(t_scenario_documents.c.document_id)
+            .where(t_scenario_documents.c.scenario_id == scenario.id)
+        ).fetchall()]
+        
+        if doc_ids:
+            document_info = get_document_info(doc_ids, False, session)
             input_items.append(document_info)
         
         # Get all messages up to and including the target message

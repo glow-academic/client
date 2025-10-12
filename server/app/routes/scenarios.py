@@ -82,79 +82,13 @@ async def create_practice_scenario(
     department_id: uuid.UUID = Form(...),
 ) -> JSONResponse:
     """
-    Create a practice scenario by finding the base practice scenario for the persona
-    and filling any missing attributes using randomly_fill_scenario_attributes.
+    DEPRECATED: Practice mode is now simulation-level, not scenario-level.
+    This endpoint is kept for backwards compatibility but may not work correctly.
     """
-    try:
-        if not persona_id:
-            raise HTTPException(status_code=400, detail="persona_id is required")
-
-        # Find the base practice scenario for this persona
-        # This should be the scenario with only persona_id set, default_scenario=True, and practice_scenario=True
-        base_scenario = session.exec(
-            select(Scenarios).where(
-                Scenarios.persona_id == persona_id,
-                Scenarios.default_scenario == True,
-                Scenarios.practice_scenario == True,
-                # Ensure it has minimal attributes (only persona_id)
-                (Scenarios.document_ids == None) | (Scenarios.document_ids == []),
-                (Scenarios.parameter_item_ids == None) | (Scenarios.parameter_item_ids == [])
-            )
-        ).first()
-
-        if not base_scenario:
-            raise HTTPException(
-                status_code=404, 
-                detail=f"No base practice scenario found for persona {persona_id}"
-            )
-
-        # Use randomly_fill_scenario_attributes to fill any missing attributes
-        filled_scenario = await randomly_fill_scenario_attributes(base_scenario, session, department_id)
-
-        # Generate scenario description and name using AI if needed
-        if not filled_scenario.description or filled_scenario.description.strip() == "":
-            name, description, objectives, _ = await run_scenario_agent(
-                department_id=department_id,
-                persona_id=filled_scenario.persona_id,
-                document_ids=filled_scenario.document_ids,
-                parameter_item_ids=filled_scenario.parameter_item_ids,
-                group_id=None,
-                session=session,
-                profile_id=profile_id,
-            )
-            filled_scenario.name = name
-            filled_scenario.description = description
-            filled_scenario.objectives = objectives
-
-        # Update the base scenario in the database
-        session.add(filled_scenario)
-        session.commit()
-        session.refresh(filled_scenario)
-
-        return JSONResponse(
-            status_code=200,
-            content={
-                "success": True,
-                "message": "Practice scenario created successfully",
-                "scenario": {
-                    "id": str(filled_scenario.id),
-                    "name": filled_scenario.name,
-                    "description": filled_scenario.description,
-                    "objectives": filled_scenario.objectives,
-                    "personaId": str(filled_scenario.persona_id) if filled_scenario.persona_id else None,
-                    "documentIds": [str(doc_id) for doc_id in (filled_scenario.document_ids or [])],
-                    "parameterItemIds": [str(param_id) for param_id in (filled_scenario.parameter_item_ids or [])],
-                }
-            },
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error creating practice scenario: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to create practice scenario: {str(e)}"
-        )
+    raise HTTPException(
+        status_code=410,
+        detail="Practice scenario creation is deprecated. Use simulation-level practice mode instead."
+    )
 
 
 @router.post("/randomize")

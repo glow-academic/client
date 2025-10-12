@@ -123,7 +123,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             scenario_links = db_session.exec(
                 select(SimulationScenarios)
                 .where(SimulationScenarios.simulation_id == simulation.id)
-                .order_by(SimulationScenarios.position)
+                .order_by("position")
             ).all()
 
             # If no scenarios are configured, pick a random scenario
@@ -168,20 +168,36 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Check if we got a new scenario or the original one
             is_new_scenario = scenario.id != old_scenario.id
 
-            # Generate scenario description if empty
-            if not scenario.description or scenario.description == "":
+            # Generate scenario problem_statement if empty
+            if not scenario.problem_statement or scenario.problem_statement == "":
+                # Load documents and parameters from junction tables
+                from app.models import (t_scenario_documents,
+                                        t_scenario_parameter_items)
+                from sqlalchemy import select as sa_select
+                
+                doc_ids = [row[0] for row in db_session.execute(
+                    sa_select(t_scenario_documents.c.document_id)
+                    .where(t_scenario_documents.c.scenario_id == scenario.id)
+                ).fetchall()]
+                
+                param_ids = [row[0] for row in db_session.execute(
+                    sa_select(t_scenario_parameter_items.c.parameter_item_id)
+                    .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
+                ).fetchall()]
+                
                 name, description, objectives, trace_id = await run_scenario_agent(
                     department_id=department_id,
                     persona_id=scenario.persona_id,
-                    document_ids=scenario.document_ids,
-                    parameter_item_ids=scenario.parameter_item_ids,
+                    document_ids=doc_ids,
+                    parameter_item_ids=param_ids,
                     group_id=new_attempt.id,
                     session=db_session,
                     profile_id=new_attempt.profile_id,
                 )
                 scenario.name = name
-                scenario.description = description
-                scenario.objectives = objectives
+                scenario.problem_statement = description
+                # Note: objectives would need to be saved via scenario_objectives junction
+                # but for now we skip that as client handles it
                 chat_title = scenario.name
             else:
                 chat_title = scenario.name
@@ -369,19 +385,34 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 # Check if we got a new scenario or the original one
                 is_new_scenario = scenario.id != old_scenario.id
                 
-                if not scenario.description or scenario.description == "":
+                if not scenario.problem_statement or scenario.problem_statement == "":
+                    # Load documents and parameters from junction tables
+                    from app.models import (t_scenario_documents,
+                                            t_scenario_parameter_items)
+                    from sqlalchemy import select as sa_select
+                    
+                    doc_ids = [row[0] for row in db_session.execute(
+                        sa_select(t_scenario_documents.c.document_id)
+                        .where(t_scenario_documents.c.scenario_id == scenario.id)
+                    ).fetchall()]
+                    
+                    param_ids = [row[0] for row in db_session.execute(
+                        sa_select(t_scenario_parameter_items.c.parameter_item_id)
+                        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
+                    ).fetchall()]
+                    
                     name, description, objectives, trace_id = await run_scenario_agent(
                         department_id=scenario.department_id,
                         persona_id=scenario.persona_id,
-                        document_ids=scenario.document_ids,
-                        parameter_item_ids=scenario.parameter_item_ids,
+                        document_ids=doc_ids,
+                        parameter_item_ids=param_ids,
                         group_id=attempt_id,
                         session=db_session,
                         profile_id=simulation_attempt.profile_id if simulation_attempt else None,
                     )
                     scenario.name = name
-                    scenario.description = description
-                    scenario.objectives = objectives
+                    scenario.problem_statement = description
+                    # Note: objectives would need to be saved via scenario_objectives junction
                     chat_title = scenario.name
                 else:
                     chat_title = scenario.name
@@ -448,7 +479,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             scenario_links = db_session.exec(
                 select(SimulationScenarios)
                 .where(SimulationScenarios.simulation_id == simulation.id)
-                .order_by(SimulationScenarios.position)
+                .order_by("position")
             ).all()
             is_infinite_mode = bool(simulation_attempt.infinite_mode)
 
@@ -527,13 +558,13 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 # Calculate and create remaining chats in order
                 created_count = 0
                 start_index = len(existing_chats)
-                total_needed = max(0, len(scenario_ids) - start_index)
+                total_needed = max(0, len(scenario_links) - start_index)
                 logger.info(
                     f"End all: Need to create {total_needed} more chats"
                 )
 
                 for offset in range(total_needed):
-                    next_id = scenario_ids[start_index + offset]
+                    next_id = scenario_links[start_index + offset].scenario_id
                     created = await create_chat_for_scenario_id(
                         next_id, mark_completed=True
                     )

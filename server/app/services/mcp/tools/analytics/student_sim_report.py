@@ -7,17 +7,10 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Profiles,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChatFeedbacks,
-    SimulationChatGrades,
-    SimulationChats,
-    SimulationMessages,
-    Simulations,
-    Standards,
-)
+from app.models import (Profiles, Scenarios, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        Standards)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -94,7 +87,7 @@ def student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
                     {
                         "id": str(scenario.id),
                         "name": scenario.name,
-                        "description": scenario.description,
+                        "description": scenario.problem_statement,
                     }
                     if scenario
                     else {}
