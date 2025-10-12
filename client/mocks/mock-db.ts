@@ -1,17 +1,19 @@
 
 import * as mockSchema from './schema';
 import { faker } from '@faker-js/faker';
-import { createMockAgent, createMockAppFeedback, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockCohortProfile, createMockCohortSimulation, createMockCohort, createMockDebugInfo, createMockDepartmentAgent, createMockDepartment, createMockDocument, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfileDepartment, createMockProfile, createMockProvider, createMockRubric, createMockScenarioDocument, createMockScenarioObjective, createMockScenarioParameterItem, createMockScenarioTree, createMockScenario, createMockSimulationAttempt, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationHint, createMockSimulationMessage, createMockSimulationScenario, createMockSimulationTagDocument, createMockSimulationTagParameterItem, createMockSimulationTag, createMockSimulation, createMockStandardGroup, createMockStandard } from './factories';
-import type { Agent, AppFeedback, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, CohortProfile, CohortSimulation, Cohort, DebugInfo, DepartmentAgent, Department, Document, ModelRun, Model, ParameterItem, Parameter, Persona, ProfileDepartment, Profile, Provider, Rubric, ScenarioDocument, ScenarioObjective, ScenarioParameterItem, ScenarioTree, Scenario, SimulationAttempt, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationHint, SimulationMessage, SimulationScenario, SimulationTagDocument, SimulationTagParameterItem, SimulationTag, Simulation, StandardGroup, Standard } from '@/types';
+import { createMockAgent, createMockAppFeedback, createMockAppFeedbackProfile, createMockAppLog, createMockAssistantChat, createMockAssistantMessage, createMockAssistantToolCall, createMockAttemptProfile, createMockCohortProfile, createMockCohortSimulation, createMockCohort, createMockDebugInfo, createMockDepartmentAgent, createMockDepartment, createMockDocument, createMockModelRunAgent, createMockModelRunModel, createMockModelRunPersona, createMockModelRunProfile, createMockModelRun, createMockModel, createMockParameterItem, createMockParameter, createMockPersona, createMockProfileDepartment, createMockProfile, createMockProvider, createMockRubric, createMockScenarioDocument, createMockScenarioObjective, createMockScenarioParameterItem, createMockScenarioPersona, createMockScenarioTree, createMockScenario, createMockSimulationAttempt, createMockSimulationChatFeedback, createMockSimulationChatGrade, createMockSimulationChat, createMockSimulationHint, createMockSimulationMessage, createMockSimulationScenario, createMockSimulationTagDocument, createMockSimulationTagParameterItem, createMockSimulationTag, createMockSimulation, createMockStandardGroup, createMockStandard, createMockUserProfile } from './factories';
+import type { Agent, AppFeedback, AppFeedbackProfile, AppLog, AssistantChat, AssistantMessage, AssistantToolCall, AttemptProfile, CohortProfile, CohortSimulation, Cohort, DebugInfo, DepartmentAgent, Department, Document, ModelRunAgent, ModelRunModel, ModelRunPersona, ModelRunProfile, ModelRun, Model, ParameterItem, Parameter, Persona, ProfileDepartment, Profile, Provider, Rubric, ScenarioDocument, ScenarioObjective, ScenarioParameterItem, ScenarioPersona, ScenarioTree, Scenario, SimulationAttempt, SimulationChatFeedback, SimulationChatGrade, SimulationChat, SimulationHint, SimulationMessage, SimulationScenario, SimulationTagDocument, SimulationTagParameterItem, SimulationTag, Simulation, StandardGroup, Standard, UserProfile } from '@/types';
 
 // A type-safe, in-memory database for testing
 export class MockDb {
   agents: Agent[];
   appFeedback: AppFeedback[];
+  appFeedbackProfiles: AppFeedbackProfile[];
   appLogs: AppLog[];
   assistantChats: AssistantChat[];
   assistantMessages: AssistantMessage[];
   assistantToolCalls: AssistantToolCall[];
+  attemptProfiles: AttemptProfile[];
   cohortProfiles: CohortProfile[];
   cohortSimulations: CohortSimulation[];
   cohorts: Cohort[];
@@ -19,6 +21,10 @@ export class MockDb {
   departmentAgents: DepartmentAgent[];
   departments: Department[];
   documents: Document[];
+  modelRunAgents: ModelRunAgent[];
+  modelRunModels: ModelRunModel[];
+  modelRunPersonas: ModelRunPersona[];
+  modelRunProfiles: ModelRunProfile[];
   modelRuns: ModelRun[];
   models: Model[];
   parameterItems: ParameterItem[];
@@ -31,6 +37,7 @@ export class MockDb {
   scenarioDocuments: ScenarioDocument[];
   scenarioObjectives: ScenarioObjective[];
   scenarioParameterItems: ScenarioParameterItem[];
+  scenarioPersonas: ScenarioPersona[];
   scenarioTree: ScenarioTree[];
   scenarios: Scenario[];
   simulationAttempts: SimulationAttempt[];
@@ -46,15 +53,18 @@ export class MockDb {
   simulations: Simulation[];
   standardGroups: StandardGroup[];
   standards: Standard[];
+  userProfiles: UserProfile[];
 
   constructor() {
     // Create deep copies to ensure test isolation
     this.agents = JSON.parse(JSON.stringify(mockSchema.agents));
     this.appFeedback = JSON.parse(JSON.stringify(mockSchema.appFeedback));
+    this.appFeedbackProfiles = JSON.parse(JSON.stringify(mockSchema.appFeedbackProfiles));
     this.appLogs = JSON.parse(JSON.stringify(mockSchema.appLogs));
     this.assistantChats = JSON.parse(JSON.stringify(mockSchema.assistantChats));
     this.assistantMessages = JSON.parse(JSON.stringify(mockSchema.assistantMessages));
     this.assistantToolCalls = JSON.parse(JSON.stringify(mockSchema.assistantToolCalls));
+    this.attemptProfiles = JSON.parse(JSON.stringify(mockSchema.attemptProfiles));
     this.cohortProfiles = JSON.parse(JSON.stringify(mockSchema.cohortProfiles));
     this.cohortSimulations = JSON.parse(JSON.stringify(mockSchema.cohortSimulations));
     this.cohorts = JSON.parse(JSON.stringify(mockSchema.cohorts));
@@ -62,6 +72,10 @@ export class MockDb {
     this.departmentAgents = JSON.parse(JSON.stringify(mockSchema.departmentAgents));
     this.departments = JSON.parse(JSON.stringify(mockSchema.departments));
     this.documents = JSON.parse(JSON.stringify(mockSchema.documents));
+    this.modelRunAgents = JSON.parse(JSON.stringify(mockSchema.modelRunAgents));
+    this.modelRunModels = JSON.parse(JSON.stringify(mockSchema.modelRunModels));
+    this.modelRunPersonas = JSON.parse(JSON.stringify(mockSchema.modelRunPersonas));
+    this.modelRunProfiles = JSON.parse(JSON.stringify(mockSchema.modelRunProfiles));
     this.modelRuns = JSON.parse(JSON.stringify(mockSchema.modelRuns));
     this.models = JSON.parse(JSON.stringify(mockSchema.models));
     this.parameterItems = JSON.parse(JSON.stringify(mockSchema.parameterItems));
@@ -74,6 +88,7 @@ export class MockDb {
     this.scenarioDocuments = JSON.parse(JSON.stringify(mockSchema.scenarioDocuments));
     this.scenarioObjectives = JSON.parse(JSON.stringify(mockSchema.scenarioObjectives));
     this.scenarioParameterItems = JSON.parse(JSON.stringify(mockSchema.scenarioParameterItems));
+    this.scenarioPersonas = JSON.parse(JSON.stringify(mockSchema.scenarioPersonas));
     this.scenarioTree = JSON.parse(JSON.stringify(mockSchema.scenarioTree));
     this.scenarios = JSON.parse(JSON.stringify(mockSchema.scenarios));
     this.simulationAttempts = JSON.parse(JSON.stringify(mockSchema.simulationAttempts));
@@ -89,6 +104,7 @@ export class MockDb {
     this.simulations = JSON.parse(JSON.stringify(mockSchema.simulations));
     this.standardGroups = JSON.parse(JSON.stringify(mockSchema.standardGroups));
     this.standards = JSON.parse(JSON.stringify(mockSchema.standards));
+    this.userProfiles = JSON.parse(JSON.stringify(mockSchema.userProfiles));
   }
 
   // AGENTS Queries
@@ -120,9 +136,6 @@ export class MockDb {
   // APPFEEDBACK Queries
   getAllAppFeedback() { return this.appFeedback; }
   getAppFeedback(id: number) { return this.appFeedback.find(item => item.id === id) || null; }
-  getAppFeedbackByProfile(profileId: string) { 
-    return this.appFeedback.filter(item => item.profileId === profileId); 
-  }
 
   // APPFEEDBACK Mutations
   createAppFeedback(data: Partial<AppFeedback>) {
@@ -141,6 +154,22 @@ export class MockDb {
     if (itemIndex === -1) return null;
     const deletedItem = this.appFeedback.splice(itemIndex, 1);
     return deletedItem[0];
+  }
+
+  // APPFEEDBACKPROFILES Queries
+  getAllAppFeedbackProfiles() { return this.appFeedbackProfiles; }
+  getAppFeedbackProfilesByAppFeedback(appFeedbackId: number) { 
+    return this.appFeedbackProfiles.filter(item => item.appFeedbackId === appFeedbackId); 
+  }
+  getAppFeedbackProfilesByProfile(profileId: string) { 
+    return this.appFeedbackProfiles.filter(item => item.profileId === profileId); 
+  }
+
+  // APPFEEDBACKPROFILES Mutations
+  createAppFeedbackProfile(data: Partial<AppFeedbackProfile>) {
+    const newItem = createMockAppFeedbackProfile({ ...data, id: data.id ?? faker.string.uuid() });
+    this.appFeedbackProfiles.push(newItem);
+    return newItem;
   }
 
   // APPLOGS Queries
@@ -242,6 +271,22 @@ export class MockDb {
     if (itemIndex === -1) return null;
     const deletedItem = this.assistantToolCalls.splice(itemIndex, 1);
     return deletedItem[0];
+  }
+
+  // ATTEMPTPROFILES Queries
+  getAllAttemptProfiles() { return this.attemptProfiles; }
+  getAttemptProfilesBySimulationAttempt(simulationAttemptId: string) { 
+    return this.attemptProfiles.filter(item => item.attemptId === simulationAttemptId); 
+  }
+  getAttemptProfilesByProfile(profileId: string) { 
+    return this.attemptProfiles.filter(item => item.profileId === profileId); 
+  }
+
+  // ATTEMPTPROFILES Mutations
+  createAttemptProfile(data: Partial<AttemptProfile>) {
+    const newItem = createMockAttemptProfile({ ...data, id: data.id ?? faker.string.uuid() });
+    this.attemptProfiles.push(newItem);
+    return newItem;
   }
 
   // COHORTPROFILES Queries
@@ -393,21 +438,73 @@ export class MockDb {
     return deletedItem[0];
   }
 
+  // MODELRUNAGENTS Queries
+  getAllModelRunAgents() { return this.modelRunAgents; }
+  getModelRunAgentsByModelRun(modelRunId: string) { 
+    return this.modelRunAgents.filter(item => item.modelRunId === modelRunId); 
+  }
+  getModelRunAgentsByAgent(agentId: string) { 
+    return this.modelRunAgents.filter(item => item.agentId === agentId); 
+  }
+
+  // MODELRUNAGENTS Mutations
+  createModelRunAgent(data: Partial<ModelRunAgent>) {
+    const newItem = createMockModelRunAgent({ ...data, id: data.id ?? faker.string.uuid() });
+    this.modelRunAgents.push(newItem);
+    return newItem;
+  }
+
+  // MODELRUNMODELS Queries
+  getAllModelRunModels() { return this.modelRunModels; }
+  getModelRunModelsByModelRun(modelRunId: string) { 
+    return this.modelRunModels.filter(item => item.modelRunId === modelRunId); 
+  }
+  getModelRunModelsByModel(modelId: string) { 
+    return this.modelRunModels.filter(item => item.modelId === modelId); 
+  }
+
+  // MODELRUNMODELS Mutations
+  createModelRunModel(data: Partial<ModelRunModel>) {
+    const newItem = createMockModelRunModel({ ...data, id: data.id ?? faker.string.uuid() });
+    this.modelRunModels.push(newItem);
+    return newItem;
+  }
+
+  // MODELRUNPERSONAS Queries
+  getAllModelRunPersonas() { return this.modelRunPersonas; }
+  getModelRunPersonasByModelRun(modelRunId: string) { 
+    return this.modelRunPersonas.filter(item => item.modelRunId === modelRunId); 
+  }
+  getModelRunPersonasByPersona(personaId: string) { 
+    return this.modelRunPersonas.filter(item => item.personaId === personaId); 
+  }
+
+  // MODELRUNPERSONAS Mutations
+  createModelRunPersona(data: Partial<ModelRunPersona>) {
+    const newItem = createMockModelRunPersona({ ...data, id: data.id ?? faker.string.uuid() });
+    this.modelRunPersonas.push(newItem);
+    return newItem;
+  }
+
+  // MODELRUNPROFILES Queries
+  getAllModelRunProfiles() { return this.modelRunProfiles; }
+  getModelRunProfilesByModelRun(modelRunId: string) { 
+    return this.modelRunProfiles.filter(item => item.modelRunId === modelRunId); 
+  }
+  getModelRunProfilesByProfile(profileId: string) { 
+    return this.modelRunProfiles.filter(item => item.profileId === profileId); 
+  }
+
+  // MODELRUNPROFILES Mutations
+  createModelRunProfile(data: Partial<ModelRunProfile>) {
+    const newItem = createMockModelRunProfile({ ...data, id: data.id ?? faker.string.uuid() });
+    this.modelRunProfiles.push(newItem);
+    return newItem;
+  }
+
   // MODELRUNS Queries
   getAllModelRuns() { return this.modelRuns; }
   getModelRun(id: string) { return this.modelRuns.find(item => item.id === id) || null; }
-  getModelRunsByModel(modelId: string) { 
-    return this.modelRuns.filter(item => item.modelId === modelId); 
-  }
-  getModelRunsByPersona(personaId: string) { 
-    return this.modelRuns.filter(item => item.personaId === personaId); 
-  }
-  getModelRunsByAgent(agentId: string) { 
-    return this.modelRuns.filter(item => item.agentId === agentId); 
-  }
-  getModelRunsByProfile(profileId: string) { 
-    return this.modelRuns.filter(item => item.profileId === profileId); 
-  }
   getModelRunsByDepartment(departmentId: string) { 
     return this.modelRuns.filter(item => item.departmentId === departmentId); 
   }
@@ -674,6 +771,22 @@ export class MockDb {
     return newItem;
   }
 
+  // SCENARIOPERSONAS Queries
+  getAllScenarioPersonas() { return this.scenarioPersonas; }
+  getScenarioPersonasByScenario(scenarioId: string) { 
+    return this.scenarioPersonas.filter(item => item.scenarioId === scenarioId); 
+  }
+  getScenarioPersonasByPersona(personaId: string) { 
+    return this.scenarioPersonas.filter(item => item.personaId === personaId); 
+  }
+
+  // SCENARIOPERSONAS Mutations
+  createScenarioPersona(data: Partial<ScenarioPersona>) {
+    const newItem = createMockScenarioPersona({ ...data, id: data.id ?? faker.string.uuid() });
+    this.scenarioPersonas.push(newItem);
+    return newItem;
+  }
+
   // SCENARIOTREE Queries
   getAllScenarioTree() { return this.scenarioTree; }
   getScenarioTreeByScenario(scenarioId: string) { 
@@ -693,9 +806,6 @@ export class MockDb {
   // SCENARIOS Queries
   getAllScenarios() { return this.scenarios; }
   getScenario(id: string) { return this.scenarios.find(item => item.id === id) || null; }
-  getScenariosByPersona(personaId: string) { 
-    return this.scenarios.filter(item => item.personaId === personaId); 
-  }
   getScenariosByDepartment(departmentId: string) { 
     return this.scenarios.filter(item => item.departmentId === departmentId); 
   }
@@ -722,9 +832,6 @@ export class MockDb {
   // SIMULATIONATTEMPTS Queries
   getAllSimulationAttempts() { return this.simulationAttempts; }
   getSimulationAttempt(id: string) { return this.simulationAttempts.find(item => item.id === id) || null; }
-  getSimulationAttemptsByProfile(profileId: string) { 
-    return this.simulationAttempts.filter(item => item.profileId === profileId); 
-  }
   getSimulationAttemptsBySimulation(simulationId: string) { 
     return this.simulationAttempts.filter(item => item.simulationId === simulationId); 
   }
@@ -1027,6 +1134,19 @@ export class MockDb {
     if (itemIndex === -1) return null;
     const deletedItem = this.standards.splice(itemIndex, 1);
     return deletedItem[0];
+  }
+
+  // USERPROFILES Queries
+  getAllUserProfiles() { return this.userProfiles; }
+  getUserProfilesByProfile(profileId: string) { 
+    return this.userProfiles.filter(item => item.profileId === profileId); 
+  }
+
+  // USERPROFILES Mutations
+  createUserProfile(data: Partial<UserProfile>) {
+    const newItem = createMockUserProfile({ ...data, id: data.id ?? faker.string.uuid() });
+    this.userProfiles.push(newItem);
+    return newItem;
   }
 
 }
