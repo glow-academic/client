@@ -35,8 +35,8 @@ def generate_sqlmodel_from_sql():
             "from typing import Any, Dict, List, Optional",
             "",
             "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
-            "                        Enum, ForeignKeyConstraint, Integer,",
-            "                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time, REAL)",
+            "                        Enum, ForeignKeyConstraint, Integer, MetaData,",
+            "                        PrimaryKeyConstraint, String, Table, Text, Uuid, text, Double, Time, REAL)",
             "from sqlalchemy.dialects.postgresql import JSONB",
             "from sqlmodel import Field, Relationship, SQLModel, Index",
             "from sqlalchemy.orm import Mapped",
@@ -60,6 +60,10 @@ def generate_sqlmodel_from_sql():
             r"class \1(_Base, table=True):",
             class_definitions,
         )
+        
+        # Add metadata object for Table definitions
+        metadata_definition = "\nmetadata = MetaData()\n"
+        class_definitions = base_class + metadata_definition + class_definitions[len(base_class):]
 
         print("Applying type transformations...")
 
@@ -131,6 +135,13 @@ def generate_sqlmodel_from_sql():
                 processed_lines.append(line)
 
         class_definitions = "\n".join(processed_lines)
+        
+        # Fix Table definitions that have empty metadata spots (e.g., Table('name', ,))
+        class_definitions = re.sub(
+            r"Table\(\s*'([^']+)',\s*,",
+            r"Table('\1', metadata,",
+            class_definitions,
+        )
 
         # Correct type hints and other formatting
         class_definitions = re.sub(

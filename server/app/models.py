@@ -2,15 +2,20 @@ import uuid
 from datetime import datetime, time, timezone
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
-                        Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, String, Text, Uuid, text, Double, Time, REAL)
+from sqlalchemy import (ARRAY, REAL, BigInteger, Boolean, Column, DateTime,
+                        Double, Enum, ForeignKeyConstraint, Integer, MetaData,
+                        PrimaryKeyConstraint, String, Table, Text, Time, Uuid,
+                        text)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field, Relationship, SQLModel, Index
 from sqlalchemy.orm import Mapped
+from sqlmodel import Field, Index, Relationship, SQLModel
+
+
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
+
+metadata = MetaData()
 class Accounts(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='accounts_pkey'),
@@ -282,8 +287,7 @@ class AssistantChats(_Base, table=True):
     assistant_tool_calls: list['AssistantToolCalls'] = Relationship(back_populates='chat')
 
 
-t_cohort_profiles = Table(
-    'cohort_profiles', ,
+t_cohort_profiles = Table('cohort_profiles', metadata,
     Column('cohort_id', Uuid, primary_key=True),
     Column('profile_id', Uuid, primary_key=True),
     ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE', name='cohort_profiles_cohort_id_fkey'),
@@ -473,8 +477,7 @@ class AssistantToolCalls(_Base, table=True):
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
 
 
-t_cohort_simulations = Table(
-    'cohort_simulations', ,
+t_cohort_simulations = Table('cohort_simulations', metadata,
     Column('cohort_id', Uuid, primary_key=True),
     Column('simulation_id', Uuid, primary_key=True),
     ForeignKeyConstraint(['cohort_id'], ['cohorts.id'], ondelete='CASCADE', name='cohort_simulations_cohort_id_fkey'),
@@ -654,8 +657,7 @@ class Scenarios(_Base, table=True):
     simulation_scenarios: list['SimulationScenarios'] = Relationship(back_populates='scenario')
 
 
-t_simulation_tag_documents = Table(
-    'simulation_tag_documents', ,
+t_simulation_tag_documents = Table('simulation_tag_documents', metadata,
     Column('simulation_id', Uuid, primary_key=True),
     Column('tag_idx', Integer, primary_key=True),
     Column('document_id', Uuid, primary_key=True),
@@ -667,8 +669,7 @@ t_simulation_tag_documents = Table(
 )
 
 
-t_simulation_tag_parameter_items = Table(
-    'simulation_tag_parameter_items', ,
+t_simulation_tag_parameter_items = Table('simulation_tag_parameter_items', metadata,
     Column('simulation_id', Uuid, primary_key=True),
     Column('tag_idx', Integer, primary_key=True),
     Column('parameter_item_id', Uuid, primary_key=True),
@@ -695,8 +696,7 @@ class DebugInfo(_Base, table=True):
     model_run: Optional['ModelRuns'] = Relationship(back_populates='debug_info')
 
 
-t_scenario_documents = Table(
-    'scenario_documents', ,
+t_scenario_documents = Table('scenario_documents', metadata,
     Column('scenario_id', Uuid, primary_key=True),
     Column('document_id', Uuid, primary_key=True),
     ForeignKeyConstraint(['document_id'], ['documents.id'], ondelete='CASCADE', name='scenario_documents_document_id_fkey'),
@@ -722,8 +722,7 @@ class ScenarioObjectives(_Base, table=True):
     scenario: Optional['Scenarios'] = Relationship(back_populates='scenario_objectives')
 
 
-t_scenario_parameter_items = Table(
-    'scenario_parameter_items', ,
+t_scenario_parameter_items = Table('scenario_parameter_items', metadata,
     Column('scenario_id', Uuid, primary_key=True),
     Column('parameter_item_id', Uuid, primary_key=True),
     ForeignKeyConstraint(['parameter_item_id'], ['parameter_items.id'], ondelete='CASCADE', name='scenario_parameter_items_parameter_item_id_fkey'),
@@ -734,8 +733,7 @@ t_scenario_parameter_items = Table(
 )
 
 
-t_scenario_tree = Table(
-    'scenario_tree', ,
+t_scenario_tree = Table('scenario_tree', metadata,
     Column('parent_id', Uuid, primary_key=True),
     Column('child_id', Uuid, primary_key=True),
     ForeignKeyConstraint(['child_id'], ['scenarios.id'], ondelete='CASCADE', name='scenario_tree_child_id_fkey'),
