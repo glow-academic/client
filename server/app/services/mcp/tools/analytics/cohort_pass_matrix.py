@@ -46,10 +46,10 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
         from app.models import t_cohort_profiles
         from sqlalchemy import select as sa_select
         
-        profile_ids = [row[0] for row in session.execute(
+        profile_ids = list(session.connection().execute(  # type: ignore
             sa_select(t_cohort_profiles.c.profile_id)
             .where(t_cohort_profiles.c.cohort_id == cohort_uuid)
-        ).fetchall()]
+        ).scalars().all())
         
         cohort_members = []
         if profile_ids:

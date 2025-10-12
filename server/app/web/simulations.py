@@ -175,15 +175,15 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                                         t_scenario_parameter_items)
                 from sqlalchemy import select as sa_select
                 
-                doc_ids = [row[0] for row in db_session.execute(
+                doc_ids = list(db_session.connection().execute(  # type: ignore
                     sa_select(t_scenario_documents.c.document_id)
                     .where(t_scenario_documents.c.scenario_id == scenario.id)
-                ).fetchall()]
+                ).scalars().all())
                 
-                param_ids = [row[0] for row in db_session.execute(
+                param_ids = list(db_session.connection().execute(  # type: ignore
                     sa_select(t_scenario_parameter_items.c.parameter_item_id)
                     .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-                ).fetchall()]
+                ).scalars().all())
                 
                 name, description, objectives, trace_id = await run_scenario_agent(
                     department_id=department_id,
@@ -391,15 +391,15 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                                             t_scenario_parameter_items)
                     from sqlalchemy import select as sa_select
                     
-                    doc_ids = [row[0] for row in db_session.execute(
+                    doc_ids = list(db_session.connection().execute(  # type: ignore
                         sa_select(t_scenario_documents.c.document_id)
                         .where(t_scenario_documents.c.scenario_id == scenario.id)
-                    ).fetchall()]
+                    ).scalars().all())
                     
-                    param_ids = [row[0] for row in db_session.execute(
+                    param_ids = list(db_session.connection().execute(  # type: ignore
                         sa_select(t_scenario_parameter_items.c.parameter_item_id)
                         .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-                    ).fetchall()]
+                    ).scalars().all())
                     
                     name, description, objectives, trace_id = await run_scenario_agent(
                         department_id=scenario.department_id,

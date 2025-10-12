@@ -219,10 +219,10 @@ async def run_hint_agent(
         from app.models import t_scenario_documents
         from sqlalchemy import select as sa_select
         
-        doc_ids = [row[0] for row in session.execute(
+        doc_ids = list(session.connection().execute(  # type: ignore
             sa_select(t_scenario_documents.c.document_id)
             .where(t_scenario_documents.c.scenario_id == scenario.id)
-        ).fetchall()]
+        ).scalars().all())
         
         if doc_ids:
             document_info = get_document_info(doc_ids, False, session)

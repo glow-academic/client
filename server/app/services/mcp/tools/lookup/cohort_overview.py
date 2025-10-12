@@ -50,14 +50,13 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
         from app.models import t_cohort_profiles
         from sqlalchemy import select as sa_select
         
-        profile_links = session.execute(
+        profile_ids = list(session.connection().execute(  # type: ignore
             sa_select(t_cohort_profiles.c.profile_id)
             .where(t_cohort_profiles.c.cohort_id == cohort_uuid)
-        ).fetchall()
+        ).scalars().all())
         
         roster = []
-        if profile_links:
-            profile_ids = [row[0] for row in profile_links]
+        if profile_ids:
             profiles_stmt = select(Profiles).where(Profiles.id.in_(profile_ids))
             profiles = session.exec(profiles_stmt).all()
 
@@ -75,14 +74,13 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
         # Load simulations from cohort_simulations junction table
         from app.models import t_cohort_simulations
         
-        sim_links = session.execute(
+        simulation_ids = list(session.connection().execute(  # type: ignore
             sa_select(t_cohort_simulations.c.simulation_id)
             .where(t_cohort_simulations.c.cohort_id == cohort_uuid)
-        ).fetchall()
+        ).scalars().all())
         
         cohort_sims: list[Simulations] = []
-        if sim_links:
-            simulation_ids = [row[0] for row in sim_links]
+        if simulation_ids:
             sims_stmt = select(Simulations).where(
                 Simulations.id.in_(simulation_ids), Simulations.active
             )

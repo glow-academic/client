@@ -122,15 +122,15 @@ async def randomly_fill_scenario_attributes(
     from app.models import t_scenario_documents, t_scenario_parameter_items
     from sqlalchemy import select as sa_select
     
-    existing_doc_ids = [row[0] for row in session.execute(
+    existing_doc_ids = list(session.connection().execute(  # type: ignore
         sa_select(t_scenario_documents.c.document_id)
         .where(t_scenario_documents.c.scenario_id == scenario.id)
-    ).fetchall()]
+    ).scalars().all())
     
-    existing_param_ids = [row[0] for row in session.execute(
+    existing_param_ids = list(session.connection().execute(  # type: ignore
         sa_select(t_scenario_parameter_items.c.parameter_item_id)
         .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-    ).fetchall()]
+    ).scalars().all())
     
     if not existing_doc_ids:
         # Only select from active documents
@@ -301,17 +301,15 @@ async def randomly_fill_scenario_attributes(
                             t_scenario_tree)
     from sqlalchemy import select as sa_select
     
-    current_doc_links = session.execute(
+    current_doc_ids = sorted(session.connection().execute(  # type: ignore
         sa_select(t_scenario_documents.c.document_id)
         .where(t_scenario_documents.c.scenario_id == scenario.id)
-    ).fetchall()
-    current_doc_ids = sorted([row[0] for row in current_doc_links])
+    ).scalars().all())
     
-    current_param_links = session.execute(
+    current_param_ids = sorted(session.connection().execute(  # type: ignore
         sa_select(t_scenario_parameter_items.c.parameter_item_id)
         .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-    ).fetchall()
-    current_param_ids = sorted([row[0] for row in current_param_links])
+    ).scalars().all())
     
     # Compare with new values
     new_docs = sorted(scenario_documents or [])
