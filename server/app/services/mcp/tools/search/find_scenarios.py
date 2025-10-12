@@ -3,7 +3,7 @@
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
 #
-# LIKE-only fuzzy-ish scenario search (name + description).
+# LIKE-only fuzzy-ish scenario search (name + problem_statement).
 #
 # Usage:
 #   find_scenarios("medication error")
@@ -64,7 +64,7 @@ def _score_scenario(
 ) -> int:
     """
     Score a scenario candidate.
-    Name carries more weight than description.
+    Name carries more weight than problem_statement.
     """
     n_norm = _norm(name or "")
     d_norm = _norm(desc or "")
@@ -113,31 +113,30 @@ def _score_scenario(
 
 def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
-    🔎 Find scenarios by name/description
-    -------------------------------------
-    Fuzzy, case-insensitive search on scenario name and description.
+    🔎 Find scenarios by name/problem_statement
+    --------------------------------------------
+    Fuzzy, case-insensitive search on scenario name and problem statement.
 
     Input
-        • query - Scenario name or description to search for
+        • query - Scenario name or problem statement to search for
         • limit - Max results (default: 10)
 
     Returns
         [
             {
-                "id": str,                  # Scenario UUID
-                "name": str | None,         # Scenario name/title
-                "description": str | None,  # Scenario description
-                "persona_id": str | None,     # Linked persona UUID (if any)
-                "default_scenario": bool,   # Is this the default scenario?
-                "practice_scenario": bool,  # Is this a practice scenario?
-                "score": int                # Heuristic match score
+                "id": str,                       # Scenario UUID
+                "name": str | None,              # Scenario name/title
+                "problem_statement": str | None, # Scenario problem statement
+                "persona_id": str | None,        # Linked persona UUID (if any)
+                "default_scenario": bool,        # Is this the default scenario?
+                "score": int                     # Heuristic match score
             },
             ...
         ]
 
     Quick-start
-        ask:  "Find all practice scenarios for BIOL-1102"
-        call: find_scenarios("practice BIOL-1102")
+        ask:  "Find scenarios for medication errors"
+        call: find_scenarios("medication error")
 
     See also 👉 scenario_overview() for detailed scenario data.
     """
@@ -149,7 +148,7 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     session = next(get_session())
     try:
         s_name = func.lower(Scenarios.name)
-        s_desc = func.lower(Scenarios.description)
+        s_problem = func.lower(Scenarios.problem_statement)
 
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
@@ -157,15 +156,15 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         token_ors = []
         for t in toks:
             p = f"%{t}%"
-            token_ors.append(or_(s_name.like(p), s_desc.like(p)))
+            token_ors.append(or_(s_name.like(p), s_problem.like(p)))
 
         pred = or_(
             s_name == q_norm,
-            s_desc == q_norm,
+            s_problem == q_norm,
             s_name.like(like_prefix),
-            s_desc.like(like_prefix),
+            s_problem.like(like_prefix),
             s_name.like(like_full),
-            s_desc.like(like_full),
+            s_problem.like(like_full),
             or_(*token_ors) if token_ors else literal(False),
         )
 
@@ -177,15 +176,14 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
         results: List[Dict[str, Any]] = []
         for sc in scenarios:
-            score = _score_scenario(q_norm, toks, sc.name, sc.description)
+            score = _score_scenario(q_norm, toks, sc.name, sc.problem_statement)
             results.append(
                 {
                     "id": str(sc.id),
                     "name": sc.name,
-                    "description": sc.description,
+                    "problem_statement": sc.problem_statement,
                     "persona_id": str(sc.persona_id) if sc.persona_id else None,
                     "default_scenario": sc.default_scenario,
-                    "practice_scenario": sc.practice_scenario,
                     "score": score,
                 }
             )

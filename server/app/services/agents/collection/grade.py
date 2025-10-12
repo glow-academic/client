@@ -204,16 +204,9 @@ async def run_grade_agent(
         grading_progress.clear()
         _grading_sio_instance = sio_instance
         _grading_chat_id = simulation_chat_id
-        # Get department to access grade_agent_id
-        from app.models import Departments
-        department = session.exec(select(Departments).where(Departments.id == department_id)).one()
-        if not department:
-            raise ValueError(f"Department with ID {department_id} not found")
-        
-        # Get the grade agent configured for this department
-        agent = session.exec(select(Agents).where(Agents.id == department.grade_agent_id)).one()
-        if not agent:
-            raise ValueError(f"Grade agent with ID {department.grade_agent_id} not found")
+        # Get the grade agent configured for this department (via junction table)
+        from app.utils.agents import get_department_agent
+        agent = get_department_agent(session, department_id, 'grade')
 
         # get the chat from the simulation_chat_id
         chat = session.exec(

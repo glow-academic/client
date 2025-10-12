@@ -7,15 +7,8 @@ import uuid
 from typing import Any, Dict
 
 from app.db import get_session
-from app.models import (
-    Cohorts,
-    Rubrics,
-    Scenarios,
-    SimulationAttempts,
-    SimulationChatGrades,
-    SimulationChats,
-    Simulations,
-)
+from app.models import (Cohorts, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatGrades, SimulationChats, Simulations)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
@@ -88,20 +81,32 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
                         }
                     )
 
-        # Get scenarios
+        # Load scenarios from junction table (ordered by position)
+        from app.models import SimulationScenarios
+        scenario_links = session.exec(
+            select(SimulationScenarios)
+            .where(SimulationScenarios.simulation_id == simulation.id)
+            .order_by(SimulationScenarios.position)
+        ).all()
+        
         scenarios_data = []
-        if simulation.scenario_ids:
+        if scenario_links:
+            scenario_ids = [link.scenario_id for link in scenario_links]
             scenarios_stmt = select(Scenarios).where(
-                Scenarios.id.in_(simulation.scenario_ids)
+                Scenarios.id.in_(scenario_ids)
             )
             scenarios = session.exec(scenarios_stmt).all()
+            # Maintain order from junction table
+            scenario_by_id = {str(s.id): s for s in scenarios}
             scenarios_data = [
                 {
-                    "id": str(scenario.id),
-                    "name": scenario.name,
-                    "description": scenario.description,
+                    "id": str(link.scenario_id),
+                    "name": scenario_by_id[str(link.scenario_id)].name,
+                    "problem_statement": scenario_by_id[str(link.scenario_id)].problem_statement,
+                    "position": link.position,
                 }
-                for scenario in scenarios
+                for link in scenario_links
+                if str(link.scenario_id) in scenario_by_id
             ]
 
         # Calculate pass stats

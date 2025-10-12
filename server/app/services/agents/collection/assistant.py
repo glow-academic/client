@@ -93,16 +93,9 @@ async def _handle_assistant_chat(
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
-    # Get department to access assistant_agent_id
-    from app.models import Departments
-    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
-    if not department:
-        raise ValueError(f"Department with ID {department_id} not found")
-    
-    # Get the assistant agent configured for this department
-    agent = session.exec(select(Agents).where(Agents.id == department.assistant_agent_id)).one()
-    if not agent:
-        raise ValueError(f"Assistant agent with ID {department.assistant_agent_id} not found")
+    # Get the assistant agent configured for this department (via junction table)
+    from app.utils.agents import get_department_agent
+    agent = get_department_agent(session, department_id, 'assistant')
 
     input_items: list[TResponseInputItem] = []
 

@@ -72,23 +72,13 @@ def _build_guardrail_agent(session: Session, department_id: uuid.UUID, guardrail
         department_id: Department ID to get the guardrail agent from
         guardrail_type: Either "input" or "output" to determine which guardrail agent to use
     """
-    # Get department to access guardrail agent IDs
-    from app.models import Departments
-    department = session.exec(select(Departments).where(Departments.id == department_id)).one()
-    if not department:
-        raise ValueError(f"Department with ID {department_id} not found")
-    
-    # Get the appropriate guardrail agent based on type
-    if guardrail_type == "input":
-        agent_id = department.input_guardrail_agent_id
-    elif guardrail_type == "output":
-        agent_id = department.output_guardrail_agent_id
-    else:
+    # Get the appropriate guardrail agent from department via junction table
+    if guardrail_type not in ("input", "output"):
         raise ValueError(f"Invalid guardrail_type: {guardrail_type}. Must be 'input' or 'output'")
     
-    agent_row = session.exec(select(Agents).where(Agents.id == agent_id)).one()
-    if not agent_row:
-        raise ValueError(f"{guardrail_type.capitalize()} guardrail agent with ID {agent_id} not found")
+    from app.utils.agents import get_department_agent
+    role = f"{guardrail_type}_guardrail"  # 'input_guardrail' or 'output_guardrail'
+    agent_row = get_department_agent(session, department_id, role)
 
     model = session.exec(select(Models).where(Models.id == agent_row.model_id)).one()
     if not model:

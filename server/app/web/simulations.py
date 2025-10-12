@@ -18,7 +18,7 @@ from agents import gen_trace_id
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from app.db import get_session
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
-                        SimulationMessages, Simulations)
+                        SimulationMessages, Simulations, SimulationScenarios)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.hint import run_hint_agent
 from app.services.agents.collection.scenario import run_scenario_agent
@@ -119,8 +119,12 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 f"Created attempt {new_attempt.id} for simulation {simulation_id}"
             )
 
-            # Get scenario IDs for this simulation
-            scenario_ids = simulation.scenario_ids or []
+            # Load scenarios for this simulation from junction table
+            scenario_links = db_session.exec(
+                select(SimulationScenarios)
+                .where(SimulationScenarios.simulation_id == simulation.id)
+                .order_by(SimulationScenarios.position)
+            ).all()
 
             # If no scenarios are configured, pick a random scenario
             if scenario_id_override:
@@ -131,7 +135,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     await emit_error(sid, f"Scenario {scenario_id_override} not found")
                     return
                 chosen_scenario_id = old_scenario.id
-            elif not scenario_ids:
+            elif not scenario_links:
                 logger.info(
                     f"No scenarios configured for simulation {simulation_id}, selecting random scenario"
                 )
@@ -148,7 +152,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     f"Selected random scenario {scenario_id} for simulation {simulation_id}"
                 )
             else:
-                chosen_scenario_id = scenario_ids[0]
+                chosen_scenario_id = scenario_links[0].scenario_id
 
             old_scenario = db_session.exec(
                 select(Scenarios).where(Scenarios.id == chosen_scenario_id)
@@ -440,8 +444,12 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 await emit_error(sid, "Simulation not found")
                 return
 
-            # Scenario list for this simulation
-            scenario_ids = simulation.scenario_ids or []
+            # Load scenarios for this simulation from junction table
+            scenario_links = db_session.exec(
+                select(SimulationScenarios)
+                .where(SimulationScenarios.simulation_id == simulation.id)
+                .order_by(SimulationScenarios.position)
+            ).all()
             is_infinite_mode = bool(simulation_attempt.infinite_mode)
 
             # Determine how many chats already exist for this attempt
@@ -453,23 +461,19 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             next_index = len(existing_chats)
 
             # If not processing end_all, create the next chat
-            # - Normal mode: create next chat only if we haven't exhausted scenario_ids
-            # - Infinite mode: always create next chat by cycling through scenario_ids
+            # - Normal mode: create next chat only if we haven't exhausted scenarios
+            # - Infinite mode: always create next chat by cycling through scenarios
             next_chat_id = chat_id
-            if not end_all and scenario_ids:
+            if not end_all and scenario_links:
                 next_scenario_id: Optional[uuid.UUID] = None
                 if is_infinite_mode:
                     # Cycle through the configured scenarios indefinitely
-                    # Be defensive if scenario_ids is a mock or empty
-                    try:
-                        num_scenarios = len(scenario_ids)  # type: ignore[arg-type]
-                    except Exception:
-                        num_scenarios = 0
+                    num_scenarios = len(scenario_links)
                     if num_scenarios > 0:
                         cycling_index = next_index % num_scenarios
-                        next_scenario_id = scenario_ids[cycling_index]  # type: ignore[index]
-                elif next_index < len(scenario_ids):
-                    next_scenario_id = scenario_ids[next_index]
+                        next_scenario_id = scenario_links[cycling_index].scenario_id
+                elif next_index < len(scenario_links):
+                    next_scenario_id = scenario_links[next_index].scenario_id
 
                 if next_scenario_id is not None:
                     created_next_chat = await create_chat_for_scenario_id(

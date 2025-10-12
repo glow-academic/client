@@ -285,30 +285,63 @@ async def randomly_fill_scenario_attributes(
                 else:
                     logger.warning(f"No parameter items found for parameter {param_id}")
 
-    # Check if we actually need to create a new scenario
-    # If all the values are the same as the original scenario, return the original
-    # Sort lists for comparison to handle order differences
-    original_docs = sorted(scenario.document_ids or [])
+    # Load current linked docs/params from junction tables for comparison
+    from app.models import (ScenarioDocuments, ScenarioParameterItems,
+                            ScenarioTree)
+    
+    current_doc_links = session.exec(
+        select(ScenarioDocuments)
+        .where(ScenarioDocuments.scenario_id == scenario.id)
+    ).all()
+    current_doc_ids = sorted([link.document_id for link in current_doc_links])
+    
+    current_param_links = session.exec(
+        select(ScenarioParameterItems)
+        .where(ScenarioParameterItems.scenario_id == scenario.id)
+    ).all()
+    current_param_ids = sorted([link.parameter_item_id for link in current_param_links])
+    
+    # Compare with new values
     new_docs = sorted(scenario_documents or [])
-    original_params = sorted(scenario.parameter_item_ids or [])
     new_params = sorted(scenario_parameter_item_ids or [])
     
     if (scenario_persona_id == scenario.persona_id and 
-        new_docs == original_docs and 
-        new_params == original_params):
+        new_docs == current_doc_ids and 
+        new_params == current_param_ids):
         return scenario
     
-    # Create a new scenario only if we actually have changes
-    return Scenarios(
+    # Create a new scenario variant with changes
+    new_scenario = Scenarios(
         name=scenario.name,
-        description=scenario.description,
+        problem_statement=scenario.problem_statement,
         persona_id=scenario_persona_id,
-        document_ids=scenario_documents,
-        parameter_item_ids=scenario_parameter_item_ids,
         department_id=department_id,
         generated=True,
-        parent_id=scenario.id,  # since we are creating a new scenario, we need to set the parent_id to the original scenario
     )
+    session.add(new_scenario)
+    session.flush()  # Get the new scenario ID
+    
+    # Create scenario_tree edge (parent -> child)
+    session.add(ScenarioTree(
+        parent_id=scenario.id,
+        child_id=new_scenario.id,
+    ))
+    
+    # Create junction records for documents
+    for doc_id in (scenario_documents or []):
+        session.add(ScenarioDocuments(
+            scenario_id=new_scenario.id,
+            document_id=doc_id,
+        ))
+    
+    # Create junction records for parameter items
+    for param_id in (scenario_parameter_item_ids or []):
+        session.add(ScenarioParameterItems(
+            scenario_id=new_scenario.id,
+            parameter_item_id=param_id,
+        ))
+    
+    return new_scenario
 
 
 # -------------------------- Suggestion Utilities ---------------------------
