@@ -31,6 +31,9 @@ CREATE TABLE simulation_scenarios (
   simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
   scenario_id   UUID NOT NULL REFERENCES scenarios(id)   ON DELETE CASCADE,
   position      INT  NOT NULL DEFAULT 1,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, scenario_id)
 );
 
@@ -46,6 +49,9 @@ CREATE TABLE simulation_tags (
   simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
   idx           INT  NOT NULL,
   tag           TEXT NOT NULL,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, idx)
 );
 
@@ -64,6 +70,9 @@ CREATE TABLE simulation_tag_documents (
   simulation_id UUID NOT NULL,
   tag_idx       INT  NOT NULL,
   document_id   UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, tag_idx, document_id),
   CONSTRAINT simulation_tag_documents_tag_fk
     FOREIGN KEY (simulation_id, tag_idx)
@@ -75,6 +84,9 @@ CREATE TABLE simulation_tag_parameter_items (
   simulation_id     UUID NOT NULL,
   tag_idx           INT  NOT NULL,
   parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, tag_idx, parameter_item_id),
   CONSTRAINT simulation_tag_parameter_items_tag_fk
     FOREIGN KEY (simulation_id, tag_idx)
@@ -105,12 +117,28 @@ JOIN parameter_items pi ON pi.id = stpi.parameter_item_id;
 CREATE TABLE simulation_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  profile_id    UUID         NULL REFERENCES profiles(id)  ON DELETE CASCADE,
   simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE,
   infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE,
   infinite_mode_time_limit INTEGER     NULL, -- in minutes, or no time limit
   archived BOOLEAN     NOT NULL           DEFAULT FALSE
 );
+
+-- Simulation attempts ↔ Profiles junction table (BCNF normalization - replaces simulation_attempts.profile_id)
+CREATE TABLE attempt_profiles (
+  attempt_id UUID NOT NULL REFERENCES simulation_attempts(id) ON DELETE CASCADE,
+  profile_id UUID NOT NULL REFERENCES profiles(id)           ON DELETE RESTRICT,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (attempt_id, profile_id)
+);
+
+CREATE UNIQUE INDEX attempt_profiles_one_active_per_attempt
+  ON attempt_profiles(attempt_id)
+  WHERE active;
+
+CREATE INDEX ON attempt_profiles (profile_id);
+CREATE INDEX ON attempt_profiles (attempt_id, active);
 
 CREATE TABLE simulation_chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),

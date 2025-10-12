@@ -40,12 +40,13 @@ sim_persona_meta AS (
   FROM (
     SELECT
       s.id AS simulation_id,
-      sc.persona_id,
+      sp.persona_id,
       COUNT(*) AS cnt
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
     LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
-    GROUP BY s.id, sc.persona_id
+    LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
+    GROUP BY s.id, sp.persona_id
   ) sm
   LEFT JOIN personas p ON p.id = sm.persona_id
   GROUP BY sm.simulation_id

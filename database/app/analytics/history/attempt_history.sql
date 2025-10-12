@@ -166,7 +166,7 @@ attempt_rollup AS (
 attempt_joined AS (
   SELECT
     ar.*,
-    sa.profile_id,
+    ap.profile_id,
     sa.archived                         AS is_archived,
     sa.infinite_mode,
     sa.infinite_mode_time_limit,
@@ -183,9 +183,10 @@ attempt_joined AS (
     (p.first_name || ' ' || p.last_name) AS profile_name
   FROM attempt_rollup ar
   JOIN simulation_attempts sa ON sa.id = ar.attempt_id
+  LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
   JOIN simulations        s  ON s.id  = ar.simulation_id
   LEFT JOIN rubrics       r  ON r.id  = s.rubric_id
-  JOIN profiles           p  ON p.id  = sa.profile_id
+  JOIN profiles           p  ON p.id  = ap.profile_id
 ),
 /* Final shaping with scoring semantics */
 final_rows AS (

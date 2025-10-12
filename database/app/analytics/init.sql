@@ -49,15 +49,16 @@ cohorts_by_sim AS (
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
 profile_cohorts_for_sim AS (
-  SELECT sa.id AS attempt_id, sa.profile_id, sa.simulation_id,
+  SELECT sa.id AS attempt_id, ap.profile_id, sa.simulation_id,
          ARRAY(
            SELECT c.id
            FROM cohorts c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
-           JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = sa.profile_id
+           JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE c.active = TRUE
          ) AS profile_cohort_ids
   FROM simulation_attempts sa
+  LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 ),
 -- Message counts per chat (total + by type)
 message_counts AS (
@@ -107,19 +108,20 @@ effective_profile_department AS (
              ORDER BY pd2.created_at ASC
              LIMIT 1)
          ) AS department_id
-  FROM (SELECT DISTINCT profile_id FROM simulation_attempts) pd
+  FROM (SELECT DISTINCT ap.profile_id FROM simulation_attempts sa
+        JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE) pd
 )
 SELECT
   -- *** original columns kept in the same order as your "Old def" ***
   sc.id                         AS chat_id,
   sc.attempt_id                 AS attempt_id,
-  sa.profile_id                 AS profile_id,
+  ap.profile_id                 AS profile_id,
   sa.simulation_id              AS simulation_id,
 
   rm.root_scenario_id           AS scenario_id,
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
-  s.persona_id                  AS persona_id,
+  sp.persona_id                 AS persona_id,
   p.color                       AS persona_color,
 
   sim.practice_simulation       AS is_practice,
@@ -162,18 +164,20 @@ SELECT
   COALESCE(epd.department_id, sim.department_id, r.department_id, s.department_id, p.department_id) AS department_id
 FROM simulation_chats sc
 JOIN simulation_attempts sa   ON sa.id = sc.attempt_id
+LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
-JOIN profiles pr              ON pr.id = sa.profile_id
+JOIN profiles pr              ON pr.id = ap.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
-LEFT JOIN personas p          ON p.id = s.persona_id
+LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = TRUE
+LEFT JOIN personas p          ON p.id = sp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
 LEFT JOIN rubrics r           ON r.id = lg.rubric_id
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
 LEFT JOIN message_deltas_agg mda ON mda.chat_id = sc.id
-LEFT JOIN effective_profile_department epd ON epd.profile_id = sa.profile_id
+LEFT JOIN effective_profile_department epd ON epd.profile_id = ap.profile_id
 WITH NO DATA;
 
 -- Unique index required for CONCURRENT refresh
@@ -297,9 +301,6 @@ CREATE INDEX IF NOT EXISTS simulation_messages_chat_created_type_idx
 CREATE INDEX IF NOT EXISTS simulation_chats_id_created_idx
   ON simulation_chats (id, created_at);
 
-CREATE INDEX IF NOT EXISTS simulation_attempts_profile_sim_idx
-  ON simulation_attempts (profile_id, simulation_id);
-
 CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
   ON simulation_attempts (archived);
 
@@ -325,15 +326,22 @@ CREATE INDEX IF NOT EXISTS analytics_profile_cohort_ids_gin
   ON analytics USING GIN (profile_cohort_ids);
 
 -- Common joins
-CREATE INDEX IF NOT EXISTS simulation_attempts_id_profile_archived_idx
-  ON simulation_attempts (id, profile_id, archived, infinite_mode);
-
 CREATE INDEX IF NOT EXISTS simulations_id_active_idx
   ON simulations (id, active);
 
 CREATE INDEX IF NOT EXISTS rubrics_id_idx ON rubrics (id);
 CREATE INDEX IF NOT EXISTS scenarios_id_active_idx ON scenarios (id, active);
 CREATE INDEX IF NOT EXISTS personas_id_idx ON personas (id);
+
+-- Junction table indexes for analytics performance
+CREATE INDEX IF NOT EXISTS attempt_profiles_attempt_active_idx
+  ON attempt_profiles (attempt_id, profile_id) WHERE active = TRUE;
+
+CREATE INDEX IF NOT EXISTS attempt_profiles_profile_active_idx
+  ON attempt_profiles (profile_id, attempt_id) WHERE active = TRUE;
+
+CREATE INDEX IF NOT EXISTS scenario_personas_scenario_active_idx
+  ON scenario_personas (scenario_id, persona_id) WHERE active = TRUE;
 
 -- Optimized indexes for analytics functions performance
 -- Profile + time range lookups for fast filtering

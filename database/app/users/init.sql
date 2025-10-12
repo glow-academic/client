@@ -59,7 +59,6 @@ CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'ta', 
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  user_id    INTEGER     NULL REFERENCES users(id) ON DELETE CASCADE,
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
   last_name  TEXT        NOT NULL,
@@ -74,12 +73,31 @@ CREATE TABLE profiles (
   req_per_day INTEGER     NULL DEFAULT NULL -- model requests per day, null means unlimited
 );
 
+-- User ↔ Profiles junction table (BCNF normalization - replaces profiles.user_id)
+CREATE TABLE user_profiles (
+  user_id     INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  profile_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  is_primary  BOOLEAN NOT NULL DEFAULT FALSE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, profile_id)
+);
+
+CREATE UNIQUE INDEX user_profiles_one_primary_per_user
+  ON user_profiles(user_id) WHERE is_primary;
+
+CREATE INDEX ON user_profiles (profile_id);
+CREATE INDEX ON user_profiles (user_id, is_primary);
+
 -- Profile ↔ Department M:N relationship (BCNF normalization)
 CREATE TABLE profile_departments (
   profile_id    UUID NOT NULL REFERENCES profiles(id)    ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   is_primary    BOOLEAN NOT NULL DEFAULT FALSE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (profile_id, department_id)
 );
 

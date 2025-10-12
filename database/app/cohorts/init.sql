@@ -20,6 +20,9 @@ CREATE TABLE cohorts (
 CREATE TABLE cohort_profiles (
   cohort_id  UUID NOT NULL REFERENCES cohorts(id)    ON DELETE CASCADE,
   profile_id UUID NOT NULL REFERENCES profiles(id)   ON DELETE CASCADE,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (cohort_id, profile_id)
 );
 
@@ -30,6 +33,9 @@ CREATE INDEX ON cohort_profiles (cohort_id);
 CREATE TABLE cohort_simulations (
   cohort_id    UUID NOT NULL REFERENCES cohorts(id)      ON DELETE CASCADE,
   simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (cohort_id, simulation_id)
 );
 

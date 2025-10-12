@@ -17,7 +17,20 @@ CREATE TABLE app_logs (
 CREATE TABLE app_feedback (
   id           SERIAL PRIMARY KEY,
   created_at   TIMESTAMPTZ DEFAULT now(),
-  profile_id   UUID REFERENCES profiles(id) ON DELETE CASCADE DEFAULT NULL,
   type         feedback_type NOT NULL,
   message      TEXT
 );
+
+-- App feedback ↔ Profiles junction table (BCNF normalization - replaces app_feedback.profile_id)
+CREATE TABLE app_feedback_profiles (
+  app_feedback_id INT  NOT NULL REFERENCES app_feedback(id) ON DELETE CASCADE,
+  profile_id      UUID NOT NULL REFERENCES profiles(id)     ON DELETE CASCADE,
+  role            TEXT NOT NULL DEFAULT 'author',
+  active          BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (app_feedback_id, profile_id, role)
+);
+
+CREATE INDEX ON app_feedback_profiles (profile_id);
+CREATE INDEX ON app_feedback_profiles (app_feedback_id);

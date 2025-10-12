@@ -18,10 +18,8 @@ CREATE TABLE personas (
   default_persona      BOOLEAN     NOT NULL DEFAULT FALSE,
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
-  model_id UUID REFERENCES models(id),
+  model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort DEFAULT NULL,
   active BOOLEAN NOT NULL DEFAULT FALSE,
-  guardrail_active BOOLEAN NOT NULL DEFAULT FALSE,
-  image_input_active BOOLEAN NOT NULL DEFAULT FALSE,
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );

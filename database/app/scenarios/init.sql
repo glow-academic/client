@@ -37,12 +37,29 @@ CREATE TABLE scenarios (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   problem_statement TEXT        NOT NULL,
-  persona_id UUID         NULL REFERENCES personas(id)  ON DELETE SET NULL DEFAULT NULL,
   default_scenario BOOLEAN     NOT NULL DEFAULT FALSE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT TRUE,
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );
+
+-- Scenario ↔ Persona junction table (BCNF normalization - replaces scenarios.persona_id)
+CREATE TABLE scenario_personas (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  persona_id  UUID NOT NULL REFERENCES personas(id)  ON DELETE RESTRICT,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, persona_id)
+);
+
+-- One active persona per scenario (enforces single current persona)
+CREATE UNIQUE INDEX scenario_personas_one_active_per_scenario
+  ON scenario_personas(scenario_id)
+  WHERE active;
+
+CREATE INDEX ON scenario_personas (persona_id);
+CREATE INDEX ON scenario_personas (scenario_id, active);
 
 -- Scenario objectives junction table (BCNF normalization)
 CREATE TABLE scenario_objectives (
@@ -58,6 +75,9 @@ CREATE INDEX ON scenario_objectives (scenario_id);
 CREATE TABLE scenario_parameter_items (
   scenario_id      UUID NOT NULL REFERENCES scenarios(id)       ON DELETE CASCADE,
   parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  active           BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (scenario_id, parameter_item_id)
 );
 
@@ -68,6 +88,9 @@ CREATE INDEX ON scenario_parameter_items (parameter_item_id);
 CREATE TABLE scenario_documents (
   scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
   document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (scenario_id, document_id)
 );
 
@@ -78,6 +101,9 @@ CREATE INDEX ON scenario_documents (document_id);
 CREATE TABLE scenario_tree (
   parent_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
   child_id  UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  active    BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (parent_id, child_id)
 );
 
