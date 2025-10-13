@@ -66,6 +66,10 @@ import {
   useScenarioParameterItemsByScenarioId,
 } from "@/lib/api/hooks/scenario_parameter_items";
 import {
+  useCreateScenarioPersona,
+  useScenarioPersonasByScenarioId,
+} from "@/lib/api/hooks/scenario_personas";
+import {
   useCreateScenario,
   useScenario,
   useUpdateScenario,
@@ -106,15 +110,19 @@ export default function Scenario({
   const createScenarioObjectiveMutation = useCreateScenarioObjective();
   const createScenarioParameterItemMutation = useCreateScenarioParameterItem();
   const createScenarioDocumentMutation = useCreateScenarioDocument();
+  const createScenarioPersonaMutation = useCreateScenarioPersona();
 
   // Load linked data from junction tables
   const { data: linkedObjectives = [] } = useScenarioObjectivesByScenarioId(
-    scenarioId || ""
+    scenarioId || "",
   );
   const { data: linkedParameterItems = [] } =
     useScenarioParameterItemsByScenarioId(scenarioId || "");
   const { data: linkedDocuments = [] } = useScenarioDocumentsByScenarioId(
-    scenarioId || ""
+    scenarioId || "",
+  );
+  const { data: linkedPersonas = [] } = useScenarioPersonasByScenarioId(
+    scenarioId || "",
   );
 
   // Form data state
@@ -157,7 +165,7 @@ export default function Scenario({
   useEffect(() => {
     if (linkedParameterItems.length > 0) {
       setCurrentParameterItemIds(
-        linkedParameterItems.map((lpi) => lpi.parameterItemId)
+        linkedParameterItems.map((lpi) => lpi.parameterItemId),
       );
     }
   }, [linkedParameterItems]);
@@ -168,18 +176,31 @@ export default function Scenario({
     }
   }, [linkedDocuments]);
 
+  useEffect(() => {
+    if (linkedPersonas.length > 0 && isEditMode) {
+      // Load persona from junction table (only one active persona per scenario)
+      const activePersona = linkedPersonas.find((lp) => lp.active);
+      if (activePersona) {
+        setFormData((prev) => ({
+          ...prev,
+          personaId: activePersona.personaId,
+        }));
+      }
+    }
+  }, [linkedPersonas, isEditMode]);
+
   const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameterItems = [] } = useParameterItems();
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: scenario, isLoading } = useScenario(scenarioId!);
   const { data: departments = [] } = useDepartmentsHook();
@@ -188,7 +209,7 @@ export default function Scenario({
   useEffect(() => {
     if (isEditMode && scenario) {
       const scenarioData = {
-        personaId: scenario.personaId,
+        personaId: null, // Will be loaded from junction table via separate useEffect
         name: scenario.name || "",
         problemStatement: scenario.problemStatement || "",
         defaultScenario: scenario.defaultScenario ?? false,
@@ -224,7 +245,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -233,7 +254,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return false;
 
     const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active
+      (sim: Simulation) => sim.active,
     );
 
     const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
@@ -299,7 +320,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | boolean | null
+    value: string | string[] | boolean | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -486,7 +507,7 @@ export default function Scenario({
         context: { component: "Scenario", function: "handleGenerateScenario" },
       });
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -506,7 +527,6 @@ export default function Scenario({
       const payload = {
         name: formData.name?.trim() || "",
         problemStatement: formData.problemStatement?.trim() || "",
-        personaId: formData.personaId,
         defaultScenario: formData.defaultScenario || false,
         departmentId: formData.departmentId || effectiveDepartmentIds[0] || "",
       };
@@ -519,8 +539,18 @@ export default function Scenario({
           updatedAt: new Date().toISOString(),
         });
 
-        // Note: Junction table management (objectives, params, docs) requires API updates
-        // TODO: Add batch update endpoints for junction tables
+        // Update persona junction if changed
+        const currentPersonaId = linkedPersonas[0]?.personaId;
+        if (formData.personaId !== currentPersonaId) {
+          // TODO: Need delete endpoint for scenario_personas composite key
+          // For now, backend should handle via CASCADE or manual cleanup
+          if (formData.personaId) {
+            await createScenarioPersonaMutation.mutateAsync({
+              scenarioId: scenarioId!,
+              personaId: formData.personaId,
+            });
+          }
+        }
 
         toast.success("Scenario updated successfully!");
       } else {
@@ -529,6 +559,14 @@ export default function Scenario({
 
         // Create junction records if scenario was created successfully
         if (newScenario?.id) {
+          // Create persona link
+          if (formData.personaId) {
+            await createScenarioPersonaMutation.mutateAsync({
+              scenarioId: newScenario.id,
+              personaId: formData.personaId,
+            });
+          }
+
           // Create objectives
           for (let i = 0; i < currentObjectives.length; i++) {
             if (currentObjectives[i]?.trim()) {
@@ -577,7 +615,7 @@ export default function Scenario({
         },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -612,10 +650,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    currentDocumentIds.includes(doc.id)
+    currentDocumentIds.includes(doc.id),
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId
+    (persona) => persona.id === formData.personaId,
   );
 
   return (
@@ -1106,7 +1144,7 @@ export default function Scenario({
                     formData?.departmentId
                       ? (() => {
                           const dept = departments.find(
-                            (d) => d.id === formData.departmentId
+                            (d) => d.id === formData.departmentId,
                           );
                           return dept
                             ? {

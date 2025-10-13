@@ -66,68 +66,6 @@ export const modelRunRepo = {
       throw HttpError.notFound("ModelRun with id " + id + " not found");
   },
 
-  async listByModel(modelId: string) {
-    const db = await getDb();
-    return db.select().from(modelRuns).where(eq(modelRuns.modelId, modelId));
-  },
-
-  async listByModels(modelIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(modelIds) || modelIds.length === 0) return [];
-    return db
-      .select()
-      .from(modelRuns)
-      .where(inArray(modelRuns.modelId, modelIds));
-  },
-
-  async listByPersona(personaId: string) {
-    const db = await getDb();
-    return db
-      .select()
-      .from(modelRuns)
-      .where(eq(modelRuns.personaId, personaId));
-  },
-
-  async listByPersonas(personaIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(personaIds) || personaIds.length === 0) return [];
-    return db
-      .select()
-      .from(modelRuns)
-      .where(inArray(modelRuns.personaId, personaIds));
-  },
-
-  async listByAgent(agentId: string) {
-    const db = await getDb();
-    return db.select().from(modelRuns).where(eq(modelRuns.agentId, agentId));
-  },
-
-  async listByAgents(agentIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(agentIds) || agentIds.length === 0) return [];
-    return db
-      .select()
-      .from(modelRuns)
-      .where(inArray(modelRuns.agentId, agentIds));
-  },
-
-  async listByProfile(profileId: string) {
-    const db = await getDb();
-    return db
-      .select()
-      .from(modelRuns)
-      .where(eq(modelRuns.profileId, profileId));
-  },
-
-  async listByProfiles(profileIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(profileIds) || profileIds.length === 0) return [];
-    return db
-      .select()
-      .from(modelRuns)
-      .where(inArray(modelRuns.profileId, profileIds));
-  },
-
   async listByDepartment(departmentId: string) {
     const db = await getDb();
     return db

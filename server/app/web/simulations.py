@@ -17,8 +17,9 @@ import socketio  # type: ignore
 from agents import gen_trace_id
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from app.db import get_session
-from app.models import (Scenarios, SimulationAttempts, SimulationChats,
-                        SimulationMessages, Simulations, SimulationScenarios)
+from app.models import (AttemptProfiles, Scenarios, SimulationAttempts, 
+                        SimulationChats, SimulationMessages, Simulations, 
+                        SimulationScenarios)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.hint import run_hint_agent
 from app.services.agents.collection.scenario import run_scenario_agent
@@ -102,7 +103,6 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Create the attempt
             new_attempt = SimulationAttempts(
-                profile_id=profile_id,
                 simulation_id=simulation_id,
                 infinite_mode=infinite,
                 infinite_mode_time_limit=(
@@ -114,6 +114,16 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             db_session.add(new_attempt)
             db_session.commit()
             db_session.refresh(new_attempt)
+
+            # Create attempt_profiles junction record if profile exists
+            if profile_id:
+                attempt_profile = AttemptProfiles(
+                    attempt_id=new_attempt.id,
+                    profile_id=profile_id,
+                    active=True,
+                )
+                db_session.add(attempt_profile)
+                db_session.commit()
 
             logger.info(
                 f"Created attempt {new_attempt.id} for simulation {simulation_id}"
@@ -171,28 +181,44 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             # Generate scenario problem_statement if empty
             if not scenario.problem_statement or scenario.problem_statement == "":
                 # Load documents and parameters from junction tables
-                from app.models import (t_scenario_documents,
-                                        t_scenario_parameter_items)
-                from sqlalchemy import select as sa_select
+                from app.models import ScenarioDocuments, ScenarioParameterItems, ScenarioPersonas
                 
-                doc_ids = list(db_session.connection().execute(  # type: ignore
-                    sa_select(t_scenario_documents.c.document_id)
-                    .where(t_scenario_documents.c.scenario_id == scenario.id)
-                ).scalars().all())
+                doc_links = db_session.exec(
+                    select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+                ).all()
+                doc_ids = [link.document_id for link in doc_links]
                 
-                param_ids = list(db_session.connection().execute(  # type: ignore
-                    sa_select(t_scenario_parameter_items.c.parameter_item_id)
-                    .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-                ).scalars().all())
+                param_links = db_session.exec(
+                    select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
+                ).all()
+                param_ids = [link.parameter_item_id for link in param_links]
+                
+                # Get persona from junction
+                persona_link = db_session.exec(
+                    select(ScenarioPersonas).where(
+                        ScenarioPersonas.scenario_id == scenario.id,
+                        ScenarioPersonas.active == True
+                    )
+                ).first()
+                scenario_persona_id = persona_link.persona_id if persona_link else None
+                
+                # Get profile from attempt_profiles junction
+                attempt_profile_link = db_session.exec(
+                    select(AttemptProfiles).where(
+                        AttemptProfiles.attempt_id == new_attempt.id,
+                        AttemptProfiles.active == True
+                    )
+                ).first()
+                attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
                 
                 name, description, objectives, trace_id = await run_scenario_agent(
                     department_id=department_id,
-                    persona_id=scenario.persona_id,
+                    persona_id=scenario_persona_id,
                     document_ids=doc_ids,
                     parameter_item_ids=param_ids,
                     group_id=new_attempt.id,
                     session=db_session,
-                    profile_id=new_attempt.profile_id,
+                    profile_id=attempt_profile_id,
                 )
                 scenario.name = name
                 scenario.problem_statement = description
@@ -387,28 +413,44 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 
                 if not scenario.problem_statement or scenario.problem_statement == "":
                     # Load documents and parameters from junction tables
-                    from app.models import (t_scenario_documents,
-                                            t_scenario_parameter_items)
-                    from sqlalchemy import select as sa_select
+                    from app.models import ScenarioDocuments, ScenarioParameterItems, ScenarioPersonas
                     
-                    doc_ids = list(db_session.connection().execute(  # type: ignore
-                        sa_select(t_scenario_documents.c.document_id)
-                        .where(t_scenario_documents.c.scenario_id == scenario.id)
-                    ).scalars().all())
+                    doc_links = db_session.exec(
+                        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+                    ).all()
+                    doc_ids = [link.document_id for link in doc_links]
                     
-                    param_ids = list(db_session.connection().execute(  # type: ignore
-                        sa_select(t_scenario_parameter_items.c.parameter_item_id)
-                        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-                    ).scalars().all())
+                    param_links = db_session.exec(
+                        select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
+                    ).all()
+                    param_ids = [link.parameter_item_id for link in param_links]
+                    
+                    # Get persona from junction
+                    persona_link = db_session.exec(
+                        select(ScenarioPersonas).where(
+                            ScenarioPersonas.scenario_id == scenario.id,
+                            ScenarioPersonas.active == True
+                        )
+                    ).first()
+                    scenario_persona_id = persona_link.persona_id if persona_link else None
+                    
+                    # Get profile from attempt_profiles junction
+                    attempt_profile_link = db_session.exec(
+                        select(AttemptProfiles).where(
+                            AttemptProfiles.attempt_id == attempt_id,
+                            AttemptProfiles.active == True
+                        )
+                    ).first()
+                    attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
                     
                     name, description, objectives, trace_id = await run_scenario_agent(
                         department_id=scenario.department_id,
-                        persona_id=scenario.persona_id,
+                        persona_id=scenario_persona_id,
                         document_ids=doc_ids,
                         parameter_item_ids=param_ids,
                         group_id=attempt_id,
                         session=db_session,
-                        profile_id=simulation_attempt.profile_id if simulation_attempt else None,
+                        profile_id=attempt_profile_id,
                     )
                     scenario.name = name
                     scenario.problem_statement = description

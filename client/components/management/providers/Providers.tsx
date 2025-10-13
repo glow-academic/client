@@ -83,7 +83,7 @@ export default function Providers() {
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: agents = [] } = useAgents()
+  const { data: agents = [] } = useAgents();
 
   // Get filter options
   const { columns, providerOptions, customModelOptions, statusOptions } =

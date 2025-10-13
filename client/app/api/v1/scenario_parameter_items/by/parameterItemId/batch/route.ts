@@ -14,11 +14,17 @@ export async function POST(req: Request) {
   return handle(
     () => scenarioParameterItemRepo.listByParameterItems(parsed.data.ids),
     (e: unknown) =>
-      log.error("api.scenario_parameter_items.by.parameterItemId.batch.failed", {
-        message: "Failed to fetch by foreign key batch",
-        subject: { entityType: "scenario_parameter_items" },
-        context: { foreignKey: "parameterItemId", count: parsed.data.ids.length },
-        error: e,
-      })
+      log.error(
+        "api.scenario_parameter_items.by.parameterItemId.batch.failed",
+        {
+          message: "Failed to fetch by foreign key batch",
+          subject: { entityType: "scenario_parameter_items" },
+          context: {
+            foreignKey: "parameterItemId",
+            count: parsed.data.ids.length,
+          },
+          error: e,
+        },
+      ),
   );
 }

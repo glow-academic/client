@@ -35,7 +35,7 @@ export interface DepartmentsContextType {
 }
 
 const DepartmentsContext = createContext<DepartmentsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface DepartmentsProviderProps {
@@ -50,18 +50,18 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
 
   // Fetch all departments for this profile from profile_departments junction
   const { data: profileDepartments = [] } = useProfileDepartmentsByProfileId(
-    effectiveProfile?.id || ""
+    effectiveProfile?.id || "",
   );
 
   // Department filtering - empty array means all departments
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
+    [],
   );
 
   // Get all department IDs from profile_departments (no primary filtering)
   const userDepartmentIds = useMemo(
     () => profileDepartments.map((pd) => pd.departmentId),
-    [profileDepartments]
+    [profileDepartments],
   );
 
   // Initialize department selection based on user role
@@ -123,7 +123,7 @@ export function DepartmentsProvider({ children }: DepartmentsProviderProps) {
       clearDepartmentFilters,
       hasActiveDepartmentFilters,
       effectiveDepartmentIds,
-    ]
+    ],
   );
 
   return (

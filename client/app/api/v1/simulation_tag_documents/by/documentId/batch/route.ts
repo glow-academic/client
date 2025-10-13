@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_tag_documents" },
         context: { foreignKey: "documentId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

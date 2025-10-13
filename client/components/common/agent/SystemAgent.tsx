@@ -67,7 +67,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   const [formData, setFormData] = useState<SystemAgentFormData>();
   const [errors, setErrors] = useState<FormErrors>({});
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
 
   const isEditMode = !!agentId;
@@ -89,7 +89,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       modelId: "",
       reasoning: "none",
     }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | null | undefined
+    value: string | number | null | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -199,7 +199,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       toast.success(
         isEditMode
           ? "Agent updated successfully!"
-          : "Agent created successfully!"
+          : "Agent created successfully!",
       );
       resetFormAndState();
       router.push("/system/agents");
@@ -210,7 +210,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
         context: { component: "SystemAgent", isEditMode, agentId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -317,7 +317,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                             | "minimal"
                             | "low"
                             | "medium"
-                            | "high"
+                            | "high",
                         )
                       }
                     >
@@ -386,7 +386,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
+                                editorMode === "preview" ? "editor" : "preview",
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -409,7 +409,7 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                               size="sm"
                               onClick={() =>
                                 setEditorMode(
-                                  editorMode === "debug" ? "editor" : "debug"
+                                  editorMode === "debug" ? "editor" : "debug",
                                 )
                               }
                               className="h-8 w-8 p-0"

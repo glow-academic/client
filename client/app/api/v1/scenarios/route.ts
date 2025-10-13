@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list scenarios",
         subject: { entityType: "scenarios" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "scenarios" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

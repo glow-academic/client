@@ -37,7 +37,9 @@ import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
   const {
     startDate,
     endDate,
@@ -90,7 +92,7 @@ export default function Home() {
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
@@ -129,14 +131,14 @@ export default function Home() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -162,7 +164,7 @@ export default function Home() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           log.error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
@@ -199,7 +201,9 @@ export default function Home() {
             isConnected,
           },
         });
-        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        const departmentId = simulations?.find(
+          (simulation) => simulation.id === simulationId,
+        )?.departmentId;
         if (!departmentId) {
           toast.error("No department found. Please contact support.");
           return;
@@ -249,7 +253,7 @@ export default function Home() {
       loadingToastId,
       effectiveDepartmentIds,
       simulations,
-    ]
+    ],
   );
 
   // Use data directly from the hook
@@ -625,7 +629,7 @@ export default function Home() {
                   passPct: item.passPct,
                 })}
               />
-            ) : null
+            ) : null,
           )}
         </div>
       </div>
@@ -698,7 +702,7 @@ export default function Home() {
                   loadingSimulation={loadingSimulation}
                   effectiveProfile={effectiveProfile}
                 />
-              ) : null
+              ) : null,
             )}
           </div>
 

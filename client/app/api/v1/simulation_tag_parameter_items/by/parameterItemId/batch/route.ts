@@ -14,11 +14,17 @@ export async function POST(req: Request) {
   return handle(
     () => simulationTagParameterItemRepo.listByParameterItems(parsed.data.ids),
     (e: unknown) =>
-      log.error("api.simulation_tag_parameter_items.by.parameterItemId.batch.failed", {
-        message: "Failed to fetch by foreign key batch",
-        subject: { entityType: "simulation_tag_parameter_items" },
-        context: { foreignKey: "parameterItemId", count: parsed.data.ids.length },
-        error: e,
-      })
+      log.error(
+        "api.simulation_tag_parameter_items.by.parameterItemId.batch.failed",
+        {
+          message: "Failed to fetch by foreign key batch",
+          subject: { entityType: "simulation_tag_parameter_items" },
+          context: {
+            foreignKey: "parameterItemId",
+            count: parsed.data.ids.length,
+          },
+          error: e,
+        },
+      ),
   );
 }

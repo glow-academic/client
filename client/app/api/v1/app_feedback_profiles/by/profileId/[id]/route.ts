@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { appFeedbackProfileRepo } from "@/lib/repos/appFeedbackProfileRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => appFeedbackProfileRepo.listByProfile(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "app_feedback_profiles" },
         context: { foreignKey: "profileId", id },
         error: e,
-      })
+      }),
   );
 }

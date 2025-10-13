@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { departmentAgentRepo, DepartmentAgentCreateSchema } from "@/lib/repos/departmentAgentRepo";
+import {
+  departmentAgentRepo,
+  DepartmentAgentCreateSchema,
+} from "@/lib/repos/departmentAgentRepo";
 import type { DepartmentAgentCreate } from "@/lib/repos/departmentAgentRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list department_agents",
         subject: { entityType: "department_agents" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "department_agents" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

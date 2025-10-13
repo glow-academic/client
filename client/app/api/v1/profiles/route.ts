@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list profiles",
         subject: { entityType: "profiles" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "profiles" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

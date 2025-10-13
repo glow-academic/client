@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { modelRunModelRepo } from "@/lib/repos/modelRunModelRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => modelRunModelRepo.listByModel(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "model_run_models" },
         context: { foreignKey: "modelId", id },
         error: e,
-      })
+      }),
   );
 }

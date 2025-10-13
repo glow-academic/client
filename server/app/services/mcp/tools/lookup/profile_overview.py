@@ -81,13 +81,25 @@ def profile_overview(profile_id: str) -> Dict[str, Any]:
             else None,
         }
 
-        # Get latest simulation grades (last 5)
-        attempts_stmt = select(SimulationAttempts).where(
-            SimulationAttempts.profile_id == profile.id
-        )
-        attempts = session.exec(attempts_stmt).all()
-        attempts = list(attempts)
-        attempts = sorted(attempts, key=lambda x: x.created_at, reverse=True)[:5]
+        # Get latest simulation grades (last 5) via attempt_profiles junction
+        from app.models import AttemptProfiles
+        attempt_links = session.exec(
+            select(AttemptProfiles).where(
+                AttemptProfiles.profile_id == profile.id,
+                AttemptProfiles.active == True
+            )
+        ).all()
+        
+        attempt_ids = [link.attempt_id for link in attempt_links]
+        if attempt_ids:
+            attempts_stmt = select(SimulationAttempts).where(
+                SimulationAttempts.id.in_(attempt_ids)
+            )
+            attempts = session.exec(attempts_stmt).all()
+            attempts = list(attempts)
+            attempts = sorted(attempts, key=lambda x: x.created_at, reverse=True)[:5]
+        else:
+            attempts = []
 
         latest_grades = []
         for attempt in attempts:

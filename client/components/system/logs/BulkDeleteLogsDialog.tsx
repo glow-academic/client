@@ -72,7 +72,7 @@ export function BulkDeleteLogsDialog({
 
       // Show success toast and close dialog only after successful deletion
       toast.success(
-        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`
+        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`,
       );
       onSuccess?.();
       onOpenChange(false);

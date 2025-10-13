@@ -95,7 +95,9 @@ export default function TATour() {
   const pathname = usePathname();
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
@@ -363,7 +365,9 @@ export default function TATour() {
           },
         });
 
-        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        const departmentId = simulations?.find(
+          (simulation) => simulation.id === simulationId,
+        )?.departmentId;
         if (!departmentId) {
           toast.error("No department found. Please contact support.");
           return;

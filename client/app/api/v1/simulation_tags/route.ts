@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationTagRepo, SimulationTagCreateSchema } from "@/lib/repos/simulationTagRepo";
+import {
+  simulationTagRepo,
+  SimulationTagCreateSchema,
+} from "@/lib/repos/simulationTagRepo";
 import type { SimulationTagCreate } from "@/lib/repos/simulationTagRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_tags",
         subject: { entityType: "simulation_tags" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_tags" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

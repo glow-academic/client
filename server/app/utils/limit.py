@@ -30,14 +30,26 @@ def check_rate_limit(profile_id: uuid.UUID | None, session: Session = Depends(ge
     now_utc = datetime.now(timezone.utc)
     start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Count model runs for this profile since the start of the day
-    model_runs_today = session.exec(
-        select(ModelRuns)
-        .where(
-            (ModelRuns.profile_id == profile_id) &
-            (ModelRuns.created_at >= start_of_day_utc)
+    # Count model runs for this profile since the start of the day via model_run_profiles junction
+    from app.models import ModelRunProfiles
+    profile_run_links = session.exec(
+        select(ModelRunProfiles).where(
+            ModelRunProfiles.profile_id == profile_id,
+            ModelRunProfiles.active == True
         )
     ).all()
+    
+    run_ids = [link.model_run_id for link in profile_run_links]
+    if run_ids:
+        model_runs_today = session.exec(
+            select(ModelRuns)
+            .where(
+                (ModelRuns.id.in_(run_ids)) &
+                (ModelRuns.created_at >= start_of_day_utc)
+            )
+        ).all()
+    else:
+        model_runs_today = []
 
     if len(model_runs_today) >= req_per_day:
         # Find the earliest run today to determine when the next request is allowed

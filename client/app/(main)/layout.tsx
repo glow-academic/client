@@ -80,7 +80,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { isConnected, emitStartSimulation } = useWebSocket();
   const { effectiveProfile, isLoading, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
@@ -88,7 +90,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const simulationContext = useSimulation();
   const currentChatId = simulationContext?.currentChat?.id;
   const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
-    currentChatId!
+    currentChatId!,
   );
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
@@ -132,7 +134,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Track which action is ending, so only that button shows "Ending..."
   const [endingAction, setEndingAction] = useState<"endAll" | "endChat" | null>(
-    null
+    null,
   );
   React.useEffect(() => {
     if (!simulationContext?.endChatLoading) {
@@ -158,7 +160,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const uploadFile = async (
     file: File,
     classification?: { type: import("@/types").DocumentType; tags: string[] },
-    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] }
+    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] },
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -176,7 +178,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         progress: 0,
         toastId: toastId as string,
         status: "uploading",
-      })
+      }),
     );
 
     try {
@@ -257,7 +259,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               fileId,
               isZipFile, // zip parameter
               shouldAutoClassify, // autoClassify parameter
-              effectiveProfile?.id
+              effectiveProfile?.id,
             );
 
             if (result.success) {
@@ -525,7 +527,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       chatId: simulationContext.currentChat?.id,
                       attemptId: simulationContext.attemptId,
                     },
-                  })
+                  }),
                 );
                 setEndingAction("endChat");
                 endChat();
@@ -791,11 +793,13 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   // Infinite mode - use WebSocket
                   if (!isConnected) {
                     toast.error(
-                      "WebSocket not connected. Please refresh the page."
+                      "WebSocket not connected. Please refresh the page.",
                     );
                     return;
                   }
-                  const departmentId = simulations?.find(simulation => simulation.id === params.simulationId)?.departmentId;
+                  const departmentId = simulations?.find(
+                    (simulation) => simulation.id === params.simulationId,
+                  )?.departmentId;
                   if (!departmentId) {
                     toast.error("No department found. Please contact support.");
                     return;
@@ -822,7 +826,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                     "Creating practice scenario...",
                     {
                       dismissible: true,
-                    }
+                    },
                   ) as unknown as string;
 
                   try {
@@ -841,7 +845,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       router.push("/practice");
                     } else {
                       throw new Error(
-                        result.message || "Failed to create practice scenario"
+                        result.message || "Failed to create practice scenario",
                       );
                     }
                   } catch (error) {
@@ -857,7 +861,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                       {
                         id: "start-attempt",
                         dismissible: true,
-                      }
+                      },
                     );
                   } finally {
                     setIsStartingAttempt(false);
@@ -896,7 +900,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           attemptId: simulationContext?.attemptId,
                           remainingSessions: endAllRemainingSessions,
                         },
-                      })
+                      }),
                     );
                     setConfirmEndAllOpen(false);
                     setEndingAction("endAll");
@@ -933,7 +937,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                           chatId: simulationContext?.currentChat?.id,
                           attemptId: simulationContext?.attemptId,
                         },
-                      })
+                      }),
                     );
                     setConfirmEndChatOpen(false);
                     setEndingAction("endChat");
@@ -975,7 +979,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
               }}
               onRemoveFile={(fileName) =>
                 setPendingFiles((prev) =>
-                  prev.filter((f) => f.name !== fileName)
+                  prev.filter((f) => f.name !== fileName),
                 )
               }
             />

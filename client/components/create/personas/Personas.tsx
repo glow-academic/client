@@ -40,6 +40,7 @@ import {
   useDeletePersona,
   usePersonasByDepartmentIdBatch,
 } from "@/lib/api/hooks/personas";
+import { useScenarioPersonasByPersonaIdBatch } from "@/lib/api/hooks/scenario_personas";
 import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { Persona } from "@/types";
 import { PersonasDataTable } from "./PersonasDataTable";
@@ -88,6 +89,11 @@ export default function Personas() {
     effectiveDepartmentIds,
   );
 
+  // Load scenario_personas junction data for all personas
+  const personaIds = personas.map((p) => p.id);
+  const { data: scenarioPersonas = [] } =
+    useScenarioPersonasByPersonaIdBatch(personaIds);
+
   // Get table columns and filter options
   const {
     columns,
@@ -97,9 +103,11 @@ export default function Personas() {
     temperatureOptions,
   } = usePersonaColumns();
 
-  // Check if a persona is being used by any scenarios
+  // Check if a persona is being used by any scenarios (via junction table)
   const isPersonaInUse = (personaId: string) => {
-    return scenarios.some((scenario) => scenario.personaId === personaId);
+    return scenarioPersonas.some(
+      (sp) => sp.personaId === personaId && sp.active,
+    );
   };
 
   // Only superadmins can edit default personas; admins/superadmins can edit non-default; others can edit non-default only if not in use

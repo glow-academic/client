@@ -52,7 +52,7 @@ export default function Departments() {
   const calculateTotalPriceSpent = useCallback(
     (departmentId: string): number => {
       const departmentRuns = modelRuns.filter(
-        (run: ModelRun) => run.departmentId === departmentId
+        (run: ModelRun) => run.departmentId === departmentId,
       );
 
       let totalSpend = 0;
@@ -70,18 +70,18 @@ export default function Departments() {
       }
       return totalSpend;
     },
-    [modelRuns, modelIdToMeta]
+    [modelRuns, modelIdToMeta],
   );
 
   // Helper function to get staff count for a department (via profile_departments junction)
   const getStaffCount = useCallback(
     (departmentId: string): number => {
       const departmentProfileLinks = profileDepartments.filter(
-        (pd) => pd.departmentId === departmentId
+        (pd) => pd.departmentId === departmentId,
       );
       return departmentProfileLinks.length;
     },
-    [profileDepartments]
+    [profileDepartments],
   );
 
   const renderDepartmentCard = (department: Department) => (

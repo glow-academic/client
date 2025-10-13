@@ -10,7 +10,7 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 from app.models import (DebugInfo, Documents, ModelRuns, Models, Personas,
                         Providers, Scenarios, SimulationAttempts,
-                        SimulationChats, SimulationMessages)
+                        SimulationChats, SimulationMessages, Simulations)
 from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
@@ -92,26 +92,36 @@ async def _handle_simulation_chat(
     if not scenario:
         raise ValueError(f"Scenario not found for chat {chat.id}")
 
-    if not scenario.persona_id:
-        raise ValueError(f"Scenario {scenario.id} has no persona_id")
+    # Get persona from scenario_personas junction
+    from app.models import ScenarioPersonas
+    persona_link = session.exec(
+        select(ScenarioPersonas).where(
+            ScenarioPersonas.scenario_id == scenario.id,
+            ScenarioPersonas.active == True
+        )
+    ).first()
+    
+    if not persona_link:
+        raise ValueError(f"Scenario {scenario.id} has no active persona")
 
     persona = session.exec(
-        select(Personas).where(Personas.id == scenario.persona_id)
+        select(Personas).where(Personas.id == persona_link.persona_id)
     ).one()
     if not persona:
         raise ValueError(f"Persona not found for scenario {scenario.id}")
 
-    show_images = persona.image_input_active
+    # Get simulation to check image_input_active setting
+    simulation = session.get(Simulations, attempt.simulation_id)
+    show_images = simulation.image_input_active if simulation else False
 
     input_items: list[TResponseInputItem] = []
     # Load document IDs from junction table
-    from app.models import t_scenario_documents
-    from sqlalchemy import select as sa_select
+    from app.models import ScenarioDocuments
     
-    doc_ids = list(session.connection().execute(  # type: ignore
-        sa_select(t_scenario_documents.c.document_id)
-        .where(t_scenario_documents.c.scenario_id == scenario.id)
-    ).scalars().all())
+    doc_links = session.exec(
+        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+    ).all()
+    doc_ids = [link.document_id for link in doc_links]
     
     if doc_ids:
         document_info = get_document_info(doc_ids, show_images, session)
@@ -145,9 +155,12 @@ async def _handle_simulation_chat(
     if not provider:
         raise ValueError(f"Provider with ID {model.provider_id} not found")
 
+    # Get simulation to check guardrail settings
+    simulation = session.get(Simulations, attempt.simulation_id)
+    
     output_guards = (
         get_output_guardrails(chat.id, department_id, conversation_history, session)
-        if persona.guardrail_active
+        if simulation and simulation.output_guardrail_active
         else None
     )
 
@@ -164,9 +177,20 @@ async def _handle_simulation_chat(
         custom_model=model.custom_model,
     )
 
+    # Get profile from attempt_profiles junction
+    from app.models import AttemptProfiles
+    attempt_profile_link = session.exec(
+        select(AttemptProfiles).where(
+            AttemptProfiles.attempt_id == attempt.id,
+            AttemptProfiles.active == True
+        )
+    ).first()
+    
+    attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
+
     default_guest_profile = find_default_guest_profile(session)
 
-    final_profile_id = (attempt.profile_id if attempt.profile_id else (default_guest_profile.id if default_guest_profile else None))
+    final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile.id if default_guest_profile else None))
 
     success, error_message = check_rate_limit(final_profile_id, session)
     if not success:
@@ -174,14 +198,41 @@ async def _handle_simulation_chat(
 
     # create model run
     model_run = ModelRuns(
-        model_id=model.id,
         input_tokens=0,
         output_tokens=0,
-        profile_id=final_profile_id,
-        persona_id=persona.id,
         department_id=scenario.department_id,
     )
     session.add(model_run)
+    session.commit()
+    session.refresh(model_run)
+
+    # Create model_run junction records
+    from app.models import ModelRunModels, ModelRunPersonas, ModelRunProfiles
+    
+    if model.id:
+        model_run_model = ModelRunModels(
+            model_run_id=model_run.id,
+            model_id=model.id,
+            active=True,
+        )
+        session.add(model_run_model)
+    
+    if persona.id:
+        model_run_persona = ModelRunPersonas(
+            model_run_id=model_run.id,
+            persona_id=persona.id,
+            active=True,
+        )
+        session.add(model_run_persona)
+    
+    if final_profile_id:
+        model_run_profile = ModelRunProfiles(
+            model_run_id=model_run.id,
+            profile_id=final_profile_id,
+            active=True,
+        )
+        session.add(model_run_profile)
+    
     session.commit()
 
     with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):

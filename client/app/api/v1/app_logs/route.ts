@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list app_logs",
         subject: { entityType: "app_logs" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_logs" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

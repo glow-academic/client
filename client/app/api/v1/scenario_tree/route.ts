@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { scenarioTreeRepo, ScenarioTreeCreateSchema } from "@/lib/repos/scenarioTreeRepo";
+import {
+  scenarioTreeRepo,
+  ScenarioTreeCreateSchema,
+} from "@/lib/repos/scenarioTreeRepo";
 import type { ScenarioTreeCreate } from "@/lib/repos/scenarioTreeRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list scenario_tree",
         subject: { entityType: "scenario_tree" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "scenario_tree" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

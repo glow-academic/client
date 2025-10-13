@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { scenarioPersonaRepo, ScenarioPersonaCreateSchema } from "@/lib/repos/scenarioPersonaRepo";
+import {
+  scenarioPersonaRepo,
+  ScenarioPersonaCreateSchema,
+} from "@/lib/repos/scenarioPersonaRepo";
 import type { ScenarioPersonaCreate } from "@/lib/repos/scenarioPersonaRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list scenario_personas",
         subject: { entityType: "scenario_personas" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "scenario_personas" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

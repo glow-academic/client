@@ -9,7 +9,9 @@ import { useDepartments } from "@/contexts/departments-context";
 
 export function useProviderColumns() {
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: providers = [] } = useProvidersByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: providers = [] } = useProvidersByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   const columns = useMemo<ColumnDef<Model>[]>(
     () => [

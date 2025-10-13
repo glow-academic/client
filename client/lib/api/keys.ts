@@ -557,262 +557,421 @@ export const modelKeysByProviderId = {
 
 export const simulationHintKeys = {
   all: ["simulation_hints"] as const,
-  list: (filters?: unknown) => [...simulationHintKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...simulationHintKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...simulationHintKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...simulationHintKeys.all, String(id)] as const,
 };
 export const simulationHintKeysBySimulationMessageId = {
-  one: (id: string | number) => ["simulation_hints:by:simulationMessageId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_hints:by:simulationMessageId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_hints:by:simulationMessageId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_hints:by:simulationMessageId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const cohortProfileKeys = {
   all: ["cohort_profiles"] as const,
   list: (filters?: unknown) => [...cohortProfileKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...cohortProfileKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...cohortProfileKeys.all, String(id)] as const,
 };
 export const cohortSimulationKeys = {
   all: ["cohort_simulations"] as const,
-  list: (filters?: unknown) => [...cohortSimulationKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...cohortSimulationKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...cohortSimulationKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...cohortSimulationKeys.all, String(id)] as const,
 };
 export const departmentAgentKeys = {
   all: ["department_agents"] as const,
-  list: (filters?: unknown) => [...departmentAgentKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...departmentAgentKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...departmentAgentKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...departmentAgentKeys.all, String(id)] as const,
 };
 export const profileDepartmentKeys = {
   all: ["profile_departments"] as const,
-  list: (filters?: unknown) => [...profileDepartmentKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...profileDepartmentKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...profileDepartmentKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...profileDepartmentKeys.all, String(id)] as const,
 };
 export const scenarioDocumentKeys = {
   all: ["scenario_documents"] as const,
-  list: (filters?: unknown) => [...scenarioDocumentKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...scenarioDocumentKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...scenarioDocumentKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...scenarioDocumentKeys.all, String(id)] as const,
 };
 export const scenarioObjectiveKeys = {
   all: ["scenario_objectives"] as const,
-  list: (filters?: unknown) => [...scenarioObjectiveKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...scenarioObjectiveKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...scenarioObjectiveKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...scenarioObjectiveKeys.all, String(id)] as const,
 };
 export const scenarioParameterItemKeys = {
   all: ["scenario_parameter_items"] as const,
-  list: (filters?: unknown) => [...scenarioParameterItemKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...scenarioParameterItemKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...scenarioParameterItemKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...scenarioParameterItemKeys.all, String(id)] as const,
 };
 export const scenarioTreeKeys = {
   all: ["scenario_tree"] as const,
   list: (filters?: unknown) => [...scenarioTreeKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...scenarioTreeKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...scenarioTreeKeys.all, String(id)] as const,
 };
 export const simulationScenarioKeys = {
   all: ["simulation_scenarios"] as const,
-  list: (filters?: unknown) => [...simulationScenarioKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...simulationScenarioKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...simulationScenarioKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...simulationScenarioKeys.all, String(id)] as const,
 };
 export const simulationTagDocumentKeys = {
   all: ["simulation_tag_documents"] as const,
-  list: (filters?: unknown) => [...simulationTagDocumentKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...simulationTagDocumentKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...simulationTagDocumentKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...simulationTagDocumentKeys.all, String(id)] as const,
 };
 export const simulationTagParameterItemKeys = {
   all: ["simulation_tag_parameter_items"] as const,
-  list: (filters?: unknown) => [...simulationTagParameterItemKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...simulationTagParameterItemKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...simulationTagParameterItemKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...simulationTagParameterItemKeys.all, String(id)] as const,
 };
 export const simulationTagKeys = {
   all: ["simulation_tags"] as const,
   list: (filters?: unknown) => [...simulationTagKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...simulationTagKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...simulationTagKeys.all, String(id)] as const,
 };
 export const cohortProfileKeysByCohortId = {
-  one: (id: string | number) => ["cohort_profiles:by:cohortId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["cohort_profiles:by:cohortId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["cohort_profiles:by:cohortId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["cohort_profiles:by:cohortId:batch", ids.map(String).sort()] as const,
 };
 export const cohortProfileKeysByProfileId = {
-  one: (id: string | number) => ["cohort_profiles:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["cohort_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["cohort_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["cohort_profiles:by:profileId:batch", ids.map(String).sort()] as const,
 };
 export const cohortSimulationKeysByCohortId = {
-  one: (id: string | number) => ["cohort_simulations:by:cohortId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["cohort_simulations:by:cohortId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["cohort_simulations:by:cohortId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["cohort_simulations:by:cohortId:batch", ids.map(String).sort()] as const,
 };
 export const cohortSimulationKeysBySimulationId = {
-  one: (id: string | number) => ["cohort_simulations:by:simulationId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["cohort_simulations:by:simulationId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["cohort_simulations:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "cohort_simulations:by:simulationId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const departmentAgentKeysByDepartmentId = {
-  one: (id: string | number) => ["department_agents:by:departmentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["department_agents:by:departmentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["department_agents:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "department_agents:by:departmentId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const departmentAgentKeysByAgentId = {
-  one: (id: string | number) => ["department_agents:by:agentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["department_agents:by:agentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["department_agents:by:agentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["department_agents:by:agentId:batch", ids.map(String).sort()] as const,
 };
 export const profileDepartmentKeysByProfileId = {
-  one: (id: string | number) => ["profile_departments:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["profile_departments:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["profile_departments:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["profile_departments:by:profileId:batch", ids.map(String).sort()] as const,
 };
 export const profileDepartmentKeysByDepartmentId = {
-  one: (id: string | number) => ["profile_departments:by:departmentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["profile_departments:by:departmentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["profile_departments:by:departmentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "profile_departments:by:departmentId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const scenarioDocumentKeysByScenarioId = {
-  one: (id: string | number) => ["scenario_documents:by:scenarioId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_documents:by:scenarioId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_documents:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_documents:by:scenarioId:batch", ids.map(String).sort()] as const,
 };
 export const scenarioDocumentKeysByDocumentId = {
-  one: (id: string | number) => ["scenario_documents:by:documentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_documents:by:documentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_documents:by:documentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_documents:by:documentId:batch", ids.map(String).sort()] as const,
 };
 export const scenarioObjectiveKeysByScenarioId = {
-  one: (id: string | number) => ["scenario_objectives:by:scenarioId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_objectives:by:scenarioId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_objectives:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "scenario_objectives:by:scenarioId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const scenarioParameterItemKeysByScenarioId = {
-  one: (id: string | number) => ["scenario_parameter_items:by:scenarioId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_parameter_items:by:scenarioId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_parameter_items:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "scenario_parameter_items:by:scenarioId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const scenarioParameterItemKeysByParameterItemId = {
-  one: (id: string | number) => ["scenario_parameter_items:by:parameterItemId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_parameter_items:by:parameterItemId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_parameter_items:by:parameterItemId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "scenario_parameter_items:by:parameterItemId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const scenarioTreeKeysByParentId = {
-  one: (id: string | number) => ["scenario_tree:by:parentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_tree:by:parentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_tree:by:parentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_tree:by:parentId:batch", ids.map(String).sort()] as const,
 };
 export const scenarioTreeKeysByChildId = {
-  one: (id: string | number) => ["scenario_tree:by:childId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_tree:by:childId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_tree:by:childId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_tree:by:childId:batch", ids.map(String).sort()] as const,
 };
 export const simulationScenarioKeysBySimulationId = {
-  one: (id: string | number) => ["simulation_scenarios:by:simulationId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_scenarios:by:simulationId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_scenarios:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_scenarios:by:simulationId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationScenarioKeysByScenarioId = {
-  one: (id: string | number) => ["simulation_scenarios:by:scenarioId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_scenarios:by:scenarioId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_scenarios:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_scenarios:by:scenarioId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationTagDocumentKeysByDocumentId = {
-  one: (id: string | number) => ["simulation_tag_documents:by:documentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_tag_documents:by:documentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_tag_documents:by:documentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_tag_documents:by:documentId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationTagDocumentKeysBySimulationId = {
-  one: (id: string | number) => ["simulation_tag_documents:by:simulationId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_tag_documents:by:simulationId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_tag_documents:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_tag_documents:by:simulationId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationTagParameterItemKeysByParameterItemId = {
-  one: (id: string | number) => ["simulation_tag_parameter_items:by:parameterItemId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_tag_parameter_items:by:parameterItemId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_tag_parameter_items:by:parameterItemId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_tag_parameter_items:by:parameterItemId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationTagParameterItemKeysBySimulationId = {
-  one: (id: string | number) => ["simulation_tag_parameter_items:by:simulationId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_tag_parameter_items:by:simulationId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_tag_parameter_items:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "simulation_tag_parameter_items:by:simulationId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const simulationTagKeysBySimulationId = {
-  one: (id: string | number) => ["simulation_tags:by:simulationId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["simulation_tags:by:simulationId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["simulation_tags:by:simulationId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["simulation_tags:by:simulationId:batch", ids.map(String).sort()] as const,
 };
 export const appFeedbackProfileKeys = {
   all: ["app_feedback_profiles"] as const,
-  list: (filters?: unknown) => [...appFeedbackProfileKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...appFeedbackProfileKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...appFeedbackProfileKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...appFeedbackProfileKeys.all, String(id)] as const,
 };
 export const attemptProfileKeys = {
   all: ["attempt_profiles"] as const,
-  list: (filters?: unknown) => [...attemptProfileKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...attemptProfileKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...attemptProfileKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...attemptProfileKeys.all, String(id)] as const,
 };
 export const modelRunAgentKeys = {
   all: ["model_run_agents"] as const,
   list: (filters?: unknown) => [...modelRunAgentKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...modelRunAgentKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...modelRunAgentKeys.all, String(id)] as const,
 };
 export const modelRunModelKeys = {
   all: ["model_run_models"] as const,
   list: (filters?: unknown) => [...modelRunModelKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...modelRunModelKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...modelRunModelKeys.all, String(id)] as const,
 };
 export const modelRunPersonaKeys = {
   all: ["model_run_personas"] as const,
-  list: (filters?: unknown) => [...modelRunPersonaKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...modelRunPersonaKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...modelRunPersonaKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...modelRunPersonaKeys.all, String(id)] as const,
 };
 export const modelRunProfileKeys = {
   all: ["model_run_profiles"] as const,
-  list: (filters?: unknown) => [...modelRunProfileKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...modelRunProfileKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...modelRunProfileKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...modelRunProfileKeys.all, String(id)] as const,
 };
 export const scenarioPersonaKeys = {
   all: ["scenario_personas"] as const,
-  list: (filters?: unknown) => [...scenarioPersonaKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...scenarioPersonaKeys.all, String(id)] as const,
+  list: (filters?: unknown) =>
+    [...scenarioPersonaKeys.all, { filters }] as const,
+  detail: (id: string | number) =>
+    [...scenarioPersonaKeys.all, String(id)] as const,
 };
 export const userProfileKeys = {
   all: ["user_profiles"] as const,
   list: (filters?: unknown) => [...userProfileKeys.all, { filters }] as const,
-  detail: (id: string | number) => [...userProfileKeys.all, String(id)] as const,
+  detail: (id: string | number) =>
+    [...userProfileKeys.all, String(id)] as const,
 };
 export const appFeedbackProfileKeysByAppFeedbackId = {
-  one: (id: string | number) => ["app_feedback_profiles:by:appFeedbackId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["app_feedback_profiles:by:appFeedbackId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["app_feedback_profiles:by:appFeedbackId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "app_feedback_profiles:by:appFeedbackId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const appFeedbackProfileKeysByProfileId = {
-  one: (id: string | number) => ["app_feedback_profiles:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["app_feedback_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["app_feedback_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    [
+      "app_feedback_profiles:by:profileId:batch",
+      ids.map(String).sort(),
+    ] as const,
 };
 export const attemptProfileKeysByAttemptId = {
-  one: (id: string | number) => ["attempt_profiles:by:attemptId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["attempt_profiles:by:attemptId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["attempt_profiles:by:attemptId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["attempt_profiles:by:attemptId:batch", ids.map(String).sort()] as const,
 };
 export const attemptProfileKeysByProfileId = {
-  one: (id: string | number) => ["attempt_profiles:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["attempt_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["attempt_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["attempt_profiles:by:profileId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunAgentKeysByModelRunId = {
-  one: (id: string | number) => ["model_run_agents:by:modelRunId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_agents:by:modelRunId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_agents:by:modelRunId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_agents:by:modelRunId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunAgentKeysByAgentId = {
-  one: (id: string | number) => ["model_run_agents:by:agentId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_agents:by:agentId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_agents:by:agentId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_agents:by:agentId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunModelKeysByModelRunId = {
-  one: (id: string | number) => ["model_run_models:by:modelRunId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_models:by:modelRunId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_models:by:modelRunId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_models:by:modelRunId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunModelKeysByModelId = {
-  one: (id: string | number) => ["model_run_models:by:modelId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_models:by:modelId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_models:by:modelId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_models:by:modelId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunPersonaKeysByModelRunId = {
-  one: (id: string | number) => ["model_run_personas:by:modelRunId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_personas:by:modelRunId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_personas:by:modelRunId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_personas:by:modelRunId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunPersonaKeysByPersonaId = {
-  one: (id: string | number) => ["model_run_personas:by:personaId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_personas:by:personaId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_personas:by:personaId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_personas:by:personaId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunProfileKeysByModelRunId = {
-  one: (id: string | number) => ["model_run_profiles:by:modelRunId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_profiles:by:modelRunId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_profiles:by:modelRunId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_profiles:by:modelRunId:batch", ids.map(String).sort()] as const,
 };
 export const modelRunProfileKeysByProfileId = {
-  one: (id: string | number) => ["model_run_profiles:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["model_run_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["model_run_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["model_run_profiles:by:profileId:batch", ids.map(String).sort()] as const,
 };
 export const scenarioPersonaKeysByScenarioId = {
-  one: (id: string | number) => ["scenario_personas:by:scenarioId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_personas:by:scenarioId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_personas:by:scenarioId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_personas:by:scenarioId:batch", ids.map(String).sort()] as const,
 };
 export const scenarioPersonaKeysByPersonaId = {
-  one: (id: string | number) => ["scenario_personas:by:personaId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["scenario_personas:by:personaId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["scenario_personas:by:personaId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["scenario_personas:by:personaId:batch", ids.map(String).sort()] as const,
 };
 export const userProfileKeysByUserId = {
-  one: (id: string | number) => ["user_profiles:by:userId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["user_profiles:by:userId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["user_profiles:by:userId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["user_profiles:by:userId:batch", ids.map(String).sort()] as const,
 };
 export const userProfileKeysByProfileId = {
-  one: (id: string | number) => ["user_profiles:by:profileId", String(id)] as const,
-  many: (ids: Array<string | number>) => ["user_profiles:by:profileId:batch", ids.map(String).sort()] as const,
+  one: (id: string | number) =>
+    ["user_profiles:by:profileId", String(id)] as const,
+  many: (ids: Array<string | number>) =>
+    ["user_profiles:by:profileId:batch", ids.map(String).sort()] as const,
 };

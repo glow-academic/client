@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { AttemptProfile, AttemptProfileCreate, AttemptProfileUpdate } from "@/lib/repos/attemptProfileRepo";
-import { attemptProfileKeys, attemptProfileKeysByAttemptId, attemptProfileKeysByProfileId } from "@/lib/api/keys";
+import type {
+  AttemptProfile,
+  AttemptProfileCreate,
+} from "@/lib/repos/attemptProfileRepo";
+import {
+  attemptProfileKeys,
+  attemptProfileKeysByAttemptId,
+  attemptProfileKeysByProfileId,
+} from "@/lib/api/keys";
 
 export function useAttemptProfiles(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,20 @@ export function useAttemptProfiles(filters?: unknown) {
 export function useCreateAttemptProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AttemptProfileCreate) => api<AttemptProfile>("/api/v1/attempt_profiles", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: AttemptProfileCreate) =>
+      api<AttemptProfile>("/api/v1/attempt_profiles", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: attemptProfileKeys.all }),
   });
 }
 
-
 export function useAttemptProfilesByAttemptId(id: string) {
   return useQuery<AttemptProfile[]>({
     queryKey: attemptProfileKeysByAttemptId.one(id),
-    queryFn: () => api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/attemptId/${id}`),
+    queryFn: () =>
+      api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/attemptId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +43,11 @@ export function useAttemptProfilesByAttemptId(id: string) {
 export function useAttemptProfilesByAttemptIdBatch(ids: string[]) {
   return useQuery<AttemptProfile[]>({
     queryKey: attemptProfileKeysByAttemptId.many(ids),
-    queryFn: () => api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/attemptId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/attemptId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +55,8 @@ export function useAttemptProfilesByAttemptIdBatch(ids: string[]) {
 export function useAttemptProfilesByProfileId(id: string) {
   return useQuery<AttemptProfile[]>({
     queryKey: attemptProfileKeysByProfileId.one(id),
-    queryFn: () => api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/profileId/${id}`),
+    queryFn: () =>
+      api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/profileId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +64,11 @@ export function useAttemptProfilesByProfileId(id: string) {
 export function useAttemptProfilesByProfileIdBatch(ids: string[]) {
   return useQuery<AttemptProfile[]>({
     queryKey: attemptProfileKeysByProfileId.many(ids),
-    queryFn: () => api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AttemptProfile[]>(`/api/v1/attempt_profiles/by/profileId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

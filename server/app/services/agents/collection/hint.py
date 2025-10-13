@@ -216,13 +216,12 @@ async def run_hint_agent(
         
         # Add document info if available (no images needed for hints)
         # Load document IDs from junction table
-        from app.models import t_scenario_documents
-        from sqlalchemy import select as sa_select
+        from app.models import ScenarioDocuments
         
-        doc_ids = list(session.connection().execute(  # type: ignore
-            sa_select(t_scenario_documents.c.document_id)
-            .where(t_scenario_documents.c.scenario_id == scenario.id)
-        ).scalars().all())
+        doc_links = session.exec(
+            select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+        ).all()
+        doc_ids = [link.document_id for link in doc_links]
         
         if doc_ids:
             document_info = get_document_info(doc_ids, False, session)
@@ -246,11 +245,20 @@ async def run_hint_agent(
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
         
-        # Get profile for rate limiting
+        # Get profile for rate limiting from attempt_profiles junction
+        from app.models import AttemptProfiles
+        attempt_profile_link = session.exec(
+            select(AttemptProfiles).where(
+                AttemptProfiles.attempt_id == attempt.id,
+                AttemptProfiles.active == True
+            )
+        ).first()
+        
+        attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
         default_guest_profile = find_default_guest_profile(session)
         final_profile_id = (
-            attempt.profile_id 
-            if attempt.profile_id 
+            attempt_profile_id 
+            if attempt_profile_id 
             else (default_guest_profile.id if default_guest_profile else None)
         )
         
@@ -264,14 +272,41 @@ async def run_hint_agent(
         
         # Create model run
         model_run = ModelRuns(
-            model_id=model_id,
             input_tokens=0,
             output_tokens=0,
-            profile_id=final_profile_id,
-            agent_id=agent_id,
             department_id=department_id,
         )
         session.add(model_run)
+        session.commit()
+        session.refresh(model_run)
+
+        # Create model_run junction records
+        from app.models import ModelRunAgents, ModelRunModels, ModelRunProfiles
+        
+        if model_id:
+            model_run_model = ModelRunModels(
+                model_run_id=model_run.id,
+                model_id=model_id,
+                active=True,
+            )
+            session.add(model_run_model)
+        
+        if agent_id:
+            model_run_agent = ModelRunAgents(
+                model_run_id=model_run.id,
+                agent_id=agent_id,
+                active=True,
+            )
+            session.add(model_run_agent)
+        
+        if final_profile_id:
+            model_run_profile = ModelRunProfiles(
+                model_run_id=model_run.id,
+                profile_id=final_profile_id,
+                active=True,
+            )
+            session.add(model_run_profile)
+        
         session.commit()
         
         # Run the hint agent

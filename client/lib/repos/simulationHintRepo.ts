@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type SimulationHintUpdate = Partial<SimulationHintCreate>;
 export const SimulationHintCreateSchema = createInsertSchema(simulationHints);
 export const SimulationHintUpdateSchema = SimulationHintCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const simulationHintRepo = {
   async create(payload: SimulationHintCreate) {
@@ -26,36 +27,65 @@ export const simulationHintRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(simulationHints).orderBy(simulationHints.createdAt ?? simulationHints.id);
+    return db
+      .select()
+      .from(simulationHints)
+      .orderBy(simulationHints.createdAt ?? simulationHints.id);
   },
   async find(id: string) {
     const db = await getDb();
-    const rows = await db.select().from(simulationHints).where(eq(simulationHints.id, id)).limit(1);
-    if (!rows[0]) throw HttpError.notFound("SimulationHint with id " + id + " not found");
+    const rows = await db
+      .select()
+      .from(simulationHints)
+      .where(eq(simulationHints.id, id))
+      .limit(1);
+    if (!rows[0])
+      throw HttpError.notFound("SimulationHint with id " + id + " not found");
     return rows[0];
   },
 
   async update(id: string, patch: SimulationHintUpdate) {
     const db = await getDb();
-    const rows = await db.update(simulationHints).set(patch).where(eq(simulationHints.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("SimulationHint with id " + id + " not found");
+    const rows = await db
+      .update(simulationHints)
+      .set(patch)
+      .where(eq(simulationHints.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("SimulationHint with id " + id + " not found");
     return rows[0];
   },
 
   async remove(id: string) {
     const db = await getDb();
-    const rows = await db.delete(simulationHints).where(eq(simulationHints.id, id)).returning();
-    if (!rows[0]) throw HttpError.notFound("SimulationHint with id " + id + " not found");
+    const rows = await db
+      .delete(simulationHints)
+      .where(eq(simulationHints.id, id))
+      .returning();
+    if (!rows[0])
+      throw HttpError.notFound("SimulationHint with id " + id + " not found");
   },
 
   async listBySimulationMessage(simulationMessageId: string) {
     const db = await getDb();
-    return db.select().from(simulationHints).where(eq(simulationHints.simulationMessageId, simulationMessageId));
+    return db
+      .select()
+      .from(simulationHints)
+      .where(eq(simulationHints.simulationMessageId, simulationMessageId));
   },
 
   async listBySimulationMessages(simulationMessageIds: string[]) {
     const db = await getDb();
-    if (!Array.isArray(simulationMessageIds) || simulationMessageIds.length === 0) return [];
-    return db.select().from(simulationHints).where(inArray(simulationHints.simulationMessageId, simulationMessageIds));
+    if (
+      !Array.isArray(simulationMessageIds) ||
+      simulationMessageIds.length === 0
+    )
+      return [];
+    return db
+      .select()
+      .from(simulationHints)
+      .where(
+        inArray(simulationHints.simulationMessageId, simulationMessageIds),
+      );
   },
 };

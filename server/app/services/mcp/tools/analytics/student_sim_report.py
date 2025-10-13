@@ -56,13 +56,25 @@ def student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
             else None,
         }
 
-        # Get all simulation attempts for this profile
-        attempts_stmt = select(SimulationAttempts).where(
-            SimulationAttempts.profile_id == profile_uuid
-        )
-        attempts = session.exec(attempts_stmt).all()
-        attempts = list(attempts)
-        attempts = sorted(attempts, key=lambda x: x.created_at)
+        # Get all simulation attempts for this profile via attempt_profiles junction
+        from app.models import AttemptProfiles
+        attempt_links = session.exec(
+            select(AttemptProfiles).where(
+                AttemptProfiles.profile_id == profile_uuid,
+                AttemptProfiles.active == True
+            )
+        ).all()
+        
+        attempt_ids = [link.attempt_id for link in attempt_links]
+        if attempt_ids:
+            attempts_stmt = select(SimulationAttempts).where(
+                SimulationAttempts.id.in_(attempt_ids)
+            )
+            attempts = session.exec(attempts_stmt).all()
+            attempts = list(attempts)
+            attempts = sorted(attempts, key=lambda x: x.created_at)
+        else:
+            attempts = []
 
         attempts_data = []
 

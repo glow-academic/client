@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list parameter_items",
         subject: { entityType: "parameter_items" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

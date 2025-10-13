@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "cohort_simulations" },
         context: { foreignKey: "cohortId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

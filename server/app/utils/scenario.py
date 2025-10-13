@@ -105,32 +105,49 @@ async def randomly_fill_scenario_attributes(
 
 
 
-    # Random agent selection if agent_id is null
-    if scenario.persona_id is None:
+    # Get persona from scenario_personas junction, or randomly select if none
+    from app.models import ScenarioPersonas
+    existing_persona_link = session.exec(
+        select(ScenarioPersonas).where(
+            ScenarioPersonas.scenario_id == scenario.id,
+            ScenarioPersonas.active == True
+        )
+    ).first()
+    
+    scenario_persona_id = existing_persona_link.persona_id if existing_persona_link else None
+    
+    # Random persona selection if none exists
+    if scenario_persona_id is None:
         # Only select from active personas
         active_personas = session.exec(select(Personas).where(Personas.active)).all()
         if active_personas:
             scenario_persona_id = random.choice(active_personas).id
             logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
+            
+            # Create the junction record
+            scenario_persona_link = ScenarioPersonas(
+                scenario_id=scenario.id,
+                persona_id=scenario_persona_id,
+                active=True,
+            )
+            session.add(scenario_persona_link)
+            session.commit()
         else:
             scenario_persona_id = None
             logger.info("No active personas found")
-    else:
-        scenario_persona_id = scenario.persona_id
 
     # Load existing documents and parameters from junction tables
-    from app.models import t_scenario_documents, t_scenario_parameter_items
-    from sqlalchemy import select as sa_select
+    from app.models import ScenarioDocuments, ScenarioParameterItems
     
-    existing_doc_ids = list(session.connection().execute(  # type: ignore
-        sa_select(t_scenario_documents.c.document_id)
-        .where(t_scenario_documents.c.scenario_id == scenario.id)
-    ).scalars().all())
+    doc_links = session.exec(
+        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+    ).all()
+    existing_doc_ids = [link.document_id for link in doc_links]
     
-    existing_param_ids = list(session.connection().execute(  # type: ignore
-        sa_select(t_scenario_parameter_items.c.parameter_item_id)
-        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-    ).scalars().all())
+    param_links = session.exec(
+        select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
+    ).all()
+    existing_param_ids = [link.parameter_item_id for link in param_links]
     
     if not existing_doc_ids:
         # Only select from active documents
@@ -297,34 +314,40 @@ async def randomly_fill_scenario_attributes(
                     logger.warning(f"No parameter items found for parameter {param_id}")
 
     # Load current linked docs/params from junction tables for comparison
-    from app.models import (t_scenario_documents, t_scenario_parameter_items,
-                            t_scenario_tree)
-    from sqlalchemy import select as sa_select
+    from app.models import ScenarioDocuments, ScenarioParameterItems, ScenarioTree
     
-    current_doc_ids = sorted(session.connection().execute(  # type: ignore
-        sa_select(t_scenario_documents.c.document_id)
-        .where(t_scenario_documents.c.scenario_id == scenario.id)
-    ).scalars().all())
+    current_doc_links = session.exec(
+        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
+    ).all()
+    current_doc_ids = sorted([link.document_id for link in current_doc_links])
     
-    current_param_ids = sorted(session.connection().execute(  # type: ignore
-        sa_select(t_scenario_parameter_items.c.parameter_item_id)
-        .where(t_scenario_parameter_items.c.scenario_id == scenario.id)
-    ).scalars().all())
+    current_param_links = session.exec(
+        select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
+    ).all()
+    current_param_ids = sorted([link.parameter_item_id for link in current_param_links])
+    
+    # Get current persona from junction
+    current_persona_link = session.exec(
+        select(ScenarioPersonas).where(
+            ScenarioPersonas.scenario_id == scenario.id,
+            ScenarioPersonas.active == True
+        )
+    ).first()
+    current_persona_id = current_persona_link.persona_id if current_persona_link else None
     
     # Compare with new values
     new_docs = sorted(scenario_documents or [])
     new_params = sorted(scenario_parameter_item_ids or [])
     
-    if (scenario_persona_id == scenario.persona_id and 
+    if (scenario_persona_id == current_persona_id and 
         new_docs == current_doc_ids and 
         new_params == current_param_ids):
         return scenario
     
-    # Create a new scenario variant with changes
+    # Create a new scenario variant with changes (persona will be set via junction below)
     new_scenario = Scenarios(
         name=scenario.name,
         problem_statement=scenario.problem_statement,
-        persona_id=scenario_persona_id,
         department_id=department_id,
         generated=True,
     )
@@ -332,28 +355,44 @@ async def randomly_fill_scenario_attributes(
     session.flush()  # Get the new scenario ID
     
     # Create scenario_tree edge (parent -> child)
-    session.execute(
-        t_scenario_tree.insert().values(
-            parent_id=scenario.id,
-            child_id=new_scenario.id,
-        )
+    from app.models import ScenarioTree
+    tree_link = ScenarioTree(
+        parent_id=scenario.id,
+        child_id=new_scenario.id,
+        active=True,
     )
+    session.add(tree_link)
+    
+    # Create junction record for persona
+    if scenario_persona_id:
+        persona_link = ScenarioPersonas(
+            scenario_id=new_scenario.id,
+            persona_id=scenario_persona_id,
+            active=True,
+        )
+        session.add(persona_link)
     
     # Create junction records for documents
     if scenario_documents:
-        session.execute(
-            t_scenario_documents.insert(),
-            [{"scenario_id": new_scenario.id, "document_id": doc_id} 
-             for doc_id in scenario_documents]
-        )
+        for doc_id in scenario_documents:
+            doc_link = ScenarioDocuments(
+                scenario_id=new_scenario.id,
+                document_id=doc_id,
+                active=True,
+            )
+            session.add(doc_link)
     
     # Create junction records for parameter items
     if scenario_parameter_item_ids:
-        session.execute(
-            t_scenario_parameter_items.insert(),
-            [{"scenario_id": new_scenario.id, "parameter_item_id": param_id} 
-             for param_id in scenario_parameter_item_ids]
-        )
+        for param_id in scenario_parameter_item_ids:
+            param_link = ScenarioParameterItems(
+                scenario_id=new_scenario.id,
+                parameter_item_id=param_id,
+                active=True,
+            )
+            session.add(param_link)
+    
+    session.commit()
     
     return new_scenario
 

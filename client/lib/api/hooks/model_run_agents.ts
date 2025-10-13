@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { ModelRunAgent, ModelRunAgentCreate, ModelRunAgentUpdate } from "@/lib/repos/modelRunAgentRepo";
-import { modelRunAgentKeys, modelRunAgentKeysByModelRunId, modelRunAgentKeysByAgentId } from "@/lib/api/keys";
+import type {
+  ModelRunAgent,
+  ModelRunAgentCreate,
+} from "@/lib/repos/modelRunAgentRepo";
+import {
+  modelRunAgentKeys,
+  modelRunAgentKeysByModelRunId,
+  modelRunAgentKeysByAgentId,
+} from "@/lib/api/keys";
 
 export function useModelRunAgents(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,20 @@ export function useModelRunAgents(filters?: unknown) {
 export function useCreateModelRunAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ModelRunAgentCreate) => api<ModelRunAgent>("/api/v1/model_run_agents", { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: ModelRunAgentCreate) =>
+      api<ModelRunAgent>("/api/v1/model_run_agents", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: modelRunAgentKeys.all }),
   });
 }
 
-
 export function useModelRunAgentsByModelRunId(id: string) {
   return useQuery<ModelRunAgent[]>({
     queryKey: modelRunAgentKeysByModelRunId.one(id),
-    queryFn: () => api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/modelRunId/${id}`),
+    queryFn: () =>
+      api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/modelRunId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +43,11 @@ export function useModelRunAgentsByModelRunId(id: string) {
 export function useModelRunAgentsByModelRunIdBatch(ids: string[]) {
   return useQuery<ModelRunAgent[]>({
     queryKey: modelRunAgentKeysByModelRunId.many(ids),
-    queryFn: () => api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/modelRunId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/modelRunId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +55,8 @@ export function useModelRunAgentsByModelRunIdBatch(ids: string[]) {
 export function useModelRunAgentsByAgentId(id: string) {
   return useQuery<ModelRunAgent[]>({
     queryKey: modelRunAgentKeysByAgentId.one(id),
-    queryFn: () => api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/agentId/${id}`),
+    queryFn: () =>
+      api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/agentId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +64,11 @@ export function useModelRunAgentsByAgentId(id: string) {
 export function useModelRunAgentsByAgentIdBatch(ids: string[]) {
   return useQuery<ModelRunAgent[]>({
     queryKey: modelRunAgentKeysByAgentId.many(ids),
-    queryFn: () => api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/agentId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunAgent[]>(`/api/v1/model_run_agents/by/agentId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

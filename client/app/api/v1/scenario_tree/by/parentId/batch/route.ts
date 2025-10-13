@@ -12,13 +12,13 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error.message }, { status: 400 });
   }
   return handle(
-    () => scenarioTreeRepo.listByScenarios(parsed.data.ids),
+    () => scenarioTreeRepo.listByParentScenarios(parsed.data.ids),
     (e: unknown) =>
       log.error("api.scenario_tree.by.parentId.batch.failed", {
         message: "Failed to fetch by foreign key batch",
         subject: { entityType: "scenario_tree" },
         context: { foreignKey: "parentId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

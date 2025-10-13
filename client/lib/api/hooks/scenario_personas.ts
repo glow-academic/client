@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { ScenarioPersona, ScenarioPersonaCreate, ScenarioPersonaUpdate } from "@/lib/repos/scenarioPersonaRepo";
-import { scenarioPersonaKeys, scenarioPersonaKeysByScenarioId, scenarioPersonaKeysByPersonaId } from "@/lib/api/keys";
+import type {
+  ScenarioPersona,
+  ScenarioPersonaCreate,
+} from "@/lib/repos/scenarioPersonaRepo";
+import {
+  scenarioPersonaKeys,
+  scenarioPersonaKeysByScenarioId,
+  scenarioPersonaKeysByPersonaId,
+} from "@/lib/api/keys";
 
 export function useScenarioPersonas(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,21 @@ export function useScenarioPersonas(filters?: unknown) {
 export function useCreateScenarioPersona() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ScenarioPersonaCreate) => api<ScenarioPersona>("/api/v1/scenario_personas", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: scenarioPersonaKeys.all }),
+    mutationFn: (payload: ScenarioPersonaCreate) =>
+      api<ScenarioPersona>("/api/v1/scenario_personas", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: scenarioPersonaKeys.all }),
   });
 }
-
 
 export function useScenarioPersonasByScenarioId(id: string) {
   return useQuery<ScenarioPersona[]>({
     queryKey: scenarioPersonaKeysByScenarioId.one(id),
-    queryFn: () => api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/scenarioId/${id}`),
+    queryFn: () =>
+      api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/scenarioId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +44,11 @@ export function useScenarioPersonasByScenarioId(id: string) {
 export function useScenarioPersonasByScenarioIdBatch(ids: string[]) {
   return useQuery<ScenarioPersona[]>({
     queryKey: scenarioPersonaKeysByScenarioId.many(ids),
-    queryFn: () => api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/scenarioId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/scenarioId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +56,8 @@ export function useScenarioPersonasByScenarioIdBatch(ids: string[]) {
 export function useScenarioPersonasByPersonaId(id: string) {
   return useQuery<ScenarioPersona[]>({
     queryKey: scenarioPersonaKeysByPersonaId.one(id),
-    queryFn: () => api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/personaId/${id}`),
+    queryFn: () =>
+      api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/personaId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +65,11 @@ export function useScenarioPersonasByPersonaId(id: string) {
 export function useScenarioPersonasByPersonaIdBatch(ids: string[]) {
   return useQuery<ScenarioPersona[]>({
     queryKey: scenarioPersonaKeysByPersonaId.many(ids),
-    queryFn: () => api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ScenarioPersona[]>(`/api/v1/scenario_personas/by/personaId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

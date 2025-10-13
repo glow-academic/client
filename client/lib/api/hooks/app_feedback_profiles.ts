@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { AppFeedbackProfile, AppFeedbackProfileCreate, AppFeedbackProfileUpdate } from "@/lib/repos/appFeedbackProfileRepo";
-import { appFeedbackProfileKeys, appFeedbackProfileKeysByAppFeedbackId, appFeedbackProfileKeysByProfileId } from "@/lib/api/keys";
+import type {
+  AppFeedbackProfile,
+  AppFeedbackProfileCreate,
+} from "@/lib/repos/appFeedbackProfileRepo";
+import {
+  appFeedbackProfileKeys,
+  appFeedbackProfileKeysByAppFeedbackId,
+  appFeedbackProfileKeysByProfileId,
+} from "@/lib/api/keys";
 
 export function useAppFeedbackProfiles(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,23 @@ export function useAppFeedbackProfiles(filters?: unknown) {
 export function useCreateAppFeedbackProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: AppFeedbackProfileCreate) => api<AppFeedbackProfile>("/api/v1/app_feedback_profiles", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: appFeedbackProfileKeys.all }),
+    mutationFn: (payload: AppFeedbackProfileCreate) =>
+      api<AppFeedbackProfile>("/api/v1/app_feedback_profiles", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: appFeedbackProfileKeys.all }),
   });
 }
-
 
 export function useAppFeedbackProfilesByAppFeedbackId(id: string) {
   return useQuery<AppFeedbackProfile[]>({
     queryKey: appFeedbackProfileKeysByAppFeedbackId.one(id),
-    queryFn: () => api<AppFeedbackProfile[]>(`/api/v1/app_feedback_profiles/by/appFeedbackId/${id}`),
+    queryFn: () =>
+      api<AppFeedbackProfile[]>(
+        `/api/v1/app_feedback_profiles/by/appFeedbackId/${id}`,
+      ),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +46,11 @@ export function useAppFeedbackProfilesByAppFeedbackId(id: string) {
 export function useAppFeedbackProfilesByAppFeedbackIdBatch(ids: string[]) {
   return useQuery<AppFeedbackProfile[]>({
     queryKey: appFeedbackProfileKeysByAppFeedbackId.many(ids),
-    queryFn: () => api<AppFeedbackProfile[]>(`/api/v1/app_feedback_profiles/by/appFeedbackId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AppFeedbackProfile[]>(
+        `/api/v1/app_feedback_profiles/by/appFeedbackId/batch`,
+        { method: "POST", body: JSON.stringify({ ids }) },
+      ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +58,10 @@ export function useAppFeedbackProfilesByAppFeedbackIdBatch(ids: string[]) {
 export function useAppFeedbackProfilesByProfileId(id: string) {
   return useQuery<AppFeedbackProfile[]>({
     queryKey: appFeedbackProfileKeysByProfileId.one(id),
-    queryFn: () => api<AppFeedbackProfile[]>(`/api/v1/app_feedback_profiles/by/profileId/${id}`),
+    queryFn: () =>
+      api<AppFeedbackProfile[]>(
+        `/api/v1/app_feedback_profiles/by/profileId/${id}`,
+      ),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +69,11 @@ export function useAppFeedbackProfilesByProfileId(id: string) {
 export function useAppFeedbackProfilesByProfileIdBatch(ids: string[]) {
   return useQuery<AppFeedbackProfile[]>({
     queryKey: appFeedbackProfileKeysByProfileId.many(ids),
-    queryFn: () => api<AppFeedbackProfile[]>(`/api/v1/app_feedback_profiles/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<AppFeedbackProfile[]>(
+        `/api/v1/app_feedback_profiles/by/profileId/batch`,
+        { method: "POST", body: JSON.stringify({ ids }) },
+      ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

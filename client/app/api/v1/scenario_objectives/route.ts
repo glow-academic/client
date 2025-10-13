@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { scenarioObjectiveRepo, ScenarioObjectiveCreateSchema } from "@/lib/repos/scenarioObjectiveRepo";
+import {
+  scenarioObjectiveRepo,
+  ScenarioObjectiveCreateSchema,
+} from "@/lib/repos/scenarioObjectiveRepo";
 import type { ScenarioObjectiveCreate } from "@/lib/repos/scenarioObjectiveRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list scenario_objectives",
         subject: { entityType: "scenario_objectives" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "scenario_objectives" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

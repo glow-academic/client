@@ -21,6 +21,6 @@ export async function DELETE(req: Request) {
         subject: { entityType: "app_logs" },
         context: { count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

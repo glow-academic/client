@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list assistant_chats",
         subject: { entityType: "assistant_chats" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "assistant_chats" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

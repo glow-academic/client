@@ -9,7 +9,7 @@ export class ApiError extends Error {
 
 export async function api<T>(
   input: RequestInfo,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T> {
   // Prepend the basePath prefix to relative URLs
   const prefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";

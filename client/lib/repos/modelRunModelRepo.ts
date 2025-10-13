@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ModelRunModelUpdate = Partial<ModelRunModelCreate>;
 export const ModelRunModelCreateSchema = createInsertSchema(modelRunModels);
 export const ModelRunModelUpdateSchema = ModelRunModelCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const modelRunModelRepo = {
   async create(payload: ModelRunModelCreate) {
@@ -26,32 +27,53 @@ export const modelRunModelRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(modelRunModels).orderBy(modelRunModels.createdAt ?? modelRunModels.id);
+    return db.select().from(modelRunModels).orderBy(modelRunModels.createdAt);
   },
   // Composite/no PK table – implement find/update/remove if needed.
-  async find(_id: unknown) { throw new HttpError(400, "Not supported for composite/no primary key tables"); },
-  async update(_id: unknown, _patch: ModelRunModelUpdate) { throw new HttpError(400, "Not supported"); },
-  async remove(_id: unknown) { throw new HttpError(400, "Not supported"); },
+  async find(_id: unknown) {
+    throw new HttpError(
+      400,
+      "Not supported for composite/no primary key tables",
+    );
+  },
+  async update(_id: unknown, _patch: ModelRunModelUpdate) {
+    throw new HttpError(400, "Not supported");
+  },
+  async remove(_id: unknown) {
+    throw new HttpError(400, "Not supported");
+  },
 
   async listByModelRun(modelRunId: string) {
     const db = await getDb();
-    return db.select().from(modelRunModels).where(eq(modelRunModels.modelRunId, modelRunId));
+    return db
+      .select()
+      .from(modelRunModels)
+      .where(eq(modelRunModels.modelRunId, modelRunId));
   },
 
   async listByModelRuns(modelRunIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(modelRunIds) || modelRunIds.length === 0) return [];
-    return db.select().from(modelRunModels).where(inArray(modelRunModels.modelRunId, modelRunIds));
+    return db
+      .select()
+      .from(modelRunModels)
+      .where(inArray(modelRunModels.modelRunId, modelRunIds));
   },
 
   async listByModel(modelId: string) {
     const db = await getDb();
-    return db.select().from(modelRunModels).where(eq(modelRunModels.modelId, modelId));
+    return db
+      .select()
+      .from(modelRunModels)
+      .where(eq(modelRunModels.modelId, modelId));
   },
 
   async listByModels(modelIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(modelIds) || modelIds.length === 0) return [];
-    return db.select().from(modelRunModels).where(inArray(modelRunModels.modelId, modelIds));
+    return db
+      .select()
+      .from(modelRunModels)
+      .where(inArray(modelRunModels.modelId, modelIds));
   },
 };

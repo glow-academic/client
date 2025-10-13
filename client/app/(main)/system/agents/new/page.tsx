@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-
 import SystemAgent from "@/components/common/agent/SystemAgent";
 import type { Metadata } from "next";
 

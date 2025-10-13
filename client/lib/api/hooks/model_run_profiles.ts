@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { ModelRunProfile, ModelRunProfileCreate, ModelRunProfileUpdate } from "@/lib/repos/modelRunProfileRepo";
-import { modelRunProfileKeys, modelRunProfileKeysByModelRunId, modelRunProfileKeysByProfileId } from "@/lib/api/keys";
+import type {
+  ModelRunProfile,
+  ModelRunProfileCreate,
+} from "@/lib/repos/modelRunProfileRepo";
+import {
+  modelRunProfileKeys,
+  modelRunProfileKeysByModelRunId,
+  modelRunProfileKeysByProfileId,
+} from "@/lib/api/keys";
 
 export function useModelRunProfiles(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,21 @@ export function useModelRunProfiles(filters?: unknown) {
 export function useCreateModelRunProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ModelRunProfileCreate) => api<ModelRunProfile>("/api/v1/model_run_profiles", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: modelRunProfileKeys.all }),
+    mutationFn: (payload: ModelRunProfileCreate) =>
+      api<ModelRunProfile>("/api/v1/model_run_profiles", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: modelRunProfileKeys.all }),
   });
 }
-
 
 export function useModelRunProfilesByModelRunId(id: string) {
   return useQuery<ModelRunProfile[]>({
     queryKey: modelRunProfileKeysByModelRunId.one(id),
-    queryFn: () => api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/modelRunId/${id}`),
+    queryFn: () =>
+      api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/modelRunId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +44,11 @@ export function useModelRunProfilesByModelRunId(id: string) {
 export function useModelRunProfilesByModelRunIdBatch(ids: string[]) {
   return useQuery<ModelRunProfile[]>({
     queryKey: modelRunProfileKeysByModelRunId.many(ids),
-    queryFn: () => api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/modelRunId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/modelRunId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +56,8 @@ export function useModelRunProfilesByModelRunIdBatch(ids: string[]) {
 export function useModelRunProfilesByProfileId(id: string) {
   return useQuery<ModelRunProfile[]>({
     queryKey: modelRunProfileKeysByProfileId.one(id),
-    queryFn: () => api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/profileId/${id}`),
+    queryFn: () =>
+      api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/profileId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +65,11 @@ export function useModelRunProfilesByProfileId(id: string) {
 export function useModelRunProfilesByProfileIdBatch(ids: string[]) {
   return useQuery<ModelRunProfile[]>({
     queryKey: modelRunProfileKeysByProfileId.many(ids),
-    queryFn: () => api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/profileId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunProfile[]>(`/api/v1/model_run_profiles/by/profileId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

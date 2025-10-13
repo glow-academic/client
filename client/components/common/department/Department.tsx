@@ -126,7 +126,7 @@ export default function Department({ departmentId }: DepartmentProps) {
       description: "",
       active: true,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -149,12 +149,12 @@ export default function Department({ departmentId }: DepartmentProps) {
   // Data fetching
   const { data: department, isLoading: isDepartmentLoading } = useDepartment(
     departmentId!,
-    !!departmentId
+    !!departmentId,
   );
 
   // Load department agents from junction table
   const { data: linkedAgents = [] } = useDepartmentAgentsByDepartmentId(
-    departmentId || ""
+    departmentId || "",
   );
 
   // Get all agents for selection
@@ -204,7 +204,7 @@ export default function Department({ departmentId }: DepartmentProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | boolean | undefined
+    value: string | boolean | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -241,7 +241,7 @@ export default function Department({ departmentId }: DepartmentProps) {
 
     // Validate that all 8 agent types are selected
     const missingAgents = REQUIRED_AGENT_TYPES.filter(
-      (agentType) => !departmentAgents[agentType.type as AgentRole]
+      (agentType) => !departmentAgents[agentType.type as AgentRole],
     );
 
     if (missingAgents.length > 0) {
@@ -321,7 +321,7 @@ export default function Department({ departmentId }: DepartmentProps) {
       toast.success(
         isEditMode
           ? "Department updated successfully!"
-          : "Department created successfully!"
+          : "Department created successfully!",
       );
       router.push(`/system/departments`);
     } catch (error) {
@@ -332,7 +332,7 @@ export default function Department({ departmentId }: DepartmentProps) {
         context: { component: "Department", isEditMode, departmentId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);

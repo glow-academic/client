@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { profileDepartmentRepo } from "@/lib/repos/profileDepartmentRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => profileDepartmentRepo.listByProfile(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "profile_departments" },
         context: { foreignKey: "profileId", id },
         error: e,
-      })
+      }),
   );
 }

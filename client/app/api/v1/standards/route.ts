@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list standards",
         subject: { entityType: "standards" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "standards" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { scenarioDocumentRepo, ScenarioDocumentCreateSchema } from "@/lib/repos/scenarioDocumentRepo";
+import {
+  scenarioDocumentRepo,
+  ScenarioDocumentCreateSchema,
+} from "@/lib/repos/scenarioDocumentRepo";
 import type { ScenarioDocumentCreate } from "@/lib/repos/scenarioDocumentRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list scenario_documents",
         subject: { entityType: "scenario_documents" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "scenario_documents" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

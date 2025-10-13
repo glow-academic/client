@@ -1,7 +1,7 @@
 import { AnalyticsFiltersSchema } from "@/lib/analytics";
 import { analyticsRepo } from "@/lib/repos/analyticsRepo";
 import { log } from "@/utils/logger";
-import { NextRequest, NextResponse } from "next/server";  
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {

@@ -2,8 +2,15 @@
 // Safe to edit: generator will SKIP unless --force-hooks
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type { ModelRunPersona, ModelRunPersonaCreate, ModelRunPersonaUpdate } from "@/lib/repos/modelRunPersonaRepo";
-import { modelRunPersonaKeys, modelRunPersonaKeysByModelRunId, modelRunPersonaKeysByPersonaId } from "@/lib/api/keys";
+import type {
+  ModelRunPersona,
+  ModelRunPersonaCreate,
+} from "@/lib/repos/modelRunPersonaRepo";
+import {
+  modelRunPersonaKeys,
+  modelRunPersonaKeysByModelRunId,
+  modelRunPersonaKeysByPersonaId,
+} from "@/lib/api/keys";
 
 export function useModelRunPersonas(filters?: unknown) {
   return useQuery({
@@ -15,16 +22,21 @@ export function useModelRunPersonas(filters?: unknown) {
 export function useCreateModelRunPersona() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ModelRunPersonaCreate) => api<ModelRunPersona>("/api/v1/model_run_personas", { method: "POST", body: JSON.stringify(payload) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: modelRunPersonaKeys.all }),
+    mutationFn: (payload: ModelRunPersonaCreate) =>
+      api<ModelRunPersona>("/api/v1/model_run_personas", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: modelRunPersonaKeys.all }),
   });
 }
-
 
 export function useModelRunPersonasByModelRunId(id: string) {
   return useQuery<ModelRunPersona[]>({
     queryKey: modelRunPersonaKeysByModelRunId.one(id),
-    queryFn: () => api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/modelRunId/${id}`),
+    queryFn: () =>
+      api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/modelRunId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -32,7 +44,11 @@ export function useModelRunPersonasByModelRunId(id: string) {
 export function useModelRunPersonasByModelRunIdBatch(ids: string[]) {
   return useQuery<ModelRunPersona[]>({
     queryKey: modelRunPersonaKeysByModelRunId.many(ids),
-    queryFn: () => api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/modelRunId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/modelRunId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }
@@ -40,7 +56,8 @@ export function useModelRunPersonasByModelRunIdBatch(ids: string[]) {
 export function useModelRunPersonasByPersonaId(id: string) {
   return useQuery<ModelRunPersona[]>({
     queryKey: modelRunPersonaKeysByPersonaId.one(id),
-    queryFn: () => api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/personaId/${id}`),
+    queryFn: () =>
+      api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/personaId/${id}`),
     enabled: id !== undefined && id !== null && id !== "",
   });
 }
@@ -48,7 +65,11 @@ export function useModelRunPersonasByPersonaId(id: string) {
 export function useModelRunPersonasByPersonaIdBatch(ids: string[]) {
   return useQuery<ModelRunPersona[]>({
     queryKey: modelRunPersonaKeysByPersonaId.many(ids),
-    queryFn: () => api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/personaId/batch`, { method: "POST", body: JSON.stringify({ ids }) }),
+    queryFn: () =>
+      api<ModelRunPersona[]>(`/api/v1/model_run_personas/by/personaId/batch`, {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
 }

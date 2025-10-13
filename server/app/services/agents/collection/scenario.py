@@ -157,7 +157,9 @@ async def run_scenario_agent(
             if not persona:
                 raise ValueError(f"Persona with ID {persona_id} not found")
             persona_info = get_persona_info(persona.id, session)
-            show_images = persona.image_input_active
+            # Note: image_input_active moved to simulation level
+            # For scenario generation, default to False
+            show_images = False
 
         if document_ids is None or len(document_ids) == 0:
             document_info = None
@@ -248,14 +250,41 @@ async def run_scenario_agent(
 
         # create model run
         model_run = ModelRuns(
-            model_id=model.id,
             input_tokens=0,
             output_tokens=0,
-            profile_id=final_profile_id,
-            agent_id=scenario_agent.id,
             department_id=department_id,
         )
         session.add(model_run)
+        session.commit()
+        session.refresh(model_run)
+
+        # Create model_run junction records
+        from app.models import ModelRunModels, ModelRunAgents, ModelRunProfiles
+        
+        if model.id:
+            model_run_model = ModelRunModels(
+                model_run_id=model_run.id,
+                model_id=model.id,
+                active=True,
+            )
+            session.add(model_run_model)
+        
+        if scenario_agent.id:
+            model_run_agent = ModelRunAgents(
+                model_run_id=model_run.id,
+                agent_id=scenario_agent.id,
+                active=True,
+            )
+            session.add(model_run_agent)
+        
+        if final_profile_id:
+            model_run_profile = ModelRunProfiles(
+                model_run_id=model_run.id,
+                profile_id=final_profile_id,
+                active=True,
+            )
+            session.add(model_run_profile)
+        
         session.commit()
 
         with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id):

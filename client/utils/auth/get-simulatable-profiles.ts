@@ -40,7 +40,7 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
       departmentIds.length > 0
         ? or(
             inArray(profiles.departmentId, departmentIds),
-            and(isNull(profiles.departmentId), eq(profiles.role, "superadmin"))
+            and(isNull(profiles.departmentId), eq(profiles.role, "superadmin")),
           )
         : undefined;
 
@@ -53,7 +53,7 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id)
+              : ne(profiles.id, userProfile.id),
           );
         break;
       case "admin":
@@ -64,11 +64,12 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id)
+              : ne(profiles.id, userProfile.id),
           );
         // Filter out superadmin and admin profiles
         simulatableProfiles = simulatableProfiles.filter(
-          (profile) => profile.role !== "superadmin" && profile.role !== "admin"
+          (profile) =>
+            profile.role !== "superadmin" && profile.role !== "admin",
         );
         break;
 
@@ -80,14 +81,14 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id)
+              : ne(profiles.id, userProfile.id),
           );
         // Filter out superadmin, admin, and instructional staff profiles
         simulatableProfiles = simulatableProfiles.filter(
           (profile) =>
             profile.role !== "superadmin" &&
             profile.role !== "admin" &&
-            profile.role !== "instructional"
+            profile.role !== "instructional",
         );
         break;
       case "ta":

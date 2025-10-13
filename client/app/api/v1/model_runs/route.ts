@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list model_runs",
         subject: { entityType: "model_runs" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "model_runs" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

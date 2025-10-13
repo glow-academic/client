@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { userProfileRepo, UserProfileCreateSchema } from "@/lib/repos/userProfileRepo";
+import {
+  userProfileRepo,
+  UserProfileCreateSchema,
+} from "@/lib/repos/userProfileRepo";
 import type { UserProfileCreate } from "@/lib/repos/userProfileRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list user_profiles",
         subject: { entityType: "user_profiles" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "user_profiles" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

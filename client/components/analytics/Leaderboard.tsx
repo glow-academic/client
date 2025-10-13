@@ -790,10 +790,8 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                                 lastLogin: new Date().toISOString(),
                                 reqPerDay: 0,
                                 updatedAt: new Date().toISOString(),
-                                userId: null,
                                 viewedChat: false,
                                 viewedIntro: false,
-                                departmentId: null,
                               }
                             : undefined
                         }

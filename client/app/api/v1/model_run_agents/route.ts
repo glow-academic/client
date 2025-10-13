@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { modelRunAgentRepo, ModelRunAgentCreateSchema } from "@/lib/repos/modelRunAgentRepo";
+import {
+  modelRunAgentRepo,
+  ModelRunAgentCreateSchema,
+} from "@/lib/repos/modelRunAgentRepo";
 import type { ModelRunAgentCreate } from "@/lib/repos/modelRunAgentRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list model_run_agents",
         subject: { entityType: "model_run_agents" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "model_run_agents" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

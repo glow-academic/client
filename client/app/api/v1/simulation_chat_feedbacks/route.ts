@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_chat_feedbacks",
         subject: { entityType: "simulation_chat_feedbacks" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_chat_feedbacks" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

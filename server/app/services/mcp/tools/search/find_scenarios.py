@@ -174,15 +174,29 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
 
         scenarios = session.exec(stmt).all()
 
+        # Get persona associations from junction table
+        from app.models import ScenarioPersonas
+        scenario_ids = [sc.id for sc in scenarios]
+        persona_links = session.exec(
+            select(ScenarioPersonas).where(
+                ScenarioPersonas.scenario_id.in_(scenario_ids),
+                ScenarioPersonas.active == True
+            )
+        ).all()
+        
+        # Map scenario_id -> persona_id
+        scenario_persona_map = {link.scenario_id: link.persona_id for link in persona_links}
+
         results: List[Dict[str, Any]] = []
         for sc in scenarios:
             score = _score_scenario(q_norm, toks, sc.name, sc.problem_statement)
+            persona_id = scenario_persona_map.get(sc.id)
             results.append(
                 {
                     "id": str(sc.id),
                     "name": sc.name,
                     "problem_statement": sc.problem_statement,
-                    "persona_id": str(sc.persona_id) if sc.persona_id else None,
+                    "persona_id": str(persona_id) if persona_id else None,
                     "default_scenario": sc.default_scenario,
                     "score": score,
                 }

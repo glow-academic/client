@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "user_profiles" },
         context: { foreignKey: "userId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

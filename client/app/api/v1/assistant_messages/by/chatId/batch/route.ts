@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "assistant_messages" },
         context: { foreignKey: "chatId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

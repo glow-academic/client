@@ -10,8 +10,12 @@ import { useDepartments } from "@/contexts/departments-context";
 
 export function useCohortColumns() {
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
+  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   const columns = useMemo<ColumnDef<Cohort>[]>(
     () => [

@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { attemptProfileRepo, AttemptProfileCreateSchema } from "@/lib/repos/attemptProfileRepo";
+import {
+  attemptProfileRepo,
+  AttemptProfileCreateSchema,
+} from "@/lib/repos/attemptProfileRepo";
 import type { AttemptProfileCreate } from "@/lib/repos/attemptProfileRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list attempt_profiles",
         subject: { entityType: "attempt_profiles" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "attempt_profiles" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

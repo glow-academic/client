@@ -80,19 +80,45 @@ export const simulationAttemptRepo = {
 
   async listByProfile(profileId: string) {
     const db = await getDb();
+    // Join via attempt_profiles junction table
+    const { attemptProfiles } = await import("@/utils/drizzle/schema");
     return db
-      .select()
+      .select({
+        id: simulationAttempts.id,
+        createdAt: simulationAttempts.createdAt,
+        simulationId: simulationAttempts.simulationId,
+        infiniteMode: simulationAttempts.infiniteMode,
+        infiniteModeTimeLimit: simulationAttempts.infiniteModeTimeLimit,
+        archived: simulationAttempts.archived,
+      })
       .from(simulationAttempts)
-      .where(eq(simulationAttempts.profileId, profileId));
+      .innerJoin(
+        attemptProfiles,
+        eq(attemptProfiles.attemptId, simulationAttempts.id),
+      )
+      .where(eq(attemptProfiles.profileId, profileId));
   },
 
   async listByProfiles(profileIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(profileIds) || profileIds.length === 0) return [];
+    // Join via attempt_profiles junction table
+    const { attemptProfiles } = await import("@/utils/drizzle/schema");
     return db
-      .select()
+      .select({
+        id: simulationAttempts.id,
+        createdAt: simulationAttempts.createdAt,
+        simulationId: simulationAttempts.simulationId,
+        infiniteMode: simulationAttempts.infiniteMode,
+        infiniteModeTimeLimit: simulationAttempts.infiniteModeTimeLimit,
+        archived: simulationAttempts.archived,
+      })
       .from(simulationAttempts)
-      .where(inArray(simulationAttempts.profileId, profileIds));
+      .innerJoin(
+        attemptProfiles,
+        eq(attemptProfiles.attemptId, simulationAttempts.id),
+      )
+      .where(inArray(attemptProfiles.profileId, profileIds));
   },
 
   async listBySimulation(simulationId: string) {

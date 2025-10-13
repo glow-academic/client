@@ -183,14 +183,41 @@ async def _handle_assistant_chat(
 
     # create a model run
     model_run = ModelRuns(
-        model_id=model.id,
         input_tokens=0,
         output_tokens=0,
-        profile_id=final_profile_id,
-        agent_id=agent.id,
         department_id=department_id,
     )
     session.add(model_run)
+    session.commit()
+    session.refresh(model_run)
+
+    # Create model_run junction records
+    from app.models import ModelRunModels, ModelRunAgents, ModelRunProfiles
+    
+    if model.id:
+        model_run_model = ModelRunModels(
+            model_run_id=model_run.id,
+            model_id=model.id,
+            active=True,
+        )
+        session.add(model_run_model)
+    
+    if agent.id:
+        model_run_agent = ModelRunAgents(
+            model_run_id=model_run.id,
+            agent_id=agent.id,
+            active=True,
+        )
+        session.add(model_run_agent)
+    
+    if final_profile_id:
+        model_run_profile = ModelRunProfiles(
+            model_run_id=model_run.id,
+            profile_id=final_profile_id,
+            active=True,
+        )
+        session.add(model_run_profile)
+    
     session.commit()
 
     with trace(chat.title, trace_id=chat.trace_id):

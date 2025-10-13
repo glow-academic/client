@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { cohortProfileRepo, CohortProfileCreateSchema } from "@/lib/repos/cohortProfileRepo";
+import {
+  cohortProfileRepo,
+  CohortProfileCreateSchema,
+} from "@/lib/repos/cohortProfileRepo";
 import type { CohortProfileCreate } from "@/lib/repos/cohortProfileRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list cohort_profiles",
         subject: { entityType: "cohort_profiles" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "cohort_profiles" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { appFeedbackProfileRepo, AppFeedbackProfileCreateSchema } from "@/lib/repos/appFeedbackProfileRepo";
+import {
+  appFeedbackProfileRepo,
+  AppFeedbackProfileCreateSchema,
+} from "@/lib/repos/appFeedbackProfileRepo";
 import type { AppFeedbackProfileCreate } from "@/lib/repos/appFeedbackProfileRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list app_feedback_profiles",
         subject: { entityType: "app_feedback_profiles" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_feedback_profiles" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

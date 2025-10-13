@@ -70,14 +70,15 @@ export default function Pricing() {
 
   const { effectiveDepartmentIds } = useDepartments();
   const { data: models = [], isLoading: modelsLoading } = useModels();
-  const { data: runs = [], isLoading: runsLoading } = useModelRunsByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
+  const { data: runs = [], isLoading: runsLoading } =
+    useModelRunsByDepartmentIdBatch(effectiveDepartmentIds);
   const { data: agents = [] } = useAgents();
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]);

@@ -12,7 +12,7 @@ export function useParameterColumns() {
   const { effectiveDepartmentIds } = useDepartments();
   const { data: parameterItems = [] } = useParameterItems();
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
 
   const columns = useMemo<ColumnDef<Parameter>[]>(

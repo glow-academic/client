@@ -11,7 +11,7 @@ export async function GET() {
         message: "Failed to list models",
         subject: { entityType: "models" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +30,6 @@ export async function POST(req: Request) {
         subject: { entityType: "models" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

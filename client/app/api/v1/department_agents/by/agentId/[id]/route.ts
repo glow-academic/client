@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { departmentAgentRepo } from "@/lib/repos/departmentAgentRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => departmentAgentRepo.listByAgent(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "department_agents" },
         context: { foreignKey: "agentId", id },
         error: e,
-      })
+      }),
   );
 }

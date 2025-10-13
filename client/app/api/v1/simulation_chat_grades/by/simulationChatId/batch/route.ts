@@ -22,6 +22,6 @@ export async function POST(req: Request) {
           count: parsed.data.ids.length,
         },
         error: e,
-      })
+      }),
   );
 }

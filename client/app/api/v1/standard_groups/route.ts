@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list standard_groups",
         subject: { entityType: "standard_groups" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "standard_groups" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

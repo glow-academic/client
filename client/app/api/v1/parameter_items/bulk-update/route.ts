@@ -30,6 +30,6 @@ export async function PATCH(req: Request) {
         subject: { entityType: "parameter_items" },
         context: { count: updates.length },
         error: e,
-      })
+      }),
   );
 }

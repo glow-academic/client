@@ -43,13 +43,13 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
             return {"error": f"Cohort not found: {cohort_id}"}
 
         # Get cohort members via cohort_profiles junction
-        from app.models import t_cohort_profiles
-        from sqlalchemy import select as sa_select
+        from app.models import CohortProfiles
         
-        profile_ids = list(session.connection().execute(  # type: ignore
-            sa_select(t_cohort_profiles.c.profile_id)
-            .where(t_cohort_profiles.c.cohort_id == cohort_uuid)
-        ).scalars().all())
+        profile_links = session.exec(
+            select(CohortProfiles).where(CohortProfiles.cohort_id == cohort_uuid)
+        ).all()
+        
+        profile_ids = [link.profile_id for link in profile_links]
         
         cohort_members = []
         if profile_ids:
@@ -81,12 +81,24 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
 
             # Get results for each simulation
             for sim in cohort_simulations:
-                # Get attempts for this student and simulation
-                attempts_stmt = select(SimulationAttempts).where(
-                    SimulationAttempts.profile_id == student.id,
-                    SimulationAttempts.simulation_id == sim.id,
-                )
-                attempts = session.exec(attempts_stmt).all()
+                # Get attempts for this student and simulation via attempt_profiles junction
+                from app.models import AttemptProfiles
+                attempt_links = session.exec(
+                    select(AttemptProfiles).where(
+                        AttemptProfiles.profile_id == student.id,
+                        AttemptProfiles.active == True
+                    )
+                ).all()
+                
+                attempt_ids = [link.attempt_id for link in attempt_links]
+                if attempt_ids:
+                    attempts_stmt = select(SimulationAttempts).where(
+                        SimulationAttempts.id.in_(attempt_ids),
+                        SimulationAttempts.simulation_id == sim.id,
+                    )
+                    attempts = session.exec(attempts_stmt).all()
+                else:
+                    attempts = []
 
                 best_result = None
                 for attempt in attempts:

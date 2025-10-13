@@ -54,6 +54,7 @@ import {
   usePersona,
   useUpdatePersona,
 } from "@/lib/api/hooks/personas";
+import { useScenarioPersonasByPersonaId } from "@/lib/api/hooks/scenario_personas";
 import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
 import {
@@ -108,14 +109,12 @@ export default function Persona({
       icon: "Zap",
       active: true,
       defaultPersona: false,
-      guardrailActive: false,
-      imageInputActive: false,
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? null
           : effectiveProfile?.departmentId || null,
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId]
+    [effectiveProfile?.role, effectiveProfile?.departmentId],
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,7 +122,7 @@ export default function Persona({
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
+    "editor",
   );
 
   const { data: persona, isLoading: isLoadingPersona } = usePersona(personaId!);
@@ -132,11 +131,16 @@ export default function Persona({
   const { data: departments = [] } = useDepartmentsHook();
 
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
 
   const { mutate: createPersona } = useCreatePersona();
   const { mutate: updatePersona } = useUpdatePersona();
+
+  // Load scenario_personas junction to check if persona is in use
+  const { data: scenarioPersonas = [] } = useScenarioPersonasByPersonaId(
+    personaId || "",
+  );
 
   // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
   const isReadonly = useMemo(() => {
@@ -150,15 +154,14 @@ export default function Persona({
       return true;
     }
 
-    const inUse = scenarios.some(
-      (scenario) => scenario.personaId === persona.id
-    );
+    // Check if persona is in use via junction table
+    const inUse = scenarioPersonas.some((sp) => sp.active);
     if (!isAdmin && inUse) {
       return true;
     }
 
     return false;
-  }, [isEditMode, persona, effectiveProfile?.role, scenarios]);
+  }, [isEditMode, persona, effectiveProfile?.role, scenarioPersonas]);
 
   const isLoading = isLoadingPersona || isModelsLoading;
 
@@ -181,8 +184,6 @@ export default function Persona({
         icon: persona.icon || "Zap",
         active: persona.active ?? true,
         defaultPersona: persona.defaultPersona ?? false,
-        guardrailActive: persona.guardrailActive ?? false,
-        imageInputActive: persona.imageInputActive ?? false,
         departmentId: persona.departmentId,
       });
     } else if (!isEditMode) {
@@ -236,8 +237,6 @@ export default function Persona({
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
-          guardrailActive: formData.guardrailActive ?? false,
-          imageInputActive: formData.imageInputActive ?? false,
           departmentId:
             formData.departmentId || effectiveProfile?.departmentId || "",
           updatedAt: new Date().toISOString(),
@@ -255,8 +254,6 @@ export default function Persona({
           icon: formData.icon || "Zap",
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
-          guardrailActive: formData.guardrailActive ?? false,
-          imageInputActive: formData.imageInputActive ?? false,
           departmentId:
             formData.departmentId || effectiveProfile?.departmentId || "",
         });
@@ -266,7 +263,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -393,7 +390,7 @@ export default function Persona({
                       formData?.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === formData.departmentId
+                              (d) => d.id === formData.departmentId,
                             );
                             return dept
                               ? {
@@ -459,54 +456,6 @@ export default function Persona({
                         setFormData((prev) => ({
                           ...prev,
                           defaultPersona: checked,
-                        }))
-                      }
-                      disabled={isReadonly}
-                    />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
-                </div>
-              )}
-
-              {/* Guardrail Active Switch - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="guardrailActive" className="text-sm">
-                    Guardrail Active
-                  </Label>
-                  {formData?.guardrailActive !== undefined && !isLoading ? (
-                    <Switch
-                      id="guardrailActive"
-                      checked={formData.guardrailActive ?? false}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          guardrailActive: checked,
-                        }))
-                      }
-                      disabled={isReadonly}
-                    />
-                  ) : (
-                    <Skeleton className="h-6 w-11" />
-                  )}
-                </div>
-              )}
-
-              {/* Image Input Active Switch - Only for superadmin */}
-              {effectiveProfile?.role === "superadmin" && (
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="imageInputActive" className="text-sm">
-                    Image Input Active
-                  </Label>
-                  {formData?.imageInputActive !== undefined && !isLoading ? (
-                    <Switch
-                      id="imageInputActive"
-                      checked={formData.imageInputActive ?? false}
-                      onCheckedChange={(checked) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          imageInputActive: checked,
                         }))
                       }
                       disabled={isReadonly}
@@ -689,7 +638,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0"
+                                            : "opacity-0",
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -724,7 +673,7 @@ export default function Persona({
                                       "mr-2 h-4 w-4",
                                       formData.icon === iconName
                                         ? "opacity-100"
-                                        : "opacity-0"
+                                        : "opacity-0",
                                     )}
                                   />
                                   <IconComponent className="mr-2 h-4 w-4" />
@@ -868,7 +817,7 @@ export default function Persona({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
+                                editorMode === "preview" ? "editor" : "preview",
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -894,7 +843,7 @@ export default function Persona({
                                 size="sm"
                                 onClick={() =>
                                   setEditorMode(
-                                    editorMode === "debug" ? "editor" : "debug"
+                                    editorMode === "debug" ? "editor" : "debug",
                                   )
                                 }
                                 className="h-8 w-8 p-0"

@@ -408,9 +408,19 @@ async def run_grade_agent(
 
         agent_instance = grading_agent.agent()
 
+        # Get profile from attempt_profiles junction
+        from app.models import AttemptProfiles
+        attempt_profile_link = session.exec(
+            select(AttemptProfiles).where(
+                AttemptProfiles.attempt_id == attempt.id,
+                AttemptProfiles.active == True
+            )
+        ).first()
+        
+        attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
         default_guest_profile = find_default_guest_profile(session)
 
-        final_profile_id = (attempt.profile_id if attempt.profile_id else (default_guest_profile.id if default_guest_profile else None))
+        final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile.id if default_guest_profile else None))
 
         success, error_message = check_rate_limit(final_profile_id, session)
         if not success:
@@ -418,14 +428,41 @@ async def run_grade_agent(
 
         # create model run
         model_run = ModelRuns(
-            model_id=model.id,
             input_tokens=0,
             output_tokens=0,
-            profile_id=final_profile_id,
-            agent_id=agent.id,
             department_id=simulation.department_id,
         )
         session.add(model_run)
+        session.commit()
+        session.refresh(model_run)
+
+        # Create model_run junction records
+        from app.models import ModelRunAgents, ModelRunModels, ModelRunProfiles
+        
+        if model.id:
+            model_run_model = ModelRunModels(
+                model_run_id=model_run.id,
+                model_id=model.id,
+                active=True,
+            )
+            session.add(model_run_model)
+        
+        if agent.id:
+            model_run_agent = ModelRunAgents(
+                model_run_id=model_run.id,
+                agent_id=agent.id,
+                active=True,
+            )
+            session.add(model_run_agent)
+        
+        if final_profile_id:
+            model_run_profile = ModelRunProfiles(
+                model_run_id=model_run.id,
+                profile_id=final_profile_id,
+                active=True,
+            )
+            session.add(model_run_profile)
+        
         session.commit()
 
         # Run the grading

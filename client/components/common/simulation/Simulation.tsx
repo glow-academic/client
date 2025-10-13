@@ -98,7 +98,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null
+    null,
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
@@ -108,7 +108,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   // Load linked scenarios from junction table
   const { data: linkedScenarios = [] } = useSimulationScenariosBySimulationId(
-    simulationId || editingSimulationId || ""
+    simulationId || editingSimulationId || "",
   );
 
   const initialFormData: FormData = useMemo(
@@ -127,7 +127,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
       imageInputActive: false,
       hintsEnabled: false,
     }),
-    []
+    [],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -135,22 +135,22 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
-    simulationId!
+    simulationId!,
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
     useParameterItems();
   // Load cohorts (for display, not currently used in logic)
   const { data: _cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: departments = [] } = useDepartmentsHook();
   const { data: allCohortSimulations = [] } = useCohortSimulations();
@@ -206,7 +206,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | number | boolean | string[] | null
+    value: string | number | boolean | string[] | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -231,7 +231,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
   useEffect(() => {
     if (linkedScenarios.length > 0) {
       const sortedScenarios = [...linkedScenarios].sort(
-        (a, b) => a.position - b.position
+        (a, b) => a.position - b.position,
       );
       setCurrentScenarioIds(sortedScenarios.map((ls) => ls.scenarioId));
     } else {
@@ -375,7 +375,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -520,7 +520,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   formData?.departmentId
                     ? (() => {
                         const dept = departments.find(
-                          (d) => d.id === formData.departmentId
+                          (d) => d.id === formData.departmentId,
                         );
                         return dept
                           ? {
@@ -562,7 +562,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                 onChange={(e) =>
                   handleInputChange(
                     "timeLimit",
-                    parseInt(e.target.value) || null
+                    parseInt(e.target.value) || null,
                   )
                 }
                 className={errors.timeLimit ? "border-destructive" : ""}
@@ -590,7 +590,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   <span className="truncate text-left">
                     {(() => {
                       const selected = rubrics.find(
-                        (r: Rubric) => r.id === formData.rubricId
+                        (r: Rubric) => r.id === formData.rubricId,
                       );
                       return selected ? selected.name : "No rubric selected";
                     })()}
@@ -608,7 +608,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                           description: r.description,
                           points: r.points,
                           active: r.active,
-                        }) as RubricPickerItem
+                        }) as RubricPickerItem,
                     )}
                   placeholder="Select a rubric..."
                   onSelect={(selected) =>
@@ -616,7 +616,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   }
                   selectedRubrics={(() => {
                     const selected = rubrics.find(
-                      (r: Rubric) => r.id === formData.rubricId
+                      (r: Rubric) => r.id === formData.rubricId,
                     );
                     return selected
                       ? [
@@ -810,7 +810,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {selectedScenarios.map((scenario) => {
                 const originalScenario = scenarios.find(
-                  (s: Scenario) => s.id === scenario.id
+                  (s: Scenario) => s.id === scenario.id,
                 );
                 if (!originalScenario) return null;
 
@@ -852,10 +852,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
                                   onClick={() => {
                                     const newSelectedScenarios =
                                       selectedScenarios.filter(
-                                        (s) => s.id !== scenario.id
+                                        (s) => s.id !== scenario.id,
                                       );
                                     handleScenarioSelection(
-                                      newSelectedScenarios
+                                      newSelectedScenarios,
                                     );
                                   }}
                                   className="h-6 w-6 p-0"

@@ -69,12 +69,23 @@ def scenario_overview(scenario_id: str) -> Dict[str, Any]:
                     }
                 )
 
+        # Get persona from scenario_personas junction
+        from app.models import ScenarioPersonas
+        persona_link = session.exec(
+            select(ScenarioPersonas).where(
+                ScenarioPersonas.scenario_id == scenario.id,
+                ScenarioPersonas.active == True
+            )
+        ).first()
+        
+        persona_id = str(persona_link.persona_id) if persona_link else None
+
         return {
             "id": str(scenario.id),
             "name": scenario.name,
             "problem_statement": scenario.problem_statement,
             "default_scenario": scenario.default_scenario,
-            "persona_id": str(scenario.persona_id) if scenario.persona_id else None,
+            "persona_id": persona_id,
             "created_at": scenario.created_at.isoformat()
             if scenario.created_at
             else None,

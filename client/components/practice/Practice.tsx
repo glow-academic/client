@@ -34,7 +34,9 @@ import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
 export default function Practice() {
   const router = useRouter();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -43,7 +45,7 @@ export default function Practice() {
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null
+    null,
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
@@ -128,14 +130,14 @@ export default function Practice() {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as EventListener,
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as EventListener,
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -161,7 +163,7 @@ export default function Practice() {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page."
+            "WebSocket not connected. Please wait for connection or refresh the page.",
           );
           log.error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
@@ -198,7 +200,9 @@ export default function Practice() {
             isConnected,
           },
         });
-        const departmentId = simulations?.find(simulation => simulation.id === simulationId)?.departmentId;
+        const departmentId = simulations?.find(
+          (simulation) => simulation.id === simulationId,
+        )?.departmentId;
         if (!departmentId) {
           toast.error("No department found. Please contact support.");
           return;
@@ -251,7 +255,7 @@ export default function Practice() {
       activeProfile,
       effectiveDepartmentIds,
       simulations,
-    ]
+    ],
   );
 
   // Loading state

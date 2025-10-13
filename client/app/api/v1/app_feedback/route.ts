@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list app_feedback",
         subject: { entityType: "app_feedback" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_feedback" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

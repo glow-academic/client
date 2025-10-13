@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { cohortSimulationRepo, CohortSimulationCreateSchema } from "@/lib/repos/cohortSimulationRepo";
+import {
+  cohortSimulationRepo,
+  CohortSimulationCreateSchema,
+} from "@/lib/repos/cohortSimulationRepo";
 import type { CohortSimulationCreate } from "@/lib/repos/cohortSimulationRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list cohort_simulations",
         subject: { entityType: "cohort_simulations" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "cohort_simulations" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -11,7 +11,7 @@ import { useDepartments } from "@/contexts/departments-context";
 export function usePersonaColumns() {
   const { effectiveDepartmentIds } = useDepartments();
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: models = [] } = useModels();
 

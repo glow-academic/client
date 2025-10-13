@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
@@ -67,44 +67,6 @@ export const profileRepo = {
       throw HttpError.notFound("Profile with id " + id + " not found");
   },
 
-  async listByUser(userId: number) {
-    const db = await getDb();
-    return db.select().from(profiles).where(eq(profiles.userId, userId));
-  },
-
-  async listByUsers(userIds: number[]) {
-    const db = await getDb();
-    if (!Array.isArray(userIds) || userIds.length === 0) return [];
-    return db.select().from(profiles).where(inArray(profiles.userId, userIds));
-  },
-
-  async listByDepartment(departmentId: string) {
-    const db = await getDb();
-    return db
-      .select()
-      .from(profiles)
-      .where(
-        or(
-          eq(profiles.departmentId, departmentId),
-          and(isNull(profiles.departmentId), eq(profiles.role, "superadmin"))
-        )
-      );
-  },
-
-  async listByDepartments(departmentIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(departmentIds) || departmentIds.length === 0) return [];
-    return db
-      .select()
-      .from(profiles)
-      .where(
-        or(
-          inArray(profiles.departmentId, departmentIds),
-          and(isNull(profiles.departmentId), eq(profiles.role, "superadmin"))
-        )
-      );
-  },
-
   async createMany(payloads: ProfileCreate[]) {
     const db = await getDb();
     if (!Array.isArray(payloads) || payloads.length === 0) return [];
@@ -116,7 +78,7 @@ export const profileRepo = {
     return OptimizedBulkUpdate.updateManyOptimized(
       profiles,
       updates,
-      "Profile"
+      "Profile",
     );
   },
 

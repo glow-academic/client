@@ -222,7 +222,7 @@ export function UnifiedSidebar({
   });
 
   const { data: cohorts } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
 
   // Extract stable profile ID to avoid complex dependency expressions
@@ -245,7 +245,7 @@ export function UnifiedSidebar({
           break;
         }
         profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortData?.profileIds?.includes(stableProfileId)
+          cohortData?.profileIds?.includes(stableProfileId),
         );
         break;
       default:
@@ -272,7 +272,7 @@ export function UnifiedSidebar({
     // 2. Add profiles with defaultProfile = true
     if (simulatableProfiles) {
       const defaultProfiles = simulatableProfiles.filter(
-        (profile) => profile.defaultProfile
+        (profile) => profile.defaultProfile,
       );
       options.push(...defaultProfiles);
     }
@@ -280,7 +280,7 @@ export function UnifiedSidebar({
     // 3. Add the rest of the simulatable profiles
     if (simulatableProfiles) {
       const regularProfiles = simulatableProfiles.filter(
-        (profile) => !profile.defaultProfile
+        (profile) => !profile.defaultProfile,
       );
       options.push(...regularProfiles);
     }
@@ -295,7 +295,9 @@ export function UnifiedSidebar({
           profile.role
             .toLowerCase()
             .includes(profileSearchTerm.toLowerCase()) ||
-          profile.alias?.toLowerCase().includes(profileSearchTerm.toLowerCase())
+          profile.alias
+            ?.toLowerCase()
+            .includes(profileSearchTerm.toLowerCase()),
       );
     }
 
@@ -308,7 +310,7 @@ export function UnifiedSidebar({
 
     const menu: NavSection[] = [];
     const availableSections = getAvailableSubsectionsForRole(
-      effectiveProfile.role
+      effectiveProfile.role,
     );
 
     // Home - Only for non guest users
@@ -543,7 +545,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.section?.toLowerCase().includes(searchTerm.toLowerCase())
+                item.section?.toLowerCase().includes(searchTerm.toLowerCase()),
             ) || [],
         }))
         .filter((section) => section.items.length > 0);
@@ -557,7 +559,7 @@ export function UnifiedSidebar({
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname
+    pathname,
   );
 
   const handleItemClick = useCallback(
@@ -578,7 +580,7 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating]
+    [router, handleSectionChange, isNavigating],
   );
 
   const handleProfileSelect = async (profileId: string) => {
@@ -682,7 +684,7 @@ export function UnifiedSidebar({
             },
           });
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out"
+            typeof error === "string" ? error : "Failed to log out",
           );
         } finally {
           setIsLoggingOut(false);
@@ -692,7 +694,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      }
+      },
     );
   };
 
@@ -731,7 +733,7 @@ export function UnifiedSidebar({
                     >
                       <AvatarFallback>
                         {getInitials(
-                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
+                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`,
                         )}
                       </AvatarFallback>
                     </Avatar>
@@ -788,7 +790,7 @@ export function UnifiedSidebar({
                             >
                               <AvatarFallback>
                                 {getInitials(
-                                  `${profile.firstName} ${profile.lastName}`
+                                  `${profile.firstName} ${profile.lastName}`,
                                 )}
                               </AvatarFallback>
                             </Avatar>
@@ -935,7 +937,7 @@ export function UnifiedSidebar({
                           : getInitials(
                               activeProfile?.firstName +
                                 " " +
-                                activeProfile?.lastName
+                                activeProfile?.lastName,
                             )}
                       </AvatarFallback>
                     </Avatar>
@@ -974,7 +976,7 @@ export function UnifiedSidebar({
                             : getInitials(
                                 activeProfile?.firstName +
                                   " " +
-                                  activeProfile?.lastName
+                                  activeProfile?.lastName,
                               )}
                         </AvatarFallback>
                       </Avatar>

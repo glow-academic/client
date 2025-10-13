@@ -68,19 +68,51 @@ export const scenarioRepo = {
 
   async listByPersona(personaId: string) {
     const db = await getDb();
+    // Join via scenario_personas junction table
+    const { scenarioPersonas } = await import("@/utils/drizzle/schema");
     return db
-      .select()
+      .select({
+        id: scenarios.id,
+        createdAt: scenarios.createdAt,
+        updatedAt: scenarios.updatedAt,
+        name: scenarios.name,
+        problemStatement: scenarios.problemStatement,
+        defaultScenario: scenarios.defaultScenario,
+        generated: scenarios.generated,
+        active: scenarios.active,
+        departmentId: scenarios.departmentId,
+      })
       .from(scenarios)
-      .where(eq(scenarios.personaId, personaId));
+      .innerJoin(
+        scenarioPersonas,
+        eq(scenarioPersonas.scenarioId, scenarios.id),
+      )
+      .where(eq(scenarioPersonas.personaId, personaId));
   },
 
   async listByPersonas(personaIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(personaIds) || personaIds.length === 0) return [];
+    // Join via scenario_personas junction table
+    const { scenarioPersonas } = await import("@/utils/drizzle/schema");
     return db
-      .select()
+      .select({
+        id: scenarios.id,
+        createdAt: scenarios.createdAt,
+        updatedAt: scenarios.updatedAt,
+        name: scenarios.name,
+        problemStatement: scenarios.problemStatement,
+        defaultScenario: scenarios.defaultScenario,
+        generated: scenarios.generated,
+        active: scenarios.active,
+        departmentId: scenarios.departmentId,
+      })
       .from(scenarios)
-      .where(inArray(scenarios.personaId, personaIds));
+      .innerJoin(
+        scenarioPersonas,
+        eq(scenarioPersonas.scenarioId, scenarios.id),
+      )
+      .where(inArray(scenarioPersonas.personaId, personaIds));
   },
 
   async listByDepartment(departmentId: string) {

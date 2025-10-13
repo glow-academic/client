@@ -30,6 +30,6 @@ export async function PATCH(req: Request) {
         subject: { entityType: "simulation_attempts" },
         context: { count: updates.length },
         error: e,
-      })
+      }),
   );
 }

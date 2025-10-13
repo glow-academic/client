@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_messages",
         subject: { entityType: "simulation_messages" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_messages" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

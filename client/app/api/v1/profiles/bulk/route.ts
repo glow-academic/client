@@ -24,7 +24,7 @@ const Body = z.object({
         defaultProfile: z.boolean().optional(),
         viewedIntro: z.boolean().optional(),
         viewedChat: z.boolean().optional(),
-      })
+      }),
     )
     .min(1),
 });
@@ -43,6 +43,6 @@ export async function POST(req: Request) {
         subject: { entityType: "profiles" },
         context: { count: parsed.data.profiles.length },
         error: e,
-      })
+      }),
   );
 }

@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { modelRunModelRepo, ModelRunModelCreateSchema } from "@/lib/repos/modelRunModelRepo";
+import {
+  modelRunModelRepo,
+  ModelRunModelCreateSchema,
+} from "@/lib/repos/modelRunModelRepo";
 import type { ModelRunModelCreate } from "@/lib/repos/modelRunModelRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list model_run_models",
         subject: { entityType: "model_run_models" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "model_run_models" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

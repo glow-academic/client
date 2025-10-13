@@ -42,9 +42,21 @@ def persona_overview(persona_id: str) -> Dict[str, Any]:
         if not persona:
             return {"error": f"Persona not found: {persona_id}"}
 
-        # Get associated scenarios (personas are linked directly to scenarios)
-        scenarios_stmt = select(Scenarios).where(Scenarios.persona_id == persona_uuid)
-        scenarios = session.exec(scenarios_stmt).all()
+        # Get associated scenarios via scenario_personas junction
+        from app.models import ScenarioPersonas
+        persona_links = session.exec(
+            select(ScenarioPersonas).where(
+                ScenarioPersonas.persona_id == persona_uuid,
+                ScenarioPersonas.active == True
+            )
+        ).all()
+        
+        scenario_ids = [link.scenario_id for link in persona_links]
+        if scenario_ids:
+            scenarios_stmt = select(Scenarios).where(Scenarios.id.in_(scenario_ids))
+            scenarios = session.exec(scenarios_stmt).all()
+        else:
+            scenarios = []
 
         scenario_list = []
         for scenario in scenarios:

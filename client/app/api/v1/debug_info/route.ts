@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list debug_info",
         subject: { entityType: "debug_info" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "debug_info" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

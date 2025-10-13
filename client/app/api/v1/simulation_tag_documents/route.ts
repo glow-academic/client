@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { simulationTagDocumentRepo, SimulationTagDocumentCreateSchema } from "@/lib/repos/simulationTagDocumentRepo";
+import {
+  simulationTagDocumentRepo,
+  SimulationTagDocumentCreateSchema,
+} from "@/lib/repos/simulationTagDocumentRepo";
 import type { SimulationTagDocumentCreate } from "@/lib/repos/simulationTagDocumentRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list simulation_tag_documents",
         subject: { entityType: "simulation_tag_documents" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "simulation_tag_documents" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

@@ -14,7 +14,7 @@ export async function GET() {
         message: "Failed to list assistant_tool_calls",
         subject: { entityType: "assistant_tool_calls" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -33,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "assistant_tool_calls" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

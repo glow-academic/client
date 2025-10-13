@@ -1,4 +1,3 @@
-
 import { createInsertSchema } from "drizzle-zod";
 import { eq, inArray } from "drizzle-orm";
 
@@ -15,7 +14,9 @@ export type ScenarioTreeUpdate = Partial<ScenarioTreeCreate>;
 export const ScenarioTreeCreateSchema = createInsertSchema(scenarioTree);
 export const ScenarioTreeUpdateSchema = ScenarioTreeCreateSchema.partial();
 
-async function getDb() { return drizzleDb; }
+async function getDb() {
+  return drizzleDb;
+}
 
 export const scenarioTreeRepo = {
   async create(payload: ScenarioTreeCreate) {
@@ -26,32 +27,53 @@ export const scenarioTreeRepo = {
 
   async list() {
     const db = await getDb();
-    return db.select().from(scenarioTree).orderBy(scenarioTree.createdAt ?? scenarioTree.id);
+    return db.select().from(scenarioTree).orderBy(scenarioTree.createdAt);
   },
   // Composite/no PK table – implement find/update/remove if needed.
-  async find(_id: unknown) { throw new HttpError(400, "Not supported for composite/no primary key tables"); },
-  async update(_id: unknown, _patch: ScenarioTreeUpdate) { throw new HttpError(400, "Not supported"); },
-  async remove(_id: unknown) { throw new HttpError(400, "Not supported"); },
-
-  async listByScenario(scenarioId: string) {
-    const db = await getDb();
-    return db.select().from(scenarioTree).where(eq(scenarioTree.parentId, scenarioId));
+  async find(_id: unknown) {
+    throw new HttpError(
+      400,
+      "Not supported for composite/no primary key tables",
+    );
+  },
+  async update(_id: unknown, _patch: ScenarioTreeUpdate) {
+    throw new HttpError(400, "Not supported");
+  },
+  async remove(_id: unknown) {
+    throw new HttpError(400, "Not supported");
   },
 
-  async listByScenarios(scenarioIds: string[]) {
+  async listByParentScenario(scenarioId: string) {
+    const db = await getDb();
+    return db
+      .select()
+      .from(scenarioTree)
+      .where(eq(scenarioTree.parentId, scenarioId));
+  },
+
+  async listByParentScenarios(scenarioIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(scenarioIds) || scenarioIds.length === 0) return [];
-    return db.select().from(scenarioTree).where(inArray(scenarioTree.parentId, scenarioIds));
+    return db
+      .select()
+      .from(scenarioTree)
+      .where(inArray(scenarioTree.parentId, scenarioIds));
   },
 
-  async listByScenario(scenarioId: string) {
+  async listByChildScenario(scenarioId: string) {
     const db = await getDb();
-    return db.select().from(scenarioTree).where(eq(scenarioTree.childId, scenarioId));
+    return db
+      .select()
+      .from(scenarioTree)
+      .where(eq(scenarioTree.childId, scenarioId));
   },
 
-  async listByScenarios(scenarioIds: string[]) {
+  async listByChildScenarios(scenarioIds: string[]) {
     const db = await getDb();
     if (!Array.isArray(scenarioIds) || scenarioIds.length === 0) return [];
-    return db.select().from(scenarioTree).where(inArray(scenarioTree.childId, scenarioIds));
+    return db
+      .select()
+      .from(scenarioTree)
+      .where(inArray(scenarioTree.childId, scenarioIds));
   },
 };

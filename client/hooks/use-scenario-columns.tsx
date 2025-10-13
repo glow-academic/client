@@ -11,9 +11,15 @@ import { useDepartments } from "@/contexts/departments-context";
 
 export function useScenarioColumns() {
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
+  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
+  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   const columns = useMemo<ColumnDef<Scenario>[]>(
     () => [

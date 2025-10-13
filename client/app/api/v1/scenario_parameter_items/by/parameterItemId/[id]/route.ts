@@ -2,7 +2,10 @@ import { handle } from "@/lib/api/route-factory";
 import { scenarioParameterItemRepo } from "@/lib/repos/scenarioParameterItemRepo";
 import { log } from "@/utils/logger";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   return handle(
     () => scenarioParameterItemRepo.listByParameterItem(id),
@@ -12,6 +15,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         subject: { entityType: "scenario_parameter_items" },
         context: { foreignKey: "parameterItemId", id },
         error: e,
-      })
+      }),
   );
 }

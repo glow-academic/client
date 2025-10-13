@@ -19,6 +19,6 @@ export async function POST(req: Request) {
         subject: { entityType: "app_feedback_profiles" },
         context: { foreignKey: "profileId", count: parsed.data.ids.length },
         error: e,
-      })
+      }),
   );
 }

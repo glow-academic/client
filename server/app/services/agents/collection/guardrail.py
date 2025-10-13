@@ -7,7 +7,7 @@ from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
                     ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers,
+from app.models import (Agents, AttemptProfiles, ModelRuns, Models, Providers,
                         SimulationAttempts, SimulationChats)
 from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext, debug_info
@@ -144,7 +144,16 @@ def get_input_guardrails(
                 select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
             ).one()
 
-            profile_id = attempt.profile_id
+            # Get profile from attempt_profiles junction
+            from app.models import AttemptProfiles
+            attempt_profile_link = db_session.exec(
+                select(AttemptProfiles).where(
+                    AttemptProfiles.attempt_id == attempt.id,
+                    AttemptProfiles.active == True
+                )
+            ).first()
+            
+            profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
 
             default_guest_profile = find_default_guest_profile(session)
 
@@ -176,14 +185,42 @@ def get_input_guardrails(
                 raise ValueError(error_message)
             
             model_run = ModelRuns(
-                model_id=model_id,
                 input_tokens=0,
                 output_tokens=0,
-                profile_id=final_profile_id,
-                agent_id=agent_id,
                 department_id=department_id,
             )
             session.add(model_run)
+            session.commit()
+            session.refresh(model_run)
+
+            # Create model_run junction records
+            from app.models import (ModelRunAgents, ModelRunModels,
+                                    ModelRunProfiles)
+            
+            if model_id:
+                model_run_model = ModelRunModels(
+                    model_run_id=model_run.id,
+                    model_id=model_id,
+                    active=True,
+                )
+                session.add(model_run_model)
+            
+            if agent_id:
+                model_run_agent = ModelRunAgents(
+                    model_run_id=model_run.id,
+                    agent_id=agent_id,
+                    active=True,
+                )
+                session.add(model_run_agent)
+            
+            if final_profile_id:
+                model_run_profile = ModelRunProfiles(
+                    model_run_id=model_run.id,
+                    profile_id=final_profile_id,
+                    active=True,
+                )
+                session.add(model_run_profile)
+            
             session.commit()
 
             with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
@@ -248,7 +285,15 @@ def get_output_guardrails(
                 select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
             ).one()
 
-            profile_id = attempt.profile_id
+            # Get profile from attempt_profiles junction
+            attempt_profile_link = db_session.exec(
+                select(AttemptProfiles).where(
+                    AttemptProfiles.attempt_id == attempt.id,
+                    AttemptProfiles.active == True
+                )
+            ).first()
+            
+            profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
 
             default_guest_profile = find_default_guest_profile(session)
 
@@ -280,14 +325,42 @@ def get_output_guardrails(
                 raise ValueError(error_message)
             
             model_run = ModelRuns(
-                model_id=model_id,
                 input_tokens=0,
                 output_tokens=0,
-                profile_id=final_profile_id,
-                agent_id=agent_id,
                 department_id=department_id,
             )
             session.add(model_run)
+            session.commit()
+            session.refresh(model_run)
+
+            # Create model_run junction records
+            from app.models import (ModelRunAgents, ModelRunModels,
+                                    ModelRunProfiles)
+            
+            if model_id:
+                model_run_model = ModelRunModels(
+                    model_run_id=model_run.id,
+                    model_id=model_id,
+                    active=True,
+                )
+                session.add(model_run_model)
+            
+            if agent_id:
+                model_run_agent = ModelRunAgents(
+                    model_run_id=model_run.id,
+                    agent_id=agent_id,
+                    active=True,
+                )
+                session.add(model_run_agent)
+            
+            if final_profile_id:
+                model_run_profile = ModelRunProfiles(
+                    model_run_id=model_run.id,
+                    profile_id=final_profile_id,
+                    active=True,
+                )
+                session.add(model_run_profile)
+            
             session.commit()
 
             with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):

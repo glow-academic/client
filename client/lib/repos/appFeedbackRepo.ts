@@ -1,5 +1,5 @@
+import { eq } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { eq, inArray } from "drizzle-orm";
 
 import { db as drizzleDb } from "@/utils/drizzle/db";
 import { appFeedback } from "@/utils/drizzle/schema";
@@ -64,22 +64,5 @@ export const appFeedbackRepo = {
       .returning();
     if (!rows[0])
       throw HttpError.notFound("AppFeedback with id " + id + " not found");
-  },
-
-  async listByProfile(profileId: string) {
-    const db = await getDb();
-    return db
-      .select()
-      .from(appFeedback)
-      .where(eq(appFeedback.profileId, profileId));
-  },
-
-  async listByProfiles(profileIds: string[]) {
-    const db = await getDb();
-    if (!Array.isArray(profileIds) || profileIds.length === 0) return [];
-    return db
-      .select()
-      .from(appFeedback)
-      .where(inArray(appFeedback.profileId, profileIds));
   },
 };

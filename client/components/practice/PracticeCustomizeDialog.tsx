@@ -58,7 +58,7 @@ export function PracticeCustomizeDialog({
   const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
-    undefined
+    undefined,
   );
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
@@ -67,23 +67,23 @@ export function PracticeCustomizeDialog({
 
   // API calls - only made when dialog is open
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
+    effectiveDepartmentIds,
   );
   const { data: parameterItems = [] } = useParameterItems();
 
   // Only allow customizing non-default parameters and non-default items
   const customParameters = useMemo(() => {
     return (parameters as Parameter[]).filter(
-      (p) => p.defaultParameter === false
+      (p) => p.defaultParameter === false,
     );
   }, [parameters]);
 
@@ -91,7 +91,7 @@ export function PracticeCustomizeDialog({
     // Use ONLY default items, but only for the non-default parameters
     const customParamIds = new Set(customParameters.map((p) => p.id));
     return (parameterItems as ParameterItem[]).filter(
-      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
+      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId),
     );
   }, [parameterItems, customParameters]);
 
@@ -116,12 +116,13 @@ export function PracticeCustomizeDialog({
         return;
       }
 
-      // Find base default practice scenario for this persona
+      // Find base default practice scenario for this persona via junction table
+      // Note: This requires querying scenario_personas junction
+      // For now, we'll use the simulation directly since practice sims are pre-linked
       const baseScenario = (scenarios as Scenario[]).find(
         (s) =>
-          s.personaId === selectedPersona.id &&
           s.defaultScenario === true &&
-          s.practiceScenario === true
+          s.name.toLowerCase().includes(selectedPersona.name.toLowerCase()),
       );
 
       // Find simulation that includes the base scenario (prefer default+practice)
@@ -130,15 +131,15 @@ export function PracticeCustomizeDialog({
           (sim) =>
             (sim.scenarioIds || []).includes(baseScenario?.id || "") &&
             sim.defaultSimulation === true &&
-            sim.practiceSimulation === true
+            sim.practiceSimulation === true,
         ) ||
         (simulations as Simulation[]).find((sim) =>
-          (sim.scenarioIds || []).includes(baseScenario?.id || "")
+          (sim.scenarioIds || []).includes(baseScenario?.id || ""),
         );
 
       if (!targetSimulation) {
         toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
+          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`,
         );
         return;
       }

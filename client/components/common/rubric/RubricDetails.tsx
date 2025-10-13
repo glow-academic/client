@@ -60,13 +60,13 @@ export default function RubricDetails({
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleDepartmentChange = (
-    department: { id: string; title: string; description?: string } | null
+    department: { id: string; title: string; description?: string } | null,
   ) => {
     setFormData((prev) => ({ ...prev, departmentId: department?.id || "" }));
   };
@@ -100,7 +100,7 @@ export default function RubricDetails({
         context: { component: "RubricDetails", rubricId },
       });
       toast.error(
-        isCreateMode ? "Failed to create rubric" : "Failed to update rubric"
+        isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
       );
     }
   };
@@ -167,7 +167,7 @@ export default function RubricDetails({
                       formData.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === formData.departmentId
+                              (d) => d.id === formData.departmentId,
                             );
                             return dept
                               ? {

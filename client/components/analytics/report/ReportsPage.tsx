@@ -49,7 +49,14 @@ export default function ReportsPage() {
       simulationFilters,
       departmentIds: effectiveDepartmentIds,
     }),
-    [startDate, endDate, selectedCohortIds, selectedRoles, simulationFilters, effectiveDepartmentIds],
+    [
+      startDate,
+      endDate,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+      effectiveDepartmentIds,
+    ],
   );
 
   const rqOpts = useMemo(() => ({ enabled: true, staleTime: 60_000 }), []);
@@ -66,7 +73,9 @@ export default function ReportsPage() {
   const { data: allSimulations } = useSimulationsByDepartmentIdBatch(
     effectiveDepartmentIds,
   );
-  const { data: allProfiles = [] } = useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: allProfiles = [] } = useProfilesByDepartmentIdBatch(
+    effectiveDepartmentIds,
+  );
 
   // Profile lookup map for names
   const profileMap = useMemo(() => {

@@ -1,5 +1,8 @@
 import { handle } from "@/lib/api/route-factory";
-import { profileDepartmentRepo, ProfileDepartmentCreateSchema } from "@/lib/repos/profileDepartmentRepo";
+import {
+  profileDepartmentRepo,
+  ProfileDepartmentCreateSchema,
+} from "@/lib/repos/profileDepartmentRepo";
 import type { ProfileDepartmentCreate } from "@/lib/repos/profileDepartmentRepo";
 import { log } from "@/utils/logger";
 
@@ -11,7 +14,7 @@ export async function GET() {
         message: "Failed to list profile_departments",
         subject: { entityType: "profile_departments" },
         error: e,
-      })
+      }),
   );
 }
 
@@ -30,6 +33,6 @@ export async function POST(req: Request) {
         subject: { entityType: "profile_departments" },
         context: { body: json },
         error: e,
-      })
+      }),
   );
 }

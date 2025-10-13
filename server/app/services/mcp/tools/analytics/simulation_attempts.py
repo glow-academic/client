@@ -55,10 +55,18 @@ def simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
         results = []
 
         for attempt in attempts:
-            # Get student info
+            # Get student info from attempt_profiles junction
+            from app.models import AttemptProfiles
+            attempt_profile = session.exec(
+                select(AttemptProfiles).where(
+                    AttemptProfiles.attempt_id == attempt.id,
+                    AttemptProfiles.active == True
+                )
+            ).first()
+            
             student_name = "Unknown"
-            if attempt.profile_id:
-                profile = session.get(Profiles, attempt.profile_id)
+            if attempt_profile and attempt_profile.profile_id:
+                profile = session.get(Profiles, attempt_profile.profile_id)
                 if profile:
                     name_parts = []
                     if profile.first_name:
@@ -100,8 +108,8 @@ def simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
                 {
                     "id": str(attempt.id),
                     "student": student_name,
-                    "student_id": str(attempt.profile_id)
-                    if attempt.profile_id
+                    "student_id": str(attempt_profile.profile_id)
+                    if attempt_profile
                     else None,
                     "score": latest_score,
                     "passed": latest_passed,
