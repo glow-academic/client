@@ -281,3 +281,22 @@ export const rubricsDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...rubricsDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Staff Keys
+export const staffListKeys = {
+  all: ["staff:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...staffListKeys.all, { filters }] as const,
+};
+
+export const staffDetailKeys = {
+  all: ["staff:v2:detail"] as const,
+  detail: (profileId: string, currentProfileId: string) =>
+    [...staffDetailKeys.all, { profileId, currentProfileId }] as const,
+};
+
+export const staffDetailBulkKeys = {
+  all: ["staff:v2:detail-bulk"] as const,
+  detail: (profileIds: string[], currentProfileId: string) =>
+    [...staffDetailBulkKeys.all, { profileIds, currentProfileId }] as const,
+};

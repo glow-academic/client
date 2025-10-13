@@ -6,6 +6,7 @@ from app.api.v2.personas import router as personas_router
 from app.api.v2.rubrics import router as rubrics_router
 from app.api.v2.scenarios import router as scenarios_router
 from app.api.v2.simulations import router as simulations_router
+from app.api.v2.staff import router as staff_router
 from fastapi import APIRouter
 
 # Create main v2 router
@@ -28,4 +29,7 @@ router.include_router(simulations_router)
 
 # Include rubrics router
 router.include_router(rubrics_router)
+
+# Include staff router
+router.include_router(staff_router)
 
