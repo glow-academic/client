@@ -2,6 +2,7 @@
 
 from app.api.v2.analytics.router import router as analytics_router
 from app.api.v2.cohorts import router as cohorts_router
+from app.api.v2.departments import router as departments_router
 from app.api.v2.documents import router as documents_router
 from app.api.v2.parameters import router as parameters_router
 from app.api.v2.personas import router as personas_router
@@ -44,4 +45,7 @@ router.include_router(providers_router)
 
 # Include parameters router
 router.include_router(parameters_router)
+
+# Include departments router
+router.include_router(departments_router, prefix="/departments", tags=["departments"])
 

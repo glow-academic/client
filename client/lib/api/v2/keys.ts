@@ -365,3 +365,22 @@ export const parametersDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...parametersDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Departments Keys
+export const departmentsListKeys = {
+  all: ["departments:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...departmentsListKeys.all, { filters }] as const,
+};
+
+export const departmentsDetailKeys = {
+  all: ["departments:v2:detail"] as const,
+  detail: (departmentId: string, profileId: string) =>
+    [...departmentsDetailKeys.all, { departmentId, profileId }] as const,
+};
+
+export const departmentsDetailDefaultKeys = {
+  all: ["departments:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...departmentsDetailDefaultKeys.all, { profileId }] as const,
+};
