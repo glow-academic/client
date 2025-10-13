@@ -3,6 +3,7 @@
 from app.api.v2.analytics.router import router as analytics_router
 from app.api.v2.documents import router as documents_router
 from app.api.v2.personas import router as personas_router
+from app.api.v2.rubrics import router as rubrics_router
 from app.api.v2.scenarios import router as scenarios_router
 from app.api.v2.simulations import router as simulations_router
 from fastapi import APIRouter
@@ -24,4 +25,7 @@ router.include_router(scenarios_router)
 
 # Include simulations router
 router.include_router(simulations_router)
+
+# Include rubrics router
+router.include_router(rubrics_router)
 

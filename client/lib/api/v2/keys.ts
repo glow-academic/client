@@ -262,3 +262,22 @@ export const simulationsDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...simulationsDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Rubrics Keys
+export const rubricsListKeys = {
+  all: ["rubrics:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...rubricsListKeys.all, { filters }] as const,
+};
+
+export const rubricsDetailKeys = {
+  all: ["rubrics:v2:detail"] as const,
+  detail: (rubricId: string, profileId: string) =>
+    [...rubricsDetailKeys.all, { rubricId, profileId }] as const,
+};
+
+export const rubricsDetailDefaultKeys = {
+  all: ["rubrics:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...rubricsDetailDefaultKeys.all, { profileId }] as const,
+};
