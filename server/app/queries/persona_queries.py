@@ -31,6 +31,7 @@ class PersonaQueries:
                 p.model_id,
                 p.reasoning,
                 p.temperature,
+                p.active,
                 p.default_persona,
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,

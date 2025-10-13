@@ -8,11 +8,12 @@
 import { log } from "@/utils/logger";
 import { Brain, Copy, Edit, Eye, Thermometer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { usePersonaColumns } from "@/hooks/use-persona-columns";
+import { PersonaItem } from "@/lib/api/v2/schemas/personas";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
+import { ColumnDef } from "@tanstack/react-table";
 
 import {
   AlertDialog,
@@ -36,13 +37,10 @@ import {
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
-  useCreatePersona,
   useDeletePersona,
-  usePersonasByDepartmentIdBatch,
-} from "@/lib/api/v1/hooks/personas";
-import { useScenarioPersonasByPersonaIdBatch } from "@/lib/api/v1/hooks/scenario_personas";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
-import { Persona } from "@/types";
+  useDuplicatePersona,
+  usePersonasList,
+} from "@/lib/api/v2/hooks/personas";
 import { PersonasDataTable } from "./PersonasDataTable";
 
 // Utility function to generate gradient from hex color
@@ -78,55 +76,155 @@ export default function Personas() {
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
 
+  // V2 API hooks - single fetch with all data
+  const { data: personasData } = usePersonasList(
+    {
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    },
+    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+  );
+
   // Mutation hooks
-  const createPersonaMutation = useCreatePersona();
+  const duplicatePersonaMutation = useDuplicatePersona();
   const deletePersonaMutation = useDeletePersona();
 
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // Extract data from V2 response
+  const personas = personasData?.personas || [];
+  const scenarioMapping = useMemo(
+    () => personasData?.scenario_mapping || {},
+    [personasData?.scenario_mapping]
   );
-  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const modelMapping = useMemo(
+    () => personasData?.model_mapping || {},
+    [personasData?.model_mapping]
   );
 
-  // Load scenario_personas junction data for all personas
-  const personaIds = personas.map((p) => p.id);
-  const { data: scenarioPersonas = [] } =
-    useScenarioPersonasByPersonaIdBatch(personaIds);
+  // Create filter options from mappings
+  const scenarioOptions = useMemo(() => {
+    return Object.entries(scenarioMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [scenarioMapping]);
 
-  // Get table columns and filter options
-  const {
-    columns,
-    scenarioOptions,
-    reasoningOptions,
-    modelOptions,
-    temperatureOptions,
-  } = usePersonaColumns();
+  const modelOptions = useMemo(() => {
+    return Object.entries(modelMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [modelMapping]);
 
-  // Check if a persona is being used by any scenarios (via junction table)
-  const isPersonaInUse = (personaId: string) => {
-    return scenarioPersonas.some(
-      (sp) => sp.personaId === personaId && sp.active
-    );
+  const reasoningOptions = useMemo(
+    () => [
+      { value: "minimal", label: "Minimal" },
+      { value: "low", label: "Low" },
+      { value: "medium", label: "Medium" },
+      { value: "high", label: "High" },
+    ],
+    []
+  );
+
+  const temperatureOptions = useMemo(
+    () => [
+      { value: "low", label: "Low (0.0-0.33)" },
+      { value: "medium", label: "Medium (0.34-0.66)" },
+      { value: "high", label: "High (0.67-1.0)" },
+    ],
+    []
+  );
+
+  // Helper function to get temperature range
+  const getTemperatureRange = (temperature: number) => {
+    if (temperature <= 0.33) return "low";
+    if (temperature <= 0.66) return "medium";
+    return "high";
   };
 
-  // Only superadmins can edit default personas; admins/superadmins can edit non-default; others can edit non-default only if not in use
-  const canEditPersona = (persona: Persona) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-    if (persona.defaultPersona) {
-      return effectiveProfile?.role === "superadmin";
-    }
-    return isAdmin || !isPersonaInUse(persona.id);
-  };
+  // Define table columns
+  const columns: ColumnDef<PersonaItem>[] = useMemo(() => {
+    return [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => {
+          const persona = row.original;
+          return (
+            <div className="font-medium">
+              {persona.name || "Unnamed Persona"}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => {
+          const persona = row.original;
+          return (
+            <div className="text-sm text-muted-foreground">
+              {persona.description || "No description available"}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "reasoning",
+        header: "Reasoning",
+        cell: ({ row }) => {
+          const persona = row.original;
+          return (
+            <div className="text-sm">
+              {persona.reasoning ? (
+                <span className="capitalize">{persona.reasoning}</span>
+              ) : (
+                <span className="text-muted-foreground">None</span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "temperature",
+        header: "Temperature",
+        cell: ({ row }) => {
+          const persona = row.original;
+          const temp = persona.temperature.toFixed(2);
+          return <div className="text-sm">{temp}</div>;
+        },
+        filterFn: (row, id, value) => {
+          const temperature = row.getValue(id) as number;
+          const range = getTemperatureRange(temperature);
+          return value.includes(range);
+        },
+      },
+      {
+        accessorKey: "model_id",
+        header: "Model",
+        cell: ({ row }) => {
+          const persona = row.original;
+          const modelName = modelMapping[persona.model_id];
+          return (
+            <div className="text-sm">
+              {modelName || (
+                <span className="text-muted-foreground">No model</span>
+              )}
+            </div>
+          );
+        },
+      },
+    ];
+  }, [modelMapping]);
+
+  // Permissions now come from server-side in V2 API
+  // No need for client-side permission logic
 
   const handleDelete = async () => {
     if (!deleteItem) return;
 
     setIsDeleting(true);
     try {
-      await deletePersonaMutation.mutateAsync(deleteItem.id);
+      await deletePersonaMutation.mutateAsync({ personaId: deleteItem.id });
       await log.info("persona.delete.success", {
         message: "Persona deleted successfully",
         subject: { entityType: "persona", entityId: deleteItem.id },
@@ -152,36 +250,28 @@ export default function Personas() {
     }
   };
 
-  const handleDuplicate = async (persona: Persona) => {
-    setIsDuplicating(persona.id);
+  const handleDuplicate = async (personaId: string, personaName: string) => {
+    setIsDuplicating(personaId);
     try {
-      await createPersonaMutation.mutateAsync({
-        ...persona,
-        id: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        active: false,
-        defaultPersona: false,
-        name: `${persona.name} Copy`,
-      });
+      await duplicatePersonaMutation.mutateAsync({ personaId });
       await log.info("persona.duplicate.success", {
         message: "Persona duplicated successfully",
-        subject: { entityType: "persona", entityId: persona.id },
+        subject: { entityType: "persona", entityId: personaId },
         context: {
           component: "Personas",
           function: "handleDuplicate",
-          originalName: persona.name,
+          originalName: personaName,
         },
       });
-      toast.success(`Persona "${persona.name}" duplicated successfully`);
+      toast.success(`Persona "${personaName}" duplicated successfully`);
     } catch (error) {
       await log.error("persona.duplicate.failed", {
         message: "Error duplicating persona",
-        subject: { entityType: "persona", entityId: persona.id },
+        subject: { entityType: "persona", entityId: personaId },
         context: {
           component: "Personas",
           function: "handleDuplicate",
-          originalName: persona.name,
+          originalName: personaName,
         },
         error,
       });
@@ -210,7 +300,7 @@ export default function Personas() {
 
   // no-op
 
-  const renderPersonaCard = (persona: Persona) => {
+  const renderPersonaCard = (persona: (typeof personas)[0]) => {
     // Get the icon component from the persona's stored icon name
     const IconComponent = getPersonaIconComponent(persona.icon) || Brain;
 
@@ -224,7 +314,10 @@ export default function Personas() {
     const iconColor = "#ffffff";
 
     return (
-      <Card key={persona.id} className="hover:shadow-md transition-shadow">
+      <Card
+        key={persona.persona_id}
+        className="hover:shadow-md transition-shadow"
+      >
         <CardHeader>
           <div className="flex justify-between items-start">
             <div className="space-y-2 flex-1">
@@ -282,11 +375,11 @@ export default function Personas() {
               </div>
             </div>
             <div className="flex gap-2 items-center">
-              {canEditPersona(persona) ? (
+              {persona.can_edit ? (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(persona.id)}
+                  onClick={() => handleEdit(persona.persona_id)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -296,7 +389,7 @@ export default function Personas() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleView(persona.id)}
+                      onClick={() => handleView(persona.persona_id)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -306,25 +399,29 @@ export default function Personas() {
                   </TooltipContent>
                 </Tooltip>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(persona)}
-                disabled={
-                  isDuplicating === persona.id ||
-                  createPersonaMutation.isPending
-                }
-              >
-                <Copy className="h-4 w-4" />
-                {isDuplicating === persona.id ? "..." : ""}
-              </Button>
-              {!isPersonaInUse(persona.id) && (
+              {persona.can_duplicate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDuplicate(persona.persona_id, persona.name)
+                  }
+                  disabled={
+                    isDuplicating === persona.persona_id ||
+                    duplicatePersonaMutation.isPending
+                  }
+                >
+                  <Copy className="h-4 w-4" />
+                  {isDuplicating === persona.persona_id ? "..." : ""}
+                </Button>
+              )}
+              {persona.can_delete && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
                     handleDeleteClick(
-                      persona.id,
+                      persona.persona_id,
                       persona.name || "Unnamed Persona"
                     )
                   }
@@ -341,12 +438,7 @@ export default function Personas() {
           </p>
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Eye className="h-3 w-3" />
-            {
-              scenarioPersonas.filter(
-                (sp) => sp.personaId === persona.id && sp.active
-              ).length
-            }{" "}
-            scenarios
+            {persona.num_scenarios} scenarios
           </div>
         </CardContent>
       </Card>
@@ -359,7 +451,8 @@ export default function Personas() {
         <PersonasDataTable
           columns={columns}
           data={personas}
-          scenarios={scenarios}
+          scenarioMapping={scenarioMapping}
+          modelMapping={modelMapping}
           scenarioOptions={scenarioOptions}
           reasoningOptions={reasoningOptions}
           modelOptions={modelOptions}

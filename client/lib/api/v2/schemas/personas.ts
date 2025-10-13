@@ -54,6 +54,7 @@ export const PersonaItemSchema = z.object({
   model_id: z.string(),
   reasoning: z.string().nullable(),
   temperature: z.number(),
+  active: z.boolean(),
   num_scenarios: z.number(),
   can_edit: z.boolean(),
   can_duplicate: z.boolean(),

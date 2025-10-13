@@ -55,6 +55,7 @@ class PersonaService:
                     model_id=str(row.model_id),
                     reasoning=row.reasoning,
                     temperature=float(row.temperature),
+                    active=row.active,
                     num_scenarios=row.num_scenarios,
                     can_edit=row.can_edit,
                     can_duplicate=row.can_duplicate,

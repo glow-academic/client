@@ -16,23 +16,30 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Persona, Scenario } from "@/types";
+import {
+  ModelMapping,
+  PersonaItem,
+  ScenarioMapping,
+} from "@/lib/api/v2/schemas/personas";
 import { PersonasDataTableToolbar } from "./PersonasDataTableToolbar";
 
 export interface PersonasDataTableProps {
-  columns: ColumnDef<Persona>[];
-  data: Persona[];
-  scenarios: Scenario[];
+  columns: ColumnDef<PersonaItem>[];
+  data: PersonaItem[];
+  scenarioMapping: ScenarioMapping;
+  modelMapping: ModelMapping;
   scenarioOptions: { value: string; label: string }[];
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
-  renderPersonaCard: (persona: Persona) => React.ReactNode;
+  renderPersonaCard: (persona: PersonaItem) => React.ReactNode;
 }
 
 export function PersonasDataTable({
   columns,
   data,
+  scenarioMapping,
+  modelMapping,
   scenarioOptions,
   reasoningOptions,
   modelOptions,
@@ -43,7 +50,7 @@ export function PersonasDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
