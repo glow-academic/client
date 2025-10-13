@@ -243,3 +243,22 @@ export const scenariosDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...scenariosDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Simulations Keys
+export const simulationsListKeys = {
+  all: ["simulations:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...simulationsListKeys.all, { filters }] as const,
+};
+
+export const simulationsDetailKeys = {
+  all: ["simulations:v2:detail"] as const,
+  detail: (simulationId: string, profileId: string) =>
+    [...simulationsDetailKeys.all, { simulationId, profileId }] as const,
+};
+
+export const simulationsDetailDefaultKeys = {
+  all: ["simulations:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...simulationsDetailDefaultKeys.all, { profileId }] as const,
+};
