@@ -319,3 +319,23 @@ export const cohortsDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...cohortsDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Providers Keys
+export const providersListKeys = {
+  all: ["providers:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...providersListKeys.all, { filters }] as const,
+};
+
+export const providersDetailKeys = {
+  all: ["providers:v2:detail"] as const,
+  detail: (providerId: string, profileId: string) =>
+    [...providersDetailKeys.all, { providerId, profileId }] as const,
+};
+
+// Models Keys
+export const modelsDetailKeys = {
+  all: ["models:v2:detail"] as const,
+  detail: (modelId: string, providerId: string, profileId: string) =>
+    [...modelsDetailKeys.all, { modelId, providerId, profileId }] as const,
+};
