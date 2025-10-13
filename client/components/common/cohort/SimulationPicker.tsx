@@ -235,7 +235,7 @@ export function SimulationPicker({
 
   // Get scenario badges for a simulation
   // TODO: Load from simulation_scenarios and scenario_parameter_items junctions
-  const _getSimulationScenarioBadges = (_simulation: Simulation) => {
+  const getSimulationScenarioBadges = (_simulation: Simulation) => {
     // Badges require loading from multiple junction tables which adds complexity
     // Returning empty for now - can be enhanced with dedicated hooks later
     return [] as {

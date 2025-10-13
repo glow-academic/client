@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for profile_departments
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  profileDepartmentKeys,
+  profileDepartmentKeysByDepartmentId,
+  profileDepartmentKeysByProfileId,
+} from "@/lib/api/v1/keys";
 import type {
   ProfileDepartment,
   ProfileDepartmentCreate,
 } from "@/lib/repos/profileDepartmentRepo";
-import {
-  profileDepartmentKeys,
-  profileDepartmentKeysByProfileId,
-  profileDepartmentKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useProfileDepartments(filters?: unknown) {
   return useQuery({
@@ -37,7 +37,7 @@ export function useProfileDepartmentsByProfileId(id: string) {
     queryKey: profileDepartmentKeysByProfileId.one(id),
     queryFn: () =>
       api<ProfileDepartment[]>(
-        `/api/v1/profile_departments/by/profileId/${id}`,
+        `/api/v1/profile_departments/by/profileId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -49,7 +49,7 @@ export function useProfileDepartmentsByProfileIdBatch(ids: string[]) {
     queryFn: () =>
       api<ProfileDepartment[]>(
         `/api/v1/profile_departments/by/profileId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -60,7 +60,7 @@ export function useProfileDepartmentsByDepartmentId(id: string) {
     queryKey: profileDepartmentKeysByDepartmentId.one(id),
     queryFn: () =>
       api<ProfileDepartment[]>(
-        `/api/v1/profile_departments/by/departmentId/${id}`,
+        `/api/v1/profile_departments/by/departmentId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -72,7 +72,7 @@ export function useProfileDepartmentsByDepartmentIdBatch(ids: string[]) {
     queryFn: () =>
       api<ProfileDepartment[]>(
         `/api/v1/profile_departments/by/departmentId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

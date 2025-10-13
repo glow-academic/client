@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for model_run_profiles
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  ModelRunProfile,
-  ModelRunProfileCreate,
-} from "@/lib/repos/modelRunProfileRepo";
 import {
   modelRunProfileKeys,
   modelRunProfileKeysByModelRunId,
   modelRunProfileKeysByProfileId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  ModelRunProfile,
+  ModelRunProfileCreate,
+} from "@/lib/repos/modelRunProfileRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useModelRunProfiles(filters?: unknown) {
   return useQuery({

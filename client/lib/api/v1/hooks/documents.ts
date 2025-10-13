@@ -1,7 +1,7 @@
 // AUTO-GENERATED minimal hooks for documents
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import { documentKeys, documentKeysByDepartmentId } from "@/lib/api/keys";
+import { documentKeys, documentKeysByDepartmentId } from "@/lib/api/v1/keys";
 import type {
   Document,
   DocumentCreate,

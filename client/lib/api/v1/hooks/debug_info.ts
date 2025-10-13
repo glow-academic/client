@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for debug_info
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { debugInfoKeys, debugInfoKeysByModelRunId } from "@/lib/api/v1/keys";
 import type {
   DebugInfo,
   DebugInfoCreate,
   DebugInfoUpdate,
 } from "@/lib/repos/debugInfoRepo";
-import { debugInfoKeys, debugInfoKeysByModelRunId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDebugInfos(filters?: unknown) {
   return useQuery({

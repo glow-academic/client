@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for assistant_chats
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  assistantChatKeys,
+  assistantChatKeysByProfileId,
+} from "@/lib/api/v1/keys";
 import type {
   AssistantChat,
   AssistantChatCreate,
   AssistantChatUpdate,
 } from "@/lib/repos/assistantChatRepo";
-import {
-  assistantChatKeys,
-  assistantChatKeysByProfileId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAssistantChats(filters?: unknown) {
   return useQuery({

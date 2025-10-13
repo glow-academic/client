@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for simulation_scenarios
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  simulationScenarioKeys,
+  simulationScenarioKeysByScenarioId,
+  simulationScenarioKeysBySimulationId,
+} from "@/lib/api/v1/keys";
 import type {
   SimulationScenario,
   SimulationScenarioCreate,
 } from "@/lib/repos/simulationScenarioRepo";
-import {
-  simulationScenarioKeys,
-  simulationScenarioKeysBySimulationId,
-  simulationScenarioKeysByScenarioId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationScenarios(filters?: unknown) {
   return useQuery({
@@ -37,7 +37,7 @@ export function useSimulationScenariosBySimulationId(id: string) {
     queryKey: simulationScenarioKeysBySimulationId.one(id),
     queryFn: () =>
       api<SimulationScenario[]>(
-        `/api/v1/simulation_scenarios/by/simulationId/${id}`,
+        `/api/v1/simulation_scenarios/by/simulationId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -49,7 +49,7 @@ export function useSimulationScenariosBySimulationIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationScenario[]>(
         `/api/v1/simulation_scenarios/by/simulationId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -60,7 +60,7 @@ export function useSimulationScenariosByScenarioId(id: string) {
     queryKey: simulationScenarioKeysByScenarioId.one(id),
     queryFn: () =>
       api<SimulationScenario[]>(
-        `/api/v1/simulation_scenarios/by/scenarioId/${id}`,
+        `/api/v1/simulation_scenarios/by/scenarioId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -72,7 +72,7 @@ export function useSimulationScenariosByScenarioIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationScenario[]>(
         `/api/v1/simulation_scenarios/by/scenarioId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

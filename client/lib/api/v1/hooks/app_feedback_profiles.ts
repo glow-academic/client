@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for app_feedback_profiles
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  AppFeedbackProfile,
-  AppFeedbackProfileCreate,
-} from "@/lib/repos/appFeedbackProfileRepo";
 import {
   appFeedbackProfileKeys,
   appFeedbackProfileKeysByAppFeedbackId,
   appFeedbackProfileKeysByProfileId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  AppFeedbackProfile,
+  AppFeedbackProfileCreate,
+} from "@/lib/repos/appFeedbackProfileRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAppFeedbackProfiles(filters?: unknown) {
   return useQuery({
@@ -37,7 +37,7 @@ export function useAppFeedbackProfilesByAppFeedbackId(id: string) {
     queryKey: appFeedbackProfileKeysByAppFeedbackId.one(id),
     queryFn: () =>
       api<AppFeedbackProfile[]>(
-        `/api/v1/app_feedback_profiles/by/appFeedbackId/${id}`,
+        `/api/v1/app_feedback_profiles/by/appFeedbackId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -49,7 +49,7 @@ export function useAppFeedbackProfilesByAppFeedbackIdBatch(ids: string[]) {
     queryFn: () =>
       api<AppFeedbackProfile[]>(
         `/api/v1/app_feedback_profiles/by/appFeedbackId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -60,7 +60,7 @@ export function useAppFeedbackProfilesByProfileId(id: string) {
     queryKey: appFeedbackProfileKeysByProfileId.one(id),
     queryFn: () =>
       api<AppFeedbackProfile[]>(
-        `/api/v1/app_feedback_profiles/by/profileId/${id}`,
+        `/api/v1/app_feedback_profiles/by/profileId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -72,7 +72,7 @@ export function useAppFeedbackProfilesByProfileIdBatch(ids: string[]) {
     queryFn: () =>
       api<AppFeedbackProfile[]>(
         `/api/v1/app_feedback_profiles/by/profileId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

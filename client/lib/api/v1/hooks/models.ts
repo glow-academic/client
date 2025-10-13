@@ -1,9 +1,9 @@
 // AUTO-GENERATED minimal hooks for models
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { modelKeys, modelKeysByProviderId } from "@/lib/api/v1/keys";
 import type { Model, ModelCreate, ModelUpdate } from "@/lib/repos/modelRepo";
-import { modelKeys, modelKeysByProviderId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useModels(filters?: unknown) {
   return useQuery({

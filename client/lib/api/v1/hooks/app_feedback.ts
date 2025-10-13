@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for app_feedback
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { appFeedbackKeys, appFeedbackKeysByProfileId } from "@/lib/api/v1/keys";
 import type {
   AppFeedback,
   AppFeedbackCreate,
   AppFeedbackUpdate,
 } from "@/lib/repos/appFeedbackRepo";
-import { appFeedbackKeys, appFeedbackKeysByProfileId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAppFeedbacks(filters?: unknown) {
   return useQuery({

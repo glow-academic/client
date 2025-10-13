@@ -1,20 +1,20 @@
 // AUTO-GENERATED minimal hooks for model_runs
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  modelRunKeys,
+  modelRunKeysByAgentId,
+  modelRunKeysByDepartmentId,
+  modelRunKeysByModelId,
+  modelRunKeysByPersonaId,
+  modelRunKeysByProfileId,
+} from "@/lib/api/v1/keys";
 import type {
   ModelRun,
   ModelRunCreate,
   ModelRunUpdate,
 } from "@/lib/repos/modelRunRepo";
-import {
-  modelRunKeys,
-  modelRunKeysByModelId,
-  modelRunKeysByPersonaId,
-  modelRunKeysByAgentId,
-  modelRunKeysByProfileId,
-  modelRunKeysByDepartmentId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useModelRuns(filters?: unknown) {
   return useQuery({

@@ -7,9 +7,9 @@
 "use client";
 
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
-import { appFeedbackKeys, profileKeys } from "@/lib/api/keys";
 import { useAppFeedbacks } from "@/lib/api/v1/hooks/app_feedback";
 import { useProfiles } from "@/lib/api/v1/hooks/profiles";
+import { appFeedbackKeys, profileKeys } from "@/lib/api/v1/keys";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";

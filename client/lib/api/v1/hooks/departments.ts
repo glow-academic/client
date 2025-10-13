@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for departments
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { departmentKeys } from "@/lib/api/v1/keys";
 import type {
   Department,
   DepartmentCreate,
   DepartmentUpdate,
 } from "@/lib/repos/departmentRepo";
-import { departmentKeys } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useDepartments(filters?: unknown) {
   return useQuery({

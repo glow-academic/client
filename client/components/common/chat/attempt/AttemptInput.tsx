@@ -35,9 +35,9 @@ import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { simulationHintKeysBySimulationMessageId } from "@/lib/api/keys";
 import { useSimulationHintsBySimulationMessageId } from "@/lib/api/v1/hooks/simulation_hints";
 import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
+import { simulationHintKeysBySimulationMessageId } from "@/lib/api/v1/keys";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 

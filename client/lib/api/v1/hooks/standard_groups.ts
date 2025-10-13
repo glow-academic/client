@@ -1,13 +1,16 @@
 // AUTO-GENERATED minimal hooks for standard_groups
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  standardGroupKeys,
+  standardGroupKeysByRubricId,
+} from "@/lib/api/v1/keys";
 import type {
   StandardGroup,
   StandardGroupCreate,
   StandardGroupUpdate,
 } from "@/lib/repos/standardGroupRepo";
-import { standardGroupKeys, standardGroupKeysByRubricId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useStandardGroups(filters?: unknown) {
   return useQuery({

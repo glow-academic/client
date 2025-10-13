@@ -1,7 +1,7 @@
 // AUTO-GENERATED minimal hooks for standards
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import { standardKeys, standardKeysByStandardGroupId } from "@/lib/api/keys";
+import { standardKeys, standardKeysByStandardGroupId } from "@/lib/api/v1/keys";
 import type {
   Standard,
   StandardCreate,

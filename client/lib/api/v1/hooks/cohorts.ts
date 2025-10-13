@@ -1,7 +1,7 @@
 // AUTO-GENERATED minimal hooks for cohorts
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/keys";
+import { cohortKeys, cohortKeysByDepartmentId } from "@/lib/api/v1/keys";
 import type {
   Cohort,
   CohortCreate,

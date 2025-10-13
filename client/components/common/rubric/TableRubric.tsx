@@ -8,17 +8,11 @@
 
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -27,31 +21,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
-import {
-  useCreateSimulationChatCrowdsourcedFeedback,
-  useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch,
-} from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/v1/hooks/simulation_chat_feedbacks";
 import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/v1/hooks/simulation_chat_grades";
 import { useStandardGroupsByRubricId } from "@/lib/api/v1/hooks/standard_groups";
 import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
 import { Standard, StandardGroup } from "@/types";
-import {
-  simulationChatCrowdsourcedFeedbacks,
-  simulationChatFeedbacks,
-} from "@/utils/drizzle/schema";
-import { toast } from "sonner";
-
-type SimulationChatFeedback = typeof simulationChatFeedbacks.$inferSelect;
-type SimulationChatCrowdsourcedFeedback =
-  typeof simulationChatCrowdsourcedFeedbacks.$inferSelect;
 
 export interface TableRubricProps {
   rubricId: string;
@@ -62,50 +36,10 @@ export default function TableRubric({
   rubricId,
   simulationChatId,
 }: TableRubricProps) {
-  const { effectiveProfile } = useProfile();
-  const createSimulationChatCrowdsourcedFeedbackMutation =
-    useCreateSimulationChatCrowdsourcedFeedback();
-  const canCrowdsource =
-    !!effectiveProfile &&
-    ["instructional", "admin", "superadmin"].includes(
-      effectiveProfile.role as string
-    );
 
-  const [activeStandardId, setActiveStandardId] = React.useState<string | null>(
-    null
-  );
-  const [crowdFeedbackText, setCrowdFeedbackText] = React.useState<string>("");
-  const [votedAnchors, setVotedAnchors] = React.useState<Set<string>>(
-    () => new Set<string>()
-  );
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>()
   );
-
-  // Persist voted anchors per profile to localStorage (stopgap until DB has profileId)
-  React.useEffect(() => {
-    if (!effectiveProfile?.id) return;
-    const key = `rubricVotes:${effectiveProfile.id}`;
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const arr: string[] = JSON.parse(stored);
-        setVotedAnchors(new Set(arr));
-      }
-    } catch {
-      // ignore
-    }
-  }, [effectiveProfile?.id]);
-
-  React.useEffect(() => {
-    if (!effectiveProfile?.id) return;
-    const key = `rubricVotes:${effectiveProfile.id}`;
-    try {
-      localStorage.setItem(key, JSON.stringify(Array.from(votedAnchors)));
-    } catch {
-      // ignore
-    }
-  }, [votedAnchors, effectiveProfile?.id]);
 
   const { data: standardGroups, isLoading: loadingStandardGroups } =
     useStandardGroupsByRubricId(rubricId || "");
@@ -127,61 +61,6 @@ export default function TableRubric({
   const grades = simulationGrades;
   const feedbacks = simulationFeedbacks;
   const chatGrade = grades?.[0]; // Assuming one grade per chat
-
-  // Map standards to their simulation feedback rows for quick lookup
-  const standardIdToFeedback = React.useMemo(() => {
-    const map = new Map<string, SimulationChatFeedback>();
-    (feedbacks || []).forEach((f: SimulationChatFeedback) => {
-      if (f?.standardId) map.set(f.standardId, f);
-    });
-    return map;
-  }, [feedbacks]);
-
-  // Fetch all crowdsourced feedbacks for the feedback rows shown in this rubric
-  const allFeedbackIds = React.useMemo(
-    () => (feedbacks || []).map((f: SimulationChatFeedback) => f.id),
-    [feedbacks]
-  );
-
-  const { data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks } =
-    useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(
-      allFeedbackIds
-    );
-
-  // Build counts per (anchorFeedbackId -> total points -> count)
-  const countsByAnchorAndTotal = React.useMemo(() => {
-    const outer = new Map<string, Map<number, number>>();
-    (crowdFeedbacks || []).forEach((cf: SimulationChatCrowdsourcedFeedback) => {
-      const anchorId = cf.simulationChatFeedbackId as string;
-      const total = cf.total as number;
-      if (!outer.has(anchorId)) outer.set(anchorId, new Map<number, number>());
-      const inner = outer.get(anchorId);
-      if (inner) {
-        inner.set(total, (inner.get(total) || 0) + 1);
-      }
-    });
-    return outer;
-  }, [crowdFeedbacks]);
-
-  // (Note) We rely on a local set to block further votes within a row after first submit.
-
-  const submitCrowdFeedback = async ({
-    simulationChatFeedbackId,
-    total,
-    feedback,
-  }: {
-    simulationChatFeedbackId: string;
-    total: number;
-    feedback: string | null;
-  }) => {
-    const payload: typeof simulationChatCrowdsourcedFeedbacks.$inferInsert = {
-      profileId: effectiveProfile?.id as string,
-      simulationChatFeedbackId,
-      total,
-      feedback,
-    };
-    await createSimulationChatCrowdsourcedFeedbackMutation.mutateAsync(payload);
-  };
 
   // Helper function to get feedback for a specific standard
   const getFeedbackForStandard = (standardId: string) => {
@@ -242,8 +121,7 @@ export default function TableRubric({
     loadingStandardGroups ||
     loadingStandards ||
     loadingSimulationGrades ||
-    loadingSimulationFeedbacks ||
-    loadingCrowdFeedbacks
+    loadingSimulationFeedbacks
   ) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -316,7 +194,7 @@ export default function TableRubric({
                       <HoverCardContent side="right" className="w-80">
                         <div className="space-y-2">
                           <div className="text-xs font-semibold">
-                            Crowdsourced suggestions
+                            Standards in this group
                           </div>
                           {groupStandards.length === 0 ? (
                             <div className="text-xs text-muted-foreground">
@@ -324,45 +202,28 @@ export default function TableRubric({
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-1">
-                              {(() => {
-                                const achievedStandard = groupStandards.find(
-                                  (s) => isStandardAchieved(s, groupStandards)
+                              {groupStandards.map((s) => {
+                                const isAchievedForS = isStandardAchieved(
+                                  s,
+                                  groupStandards
                                 );
-                                const anchorId = achievedStandard
-                                  ? standardIdToFeedback.get(
-                                      achievedStandard.id
-                                    )?.id
-                                  : undefined;
-                                return groupStandards.map((s) => {
-                                  const inner = anchorId
-                                    ? countsByAnchorAndTotal.get(anchorId)
-                                    : undefined;
-                                  const count = inner?.get(s.points) || 0;
-                                  const isAchievedForS = isStandardAchieved(
-                                    s,
-                                    groupStandards
-                                  );
-                                  return (
-                                    <div
-                                      key={s.id}
-                                      className="flex items-center justify-between text-xs"
+                                return (
+                                  <div
+                                    key={s.id}
+                                    className="flex items-center justify-between text-xs"
+                                  >
+                                    <span
+                                      className={
+                                        isAchievedForS
+                                          ? "font-semibold"
+                                          : "text-muted-foreground"
+                                      }
                                     >
-                                      <span
-                                        className={
-                                          isAchievedForS
-                                            ? "font-semibold"
-                                            : "text-muted-foreground"
-                                        }
-                                      >
-                                        {s.name} ({s.points})
-                                      </span>
-                                      <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px]">
-                                        {count} vote{count === 1 ? "" : "s"}
-                                      </span>
-                                    </div>
-                                  );
-                                });
-                              })()}
+                                      {s.name} ({s.points})
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -390,27 +251,6 @@ export default function TableRubric({
                       standard,
                       groupStandards
                     );
-                    // Use the achieved standard's feedback id as row anchor for crowdsourced suggestions
-                    const achievedStandardForRow = groupStandards.find((s) =>
-                      isStandardAchieved(s, groupStandards)
-                    );
-                    const rowAnchorFeedbackId = achievedStandardForRow
-                      ? standardIdToFeedback.get(achievedStandardForRow.id)?.id
-                      : undefined;
-
-                    const alreadyVotedInRow =
-                      !!rowAnchorFeedbackId &&
-                      (crowdFeedbacks || []).some(
-                        (cf: SimulationChatCrowdsourcedFeedback) =>
-                          cf.simulationChatFeedbackId === rowAnchorFeedbackId &&
-                          cf.profileId === effectiveProfile?.id
-                      );
-                    const isClickable =
-                      canCrowdsource &&
-                      !!simulationChatId &&
-                      !!rowAnchorFeedbackId &&
-                      !isAchieved &&
-                      !alreadyVotedInRow;
 
                     return (
                       <TableCell
@@ -424,13 +264,11 @@ export default function TableRubric({
                                 ? "bg-green-200 dark:bg-green-900/40"
                                 : "bg-red-200 dark:bg-red-900/40"
                               : ""
-                        } ${
-                          isClickable ? "cursor-pointer hover:bg-accent/40" : ""
                         }`}
-                        role={isClickable ? "button" : undefined}
-                        tabIndex={isClickable ? 0 : -1}
+                        role={isAchieved ? "button" : undefined}
+                        tabIndex={isAchieved ? 0 : -1}
                         onKeyDown={(e) => {
-                          // Keyboard toggle: on achieved cells, flip; else open propose popover
+                          // Keyboard toggle: on achieved cells, flip
                           const target = e.target as HTMLElement;
                           if (
                             target.closest(
@@ -449,8 +287,6 @@ export default function TableRubric({
                                 else next.add(standard.id);
                                 return next;
                               });
-                            } else if (isClickable) {
-                              setActiveStandardId(standard.id);
                             }
                           }
                         }}
@@ -465,16 +301,9 @@ export default function TableRubric({
                             });
                             return;
                           }
-                          if (!isClickable) return;
-                          setActiveStandardId(standard.id);
                         }}
                       >
                         {(() => {
-                          const tooltipText = isClickable
-                            ? "Click to propose this level."
-                            : alreadyVotedInRow
-                              ? "You have already proposed a vote for this row."
-                              : undefined;
                           const isFlippable = isAchieved; // flip only on achieved cell
                           const isFlipped = flippedCells.has(standard.id);
 
@@ -505,97 +334,8 @@ export default function TableRubric({
                             <div className="space-y-1">{frontContent}</div>
                           );
 
-                          return tooltipText ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>{card}</TooltipTrigger>
-                              <TooltipContent>{tooltipText}</TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            card
-                          );
+                          return card;
                         })()}
-
-                        {isClickable && activeStandardId === standard.id && (
-                          <Popover
-                            open
-                            onOpenChange={(open) => {
-                              if (!open) {
-                                setActiveStandardId(null);
-                                setCrowdFeedbackText("");
-                              }
-                            }}
-                          >
-                            {/* Anchor to this cell so the popover positions correctly */}
-                            <PopoverAnchor />
-                            <PopoverContent
-                              onClick={(e) => e.stopPropagation()}
-                              align="center"
-                              side="top"
-                              className="w-80"
-                            >
-                              <div className="space-y-3">
-                                <div className="text-xs font-semibold">
-                                  Propose this level?
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {standard.name} ({standard.points} points)
-                                </div>
-                                <Textarea
-                                  value={crowdFeedbackText}
-                                  onChange={(e) =>
-                                    setCrowdFeedbackText(e.target.value)
-                                  }
-                                  placeholder="Optional: Why should this be the level?"
-                                  className="min-h-20 text-xs"
-                                />
-                                <div className="flex items-center justify-end gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveStandardId(null);
-                                      setCrowdFeedbackText("");
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    disabled={
-                                      createSimulationChatCrowdsourcedFeedbackMutation.isPending
-                                    }
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      if (!rowAnchorFeedbackId) return;
-                                      await submitCrowdFeedback({
-                                        simulationChatFeedbackId:
-                                          rowAnchorFeedbackId,
-                                        total: standard.points,
-                                        feedback:
-                                          crowdFeedbackText.trim() || null,
-                                      });
-                                      setVotedAnchors((prev) => {
-                                        const next = new Set(prev);
-                                        next.add(rowAnchorFeedbackId);
-                                        return next;
-                                      });
-                                      setActiveStandardId(null);
-                                      setCrowdFeedbackText("");
-                                      toast.success(
-                                        "Thanks for your feedback!"
-                                      );
-                                    }}
-                                  >
-                                    {createSimulationChatCrowdsourcedFeedbackMutation.isPending
-                                      ? "Submitting..."
-                                      : "Submit"}
-                                  </Button>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        )}
                       </TableCell>
                     );
                   })}

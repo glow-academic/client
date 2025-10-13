@@ -15,14 +15,6 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
-import {
-  profileKeys,
-  simulationAttemptKeys,
-  simulationChatFeedbackKeys,
-  simulationChatGradeKeys,
-  simulationChatKeysByAttemptId,
-  simulationMessageKeysByChatId,
-} from "@/lib/api/keys";
 import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
 import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
 import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
@@ -38,6 +30,14 @@ import {
 import { useSimulation as useSimulationHook } from "@/lib/api/v1/hooks/simulations";
 import { useStandardGroupsByRubricIdBatch } from "@/lib/api/v1/hooks/standard_groups";
 import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
+import {
+  profileKeys,
+  simulationAttemptKeys,
+  simulationChatFeedbackKeys,
+  simulationChatGradeKeys,
+  simulationChatKeysByAttemptId,
+  simulationMessageKeysByChatId,
+} from "@/lib/api/v1/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,

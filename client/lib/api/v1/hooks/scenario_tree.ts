@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for scenario_tree
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  scenarioTreeKeys,
+  scenarioTreeKeysByChildId,
+  scenarioTreeKeysByParentId,
+} from "@/lib/api/v1/keys";
 import type {
   ScenarioTree,
   ScenarioTreeCreate,
 } from "@/lib/repos/scenarioTreeRepo";
-import {
-  scenarioTreeKeys,
-  scenarioTreeKeysByParentId,
-  scenarioTreeKeysByChildId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useScenarioTrees(filters?: unknown) {
   return useQuery({

@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for scenario_parameter_items
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  scenarioParameterItemKeys,
+  scenarioParameterItemKeysByParameterItemId,
+  scenarioParameterItemKeysByScenarioId,
+} from "@/lib/api/v1/keys";
 import type {
   ScenarioParameterItem,
   ScenarioParameterItemCreate,
 } from "@/lib/repos/scenarioParameterItemRepo";
-import {
-  scenarioParameterItemKeys,
-  scenarioParameterItemKeysByScenarioId,
-  scenarioParameterItemKeysByParameterItemId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useScenarioParameterItems(filters?: unknown) {
   return useQuery({
@@ -38,7 +38,7 @@ export function useScenarioParameterItemsByScenarioId(id: string) {
     queryKey: scenarioParameterItemKeysByScenarioId.one(id),
     queryFn: () =>
       api<ScenarioParameterItem[]>(
-        `/api/v1/scenario_parameter_items/by/scenarioId/${id}`,
+        `/api/v1/scenario_parameter_items/by/scenarioId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -50,7 +50,7 @@ export function useScenarioParameterItemsByScenarioIdBatch(ids: string[]) {
     queryFn: () =>
       api<ScenarioParameterItem[]>(
         `/api/v1/scenario_parameter_items/by/scenarioId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -61,7 +61,7 @@ export function useScenarioParameterItemsByParameterItemId(id: string) {
     queryKey: scenarioParameterItemKeysByParameterItemId.one(id),
     queryFn: () =>
       api<ScenarioParameterItem[]>(
-        `/api/v1/scenario_parameter_items/by/parameterItemId/${id}`,
+        `/api/v1/scenario_parameter_items/by/parameterItemId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -73,7 +73,7 @@ export function useScenarioParameterItemsByParameterItemIdBatch(ids: string[]) {
     queryFn: () =>
       api<ScenarioParameterItem[]>(
         `/api/v1/scenario_parameter_items/by/parameterItemId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

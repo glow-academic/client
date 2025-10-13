@@ -127,7 +127,6 @@ export default function Scenario({
 
   // Form data state
   const initialFormData: Partial<ScenarioType> = {
-    personaId: null,
     name: "",
     problemStatement: "",
     defaultScenario: false,
@@ -136,6 +135,9 @@ export default function Scenario({
 
   const [formData, setFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
+  
+  // Store personaId separately since it's now in junction table
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isRandomizingPersona, setIsRandomizingPersona] = useState(false);

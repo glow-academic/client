@@ -5,7 +5,7 @@ import {
   userProfileKeys,
   userProfileKeysByProfileId,
   userProfileKeysByUserId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
 import type {
   UserProfile,
   UserProfileCreate,

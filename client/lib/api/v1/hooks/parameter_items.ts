@@ -4,7 +4,7 @@ import { api } from "@/lib/api/fetcher";
 import {
   parameterItemKeys,
   parameterItemKeysByParameterId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
 import type {
   ParameterItem,
   ParameterItemCreate,

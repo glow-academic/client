@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for assistant_tool_calls
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  assistantToolCallKeys,
+  assistantToolCallKeysByChatId,
+} from "@/lib/api/v1/keys";
 import type {
   AssistantToolCall,
   AssistantToolCallCreate,
   AssistantToolCallUpdate,
 } from "@/lib/repos/assistantToolCallRepo";
-import {
-  assistantToolCallKeys,
-  assistantToolCallKeysByChatId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAssistantToolCalls(filters?: unknown) {
   return useQuery({
@@ -55,7 +55,7 @@ export function useUpdateAssistantToolCall(id?: string) {
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
       return api<AssistantToolCall>(
         `/api/v1/assistant_tool_calls/${resolvedId}`,
-        { method: "PATCH", body: JSON.stringify(body) },
+        { method: "PATCH", body: JSON.stringify(body) }
       );
     },
     onSuccess: (_data, variables) => {

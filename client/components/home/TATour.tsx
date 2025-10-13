@@ -17,6 +17,9 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
+import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import {
   profileKeys,
   simulationAttemptKeys,
@@ -24,10 +27,7 @@ import {
   simulationChatGradeKeys,
   simulationChatKeysByAttemptId,
   simulationMessageKeys,
-} from "@/lib/api/keys";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
-import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
+} from "@/lib/api/v1/keys";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component

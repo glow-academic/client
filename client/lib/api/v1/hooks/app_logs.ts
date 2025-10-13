@@ -1,7 +1,7 @@
 // AUTO-GENERATED minimal hooks for app_logs
 // Safe to edit: generator will SKIP unless --force-hooks
 import { api } from "@/lib/api/fetcher";
-import { appLogKeys } from "@/lib/api/keys";
+import { appLogKeys } from "@/lib/api/v1/keys";
 import type {
   AppLog,
   AppLogCreate,

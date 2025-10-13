@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for simulation_tag_documents
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  SimulationTagDocument,
-  SimulationTagDocumentCreate,
-} from "@/lib/repos/simulationTagDocumentRepo";
 import {
   simulationTagDocumentKeys,
   simulationTagDocumentKeysByDocumentId,
   simulationTagDocumentKeysBySimulationId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  SimulationTagDocument,
+  SimulationTagDocumentCreate,
+} from "@/lib/repos/simulationTagDocumentRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationTagDocuments(filters?: unknown) {
   return useQuery({
@@ -38,7 +38,7 @@ export function useSimulationTagDocumentsByDocumentId(id: string) {
     queryKey: simulationTagDocumentKeysByDocumentId.one(id),
     queryFn: () =>
       api<SimulationTagDocument[]>(
-        `/api/v1/simulation_tag_documents/by/documentId/${id}`,
+        `/api/v1/simulation_tag_documents/by/documentId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -50,7 +50,7 @@ export function useSimulationTagDocumentsByDocumentIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationTagDocument[]>(
         `/api/v1/simulation_tag_documents/by/documentId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -61,7 +61,7 @@ export function useSimulationTagDocumentsBySimulationId(id: string) {
     queryKey: simulationTagDocumentKeysBySimulationId.one(id),
     queryFn: () =>
       api<SimulationTagDocument[]>(
-        `/api/v1/simulation_tag_documents/by/simulationId/${id}`,
+        `/api/v1/simulation_tag_documents/by/simulationId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -73,7 +73,7 @@ export function useSimulationTagDocumentsBySimulationIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationTagDocument[]>(
         `/api/v1/simulation_tag_documents/by/simulationId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

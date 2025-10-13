@@ -22,7 +22,6 @@ type ProfileRole = Profile["role"];
 // A generic, fallback guest profile for when no user is logged in or during loading states.
 const GUEST_PROFILE: Profile = {
   id: "guest-profile-id",
-  userId: null,
   firstName: "Guest",
   lastName: "User",
   alias: "guest",
@@ -36,7 +35,6 @@ const GUEST_PROFILE: Profile = {
   lastActive: new Date().toISOString(),
   defaultProfile: false,
   reqPerDay: null,
-  departmentId: null,
 };
 
 interface ProfileContextType {

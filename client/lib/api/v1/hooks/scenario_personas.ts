@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for scenario_personas
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  scenarioPersonaKeys,
+  scenarioPersonaKeysByPersonaId,
+  scenarioPersonaKeysByScenarioId,
+} from "@/lib/api/v1/keys";
 import type {
   ScenarioPersona,
   ScenarioPersonaCreate,
 } from "@/lib/repos/scenarioPersonaRepo";
-import {
-  scenarioPersonaKeys,
-  scenarioPersonaKeysByScenarioId,
-  scenarioPersonaKeysByPersonaId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useScenarioPersonas(filters?: unknown) {
   return useQuery({

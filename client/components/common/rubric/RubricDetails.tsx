@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import { useCreateRubric, useUpdateRubric } from "@/lib/api/v1/hooks/rubrics";
 import { Rubric as RubricType } from "@/types";
@@ -40,6 +41,7 @@ export default function RubricDetails({
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
   const { data: departments = [] } = useDepartmentsHook();
 
   // Mutation hooks
@@ -55,7 +57,7 @@ export default function RubricDetails({
       rubric.departmentId ||
       (effectiveProfile?.role === "superadmin"
         ? ""
-        : effectiveProfile?.departmentId || ""),
+        : effectiveDepartmentIds[0] || ""),
   });
 
   const handleInputChange = (
@@ -117,7 +119,7 @@ export default function RubricDetails({
         rubric.departmentId ||
         (effectiveProfile?.role === "superadmin"
           ? ""
-          : effectiveProfile?.departmentId || ""),
+          : effectiveDepartmentIds[0] || ""),
     });
   };
 

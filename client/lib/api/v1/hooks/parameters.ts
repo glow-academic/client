@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for parameters
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { parameterKeys, parameterKeysByDepartmentId } from "@/lib/api/v1/keys";
 import type {
   Parameter,
   ParameterCreate,
   ParameterUpdate,
 } from "@/lib/repos/parameterRepo";
-import { parameterKeys, parameterKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useParameters(filters?: unknown) {
   return useQuery({

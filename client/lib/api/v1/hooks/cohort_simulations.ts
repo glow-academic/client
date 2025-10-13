@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for cohort_simulations
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  CohortSimulation,
-  CohortSimulationCreate,
-} from "@/lib/repos/cohortSimulationRepo";
 import {
   cohortSimulationKeys,
   cohortSimulationKeysByCohortId,
   cohortSimulationKeysBySimulationId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  CohortSimulation,
+  CohortSimulationCreate,
+} from "@/lib/repos/cohortSimulationRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCohortSimulations(filters?: unknown) {
   return useQuery({
@@ -58,7 +58,7 @@ export function useCohortSimulationsBySimulationId(id: string) {
     queryKey: cohortSimulationKeysBySimulationId.one(id),
     queryFn: () =>
       api<CohortSimulation[]>(
-        `/api/v1/cohort_simulations/by/simulationId/${id}`,
+        `/api/v1/cohort_simulations/by/simulationId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -70,7 +70,7 @@ export function useCohortSimulationsBySimulationIdBatch(ids: string[]) {
     queryFn: () =>
       api<CohortSimulation[]>(
         `/api/v1/cohort_simulations/by/simulationId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

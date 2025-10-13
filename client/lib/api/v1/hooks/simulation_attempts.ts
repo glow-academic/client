@@ -5,7 +5,7 @@ import {
   simulationAttemptKeys,
   simulationAttemptKeysByProfileId,
   simulationAttemptKeysBySimulationId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
 import type {
   SimulationAttempt,
   SimulationAttemptCreate,
@@ -56,7 +56,7 @@ export function useUpdateSimulationAttempt(id?: string) {
       const { id: _omit, ...body } = (patch as Record<string, unknown>) ?? {};
       return api<SimulationAttempt>(
         `/api/v1/simulation_attempts/${resolvedId}`,
-        { method: "PATCH", body: JSON.stringify(body) },
+        { method: "PATCH", body: JSON.stringify(body) }
       );
     },
     onSuccess: (_data, variables) => {
@@ -98,7 +98,7 @@ export function useSimulationAttemptsByProfileId(id: string) {
     queryKey: simulationAttemptKeysByProfileId.one(id),
     queryFn: () =>
       api<SimulationAttempt[]>(
-        `/api/v1/simulation_attempts/by/profileId/${id}`,
+        `/api/v1/simulation_attempts/by/profileId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -110,7 +110,7 @@ export function useSimulationAttemptsByProfileIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationAttempt[]>(
         `/api/v1/simulation_attempts/by/profileId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
@@ -121,7 +121,7 @@ export function useSimulationAttemptsBySimulationId(id: string) {
     queryKey: simulationAttemptKeysBySimulationId.one(id),
     queryFn: () =>
       api<SimulationAttempt[]>(
-        `/api/v1/simulation_attempts/by/simulationId/${id}`,
+        `/api/v1/simulation_attempts/by/simulationId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -133,7 +133,7 @@ export function useSimulationAttemptsBySimulationIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationAttempt[]>(
         `/api/v1/simulation_attempts/by/simulationId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

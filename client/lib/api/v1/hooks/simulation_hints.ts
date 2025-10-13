@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for simulation_hints
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  simulationHintKeys,
+  simulationHintKeysBySimulationMessageId,
+} from "@/lib/api/v1/keys";
 import type {
   SimulationHint,
   SimulationHintCreate,
   SimulationHintUpdate,
 } from "@/lib/repos/simulationHintRepo";
-import {
-  simulationHintKeys,
-  simulationHintKeysBySimulationMessageId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useSimulationHints(filters?: unknown) {
   return useQuery({
@@ -95,7 +95,7 @@ export function useSimulationHintsBySimulationMessageId(id: string) {
     queryKey: simulationHintKeysBySimulationMessageId.one(id),
     queryFn: () =>
       api<SimulationHint[]>(
-        `/api/v1/simulation_hints/by/simulationMessageId/${id}`,
+        `/api/v1/simulation_hints/by/simulationMessageId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -107,7 +107,7 @@ export function useSimulationHintsBySimulationMessageIdBatch(ids: string[]) {
     queryFn: () =>
       api<SimulationHint[]>(
         `/api/v1/simulation_hints/by/simulationMessageId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });

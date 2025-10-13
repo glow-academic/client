@@ -588,10 +588,10 @@ fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 fastapi_app.include_router(csv_router, prefix="/csv")
 
-# Include API v1 router (analytics)
-from app.api.v1.router import router as api_v1_router  # noqa: E402
+# Include API v2 router (analytics)
+from app.api.v2.router import router as api_v2_router  # noqa: E402
 
-fastapi_app.include_router(api_v1_router)
+fastapi_app.include_router(api_v2_router)
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 from app.services.mcp.server import server  # noqa: E402

@@ -1,13 +1,13 @@
 // AUTO-GENERATED minimal hooks for providers
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { providerKeys, providerKeysByDepartmentId } from "@/lib/api/v1/keys";
 import type {
   Provider,
   ProviderCreate,
   ProviderUpdate,
 } from "@/lib/repos/providerRepo";
-import { providerKeys, providerKeysByDepartmentId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useProviders(filters?: unknown) {
   return useQuery({

@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import { useCreateProvider, useProvider } from "@/lib/api/v1/hooks/providers";
 import { log } from "@/utils/logger";
@@ -46,6 +47,7 @@ interface FormData {
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const { effectiveDepartmentIds } = useDepartments();
   const { data: departments = [] } = useDepartmentsHook();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
@@ -64,9 +66,9 @@ export default function Provider({ providerId }: ProviderProps) {
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? ""
-          : effectiveProfile?.departmentId || "",
+          : effectiveDepartmentIds[0] || "",
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId]
+    [effectiveProfile?.role, effectiveDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -174,7 +176,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
         if (formData.departmentId !== provider.departmentId) {
           updateData.departmentId =
-            formData.departmentId || effectiveProfile?.departmentId || "";
+            formData.departmentId || effectiveDepartmentIds[0] || "";
         }
 
         // Only include API key if user is editing it and entered a new one
@@ -196,7 +198,7 @@ export default function Provider({ providerId }: ProviderProps) {
           apiKey: formData.apiKey!,
           baseUrl: formData.baseUrl || "",
           departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+            formData.departmentId || effectiveDepartmentIds[0] || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });

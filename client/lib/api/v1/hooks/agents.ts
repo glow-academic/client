@@ -1,9 +1,9 @@
 // AUTO-GENERATED minimal hooks for agents
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import { agentKeys, agentKeysByModelId } from "@/lib/api/v1/keys";
 import type { Agent, AgentCreate, AgentUpdate } from "@/lib/repos/agentRepo";
-import { agentKeys, agentKeysByModelId } from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAgents(filters?: unknown) {
   return useQuery({

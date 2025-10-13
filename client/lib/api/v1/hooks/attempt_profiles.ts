@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for attempt_profiles
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  AttemptProfile,
-  AttemptProfileCreate,
-} from "@/lib/repos/attemptProfileRepo";
 import {
   attemptProfileKeys,
   attemptProfileKeysByAttemptId,
   attemptProfileKeysByProfileId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  AttemptProfile,
+  AttemptProfileCreate,
+} from "@/lib/repos/attemptProfileRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useAttemptProfiles(filters?: unknown) {
   return useQuery({

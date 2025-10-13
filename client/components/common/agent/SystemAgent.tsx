@@ -166,21 +166,23 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     try {
       if (isEditMode && agentId && agent) {
         // Update existing agent
-        await updateAgent({
+        const updatePayload: any = {
           id: agentId,
           name: formData.name,
           description: formData.description,
           systemPrompt: formData.systemPrompt,
           temperature: Number(formData.temperature),
-          modelId:
-            formData.modelId && formData.modelId !== ""
-              ? formData.modelId
-              : undefined,
-          reasoning:
-            formData.reasoning && formData.reasoning !== "none"
-              ? formData.reasoning
-              : undefined,
-        });
+        };
+        
+        if (formData.modelId && formData.modelId !== "") {
+          updatePayload.modelId = formData.modelId;
+        }
+        
+        if (formData.reasoning && formData.reasoning !== "none") {
+          updatePayload.reasoning = formData.reasoning;
+        }
+        
+        await updateAgent(updatePayload);
       } else {
         // Create new agent
         await createAgent({

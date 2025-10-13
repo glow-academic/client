@@ -1,16 +1,16 @@
 // AUTO-GENERATED minimal hooks for cohort_profiles
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
-import type {
-  CohortProfile,
-  CohortProfileCreate,
-} from "@/lib/repos/cohortProfileRepo";
 import {
   cohortProfileKeys,
   cohortProfileKeysByCohortId,
   cohortProfileKeysByProfileId,
-} from "@/lib/api/keys";
+} from "@/lib/api/v1/keys";
+import type {
+  CohortProfile,
+  CohortProfileCreate,
+} from "@/lib/repos/cohortProfileRepo";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCohortProfiles(filters?: unknown) {
   return useQuery({

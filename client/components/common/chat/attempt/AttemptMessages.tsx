@@ -10,13 +10,9 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   RotateCcw,
-  ThumbsDown,
-  ThumbsUp,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -34,17 +30,9 @@ import {
 import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
-import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
-import {
-  useCreateSimulationCrowdsourcedMessage,
-  useDeleteSimulationCrowdsourcedMessage,
-  useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch,
-  useUpdateSimulationCrowdsourcedMessage,
-} from "@/lib/api/hooks/simulation_crowdsourced_messages";
 import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
 import { SimulationMessage } from "@/types";
-import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -56,16 +44,6 @@ export default function AttemptMessages({
   isAttemptOwner = true,
 }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
-  const { effectiveProfile } = useProfile();
-
-  const createSimulationCrowdsourcedMessage =
-    useCreateSimulationCrowdsourcedMessage();
-
-  const updateSimulationCrowdsourcedMessage =
-    useUpdateSimulationCrowdsourcedMessage();
-
-  const deleteSimulationCrowdsourcedMessage =
-    useDeleteSimulationCrowdsourcedMessage();
 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -82,102 +60,6 @@ export default function AttemptMessages({
 
   const { data: messages = [], isLoading: messagesLoading } =
     useSimulationMessagesByChatId(targetChatId!);
-
-  // IDs of assistant responses in this chat
-  const responseMessageIds = useMemo(
-    () =>
-      (messages || [])
-        .filter((m) => m.type === "response")
-        .map((m) => m.id)
-        .sort(),
-    [messages]
-  );
-
-  const { data: crowdsourcedAll = [] } =
-    useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(
-      responseMessageIds
-    );
-
-  type CrowdsourcedSelect = typeof simulationCrowdsourcedMessages.$inferSelect;
-
-  const myCrowdsourced = useMemo(
-    () =>
-      (crowdsourcedAll as CrowdsourcedSelect[]).filter(
-        (c) => c.profileId === effectiveProfile?.id
-      ),
-    [crowdsourcedAll, effectiveProfile?.id]
-  );
-
-  const ratingsByMessageId = useMemo(() => {
-    const map: Record<string, { id: string; response: boolean }> = {};
-    for (const c of myCrowdsourced as Array<{
-      id: string;
-      simulationMessageId: string;
-      response: boolean;
-    }>) {
-      if (!(c.simulationMessageId in map)) {
-        map[c.simulationMessageId] = { id: c.id, response: c.response };
-      }
-    }
-    return map;
-  }, [myCrowdsourced]);
-
-  // Helper function to check if a specific rating is being updated
-  const isRatingLoading = (messageId: string, isUpvote: boolean) => {
-    const existing = ratingsByMessageId[messageId];
-    if (existing) {
-      // For existing ratings, check if we're updating to the same value or deleting
-      return (
-        (updateSimulationCrowdsourcedMessage.isPending &&
-          existing.response === isUpvote) ||
-        (deleteSimulationCrowdsourcedMessage.isPending &&
-          existing.response === isUpvote)
-      );
-    } else {
-      // For new ratings, check if we're creating with this value
-      return (
-        createSimulationCrowdsourcedMessage.isPending &&
-        createSimulationCrowdsourcedMessage.variables?.response === isUpvote
-      );
-    }
-  };
-
-  const canRate = useMemo(() => {
-    const role = effectiveProfile?.role;
-    return (
-      role === "instructional" ||
-      role === "admin" ||
-      role === "superadmin" ||
-      role === "ta"
-    );
-  }, [effectiveProfile?.role]);
-
-  const handleRate = (messageId: string, up: boolean) => {
-    if (!effectiveProfile?.id) return;
-    const existing = ratingsByMessageId[messageId];
-    if (existing) {
-      if (existing.response === up) {
-        // If clicking the same rating, deselect it
-        deleteSimulationCrowdsourcedMessage.mutate(existing.id);
-      } else {
-        // If clicking a different rating, update it
-        updateSimulationCrowdsourcedMessage.mutate({
-          id: existing.id,
-          response: up,
-        });
-      }
-    } else {
-      // First time rating - show thank you toast
-      createSimulationCrowdsourcedMessage.mutate({
-        simulationMessageId: messageId,
-        profileId: effectiveProfile.id,
-        response: up,
-      });
-      toast.success(
-        "Thank you for your feedback! Your rating helps make GLOW better."
-      );
-    }
-  };
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
@@ -566,67 +448,6 @@ export default function AttemptMessages({
                                 {group.responses.length > 1 && (
                                   <div className="flex items-center justify-between gap-0 mt-1">
                                     {/* Thumbs rating (left side) - show on hover */}
-                                    {canRate && (
-                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`h-6 w-6 p-0 ${
-                                            ratingsByMessageId[
-                                              currentResponse.id
-                                            ]?.response === true
-                                              ? "text-green-600 hover:text-green-600"
-                                              : "text-muted-foreground"
-                                          }`}
-                                          onClick={() =>
-                                            handleRate(currentResponse.id, true)
-                                          }
-                                          disabled={isRatingLoading(
-                                            currentResponse.id,
-                                            true
-                                          )}
-                                        >
-                                          {isRatingLoading(
-                                            currentResponse.id,
-                                            true
-                                          ) ? (
-                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                          ) : (
-                                            <ThumbsUp className="h-3 w-3" />
-                                          )}
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`h-6 w-6 p-0 flex items-center justify-center ${
-                                            ratingsByMessageId[
-                                              currentResponse.id
-                                            ]?.response === false
-                                              ? "text-red-600 hover:text-red-600"
-                                              : "text-muted-foreground"
-                                          }`}
-                                          onClick={() =>
-                                            handleRate(
-                                              currentResponse.id,
-                                              false
-                                            )
-                                          }
-                                          disabled={isRatingLoading(
-                                            currentResponse.id,
-                                            false
-                                          )}
-                                        >
-                                          {isRatingLoading(
-                                            currentResponse.id,
-                                            false
-                                          ) ? (
-                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                          ) : (
-                                            <ThumbsDown className="h-3 w-3" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    )}
 
                                     {/* Response navigation (right side) - always visible */}
                                     <div className="flex items-center gap-0">
@@ -671,64 +492,6 @@ export default function AttemptMessages({
                                         <ChevronRight className="h-3 w-3" />
                                       </Button>
                                     </div>
-                                  </div>
-                                )}
-
-                                {/* Thumbs rating overlay (left-below); shows on hover only when no chevron navigation exists */}
-                                {canRate && group.responses.length <= 1 && (
-                                  <div className="absolute left-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`h-6 w-6 p-0 ${
-                                        ratingsByMessageId[currentResponse.id]
-                                          ?.response === true
-                                          ? "text-green-600 hover:text-green-600"
-                                          : "text-muted-foreground"
-                                      }`}
-                                      onClick={() =>
-                                        handleRate(currentResponse.id, true)
-                                      }
-                                      disabled={isRatingLoading(
-                                        currentResponse.id,
-                                        true
-                                      )}
-                                    >
-                                      {isRatingLoading(
-                                        currentResponse.id,
-                                        true
-                                      ) ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <ThumbsUp className="h-3 w-3" />
-                                      )}
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`h-6 w-6 p-0 ${
-                                        ratingsByMessageId[currentResponse.id]
-                                          ?.response === false
-                                          ? "text-red-600 hover:text-red-600"
-                                          : "text-muted-foreground"
-                                      }`}
-                                      onClick={() =>
-                                        handleRate(currentResponse.id, false)
-                                      }
-                                      disabled={isRatingLoading(
-                                        currentResponse.id,
-                                        false
-                                      )}
-                                    >
-                                      {isRatingLoading(
-                                        currentResponse.id,
-                                        false
-                                      ) ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <ThumbsDown className="h-3 w-3" />
-                                      )}
-                                    </Button>
                                   </div>
                                 )}
                               </>

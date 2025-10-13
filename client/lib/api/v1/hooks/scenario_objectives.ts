@@ -1,15 +1,15 @@
 // AUTO-GENERATED minimal hooks for scenario_objectives
 // Safe to edit: generator will SKIP unless --force-hooks
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/fetcher";
+import {
+  scenarioObjectiveKeys,
+  scenarioObjectiveKeysByScenarioId,
+} from "@/lib/api/v1/keys";
 import type {
   ScenarioObjective,
   ScenarioObjectiveCreate,
 } from "@/lib/repos/scenarioObjectiveRepo";
-import {
-  scenarioObjectiveKeys,
-  scenarioObjectiveKeysByScenarioId,
-} from "@/lib/api/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useScenarioObjectives(filters?: unknown) {
   return useQuery({
@@ -36,7 +36,7 @@ export function useScenarioObjectivesByScenarioId(id: string) {
     queryKey: scenarioObjectiveKeysByScenarioId.one(id),
     queryFn: () =>
       api<ScenarioObjective[]>(
-        `/api/v1/scenario_objectives/by/scenarioId/${id}`,
+        `/api/v1/scenario_objectives/by/scenarioId/${id}`
       ),
     enabled: id !== undefined && id !== null && id !== "",
   });
@@ -48,7 +48,7 @@ export function useScenarioObjectivesByScenarioIdBatch(ids: string[]) {
     queryFn: () =>
       api<ScenarioObjective[]>(
         `/api/v1/scenario_objectives/by/scenarioId/batch`,
-        { method: "POST", body: JSON.stringify({ ids }) },
+        { method: "POST", body: JSON.stringify({ ids }) }
       ),
     enabled: Array.isArray(ids) && ids.length > 0,
   });
