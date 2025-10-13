@@ -85,43 +85,9 @@ export function useParameterColumns() {
           return value.includes(status);
         },
       },
-      {
-        accessorKey: "scenarioIds",
-        header: "Scenarios",
-        cell: ({ row }) => {
-          const parameter = row.original;
-          const parameterItemIds = parameterItems
-            .filter((item: ParameterItem) => item.parameterId === parameter.id)
-            .map((item: ParameterItem) => item.id);
-
-          const relatedScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.parameterItemIds?.some((id: string) =>
-              parameterItemIds.includes(id)
-            )
-          );
-
-          return relatedScenarios.map((scenario: Scenario) => scenario.id);
-        },
-        filterFn: (row, _, value) => {
-          const parameter = row.original;
-          const parameterItemIds = parameterItems
-            .filter((item: ParameterItem) => item.parameterId === parameter.id)
-            .map((item: ParameterItem) => item.id);
-
-          const relatedScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.parameterItemIds?.some((id: string) =>
-              parameterItemIds.includes(id)
-            )
-          );
-
-          const scenarioIds = relatedScenarios.map(
-            (scenario: Scenario) => scenario.id
-          );
-          return value.some((filterValue: string) =>
-            scenarioIds.includes(filterValue)
-          );
-        },
-      },
+      // Note: scenarioIds column removed - parameterItemIds is now in the
+      // scenario_parameter_items junction table and should be accessed via separate queries.
+      // Components using this hook should fetch junction table data separately and display scenarios accordingly
       {
         accessorKey: "updatedAt",
         header: "Updated",

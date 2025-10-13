@@ -21,13 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
 import { DocumentType } from "@/types";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { extractKnownTagsFromDocuments } from "@/utils/tags/search-tags";
 
 export type FileClassification = {
   type: DocumentType;
@@ -66,16 +63,7 @@ export function UploadClassificationDialog({
   onRemoveFile,
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-  const { data: existingDocuments = [] } = useDocumentsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
   const { data: departments = [] } = useDepartmentsHook();
-
-  const knownTags = React.useMemo(
-    () => extractKnownTagsFromDocuments(existingDocuments),
-    [existingDocuments]
-  );
 
   // Per-file classification state (keyed by file.name)
   const [perFile, setPerFile] = React.useState<
@@ -218,7 +206,7 @@ export function UploadClassificationDialog({
                       return next;
                     });
                   }}
-                  knownTags={knownTags}
+                  knownTags={[]}
                   placeholder="Add tags for all files..."
                   badgesPosition="below"
                   showClearAll
@@ -389,7 +377,7 @@ export function UploadClassificationDialog({
                             } as Record<string, FileClassification>;
                           })
                         }
-                        knownTags={knownTags}
+                        knownTags={[]}
                         badgesPosition="below"
                         showClearAll
                       />

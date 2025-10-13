@@ -17,14 +17,12 @@ import { useDepartments } from "@/lib/api/v1/hooks/departments";
 import { useModelRuns } from "@/lib/api/v1/hooks/model_runs";
 import { useModels } from "@/lib/api/v1/hooks/models";
 import { useProfileDepartments } from "@/lib/api/v1/hooks/profile_departments";
-import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 import { Department, Model, ModelRun } from "@/types";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
 export default function Departments() {
   const router = useRouter();
   const { data: departments = [] } = useDepartments();
-  const { data: profiles = [] } = useProfiles();
   const { data: profileDepartments = [] } = useProfileDepartments();
   const { data: modelRuns = [] } = useModelRuns();
   const { data: models = [] } = useModels();

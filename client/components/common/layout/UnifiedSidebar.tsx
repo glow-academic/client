@@ -44,6 +44,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohortProfilesByProfileId } from "@/lib/api/v1/hooks/cohort_profiles";
 import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
 import { Cohort } from "@/types";
 import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
@@ -228,6 +229,10 @@ export function UnifiedSidebar({
   // Extract stable profile ID to avoid complex dependency expressions
   const stableProfileId = effectiveProfile?.id || "";
 
+  // Fetch cohort-profile junction data for the current profile
+  const { data: cohortProfiles = [] } =
+    useCohortProfilesByProfileId(stableProfileId);
+
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];
 
@@ -244,8 +249,12 @@ export function UnifiedSidebar({
           profileCohorts = cohorts;
           break;
         }
+        // Filter cohorts using junction table data
+        const cohortIds = cohortProfiles
+          .filter((cp) => cp.active)
+          .map((cp) => cp.cohortId);
         profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortData?.profileIds?.includes(stableProfileId)
+          cohortIds.includes(cohortData.id)
         );
         break;
       default:
@@ -258,7 +267,7 @@ export function UnifiedSidebar({
       section: `cohort-${c.id}`,
       isSubItem: true,
     }));
-  }, [cohorts, effectiveProfile, stableProfileId]);
+  }, [cohorts, effectiveProfile, stableProfileId, cohortProfiles]);
 
   // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {

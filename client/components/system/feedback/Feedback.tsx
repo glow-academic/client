@@ -8,6 +8,7 @@
 
 import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
 import { useAppFeedbacks } from "@/lib/api/v1/hooks/app_feedback";
+import { useAppFeedbackProfiles } from "@/lib/api/v1/hooks/app_feedback_profiles";
 import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 import { appFeedbackKeys, profileKeys } from "@/lib/api/v1/keys";
 import { log } from "@/utils/logger";
@@ -31,6 +32,7 @@ export default function Feedback() {
 
   const { data: feedbackData = [] } = useAppFeedbacks();
   const { data: profiles = [] } = useProfiles();
+  const { data: appFeedbackProfiles = [] } = useAppFeedbackProfiles();
 
   const profileMap = useMemo(() => {
     const map: Record<string, Profile> = {};
@@ -41,6 +43,17 @@ export default function Feedback() {
     });
     return map;
   }, [profiles]);
+
+  // Create a map from feedback ID to profile ID using junction table
+  const feedbackProfileMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    appFeedbackProfiles.forEach((afp) => {
+      if (afp.role === "author") {
+        map[afp.appFeedbackId] = afp.profileId;
+      }
+    });
+    return map;
+  }, [appFeedbackProfiles]);
 
   const formatTimestamp = useCallback((timestamp: string | null) => {
     if (!timestamp) return "N/A";
@@ -79,17 +92,26 @@ export default function Feedback() {
   const tableData = useMemo((): FeedbackData[] => {
     if (!feedbackData) return [];
 
-    return feedbackData.map((feedback) => ({
-      id: feedback.id,
-      createdAt: feedback.createdAt,
-      profileId: feedback.profileId,
-      type: feedback.type,
-      message: feedback.message,
-      authorName: getAuthorName(feedback.profileId),
-      authorAlias: getAuthorAlias(feedback.profileId),
-      formattedDate: formatTimestamp(feedback.createdAt),
-    }));
-  }, [feedbackData, getAuthorName, getAuthorAlias, formatTimestamp]);
+    return feedbackData.map((feedback) => {
+      const profileId = feedbackProfileMap[feedback.id] || null;
+      return {
+        id: feedback.id,
+        createdAt: feedback.createdAt,
+        profileId: profileId,
+        type: feedback.type,
+        message: feedback.message,
+        authorName: getAuthorName(profileId),
+        authorAlias: getAuthorAlias(profileId),
+        formattedDate: formatTimestamp(feedback.createdAt),
+      };
+    });
+  }, [
+    feedbackData,
+    feedbackProfileMap,
+    getAuthorName,
+    getAuthorAlias,
+    formatTimestamp,
+  ]);
 
   // Generate profile options for filtering
   const profileOptions = useMemo(() => {

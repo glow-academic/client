@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useCohortProfilesByCohortId } from "@/lib/api/v1/hooks/cohort_profiles";
 import {
   useCohortsByDepartmentIdBatch,
   useUpdateCohorts,
@@ -184,6 +185,11 @@ export default function StaffManager({
     effectiveDepartmentIds
   );
 
+  // Fetch cohort-profile junction data if in cohort mode
+  const { data: cohortProfiles = [] } = useCohortProfilesByCohortId(
+    cohortId || ""
+  );
+
   // Mutation hooks
   const createProfilesMutation = useCreateProfiles();
   const updateCohortsMutation = useUpdateCohorts();
@@ -193,9 +199,9 @@ export default function StaffManager({
     if (!isCohortMode) return [] as string[];
     if (existingProfileIds && existingProfileIds.length > 0)
       return existingProfileIds;
-    const cohort = allCohorts.find((c) => c.id === cohortId);
-    return cohort ? (cohort.profileIds as string[]) : [];
-  }, [isCohortMode, existingProfileIds, allCohorts, cohortId]);
+    // Get profile IDs from junction table
+    return cohortProfiles.filter((cp) => cp.active).map((cp) => cp.profileId);
+  }, [isCohortMode, existingProfileIds, cohortProfiles]);
 
   // Role availability (used in non-cohort mode manual add + CSV role validation)
   const isCurrentUserSuperAdmin = effectiveProfile?.role === "superadmin";
@@ -842,21 +848,15 @@ export default function StaffManager({
       const cohortUpdateMessages: string[] = [];
       const warningMessages: string[] = [];
 
-      for (const [cohortName, profiles] of byCohort) {
+      for (const [cohortName, _profiles] of byCohort) {
         if (cohortName !== "No Cohort") {
           const cohort = allCohorts.find((c) => c.title === cohortName);
           if (cohort) {
-            const updatedProfileIds = [
-              ...cohort.profileIds,
-              ...profiles.map((p) => p.id),
-            ];
-            cohortUpdates.push({
-              id: cohort.id,
-              profileIds: updatedProfileIds,
-              updatedAt: new Date().toISOString(),
-            });
-            cohortUpdateMessages.push(
-              `Added ${profiles.length} profile(s) to cohort "${cohortName}"`
+            // TODO: Update to use cohort_profiles junction table
+            // Need to create cohort_profile records instead of updating cohort.profileIds
+            // For now, skip cohort assignment
+            warningMessages.push(
+              `Cohort assignment for "${cohortName}" temporarily disabled - junction table migration in progress`
             );
           } else {
             warningMessages.push(

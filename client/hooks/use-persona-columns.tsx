@@ -60,10 +60,8 @@ export function usePersonaColumns() {
 
   // Create columns for the data table
   const columns: ColumnDef<Persona>[] = useMemo(() => {
-    // Helper function to get scenarios for a persona
-    const getScenariosForPersona = (personaId: string) => {
-      return scenarios.filter((scenario) => scenario.personaId === personaId);
-    };
+    // Note: scenario filtering removed - personaId is now in the scenario_personas
+    // junction table and should be accessed via separate queries
 
     return [
       {
@@ -90,33 +88,8 @@ export function usePersonaColumns() {
           );
         },
       },
-      {
-        accessorKey: "scenarios",
-        header: "Scenarios",
-        cell: ({ row }) => {
-          const persona = row.original;
-          const personaScenarios = getScenariosForPersona(persona.id);
-          return (
-            <div className="text-sm">
-              {personaScenarios.length > 0 ? (
-                <span className="text-muted-foreground">
-                  {personaScenarios.length} scenario
-                  {personaScenarios.length !== 1 ? "s" : ""}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">No scenarios</span>
-              )}
-            </div>
-          );
-        },
-        filterFn: (row, _, value) => {
-          const persona = row.original;
-          const personaScenarios = getScenariosForPersona(persona.id);
-          return value.some((scenarioId: string) =>
-            personaScenarios.some((scenario) => scenario.id === scenarioId)
-          );
-        },
-      },
+      // Note: scenarios column removed - personaId is now in scenario_personas junction table
+      // and should be accessed via separate queries
       {
         accessorKey: "reasoning",
         header: "Reasoning",

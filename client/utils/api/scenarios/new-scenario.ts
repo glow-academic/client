@@ -21,6 +21,7 @@ export interface NewScenarioResponse {
   status?: "success" | "error";
   title?: string;
   description?: string;
+  objectives?: string[];
 }
 
 export async function newScenario(
@@ -81,6 +82,7 @@ export async function newScenario(
       status: result.status || "success",
       title: result.title,
       description: result.description,
+      objectives: result.objectives,
     };
   } catch (error) {
     const errorMessage = `Error generating new scenario: ${error instanceof Error ? error.message : "Unknown error"}`;

@@ -29,97 +29,19 @@ export function useScenarioColumns() {
         cell: ({ row }) => row.getValue("name"),
         filterFn: (row, id, value) => {
           const name = row.getValue(id) as string;
-          const description = row.original.description || "";
+          const problemStatement = row.original.problemStatement || "";
 
           const searchText = value.toLowerCase();
           return (
             name.toLowerCase().includes(searchText) ||
-            description.toLowerCase().includes(searchText)
+            problemStatement.toLowerCase().includes(searchText)
           );
         },
       },
-      {
-        accessorKey: "simulationIds",
-        header: "Simulations",
-        cell: ({ row }) => {
-          const scenario = row.original;
-          const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
-          );
-          return scenarioSimulations.map((sim: Simulation) => sim.id);
-        },
-        filterFn: (row, _, value) => {
-          const scenario = row.original;
-          const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
-          );
-          const simulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id
-          );
-          return value.some((filterValue: string) =>
-            simulationIds.includes(filterValue)
-          );
-        },
-      },
-      {
-        accessorKey: "cohortIds",
-        header: "Cohorts",
-        cell: ({ row }) => {
-          const scenario = row.original;
-          // Find all simulation IDs for this scenario
-          const scenarioSimulationIds = simulations
-            .filter((sim: Simulation) => sim.scenarioIds.includes(scenario.id))
-            .map((sim: Simulation) => sim.id);
-
-          // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
-          const relatedCohorts = cohorts.filter(
-            (cohort: Cohort) =>
-              Array.isArray(cohort.simulationIds) &&
-              cohort.simulationIds.some((simId: string) =>
-                scenarioSimulationIds.includes(simId)
-              )
-          );
-
-          // Return unique cohort IDs
-          return [
-            ...new Set(relatedCohorts.map((cohort: Cohort) => cohort.id)),
-          ];
-        },
-        filterFn: (row, _, value) => {
-          const scenario = row.original;
-          const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id)
-          );
-          const scenarioSimulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id
-          );
-
-          // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
-          const relatedCohorts = cohorts.filter(
-            (cohort: Cohort) =>
-              Array.isArray(cohort.simulationIds) &&
-              cohort.simulationIds.some((simId: string) =>
-                scenarioSimulationIds.includes(simId)
-              )
-          );
-
-          // Return unique cohort IDs
-          return value.some((filterValue: string) =>
-            relatedCohorts
-              .map((cohort: Cohort) => cohort.id)
-              .includes(filterValue)
-          );
-        },
-      },
-      {
-        accessorKey: "personaId",
-        header: "Persona",
-        cell: ({ row }) => row.getValue("personaId"),
-        filterFn: (row, id, value) => {
-          const personaId = row.getValue(id) as string;
-          return value.includes(personaId);
-        },
-      },
+      // Note: simulationIds, cohortIds, and personaId columns removed
+      // These are now in junction tables (simulation_scenarios, scenario_personas)
+      // and should be accessed via separate queries. Components using this hook
+      // should fetch junction table data separately and handle filtering accordingly
       {
         accessorKey: "updatedAt",
         header: "Updated",

@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
+import { useCohortSimulationsBySimulationIdBatch } from "@/lib/api/v1/hooks/cohort_simulations";
 import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
 import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import {
@@ -63,15 +63,16 @@ export function Simulations() {
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
     effectiveDepartmentIds
   );
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
 
-  // Check if a simulation is being used by any cohorts
+  // Fetch cohort-simulation junction data for all simulations
+  const simulationIds = simulations.map((s) => s.id);
+  const { data: cohortSimulations = [] } =
+    useCohortSimulationsBySimulationIdBatch(simulationIds);
+
+  // Check if a simulation is being used by any cohorts (via junction table)
   const isSimulationInUse = (simulationId: string) => {
-    return cohorts.some(
-      (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
+    return cohortSimulations.some(
+      (cs) => cs.simulationId === simulationId && cs.active
     );
   };
 

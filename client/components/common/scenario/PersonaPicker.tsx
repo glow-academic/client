@@ -82,7 +82,7 @@ export function PersonaPicker({
     Persona | undefined
   >(undefined);
   const [peekedPersona, setPeekedPersona] = React.useState<Persona | undefined>(
-    personas.find((p) => p.active) || personas[0],
+    personas.find((p) => p.active) || personas[0]
   );
 
   // Use external selectedPersona if provided, otherwise use internal state
@@ -116,8 +116,6 @@ export function PersonaPicker({
       updatedAt: "",
       systemPrompt: "",
       modelId: "",
-      guardrailActive: false,
-      imageInputActive: false,
       departmentId: "",
     });
     setOpen(false);

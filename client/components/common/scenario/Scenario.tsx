@@ -74,6 +74,7 @@ import {
   useScenario,
   useUpdateScenario,
 } from "@/lib/api/v1/hooks/scenarios";
+import { useSimulationScenariosByScenarioId } from "@/lib/api/v1/hooks/simulation_scenarios";
 import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
@@ -135,9 +136,15 @@ export default function Scenario({
 
   const [formData, setFormData] =
     useState<Partial<ScenarioType>>(initialFormData);
-  
+
   // Store personaId separately since it's now in junction table
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(
+    null
+  );
+  const [originalDocumentIds, setOriginalDocumentIds] = useState<string[]>([]);
+  const [originalParameterItemIds, setOriginalParameterItemIds] = useState<
+    string[]
+  >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isRandomizingPersona, setIsRandomizingPersona] = useState(false);
@@ -166,27 +173,30 @@ export default function Scenario({
 
   useEffect(() => {
     if (linkedParameterItems.length > 0) {
-      setCurrentParameterItemIds(
-        linkedParameterItems.map((lpi) => lpi.parameterItemId)
-      );
+      const paramIds = linkedParameterItems.map((lpi) => lpi.parameterItemId);
+      setCurrentParameterItemIds(paramIds);
+      if (isEditMode) {
+        setOriginalParameterItemIds(paramIds);
+      }
     }
-  }, [linkedParameterItems]);
+  }, [linkedParameterItems, isEditMode]);
 
   useEffect(() => {
     if (linkedDocuments.length > 0) {
-      setCurrentDocumentIds(linkedDocuments.map((ld) => ld.documentId));
+      const docIds = linkedDocuments.map((ld) => ld.documentId);
+      setCurrentDocumentIds(docIds);
+      if (isEditMode) {
+        setOriginalDocumentIds(docIds);
+      }
     }
-  }, [linkedDocuments]);
+  }, [linkedDocuments, isEditMode]);
 
   useEffect(() => {
     if (linkedPersonas.length > 0 && isEditMode) {
       // Load persona from junction table (only one active persona per scenario)
       const activePersona = linkedPersonas.find((lp) => lp.active);
       if (activePersona) {
-        setFormData((prev) => ({
-          ...prev,
-          personaId: activePersona.personaId,
-        }));
+        setSelectedPersonaId(activePersona.personaId);
       }
     }
   }, [linkedPersonas, isEditMode]);
@@ -229,27 +239,47 @@ export default function Scenario({
     const current = formData;
     const original = originalFormData;
 
+    // Compare current state with original
+    // Note: personaId, documentIds, and parameterItemIds are now tracked separately
+    const originalPersonaId = linkedPersonas[0]?.personaId || null;
+
     return (
-      current.personaId !== original.personaId ||
+      selectedPersonaId !== originalPersonaId ||
       current.name !== original.name ||
-      current.description !== original.description ||
+      current.problemStatement !== original.problemStatement ||
       current.defaultScenario !== original.defaultScenario ||
-      current.practiceScenario !== original.practiceScenario ||
-      JSON.stringify(current.documentIds?.sort()) !==
-        JSON.stringify(original.documentIds?.sort()) ||
-      JSON.stringify(current.parameterItemIds?.sort()) !==
-        JSON.stringify(original.parameterItemIds?.sort())
+      JSON.stringify([...currentDocumentIds].sort()) !==
+        JSON.stringify([...(originalDocumentIds || [])].sort()) ||
+      JSON.stringify([...currentParameterItemIds].sort()) !==
+        JSON.stringify([...(originalParameterItemIds || [])].sort())
     );
-  }, [formData, originalFormData, isEditMode]);
+  }, [
+    formData,
+    originalFormData,
+    isEditMode,
+    selectedPersonaId,
+    linkedPersonas,
+    currentDocumentIds,
+    originalDocumentIds,
+    currentParameterItemIds,
+    originalParameterItemIds,
+  ]);
+
+  // Get simulations using this scenario via junction table
+  const { data: simulationScenarios = [] } = useSimulationScenariosByScenarioId(
+    scenarioId || ""
+  );
 
   // Count simulations using this scenario
   const affectedSimulations = useMemo(() => {
     if (!isEditMode || !scenarioId) return [];
-    return simulations.filter(
-      (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
+    const simulationIds = simulationScenarios
+      .filter((ss) => ss.active)
+      .map((ss) => ss.simulationId);
+    return simulations.filter((sim: Simulation) =>
+      simulationIds.includes(sim.id)
     );
-  }, [simulations, scenarioId, isEditMode]);
+  }, [simulations, simulationScenarios, scenarioId, isEditMode]);
 
   // Check if scenario is readonly (used by active simulations or is a generated scenario)
   const isReadonly = useMemo(() => {
@@ -259,7 +289,9 @@ export default function Scenario({
       (sim: Simulation) => sim.active
     );
 
-    const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
+    // Note: parentId is now in scenario_tree junction table
+    // For now, just check if scenario is marked as generated
+    const isGeneratedScenario = !!scenario?.generated;
 
     return usedByActiveSimulations || isGeneratedScenario;
   }, [affectedSimulations, isEditMode, scenarioId, scenario]);
@@ -273,17 +305,17 @@ export default function Scenario({
 
     switch (stepId) {
       case "persona":
-        return formData.personaId ? "completed" : "active";
+        return selectedPersonaId ? "completed" : "active";
       case "documents":
         return currentDocumentIds.length > 0 ? "completed" : "active";
       case "parameters":
-        return !formData.personaId
+        return !selectedPersonaId
           ? "pending"
           : currentParameterItemIds.length > 0
             ? "completed"
             : "active";
       case "content":
-        return !formData.personaId ? "pending" : "active"; // Always active once persona is selected, user can choose to fill or leave blank
+        return !selectedPersonaId ? "pending" : "active"; // Always active once persona is selected, user can choose to fill or leave blank
       default:
         return "pending";
     }
@@ -332,8 +364,7 @@ export default function Scenario({
       setIsRandomizingParameters(true);
       const resp = await randomizeScenario({
         name: formData.name || "",
-        problemStatement: formData.problemStatement || "",
-        personaId: formData.personaId || null,
+        personaId: selectedPersonaId,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["parameters"],
@@ -358,7 +389,7 @@ export default function Scenario({
 
   const handleResetParameters = () => {
     try {
-      handleInputChange("parameterItemIds", []);
+      setCurrentParameterItemIds([]);
       toast.success("Parameters reset");
     } catch (error) {
       log.error("scenario.parameters.reset.failed", {
@@ -376,14 +407,13 @@ export default function Scenario({
       setIsRandomizingPersona(true);
       const resp = await randomizeScenario({
         name: formData.name || "",
-        problemStatement: formData.problemStatement || "",
-        personaId: formData.personaId || null,
+        personaId: selectedPersonaId,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
-      if (resp.personaId) handleInputChange("personaId", resp.personaId);
+      if (resp.personaId) setSelectedPersonaId(resp.personaId);
       toast.success("Persona suggestion applied");
     } catch (error) {
       log.error("scenario.persona.randomize.failed", {
@@ -399,7 +429,7 @@ export default function Scenario({
 
   const handleResetPersona = () => {
     try {
-      handleInputChange("personaId", null);
+      setSelectedPersonaId(null);
       toast.success("Persona reset");
     } catch (error) {
       log.error("scenario.persona.reset.failed", {
@@ -421,8 +451,7 @@ export default function Scenario({
       }
       const resp = await randomizeScenario({
         name: formData.name || "",
-        problemStatement: formData.problemStatement || "",
-        personaId: formData.personaId || null,
+        personaId: selectedPersonaId,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["documents"],
@@ -447,7 +476,7 @@ export default function Scenario({
 
   const handleResetDocuments = () => {
     try {
-      handleInputChange("documentIds", []);
+      setCurrentDocumentIds([]);
       toast.success("Documents reset");
     } catch (error) {
       log.error("scenario.documents.reset.failed", {
@@ -478,7 +507,7 @@ export default function Scenario({
 
     try {
       const result = await newScenario({
-        personaId: formData.personaId || null,
+        personaId: selectedPersonaId,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         profileId: effectiveProfile?.id || null,
@@ -495,6 +524,7 @@ export default function Scenario({
           problemStatement: result.description || prev.problemStatement || "",
         }));
         // Update objectives if returned
+        // Note: objectives may not be in response type anymore
         if (result.objectives) {
           setCurrentObjectives(result.objectives);
         }
@@ -543,13 +573,13 @@ export default function Scenario({
 
         // Update persona junction if changed
         const currentPersonaId = linkedPersonas[0]?.personaId;
-        if (formData.personaId !== currentPersonaId) {
+        if (selectedPersonaId !== currentPersonaId) {
           // TODO: Need delete endpoint for scenario_personas composite key
           // For now, backend should handle via CASCADE or manual cleanup
-          if (formData.personaId) {
+          if (selectedPersonaId) {
             await createScenarioPersonaMutation.mutateAsync({
               scenarioId: scenarioId!,
-              personaId: formData.personaId,
+              personaId: selectedPersonaId,
             });
           }
         }
@@ -562,10 +592,10 @@ export default function Scenario({
         // Create junction records if scenario was created successfully
         if (newScenario?.id) {
           // Create persona link
-          if (formData.personaId) {
+          if (selectedPersonaId && newScenario.id) {
             await createScenarioPersonaMutation.mutateAsync({
               scenarioId: newScenario.id,
-              personaId: formData.personaId,
+              personaId: selectedPersonaId,
             });
           }
 
@@ -575,7 +605,7 @@ export default function Scenario({
               await createScenarioObjectiveMutation.mutateAsync({
                 scenarioId: newScenario.id,
                 idx: i + 1,
-                objective: currentObjectives[i],
+                objective: currentObjectives[i] || "",
               });
             }
           }
@@ -655,7 +685,7 @@ export default function Scenario({
     currentDocumentIds.includes(doc.id)
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId
+    (persona) => persona.id === selectedPersonaId
   );
 
   return (
@@ -678,12 +708,12 @@ export default function Scenario({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                {scenario?.parentId && scenario?.generated
+                {scenario?.generated
                   ? "Generated scenario cannot be edited"
                   : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                {scenario?.parentId && scenario?.generated ? (
+                {scenario?.generated ? (
                   <p>
                     This is a generated scenario that cannot be directly edited.
                     You can duplicate this scenario to create a new editable
@@ -806,7 +836,7 @@ export default function Scenario({
               label=""
               placeholder="Select a persona..."
               description="Choose the persona that will interact with students in this scenario."
-              onSelect={(persona) => handleInputChange("personaId", persona.id)}
+              onSelect={(persona) => setSelectedPersonaId(persona.id)}
               selectedPersona={selectedPersona}
               disabled={isReadonly}
             />
@@ -859,7 +889,7 @@ export default function Scenario({
                     const checked = e.target.checked;
                     setNoDocuments(checked);
                     if (checked) {
-                      handleInputChange("documentIds", []);
+                      setCurrentDocumentIds([]);
                     }
                   }}
                   disabled={isReadonly}
@@ -1184,7 +1214,8 @@ export default function Scenario({
                 disabled={isReadonly}
               />
             </div>
-            <div className="flex items-center justify-between">
+            {/* Practice Scenario feature removed - was not in final schema */}
+            {/* <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-sm font-medium">Practice Scenario</Label>
                 <p className="text-sm text-muted-foreground">
@@ -1192,13 +1223,11 @@ export default function Scenario({
                 </p>
               </div>
               <Switch
-                checked={formData.practiceScenario ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("practiceScenario", checked)
-                }
+                checked={false}
+                onCheckedChange={() => {}}
                 disabled={isReadonly}
               />
-            </div>
+            </div> */}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSubmitting}>Close</AlertDialogCancel>

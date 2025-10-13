@@ -187,3 +187,21 @@ export const analyticsRefreshKeys = {
   all: ["analytics:v2:refresh"] as const,
 };
 
+// Personas Keys
+export const personasListKeys = {
+  all: ["personas:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...personasListKeys.all, { filters }] as const,
+};
+
+export const personasDetailKeys = {
+  all: ["personas:v2:detail"] as const,
+  detail: (personaId: string, profileId: string) =>
+    [...personasDetailKeys.all, { personaId, profileId }] as const,
+};
+
+export const personasDetailDefaultKeys = {
+  all: ["personas:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...personasDetailDefaultKeys.all, { profileId }] as const,
+};

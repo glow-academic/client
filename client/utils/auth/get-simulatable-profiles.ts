@@ -2,11 +2,11 @@
 "use server";
 import { auth } from "@/auth";
 import { db } from "@/utils/drizzle/db";
-import { profiles } from "@/utils/drizzle/schema";
+import { profiles, userProfiles } from "@/utils/drizzle/schema";
 import { log } from "@/utils/logger";
-import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
-export async function getSimulatableProfiles(departmentIds: string[]) {
+export async function getSimulatableProfiles(_departmentIds: string[]) {
   try {
     // Get the current user's session to determine their profile
     const session = await auth();
@@ -14,18 +14,25 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
       return [];
     }
 
-    // Get the active user's profile
+    // Get the active user's profile using junction table
     const activeProfile = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.userId, parseInt(session.user.id)))
+      .select({ profile: profiles })
+      .from(userProfiles)
+      .innerJoin(profiles, eq(userProfiles.profileId, profiles.id))
+      .where(
+        and(
+          eq(userProfiles.userId, parseInt(session.user.id)),
+          eq(userProfiles.isPrimary, true),
+          eq(userProfiles.active, true)
+        )
+      )
       .limit(1);
 
     if (!activeProfile || activeProfile.length === 0) {
       return [];
     }
 
-    const userProfile = activeProfile[0];
+    const userProfile = activeProfile[0]?.profile;
     if (!userProfile) {
       return [];
     }
@@ -33,16 +40,9 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
     // Business logic for simulation permissions
     let simulatableProfiles: (typeof profiles.$inferSelect)[] = [];
 
-    // Build department filter condition
-    // If no department IDs provided, include all profiles
-    // Otherwise, include profiles in the specified departments OR superadmins with null departmentIds
-    const departmentFilter =
-      departmentIds.length > 0
-        ? or(
-            inArray(profiles.departmentId, departmentIds),
-            and(isNull(profiles.departmentId), eq(profiles.role, "superadmin")),
-          )
-        : undefined;
+    // Note: Department filtering temporarily disabled - requires profile_departments junction table join
+    // TODO: Implement department filtering using profileDepartments junction table
+    const departmentFilter = undefined;
 
     switch (userProfile.role) {
       case "superadmin":
@@ -53,7 +53,7 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id),
+              : ne(profiles.id, userProfile.id)
           );
         break;
       case "admin":
@@ -64,12 +64,11 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id),
+              : ne(profiles.id, userProfile.id)
           );
         // Filter out superadmin and admin profiles
         simulatableProfiles = simulatableProfiles.filter(
-          (profile) =>
-            profile.role !== "superadmin" && profile.role !== "admin",
+          (profile) => profile.role !== "superadmin" && profile.role !== "admin"
         );
         break;
 
@@ -81,14 +80,14 @@ export async function getSimulatableProfiles(departmentIds: string[]) {
           .where(
             departmentFilter
               ? and(ne(profiles.id, userProfile.id), departmentFilter)
-              : ne(profiles.id, userProfile.id),
+              : ne(profiles.id, userProfile.id)
           );
         // Filter out superadmin, admin, and instructional staff profiles
         simulatableProfiles = simulatableProfiles.filter(
           (profile) =>
             profile.role !== "superadmin" &&
             profile.role !== "admin" &&
-            profile.role !== "instructional",
+            profile.role !== "instructional"
         );
         break;
       case "ta":

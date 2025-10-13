@@ -197,44 +197,9 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
           return value.length === 0 || value.includes(extension);
         },
       },
-      {
-        accessorKey: "scenarios",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Scenarios" />
-        ),
-        cell: ({ row }) => {
-          const document = row.original;
-          const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id)
-          );
-
-          if (documentScenarios.length === 0) {
-            return (
-              <div className="max-w-[200px]">
-                <span className="text-muted-foreground text-xs">None</span>
-              </div>
-            );
-          }
-
-          return (
-            <div className="max-w-[200px] flex flex-wrap gap-1">
-              {documentScenarios.slice(0, 3).map((scenario: Scenario) => (
-                <Badge key={scenario.id} variant="outline" className="text-xs">
-                  {truncateText(scenario.name, 15)}
-                </Badge>
-              ))}
-              {documentScenarios.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{documentScenarios.length - 3} more
-                </Badge>
-              )}
-            </div>
-          );
-        },
-        filterFn: (row, id, value) => {
-          return value.length === 0 || value.includes(row.getValue(id));
-        },
-      },
+      // Note: scenarios column removed - documentIds is now in the scenario_documents
+      // junction table and should be accessed via separate queries. Components using
+      // this hook should fetch junction table data separately and display scenarios accordingly
       // (Tags column moved above, remove from here)
       {
         id: "actions",

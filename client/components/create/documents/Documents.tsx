@@ -178,13 +178,9 @@ export default function Documents() {
         selectedDocuments.includes(doc.id)
       );
       if (selectedDocs.length > 0) {
-        const intersection = selectedDocs
-          .map((doc) => new Set(doc.tags ?? []))
-          .reduce<string[]>((acc, set, index) => {
-            if (index === 0) return Array.from(set);
-            return acc.filter((t) => set.has(t));
-          }, []);
-        setBulkTags(intersection);
+        // Note: Document tags removed - tags are now managed via simulation_tags → simulation_tag_documents
+        // Documents don't have a direct tags property anymore
+        setBulkTags([]);
       } else {
         setBulkTags([]);
       }
@@ -296,7 +292,7 @@ export default function Documents() {
         id: editingDocument.id,
         name: editingDocument.name,
         type: editingDocument.type,
-        tags: editingDocument.tags,
+        // Note: tags removed - documents don't have tags property
         active: editingDocument.active,
         updatedAt: new Date().toISOString(),
       });
@@ -328,9 +324,7 @@ export default function Documents() {
         updatedAt: new Date().toISOString(),
       };
       if (bulkType !== "__keep__") updates.type = bulkType;
-      // If the user used Clear, bulkTags will be [] and should be applied
-      // Apply tags if the user interacted with tags selector (we treat presence of array as intentional)
-      if (Array.isArray(bulkTags)) updates.tags = bulkTags;
+      // Note: tags removed - documents don't have tags property anymore
       if (bulkDepartmentId) updates.departmentId = bulkDepartmentId;
 
       if (Object.keys(updates).length > 0) {
@@ -493,20 +487,8 @@ export default function Documents() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="tags">Tags</Label>
-                <TagSelector
-                  value={editingDocument.tags ?? []}
-                  onChange={(tags) =>
-                    setEditingDocument((prev) =>
-                      prev ? { ...prev, tags } : null
-                    )
-                  }
-                  knownTags={Array.from(
-                    new Set(documents.flatMap((d) => d.tags ?? []))
-                  )}
-                  badgesPosition="below"
-                  showClearAll
-                />
+                {/* Note: Tags functionality removed - documents don't have direct tags
+                    Tags are now managed via simulation_tags → simulation_tag_documents */}
               </div>
 
               {/* Department Selection - Only for superadmin */}

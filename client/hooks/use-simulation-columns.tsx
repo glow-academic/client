@@ -24,29 +24,15 @@ export function useSimulationColumns({
           return title.includes(value.toLowerCase());
         },
       },
-      {
-        id: "scenarios",
-        header: "Scenarios",
-        accessorFn: (simulation) => {
-          const simulationScenarios = scenarios.filter((scenario: Scenario) =>
-            simulation.scenarioIds?.includes(scenario.id),
-          );
-          return simulationScenarios.map((scenario: Scenario) => scenario.id);
-        },
-        filterFn: (row, _, value) => {
-          const simulation = row.original;
-          const simulationScenarioIds = simulation.scenarioIds || [];
-          return value.some((filterValue: string) =>
-            simulationScenarioIds.includes(filterValue),
-          );
-        },
-      },
+      // Note: scenarios column removed - scenarioIds is now in the simulation_scenarios
+      // junction table and should be accessed via separate queries. Components using
+      // this hook should fetch junction table data separately and handle filtering accordingly
       {
         id: "rubric",
         header: "Rubric",
         accessorFn: (simulation) => {
           const simulationRubric = rubrics.find(
-            (rubric: Rubric) => rubric.id === simulation.rubricId,
+            (rubric: Rubric) => rubric.id === simulation.rubricId
           );
           return simulationRubric?.id || "";
         },
@@ -88,7 +74,7 @@ export function useSimulationColumns({
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [scenarios, rubrics],
+    [scenarios, rubrics]
   );
 
   return { columns };

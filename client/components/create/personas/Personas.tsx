@@ -341,7 +341,11 @@ export default function Personas() {
           </p>
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Eye className="h-3 w-3" />
-            {scenarios.filter((s) => s.personaId === persona.id).length}{" "}
+            {
+              scenarioPersonas.filter(
+                (sp) => sp.personaId === persona.id && sp.active
+              ).length
+            }{" "}
             scenarios
           </div>
         </CardContent>

@@ -34,44 +34,9 @@ export function useCohortColumns() {
           );
         },
       },
-      {
-        accessorKey: "profileIds",
-        header: "Profiles",
-        cell: ({ row }) => {
-          const cohort = row.original;
-          return cohort.profileIds || [];
-        },
-        filterFn: (row, _, value) => {
-          const cohort = row.original;
-          const cohortProfileIds = cohort.profileIds || [];
-          return value.some((filterValue: string) =>
-            cohortProfileIds.includes(filterValue)
-          );
-        },
-      },
-      {
-        accessorKey: "simulationIds",
-        header: "Simulations",
-        cell: ({ row }) => {
-          const cohort = row.original;
-          const cohortSimulations = simulations.filter((sim: Simulation) =>
-            cohort.simulationIds.includes(sim.id)
-          );
-          return cohortSimulations.map((sim: Simulation) => sim.id);
-        },
-        filterFn: (row, _, value) => {
-          const cohort = row.original;
-          const cohortSimulations = simulations.filter((sim: Simulation) =>
-            cohort.simulationIds.includes(sim.id)
-          );
-          const simulationIds = cohortSimulations.map(
-            (sim: Simulation) => sim.id
-          );
-          return value.some((filterValue: string) =>
-            simulationIds.includes(filterValue)
-          );
-        },
-      },
+      // Note: profileIds and simulationIds columns removed - these are now in junction tables
+      // (cohort_profiles and cohort_simulations) and should be accessed via separate queries
+      // Components using this hook should fetch junction table data separately and handle filtering accordingly
       {
         accessorKey: "updatedAt",
         header: "Updated",

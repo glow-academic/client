@@ -36,7 +36,6 @@ export default function TableRubric({
   rubricId,
   simulationChatId,
 }: TableRubricProps) {
-
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>()
   );
