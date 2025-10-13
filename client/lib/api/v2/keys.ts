@@ -346,3 +346,22 @@ export const modelsDetailKeys = {
   detail: (modelId: string, providerId: string, profileId: string) =>
     [...modelsDetailKeys.all, { modelId, providerId, profileId }] as const,
 };
+
+// Parameters Keys
+export const parametersListKeys = {
+  all: ["parameters:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...parametersListKeys.all, { filters }] as const,
+};
+
+export const parametersDetailKeys = {
+  all: ["parameters:v2:detail"] as const,
+  detail: (parameterId: string, profileId: string) =>
+    [...parametersDetailKeys.all, { parameterId, profileId }] as const,
+};
+
+export const parametersDetailDefaultKeys = {
+  all: ["parameters:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...parametersDetailDefaultKeys.all, { profileId }] as const,
+};

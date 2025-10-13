@@ -3,6 +3,7 @@
 from app.api.v2.analytics.router import router as analytics_router
 from app.api.v2.cohorts import router as cohorts_router
 from app.api.v2.documents import router as documents_router
+from app.api.v2.parameters import router as parameters_router
 from app.api.v2.personas import router as personas_router
 from app.api.v2.providers import router as providers_router
 from app.api.v2.rubrics import router as rubrics_router
@@ -40,4 +41,7 @@ router.include_router(cohorts_router)
 
 # Include providers router
 router.include_router(providers_router)
+
+# Include parameters router
+router.include_router(parameters_router)
 
