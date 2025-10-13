@@ -6,28 +6,25 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Scenario } from "@/types";
+import { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 
 export interface ScenariosDataTableToolbarProps {
-  table: Table<Scenario>;
-  simulationOptions: { value: string; label: string }[];
+  table: Table<ScenarioItem>;
   cohortOptions: { value: string; label: string }[];
   personaOptions: { value: string; label: string }[];
 }
 
 export function ScenariosDataTableToolbar({
   table,
-  simulationOptions,
   cohortOptions,
   personaOptions,
 }: ScenariosDataTableToolbarProps) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const nameColumn = table.getColumn("name");
-  const simulationColumn = table.getColumn("simulationIds");
-  const cohortColumn = table.getColumn("cohortIds");
-  const personaColumn = table.getColumn("personaId");
+  const titleColumn = table.getColumn("title");
+  const cohortColumn = table.getColumn("cohort_ids");
+  const personaColumn = table.getColumn("persona_id");
 
   return (
     <div className="flex items-center justify-between">
@@ -35,22 +32,15 @@ export function ScenariosDataTableToolbar({
         <div className="mb-2">
           <Input
             placeholder="Search scenarios..."
-            value={(nameColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) => nameColumn?.setFilterValue(event.target.value)}
+            value={(titleColumn?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              titleColumn?.setFilterValue(event.target.value)
+            }
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Simulation Filter */}
-          {simulationColumn && simulationOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={simulationColumn}
-              title="Simulation"
-              options={simulationOptions}
-            />
-          )}
-
           {/* Cohort Filter */}
           {cohortColumn && cohortOptions.length > 0 && (
             <DataTableFacetedFilter

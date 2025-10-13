@@ -58,6 +58,10 @@ class ScenarioQueries:
             s.id as scenario_id,
             s.name as title,
             s.problem_statement,
+            s.active,
+            s.default_scenario,
+            s.generated,
+            st.parent_id::text as parent_scenario_id,
             COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
             sp.persona_id,
             COALESCE(spar.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
@@ -74,6 +78,7 @@ class ScenarioQueries:
             END as can_delete,
             true as can_duplicate
         FROM scenarios s
+        LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
         LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
         LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
         LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id

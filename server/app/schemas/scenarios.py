@@ -18,6 +18,10 @@ class ScenarioItem(BaseModel):
     scenario_id: str
     title: str  # Maps to scenarios.name
     problem_statement: str
+    active: bool
+    default_scenario: bool
+    generated: bool
+    parent_scenario_id: Optional[str]
     objective_ids: List[str]  # "scenarioId_idx" composite keys
     persona_id: Optional[str]
     parameter_item_ids: List[str]

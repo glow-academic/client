@@ -61,6 +61,10 @@ export const ScenarioItemSchema = z.object({
   scenario_id: z.string(),
   title: z.string(), // Maps to scenarios.name
   problem_statement: z.string(),
+  active: z.boolean(),
+  default_scenario: z.boolean(),
+  generated: z.boolean(),
+  parent_scenario_id: z.string().nullable(),
   objective_ids: z.array(z.string()), // "scenarioId_idx" composite keys
   persona_id: z.string().nullable(),
   parameter_item_ids: z.array(z.string()),

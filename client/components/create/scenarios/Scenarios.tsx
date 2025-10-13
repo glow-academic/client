@@ -39,24 +39,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
-import { useScenarioColumns } from "@/hooks/use-scenario-columns";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
+import { useProfile } from "@/contexts/profile-context";
 import {
-  useCreateScenario,
   useDeleteScenario,
-  useScenariosByDepartmentIdBatch,
-} from "@/lib/api/v1/hooks/scenarios";
-import { useSimulationScenarios } from "@/lib/api/v1/hooks/simulation_scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
-import type { ScenarioTree } from "@/lib/repos/scenarioTreeRepo";
-import { Scenario } from "@/types";
+  useDuplicateScenario,
+  useScenariosList,
+} from "@/lib/api/v2/hooks/scenarios";
+import { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
+import { ColumnDef } from "@tanstack/react-table";
 import { ScenariosDataTable } from "./ScenariosDataTable";
 
 interface GroupedScenario {
-  parent: Scenario;
-  children: Scenario[];
+  parent: ScenarioItem;
+  children: ScenarioItem[];
 }
 
 export function Scenarios() {
@@ -72,94 +67,128 @@ export function Scenarios() {
     new Set()
   );
   const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile } = useProfile();
+
+  // V2 API hooks - single fetch with all data
+  const { data: scenariosData } = useScenariosList(
+    {
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    },
+    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+  );
 
   // Mutation hooks
-  const createScenarioMutation = useCreateScenario();
+  const duplicateScenarioMutation = useDuplicateScenario();
   const deleteScenarioMutation = useDeleteScenario();
 
-  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // Extract data from V2 response
+  const scenarios = useMemo(
+    () => scenariosData?.scenarios || [],
+    [scenariosData?.scenarios]
   );
-  const { data: treeEdges = [] } = useScenarioTrees();
-  const { data: allSimulationScenarios = [] } = useSimulationScenarios();
-  const { data: _simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const personaMapping = useMemo(
+    () => scenariosData?.persona_mapping || {},
+    [scenariosData?.persona_mapping]
   );
-  const { data: _parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const cohortMapping = useMemo(
+    () => scenariosData?.cohort_mapping || {},
+    [scenariosData?.cohort_mapping]
   );
-  const { data: _parameterItems = [] } = useParameterItems();
+  const parameterItemMapping = useMemo(
+    () => scenariosData?.parameter_item_mapping || {},
+    [scenariosData?.parameter_item_mapping]
+  );
+  const _objectiveMapping = useMemo(
+    () => scenariosData?.objective_mapping || {},
+    [scenariosData?.objective_mapping]
+  );
 
-  // Group scenarios using scenario_tree junction table
+  // Group scenarios using parent_scenario_id from V2 API
   const groupedScenarios = useMemo(() => {
     const groups: GroupedScenario[] = [];
 
-    // Find root scenarios (self-edges in scenario_tree where parent_id === child_id)
-    const rootScenarioIds = treeEdges
-      .filter((edge: ScenarioTree) => edge.parentId === edge.childId)
-      .map((edge: ScenarioTree) => edge.childId);
+    // Find root scenarios (no parent)
+    const roots = scenarios.filter((s) => !s.parent_scenario_id);
 
-    // Build groups for each root
-    rootScenarioIds.forEach((rootId: string) => {
-      const parentScenario = scenarios.find((s) => s.id === rootId);
-      if (!parentScenario) return;
-
-      // Find children (edges where parent is this root but not self-edge)
-      const childrenIds = treeEdges
-        .filter(
-          (edge: ScenarioTree) =>
-            edge.parentId === rootId && edge.parentId !== edge.childId
-        )
-        .map((edge: ScenarioTree) => edge.childId);
-
-      const children = scenarios.filter((s) => childrenIds.includes(s.id));
-
-      groups.push({
-        parent: parentScenario,
-        children: children,
-      });
-    });
-
-    // Add standalone scenarios that aren't in the tree at all
-    const scenariosInTree = new Set([
-      ...treeEdges.map((e: ScenarioTree) => e.parentId),
-      ...treeEdges.map((e: ScenarioTree) => e.childId),
-    ]);
-
-    scenarios.forEach((scenario) => {
-      if (!scenariosInTree.has(scenario.id)) {
-        groups.push({ parent: scenario, children: [] });
-      }
+    roots.forEach((parent) => {
+      const children = scenarios.filter(
+        (s) => s.parent_scenario_id === parent.scenario_id
+      );
+      groups.push({ parent, children });
     });
 
     return groups;
-  }, [scenarios, treeEdges]);
+  }, [scenarios]);
 
-  // Check if a scenario is being used by any simulations via junction table
-  const isScenarioInUse = (scenarioId: string) => {
-    return allSimulationScenarios.some((ss) => ss.scenarioId === scenarioId);
-  };
+  // Create filter options from mappings
+  const personaOptions = useMemo(() => {
+    return Object.entries(personaMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [personaMapping]);
 
-  // Check if user can edit (fully immutable)
-  const canEditScenario = (scenarioId: string) => {
-    return !isScenarioInUse(scenarioId);
-  };
+  const cohortOptions = useMemo(() => {
+    return Object.entries(cohortMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [cohortMapping]);
 
-  // Check if scenario can be deleted (default scenarios cannot be deleted)
-  const canDeleteScenario = (scenario: Scenario) => {
-    return !scenario.defaultScenario && !isScenarioInUse(scenario.id);
-  };
+  // Define table columns inline
+  const columns: ColumnDef<ScenarioItem>[] = useMemo(() => {
+    return [
+      {
+        accessorKey: "title",
+        header: "Title",
+        cell: ({ row }) => {
+          return (
+            <div className="font-medium">
+              {row.original.title || "Unnamed Scenario"}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "problem_statement",
+        header: "Problem Statement",
+        cell: ({ row }) => {
+          return (
+            <div className="text-sm text-muted-foreground line-clamp-2">
+              {row.original.problem_statement || "No problem statement"}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "persona_id",
+        header: "Persona",
+        cell: ({ row }) => {
+          const personaId = row.original.persona_id;
+          return (
+            <div className="text-sm">
+              {personaId && personaMapping[personaId] ? (
+                personaMapping[personaId]
+              ) : (
+                <span className="text-muted-foreground">No persona</span>
+              )}
+            </div>
+          );
+        },
+      },
+    ];
+  }, [personaMapping]);
 
-  // Get table columns and filter options
-  const { columns, simulationOptions, cohortOptions, personaOptions } =
-    useScenarioColumns();
+  // Permissions now come from server-side in V2 API
+  // No need for client-side permission logic
 
   const handleDelete = async () => {
     if (!deleteItem) return;
 
     setIsDeleting(true);
     try {
-      await deleteScenarioMutation.mutateAsync(deleteItem.id);
+      await deleteScenarioMutation.mutateAsync({ scenarioId: deleteItem.id });
       await log.info("scenario.delete.success", {
         message: "Scenario deleted successfully",
         subject: { entityType: "scenario", entityId: deleteItem.id },
@@ -185,37 +214,28 @@ export function Scenarios() {
     }
   };
 
-  const handleDuplicate = async (scenario: Scenario) => {
-    setIsDuplicating(scenario.id);
+  const handleDuplicate = async (scenarioId: string, scenarioName: string) => {
+    setIsDuplicating(scenarioId);
     try {
-      await createScenarioMutation.mutateAsync({
-        ...scenario,
-        id: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        defaultScenario: false,
-        active: false,
-        generated: false,
-        name: `${scenario.name} Copy`,
-      });
+      await duplicateScenarioMutation.mutateAsync({ scenarioId });
       await log.info("scenario.duplicate.success", {
         message: "Scenario duplicated successfully",
-        subject: { entityType: "scenario", entityId: scenario.id },
+        subject: { entityType: "scenario", entityId: scenarioId },
         context: {
           component: "Scenarios",
           function: "handleDuplicate",
-          originalName: scenario.name,
+          originalName: scenarioName,
         },
       });
-      toast.success(`Scenario "${scenario.name}" duplicated successfully`);
+      toast.success(`Scenario "${scenarioName}" duplicated successfully`);
     } catch (error) {
       await log.error("scenario.duplicate.failed", {
         message: "Error duplicating scenario",
-        subject: { entityType: "scenario", entityId: scenario.id },
+        subject: { entityType: "scenario", entityId: scenarioId },
         context: {
           component: "Scenarios",
           function: "handleDuplicate",
-          originalName: scenario.name,
+          originalName: scenarioName,
         },
         error,
       });
@@ -238,13 +258,6 @@ export function Scenarios() {
     router.push(`/create/scenarios/s/${id}`);
   };
 
-  // no-op
-
-  const canDuplicate = (_scenario: Scenario) => {
-    // Allow all scenarios to be duplicated for ease of use
-    return true;
-  };
-
   const toggleGroupCollapse = (parentId: string) => {
     setCollapsedGroups((prev) => {
       const newSet = new Set(prev);
@@ -257,17 +270,15 @@ export function Scenarios() {
     });
   };
 
-  // TODO: Add parameter badge display (load from scenario_parameter_items junction)
-
   const renderScenarioCard = (
-    scenario: Scenario,
+    scenario: ScenarioItem,
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
     onToggleCollapse?: () => void
   ) => (
     <Card
-      key={scenario.id}
+      key={scenario.scenario_id}
       className={`hover:shadow-md transition-shadow flex flex-col h-full ${
         isChild ? "ml-8 border-l-2 border-l-blue-200" : ""
       }`}
@@ -291,18 +302,16 @@ export function Scenarios() {
                 </Button>
               )}
               <CardTitle className="text-lg flex-1 min-w-0">
-                {scenario.name || "Unnamed Scenario"}
+                {scenario.title || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
-                {/* Practice is now simulation-level only */}
                 {!scenario.generated &&
-                  !scenario.defaultScenario &&
+                  !scenario.default_scenario &&
                   !scenario.active && (
                     <Badge variant="secondary">Inactive</Badge>
                   )}
               </div>
             </div>
-            {/* Parameter badges - TODO: Load from junction table */}
           </div>
           <div className="flex gap-2 items-center ml-4">
             {scenario.generated ? (
@@ -313,7 +322,7 @@ export function Scenarios() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleView(scenario.id)}
+                      onClick={() => handleView(scenario.scenario_id)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -322,29 +331,31 @@ export function Scenarios() {
                     <p>View Scenario Details</p>
                   </TooltipContent>
                 </Tooltip>
-                {canDuplicate(scenario) && (
+                {scenario.can_duplicate && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDuplicate(scenario)}
+                    onClick={() =>
+                      handleDuplicate(scenario.scenario_id, scenario.title)
+                    }
                     disabled={
-                      isDuplicating === scenario.id ||
-                      createScenarioMutation.isPending
+                      isDuplicating === scenario.scenario_id ||
+                      duplicateScenarioMutation.isPending
                     }
                   >
                     <Copy className="h-4 w-4" />
-                    {isDuplicating === scenario.id ? "..." : ""}
+                    {isDuplicating === scenario.scenario_id ? "..." : ""}
                   </Button>
                 )}
               </>
             ) : (
               // For non-generated scenarios: show edit, duplicate, and delete
               <>
-                {canEditScenario(scenario.id) ? (
+                {scenario.can_edit ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleEdit(scenario.id)}
+                    onClick={() => handleEdit(scenario.scenario_id)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -354,7 +365,7 @@ export function Scenarios() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleView(scenario.id)}
+                        onClick={() => handleView(scenario.scenario_id)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -364,29 +375,31 @@ export function Scenarios() {
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {canDuplicate(scenario) && (
+                {scenario.can_duplicate && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDuplicate(scenario)}
+                    onClick={() =>
+                      handleDuplicate(scenario.scenario_id, scenario.title)
+                    }
                     disabled={
-                      isDuplicating === scenario.id ||
-                      createScenarioMutation.isPending
+                      isDuplicating === scenario.scenario_id ||
+                      duplicateScenarioMutation.isPending
                     }
                   >
                     <Copy className="h-4 w-4" />
-                    {isDuplicating === scenario.id ? "..." : ""}
+                    {isDuplicating === scenario.scenario_id ? "..." : ""}
                   </Button>
                 )}
 
-                {canDeleteScenario(scenario) && (
+                {scenario.can_delete && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
                       handleDeleteClick(
-                        scenario.id,
-                        scenario.name || "Unnamed Scenario"
+                        scenario.scenario_id,
+                        scenario.title || "Unnamed Scenario"
                       )
                     }
                   >
@@ -400,18 +413,13 @@ export function Scenarios() {
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
         <p className="text-sm text-muted-foreground line-clamp-2">
-          {scenario.problemStatement ||
+          {scenario.problem_statement ||
             "Scenario will be dynamically generated."}
         </p>
         {!isChild && (
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
-            {
-              allSimulationScenarios.filter(
-                (ss) => ss.scenarioId === scenario.id
-              ).length
-            }{" "}
-            simulations
+            {scenario.num_simulations} simulations
           </div>
         )}
       </CardContent>
@@ -422,18 +430,18 @@ export function Scenarios() {
     const groupsToRender = filteredGroups || groupedScenarios;
 
     return groupsToRender.map((group) => {
-      const isCollapsed = collapsedGroups.has(group.parent.id);
+      const isCollapsed = collapsedGroups.has(group.parent.scenario_id);
       const hasChildren = group.children.length > 0;
 
       return (
-        <div key={group.parent.id} className="space-y-2">
+        <div key={group.parent.scenario_id} className="space-y-2">
           {/* Parent Scenario Card */}
           {renderScenarioCard(
             group.parent,
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.id)
+            () => toggleGroupCollapse(group.parent.scenario_id)
           )}
 
           {/* Child Scenarios */}
@@ -453,9 +461,11 @@ export function Scenarios() {
         <ScenariosDataTable
           columns={columns}
           data={scenarios}
-          simulationOptions={simulationOptions}
-          cohortOptions={cohortOptions}
+          personaMapping={personaMapping}
+          cohortMapping={cohortMapping}
+          parameterItemMapping={parameterItemMapping}
           personaOptions={personaOptions}
+          cohortOptions={cohortOptions}
           renderGroupedScenarios={renderGroupedScenarios}
         />
 

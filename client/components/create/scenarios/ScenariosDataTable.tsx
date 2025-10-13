@@ -16,41 +16,50 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Scenario } from "@/types";
+import {
+  CohortMapping,
+  ParameterItemMapping,
+  PersonaMapping,
+  ScenarioItem,
+} from "@/lib/api/v2/schemas/scenarios";
 import { ScenariosDataTableToolbar } from "./ScenariosDataTableToolbar";
 
 export interface ScenariosDataTableProps {
-  columns: ColumnDef<Scenario>[];
-  data: Scenario[];
-  simulationOptions: { value: string; label: string }[];
-  cohortOptions: { value: string; label: string }[];
+  columns: ColumnDef<ScenarioItem>[];
+  data: ScenarioItem[];
+  personaMapping: PersonaMapping;
+  cohortMapping: CohortMapping;
+  parameterItemMapping: ParameterItemMapping;
   personaOptions: { value: string; label: string }[];
+  cohortOptions: { value: string; label: string }[];
   renderGroupedScenarios: (
-    filteredGroups?: { parent: Scenario; children: Scenario[] }[],
+    filteredGroups?: { parent: ScenarioItem; children: ScenarioItem[] }[]
   ) => React.ReactNode;
 }
 
 export function ScenariosDataTable({
   columns,
   data,
-  simulationOptions,
-  cohortOptions,
+  personaMapping,
+  cohortMapping,
+  parameterItemMapping,
   personaOptions,
+  cohortOptions,
   renderGroupedScenarios,
 }: ScenariosDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
   ]);
 
-  // Create a table with parent scenarios only for pagination
+  // Create a table with parent scenarios only for pagination (root scenarios, not children)
   const parentScenarios = React.useMemo(() => {
-    return data.filter((scenario) => !scenario.generated);
+    return data.filter((scenario) => !scenario.parent_scenario_id);
   }, [data]);
 
   const table = useReactTable({
@@ -83,22 +92,22 @@ export function ScenariosDataTable({
   // Get the current page's parent scenario IDs
   const currentPageRows = table.getRowModel().rows;
   const orderedParentIds = React.useMemo(() => {
-    return currentPageRows.map((row) => row.original.id);
+    return currentPageRows.map((row) => row.original.scenario_id);
   }, [currentPageRows]);
 
   // Group the current page scenarios in the exact order of the table's sorting
   const currentPageGroupedScenarios = React.useMemo(() => {
-    const groups: { parent: Scenario; children: Scenario[] }[] = [];
+    const groups: { parent: ScenarioItem; children: ScenarioItem[] }[] = [];
 
     for (const parentId of orderedParentIds) {
       const parent = data.find(
-        (scenario) => !scenario.generated && scenario.id === parentId,
+        (scenario) =>
+          !scenario.parent_scenario_id && scenario.scenario_id === parentId
       );
       if (!parent) continue;
 
-      // Note: parentId removed in BCNF migration, hierarchy now in scenario_tree junction
-      // TODO: Load children from scenario_tree if grouping is needed
-      const children = data.filter(() => false); // No automatic grouping for now
+      // Find children using parent_scenario_id from V2 API
+      const children = data.filter((s) => s.parent_scenario_id === parentId);
 
       groups.push({ parent, children });
     }
@@ -110,7 +119,6 @@ export function ScenariosDataTable({
     <div className="space-y-4">
       <ScenariosDataTableToolbar
         table={table}
-        simulationOptions={simulationOptions}
         cohortOptions={cohortOptions}
         personaOptions={personaOptions}
       />
