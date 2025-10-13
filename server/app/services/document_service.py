@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
+from app.queries.document_queries import DocumentQueries
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
                                    DeleteDocumentRequest,
@@ -24,68 +25,19 @@ class DocumentService:
     def __init__(self, db: Session):
         """Initialize service with database session."""
         self.db = db
+        self.queries = DocumentQueries()
 
     def get_documents_list(
         self, filters: DocumentsFilters
     ) -> DocumentsListResponse:
         """Get documents list with tags and scenarios using dynamic SQL."""
 
-        query = text("""
-        WITH document_tags AS (
-            SELECT 
-                std.document_id,
-                ARRAY_AGG(DISTINCT (std.simulation_id || '_' || std.tag_idx::text)) as tag_ids
-            FROM simulation_tag_documents std
-            WHERE std.active = true
-            GROUP BY std.document_id
-        ),
-        document_scenarios AS (
-            SELECT 
-                sd.document_id,
-                ARRAY_AGG(DISTINCT sd.scenario_id) as scenario_ids
-            FROM scenario_documents sd
-            WHERE sd.active = true
-            GROUP BY sd.document_id
-        ),
-        document_data AS (
-            SELECT 
-                d.id as document_id,
-                d.name,
-                d.type,
-                d.updated_at,
-                d.mime_type,
-                COALESCE(dt.tag_ids, ARRAY[]::text[]) as tag_ids,
-                COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids
-            FROM documents d
-            LEFT JOIN document_tags dt ON dt.document_id = d.id
-            LEFT JOIN document_scenarios ds ON ds.document_id = d.id
-            WHERE d.department_id = ANY(:department_ids)
-        ),
-        user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+        # Get query from query builder
+        query, params = self.queries.list_documents(
+            filters.departmentIds, filters.profileId
         )
-        SELECT 
-            dd.*,
-            SUBSTRING(dd.mime_type FROM '\\.([^\\.]+)$') as extension,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
-                ELSE false
-            END as can_edit,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
-                ELSE false
-            END as can_delete
-        FROM document_data dd
-        CROSS JOIN user_profile up
-        ORDER BY dd.updated_at DESC
-        """)
 
-        params = {
-            "department_ids": filters.departmentIds,
-            "profile_id": filters.profileId,
-        }
-
-        result = self.db.execute(query, params).fetchall()
+        result = self.db.execute(text(query), params).fetchall()
 
         # Build response
         documents = []
@@ -117,28 +69,16 @@ class DocumentService:
         ):
             # Parse simulation_id and tag_idx from composite tag_id
             tag_parts = [tid.split("_") for tid in tag_ids_to_fetch]
-            sim_tag_pairs = [(parts[0], int(parts[1])) for parts in tag_parts if len(parts) == 2]
-            
+            sim_tag_pairs = [
+                (parts[0], int(parts[1])) for parts in tag_parts if len(parts) == 2
+            ]
+
             if sim_tag_pairs:
-                # Query simulation_tags for names
-                tag_query = text("""
-                SELECT 
-                    simulation_id,
-                    idx,
-                    name,
-                    (simulation_id::text || '_' || idx::text) as tag_id
-                FROM simulation_tags
-                WHERE (simulation_id, idx) IN (
-                    SELECT unnest(:sim_ids::uuid[]), unnest(:tag_idxs::integer[])
-                )
-                """)
-                
                 sim_ids = [pair[0] for pair in sim_tag_pairs]
                 tag_idxs = [pair[1] for pair in sim_tag_pairs]
-                
-                tag_result = self.db.execute(
-                    tag_query, {"sim_ids": sim_ids, "tag_idxs": tag_idxs}
-                ).fetchall()
+
+                query, params = self.queries.get_tag_mapping(sim_ids, tag_idxs)
+                tag_result = self.db.execute(text(query), params).fetchall()
 
                 for row in tag_result:
                     tag_mapping[row.tag_id] = row.name
@@ -147,14 +87,8 @@ class DocumentService:
         if scenario_ids_to_fetch := list(
             set([sid for d in documents for sid in d.scenario_ids])
         ):
-            scenario_query = text("""
-            SELECT id, name 
-            FROM scenarios 
-            WHERE id = ANY(:scenario_ids)
-            """)
-            scenario_result = self.db.execute(
-                scenario_query, {"scenario_ids": scenario_ids_to_fetch}
-            ).fetchall()
+            query, params = self.queries.get_scenario_mapping(scenario_ids_to_fetch)
+            scenario_result = self.db.execute(text(query), params).fetchall()
 
             for row in scenario_result:
                 scenario_mapping[str(row.id)] = row.name
@@ -171,67 +105,29 @@ class DocumentService:
         """Get detailed document information using dynamic SQL."""
 
         # Get document basic info
-        document_query = text("""
-        SELECT 
-            d.name,
-            d.active,
-            d.type,
-            d.department_id
-        FROM documents d
-        WHERE d.id = :document_id
-        """)
-
-        document = self.db.execute(
-            document_query, {"document_id": request.documentId}
-        ).fetchone()
+        query, params = self.queries.get_document_by_id(request.documentId)
+        document = self.db.execute(text(query), params).fetchone()
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
 
         # Get tag IDs for this document
-        tag_query = text("""
-        SELECT 
-            (simulation_id::text || '_' || tag_idx::text) as tag_id
-        FROM simulation_tag_documents
-        WHERE document_id = :document_id AND active = true
-        """)
-
-        tag_result = self.db.execute(
-            tag_query, {"document_id": request.documentId}
-        ).fetchall()
-
+        query, params = self.queries.get_document_tags(request.documentId)
+        tag_result = self.db.execute(text(query), params).fetchall()
         tag_ids = [row.tag_id for row in tag_result]
 
         # Get user's accessible department IDs
-        user_dept_query = text("""
-        SELECT DISTINCT d.id
-        FROM departments d
-        JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
-        ORDER BY d.name
-        """)
-
+        query, params = self.queries.get_valid_departments_for_profile(
+            request.profileId
+        )
         valid_department_ids = [
-            str(row.id)
-            for row in self.db.execute(
-                user_dept_query, {"profile_id": request.profileId}
-            ).fetchall()
+            str(row.id) for row in self.db.execute(text(query), params).fetchall()
         ]
 
-        # Get valid tag IDs (all active tags in user's departments)
-        valid_tags_query = text("""
-        SELECT DISTINCT
-            (st.simulation_id::text || '_' || st.idx::text) as tag_id
-        FROM simulation_tags st
-        JOIN simulations s ON s.id = st.simulation_id
-        WHERE s.department_id = ANY(:dept_ids) AND s.active = true
-        """)
-
+        # Get valid tag IDs
+        query, params = self.queries.get_valid_tags(valid_department_ids)
         valid_tag_ids = [
-            row.tag_id
-            for row in self.db.execute(
-                valid_tags_query, {"dept_ids": valid_department_ids}
-            ).fetchall()
+            row.tag_id for row in self.db.execute(text(query), params).fetchall()
         ]
 
         # Document type options

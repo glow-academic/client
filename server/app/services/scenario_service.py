@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List
 
+from app.queries.scenario_queries import ScenarioQueries
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -24,92 +25,19 @@ class ScenarioService:
     def __init__(self, db: Session):
         """Initialize service with database session."""
         self.db = db
+        self.queries = ScenarioQueries()
 
     def get_scenarios_list(
         self, filters: ScenariosFilters
     ) -> ScenariosListResponse:
         """Get scenarios list with all relationships using dynamic SQL."""
 
-        query = text("""
-        WITH scenario_objectives AS (
-            SELECT 
-                so.scenario_id,
-                ARRAY_AGG((so.scenario_id::text || '_' || so.idx::text) ORDER BY so.idx) as objective_ids
-            FROM scenario_objectives so
-            GROUP BY so.scenario_id
-        ),
-        scenario_parameters AS (
-            SELECT 
-                spi.scenario_id,
-                ARRAY_AGG(DISTINCT spi.parameter_item_id) as parameter_item_ids
-            FROM scenario_parameter_items spi
-            WHERE spi.active = true
-            GROUP BY spi.scenario_id
-        ),
-        scenario_simulations AS (
-            SELECT 
-                ss.scenario_id,
-                ARRAY_AGG(DISTINCT ss.simulation_id) as simulation_ids,
-                COUNT(DISTINCT ss.simulation_id) as num_simulations
-            FROM simulation_scenarios ss
-            WHERE ss.active = true
-            GROUP BY ss.scenario_id
-        ),
-        scenario_cohorts AS (
-            SELECT DISTINCT
-                ss.scenario_id,
-                ARRAY_AGG(DISTINCT cs.cohort_id) as cohort_ids
-            FROM simulation_scenarios ss
-            JOIN cohort_simulations cs ON cs.simulation_id = ss.simulation_id
-            WHERE ss.active = true AND cs.active = true
-            GROUP BY ss.scenario_id
-        ),
-        scenario_personas AS (
-            SELECT 
-                sp.scenario_id,
-                sp.persona_id
-            FROM scenario_personas sp
-            WHERE sp.active = true
-        ),
-        user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+        # Get query from query builder
+        query, params = self.queries.list_scenarios(
+            filters.departmentIds, filters.profileId
         )
-        SELECT 
-            s.id as scenario_id,
-            s.name as title,
-            s.problem_statement,
-            COALESCE(so.objective_ids, ARRAY[]::text[]) as objective_ids,
-            sp.persona_id,
-            COALESCE(spar.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,
-            COALESCE(ss.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
-            COALESCE(ss.num_simulations, 0) as num_simulations,
-            COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
-                ELSE false
-            END as can_edit,
-            CASE 
-                WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ss.num_simulations, 0) = 0 THEN true
-                ELSE false
-            END as can_delete,
-            true as can_duplicate
-        FROM scenarios s
-        LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
-        LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
-        LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
-        LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
-        LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
-        CROSS JOIN user_profile up
-        WHERE s.department_id = ANY(:department_ids)
-        ORDER BY s.name
-        """)
 
-        params = {
-            "department_ids": filters.departmentIds,
-            "profile_id": filters.profileId,
-        }
-
-        result = self.db.execute(query, params).fetchall()
+        result = self.db.execute(text(query), params).fetchall()
 
         # Build response
         scenarios = []
@@ -152,24 +80,11 @@ class ScenarioService:
             ]
 
             if scenario_idx_pairs:
-                obj_query = text("""
-                SELECT 
-                    scenario_id,
-                    idx,
-                    objective,
-                    (scenario_id::text || '_' || idx::text) as objective_id
-                FROM scenario_objectives
-                WHERE (scenario_id, idx) IN (
-                    SELECT unnest(:scenario_ids::uuid[]), unnest(:idxs::integer[])
-                )
-                """)
-
                 scenario_ids = [pair[0] for pair in scenario_idx_pairs]
                 idxs = [pair[1] for pair in scenario_idx_pairs]
 
-                obj_result = self.db.execute(
-                    obj_query, {"scenario_ids": scenario_ids, "idxs": idxs}
-                ).fetchall()
+                query, params = self.queries.get_objective_mapping(scenario_ids, idxs)
+                obj_result = self.db.execute(text(query), params).fetchall()
 
                 for row in obj_result:
                     objective_mapping[row.objective_id] = row.objective
@@ -178,19 +93,10 @@ class ScenarioService:
         if parameter_item_ids_to_fetch := list(
             set([pid for s in scenarios for pid in s.parameter_item_ids])
         ):
-            param_item_query = text("""
-            SELECT 
-                pi.id,
-                pi.name,
-                pi.description,
-                pi.value
-            FROM parameter_items pi
-            WHERE pi.id = ANY(:parameter_item_ids)
-            """)
-
-            param_item_result = self.db.execute(
-                param_item_query, {"parameter_item_ids": parameter_item_ids_to_fetch}
-            ).fetchall()
+            query, params = self.queries.get_parameter_item_mapping(
+                parameter_item_ids_to_fetch
+            )
+            param_item_result = self.db.execute(text(query), params).fetchall()
 
             for row in param_item_result:
                 parameter_item_mapping[str(row.id)] = {
@@ -203,13 +109,8 @@ class ScenarioService:
         if cohort_ids_to_fetch := list(
             set([cid for s in scenarios for cid in s.cohort_ids])
         ):
-            cohort_query = text("""
-            SELECT id, name FROM cohorts WHERE id = ANY(:cohort_ids)
-            """)
-
-            cohort_result = self.db.execute(
-                cohort_query, {"cohort_ids": cohort_ids_to_fetch}
-            ).fetchall()
+            query, params = self.queries.get_cohort_mapping(cohort_ids_to_fetch)
+            cohort_result = self.db.execute(text(query), params).fetchall()
 
             for row in cohort_result:
                 cohort_mapping[str(row.id)] = row.name
@@ -218,13 +119,8 @@ class ScenarioService:
         if persona_ids_to_fetch := list(
             set([s.persona_id for s in scenarios if s.persona_id])
         ):
-            persona_query = text("""
-            SELECT id, name FROM personas WHERE id = ANY(:persona_ids)
-            """)
-
-            persona_result = self.db.execute(
-                persona_query, {"persona_ids": persona_ids_to_fetch}
-            ).fetchall()
+            query, params = self.queries.get_persona_mapping(persona_ids_to_fetch)
+            persona_result = self.db.execute(text(query), params).fetchall()
 
             for row in persona_result:
                 persona_mapping[str(row.id)] = row.name
