@@ -396,3 +396,10 @@ export const agentsDetailKeys = {
   detail: (agentId: string, profileId: string) =>
     [...agentsDetailKeys.all, { agentId, profileId }] as const,
 };
+
+// Feedback Keys (read-only)
+export const feedbackListKeys = {
+  all: ["feedback:v2:list"] as const,
+  list: (profileId: string) =>
+    [...feedbackListKeys.all, { profileId }] as const,
+};
