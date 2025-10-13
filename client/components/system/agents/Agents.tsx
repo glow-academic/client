@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAgentColumns } from "@/hooks/use-agent-columns";
-import { useAgents } from "@/lib/api/hooks/agents";
+import { useAgents } from "@/lib/api/v1/hooks/agents";
 import { Agent } from "@/types";
 import { AgentsDataTable } from "./AgentsDataTable";
 

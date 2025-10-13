@@ -41,7 +41,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import { useScenarioTrees } from "@/lib/api/hooks/scenario_tree";
+import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
 import { cn } from "@/lib/utils";
 import { Parameter, ParameterItem } from "@/types";
 
@@ -124,7 +124,7 @@ export function SimulationScenarioPicker({
 
       const isRoot = rootScenarioIds.includes(scenario.id);
       const inTree = treeEdges.some(
-        (e) => e.childId === scenario.id || e.parentId === scenario.id,
+        (e) => e.childId === scenario.id || e.parentId === scenario.id
       );
 
       // Show if it's a root OR not in tree at all (standalone)
@@ -149,7 +149,7 @@ export function SimulationScenarioPicker({
         acc[item.id] = item;
         return acc;
       },
-      {} as Record<string, ParameterItem>,
+      {} as Record<string, ParameterItem>
     );
   }, [parameterItems]);
 
@@ -160,7 +160,7 @@ export function SimulationScenarioPicker({
         acc[param.id] = param;
         return acc;
       },
-      {} as Record<string, Parameter>,
+      {} as Record<string, Parameter>
     );
   }, [parameters]);
 
@@ -200,7 +200,7 @@ export function SimulationScenarioPicker({
     if (isSelected) {
       // Remove from selection
       newSelectedScenarios = selectedScenarios.filter(
-        (s) => s.id !== scenario.id,
+        (s) => s.id !== scenario.id
       );
     } else {
       // Add to selection
@@ -220,11 +220,11 @@ export function SimulationScenarioPicker({
   // Remove individual item
   const handleRemoveItem = (
     scenarioToRemove: SimulationScenario,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.stopPropagation();
     const newSelectedScenarios = selectedScenarios.filter(
-      (s) => s.id !== scenarioToRemove.id,
+      (s) => s.id !== scenarioToRemove.id
     );
     onSelect?.(newSelectedScenarios);
   };
@@ -370,7 +370,7 @@ export function SimulationScenarioPicker({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        ),
+                        )
                       )}
                     </>
                   )}
@@ -397,7 +397,7 @@ export function SimulationScenarioPicker({
                             "relative hover:bg-accent overflow-visible h-8 w-8 p-0",
                             filterParameterItemIds.length > 0
                               ? "text-primary"
-                              : "text-muted-foreground",
+                              : "text-muted-foreground"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -453,9 +453,9 @@ export function SimulationScenarioPicker({
                                                   return [...prev, opt.id];
                                                 }
                                                 return prev.filter(
-                                                  (x) => x !== opt.id,
+                                                  (x) => x !== opt.id
                                                 );
-                                              },
+                                              }
                                             );
                                           }}
                                         />
@@ -514,7 +514,7 @@ export function SimulationScenarioPicker({
                 <CommandGroup heading="Scenarios">
                   {filteredScenarios.map((scenario) => {
                     const isSelected = selectedScenarios.some(
-                      (s) => s.id === scenario.id,
+                      (s) => s.id === scenario.id
                     );
 
                     return (
@@ -584,7 +584,7 @@ function ScenarioItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

@@ -47,15 +47,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
-import { useModels } from "@/lib/api/hooks/models";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
+import { useModels } from "@/lib/api/v1/hooks/models";
 import {
   useCreatePersona,
   usePersona,
   useUpdatePersona,
-} from "@/lib/api/hooks/personas";
-import { useScenarioPersonasByPersonaId } from "@/lib/api/hooks/scenario_personas";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+} from "@/lib/api/v1/hooks/personas";
+import { useScenarioPersonasByPersonaId } from "@/lib/api/v1/hooks/scenario_personas";
+// import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
@@ -112,9 +112,9 @@ export default function Persona({
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? null
-          : effectiveProfile?.departmentId || null,
+          : effectiveDepartmentIds[0] || null,
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId],
+    [effectiveProfile?.role, effectiveDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,7 +122,7 @@ export default function Persona({
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor",
+    "editor"
   );
 
   const { data: persona, isLoading: isLoadingPersona } = usePersona(personaId!);
@@ -130,16 +130,16 @@ export default function Persona({
   const { data: models, isLoading: isModelsLoading } = useModels();
   const { data: departments = [] } = useDepartmentsHook();
 
-  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
+  // const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
+  //   effectiveDepartmentIds,
+  // );
 
   const { mutate: createPersona } = useCreatePersona();
   const { mutate: updatePersona } = useUpdatePersona();
 
   // Load scenario_personas junction to check if persona is in use
   const { data: scenarioPersonas = [] } = useScenarioPersonasByPersonaId(
-    personaId || "",
+    personaId || ""
   );
 
   // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
@@ -238,7 +238,7 @@ export default function Persona({
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
           departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+            formData.departmentId || effectiveDepartmentIds[0] || "",
           updatedAt: new Date().toISOString(),
         });
         toast.success("Persona updated successfully!");
@@ -255,7 +255,7 @@ export default function Persona({
           active: formData.active ?? true,
           defaultPersona: formData.defaultPersona ?? false,
           departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+            formData.departmentId || effectiveDepartmentIds[0] || "",
         });
         toast.success("Persona created successfully!");
       }
@@ -263,7 +263,7 @@ export default function Persona({
       router.push("/create/personas");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -390,7 +390,7 @@ export default function Persona({
                       formData?.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === formData.departmentId,
+                              (d) => d.id === formData.departmentId
                             );
                             return dept
                               ? {
@@ -638,7 +638,7 @@ export default function Persona({
                                           "mr-2 h-4 w-4",
                                           formData.icon === iconName
                                             ? "opacity-100"
-                                            : "opacity-0",
+                                            : "opacity-0"
                                         )}
                                       />
                                       <IconComponent className="mr-2 h-4 w-4" />
@@ -673,7 +673,7 @@ export default function Persona({
                                       "mr-2 h-4 w-4",
                                       formData.icon === iconName
                                         ? "opacity-100"
-                                        : "opacity-0",
+                                        : "opacity-0"
                                     )}
                                   />
                                   <IconComponent className="mr-2 h-4 w-4" />
@@ -817,7 +817,7 @@ export default function Persona({
                             size="sm"
                             onClick={() =>
                               setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview",
+                                editorMode === "preview" ? "editor" : "preview"
                               )
                             }
                             className="h-8 w-8 p-0"
@@ -843,7 +843,7 @@ export default function Persona({
                                 size="sm"
                                 onClick={() =>
                                   setEditorMode(
-                                    editorMode === "debug" ? "editor" : "debug",
+                                    editorMode === "debug" ? "editor" : "debug"
                                   )
                                 }
                                 className="h-8 w-8 p-0"

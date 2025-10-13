@@ -38,10 +38,10 @@ import {
   useCreateSimulationChatCrowdsourcedFeedback,
   useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch,
 } from "@/lib/api/hooks/simulation_chat_crowdsourced_feedbacks";
-import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/hooks/simulation_chat_feedbacks";
-import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/hooks/simulation_chat_grades";
-import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
+import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/v1/hooks/simulation_chat_feedbacks";
+import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/v1/hooks/simulation_chat_grades";
+import { useStandardGroupsByRubricId } from "@/lib/api/v1/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
 import { Standard, StandardGroup } from "@/types";
 import {
   simulationChatCrowdsourcedFeedbacks,
@@ -68,18 +68,18 @@ export default function TableRubric({
   const canCrowdsource =
     !!effectiveProfile &&
     ["instructional", "admin", "superadmin"].includes(
-      effectiveProfile.role as string,
+      effectiveProfile.role as string
     );
 
   const [activeStandardId, setActiveStandardId] = React.useState<string | null>(
-    null,
+    null
   );
   const [crowdFeedbackText, setCrowdFeedbackText] = React.useState<string>("");
   const [votedAnchors, setVotedAnchors] = React.useState<Set<string>>(
-    () => new Set<string>(),
+    () => new Set<string>()
   );
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
-    () => new Set<string>(),
+    () => new Set<string>()
   );
 
   // Persist voted anchors per profile to localStorage (stopgap until DB has profileId)
@@ -112,7 +112,7 @@ export default function TableRubric({
 
   const { data: standards, isLoading: loadingStandards } =
     useStandardsByStandardGroupIdBatch(
-      standardGroups?.map((group) => group.id) || [],
+      standardGroups?.map((group) => group.id) || []
     );
 
   const { data: simulationGrades, isLoading: loadingSimulationGrades } =
@@ -120,7 +120,7 @@ export default function TableRubric({
 
   const { data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks } =
     useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
-      simulationGrades?.map((grade) => grade.id) || [],
+      simulationGrades?.map((grade) => grade.id) || []
     );
 
   // Get the appropriate grade and feedback data
@@ -140,12 +140,12 @@ export default function TableRubric({
   // Fetch all crowdsourced feedbacks for the feedback rows shown in this rubric
   const allFeedbackIds = React.useMemo(
     () => (feedbacks || []).map((f: SimulationChatFeedback) => f.id),
-    [feedbacks],
+    [feedbacks]
   );
 
   const { data: crowdFeedbacks, isLoading: loadingCrowdFeedbacks } =
     useSimulationChatCrowdsourcedFeedbacksBySimulationChatFeedbackIdBatch(
-      allFeedbackIds,
+      allFeedbackIds
     );
 
   // Build counts per (anchorFeedbackId -> total points -> count)
@@ -198,7 +198,7 @@ export default function TableRubric({
   // Helper function to determine if a standard was achieved
   const isStandardAchieved = (
     standard: Standard,
-    groupStandards: Standard[],
+    groupStandards: Standard[]
   ) => {
     const feedback = getFeedbackForStandard(standard.id);
     if (!feedback) return false;
@@ -230,7 +230,7 @@ export default function TableRubric({
 
     // Find the achieved standard in this group
     const achievedStandard = groupStandards.find((s) =>
-      isStandardAchieved(s, groupStandards),
+      isStandardAchieved(s, groupStandards)
     );
     if (!achievedStandard) return false;
 
@@ -262,14 +262,14 @@ export default function TableRubric({
       standards:
         standards
           ?.filter(
-            (standard: Standard) => standard.standardGroupId === group.id,
+            (standard: Standard) => standard.standardGroupId === group.id
           )
           ?.sort((a, b) => b.points - a.points) || [], // Sort by points descending (Level 5 to Level 1)
     })) || [];
 
   // Determine the maximum number of standards across all groups for consistent column count
   const maxStandards = Math.max(
-    ...groupedStandards.map((g) => g.standards.length),
+    ...groupedStandards.map((g) => g.standards.length)
   );
 
   return (
@@ -326,11 +326,11 @@ export default function TableRubric({
                             <div className="grid grid-cols-1 gap-1">
                               {(() => {
                                 const achievedStandard = groupStandards.find(
-                                  (s) => isStandardAchieved(s, groupStandards),
+                                  (s) => isStandardAchieved(s, groupStandards)
                                 );
                                 const anchorId = achievedStandard
                                   ? standardIdToFeedback.get(
-                                      achievedStandard.id,
+                                      achievedStandard.id
                                     )?.id
                                   : undefined;
                                 return groupStandards.map((s) => {
@@ -340,7 +340,7 @@ export default function TableRubric({
                                   const count = inner?.get(s.points) || 0;
                                   const isAchievedForS = isStandardAchieved(
                                     s,
-                                    groupStandards,
+                                    groupStandards
                                   );
                                   return (
                                     <div
@@ -383,16 +383,16 @@ export default function TableRubric({
                     const feedback = getFeedbackForStandard(standard.id);
                     const isAchieved = isStandardAchieved(
                       standard,
-                      groupStandards,
+                      groupStandards
                     );
                     const isPassed = isStandardPassed(standard, group);
                     const shouldHighlightCell = shouldHighlight(
                       standard,
-                      groupStandards,
+                      groupStandards
                     );
                     // Use the achieved standard's feedback id as row anchor for crowdsourced suggestions
                     const achievedStandardForRow = groupStandards.find((s) =>
-                      isStandardAchieved(s, groupStandards),
+                      isStandardAchieved(s, groupStandards)
                     );
                     const rowAnchorFeedbackId = achievedStandardForRow
                       ? standardIdToFeedback.get(achievedStandardForRow.id)?.id
@@ -403,7 +403,7 @@ export default function TableRubric({
                       (crowdFeedbacks || []).some(
                         (cf: SimulationChatCrowdsourcedFeedback) =>
                           cf.simulationChatFeedbackId === rowAnchorFeedbackId &&
-                          cf.profileId === effectiveProfile?.id,
+                          cf.profileId === effectiveProfile?.id
                       );
                     const isClickable =
                       canCrowdsource &&
@@ -434,7 +434,7 @@ export default function TableRubric({
                           const target = e.target as HTMLElement;
                           if (
                             target.closest(
-                              "textarea, input, button, select, [contenteditable='true']",
+                              "textarea, input, button, select, [contenteditable='true']"
                             )
                           ) {
                             return; // do not hijack keys while typing or interacting with controls
@@ -583,7 +583,7 @@ export default function TableRubric({
                                       setActiveStandardId(null);
                                       setCrowdFeedbackText("");
                                       toast.success(
-                                        "Thanks for your feedback!",
+                                        "Thanks for your feedback!"
                                       );
                                     }}
                                   >
@@ -600,7 +600,7 @@ export default function TableRubric({
                     );
                   })}
                 </TableRow>
-              ),
+              )
             )}
           </TableBody>
         </Table>

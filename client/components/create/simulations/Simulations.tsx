@@ -27,14 +27,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulationColumns } from "@/hooks/use-simulation-columns";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
-import { useRubricsByDepartmentIdBatch } from "@/lib/api/hooks/rubrics";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
+import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import {
   useCreateSimulation,
   useDeleteSimulation,
   useSimulationsByDepartmentIdBatch,
-} from "@/lib/api/hooks/simulations";
+} from "@/lib/api/v1/hooks/simulations";
 import { Simulation } from "@/types";
 import { SimulationsDataTable } from "./SimulationsDataTable";
 
@@ -55,23 +55,23 @@ export function Simulations() {
   const deleteSimulationMutation = useDeleteSimulation();
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   // Check if a simulation is being used by any cohorts
   const isSimulationInUse = (simulationId: string) => {
     return cohorts.some(
       (cohort) =>
-        cohort.simulationIds && cohort.simulationIds.includes(simulationId),
+        cohort.simulationIds && cohort.simulationIds.includes(simulationId)
     );
   };
 

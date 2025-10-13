@@ -42,7 +42,7 @@ import {
   useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch,
   useUpdateSimulationCrowdsourcedMessage,
 } from "@/lib/api/hooks/simulation_crowdsourced_messages";
-import { useSimulationMessagesByChatId } from "@/lib/api/hooks/simulation_messages";
+import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
 import { SimulationMessage } from "@/types";
 import { simulationCrowdsourcedMessages } from "@/utils/drizzle/schema";
 
@@ -90,12 +90,12 @@ export default function AttemptMessages({
         .filter((m) => m.type === "response")
         .map((m) => m.id)
         .sort(),
-    [messages],
+    [messages]
   );
 
   const { data: crowdsourcedAll = [] } =
     useSimulationCrowdsourcedMessagesBySimulationMessageIdBatch(
-      responseMessageIds,
+      responseMessageIds
     );
 
   type CrowdsourcedSelect = typeof simulationCrowdsourcedMessages.$inferSelect;
@@ -103,9 +103,9 @@ export default function AttemptMessages({
   const myCrowdsourced = useMemo(
     () =>
       (crowdsourcedAll as CrowdsourcedSelect[]).filter(
-        (c) => c.profileId === effectiveProfile?.id,
+        (c) => c.profileId === effectiveProfile?.id
       ),
-    [crowdsourcedAll, effectiveProfile?.id],
+    [crowdsourcedAll, effectiveProfile?.id]
   );
 
   const ratingsByMessageId = useMemo(() => {
@@ -174,7 +174,7 @@ export default function AttemptMessages({
         response: up,
       });
       toast.success(
-        "Thank you for your feedback! Your rating helps make GLOW better.",
+        "Thank you for your feedback! Your rating helps make GLOW better."
       );
     }
   };
@@ -183,7 +183,7 @@ export default function AttemptMessages({
   const groupedMessages = useMemo(() => {
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     const groups: Array<{
@@ -241,7 +241,7 @@ export default function AttemptMessages({
 
   const handleResponseNavigation = (
     groupId: string,
-    direction: "prev" | "next",
+    direction: "prev" | "next"
   ) => {
     const group = groupedMessages.find((g) => g.groupId === groupId);
     if (!group || group.responses.length <= 1) return;
@@ -289,7 +289,7 @@ export default function AttemptMessages({
           chatId: targetChatId,
           isTourMessage: false,
         },
-      }),
+      })
     );
     simulationContext?.sendMessage(prompt);
   };
@@ -298,7 +298,7 @@ export default function AttemptMessages({
     // Find the previous user message to retry with
     const sortedMessages = messages.sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     // Find the previous user message (query type) that came before this error
@@ -312,7 +312,7 @@ export default function AttemptMessages({
       const errorMessage = sortedMessages[errorMessageIndex];
       if (errorMessage) {
         const group = groupedMessages.find((g) =>
-          g.responses.some((r) => r.id === errorMessage.id),
+          g.responses.some((r) => r.id === errorMessage.id)
         );
 
         if (group) {
@@ -332,7 +332,7 @@ export default function AttemptMessages({
             chatId: targetChatId,
             isTourMessage: false,
           },
-        }),
+        })
       );
       simulationContext?.sendMessage(previousUserMessage.content, true);
     }
@@ -342,7 +342,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
       const viewport = scrollArea.querySelector(
-        "[data-radix-scroll-area-viewport]",
+        "[data-radix-scroll-area-viewport]"
       ) as HTMLElement;
       if (viewport)
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
@@ -362,7 +362,7 @@ export default function AttemptMessages({
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
     const viewport = scrollArea.querySelector(
-      "[data-radix-scroll-area-viewport]",
+      "[data-radix-scroll-area-viewport]"
     ) as HTMLElement;
     if (!viewport) return;
     const handleScrollEvent = () => {
@@ -444,7 +444,7 @@ export default function AttemptMessages({
                         <div className="max-w-[80%] relative group p-2 -m-2">
                           {(() => {
                             const currentResponse = getCurrentResponse(
-                              group.groupId,
+                              group.groupId
                             );
                             if (!currentResponse) return null;
 
@@ -468,7 +468,7 @@ export default function AttemptMessages({
                                   </div>
                                 ) : currentResponse.completed &&
                                   currentResponse.content.startsWith(
-                                    "Error:",
+                                    "Error:"
                                   ) ? (
                                   // Show error messages in red with retry button (only if no successful responses exist)
                                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
@@ -484,8 +484,8 @@ export default function AttemptMessages({
                                           (response) =>
                                             response.completed &&
                                             !response.content.startsWith(
-                                              "Error:",
-                                            ),
+                                              "Error:"
+                                            )
                                         );
 
                                       return (
@@ -526,8 +526,8 @@ export default function AttemptMessages({
                                                   onClick={() =>
                                                     handleRetry(
                                                       messages.indexOf(
-                                                        currentResponse,
-                                                      ),
+                                                        currentResponse
+                                                      )
                                                     )
                                                   }
                                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
@@ -583,12 +583,12 @@ export default function AttemptMessages({
                                           }
                                           disabled={isRatingLoading(
                                             currentResponse.id,
-                                            true,
+                                            true
                                           )}
                                         >
                                           {isRatingLoading(
                                             currentResponse.id,
-                                            true,
+                                            true
                                           ) ? (
                                             <Loader2 className="h-3 w-3 animate-spin" />
                                           ) : (
@@ -608,17 +608,17 @@ export default function AttemptMessages({
                                           onClick={() =>
                                             handleRate(
                                               currentResponse.id,
-                                              false,
+                                              false
                                             )
                                           }
                                           disabled={isRatingLoading(
                                             currentResponse.id,
-                                            false,
+                                            false
                                           )}
                                         >
                                           {isRatingLoading(
                                             currentResponse.id,
-                                            false,
+                                            false
                                           ) ? (
                                             <Loader2 className="h-3 w-3 animate-spin" />
                                           ) : (
@@ -636,7 +636,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "prev",
+                                            "prev"
                                           )
                                         }
                                         disabled={
@@ -658,7 +658,7 @@ export default function AttemptMessages({
                                         onClick={() =>
                                           handleResponseNavigation(
                                             group.groupId,
-                                            "next",
+                                            "next"
                                           )
                                         }
                                         disabled={
@@ -691,12 +691,12 @@ export default function AttemptMessages({
                                       }
                                       disabled={isRatingLoading(
                                         currentResponse.id,
-                                        true,
+                                        true
                                       )}
                                     >
                                       {isRatingLoading(
                                         currentResponse.id,
-                                        true,
+                                        true
                                       ) ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (
@@ -717,12 +717,12 @@ export default function AttemptMessages({
                                       }
                                       disabled={isRatingLoading(
                                         currentResponse.id,
-                                        false,
+                                        false
                                       )}
                                     >
                                       {isRatingLoading(
                                         currentResponse.id,
-                                        false,
+                                        false
                                       ) ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (

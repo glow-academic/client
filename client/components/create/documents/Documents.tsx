@@ -52,15 +52,15 @@ import TagSelector from "@/components/common/tags/TagSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDocumentColumns } from "@/hooks/use-document-columns";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import {
   useDeleteDocument,
   useDeleteDocuments,
   useDocumentsByDepartmentIdBatch,
   useUpdateDocument,
   useUpdateDocuments,
-} from "@/lib/api/hooks/documents";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+} from "@/lib/api/v1/hooks/documents";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import { log } from "@/utils/logger";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
@@ -81,16 +81,16 @@ export default function Documents() {
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<DocumentObject | null>(
-    null,
+    null
   );
   const [previewDocument, setPreviewDocument] = useState<DocumentObject | null>(
-    null,
+    null
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
-    "__keep__",
+    "__keep__"
   );
   const [bulkTags, setBulkTags] = useState<string[]>([]);
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
@@ -107,20 +107,20 @@ export default function Documents() {
     (documentId: string) => {
       const activeScenarios = scenarios.filter((scenario) => scenario.active);
       return !activeScenarios.some((scenario) =>
-        scenario.documentIds?.includes(documentId),
+        scenario.documentIds?.includes(documentId)
       );
     },
-    [scenarios],
+    [scenarios]
   );
 
   // Get scenarios that use this document
   const getScenariosUsingDocument = useCallback(
     (documentId: string) => {
       return scenarios.filter((scenario) =>
-        scenario.documentIds?.includes(documentId),
+        scenario.documentIds?.includes(documentId)
       );
     },
-    [scenarios],
+    [scenarios]
   );
 
   // Handle document selection (for bulk operations in list view only)
@@ -175,7 +175,7 @@ export default function Documents() {
       setBulkType("__keep__");
       // Pre-populate with intersection of tags across selected documents
       const selectedDocs = documents.filter((doc) =>
-        selectedDocuments.includes(doc.id),
+        selectedDocuments.includes(doc.id)
       );
       if (selectedDocs.length > 0) {
         const intersection = selectedDocs
@@ -204,7 +204,7 @@ export default function Documents() {
 
       if (!canDeleteDocument(editingDocument.id)) {
         toast.error(
-          "This document cannot be deleted as it is used in active scenarios",
+          "This document cannot be deleted as it is used in active scenarios"
         );
         setShowDeleteDialog(false);
         setEditingDocument(null);
@@ -239,7 +239,7 @@ export default function Documents() {
 
       // Filter to only deletable documents
       const deletableDocuments = selectedDocuments.filter((documentId) =>
-        canDeleteDocument(documentId),
+        canDeleteDocument(documentId)
       );
 
       if (deletableDocuments.length === 0) {
@@ -341,7 +341,7 @@ export default function Documents() {
               ({
                 id,
                 ...updates,
-              }) as { id: string } & Partial<DocumentInsert>,
+              }) as { id: string } & Partial<DocumentInsert>
           ),
         });
       }
@@ -450,7 +450,7 @@ export default function Documents() {
                   value={editingDocument.name}
                   onChange={(e) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, name: e.target.value } : null,
+                      prev ? { ...prev, name: e.target.value } : null
                     )
                   }
                 />
@@ -463,7 +463,7 @@ export default function Documents() {
                   checked={editingDocument.active}
                   onCheckedChange={(checked) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, active: checked } : null,
+                      prev ? { ...prev, active: checked } : null
                     )
                   }
                 />
@@ -475,7 +475,7 @@ export default function Documents() {
                   value={editingDocument.type}
                   onValueChange={(value) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, type: value as DocumentType } : null,
+                      prev ? { ...prev, type: value as DocumentType } : null
                     )
                   }
                 >
@@ -498,11 +498,11 @@ export default function Documents() {
                   value={editingDocument.tags ?? []}
                   onChange={(tags) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, tags } : null,
+                      prev ? { ...prev, tags } : null
                     )
                   }
                   knownTags={Array.from(
-                    new Set(documents.flatMap((d) => d.tags ?? [])),
+                    new Set(documents.flatMap((d) => d.tags ?? []))
                   )}
                   badgesPosition="below"
                   showClearAll
@@ -525,7 +525,7 @@ export default function Documents() {
                       editingDocument.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === editingDocument.departmentId,
+                              (d) => d.id === editingDocument.departmentId
                             );
                             return dept
                               ? {
@@ -543,7 +543,7 @@ export default function Documents() {
                       setEditingDocument((prev) =>
                         prev
                           ? { ...prev, departmentId: department?.id || "" }
-                          : null,
+                          : null
                       )
                     }
                     placeholder="Select department"
@@ -609,7 +609,7 @@ export default function Documents() {
                 value={bulkTags}
                 onChange={setBulkTags}
                 knownTags={Array.from(
-                  new Set(documents.flatMap((d) => d.tags ?? [])),
+                  new Set(documents.flatMap((d) => d.tags ?? []))
                 )}
                 badgesPosition="below"
                 showClearAll
@@ -630,7 +630,7 @@ export default function Documents() {
                     bulkDepartmentId
                       ? (() => {
                           const dept = departments.find(
-                            (d) => d.id === bulkDepartmentId,
+                            (d) => d.id === bulkDepartmentId
                           );
                           return dept
                             ? {
@@ -687,7 +687,7 @@ export default function Documents() {
                   Are you sure you want to delete "{editingDocument.name}"?
                   {(() => {
                     const scenariosUsing = getScenariosUsingDocument(
-                      editingDocument.id,
+                      editingDocument.id
                     );
                     if (scenariosUsing.length > 0) {
                       return ` This document is used by ${scenariosUsing.length} scenario${scenariosUsing.length > 1 ? "s" : ""}.`;
@@ -710,10 +710,10 @@ export default function Documents() {
 
                   {(() => {
                     const deletableDocuments = selectedDocuments.filter(
-                      (documentId) => canDeleteDocument(documentId),
+                      (documentId) => canDeleteDocument(documentId)
                     );
                     const nonDeletableDocuments = selectedDocuments.filter(
-                      (documentId) => !canDeleteDocument(documentId),
+                      (documentId) => !canDeleteDocument(documentId)
                     );
 
                     return (
@@ -728,7 +728,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {deletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId,
+                                    (d) => d.id === documentId
                                   );
                                   return (
                                     <li
@@ -754,7 +754,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {nonDeletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId,
+                                    (d) => d.id === documentId
                                   );
                                   const scenariosUsing = doc
                                     ? getScenariosUsingDocument(doc.id)
@@ -808,7 +808,7 @@ export default function Documents() {
                 (editingDocument && !selectedDocuments.length
                   ? !canDeleteDocument(editingDocument.id)
                   : selectedDocuments.filter((documentId) =>
-                      canDeleteDocument(documentId),
+                      canDeleteDocument(documentId)
                     ).length === 0)
               }
               className="bg-red-600 hover:bg-red-700 text-white"

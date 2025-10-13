@@ -20,7 +20,7 @@ import {
   useCreateModel,
   useModel,
   useUpdateModel,
-} from "@/lib/api/hooks/models";
+} from "@/lib/api/v1/hooks/models";
 import { Model as ModelType } from "@/types";
 import { useRouter } from "next/navigation";
 interface FormErrors {
@@ -59,7 +59,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
       inputPpm: "0",
       outputPpm: "0",
     }),
-    [],
+    []
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -67,7 +67,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const { data: modelToEdit, isLoading: isModelLoading } = useModel(
     modelId!,
-    !!modelId,
+    !!modelId
   );
 
   // Mutation hooks
@@ -96,7 +96,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
   const handleInputChange = (
     field: keyof ModelType,
-    value: string | boolean | undefined,
+    value: string | boolean | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -172,12 +172,12 @@ export default function Model({ modelId, providerId }: ModelProps) {
       toast.success(
         isEditMode && modelId
           ? "Model updated successfully!"
-          : "Model created successfully!",
+          : "Model created successfully!"
       );
       router.push(`/management/providers`);
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -276,7 +276,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 onChange={(e) =>
                   handleInputChange(
                     "inputPpm" as keyof ModelType,
-                    e.target.value,
+                    e.target.value
                   )
                 }
                 placeholder="e.g. 3.00"
@@ -301,7 +301,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
                 onChange={(e) =>
                   handleInputChange(
                     "outputPpm" as keyof ModelType,
-                    e.target.value,
+                    e.target.value
                   )
                 }
                 placeholder="e.g. 15.00"

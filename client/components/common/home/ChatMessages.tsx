@@ -11,8 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useAssistantMessagesByChatId } from "@/lib/api/hooks/assistant_messages";
-import { useAssistantToolCallsByChatId } from "@/lib/api/hooks/assistant_tool_calls";
+import { useAssistantMessagesByChatId } from "@/lib/api/v1/hooks/assistant_messages";
+import { useAssistantToolCallsByChatId } from "@/lib/api/v1/hooks/assistant_tool_calls";
 import { AssistantMessage, AssistantToolCall } from "@/types";
 import { log } from "@/utils/logger";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
@@ -108,7 +108,7 @@ const ToolCallCard = ({
 
   const getToolDescription = (
     toolName: string,
-    args: Record<string, unknown>,
+    args: Record<string, unknown>
   ) => {
     const descriptions: Record<
       string,
@@ -186,7 +186,7 @@ const ToolCallCard = ({
               <span className="text-xs text-muted-foreground">
                 {getToolDescription(
                   toolCall.toolName,
-                  toolCall.toolArguments as Record<string, unknown>,
+                  toolCall.toolArguments as Record<string, unknown>
                 )}
               </span>
             </div>
@@ -282,7 +282,7 @@ export default function ChatMessages({
       });
     }
     return timeline.sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     );
   }, [messages, toolCalls]);
 

@@ -27,16 +27,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import {
   useDeleteRubric,
   useRubricsByDepartmentIdBatch,
-} from "@/lib/api/hooks/rubrics";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+} from "@/lib/api/v1/hooks/rubrics";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import { Rubric } from "@/types";
 import { RubricsDataTable } from "./RubricsDataTable";
-import { useDepartments } from "@/contexts/departments-context";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function Rubrics() {
     useRubricsByDepartmentIdBatch(effectiveDepartmentIds);
 
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   // Check if a rubric is being used by any simulations

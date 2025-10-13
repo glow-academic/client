@@ -4,7 +4,7 @@
 import { DepartmentsProvider } from "@/contexts/departments-context";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
-import { useProfilesByUserId } from "@/lib/api/hooks/profiles";
+import { useProfilesByUserId } from "@/lib/api/v1/hooks/profiles";
 import { getQueryClient } from "@/utils/react-query/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider, useSession } from "next-auth/react";

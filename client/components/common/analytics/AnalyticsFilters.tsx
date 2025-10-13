@@ -17,8 +17,9 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
-import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
+import { useRefreshAnalytics } from "@/lib/api/v1/hooks/analytics";
+import { useCohortProfilesByCohortIdBatch } from "@/lib/api/v1/hooks/cohort_profiles";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
 import type { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { useIsFetching } from "@tanstack/react-query";
@@ -50,8 +51,19 @@ export function AnalyticsFilters({
 
   const { effectiveDepartmentIds } = useDepartments();
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
+
+  // Get cohort profiles data to get member counts
+  const { data: cohortProfiles = [] } = useCohortProfilesByCohortIdBatch(
+    cohorts.map((c) => c.id)
+  );
+
+  // Helper function to get profile count for a cohort
+  const getCohortProfileCount = (cohortId: string) => {
+    return cohortProfiles.filter((cp) => cp.cohortId === cohortId && cp.active)
+      .length;
+  };
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
     useRefreshAnalytics();
 
@@ -146,7 +158,7 @@ export function AnalyticsFilters({
       if (simulationFilters.includes("archived")) vals.push("archived");
       // When all three are enabled functionally, start with empty to indicate "All simulations"
       return vals.length === 3 ? [] : vals;
-    },
+    }
   );
 
   // Keep local selection in sync when context flags change externally
@@ -185,13 +197,13 @@ export function AnalyticsFilters({
     title: cohort.title,
     description:
       cohort.description ||
-      `Cohort with ${cohort.profileIds?.length || 0} members`,
-    memberCount: cohort.profileIds?.length || 0,
+      `Cohort with ${getCohortProfileCount(cohort.id)} members`,
+    memberCount: getCohortProfileCount(cohort.id),
   }));
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id),
+    selectedCohortIds.includes(cohort.id)
   );
 
   // Automatically filter available roles and remove invalid selections when cohorts are selected
@@ -200,7 +212,7 @@ export function AnalyticsFilters({
       // When cohorts are selected, only allow "ta" and "instructional" roles
       // Remove any existing selections that aren't "ta" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "ta" || role === "instructional",
+        (role) => role === "ta" || role === "instructional"
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);

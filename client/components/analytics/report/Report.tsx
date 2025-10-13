@@ -9,7 +9,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
-import { useProfile } from "@/lib/api/hooks/profiles";
+import { useProfile } from "@/lib/api/v1/hooks/profiles";
 
 import Dashboard from "../Dashboard";
 

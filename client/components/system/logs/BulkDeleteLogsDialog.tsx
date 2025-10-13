@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { AppLog } from "@/hooks/use-log-columns";
-import { useDeleteAppLogs } from "@/lib/api/hooks/app_logs";
+import { useDeleteAppLogs } from "@/lib/api/v1/hooks/app_logs";
 
 export interface BulkDeleteLogsDialogProps {
   open: boolean;
@@ -72,7 +72,7 @@ export function BulkDeleteLogsDialog({
 
       // Show success toast and close dialog only after successful deletion
       toast.success(
-        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`,
+        `Successfully deleted ${logsToDeleteCount} log${logsToDeleteCount === 1 ? "" : "s"}`
       );
       onSuccess?.();
       onOpenChange(false);

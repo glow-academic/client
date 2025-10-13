@@ -39,9 +39,9 @@ import {
   useCreatePersona,
   useDeletePersona,
   usePersonasByDepartmentIdBatch,
-} from "@/lib/api/hooks/personas";
-import { useScenarioPersonasByPersonaIdBatch } from "@/lib/api/hooks/scenario_personas";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+} from "@/lib/api/v1/hooks/personas";
+import { useScenarioPersonasByPersonaIdBatch } from "@/lib/api/v1/hooks/scenario_personas";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import { Persona } from "@/types";
 import { PersonasDataTable } from "./PersonasDataTable";
 
@@ -83,10 +83,10 @@ export default function Personas() {
   const deletePersonaMutation = useDeletePersona();
 
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   // Load scenario_personas junction data for all personas
@@ -106,7 +106,7 @@ export default function Personas() {
   // Check if a persona is being used by any scenarios (via junction table)
   const isPersonaInUse = (personaId: string) => {
     return scenarioPersonas.some(
-      (sp) => sp.personaId === personaId && sp.active,
+      (sp) => sp.personaId === personaId && sp.active
     );
   };
 
@@ -325,7 +325,7 @@ export default function Personas() {
                   onClick={() =>
                     handleDeleteClick(
                       persona.id,
-                      persona.name || "Unnamed Persona",
+                      persona.name || "Unnamed Persona"
                     )
                   }
                 >

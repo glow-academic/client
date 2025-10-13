@@ -9,7 +9,7 @@
 
 import { DepartmentPicker } from "@/components/common/analytics/DepartmentPicker";
 import { useDepartments as useDepartmentsContext } from "@/contexts/departments-context";
-import { useDepartments } from "@/lib/api/hooks/departments";
+import { useDepartments } from "@/lib/api/v1/hooks/departments";
 
 export function DepartmentsFilters() {
   const { selectedDepartmentIds, setSelectedDepartmentIds } =
@@ -26,7 +26,7 @@ export function DepartmentsFilters() {
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
-    selectedDepartmentIds.includes(department.id),
+    selectedDepartmentIds.includes(department.id)
   );
 
   const handleDepartmentSelect = (departments: typeof departmentOptions) => {

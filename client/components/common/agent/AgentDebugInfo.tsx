@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 
+import { useDebugInfoByModelRunIdBatch } from "@/lib/api/v1/hooks/debug_info";
+import { useModelRunModelsByModelRunIdBatch } from "@/lib/api/v1/hooks/model_run_models";
+import { useModelRunsByAgentId } from "@/lib/api/v1/hooks/model_runs";
+import { useModels } from "@/lib/api/v1/hooks/models";
 import { DebugInfo as DebugInfoType, Model, ModelRun } from "@/types";
 import AgentDebugInfoDataTable from "./AgentDebugInfoDataTable";
-import { useModels } from "@/lib/api/hooks/models";
-import { useModelRunsByAgentId } from "@/lib/api/hooks/model_runs";
-import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
 
 export interface AgentDebugInfoProps {
   agentId: string;
@@ -27,7 +28,7 @@ export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
 
   const modelRunIds = useMemo(
     () => (modelRuns as ModelRun[]).map((mr) => mr.id),
-    [modelRuns],
+    [modelRuns]
   );
 
   const { data: debugInfo = [], isLoading: isLoadingDebug } =
@@ -35,13 +36,20 @@ export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
 
   const { data: models = [], isLoading: isLoadingModels } = useModels();
 
+  // Get model run models from junction table
+  const { data: modelRunModels = [] } = useModelRunModelsByModelRunIdBatch(
+    (modelRuns || []).map((mr) => mr.id)
+  );
+
   const modelIdByRunId = useMemo(() => {
     const map = new Map<string, string | null>();
-    for (const mr of modelRuns || []) {
-      map.set(mr.id, mr.modelId || null);
+    for (const mrm of modelRunModels || []) {
+      if (mrm.active) {
+        map.set(mrm.modelRunId, mrm.modelId);
+      }
     }
     return map;
-  }, [modelRuns]);
+  }, [modelRunModels]);
 
   const modelNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -72,7 +80,7 @@ export function AgentDebugInfo({ agentId }: AgentDebugInfoProps) {
         value: m.id,
         label: m.name,
       })),
-    [models],
+    [models]
   );
 
   const isLoading = isLoadingRuns || isLoadingDebug || isLoadingModels;

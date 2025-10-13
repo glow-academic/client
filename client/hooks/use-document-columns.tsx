@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDepartments } from "@/contexts/departments-context";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
+import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import { Document, Scenario } from "@/types";
 import { Edit, Trash2 } from "lucide-react";
 
@@ -32,7 +32,7 @@ const getFileExtension = (filename: string): string => {
 export function useDocumentColumns(onPreview?: (document: Document) => void) {
   const { effectiveDepartmentIds } = useDepartments();
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   // Filter options
@@ -46,7 +46,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
       { value: "lecture", label: "📖 Lecture" },
       { value: "syllabus", label: "📋 Syllabus" },
     ],
-    [],
+    []
   );
 
   const columns = useMemo<ColumnDef<Document>[]>(
@@ -205,7 +205,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         cell: ({ row }) => {
           const document = row.original;
           const documentScenarios = scenarios.filter((scenario: Scenario) =>
-            scenario.documentIds?.includes(document.id),
+            scenario.documentIds?.includes(document.id)
           );
 
           if (documentScenarios.length === 0) {
@@ -265,7 +265,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         enableHiding: false,
       },
     ],
-    [scenarios, typeOptions, onPreview],
+    [scenarios, typeOptions, onPreview]
   );
 
   const scenarioOptions = useMemo(
@@ -274,7 +274,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
         value: scenario.id,
         label: scenario.name,
       })),
-    [scenarios],
+    [scenarios]
   );
 
   const extensionOptions = useMemo(
@@ -288,7 +288,7 @@ export function useDocumentColumns(onPreview?: (document: Document) => void) {
       { value: "PNG", label: "PNG" },
       { value: "OTHER", label: "Other" },
     ],
-    [],
+    []
   );
 
   return {

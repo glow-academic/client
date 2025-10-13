@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useAssistantChat } from "@/lib/api/hooks/assistant_chats";
+import { useAssistantChat } from "@/lib/api/v1/hooks/assistant_chats";
 import { Edit, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
@@ -45,7 +45,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
 
   const { data: chat } = useAssistantChat(
     currentChatId!,
-    currentChatId !== undefined,
+    currentChatId !== undefined
   );
 
   if (uiState !== "widget") {
@@ -102,7 +102,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
-                          new Date(a.createdAt).getTime(),
+                          new Date(a.createdAt).getTime()
                       )
                       .map((pastChat) => (
                         <SelectItem key={pastChat.id} value={pastChat.id}>

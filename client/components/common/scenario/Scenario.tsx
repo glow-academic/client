@@ -48,33 +48,33 @@ import { PersonaPicker } from "./PersonaPicker";
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
+import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
+import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
 import {
   useCreateScenarioDocument,
   useScenarioDocumentsByScenarioId,
-} from "@/lib/api/hooks/scenario_documents";
+} from "@/lib/api/v1/hooks/scenario_documents";
 import {
   useCreateScenarioObjective,
   useScenarioObjectivesByScenarioId,
-} from "@/lib/api/hooks/scenario_objectives";
+} from "@/lib/api/v1/hooks/scenario_objectives";
 import {
   useCreateScenarioParameterItem,
   useScenarioParameterItemsByScenarioId,
-} from "@/lib/api/hooks/scenario_parameter_items";
+} from "@/lib/api/v1/hooks/scenario_parameter_items";
 import {
   useCreateScenarioPersona,
   useScenarioPersonasByScenarioId,
-} from "@/lib/api/hooks/scenario_personas";
+} from "@/lib/api/v1/hooks/scenario_personas";
 import {
   useCreateScenario,
   useScenario,
   useUpdateScenario,
-} from "@/lib/api/hooks/scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+} from "@/lib/api/v1/hooks/scenarios";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import { Scenario as ScenarioType, Simulation } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { randomizeScenario } from "@/utils/api/scenarios/randomize";
@@ -114,15 +114,15 @@ export default function Scenario({
 
   // Load linked data from junction tables
   const { data: linkedObjectives = [] } = useScenarioObjectivesByScenarioId(
-    scenarioId || "",
+    scenarioId || ""
   );
   const { data: linkedParameterItems = [] } =
     useScenarioParameterItemsByScenarioId(scenarioId || "");
   const { data: linkedDocuments = [] } = useScenarioDocumentsByScenarioId(
-    scenarioId || "",
+    scenarioId || ""
   );
   const { data: linkedPersonas = [] } = useScenarioPersonasByScenarioId(
-    scenarioId || "",
+    scenarioId || ""
   );
 
   // Form data state
@@ -165,7 +165,7 @@ export default function Scenario({
   useEffect(() => {
     if (linkedParameterItems.length > 0) {
       setCurrentParameterItemIds(
-        linkedParameterItems.map((lpi) => lpi.parameterItemId),
+        linkedParameterItems.map((lpi) => lpi.parameterItemId)
       );
     }
   }, [linkedParameterItems]);
@@ -190,17 +190,17 @@ export default function Scenario({
   }, [linkedPersonas, isEditMode]);
 
   const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [] } = useParameterItems();
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: scenario, isLoading } = useScenario(scenarioId!);
   const { data: departments = [] } = useDepartmentsHook();
@@ -245,7 +245,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return [];
     return simulations.filter(
       (sim: Simulation) =>
-        sim.scenarioIds && sim.scenarioIds.includes(scenarioId),
+        sim.scenarioIds && sim.scenarioIds.includes(scenarioId)
     );
   }, [simulations, scenarioId, isEditMode]);
 
@@ -254,7 +254,7 @@ export default function Scenario({
     if (!isEditMode || !scenarioId) return false;
 
     const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active,
+      (sim: Simulation) => sim.active
     );
 
     const isGeneratedScenario = !!(scenario?.parentId && scenario?.generated);
@@ -320,7 +320,7 @@ export default function Scenario({
   // Event handlers
   const handleInputChange = (
     field: keyof Partial<ScenarioType>,
-    value: string | string[] | boolean | null,
+    value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -507,7 +507,7 @@ export default function Scenario({
         context: { component: "Scenario", function: "handleGenerateScenario" },
       });
       toast.error(
-        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsGeneratingScenario(false);
@@ -615,7 +615,7 @@ export default function Scenario({
         },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -650,10 +650,10 @@ export default function Scenario({
   }
 
   const selectedDocuments = documents.filter((doc) =>
-    currentDocumentIds.includes(doc.id),
+    currentDocumentIds.includes(doc.id)
   );
   const selectedPersona = personas.find(
-    (persona) => persona.id === formData.personaId,
+    (persona) => persona.id === formData.personaId
   );
 
   return (
@@ -1144,7 +1144,7 @@ export default function Scenario({
                     formData?.departmentId
                       ? (() => {
                           const dept = departments.find(
-                            (d) => d.id === formData.departmentId,
+                            (d) => d.id === formData.departmentId
                           );
                           return dept
                             ? {

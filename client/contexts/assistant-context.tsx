@@ -8,7 +8,7 @@ import { useProfile } from "@/contexts/profile-context";
 import {
   useAssistantChatsByProfileId,
   useCreateAssistantChat,
-} from "@/lib/api/hooks/assistant_chats";
+} from "@/lib/api/v1/hooks/assistant_chats";
 import { AssistantChat } from "@/types";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
@@ -92,7 +92,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const { data: chats = [], isLoading: isLoadingChats } =
     useAssistantChatsByProfileId(
-      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "",
+      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || ""
     );
 
   // Create new chat mutation
@@ -139,11 +139,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     // Add event listeners
     window.addEventListener(
       "assistant_message_complete",
-      handleAssistantMessageComplete,
+      handleAssistantMessageComplete
     );
     window.addEventListener(
       "assistant_message_cancelled",
-      handleAssistantMessageCancelled,
+      handleAssistantMessageCancelled
     );
     window.addEventListener("assistant_error", handleAssistantError);
 
@@ -151,11 +151,11 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       // Remove event listeners
       window.removeEventListener(
         "assistant_message_complete",
-        handleAssistantMessageComplete,
+        handleAssistantMessageComplete
       );
       window.removeEventListener(
         "assistant_message_cancelled",
-        handleAssistantMessageCancelled,
+        handleAssistantMessageCancelled
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
@@ -395,7 +395,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       emitStartAssistant,
       emitSendAssistantMessage,
       effectiveDepartmentIds,
-    ],
+    ]
   );
 
   const stopMessage = useCallback(() => {

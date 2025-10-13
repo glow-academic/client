@@ -21,12 +21,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useCohortColumns } from "@/hooks/use-cohort-columns";
+import { useCohortProfilesByCohortIdBatch } from "@/lib/api/v1/hooks/cohort_profiles";
 import {
   useCohortsByDepartmentIdBatch,
   useCreateCohort,
   useDeleteCohort,
-} from "@/lib/api/hooks/cohorts";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
+} from "@/lib/api/v1/hooks/cohorts";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/v1/hooks/profiles";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -45,7 +46,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useUpdateCohort } from "@/lib/api/hooks/cohorts";
+// import { useUpdateCohort } from "@/lib/api/hooks/cohorts"; // Temporarily disabled for junction table migration
 import { Cohort } from "@/types";
 
 export default function Cohorts() {
@@ -61,10 +62,14 @@ export default function Cohorts() {
   const { data: profiles = [], isLoading: loadingProfiles } =
     useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
 
+  // Fetch cohort profiles data to get member relationships
+  const { data: cohortProfiles = [], isLoading: loadingCohortProfiles } =
+    useCohortProfilesByCohortIdBatch(cohorts.map((c) => c.id));
+
   // Mutation hooks
   const createCohortMutation = useCreateCohort();
   const deleteCohortMutation = useDeleteCohort();
-  const updateCohortMutation = useUpdateCohort();
+  // const updateCohortMutation = useUpdateCohort(); // Temporarily disabled for junction table migration
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -83,8 +88,19 @@ export default function Cohorts() {
   // Get table columns and filter options - must be called before loading check
   const { columns, profileOptions, simulationOptions } = useCohortColumns();
 
+  // Helper function to get profile IDs for a cohort
+  const getCohortProfileIds = (cohortId: string) => {
+    return cohortProfiles
+      .filter((cp) => cp.cohortId === cohortId && cp.active)
+      .map((cp) => cp.profileId);
+  };
+
   const isLoading =
-    isProfileLoading || !effectiveProfile || loadingCohorts || loadingProfiles;
+    isProfileLoading ||
+    !effectiveProfile ||
+    loadingCohorts ||
+    loadingProfiles ||
+    loadingCohortProfiles;
 
   if (isLoading) {
     return (
@@ -129,11 +145,8 @@ export default function Cohorts() {
 
   // Check if a cohort is being used (has members)
   const isCohortInUse = (cohortId: string) => {
-    const cohort = cohorts.find((c) => c.id === cohortId);
-    if (!cohort) return false;
-
-    // Check if cohort has members
-    return cohort.profileIds && cohort.profileIds.length > 0;
+    const profileIds = getCohortProfileIds(cohortId);
+    return profileIds.length > 0;
   };
 
   // Check if a cohort can be deleted (inactive or no members)
@@ -147,11 +160,12 @@ export default function Cohorts() {
     }
 
     // For active cohorts, check if there are any TA members
+    const profileIds = getCohortProfileIds(cohortId);
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      profileIds.includes(profile.id)
     );
     const hasTAMembers = cohortProfiles.some(
-      (profile) => profile.role === "ta",
+      (profile) => profile.role === "ta"
     );
 
     // Cannot delete active cohorts that have TA members
@@ -188,17 +202,16 @@ export default function Cohorts() {
     if (effectiveProfile?.role !== "instructional") return false;
 
     // Check if user is in the cohort
-    const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
-    );
+    const profileIds = getCohortProfileIds(cohortId);
+    const isUserInCohort = profileIds.includes(effectiveProfile?.id || "");
     if (!isUserInCohort) return false;
 
     // Check if there are other instructional users in the cohort
     const cohortProfiles = profiles.filter((profile) =>
-      cohort.profileIds?.includes(profile.id),
+      profileIds.includes(profile.id)
     );
     const instructionalProfiles = cohortProfiles.filter(
-      (profile) => profile.role === "instructional",
+      (profile) => profile.role === "instructional"
     );
 
     // Can leave if there are other instructional users (not the only one)
@@ -222,9 +235,8 @@ export default function Cohorts() {
     if (isAdmin) return true;
 
     // Check if user's profile is in the cohort's profileIds
-    const isUserInCohort = cohort.profileIds?.includes(
-      effectiveProfile?.id || "",
-    );
+    const profileIds = getCohortProfileIds(cohortId);
+    const isUserInCohort = profileIds.includes(effectiveProfile?.id || "");
 
     return isUserInCohort || !isCohortInUse(cohortId);
   };
@@ -240,7 +252,8 @@ export default function Cohorts() {
 
     // Instructional users can only see cohorts they're in
     if (effectiveProfile?.role === "instructional") {
-      return cohort.profileIds?.includes(effectiveProfile?.id || "");
+      const profileIds = getCohortProfileIds(cohort.id);
+      return profileIds.includes(effectiveProfile?.id || "");
     }
 
     // Other roles can see all cohorts
@@ -290,15 +303,20 @@ export default function Cohorts() {
         return;
       }
 
-      const updatedProfileIds =
-        cohort.profileIds?.filter((id) => id !== effectiveProfile?.id) || [];
-
       // Update the cohort to remove the current user
-      await updateCohortMutation.mutateAsync({
-        id: leaveItem.id,
-        profileIds: updatedProfileIds,
-        updatedAt: new Date().toISOString(),
-      });
+      // Note: This would need to be updated to use cohort_profiles junction table
+      // For now, we'll skip this functionality until the backend supports it
+      console.warn(
+        "Leave cohort functionality needs to be updated for junction table"
+      );
+      // const profileIds = getCohortProfileIds(leaveItem.id);
+      // const updatedProfileIds =
+      //   profileIds.filter((id) => id !== effectiveProfile?.id);
+      // await updateCohortMutation.mutateAsync({
+      //   id: leaveItem.id,
+      //   profileIds: updatedProfileIds,
+      //   updatedAt: new Date().toISOString(),
+      // });
 
       await log.info("cohort.leave.success", {
         message: "Left cohort successfully",
@@ -401,7 +419,7 @@ export default function Cohorts() {
               <div className="flex items-center gap-2">
                 <Badge variant="outline">
                   <Users className="h-3 w-3 mr-1" />
-                  {cohort.profileIds?.length || 0} members
+                  {getCohortProfileIds(cohort.id).length} members
                 </Badge>
               </div>
               {!cohort.active && (
@@ -477,8 +495,7 @@ export default function Cohorts() {
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
-          {cohort.profileIds?.length || 0} members •{" "}
-          {cohort.simulationIds?.length || 0} simulations
+          {getCohortProfileIds(cohort.id).length} members
         </div>
       </CardContent>
     </Card>

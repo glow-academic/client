@@ -3,9 +3,9 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
 
-import { useModelRuns } from "@/lib/api/hooks/model_runs";
-import { useModels } from "@/lib/api/hooks/models";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useModelRuns } from "@/lib/api/v1/hooks/model_runs";
+import { useModels } from "@/lib/api/v1/hooks/models";
+import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 import { Department, Model, ModelRun, Profile } from "@/types";
 
 export function useDepartmentColumns() {
@@ -20,7 +20,7 @@ export function useDepartmentColumns() {
       { value: "medium", label: "Medium ($100 - $500)" },
       { value: "high", label: "High ($500+)" },
     ],
-    [],
+    []
   );
 
   // Create filter options for staff count
@@ -30,7 +30,7 @@ export function useDepartmentColumns() {
       { value: "medium", label: "Medium (6-20 staff)" },
       { value: "large", label: "Large (20+ staff)" },
     ],
-    [],
+    []
   );
 
   // Helper function to get price range
@@ -58,7 +58,7 @@ export function useDepartmentColumns() {
   const calculateTotalPriceSpent = useCallback(
     (departmentId: string): number => {
       const departmentRuns = modelRuns.filter(
-        (run: ModelRun) => run.departmentId === departmentId,
+        (run: ModelRun) => run.departmentId === departmentId
       );
 
       let totalSpend = 0;
@@ -76,18 +76,18 @@ export function useDepartmentColumns() {
       }
       return totalSpend;
     },
-    [modelRuns, modelIdToMeta],
+    [modelRuns, modelIdToMeta]
   );
 
   // Helper function to get staff count for a department
   const getStaffCount = useCallback(
     (departmentId: string): number => {
       const departmentProfiles = profiles.filter(
-        (profile: Profile) => profile.departmentId === departmentId,
+        (profile: Profile) => profile.departmentId === departmentId
       );
       return departmentProfiles.length;
     },
-    [profiles],
+    [profiles]
   );
 
   // Create columns for the data table
@@ -160,7 +160,7 @@ export function useDepartmentColumns() {
         },
       },
     ],
-    [getStaffCount, calculateTotalPriceSpent],
+    [getStaffCount, calculateTotalPriceSpent]
   );
 
   return {

@@ -21,8 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
-import { useCreateProvider, useProvider } from "@/lib/api/hooks/providers";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
+import { useCreateProvider, useProvider } from "@/lib/api/v1/hooks/providers";
 import { log } from "@/utils/logger";
 
 export interface ProviderProps {
@@ -66,7 +66,7 @@ export default function Provider({ providerId }: ProviderProps) {
           ? ""
           : effectiveProfile?.departmentId || "",
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId],
+    [effectiveProfile?.role, effectiveProfile?.departmentId]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -74,7 +74,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const { data: provider, isLoading: isProviderLoading } = useProvider(
     providerId!,
-    !!providerId,
+    !!providerId
   );
 
   // Mutation hooks
@@ -99,7 +99,7 @@ export default function Provider({ providerId }: ProviderProps) {
 
   const handleInputChange = (
     field: keyof FormData,
-    value: string | undefined,
+    value: string | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -211,7 +211,7 @@ export default function Provider({ providerId }: ProviderProps) {
       toast.success(
         isEditMode && providerId
           ? "Provider updated successfully!"
-          : "Provider created successfully!",
+          : "Provider created successfully!"
       );
       router.push(`/management/providers`);
     } catch (error) {
@@ -223,7 +223,7 @@ export default function Provider({ providerId }: ProviderProps) {
         context: { component: "Provider", isEditMode, providerId },
       });
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -326,7 +326,7 @@ export default function Provider({ providerId }: ProviderProps) {
                   formData?.departmentId
                     ? (() => {
                         const dept = departments.find(
-                          (d) => d.id === formData.departmentId,
+                          (d) => d.id === formData.departmentId
                         );
                         return dept
                           ? {

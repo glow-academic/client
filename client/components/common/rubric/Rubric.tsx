@@ -13,11 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
+import { useRubric } from "@/lib/api/v1/hooks/rubrics";
+import { useStandardGroupsByRubricId } from "@/lib/api/v1/hooks/standard_groups";
+import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
-import { useRubric } from "@/lib/api/hooks/rubrics";
-import { useStandardGroupsByRubricId } from "@/lib/api/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/hooks/standards";
 
 export interface RubricProps {
   rubricId?: string;
@@ -49,7 +49,7 @@ export default function Rubric({ rubricId }: RubricProps) {
     useStandardGroupsByRubricId(rubricId!);
   const { data: standards, isLoading: standardsLoading } =
     useStandardsByStandardGroupIdBatch(
-      standardGroups!.map((group) => group.id),
+      standardGroups!.map((group) => group.id)
     );
 
   const isLoading = rubricLoading || standardGroupsLoading || standardsLoading;

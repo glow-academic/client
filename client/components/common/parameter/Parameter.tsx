@@ -33,22 +33,19 @@ import {
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import {
   useCreateParameterItem,
   useCreateParameterItems,
   useDeleteParameterItems,
   useParameterItemsByParameterId,
   useUpdateParameterItems,
-} from "@/lib/api/hooks/parameter_items";
+} from "@/lib/api/v1/hooks/parameter_items";
 import {
   useCreateParameter,
   useParameter,
   useUpdateParameter,
-} from "@/lib/api/hooks/parameters";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+} from "@/lib/api/v1/hooks/parameters";
 import { Plus, Trash2 } from "lucide-react";
 
 interface FormData {
@@ -94,9 +91,9 @@ export default function Parameter({
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? ""
-          : effectiveProfile?.departmentId || "",
+          : effectiveDepartmentIds[0] || "",
     }),
-    [effectiveProfile?.role, effectiveProfile?.departmentId],
+    [effectiveProfile?.role, effectiveDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,20 +103,21 @@ export default function Parameter({
   >([]);
 
   const { data: parameter, isLoading: isLoadingParameter } = useParameter(
-    parameterId!,
+    parameterId!
   );
   const { data: parameterItems, isLoading: isLoadingParameterItems } =
     useParameterItemsByParameterId(parameterId!);
 
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
-  const { data: sims = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
-  const { data: allScenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
-  );
+  // Temporarily disabled: these would need junction table updates
+  // const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
+  //   effectiveDepartmentIds,
+  // );
+  // const { data: sims = [] } = useSimulationsByDepartmentIdBatch(
+  //   effectiveDepartmentIds,
+  // );
+  // const { data: allScenarios = [] } = useScenariosByDepartmentIdBatch(
+  //   effectiveDepartmentIds,
+  // );
   const { data: departments = [] } = useDepartmentsHook();
 
   // Mutation hooks
@@ -131,28 +129,16 @@ export default function Parameter({
   const deleteParameterItemsMutation = useDeleteParameterItems();
 
   const inUseParameterItemIds = useMemo(() => {
-    // Active cohorts
-    const activeCohorts = cohorts.filter((c) => c.active);
-    const activeSimulationIds = new Set<string>();
-    activeCohorts.forEach((c) => {
-      (c.simulationIds || []).forEach((id) => activeSimulationIds.add(id));
-    });
-    const activeSimulations = sims.filter(
-      (s) => s.active && activeSimulationIds.has(s.id),
-    );
-    const scenarioIds = new Set<string>();
-    activeSimulations.forEach((s) => {
-      (s.scenarioIds || []).forEach((id) => scenarioIds.add(id));
-    });
-    const relevantScenarios = (allScenarios || []).filter((sc) =>
-      scenarioIds.has(sc.id),
-    );
-    const ids = new Set<string>();
-    relevantScenarios.forEach((sc: { parameterItemIds: string[] | null }) => {
-      (sc.parameterItemIds || []).forEach((pid: string) => ids.add(pid));
-    });
-    return ids;
-  }, [cohorts, sims, allScenarios]);
+    // TODO: Update to use junction tables (cohort_simulations, simulation_scenarios, scenario_parameter_items)
+    // For now, return empty set (all items considered not in use)
+    return new Set<string>();
+
+    // Previous logic relied on cohort.simulationIds and simulation.scenarioIds
+    // which are now in junction tables. This needs to be refactored to:
+    // 1. Get simulation IDs from cohort_simulations junction
+    // 2. Get scenario IDs from simulation_scenarios junction
+    // 3. Get parameter item IDs from scenario_parameter_items junction
+  }, []);
 
   const isLoading = isLoadingParameter || isLoadingParameterItems;
 
@@ -241,7 +227,7 @@ export default function Parameter({
           active: formData.active,
           defaultParameter: formData.defaultParameter || false,
           departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+            formData.departmentId || effectiveDepartmentIds[0] || "",
           updatedAt: new Date().toISOString(),
         });
 
@@ -279,13 +265,13 @@ export default function Parameter({
         // Execute bulk operations
         if (itemsToDelete.length > 0) {
           promises.push(
-            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete }),
+            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete })
           );
         }
 
         if (itemsToCreate.length > 0) {
           promises.push(
-            createParameterItemsMutation.mutateAsync({ items: itemsToCreate }),
+            createParameterItemsMutation.mutateAsync({ items: itemsToCreate })
           );
         }
 
@@ -293,7 +279,7 @@ export default function Parameter({
           promises.push(
             updateParameterItemsMutation.mutateAsync({
               updates: itemsToUpdate,
-            }),
+            })
           );
         }
 
@@ -308,7 +294,7 @@ export default function Parameter({
           active: formData.active || false,
           defaultParameter: formData.defaultParameter || false,
           departmentId:
-            formData.departmentId || effectiveProfile?.departmentId || "",
+            formData.departmentId || effectiveDepartmentIds[0] || "",
         });
 
         // Create parameter items for the new parameter
@@ -323,7 +309,7 @@ export default function Parameter({
                   value: formData.numerical || false ? item.value : item.name,
                   parameterId: newParameter.id,
                   defaultItem: !!item.defaultItem,
-                }),
+                })
               );
             }
           });
@@ -337,7 +323,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -347,7 +333,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -402,7 +388,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted,
+      (item) => !item.isDeleted
     );
 
     activeItems.forEach((item, index) => {
@@ -420,7 +406,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`,
+            `Parameter item ${index + 1}: Value must be a valid number`
           );
         }
       }
@@ -492,7 +478,7 @@ export default function Parameter({
                       formData?.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === formData.departmentId,
+                              (d) => d.id === formData.departmentId
                             );
                             return dept
                               ? {
@@ -614,7 +600,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm"
@@ -628,7 +614,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm min-h-[96px]"
@@ -645,7 +631,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm"
@@ -665,7 +651,7 @@ export default function Parameter({
                                         handleParameterItemInputChange(
                                           itemIndex,
                                           "defaultItem",
-                                          Boolean(checked),
+                                          Boolean(checked)
                                         )
                                       }
                                       aria-label="Save as system item"
@@ -701,7 +687,7 @@ export default function Parameter({
                           </div>
                         </TableCell>
                       </TableRow>
-                    ),
+                    )
                   )}
                 </TableBody>
               </Table>
@@ -747,7 +733,7 @@ export default function Parameter({
                         defaultItem: item.defaultItem ?? false,
                         isNew: false,
                         isDeleted: false,
-                      })),
+                      }))
                     ))
               }
             >

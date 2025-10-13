@@ -3,22 +3,22 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
-import { Cohort, Persona, Scenario, Simulation } from "@/types";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/hooks/cohorts";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
 import { useDepartments } from "@/contexts/departments-context";
+import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
+import { Cohort, Persona, Scenario, Simulation } from "@/types";
 
 export function useScenarioColumns() {
   const { effectiveDepartmentIds } = useDepartments();
   const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   const columns = useMemo<ColumnDef<Scenario>[]>(
@@ -44,20 +44,20 @@ export function useScenarioColumns() {
         cell: ({ row }) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id),
+            sim.scenarioIds.includes(scenario.id)
           );
           return scenarioSimulations.map((sim: Simulation) => sim.id);
         },
         filterFn: (row, _, value) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id),
+            sim.scenarioIds.includes(scenario.id)
           );
           const simulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id,
+            (sim: Simulation) => sim.id
           );
           return value.some((filterValue: string) =>
-            simulationIds.includes(filterValue),
+            simulationIds.includes(filterValue)
           );
         },
       },
@@ -76,8 +76,8 @@ export function useScenarioColumns() {
             (cohort: Cohort) =>
               Array.isArray(cohort.simulationIds) &&
               cohort.simulationIds.some((simId: string) =>
-                scenarioSimulationIds.includes(simId),
-              ),
+                scenarioSimulationIds.includes(simId)
+              )
           );
 
           // Return unique cohort IDs
@@ -88,10 +88,10 @@ export function useScenarioColumns() {
         filterFn: (row, _, value) => {
           const scenario = row.original;
           const scenarioSimulations = simulations.filter((sim: Simulation) =>
-            sim.scenarioIds.includes(scenario.id),
+            sim.scenarioIds.includes(scenario.id)
           );
           const scenarioSimulationIds = scenarioSimulations.map(
-            (sim: Simulation) => sim.id,
+            (sim: Simulation) => sim.id
           );
 
           // Find all cohorts whose simulation_ids include any of the scenario's simulation IDs
@@ -99,15 +99,15 @@ export function useScenarioColumns() {
             (cohort: Cohort) =>
               Array.isArray(cohort.simulationIds) &&
               cohort.simulationIds.some((simId: string) =>
-                scenarioSimulationIds.includes(simId),
-              ),
+                scenarioSimulationIds.includes(simId)
+              )
           );
 
           // Return unique cohort IDs
           return value.some((filterValue: string) =>
             relatedCohorts
               .map((cohort: Cohort) => cohort.id)
-              .includes(filterValue),
+              .includes(filterValue)
           );
         },
       },
@@ -126,7 +126,7 @@ export function useScenarioColumns() {
         cell: ({ row }) => row.getValue("updatedAt"),
       },
     ],
-    [simulations, cohorts],
+    [simulations, cohorts]
   );
 
   // Filter options
@@ -136,7 +136,7 @@ export function useScenarioColumns() {
         value: simulation.id,
         label: simulation.title,
       })),
-    [simulations],
+    [simulations]
   );
 
   const cohortOptions = useMemo(
@@ -145,7 +145,7 @@ export function useScenarioColumns() {
         value: cohort.id,
         label: cohort.title,
       })),
-    [cohorts],
+    [cohorts]
   );
 
   const personaOptions = useMemo(
@@ -154,7 +154,7 @@ export function useScenarioColumns() {
         value: persona.id,
         label: persona.name,
       })),
-    [personas],
+    [personas]
   );
 
   return {

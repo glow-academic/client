@@ -31,12 +31,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/hooks/departments";
+import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import {
   useDeleteProfile,
   useProfile,
   useUpdateProfile,
-} from "@/lib/api/hooks/profiles";
+} from "@/lib/api/v1/hooks/profiles";
 import { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
@@ -66,7 +66,7 @@ export interface StaffEditProps {
 const useStaffEditBusinessLogic = (
   profileId: string,
   redirectOnSuccess: boolean,
-  onDone?: () => void,
+  onDone?: () => void
 ) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +141,7 @@ const useStaffEditBusinessLogic = (
       onDone,
       updateProfileMutation,
       effectiveProfile?.role,
-    ],
+    ]
   );
 
   const handleDelete = useCallback(async () => {
@@ -239,7 +239,7 @@ export default function StaffEdit({
       }
       await handleSubmit(payload);
     },
-    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser],
+    [handleSubmit, formData, canToggleDefault, toggleDefault, targetUser]
   );
 
   const handleFormInputChange = useCallback(
@@ -247,7 +247,7 @@ export default function StaffEdit({
       setFormData((prev) => ({ ...prev, [field]: value }));
       handleInputChange(String(field), String(value));
     },
-    [handleInputChange],
+    [handleInputChange]
   );
 
   return (
@@ -382,7 +382,7 @@ export default function StaffEdit({
                         const num = parseInt(val, 10);
                         handleFormInputChange(
                           "reqPerDay",
-                          Number.isNaN(num) ? "" : num,
+                          Number.isNaN(num) ? "" : num
                         );
                       }
                     }}
@@ -430,7 +430,7 @@ export default function StaffEdit({
                       formData?.departmentId
                         ? (() => {
                             const dept = departments.find(
-                              (d) => d.id === formData.departmentId,
+                              (d) => d.id === formData.departmentId
                             );
                             return dept
                               ? {
@@ -447,7 +447,7 @@ export default function StaffEdit({
                     onSelect={(department) =>
                       handleFormInputChange(
                         "departmentId",
-                        department?.id || "",
+                        department?.id || ""
                       )
                     }
                     placeholder="Select department"

@@ -25,8 +25,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useDepartments } from "@/contexts/departments-context";
 import { useParameterColumns } from "@/hooks/use-parameter-columns";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
+import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
 import { Parameter, ParameterItem } from "@/types";
 import { ParametersDataTable } from "./ParametersDataTable";
 
@@ -35,7 +35,7 @@ export default function Parameters() {
   const { effectiveDepartmentIds } = useDepartments();
 
   const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: parameterItems = [], isLoading: parameterItemsLoading } =
     useParameterItems();
@@ -58,7 +58,7 @@ export default function Parameters() {
       acc[item.parameterId]!.push(item);
       return acc;
     },
-    {} as Record<string, ParameterItem[]>,
+    {} as Record<string, ParameterItem[]>
   );
 
   const getParameterIcon = (parameter: Parameter) => {

@@ -13,11 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartmentColumns } from "@/hooks/use-department-columns";
-import { useDepartments } from "@/lib/api/hooks/departments";
-import { useModelRuns } from "@/lib/api/hooks/model_runs";
-import { useModels } from "@/lib/api/hooks/models";
-import { useProfileDepartments } from "@/lib/api/hooks/profile_departments";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useDepartments } from "@/lib/api/v1/hooks/departments";
+import { useModelRuns } from "@/lib/api/v1/hooks/model_runs";
+import { useModels } from "@/lib/api/v1/hooks/models";
+import { useProfileDepartments } from "@/lib/api/v1/hooks/profile_departments";
+import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 import { Department, Model, ModelRun } from "@/types";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
@@ -52,7 +52,7 @@ export default function Departments() {
   const calculateTotalPriceSpent = useCallback(
     (departmentId: string): number => {
       const departmentRuns = modelRuns.filter(
-        (run: ModelRun) => run.departmentId === departmentId,
+        (run: ModelRun) => run.departmentId === departmentId
       );
 
       let totalSpend = 0;
@@ -70,18 +70,18 @@ export default function Departments() {
       }
       return totalSpend;
     },
-    [modelRuns, modelIdToMeta],
+    [modelRuns, modelIdToMeta]
   );
 
   // Helper function to get staff count for a department (via profile_departments junction)
   const getStaffCount = useCallback(
     (departmentId: string): number => {
       const departmentProfileLinks = profileDepartments.filter(
-        (pd) => pd.departmentId === departmentId,
+        (pd) => pd.departmentId === departmentId
       );
       return departmentProfileLinks.length;
     },
-    [profileDepartments],
+    [profileDepartments]
   );
 
   const renderDepartmentCard = (department: Department) => (

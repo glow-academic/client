@@ -21,8 +21,8 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useAppLogs } from "@/lib/api/hooks/app_logs";
-import { useProfiles } from "@/lib/api/hooks/profiles";
+import { useAppLogs } from "@/lib/api/v1/hooks/app_logs";
+import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
@@ -94,7 +94,7 @@ export default function Logs() {
       const userId = actor["userId"] as string | undefined;
       return explicit ?? profileId ?? userId ?? null;
     },
-    [profileIdToName],
+    [profileIdToName]
   );
 
   const { columns, levelOptions } = useLogColumns({
@@ -122,7 +122,7 @@ export default function Logs() {
 
     const getContextString = (
       ctx: unknown,
-      key: string,
+      key: string
     ): string | undefined => {
       if (!ctx || typeof ctx !== "object") return undefined;
       const value = (ctx as Record<string, unknown>)[key];
@@ -136,7 +136,7 @@ export default function Logs() {
       const component = getContextString(l.context, "component");
       const fn = getContextString(l.context, "function");
       const actor = resolveActorName(
-        l.actor as Record<string, unknown> | null | undefined,
+        l.actor as Record<string, unknown> | null | undefined
       );
       if (provider) providers.add(provider);
       if (model) models.add(model);

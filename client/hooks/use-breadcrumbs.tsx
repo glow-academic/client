@@ -1,4 +1,4 @@
-import { useResolveBreadcrumb } from "@/lib/api/hooks/breadcrumbs";
+import { useResolveBreadcrumb } from "@/lib/api/v1/hooks/breadcrumbs";
 import { useEffect, useState } from "react";
 
 interface BreadcrumbItem {

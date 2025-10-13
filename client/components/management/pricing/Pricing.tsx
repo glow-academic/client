@@ -24,17 +24,17 @@ import {
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useDepartments } from "@/contexts/departments-context";
-import { useDebugInfoByModelRunIdBatch } from "@/lib/api/hooks/debug_info";
-import { useModelRunsByDepartmentIdBatch } from "@/lib/api/hooks/model_runs";
-import { useModels } from "@/lib/api/hooks/models";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/hooks/personas";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/hooks/profiles";
+import { useAgents } from "@/lib/api/v1/hooks/agents";
+import { useDebugInfoByModelRunIdBatch } from "@/lib/api/v1/hooks/debug_info";
+import { useModelRunsByDepartmentIdBatch } from "@/lib/api/v1/hooks/model_runs";
+import { useModels } from "@/lib/api/v1/hooks/models";
+import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
+import { useProfilesByDepartmentIdBatch } from "@/lib/api/v1/hooks/profiles";
 import type { DebugInfo } from "@/types";
 import { Agent, Model, ModelRun, Persona } from "@/types";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
 import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
-import { useAgents } from "@/lib/api/hooks/agents";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -74,10 +74,10 @@ export default function Pricing() {
     useModelRunsByDepartmentIdBatch(effectiveDepartmentIds);
   const { data: agents = [] } = useAgents();
   const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: profiles = [] } = useProfilesByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
@@ -122,7 +122,7 @@ export default function Pricing() {
 
     // Build include sets (empty selection means All)
     const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : models.map((m) => m.id),
+      selectedModelIds.length ? selectedModelIds : models.map((m) => m.id)
     );
     const includeActors = new Set(selectedActorIds);
     const includeProfiles = new Set(selectedProfileIds);
@@ -198,7 +198,7 @@ export default function Pricing() {
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2),
+            .toFixed(2)
         );
         return row;
       });
@@ -247,7 +247,7 @@ export default function Pricing() {
   // Debug info by run
   const filteredRunIds = useMemo(
     () => (filteredRuns || []).map((r) => r.id as string),
-    [filteredRuns],
+    [filteredRuns]
   );
 
   const { data: debugInfoList = [] } =
@@ -266,7 +266,7 @@ export default function Pricing() {
   // Build options for toolbar
   const modelOptions = useMemo(
     () => models.map((m) => ({ value: m.id, label: m.name })),
-    [models],
+    [models]
   );
   const actorOptions = useMemo(() => {
     const agentOpts = agents.map((a) => ({ value: a.id, label: a.name }));
@@ -413,7 +413,7 @@ export default function Pricing() {
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ]),
+                ])
               )}
               className="aspect-[16/7]"
             >

@@ -17,7 +17,7 @@ import { Document } from "@/types";
 import CodeViewer from "@/components/common/viewers/CodeViewer";
 import HtmlViewer from "@/components/common/viewers/HtmlViewer";
 import { useDepartments } from "@/contexts/departments-context";
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/hooks/documents";
+import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
 import { isCodeByName } from "@/utils/mime-map";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
@@ -104,7 +104,7 @@ export default function DocumentViewer({
             {
               method: "GET",
               credentials: "include",
-            },
+            }
           );
         }
 

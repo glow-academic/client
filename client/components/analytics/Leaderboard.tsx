@@ -8,6 +8,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
+import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import type {
   AnalyticsFilters,
@@ -23,7 +24,7 @@ import type {
   TotalAttemptsMetricResponse,
 } from "@/lib/analytics";
 import { computeCurrent } from "@/lib/analytics";
-import { useAnalyticsLeaderboardBundle } from "@/lib/api/hooks/analytics";
+import { useAnalyticsLeaderboardBundle } from "@/lib/api/v1/hooks/analytics";
 import type { Profile } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -42,7 +43,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import AccoladeCard from "../common/cohort/AccoladeCard";
 import LeaderboardTable from "../common/cohort/LeaderboardTable";
-import { useDepartments } from "@/contexts/departments-context";
 
 // Helper function to get initials from name
 const getInitials = (firstName: string, lastName: string): string => {
@@ -85,7 +85,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       selectedRoles,
       simulationFilters,
       effectiveDepartmentIds,
-    ],
+    ]
   );
 
   // Load the leaderboard data
@@ -160,7 +160,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         keyField?: string | undefined;
       },
     >(
-      metric: T,
+      metric: T
     ) => {
       if (!metric.hasData || !metric.dataPoints.length) return 0;
       return computeCurrent(
@@ -179,7 +179,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           | "simulationId"
           | "profileId"
           | "date"
-          | undefined,
+          | undefined
       );
     };
 
@@ -191,11 +191,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           const curValue = getCurrentValue(cur.metrics[metricKey]);
           return curValue > bestValue ? cur : best;
         },
-        hydratedRows[0] as LeaderboardRow | undefined,
+        hydratedRows[0] as LeaderboardRow | undefined
       );
 
     const pickMinPositiveByMetric = (
-      metricKey: keyof LeaderboardRow["metrics"],
+      metricKey: keyof LeaderboardRow["metrics"]
     ) => {
       const positives = hydratedRows.filter((r) => {
         const value = getCurrentValue(r.metrics[metricKey]);
@@ -284,7 +284,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         details: perfectScoreRow
           ? getCurrentValue(
               perfectScoreRow.metrics
-                .perfectScoreCount as PerfectScoreCountMetricResponse,
+                .perfectScoreCount as PerfectScoreCountMetricResponse
             ) > 0
             ? `${Math.round(getCurrentValue(perfectScoreRow.metrics.perfectScoreCount as PerfectScoreCountMetricResponse))} perfect`
             : `${Math.round(getCurrentValue(perfectScoreRow.metrics.highestScoreAvg as HighestScoreAvgMetricResponse))} avg`
@@ -363,7 +363,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
     if (!allAccolades.length) return [];
     return Array.from(
       { length: allAccolades.length },
-      (_, i) => allAccolades[(i + seed) % allAccolades.length],
+      (_, i) => allAccolades[(i + seed) % allAccolades.length]
     );
   }, [allAccolades, seed]);
 
@@ -421,7 +421,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
   // Calculate challengers for each accolade using computeCurrent
   const getChallengers = (
     accoladeKey: string,
-    currentWinner: LeaderboardRow | null | undefined,
+    currentWinner: LeaderboardRow | null | undefined
   ) => {
     if (!hydratedRows || hydratedRows.length === 0) return [];
 
@@ -434,7 +434,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         keyField?: string | undefined;
       },
     >(
-      metric: T,
+      metric: T
     ) => {
       if (!metric.hasData || !metric.dataPoints.length) return 0;
       return computeCurrent(
@@ -453,13 +453,13 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           | "simulationId"
           | "profileId"
           | "date"
-          | undefined,
+          | undefined
       );
     };
 
     // Filter out the current winner
     const challengers = hydratedRows.filter(
-      (r) => !currentWinner || r.profileId !== currentWinner.profileId,
+      (r) => !currentWinner || r.profileId !== currentWinner.profileId
     );
 
     // Sort by the relevant metric for each accolade
@@ -468,28 +468,28 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         case "perfectScore":
           // Sort by perfect score count, then by highest score avg
           const aPerfect = getCurrentValue(
-            a.metrics.perfectScoreCount as PerfectScoreCountMetricResponse,
+            a.metrics.perfectScoreCount as PerfectScoreCountMetricResponse
           );
           const bPerfect = getCurrentValue(
-            b.metrics.perfectScoreCount as PerfectScoreCountMetricResponse,
+            b.metrics.perfectScoreCount as PerfectScoreCountMetricResponse
           );
           if (aPerfect !== bPerfect) return bPerfect - aPerfect;
           return (
             getCurrentValue(
-              b.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+              b.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
             ) -
             getCurrentValue(
-              a.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+              a.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
             )
           );
 
         case "longestConvo":
           return (
             getCurrentValue(
-              b.metrics.messagesPerSession as MessagesPerSessionMetricResponse,
+              b.metrics.messagesPerSession as MessagesPerSessionMetricResponse
             ) -
             getCurrentValue(
-              a.metrics.messagesPerSession as MessagesPerSessionMetricResponse,
+              a.metrics.messagesPerSession as MessagesPerSessionMetricResponse
             )
           );
 
@@ -497,11 +497,11 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           // For response times, we want the lowest positive values (fastest responders)
           const aResponseTime = getCurrentValue(
             a.metrics
-              .personaResponseSeconds as PersonaResponseSecondsMetricResponse,
+              .personaResponseSeconds as PersonaResponseSecondsMetricResponse
           );
           const bResponseTime = getCurrentValue(
             b.metrics
-              .personaResponseSeconds as PersonaResponseSecondsMetricResponse,
+              .personaResponseSeconds as PersonaResponseSecondsMetricResponse
           );
           if (aResponseTime <= 0 && bResponseTime <= 0) return 0;
           if (aResponseTime <= 0) return 1;
@@ -511,10 +511,10 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         case "quickestPass":
           // For quickest pass, we want the lowest positive values
           const aTime = getCurrentValue(
-            a.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse,
+            a.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse
           );
           const bTime = getCurrentValue(
-            b.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse,
+            b.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse
           );
           if (aTime <= 0 && bTime <= 0) return 0;
           if (aTime <= 0) return 1;
@@ -524,20 +524,20 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         case "thePersistent":
           return (
             getCurrentValue(
-              b.metrics.totalAttempts as TotalAttemptsMetricResponse,
+              b.metrics.totalAttempts as TotalAttemptsMetricResponse
             ) -
             getCurrentValue(
-              a.metrics.totalAttempts as TotalAttemptsMetricResponse,
+              a.metrics.totalAttempts as TotalAttemptsMetricResponse
             )
           );
 
         case "marathonRunner":
           return (
             getCurrentValue(
-              b.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse,
+              b.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse
             ) -
             getCurrentValue(
-              a.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse,
+              a.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse
             )
           );
 
@@ -545,21 +545,21 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           return (
             getCurrentValue(
               b.metrics
-                .improvementRatePerDay as ImprovementRatePerDayMetricResponse,
+                .improvementRatePerDay as ImprovementRatePerDayMetricResponse
             ) -
             getCurrentValue(
               a.metrics
-                .improvementRatePerDay as ImprovementRatePerDayMetricResponse,
+                .improvementRatePerDay as ImprovementRatePerDayMetricResponse
             )
           );
 
         case "highestScorer":
           return (
             getCurrentValue(
-              b.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+              b.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
             ) -
             getCurrentValue(
-              a.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+              a.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
             )
           );
 
@@ -575,7 +575,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       switch (accoladeKey) {
         case "perfectScore":
           metricValue = getCurrentValue(
-            row.metrics.perfectScoreCount as PerfectScoreCountMetricResponse,
+            row.metrics.perfectScoreCount as PerfectScoreCountMetricResponse
           );
           metricLabel =
             metricValue > 0
@@ -584,46 +584,45 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           break;
         case "longestConvo":
           metricValue = getCurrentValue(
-            row.metrics.messagesPerSession as MessagesPerSessionMetricResponse,
+            row.metrics.messagesPerSession as MessagesPerSessionMetricResponse
           );
           metricLabel = `${Math.round(metricValue)} msgs/session`;
           break;
         case "responseTimes":
           metricValue = getCurrentValue(
             row.metrics
-              .personaResponseSeconds as PersonaResponseSecondsMetricResponse,
+              .personaResponseSeconds as PersonaResponseSecondsMetricResponse
           );
           metricLabel = `${Math.round(metricValue)}s`;
           break;
         case "quickestPass":
           metricValue = getCurrentValue(
-            row.metrics
-              .quickestPassMinutes as QuickestPassMinutesMetricResponse,
+            row.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse
           );
           metricLabel = `${Math.round(metricValue)} min`;
           break;
         case "thePersistent":
           metricValue = getCurrentValue(
-            row.metrics.totalAttempts as TotalAttemptsMetricResponse,
+            row.metrics.totalAttempts as TotalAttemptsMetricResponse
           );
           metricLabel = `${Math.round(metricValue)} attempts`;
           break;
         case "marathonRunner":
           metricValue = getCurrentValue(
-            row.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse,
+            row.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse
           );
           metricLabel = `${Math.round(metricValue)} min`;
           break;
         case "rapidRiser":
           metricValue = getCurrentValue(
             row.metrics
-              .improvementRatePerDay as ImprovementRatePerDayMetricResponse,
+              .improvementRatePerDay as ImprovementRatePerDayMetricResponse
           );
           metricLabel = `+${Math.round(metricValue)} pts/day`;
           break;
         case "highestScorer":
           metricValue = getCurrentValue(
-            row.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+            row.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
           );
           metricLabel = `${Math.round(metricValue)} avg`;
           break;
@@ -648,7 +647,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
           keyField?: string | undefined;
         },
       >(
-        metric: T,
+        metric: T
       ) => {
         if (!metric.hasData || !metric.dataPoints.length) return 0;
         return computeCurrent(
@@ -667,7 +666,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
             | "simulationId"
             | "profileId"
             | "date"
-            | undefined,
+            | undefined
         );
       };
 
@@ -675,42 +674,41 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
         id: r.profileId,
         name: `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim() || r.profileId,
         timeSpentMinutes: getCurrentValue(
-          r.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse,
+          r.metrics.timeSpentMinutes as TimeSpentMinutesMetricResponse
         ),
         improvementRatePerDay: getCurrentValue(
-          r.metrics
-            .improvementRatePerDay as ImprovementRatePerDayMetricResponse,
+          r.metrics.improvementRatePerDay as ImprovementRatePerDayMetricResponse
         ),
         messagesPerSession: getCurrentValue(
-          r.metrics.messagesPerSession as MessagesPerSessionMetricResponse,
+          r.metrics.messagesPerSession as MessagesPerSessionMetricResponse
         ),
         perfectScoreCount: getCurrentValue(
-          r.metrics.perfectScoreCount as PerfectScoreCountMetricResponse,
+          r.metrics.perfectScoreCount as PerfectScoreCountMetricResponse
         ),
         quickestPassMinutes: getCurrentValue(
-          r.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse,
+          r.metrics.quickestPassMinutes as QuickestPassMinutesMetricResponse
         ),
         totalAttempts: getCurrentValue(
-          r.metrics.totalAttempts as TotalAttemptsMetricResponse,
+          r.metrics.totalAttempts as TotalAttemptsMetricResponse
         ),
         highestScoreAvg: getCurrentValue(
-          r.metrics.highestScoreAvg as HighestScoreAvgMetricResponse,
+          r.metrics.highestScoreAvg as HighestScoreAvgMetricResponse
         ),
         personaResponseSeconds: getCurrentValue(
           r.metrics
-            .personaResponseSeconds as PersonaResponseSecondsMetricResponse,
+            .personaResponseSeconds as PersonaResponseSecondsMetricResponse
         ),
       }));
 
       // Sort by highest score descending
       const sortedByHighestScore = rows.sort(
-        (a, b) => b.highestScoreAvg - a.highestScoreAvg,
+        (a, b) => b.highestScoreAvg - a.highestScoreAvg
       );
 
       // Take top 25% based on highest score
       const topCount = Math.max(
         1,
-        Math.ceil(sortedByHighestScore.length * 0.25),
+        Math.ceil(sortedByHighestScore.length * 0.25)
       );
       return sortedByHighestScore.slice(0, topCount);
     }
@@ -759,7 +757,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
               <AnimatePresence mode="popLayout" initial={false}>
                 {pages[page]
                   ?.filter((item): item is NonNullable<typeof item> =>
-                    Boolean(item),
+                    Boolean(item)
                   )
                   .map(({ key, icon, title, accolade }, i) => (
                     <motion.div
@@ -897,7 +895,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                         <AvatarFallback>
                           {getInitials(
                             selected.accolade.holder.firstName ?? "",
-                            selected.accolade.holder.lastName ?? "",
+                            selected.accolade.holder.lastName ?? ""
                           )}
                         </AvatarFallback>
                       </Avatar>
@@ -934,7 +932,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                     {(() => {
                       const challengers = getChallengers(
                         selected.key,
-                        selected.accolade.holder,
+                        selected.accolade.holder
                       );
                       if (challengers.length === 0) {
                         return (
@@ -963,7 +961,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                                 <AvatarFallback>
                                   {getInitials(
                                     challenger.row.firstName ?? "",
-                                    challenger.row.lastName ?? "",
+                                    challenger.row.lastName ?? ""
                                   )}
                                 </AvatarFallback>
                               </Avatar>

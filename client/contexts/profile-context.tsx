@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useProfile as useProfileQuery } from "@/lib/api/hooks/profiles";
+import { useProfile as useProfileQuery } from "@/lib/api/v1/hooks/profiles";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
@@ -82,7 +82,7 @@ export function ProfileProvider({
 
   const { data: effectiveProfile, isLoading: isEffLoading } = useProfileQuery(
     effectiveId || "",
-    !!effectiveId && effectiveId !== "guest-profile-id",
+    !!effectiveId && effectiveId !== "guest-profile-id"
   );
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
@@ -141,7 +141,7 @@ export function ProfileProvider({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname],
+    [router, pathname]
   );
 
   const isSectionAvailable = useCallback(
@@ -149,7 +149,7 @@ export function ProfileProvider({
       const targetRole = role || effectiveProfile?.role || "guest";
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role],
+    [effectiveProfile?.role]
   );
 
   const value: ProfileContextType = {

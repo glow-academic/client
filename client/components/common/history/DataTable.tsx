@@ -37,8 +37,8 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { useRefreshAnalytics } from "@/lib/api/hooks/analytics";
-import { useUpdateSimulationAttempts } from "@/lib/api/hooks/simulation_attempts";
+import { useRefreshAnalytics } from "@/lib/api/v1/hooks/analytics";
+import { useUpdateSimulationAttempts } from "@/lib/api/v1/hooks/simulation_attempts";
 import { log } from "@/utils/logger";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
@@ -90,7 +90,7 @@ export function DataTable<TData, TValue>({
       scenarios: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Default to descending order by date
@@ -99,7 +99,7 @@ export function DataTable<TData, TValue>({
   // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
   const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
-    null,
+    null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
   const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
@@ -262,7 +262,7 @@ export function DataTable<TData, TValue>({
       });
 
       toast.success(
-        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`,
+        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
       );
 
       // Refresh analytics data after archive status change
@@ -339,7 +339,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -358,7 +358,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

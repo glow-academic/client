@@ -40,16 +40,16 @@ import {
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
 import { useScenarioColumns } from "@/hooks/use-scenario-columns";
-import { useParameterItems } from "@/lib/api/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/hooks/parameters";
-import { useScenarioTrees } from "@/lib/api/hooks/scenario_tree";
+import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
+import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
+import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
 import {
   useCreateScenario,
   useDeleteScenario,
   useScenariosByDepartmentIdBatch,
-} from "@/lib/api/hooks/scenarios";
-import { useSimulationScenarios } from "@/lib/api/hooks/simulation_scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/hooks/simulations";
+} from "@/lib/api/v1/hooks/scenarios";
+import { useSimulationScenarios } from "@/lib/api/v1/hooks/simulation_scenarios";
+import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import type { ScenarioTree } from "@/lib/repos/scenarioTreeRepo";
 import { Scenario } from "@/types";
 import { ScenariosDataTable } from "./ScenariosDataTable";
@@ -69,7 +69,7 @@ export function Scenarios() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const { effectiveDepartmentIds } = useDepartments();
 
@@ -78,15 +78,15 @@ export function Scenarios() {
   const deleteScenarioMutation = useDeleteScenario();
 
   const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: treeEdges = [] } = useScenarioTrees();
   const { data: allSimulationScenarios = [] } = useSimulationScenarios();
   const { data: _simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: _parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds,
+    effectiveDepartmentIds
   );
   const { data: _parameterItems = [] } = useParameterItems();
 
@@ -108,7 +108,7 @@ export function Scenarios() {
       const childrenIds = treeEdges
         .filter(
           (edge: ScenarioTree) =>
-            edge.parentId === rootId && edge.parentId !== edge.childId,
+            edge.parentId === rootId && edge.parentId !== edge.childId
         )
         .map((edge: ScenarioTree) => edge.childId);
 
@@ -264,7 +264,7 @@ export function Scenarios() {
     isChild: boolean = false,
     showDropdown?: boolean,
     isCollapsed?: boolean,
-    onToggleCollapse?: () => void,
+    onToggleCollapse?: () => void
   ) => (
     <Card
       key={scenario.id}
@@ -386,7 +386,7 @@ export function Scenarios() {
                     onClick={() =>
                       handleDeleteClick(
                         scenario.id,
-                        scenario.name || "Unnamed Scenario",
+                        scenario.name || "Unnamed Scenario"
                       )
                     }
                   >
@@ -408,7 +408,7 @@ export function Scenarios() {
             <Users className="h-3 w-3" />
             {
               allSimulationScenarios.filter(
-                (ss) => ss.scenarioId === scenario.id,
+                (ss) => ss.scenarioId === scenario.id
               ).length
             }{" "}
             simulations
@@ -433,7 +433,7 @@ export function Scenarios() {
             false,
             hasChildren,
             isCollapsed,
-            () => toggleGroupCollapse(group.parent.id),
+            () => toggleGroupCollapse(group.parent.id)
           )}
 
           {/* Child Scenarios */}

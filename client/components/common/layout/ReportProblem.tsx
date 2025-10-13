@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateAppFeedback } from "@/lib/api/hooks/app_feedback";
+import { useCreateAppFeedback } from "@/lib/api/v1/hooks/app_feedback";
 import type { AppFeedback } from "@/lib/repos/appFeedbackRepo";
 import { log } from "@/utils/logger";
 import { MessageSquare } from "lucide-react";

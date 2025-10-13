@@ -1,5 +1,6 @@
 // auth.ts
 import { profileRepo } from "@/lib/repos/profileRepo";
+import { userProfileRepo } from "@/lib/repos/userProfileRepo";
 import { log } from "@/utils/server-logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
@@ -46,29 +47,59 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const alias = user.email.split("@")[0];
         const existingProfile = await getProfileByAlias(alias || "");
 
-        if (existingProfile && !existingProfile.userId) {
-          await profileRepo.update(existingProfile.id, {
-            userId: parseInt(user.id!),
-            lastLogin: new Date().toISOString(),
-          });
-          await log.info("auth.profile.linked", {
-            subject: { entityType: "profile", entityId: existingProfile.id },
-            actor: { profileId: existingProfile.id },
-            context: { file: "client/auth.ts", function: "events.createUser" },
-            message: "Linked existing profile to new user",
-          });
+        if (existingProfile) {
+          // Check if profile is already linked to a user
+          const existingUserProfiles = await userProfileRepo.listByProfile(
+            existingProfile.id
+          );
+          if (existingUserProfiles.length === 0) {
+            // Link existing profile to new user
+            await userProfileRepo.create({
+              userId: parseInt(user.id!),
+              profileId: existingProfile.id,
+              isPrimary: true,
+              active: true,
+            });
+
+            // Update profile lastLogin
+            await profileRepo.update(existingProfile.id, {
+              lastLogin: new Date().toISOString(),
+            });
+
+            await log.info("auth.profile.linked", {
+              subject: { entityType: "profile", entityId: existingProfile.id },
+              actor: { profileId: existingProfile.id },
+              context: {
+                file: "client/auth.ts",
+                function: "events.createUser",
+              },
+              message: "Linked existing profile to new user",
+            });
+          }
         } else {
           const nameParts = user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          await profileRepo.create({
-            userId: parseInt(user.id!),
+          // Create new profile
+          const newProfile = await profileRepo.create({
             firstName,
             lastName,
             alias: alias || "",
             viewedIntro: false,
             role: "guest",
+          });
+
+          if (!newProfile) {
+            throw new Error("Failed to create profile");
+          }
+
+          // Link profile to user
+          await userProfileRepo.create({
+            userId: parseInt(user.id!),
+            profileId: newProfile.id,
+            isPrimary: true,
+            active: true,
           });
 
           await log.info("auth.profile.created", {
@@ -117,16 +148,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             message: "Updating existing user profile",
           });
 
-          const userProfiles = await profileRepo.listByUser(parseInt(user.id!));
-          const userProfile = userProfiles[0];
-          if (userProfile) {
-            await profileRepo.update(userProfile.id, {
+          const userProfileLinks = await userProfileRepo.listByUser(
+            parseInt(user.id!)
+          );
+          const primaryUserProfile = userProfileLinks.find(
+            (up) => up.isPrimary
+          );
+          if (primaryUserProfile) {
+            await profileRepo.update(primaryUserProfile.profileId, {
               firstName,
               lastName,
               lastLogin: new Date().toISOString(),
             });
             await log.info("auth.profile.updated", {
-              subject: { entityType: "profile", entityId: userProfile.id },
+              subject: {
+                entityType: "profile",
+                entityId: primaryUserProfile.profileId,
+              },
               context: {
                 file: "client/auth.ts",
                 function: "events.signIn",
@@ -151,10 +189,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       // On initial sign in, attach canonical profileId/role
       if (user?.id) {
-        // your DB lookup to map user.id -> default profile
-        const profiles = await profileRepo.listByUser(parseInt(user.id));
-        const primary = profiles?.[0];
-        if (primary) {
+        // your DB lookup to map user.id -> default profile via user_profiles junction
+        const userProfileLinks = await userProfileRepo.listByUser(
+          parseInt(user.id)
+        );
+        const primaryLink = userProfileLinks.find((up) => up.isPrimary);
+        if (primaryLink) {
+          // Get the actual profile to get role
+          const primary = await profileRepo.find(primaryLink.profileId);
           token["profileId"] = primary.id;
           token["role"] = primary.role;
           // initialize effectiveProfileId to self
