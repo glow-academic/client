@@ -224,3 +224,22 @@ export const documentsDetailBulkKeys = {
   detail: (documentIds: string[], profileId: string) =>
     [...documentsDetailBulkKeys.all, { documentIds, profileId }] as const,
 };
+
+// Scenarios Keys
+export const scenariosListKeys = {
+  all: ["scenarios:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...scenariosListKeys.all, { filters }] as const,
+};
+
+export const scenariosDetailKeys = {
+  all: ["scenarios:v2:detail"] as const,
+  detail: (scenarioId: string, profileId: string) =>
+    [...scenariosDetailKeys.all, { scenarioId, profileId }] as const,
+};
+
+export const scenariosDetailDefaultKeys = {
+  all: ["scenarios:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...scenariosDetailDefaultKeys.all, { profileId }] as const,
+};

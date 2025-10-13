@@ -3,6 +3,7 @@
 from app.api.v2.analytics.router import router as analytics_router
 from app.api.v2.documents import router as documents_router
 from app.api.v2.personas import router as personas_router
+from app.api.v2.scenarios import router as scenarios_router
 from fastapi import APIRouter
 
 # Create main v2 router
@@ -16,4 +17,7 @@ router.include_router(personas_router)
 
 # Include documents router
 router.include_router(documents_router)
+
+# Include scenarios router
+router.include_router(scenarios_router)
 

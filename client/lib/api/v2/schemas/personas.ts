@@ -27,6 +27,7 @@ export const DepartmentMappingItemSchema = z.object({
 
 export const ModelMappingSchema = z.record(z.string(), z.string()); // model_id -> name
 export const ScenarioMappingSchema = z.record(z.string(), z.string()); // scenario_id -> name
+export const PersonaMappingSchema = z.record(z.string(), z.string()); // persona_id -> name
 export const DepartmentMappingSchema = z.record(
   z.string(),
   DepartmentMappingItemSchema
@@ -34,6 +35,7 @@ export const DepartmentMappingSchema = z.record(
 
 export type ModelMapping = z.infer<typeof ModelMappingSchema>;
 export type ScenarioMapping = z.infer<typeof ScenarioMappingSchema>;
+export type PersonaMapping = z.infer<typeof PersonaMappingSchema>;
 export type DepartmentMapping = z.infer<typeof DepartmentMappingSchema>;
 export type DepartmentMappingItem = z.infer<typeof DepartmentMappingItemSchema>;
 
