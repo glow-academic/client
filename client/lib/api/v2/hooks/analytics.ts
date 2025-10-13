@@ -22,6 +22,7 @@ import {
   analyticsPersonaPerformanceKeys,
   analyticsPersonaResponseTimesKeys,
   analyticsPracticeOverviewKeys,
+  analyticsPricingKeys,
   analyticsQuickestPassKeys,
   analyticsRefreshKeys,
   analyticsReportsBundleKeys,
@@ -47,6 +48,7 @@ import {
   MetricResponseSchema,
   PersonaPerformanceResponseSchema,
   PracticeOverviewResponseSchema,
+  PricingAnalyticsResponseSchema,
   RefreshResponseSchema,
   ReportsBundleResponseSchema,
   RubricHeatmapResponseSchema,
@@ -811,6 +813,32 @@ export function useRefreshAnalytics() {
     gcTime: 0,
     meta: {
       errorMessage: "Failed to refresh analytics data",
+    },
+  });
+}
+
+// ============================================================================
+// PRICING ANALYTICS HOOK
+// ============================================================================
+
+export function usePricingAnalytics(
+  filters: AnalyticsFilters,
+  options: AnalyticsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: analyticsPricingKeys.list(filters),
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/analytics/pricing", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return PricingAnalyticsResponseSchema.parse(res);
     },
   });
 }

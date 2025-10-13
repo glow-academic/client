@@ -7,16 +7,19 @@ from app.queries.analytics.footer_queries import FooterQueries
 from app.queries.analytics.header_queries import HeaderQueries
 from app.queries.analytics.leaderboard_queries import LeaderboardQueries
 from app.queries.analytics.page_queries import PageQueries
+from app.queries.analytics.pricing_queries import PricingQueries
 from app.queries.analytics.primary_queries import PrimaryQueries
 from app.queries.analytics.secondary_queries import SecondaryQueries
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    AttemptHistoryRow,
                                    AttemptImprovementResponse,
-                                   CohortPerformanceResponse,
+                                   CohortPerformanceResponse, DebugInfoItem,
                                    GrowthDataResponse, HomeOverviewResponse,
                                    LeaderboardBundleResponse, Method,
-                                   MetricResponse, PersonaPerformanceResponse,
+                                   MetricResponse, ModelMappingWithPricing,
+                                   ModelRunItem, PersonaPerformanceResponse,
                                    PracticeOverviewResponse,
+                                   PricingAnalyticsResponse,
                                    ReportsBundleResponse,
                                    RubricHeatmapResponse,
                                    ScenarioPerformanceResponse,
@@ -41,6 +44,7 @@ class AnalyticsService:
         self.page_queries = PageQueries()
         self.bundle_queries = BundleQueries()
         self.leaderboard_queries = LeaderboardQueries()
+        self.pricing_queries = PricingQueries()
 
     def _execute_metric_query(
         self, query: str, params: Dict[str, Any]
@@ -423,6 +427,132 @@ class AnalyticsService:
         )
         result = self.db.execute(text(query), params).scalar()
         return LeaderboardBundleResponse.model_validate(result or {})
+
+    def get_pricing_analytics(
+        self, filters: AnalyticsFilters
+    ) -> PricingAnalyticsResponse:
+        """Get pricing analytics for model runs."""
+
+        # Get model runs with all relationships
+        query, params = self.pricing_queries.get_model_runs(
+            department_ids=filters.departmentIds or [],
+            start_date=filters.startDate,
+            end_date=filters.endDate,
+            cohort_ids=filters.cohortIds,
+            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+        )
+
+        runs_result = self.db.execute(text(query), params).fetchall()
+
+        # Build model runs list
+        model_runs = []
+        model_run_ids = []
+
+        for row in runs_result:
+            model_runs.append(
+                ModelRunItem(
+                    model_run_id=str(row.model_run_id),
+                    created_at=row.created_at.isoformat(),
+                    input_tokens=row.input_tokens,
+                    output_tokens=row.output_tokens,
+                    model_id=str(row.model_id) if row.model_id else None,
+                    profile_id=str(row.profile_id) if row.profile_id else None,
+                    agent_id=str(row.agent_id) if row.agent_id else None,
+                    persona_id=str(row.persona_id) if row.persona_id else None,
+                    debug_info=[],  # Will be populated below
+                )
+            )
+            model_run_ids.append(str(row.model_run_id))
+
+        # Get debug info for all runs
+        if model_run_ids:
+            query, params = self.pricing_queries.get_debug_info_for_runs(
+                model_run_ids
+            )
+            debug_result = self.db.execute(text(query), params).fetchall()
+
+            # Group debug info by model_run_id
+            debug_by_run: Dict[str, List[DebugInfoItem]] = {}
+            for debug in debug_result:
+                run_id = str(debug.model_run_id)
+                if run_id not in debug_by_run:
+                    debug_by_run[run_id] = []
+                debug_by_run[run_id].append(
+                    DebugInfoItem(
+                        id=str(debug.id),
+                        created_at=debug.created_at.isoformat(),
+                        content=debug.content,
+                    )
+                )
+
+            # Add debug info to runs
+            for run in model_runs:
+                run.debug_info = debug_by_run.get(run.model_run_id, [])
+
+        # Build mappings
+        model_mapping: Dict[str, ModelMappingWithPricing] = {}
+        profile_mapping: Dict[str, str] = {}
+        agent_mapping: Dict[str, str] = {}
+        persona_mapping: Dict[str, str] = {}
+
+        # Get model mapping with pricing
+        if model_ids_to_fetch := list(
+            set([r.model_id for r in model_runs if r.model_id])
+        ):
+            query, params = self.pricing_queries.get_model_mapping(
+                model_ids_to_fetch
+            )
+            model_result = self.db.execute(text(query), params).fetchall()
+
+            for row in model_result:
+                model_mapping[str(row.id)] = ModelMappingWithPricing(
+                    name=row.name,
+                    description=row.description,
+                    input_ppm=row.input_ppm,
+                    output_ppm=row.output_ppm,
+                )
+
+        # Get profile mapping
+        if profile_ids_to_fetch := list(
+            set([r.profile_id for r in model_runs if r.profile_id])
+        ):
+            query, params = self.pricing_queries.get_profile_mapping(
+                profile_ids_to_fetch
+            )
+            profile_result = self.db.execute(text(query), params).fetchall()
+
+            for row in profile_result:
+                profile_mapping[str(row.id)] = row.name
+
+        # Get agent mapping
+        if agent_ids_to_fetch := list(
+            set([r.agent_id for r in model_runs if r.agent_id])
+        ):
+            query, params = self.pricing_queries.get_agent_mapping(agent_ids_to_fetch)
+            agent_result = self.db.execute(text(query), params).fetchall()
+
+            for row in agent_result:
+                agent_mapping[str(row.id)] = row.name
+
+        # Get persona mapping
+        if persona_ids_to_fetch := list(
+            set([r.persona_id for r in model_runs if r.persona_id])
+        ):
+            query, params = self.pricing_queries.get_persona_mapping(
+                persona_ids_to_fetch
+            )
+            persona_result = self.db.execute(text(query), params).fetchall()
+
+            for row in persona_result:
+                persona_mapping[str(row.id)] = row.name
+
+        return PricingAnalyticsResponse(
+            model_runs=model_runs,
+            model_mapping=model_mapping,
+            profile_mapping=profile_mapping,
+            agent_mapping=agent_mapping,
+            persona_mapping=persona_mapping,
+        )
 
     # Leaderboard-Specific Metrics (3 additional metrics)
     def get_improvement_per_day(self, filters: AnalyticsFilters) -> MetricResponse:

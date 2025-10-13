@@ -367,10 +367,10 @@ export const SimulationCompositionResponseSchema = z.object({
   validSimulationIds: z.array(z.string()),
   simulationFacts: z.array(SimulationFactSchema),
   simulationParameterFactsCategorical: z.array(
-    SimulationParameterFactCategoricalSchema,
+    SimulationParameterFactCategoricalSchema
   ),
   simulationParameterFactsNumeric: z.array(
-    SimulationParameterFactNumericSchema,
+    SimulationParameterFactNumericSchema
   ),
   hasData: z.boolean(),
 });
@@ -535,9 +535,7 @@ export const ReportsBundleResponseSchema = z.object({
   data: z.array(ProfileDataSchema),
 });
 
-export type ReportsBundleResponse = z.infer<
-  typeof ReportsBundleResponseSchema
->;
+export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 
 // Leaderboard Bundle
 export const LeaderboardMetricSchema = z.object({
@@ -585,3 +583,51 @@ export const RefreshResponseSchema = z.object({
 
 export type RefreshResponse = z.infer<typeof RefreshResponseSchema>;
 
+// ============================================================================
+// PRICING ANALYTICS SCHEMAS
+// ============================================================================
+
+export const DebugInfoItemSchema = z.object({
+  id: z.string(),
+  created_at: z.string(),
+  content: z.string(),
+});
+
+export type DebugInfoItem = z.infer<typeof DebugInfoItemSchema>;
+
+export const ModelRunItemSchema = z.object({
+  model_run_id: z.string(),
+  created_at: z.string(),
+  input_tokens: z.number(),
+  output_tokens: z.number(),
+  model_id: z.string().nullable(),
+  profile_id: z.string().nullable(),
+  agent_id: z.string().nullable(),
+  persona_id: z.string().nullable(),
+  debug_info: z.array(DebugInfoItemSchema),
+});
+
+export type ModelRunItem = z.infer<typeof ModelRunItemSchema>;
+
+export const ModelMappingWithPricingSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  input_ppm: z.number(),
+  output_ppm: z.number(),
+});
+
+export type ModelMappingWithPricing = z.infer<
+  typeof ModelMappingWithPricingSchema
+>;
+
+export const PricingAnalyticsResponseSchema = z.object({
+  model_runs: z.array(ModelRunItemSchema),
+  model_mapping: z.record(z.string(), ModelMappingWithPricingSchema),
+  profile_mapping: z.record(z.string(), z.string()),
+  agent_mapping: z.record(z.string(), z.string()),
+  persona_mapping: z.record(z.string(), z.string()),
+});
+
+export type PricingAnalyticsResponse = z.infer<
+  typeof PricingAnalyticsResponseSchema
+>;

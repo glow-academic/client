@@ -187,6 +187,13 @@ export const analyticsRefreshKeys = {
   all: ["analytics:v2:refresh"] as const,
 };
 
+// Pricing Analytics Keys
+export const analyticsPricingKeys = {
+  all: ["analytics:v2:pricing"] as const,
+  list: (filters: AnalyticsFilters) =>
+    [...analyticsPricingKeys.all, { filters }] as const,
+};
+
 // Personas Keys
 export const personasListKeys = {
   all: ["personas:v2:list"] as const,

@@ -749,3 +749,49 @@ class RefreshResponse(BaseModel):
     message: str
     status: str
 
+
+# ============================================================================
+# PRICING ANALYTICS SCHEMAS
+# ============================================================================
+
+
+class DebugInfoItem(BaseModel):
+    """Debug info item."""
+
+    id: str
+    created_at: str
+    content: str
+
+
+class ModelRunItem(BaseModel):
+    """Model run item for pricing analytics."""
+
+    model_run_id: str
+    created_at: str
+    input_tokens: int
+    output_tokens: int
+    model_id: Optional[str]
+    profile_id: Optional[str]
+    agent_id: Optional[str]
+    persona_id: Optional[str]
+    debug_info: List[DebugInfoItem]
+
+
+class ModelMappingWithPricing(BaseModel):
+    """Model mapping with pricing information."""
+
+    name: str
+    description: str
+    input_ppm: float
+    output_ppm: float
+
+
+class PricingAnalyticsResponse(BaseModel):
+    """Response for pricing analytics."""
+
+    model_runs: List[ModelRunItem]
+    model_mapping: dict[str, ModelMappingWithPricing]
+    profile_mapping: dict[str, str]
+    agent_mapping: dict[str, str]
+    persona_mapping: dict[str, str]
+

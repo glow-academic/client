@@ -14,6 +14,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    LeaderboardBundleResponse, MetricResponse,
                                    PersonaPerformanceResponse,
                                    PracticeOverviewResponse,
+                                   PricingAnalyticsResponse,
                                    ReportsBundleResponse,
                                    RubricHeatmapResponse,
                                    ScenarioPerformanceResponse,
@@ -183,6 +184,13 @@ class AnalyticsRepository:
     def get_quickest_pass(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get quickest pass metric."""
         return self.service.get_quickest_pass(filters)
+
+    # Pricing Analytics
+    def get_pricing_analytics(
+        self, filters: AnalyticsFilters
+    ) -> PricingAnalyticsResponse:
+        """Get pricing analytics for model runs."""
+        return self.service.get_pricing_analytics(filters)
 
     # Utility
     def refresh_materialized_view(self) -> None:
