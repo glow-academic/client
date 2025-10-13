@@ -203,3 +203,28 @@ export const CreatePersonaResponseSchema = z.object({
 });
 
 export type CreatePersonaResponse = z.infer<typeof CreatePersonaResponseSchema>;
+
+// Update request (same fields as create)
+export const UpdatePersonaRequestSchema = z.object({
+  personaId: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  department_id: z.string(),
+  active: z.boolean(),
+  default_persona: z.boolean(),
+  color: z.string(),
+  icon: z.string(),
+  model_id: z.string(),
+  reasoning: z.string().nullable(),
+  temperature: z.number(),
+  system_prompt: z.string(),
+});
+
+export type UpdatePersonaRequest = z.infer<typeof UpdatePersonaRequestSchema>;
+
+export const UpdatePersonaResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type UpdatePersonaResponse = z.infer<typeof UpdatePersonaResponseSchema>;

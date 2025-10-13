@@ -153,3 +153,27 @@ class CreatePersonaResponse(BaseModel):
     personaId: str
     message: str
 
+
+class UpdatePersonaRequest(BaseModel):
+    """Request to update a persona."""
+
+    personaId: str
+    name: str
+    description: Optional[str]
+    department_id: str
+    active: bool
+    default_persona: bool
+    color: str
+    icon: str
+    model_id: str
+    reasoning: Optional[str]
+    temperature: float
+    system_prompt: str
+
+
+class UpdatePersonaResponse(BaseModel):
+    """Response from update operation."""
+
+    success: bool
+    message: str
+

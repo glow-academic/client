@@ -20,6 +20,8 @@ import {
   PersonaDetailResponseSchema,
   PersonasFilters,
   PersonasListResponseSchema,
+  UpdatePersonaRequest,
+  UpdatePersonaResponseSchema,
 } from "@/lib/api/v2/schemas/personas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -161,6 +163,32 @@ export function useCreatePersona() {
         predicate: (query) => {
           const key = query.queryKey[0];
           return typeof key === "string" && key.startsWith("personas:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useUpdatePersona() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: UpdatePersonaRequest) => {
+      const res = await api<unknown>("/api/v2/personas/update", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return UpdatePersonaResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate all personas queries
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("personas:v2:list")) ||
+            (typeof key === "string" && key.startsWith("personas:v2:detail"))
+          );
         },
       });
     },

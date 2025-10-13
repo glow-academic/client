@@ -10,7 +10,8 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonaDetailDefaultRequest,
                                   PersonaDetailRequest, PersonaDetailResponse,
                                   PersonaItem, PersonasFilters,
-                                  PersonasListResponse)
+                                  PersonasListResponse, UpdatePersonaRequest,
+                                  UpdatePersonaResponse)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -549,5 +550,62 @@ class PersonaService:
             success=True,
             personaId=str(result.id),
             message=f"Persona '{request.name}' created successfully",
+        )
+
+    def update_persona(self, request: UpdatePersonaRequest) -> UpdatePersonaResponse:
+        """Update an existing persona using dynamic SQL."""
+
+        # Check if persona exists
+        check_query = text("""
+        SELECT name FROM personas WHERE id = :persona_id
+        """)
+
+        existing = self.db.execute(
+            check_query, {"persona_id": request.personaId}
+        ).fetchone()
+
+        if not existing:
+            raise ValueError(f"Persona not found: {request.personaId}")
+
+        # Update persona
+        update_query = text("""
+        UPDATE personas SET
+            name = :name,
+            description = :description,
+            department_id = :department_id,
+            active = :active,
+            default_persona = :default_persona,
+            color = :color,
+            icon = :icon,
+            model_id = :model_id,
+            reasoning = :reasoning,
+            temperature = :temperature,
+            system_prompt = :system_prompt,
+            updated_at = NOW()
+        WHERE id = :persona_id
+        """)
+
+        self.db.execute(
+            update_query,
+            {
+                "persona_id": request.personaId,
+                "name": request.name,
+                "description": request.description,
+                "department_id": request.department_id,
+                "active": request.active,
+                "default_persona": request.default_persona,
+                "color": request.color,
+                "icon": request.icon,
+                "model_id": request.model_id,
+                "reasoning": request.reasoning,
+                "temperature": request.temperature,
+                "system_prompt": request.system_prompt,
+            },
+        )
+
+        self.db.commit()
+
+        return UpdatePersonaResponse(
+            success=True, message=f"Persona '{request.name}' updated successfully"
         )
 

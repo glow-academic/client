@@ -205,3 +205,22 @@ export const personasDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...personasDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Documents Keys
+export const documentsListKeys = {
+  all: ["documents:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...documentsListKeys.all, { filters }] as const,
+};
+
+export const documentsDetailKeys = {
+  all: ["documents:v2:detail"] as const,
+  detail: (documentId: string, profileId: string) =>
+    [...documentsDetailKeys.all, { documentId, profileId }] as const,
+};
+
+export const documentsDetailBulkKeys = {
+  all: ["documents:v2:detail-bulk"] as const,
+  detail: (documentIds: string[], profileId: string) =>
+    [...documentsDetailBulkKeys.all, { documentIds, profileId }] as const,
+};

@@ -3,14 +3,15 @@
 from typing import Annotated
 
 from app.db import get_session
+from app.repositories.persona_repository import get_persona_repository
 from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   DeletePersonaRequest, DeletePersonaResponse,
                                   DuplicatePersonaRequest,
                                   DuplicatePersonaResponse,
                                   PersonaDetailDefaultRequest,
                                   PersonaDetailRequest, PersonaDetailResponse,
-                                  PersonasFilters, PersonasListResponse)
-from app.services.persona_service import PersonaService
+                                  PersonasFilters, PersonasListResponse,
+                                  UpdatePersonaRequest, UpdatePersonaResponse)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -24,8 +25,8 @@ async def get_personas_list(
 ) -> PersonasListResponse:
     """Get personas list with permissions and scenario details."""
     try:
-        service = PersonaService(db)
-        return service.get_personas_list(filters)
+        repo = get_persona_repository(db)
+        return repo.get_personas_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -37,8 +38,8 @@ async def duplicate_persona(
 ) -> DuplicatePersonaResponse:
     """Duplicate a persona."""
     try:
-        service = PersonaService(db)
-        return service.duplicate_persona(request)
+        repo = get_persona_repository(db)
+        return repo.duplicate_persona(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -52,8 +53,8 @@ async def delete_persona(
 ) -> DeletePersonaResponse:
     """Delete a persona."""
     try:
-        service = PersonaService(db)
-        return service.delete_persona(request)
+        repo = get_persona_repository(db)
+        return repo.delete_persona(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -67,8 +68,8 @@ async def get_persona_detail(
 ) -> PersonaDetailResponse:
     """Get detailed persona information."""
     try:
-        service = PersonaService(db)
-        return service.get_persona_detail(request)
+        repo = get_persona_repository(db)
+        return repo.get_persona_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -82,8 +83,8 @@ async def get_persona_detail_default(
 ) -> PersonaDetailResponse:
     """Get default persona detail based on profile."""
     try:
-        service = PersonaService(db)
-        return service.get_persona_detail_default(request)
+        repo = get_persona_repository(db)
+        return repo.get_persona_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -97,8 +98,23 @@ async def create_persona(
 ) -> CreatePersonaResponse:
     """Create a new persona."""
     try:
-        service = PersonaService(db)
-        return service.create_persona(request)
+        repo = get_persona_repository(db)
+        return repo.create_persona(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update", response_model=UpdatePersonaResponse)
+async def update_persona(
+    request: UpdatePersonaRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> UpdatePersonaResponse:
+    """Update an existing persona."""
+    try:
+        repo = get_persona_repository(db)
+        return repo.update_persona(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

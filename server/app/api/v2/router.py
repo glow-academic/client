@@ -1,6 +1,7 @@
 """Main v2 API router."""
 
 from app.api.v2.analytics.router import router as analytics_router
+from app.api.v2.documents import router as documents_router
 from app.api.v2.personas import router as personas_router
 from fastapi import APIRouter
 
@@ -12,4 +13,7 @@ router.include_router(analytics_router)
 
 # Include personas router
 router.include_router(personas_router)
+
+# Include documents router
+router.include_router(documents_router)
 
