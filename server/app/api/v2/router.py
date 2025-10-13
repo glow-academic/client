@@ -6,6 +6,7 @@ from app.api.v2.cohorts import router as cohorts_router
 from app.api.v2.departments import router as departments_router
 from app.api.v2.documents import router as documents_router
 from app.api.v2.feedback import router as feedback_router
+from app.api.v2.logs import router as logs_router
 from app.api.v2.parameters import router as parameters_router
 from app.api.v2.personas import router as personas_router
 from app.api.v2.providers import router as providers_router
@@ -56,4 +57,7 @@ router.include_router(agents_router, prefix="/agents", tags=["agents"])
 
 # Include feedback router
 router.include_router(feedback_router, prefix="/feedback", tags=["feedback"])
+
+# Include logs router
+router.include_router(logs_router, prefix="/logs", tags=["logs"])
 

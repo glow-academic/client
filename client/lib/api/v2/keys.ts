@@ -403,3 +403,9 @@ export const feedbackListKeys = {
   list: (profileId: string) =>
     [...feedbackListKeys.all, { profileId }] as const,
 };
+
+// Logs Keys (read-only)
+export const logsListKeys = {
+  all: ["logs:v2:list"] as const,
+  list: (profileId: string) => [...logsListKeys.all, { profileId }] as const,
+};
