@@ -384,3 +384,15 @@ export const departmentsDetailDefaultKeys = {
   detail: (profileId: string) =>
     [...departmentsDetailDefaultKeys.all, { profileId }] as const,
 };
+
+// Agents Keys
+export const agentsListKeys = {
+  all: ["agents:v2:list"] as const,
+  list: (profileId: string) => [...agentsListKeys.all, { profileId }] as const,
+};
+
+export const agentsDetailKeys = {
+  all: ["agents:v2:detail"] as const,
+  detail: (agentId: string, profileId: string) =>
+    [...agentsDetailKeys.all, { agentId, profileId }] as const,
+};

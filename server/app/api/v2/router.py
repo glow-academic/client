@@ -1,5 +1,6 @@
 """Main v2 API router."""
 
+from app.api.v2.agents import router as agents_router
 from app.api.v2.analytics.router import router as analytics_router
 from app.api.v2.cohorts import router as cohorts_router
 from app.api.v2.departments import router as departments_router
@@ -48,4 +49,7 @@ router.include_router(parameters_router)
 
 # Include departments router
 router.include_router(departments_router, prefix="/departments", tags=["departments"])
+
+# Include agents router
+router.include_router(agents_router, prefix="/agents", tags=["agents"])
 
