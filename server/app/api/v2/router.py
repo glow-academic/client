@@ -1,6 +1,7 @@
 """Main v2 API router."""
 
 from app.api.v2.analytics.router import router as analytics_router
+from app.api.v2.cohorts import router as cohorts_router
 from app.api.v2.documents import router as documents_router
 from app.api.v2.personas import router as personas_router
 from app.api.v2.rubrics import router as rubrics_router
@@ -32,4 +33,7 @@ router.include_router(rubrics_router)
 
 # Include staff router
 router.include_router(staff_router)
+
+# Include cohorts router
+router.include_router(cohorts_router)
 

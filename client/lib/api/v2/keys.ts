@@ -300,3 +300,22 @@ export const staffDetailBulkKeys = {
   detail: (profileIds: string[], currentProfileId: string) =>
     [...staffDetailBulkKeys.all, { profileIds, currentProfileId }] as const,
 };
+
+// Cohorts Keys
+export const cohortsListKeys = {
+  all: ["cohorts:v2:list"] as const,
+  list: (filters: { departmentIds: string[]; profileId: string }) =>
+    [...cohortsListKeys.all, { filters }] as const,
+};
+
+export const cohortsDetailKeys = {
+  all: ["cohorts:v2:detail"] as const,
+  detail: (cohortId: string, profileId: string) =>
+    [...cohortsDetailKeys.all, { cohortId, profileId }] as const,
+};
+
+export const cohortsDetailDefaultKeys = {
+  all: ["cohorts:v2:detail-default"] as const,
+  detail: (profileId: string) =>
+    [...cohortsDetailDefaultKeys.all, { profileId }] as const,
+};
