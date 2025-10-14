@@ -11,18 +11,53 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAgentColumns } from "@/hooks/use-agent-columns";
-import { useAgents } from "@/lib/api/v1/hooks/agents";
-import { Agent } from "@/types";
+import { useProfile } from "@/contexts/profile-context";
+import { useAgentsList } from "@/lib/api/v2/hooks/agents";
+import { useMemo } from "react";
 import { AgentsDataTable } from "./AgentsDataTable";
 
 export default function Agents() {
   const router = useRouter();
-  const { data: agents = [] } = useAgents();
+  const { effectiveProfile } = useProfile();
 
-  // Get table columns and filter options
-  const { columns, reasoningOptions, modelOptions, temperatureOptions } =
-    useAgentColumns();
+  // V2 API hook
+  const profileId = effectiveProfile?.id || "";
+  const { data: agentsData, isLoading } = useAgentsList(profileId, !!profileId);
+
+  // Extract data from V2 response
+  const agents = useMemo(() => agentsData?.agents || [], [agentsData?.agents]);
+  const modelMapping = useMemo(
+    () => agentsData?.model_mapping || {},
+    [agentsData?.model_mapping]
+  );
+
+  // Filter options (inline)
+  const reasoningOptions = useMemo(
+    () => [
+      { value: "cot", label: "Chain of Thought" },
+      { value: "none", label: "None" },
+      { value: "null", label: "Not Set" },
+    ],
+    []
+  );
+
+  const modelOptions = useMemo(
+    () =>
+      Object.entries(modelMapping).map(([id, name]) => ({
+        value: id,
+        label: name,
+      })),
+    [modelMapping]
+  );
+
+  const temperatureOptions = useMemo(() => {
+    const temps = agents.map((a) => a.temperature);
+    const uniqueTemps = [...new Set(temps)].sort((a, b) => a - b);
+    return uniqueTemps.map((temp) => ({
+      value: temp.toString(),
+      label: temp.toFixed(2),
+    }));
+  }, [agents]);
 
   const handleEdit = (id: string) => {
     router.push(`/system/agents/a/${id}`);
@@ -36,8 +71,8 @@ export default function Agents() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const renderAgentCard = (agent: Agent) => (
-    <Card key={agent.id} className="hover:shadow-md transition-shadow">
+  const renderAgentCard = (agent: (typeof agents)[0]) => (
+    <Card key={agent.agent_id} className="hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="space-y-2 flex-1">
@@ -66,7 +101,7 @@ export default function Agents() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleEdit(agent.id)}
+              onClick={() => handleEdit(agent.agent_id)}
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -77,18 +112,30 @@ export default function Agents() {
         <div className="text-sm">
           <span className="text-muted-foreground">Updated:</span>
           <span className="font-medium ml-2">
-            {formatDate(agent.updatedAt)}
+            {formatDate(agent.updated_at)}
           </span>
         </div>
       </CardContent>
     </Card>
   );
 
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">Loading agents...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <AgentsDataTable
-        columns={columns}
         data={agents}
+        modelMapping={modelMapping}
         reasoningOptions={reasoningOptions}
         modelOptions={modelOptions}
         temperatureOptions={temperatureOptions}

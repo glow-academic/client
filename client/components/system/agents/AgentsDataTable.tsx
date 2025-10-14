@@ -16,21 +16,21 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Agent } from "@/types";
+import type { AgentItem } from "@/lib/api/v2/schemas/agents";
 import { AgentsDataTableToolbar } from "./AgentsDataTableToolbar";
 
 export interface AgentsDataTableProps {
-  columns: ColumnDef<Agent>[];
-  data: Agent[];
+  data: AgentItem[];
+  modelMapping: Record<string, string>;
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
-  renderAgentCard: (agent: Agent) => React.ReactNode;
+  renderAgentCard: (agent: AgentItem) => React.ReactNode;
 }
 
 export function AgentsDataTable({
-  columns,
   data,
+  modelMapping,
   reasoningOptions,
   modelOptions,
   temperatureOptions,
@@ -40,11 +40,38 @@ export function AgentsDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "updatedAt", desc: true }, // Default to descending order by date
+    { id: "updated_at", desc: true }, // Default to descending order by date
   ]);
+
+  // Define columns inline for filtering
+  const columns = React.useMemo<ColumnDef<AgentItem>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "model_id",
+        header: "Model",
+        cell: ({ row }) => {
+          const modelId = row.getValue("model_id") as string;
+          return modelMapping[modelId] || modelId;
+        },
+      },
+      {
+        accessorKey: "reasoning",
+        header: "Reasoning",
+      },
+      {
+        accessorKey: "temperature",
+        header: "Temperature",
+      },
+    ],
+    [modelMapping]
+  );
 
   const table = useReactTable({
     data,

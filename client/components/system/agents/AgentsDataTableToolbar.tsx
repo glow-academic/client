@@ -6,10 +6,10 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Agent } from "@/types";
+import type { AgentItem } from "@/lib/api/v2/schemas/agents";
 
 export interface AgentsDataTableToolbarProps {
-  table: Table<Agent>;
+  table: Table<AgentItem>;
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];
   temperatureOptions: { value: string; label: string }[];
@@ -26,7 +26,7 @@ export function AgentsDataTableToolbar({
 
   const nameColumn = table.getColumn("name");
   const reasoningColumn = table.getColumn("reasoning");
-  const modelColumn = table.getColumn("modelId");
+  const modelColumn = table.getColumn("model_id");
   const temperatureColumn = table.getColumn("temperature");
 
   return (

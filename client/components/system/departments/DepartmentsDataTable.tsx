@@ -16,19 +16,17 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Department } from "@/types";
+import type { DepartmentItem } from "@/lib/api/v2/schemas/departments";
 import { DepartmentsDataTableToolbar } from "./DepartmentsDataTableToolbar";
 
 export interface DepartmentsDataTableProps {
-  columns: ColumnDef<Department>[];
-  data: Department[];
+  data: DepartmentItem[];
   priceSpentOptions: { value: string; label: string }[];
   staffCountOptions: { value: string; label: string }[];
-  renderDepartmentCard: (department: Department) => React.ReactNode;
+  renderDepartmentCard: (department: DepartmentItem) => React.ReactNode;
 }
 
 export function DepartmentsDataTable({
-  columns,
   data,
   priceSpentOptions,
   staffCountOptions,
@@ -37,12 +35,35 @@ export function DepartmentsDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "updatedAt", desc: true }, // Default to descending order by date
+    { id: "updated_at", desc: true }, // Default to descending order by date
   ]);
   const [rowSelection, setRowSelection] = React.useState({});
+
+  // Define columns inline for filtering
+  const columns = React.useMemo<ColumnDef<DepartmentItem>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Title",
+      },
+      {
+        accessorKey: "total_price_spent",
+        header: "Price Spent",
+      },
+      {
+        accessorKey: "staff_count",
+        header: "Staff Count",
+      },
+      {
+        accessorKey: "active",
+        header: "Active",
+      },
+    ],
+    []
+  );
 
   const table = useReactTable({
     data,

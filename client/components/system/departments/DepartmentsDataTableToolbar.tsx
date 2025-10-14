@@ -6,10 +6,10 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Department } from "@/types";
+import type { DepartmentItem } from "@/lib/api/v2/schemas/departments";
 
 export interface DepartmentsDataTableToolbarProps {
-  table: Table<Department>;
+  table: Table<DepartmentItem>;
   priceSpentOptions: { value: string; label: string }[];
   staffCountOptions: { value: string; label: string }[];
 }
@@ -23,8 +23,8 @@ export function DepartmentsDataTableToolbar({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const nameColumn = table.getColumn("title");
-  const priceSpentColumn = table.getColumn("totalPriceSpent");
-  const staffCountColumn = table.getColumn("staffCount");
+  const priceSpentColumn = table.getColumn("total_price_spent");
+  const staffCountColumn = table.getColumn("staff_count");
 
   return (
     <div className="flex items-center justify-between">
