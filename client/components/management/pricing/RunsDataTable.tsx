@@ -15,19 +15,37 @@ import {
 } from "@tanstack/react-table";
 import { Bug } from "lucide-react";
 import * as React from "react";
+import type { DateRange } from "react-day-picker";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useProfile } from "@/contexts/profile-context";
-import { DebugInfo } from "@/types";
+import type {
+  DebugInfoItem,
+  ModelMappingWithPricing,
+} from "@/lib/api/v2/schemas/analytics";
 import { format } from "date-fns";
 
 const currency = (value: number) =>
@@ -50,21 +68,52 @@ export interface ModelRunRow {
   profileName?: string;
   inputTokens: number;
   outputTokens: number;
-  debugInfo?: DebugInfo[];
+  debugInfo?: DebugInfoItem[];
   cost: number;
 }
 
 export interface RunsDataTableProps {
   rows: ModelRunRow[];
+  modelMapping: Record<string, ModelMappingWithPricing>;
+  profileMapping: Record<string, string>;
+  agentMapping: Record<string, string>;
+  personaMapping: Record<string, string>;
+  selectedModelIds: string[];
+  selectedAgentIds: string[];
+  selectedPersonaIds: string[];
+  selectedProfileIds: string[];
+  setSelectedModelIds: (ids: string[]) => void;
+  setSelectedAgentIds: (ids: string[]) => void;
+  setSelectedPersonaIds: (ids: string[]) => void;
+  setSelectedProfileIds: (ids: string[]) => void;
+  dateRange: DateRange | undefined;
+  setDateRange: (range: DateRange | undefined) => void;
 }
 
-export function RunsDataTable({ rows }: RunsDataTableProps) {
+export function RunsDataTable({
+  rows,
+  modelMapping,
+  profileMapping,
+  agentMapping,
+  personaMapping,
+  selectedModelIds,
+  selectedAgentIds,
+  selectedPersonaIds,
+  selectedProfileIds,
+  setSelectedModelIds,
+  setSelectedAgentIds,
+  setSelectedPersonaIds,
+  setSelectedProfileIds,
+  dateRange,
+  setDateRange,
+}: RunsDataTableProps) {
   const { effectiveProfile } = useProfile();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const [runIdSearch, setRunIdSearch] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
@@ -210,8 +259,16 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     return cols;
   }, [isSuperadmin]);
 
+  // Filter rows by search
+  const filteredRows = React.useMemo(() => {
+    if (!runIdSearch) return rows;
+    return rows.filter((r) =>
+      r.id.toLowerCase().includes(runIdSearch.toLowerCase())
+    );
+  }, [rows, runIdSearch]);
+
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns,
     state: {
       sorting,
@@ -234,80 +291,205 @@ export function RunsDataTable({ rows }: RunsDataTableProps) {
     },
   });
 
-  // Build option lists from faceted values
+  // Build filter options from mappings
   const modelOptions = React.useMemo(() => {
-    const set = new Map<string, string>();
-    rows.forEach((r) => {
-      if (r.modelId) set.set(r.modelId, r.modelName);
-    });
-    return Array.from(set.entries()).map(([value, label]) => ({
-      value,
-      label,
+    return Object.entries(modelMapping).map(([id, data]) => ({
+      value: id,
+      label: data.name,
     }));
-  }, [rows]);
-  const actorOptions = React.useMemo(() => {
-    const set = new Map<string, string>();
-    rows.forEach((r) => {
-      if (r.agentId) set.set(r.agentId, r.agentName || r.agentId);
-      if (r.personaId) set.set(r.personaId, r.personaName || r.personaId);
-    });
-    return Array.from(set.entries()).map(([value, label]) => ({
-      value,
-      label,
-    }));
-  }, [rows]);
+  }, [modelMapping]);
+
   const profileOptions = React.useMemo(() => {
-    const set = new Map<string, string>();
-    rows.forEach((r) => {
-      if (r.profileId) set.set(r.profileId, r.profileName || r.profileId);
-    });
-    return Array.from(set.entries()).map(([value, label]) => ({
-      value,
-      label,
+    return Object.entries(profileMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
     }));
-  }, [rows]);
+  }, [profileMapping]);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      {/* Filters + Search */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          {(() => {
-            const col = table.getColumn("modelName");
-            return col ? (
-              <DataTableFacetedFilter
-                column={col}
-                title="Model"
-                options={modelOptions}
-              />
-            ) : null;
-          })()}
-          {(() => {
-            const col = table.getColumn("actorId");
-            return col ? (
-              <DataTableFacetedFilter
-                column={col}
-                title="Agent/Persona"
-                options={actorOptions}
-              />
-            ) : null;
-          })()}
-          {(() => {
-            const col = table.getColumn("profileName");
-            return col ? (
-              <DataTableFacetedFilter
-                column={col}
-                title="Person"
-                options={profileOptions}
-              />
-            ) : null;
-          })()}
-          {table.getState().columnFilters.length > 0 && (
+          {/* Search bar */}
+          <Input
+            placeholder="Search by run ID..."
+            value={runIdSearch}
+            onChange={(e) => setRunIdSearch(e.target.value)}
+            className="h-8 w-[200px]"
+          />
+
+          {/* Model filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 border-dashed">
+                Models{" "}
+                {selectedModelIds.length > 0 && `(${selectedModelIds.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-0">
+              <Command>
+                <CommandInput placeholder="Search models..." />
+                <CommandEmpty>No models found.</CommandEmpty>
+                <CommandList>
+                  {modelOptions.map((m) => {
+                    const checked = selectedModelIds.includes(m.value);
+                    return (
+                      <CommandItem
+                        key={m.value}
+                        onSelect={() => {
+                          const next = new Set(selectedModelIds);
+                          if (checked) next.delete(m.value);
+                          else next.add(m.value);
+                          setSelectedModelIds(Array.from(next));
+                        }}
+                      >
+                        <Checkbox checked={checked} className="mr-2" />
+                        <span className="truncate">{m.label}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Agent filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 border-dashed">
+                Agents{" "}
+                {selectedAgentIds.length > 0 && `(${selectedAgentIds.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-0">
+              <Command>
+                <CommandInput placeholder="Search agents..." />
+                <CommandEmpty>No agents found.</CommandEmpty>
+                <CommandList>
+                  {Object.entries(agentMapping).map(([id, name]) => {
+                    const checked = selectedAgentIds.includes(id);
+                    return (
+                      <CommandItem
+                        key={id}
+                        onSelect={() => {
+                          const next = new Set(selectedAgentIds);
+                          if (checked) next.delete(id);
+                          else next.add(id);
+                          setSelectedAgentIds(Array.from(next));
+                        }}
+                      >
+                        <Checkbox checked={checked} className="mr-2" />
+                        <span className="truncate">{name}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Persona filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 border-dashed">
+                Personas{" "}
+                {selectedPersonaIds.length > 0 &&
+                  `(${selectedPersonaIds.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-0">
+              <Command>
+                <CommandInput placeholder="Search personas..." />
+                <CommandEmpty>No personas found.</CommandEmpty>
+                <CommandList>
+                  {Object.entries(personaMapping).map(([id, name]) => {
+                    const checked = selectedPersonaIds.includes(id);
+                    return (
+                      <CommandItem
+                        key={id}
+                        onSelect={() => {
+                          const next = new Set(selectedPersonaIds);
+                          if (checked) next.delete(id);
+                          else next.add(id);
+                          setSelectedPersonaIds(Array.from(next));
+                        }}
+                      >
+                        <Checkbox checked={checked} className="mr-2" />
+                        <span className="truncate">{name}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Profile filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 border-dashed">
+                People{" "}
+                {selectedProfileIds.length > 0 &&
+                  `(${selectedProfileIds.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-0">
+              <Command>
+                <CommandInput placeholder="Search people..." />
+                <CommandEmpty>No people found.</CommandEmpty>
+                <CommandList>
+                  {profileOptions.map((p) => {
+                    const checked = selectedProfileIds.includes(p.value);
+                    return (
+                      <CommandItem
+                        key={p.value}
+                        onSelect={() => {
+                          const next = new Set(selectedProfileIds);
+                          if (checked) next.delete(p.value);
+                          else next.add(p.value);
+                          setSelectedProfileIds(Array.from(next));
+                        }}
+                      >
+                        <Checkbox checked={checked} className="mr-2" />
+                        <span className="truncate">{p.label}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Date range picker */}
+        <DatePickerWithRange
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+        />
+      </div>
+
+      {/* Table toolbar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {(selectedModelIds.length > 0 ||
+            selectedAgentIds.length > 0 ||
+            selectedPersonaIds.length > 0 ||
+            selectedProfileIds.length > 0 ||
+            runIdSearch) && (
             <Button
               variant="ghost"
+              size="sm"
               className="h-8 px-2"
-              onClick={() => table.resetColumnFilters()}
+              onClick={() => {
+                setSelectedModelIds([]);
+                setSelectedAgentIds([]);
+                setSelectedPersonaIds([]);
+                setSelectedProfileIds([]);
+                setRunIdSearch("");
+              }}
             >
-              Reset
+              Reset filters
             </Button>
           )}
         </div>

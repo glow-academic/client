@@ -8,7 +8,7 @@
  * - Displays summary cards and a stacked area chart (per model) + total line
  */
 
-import { format, isAfter, isBefore } from "date-fns";
+import { format } from "date-fns";
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
@@ -24,17 +24,11 @@ import {
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useDepartments } from "@/contexts/departments-context";
-import { useAgents } from "@/lib/api/v1/hooks/agents";
-import { useDebugInfoByModelRunIdBatch } from "@/lib/api/v1/hooks/debug_info";
-import { useModelRunsByDepartmentIdBatch } from "@/lib/api/v1/hooks/model_runs";
-import { useModels } from "@/lib/api/v1/hooks/models";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/v1/hooks/profiles";
-import type { DebugInfo } from "@/types";
-import { Agent, Model, ModelRun, Persona } from "@/types";
+import { useProfile } from "@/contexts/profile-context";
+import { usePricingAnalytics } from "@/lib/api/v2/hooks/analytics";
+import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
 import { Loader2 } from "lucide-react";
 import { RunsDataTable } from "./RunsDataTable";
-import { RunsDataTableToolbar } from "./RunsDataTableToolbar";
 
 const currency = (value: number) =>
   new Intl.NumberFormat(undefined, {
@@ -69,62 +63,64 @@ export default function Pricing() {
   });
 
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: models = [], isLoading: modelsLoading } = useModels();
-  const { data: runs = [], isLoading: runsLoading } =
-    useModelRunsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: agents = [] } = useAgents();
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: profiles = [] } = useProfilesByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
+  const { effectiveProfile } = useProfile();
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]);
-  // Grouping removed; always series by model with filters
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
-  // Default to All: no pre-selections
+  // Build filters for V2 API
+  const filters = useMemo<AnalyticsFilters>(
+    () => ({
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+      startDate: dateRange?.from?.toISOString() || "",
+      endDate: dateRange?.to?.toISOString() || "",
+      cohortIds: undefined,
+      simulationFilters: undefined,
+    }),
+    [effectiveDepartmentIds, effectiveProfile?.id, dateRange]
+  );
 
-  const modelIdToMeta = useMemo(() => {
-    const map = new Map<string, Model>();
-    models.forEach((m) => map.set(m.id, m));
-    return map;
-  }, [models]);
-  const agentIdToMeta = useMemo(() => {
-    const map = new Map<string, Agent>();
-    agents.forEach((a) => map.set(a.id, a));
-    return map;
-  }, [agents]);
-  const personaIdToMeta = useMemo(() => {
-    const map = new Map<string, Persona>();
-    personas.forEach((p) => map.set(p.id, p));
-    return map;
-  }, [personas]);
+  const { data: pricingData, isLoading } = usePricingAnalytics(filters);
+
+  // Extract data from V2 API response
+  const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
+  const modelMapping = useMemo(
+    () => pricingData?.model_mapping || {},
+    [pricingData]
+  );
+  const profileMapping = useMemo(
+    () => pricingData?.profile_mapping || {},
+    [pricingData]
+  );
+  const agentMapping = useMemo(
+    () => pricingData?.agent_mapping || {},
+    [pricingData]
+  );
+  const personaMapping = useMemo(
+    () => pricingData?.persona_mapping || {},
+    [pricingData]
+  );
 
   // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
   const { chartData, totals, chartConfig, filteredRuns } = useMemo(() => {
-    if (!runs?.length || !models?.length) {
+    if (!modelRuns?.length || Object.keys(modelMapping).length === 0) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
-        totals: { totalSpend: 0, runCount: 0, withProfileRuns: 0, avgCost: 0 },
+        totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
         chartConfig: {} as Record<string, { label: string; color: string }>,
-        filteredRuns: [] as ModelRun[],
+        filteredRuns: [] as typeof modelRuns,
       };
     }
 
-    const dateFiltered = runs.filter((r) => {
-      if (!dateRange?.from || !dateRange?.to) return true;
-      const d = new Date(r.createdAt);
-      return isAfter(d, dateRange.from) && isBefore(d, dateRange.to);
-    });
-
     // Build include sets (empty selection means All)
     const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : models.map((m) => m.id)
+      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping)
     );
-    const includeActors = new Set(selectedActorIds);
+    const includeAgents = new Set(selectedAgentIds);
+    const includePersonas = new Set(selectedPersonaIds);
     const includeProfiles = new Set(selectedProfileIds);
 
     const byDay = new Map<
@@ -134,22 +130,25 @@ export default function Pricing() {
 
     let totalSpend = 0;
     let runCount = 0;
-    let withProfileRuns = 0;
 
-    const matchedRuns: ModelRun[] = [];
-    for (const run of dateFiltered) {
-      const runProfileId = (run as unknown as { profileId?: string }).profileId;
-      const runAgentId = (run as unknown as { agentId?: string }).agentId;
-      const runPersonaId = (run as unknown as { personaId?: string }).personaId;
-      const modelId = (run as unknown as { modelId?: string | null }).modelId;
+    const matchedRuns: typeof modelRuns = [];
+    for (const run of modelRuns) {
+      const modelId = run.model_id;
+      const runProfileId = run.profile_id;
+      const runAgentId = run.agent_id;
+      const runPersonaId = run.persona_id;
 
       if (!modelId || !includeModels.has(modelId)) continue;
-      if (includeActors.size > 0) {
-        const matchesAgent = !!runAgentId && includeActors.has(runAgentId);
-        const matchesPersona =
-          !!runPersonaId && includeActors.has(runPersonaId);
-        if (!matchesAgent && !matchesPersona) continue;
-      }
+      if (
+        includeAgents.size > 0 &&
+        (!runAgentId || !includeAgents.has(runAgentId))
+      )
+        continue;
+      if (
+        includePersonas.size > 0 &&
+        (!runPersonaId || !includePersonas.has(runPersonaId))
+      )
+        continue;
       if (
         includeProfiles.size > 0 &&
         (!runProfileId || !includeProfiles.has(runProfileId))
@@ -158,16 +157,16 @@ export default function Pricing() {
 
       matchedRuns.push(run);
 
-      // Pricing comes from model
-      const meta = modelIdToMeta.get(modelId);
-      if (!meta) continue;
+      // Pricing comes from model mapping
+      const modelInfo = modelMapping[modelId];
+      if (!modelInfo) continue;
 
       const spend =
-        (run.inputTokens / 1_000_000) * (meta.inputPpm || 0) +
-        (run.outputTokens / 1_000_000) * (meta.outputPpm || 0);
+        (run.input_tokens / 1_000_000) * (modelInfo.input_ppm || 0) +
+        (run.output_tokens / 1_000_000) * (modelInfo.output_ppm || 0);
 
-      const dateKey = format(new Date(run.createdAt), "yyyy-MM-dd");
-      const dateLabel = format(new Date(run.createdAt), "MMM dd");
+      const dateKey = format(new Date(run.created_at), "yyyy-MM-dd");
+      const dateLabel = format(new Date(run.created_at), "MMM dd");
 
       if (!byDay.has(dateKey)) {
         byDay.set(dateKey, { dateLabel, values: {} });
@@ -179,13 +178,6 @@ export default function Pricing() {
 
       totalSpend += spend;
       runCount += 1;
-      if (selectedProfileIds.length > 0) {
-        // count all included runs (they matched selected profiles)
-        withProfileRuns += 1;
-      } else if (runProfileId) {
-        // when no profiles selected (All), count those that have any profile
-        withProfileRuns += 1;
-      }
     }
 
     const data = Array.from(byDay.entries())
@@ -213,7 +205,7 @@ export default function Pricing() {
 
     const config: Record<string, { label: string; color: string }> = {};
     for (const id of includeModels) {
-      const label = modelIdToMeta.get(id)?.name;
+      const label = modelMapping[id]?.name;
       config[id] = {
         label: label ?? id,
         color: modelIdToColor[id] ?? "#999999",
@@ -226,136 +218,64 @@ export default function Pricing() {
       totals: {
         totalSpend: Number(totalSpend.toFixed(2)),
         runCount,
-        selectedProfileRuns: withProfileRuns,
         avgCost: runCount ? Number((totalSpend / runCount).toFixed(2)) : 0,
       },
       chartConfig: config,
       filteredRuns: matchedRuns,
     };
   }, [
-    runs,
-    models,
-    dateRange,
+    modelRuns,
+    modelMapping,
     selectedModelIds,
-    selectedActorIds,
+    selectedAgentIds,
+    selectedPersonaIds,
     selectedProfileIds,
-    modelIdToMeta,
   ]);
-
-  const loading = modelsLoading || runsLoading;
-
-  // Debug info by run
-  const filteredRunIds = useMemo(
-    () => (filteredRuns || []).map((r) => r.id as string),
-    [filteredRuns]
-  );
-
-  const { data: debugInfoList = [] } =
-    useDebugInfoByModelRunIdBatch(filteredRunIds);
-
-  const debugInfoByRunId = useMemo(() => {
-    const map = new Map<string, DebugInfo[]>();
-    for (const d of debugInfoList) {
-      const key = (d.modelRunId as unknown as string) ?? "";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(d);
-    }
-    return map;
-  }, [debugInfoList]);
-
-  // Build options for toolbar
-  const modelOptions = useMemo(
-    () => models.map((m) => ({ value: m.id, label: m.name })),
-    [models]
-  );
-  const actorOptions = useMemo(() => {
-    const agentOpts = agents.map((a) => ({ value: a.id, label: a.name }));
-    const personaOpts = personas.map((p) => ({ value: p.id, label: p.name }));
-    return [...agentOpts, ...personaOpts];
-  }, [agents, personas]);
-  const profileOptions = useMemo(() => {
-    return profiles.map((p) => {
-      const id = p.id as string;
-      const label =
-        `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || p.alias || id;
-      return { value: id, label };
-    });
-  }, [profiles]);
 
   // Build rows for runs table
   const runRows = useMemo(() => {
     return (filteredRuns || []).map((run) => {
-      const modelId =
-        (run as unknown as { modelId?: string | null }).modelId || null;
-      const agentId =
-        (run as unknown as { agentId?: string | null }).agentId || null;
-      const personaId =
-        (run as unknown as { personaId?: string | null }).personaId || null;
-      const profileId =
-        (run as unknown as { profileId?: string | null }).profileId || null;
+      const modelId = run.model_id;
+      const agentId = run.agent_id;
+      const personaId = run.persona_id;
+      const profileId = run.profile_id;
 
-      const modelMeta = modelId ? modelIdToMeta.get(modelId) : undefined;
+      const modelInfo = modelId ? modelMapping[modelId] : undefined;
       const inputCost =
-        ((run.inputTokens || 0) / 1_000_000) * (modelMeta?.inputPpm || 0);
+        (run.input_tokens / 1_000_000) * (modelInfo?.input_ppm || 0);
       const outputCost =
-        ((run.outputTokens || 0) / 1_000_000) * (modelMeta?.outputPpm || 0);
+        (run.output_tokens / 1_000_000) * (modelInfo?.output_ppm || 0);
       const cost = Number((inputCost + outputCost).toFixed(6));
+
       return {
-        id: run.id as string,
-        createdAt: run.createdAt as string,
+        id: run.model_run_id,
+        createdAt: run.created_at,
         modelId,
-        modelName:
-          (modelId && modelIdToMeta.get(modelId)?.name) || modelId || "",
+        modelName: (modelId && modelMapping[modelId]?.name) || modelId || "",
         agentId,
-        agentName:
-          (agentId && agentIdToMeta.get(agentId)?.name) || agentId || "",
+        agentName: (agentId && agentMapping[agentId]) || agentId || "",
         personaId,
         personaName:
-          (personaId && personaIdToMeta.get(personaId)?.name) ||
-          personaId ||
-          "",
+          (personaId && personaMapping[personaId]) || personaId || "",
         profileId,
         profileName:
-          (profileId &&
-            (() => {
-              const p = profiles.find((pp) => pp.id === profileId);
-              if (!p) return profileId;
-              const lbl = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
-              return lbl || p.alias || profileId;
-            })()) ||
-          "",
-        inputTokens: run.inputTokens,
-        outputTokens: run.outputTokens,
-        debugInfo: debugInfoByRunId.get(run.id as string) || [],
+          (profileId && profileMapping[profileId]) || profileId || "",
+        inputTokens: run.input_tokens,
+        outputTokens: run.output_tokens,
+        debugInfo: run.debug_info,
         cost,
       };
     });
   }, [
     filteredRuns,
-    modelIdToMeta,
-    agentIdToMeta,
-    personaIdToMeta,
-    profiles,
-    debugInfoByRunId,
+    modelMapping,
+    agentMapping,
+    personaMapping,
+    profileMapping,
   ]);
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Faceted filters toolbar */}
-      <RunsDataTableToolbar
-        modelOptions={modelOptions}
-        actorOptions={actorOptions}
-        profileOptions={profileOptions}
-        selectedModelIds={selectedModelIds}
-        selectedActorIds={selectedActorIds}
-        selectedProfileIds={selectedProfileIds}
-        setSelectedModelIds={setSelectedModelIds}
-        setSelectedActorIds={setSelectedActorIds}
-        setSelectedProfileIds={setSelectedProfileIds}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-      />
-
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <Card>
@@ -398,7 +318,7 @@ export default function Pricing() {
           <CardTitle className="text-base">Spend over time</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading pricing
               data…
@@ -446,7 +366,7 @@ export default function Pricing() {
                 {/* Stacked areas per selected models */}
                 {(selectedModelIds.length
                   ? selectedModelIds
-                  : models.map((m) => m.id)
+                  : Object.keys(modelMapping)
                 ).map((id) => (
                   <Area
                     key={id}
@@ -503,12 +423,28 @@ export default function Pricing() {
           <CardTitle className="text-base">Model runs</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="flex h-40 items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading runs…
             </div>
           ) : (
-            <RunsDataTable rows={runRows} />
+            <RunsDataTable
+              rows={runRows}
+              modelMapping={modelMapping}
+              profileMapping={profileMapping}
+              agentMapping={agentMapping}
+              personaMapping={personaMapping}
+              selectedModelIds={selectedModelIds}
+              selectedAgentIds={selectedAgentIds}
+              selectedPersonaIds={selectedPersonaIds}
+              selectedProfileIds={selectedProfileIds}
+              setSelectedModelIds={setSelectedModelIds}
+              setSelectedAgentIds={setSelectedAgentIds}
+              setSelectedPersonaIds={setSelectedPersonaIds}
+              setSelectedProfileIds={setSelectedProfileIds}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+            />
           )}
         </CardContent>
       </Card>
