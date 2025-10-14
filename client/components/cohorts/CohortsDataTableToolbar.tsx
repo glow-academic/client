@@ -6,10 +6,10 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Cohort } from "@/types";
+import { CohortItem } from "@/lib/api/v2/schemas/cohorts";
 
 export interface CohortsDataTableToolbarProps {
-  table: Table<Cohort>;
+  table: Table<CohortItem>;
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
 }
@@ -22,9 +22,9 @@ export function CohortsDataTableToolbar({
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const titleColumn = table.getColumn("title");
-  const profileColumn = table.getColumn("profileIds");
-  const simulationColumn = table.getColumn("simulationIds");
+  const nameColumn = table.getColumn("name");
+  const profileColumn = table.getColumn("profile_ids");
+  const simulationColumn = table.getColumn("simulation_ids");
 
   return (
     <div className="flex items-center justify-between">
@@ -32,9 +32,9 @@ export function CohortsDataTableToolbar({
         <div className="mb-2">
           <Input
             placeholder="Search cohorts..."
-            value={(titleColumn?.getFilterValue() as string) ?? ""}
+            value={(nameColumn?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              titleColumn?.setFilterValue(event.target.value)
+              nameColumn?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />

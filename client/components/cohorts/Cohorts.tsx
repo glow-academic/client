@@ -17,17 +17,16 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useCohortColumns } from "@/hooks/use-cohort-columns";
-import { useCohortProfilesByCohortIdBatch } from "@/lib/api/v1/hooks/cohort_profiles";
 import {
-  useCohortsByDepartmentIdBatch,
-  useCreateCohort,
+  useCohortsList,
   useDeleteCohort,
-} from "@/lib/api/v1/hooks/cohorts";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/v1/hooks/profiles";
+  useDuplicateCohort,
+  useLeaveCohort,
+} from "@/lib/api/v2/hooks/cohorts";
+import { CohortItem } from "@/lib/api/v2/schemas/cohorts";
 import { CohortsDataTable } from "./CohortsDataTable";
 
 import {
@@ -46,30 +45,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-// import { useUpdateCohort } from "@/lib/api/hooks/cohorts"; // Temporarily disabled for junction table migration
-import { Cohort } from "@/types";
 
 export default function Cohorts() {
   const router = useRouter();
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
 
-  // Fetch cohorts data
-  const { data: cohorts = [], isLoading: loadingCohorts } =
-    useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
-
-  // Fetch profiles data for role checking
-  const { data: profiles = [], isLoading: loadingProfiles } =
-    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
-
-  // Fetch cohort profiles data to get member relationships
-  const { data: cohortProfiles = [], isLoading: loadingCohortProfiles } =
-    useCohortProfilesByCohortIdBatch(cohorts.map((c) => c.id));
+  // V2 API hooks - single fetch with all data (pre-filtered by role)
+  const { data: cohortsData, isLoading: loadingCohorts } = useCohortsList(
+    {
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    },
+    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+  );
 
   // Mutation hooks
-  const createCohortMutation = useCreateCohort();
+  const duplicateCohortMutation = useDuplicateCohort();
   const deleteCohortMutation = useDeleteCohort();
-  // const updateCohortMutation = useUpdateCohort(); // Temporarily disabled for junction table migration
+  const leaveCohortMutation = useLeaveCohort();
+
+  // Extract data from V2 response
+  const cohorts = useMemo(
+    () => cohortsData?.cohorts || [],
+    [cohortsData?.cohorts]
+  );
+  const profileMapping = useMemo(
+    () => cohortsData?.profile_mapping || {},
+    [cohortsData?.profile_mapping]
+  );
+  const simulationMapping = useMemo(
+    () => cohortsData?.simulation_mapping || {},
+    [cohortsData?.simulation_mapping]
+  );
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -85,22 +93,22 @@ export default function Cohorts() {
   } | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
 
-  // Get table columns and filter options - must be called before loading check
-  const { columns, profileOptions, simulationOptions } = useCohortColumns();
+  // Create filter options from mappings
+  const profileOptions = useMemo(() => {
+    return Object.entries(profileMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [profileMapping]);
 
-  // Helper function to get profile IDs for a cohort
-  const getCohortProfileIds = (cohortId: string) => {
-    return cohortProfiles
-      .filter((cp) => cp.cohortId === cohortId && cp.active)
-      .map((cp) => cp.profileId);
-  };
+  const simulationOptions = useMemo(() => {
+    return Object.entries(simulationMapping).map(([id, name]) => ({
+      value: id,
+      label: name,
+    }));
+  }, [simulationMapping]);
 
-  const isLoading =
-    isProfileLoading ||
-    !effectiveProfile ||
-    loadingCohorts ||
-    loadingProfiles ||
-    loadingCohortProfiles;
+  const isLoading = isProfileLoading || !effectiveProfile || loadingCohorts;
 
   if (isLoading) {
     return (
@@ -143,129 +151,16 @@ export default function Cohorts() {
     );
   }
 
-  // Check if a cohort is being used (has members)
-  const isCohortInUse = (cohortId: string) => {
-    const profileIds = getCohortProfileIds(cohortId);
-    return profileIds.length > 0;
-  };
-
-  // Check if a cohort can be deleted (inactive or no members)
-  const canDeleteCohort = (cohortId: string) => {
-    const cohort = cohorts.find((c) => c.id === cohortId);
-    if (!cohort) return false;
-
-    // Can delete if cohort is inactive
-    if (!cohort.active) {
-      return true;
-    }
-
-    // For active cohorts, check if there are any TA members
-    const profileIds = getCohortProfileIds(cohortId);
-    const cohortProfiles = profiles.filter((profile) =>
-      profileIds.includes(profile.id)
-    );
-    const hasTAMembers = cohortProfiles.some(
-      (profile) => profile.role === "ta"
-    );
-
-    // Cannot delete active cohorts that have TA members
-    if (hasTAMembers) {
-      return false;
-    }
-
-    // For active cohorts without TA members, check if user is the only member
-    if (effectiveProfile?.role === "instructional") {
-      // Can delete if the user is the only member in the cohort
-      return (
-        cohortProfiles.length === 1 &&
-        cohortProfiles[0]?.id === effectiveProfile.id
-      );
-    }
-
-    // Admin/superadmin can delete active cohorts without TA members
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-    if (isAdmin) {
-      return true;
-    }
-
-    return false;
-  };
-
-  // Check if user can leave the cohort
-  const canLeaveCohort = (cohortId: string) => {
-    const cohort = cohorts.find((c) => c.id === cohortId);
-    if (!cohort) return false;
-
-    // Only instructional users can leave cohorts
-    if (effectiveProfile?.role !== "instructional") return false;
-
-    // Check if user is in the cohort
-    const profileIds = getCohortProfileIds(cohortId);
-    const isUserInCohort = profileIds.includes(effectiveProfile?.id || "");
-    if (!isUserInCohort) return false;
-
-    // Check if there are other instructional users in the cohort
-    const cohortProfiles = profiles.filter((profile) =>
-      profileIds.includes(profile.id)
-    );
-    const instructionalProfiles = cohortProfiles.filter(
-      (profile) => profile.role === "instructional"
-    );
-
-    // Can leave if there are other instructional users (not the only one)
-    return instructionalProfiles.length > 1;
-  };
-
-  // Check if user can edit (admin/superadmin, cohort not in use, or user is in cohort)
-  const canEditCohort = (cohortId: string) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-
-    const cohort = cohorts.find((c) => c.id === cohortId);
-    if (!cohort) return false;
-
-    // Only superadmins can edit default cohorts
-    if (cohort.defaultCohort && effectiveProfile?.role !== "superadmin") {
-      return false;
-    }
-
-    if (isAdmin) return true;
-
-    // Check if user's profile is in the cohort's profileIds
-    const profileIds = getCohortProfileIds(cohortId);
-    const isUserInCohort = profileIds.includes(effectiveProfile?.id || "");
-
-    return isUserInCohort || !isCohortInUse(cohortId);
-  };
-
-  // Filter cohorts based on user role
-  const filteredCohorts = cohorts.filter((cohort) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-
-    // Admin/superadmin can see all cohorts
-    if (isAdmin) return true;
-
-    // Instructional users can only see cohorts they're in
-    if (effectiveProfile?.role === "instructional") {
-      const profileIds = getCohortProfileIds(cohort.id);
-      return profileIds.includes(effectiveProfile?.id || "");
-    }
-
-    // Other roles can see all cohorts
-    return true;
-  });
+  // Permissions now come from server-side in V2 API
+  // Cohorts are pre-filtered by role on the server
+  // No need for client-side permission or filtering logic
 
   const handleDelete = async () => {
     if (!deleteItem) return;
 
     setIsDeleting(true);
     try {
-      await deleteCohortMutation.mutateAsync(deleteItem.id);
+      await deleteCohortMutation.mutateAsync({ cohortId: deleteItem.id });
       await log.info("cohort.delete.success", {
         message: "Cohort deleted successfully",
         subject: { entityType: "cohort", entityId: deleteItem.id },
@@ -296,27 +191,10 @@ export default function Cohorts() {
 
     setIsLeaving(true);
     try {
-      // Remove the current user from the cohort
-      const cohort = cohorts.find((c) => c.id === leaveItem.id);
-      if (!cohort) {
-        toast.error("Cohort not found");
-        return;
-      }
-
-      // Update the cohort to remove the current user
-      // Note: This would need to be updated to use cohort_profiles junction table
-      // For now, we'll skip this functionality until the backend supports it
-      console.warn(
-        "Leave cohort functionality needs to be updated for junction table"
-      );
-      // const profileIds = getCohortProfileIds(leaveItem.id);
-      // const updatedProfileIds =
-      //   profileIds.filter((id) => id !== effectiveProfile?.id);
-      // await updateCohortMutation.mutateAsync({
-      //   id: leaveItem.id,
-      //   profileIds: updatedProfileIds,
-      //   updatedAt: new Date().toISOString(),
-      // });
+      await leaveCohortMutation.mutateAsync({
+        cohortId: leaveItem.id,
+        profileId: effectiveProfile?.id || "",
+      });
 
       await log.info("cohort.leave.success", {
         message: "Left cohort successfully",
@@ -343,36 +221,28 @@ export default function Cohorts() {
     }
   };
 
-  const handleDuplicate = async (cohort: Cohort) => {
-    setIsDuplicating(cohort.id);
+  const handleDuplicate = async (cohortId: string, cohortName: string) => {
+    setIsDuplicating(cohortId);
     try {
-      await createCohortMutation.mutateAsync({
-        ...cohort,
-        id: undefined,
-        createdAt: undefined,
-        updatedAt: undefined,
-        defaultCohort: false,
-        active: false,
-        title: `${cohort.title} Copy`,
-      });
+      await duplicateCohortMutation.mutateAsync({ cohortId });
       await log.info("cohort.duplicate.success", {
         message: "Cohort duplicated successfully",
-        subject: { entityType: "cohort", entityId: cohort.id },
+        subject: { entityType: "cohort", entityId: cohortId },
         context: {
           component: "Cohorts",
           function: "handleDuplicate",
-          originalTitle: cohort.title,
+          originalTitle: cohortName,
         },
       });
-      toast.success(`Cohort "${cohort.title}" duplicated successfully`);
+      toast.success(`Cohort "${cohortName}" duplicated successfully`);
     } catch (error) {
       await log.error("cohort.duplicate.failed", {
         message: "Error duplicating cohort",
-        subject: { entityType: "cohort", entityId: cohort.id },
+        subject: { entityType: "cohort", entityId: cohortId },
         context: {
           component: "Cohorts",
           function: "handleDuplicate",
-          originalTitle: cohort.title,
+          originalTitle: cohortName,
         },
         error,
       });
@@ -404,22 +274,22 @@ export default function Cohorts() {
     router.push("/cohorts/new");
   };
 
-  const renderCohortCard = (cohort: Cohort) => (
+  const renderCohortCard = (cohort: CohortItem) => (
     <Card
-      key={cohort.id}
-      aria-label={cohort.title}
-      data-testid={`card-${cohort.id}`}
+      key={cohort.cohort_id}
+      aria-label={cohort.name}
+      data-testid={`card-${cohort.cohort_id}`}
       className="relative flex flex-col h-full"
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg">{cohort.title}</CardTitle>
+            <CardTitle className="text-lg">{cohort.name}</CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline">
                   <Users className="h-3 w-3 mr-1" />
-                  {getCohortProfileIds(cohort.id).length} members
+                  {cohort.num_members} members
                 </Badge>
               </div>
               {!cohort.active && (
@@ -430,13 +300,13 @@ export default function Cohorts() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {canEditCohort(cohort.id) ? (
+            {cohort.can_edit ? (
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`edit-${cohort.id}`}
-                onClick={() => handleEdit(cohort.id)}
-                aria-label={`Edit ${cohort.title}`}
+                data-testid={`edit-${cohort.cohort_id}`}
+                onClick={() => handleEdit(cohort.cohort_id)}
+                aria-label={`Edit ${cohort.name}`}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -444,44 +314,49 @@ export default function Cohorts() {
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`view-${cohort.id}`}
-                onClick={() => handleView(cohort.id)}
-                aria-label={`View ${cohort.title}`}
+                data-testid={`view-${cohort.cohort_id}`}
+                onClick={() => handleView(cohort.cohort_id)}
+                aria-label={`View ${cohort.name}`}
               >
                 <Eye className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDuplicate(cohort)}
-              disabled={isDuplicating === cohort.id}
-              aria-label={`Duplicate ${cohort.title}`}
-            >
-              {isDuplicating === cohort.id ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-            {canDeleteCohort(cohort.id) && (
+            {cohort.can_duplicate && (
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`delete-${cohort.id}`}
-                onClick={() => handleDeleteClick(cohort.id, cohort.title)}
-                aria-label={`Delete ${cohort.title}`}
+                onClick={() => handleDuplicate(cohort.cohort_id, cohort.name)}
+                disabled={
+                  isDuplicating === cohort.cohort_id ||
+                  duplicateCohortMutation.isPending
+                }
+                aria-label={`Duplicate ${cohort.name}`}
+              >
+                {isDuplicating === cohort.cohort_id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {cohort.can_delete && (
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`delete-${cohort.cohort_id}`}
+                onClick={() => handleDeleteClick(cohort.cohort_id, cohort.name)}
+                aria-label={`Delete ${cohort.name}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
-            {canLeaveCohort(cohort.id) && (
+            {cohort.can_leave && (
               <Button
                 variant="outline"
                 size="sm"
-                data-testid={`leave-${cohort.id}`}
-                onClick={() => handleLeaveClick(cohort.id, cohort.title)}
-                aria-label={`Leave ${cohort.title}`}
+                data-testid={`leave-${cohort.cohort_id}`}
+                onClick={() => handleLeaveClick(cohort.cohort_id, cohort.name)}
+                aria-label={`Leave ${cohort.name}`}
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -495,7 +370,7 @@ export default function Cohorts() {
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
           <Users className="h-3 w-3" />
-          {getCohortProfileIds(cohort.id).length} members
+          {cohort.num_members} members
         </div>
       </CardContent>
     </Card>
@@ -521,12 +396,13 @@ export default function Cohorts() {
 
   return (
     <div className="space-y-6">
-      {filteredCohorts.length === 0 ? (
+      {cohorts.length === 0 ? (
         renderEmptyState()
       ) : (
         <CohortsDataTable
-          columns={columns}
-          data={filteredCohorts}
+          data={cohorts}
+          profileMapping={profileMapping}
+          simulationMapping={simulationMapping}
           profileOptions={profileOptions}
           simulationOptions={simulationOptions}
           renderCohortCard={renderCohortCard}

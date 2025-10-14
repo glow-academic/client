@@ -6,7 +6,8 @@ from app.schemas.cohorts import (CohortDetailDefaultRequest,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
                                  DuplicateCohortRequest,
-                                 DuplicateCohortResponse, UpdateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse, UpdateCohortRequest,
                                  UpdateCohortResponse)
 from app.services.cohort_service import CohortService
 from sqlalchemy.orm import Session
@@ -52,6 +53,10 @@ class CohortRepository:
     def delete_cohort(self, request: DeleteCohortRequest) -> DeleteCohortResponse:
         """Delete cohort."""
         return self.service.delete_cohort(request)
+
+    def leave_cohort(self, request: LeaveCohortRequest) -> LeaveCohortResponse:
+        """Leave cohort."""
+        return self.service.leave_cohort(request)
 
 
 def get_cohort_repository(db: Session) -> CohortRepository:

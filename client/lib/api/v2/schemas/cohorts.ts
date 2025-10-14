@@ -41,8 +41,10 @@ export const CohortItemSchema = z.object({
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),
+  can_leave: z.boolean(),
   profile_ids: z.array(z.string()),
   simulation_ids: z.array(z.string()),
+  num_members: z.number(),
 });
 
 export const CohortsListResponseSchema = z.object({
@@ -175,3 +177,18 @@ export const DeleteCohortResponseSchema = z.object({
 });
 
 export type DeleteCohortResponse = z.infer<typeof DeleteCohortResponseSchema>;
+
+// Leave cohort request
+export const LeaveCohortRequestSchema = z.object({
+  cohortId: z.string(),
+  profileId: z.string(),
+});
+
+export type LeaveCohortRequest = z.infer<typeof LeaveCohortRequestSchema>;
+
+export const LeaveCohortResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type LeaveCohortResponse = z.infer<typeof LeaveCohortResponseSchema>;

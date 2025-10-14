@@ -9,7 +9,8 @@ from app.schemas.cohorts import (CohortDetailDefaultRequest,
                                  CohortsListResponse, CreateCohortRequest,
                                  CreateCohortResponse, DeleteCohortRequest,
                                  DeleteCohortResponse, DuplicateCohortRequest,
-                                 DuplicateCohortResponse, UpdateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse, UpdateCohortRequest,
                                  UpdateCohortResponse)
 from app.schemas.personas import DepartmentMappingItem
 from sqlalchemy import text
@@ -54,8 +55,10 @@ class CohortService:
                     can_edit=row.can_edit,
                     can_delete=row.can_delete,
                     can_duplicate=row.can_duplicate,
+                    can_leave=row.can_leave,
                     profile_ids=profile_ids,
                     simulation_ids=simulation_ids,
+                    num_members=row.num_members,
                 )
             )
 
@@ -367,5 +370,24 @@ class CohortService:
 
         return DeleteCohortResponse(
             success=True, message=f"Cohort '{cohort.title}' deleted successfully"
+        )
+
+    def leave_cohort(self, request: LeaveCohortRequest) -> LeaveCohortResponse:
+        """Remove profile from cohort."""
+
+        # Get cohort title
+        query, params = self.queries.get_cohort_title(request.cohortId)
+        cohort = self.db.execute(text(query), params).fetchone()
+
+        if not cohort:
+            raise ValueError(f"Cohort not found: {request.cohortId}")
+
+        # Remove profile from cohort
+        query, params = self.queries.leave_cohort(request.cohortId, request.profileId)
+        self.db.execute(text(query), params)
+        self.db.commit()
+
+        return LeaveCohortResponse(
+            success=True, message=f"Left cohort '{cohort.title}' successfully"
         )
 

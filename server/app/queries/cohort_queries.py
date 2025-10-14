@@ -38,6 +38,11 @@ class CohortQueries:
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = :profile_id
+        ),
+        user_in_cohort AS (
+            SELECT cohort_id
+            FROM cohort_profiles
+            WHERE profile_id = :profile_id AND active = true
         )
         SELECT 
             c.id as cohort_id,
@@ -48,6 +53,7 @@ class CohortQueries:
             COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
             COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
             COALESCE(cu.usage_count, 0) as usage_count,
+            COALESCE(array_length(cp.profile_ids, 1), 0) as num_members,
             CASE 
                 WHEN up.role IN ('admin', 'superadmin') THEN true
                 ELSE false
@@ -56,15 +62,41 @@ class CohortQueries:
                 WHEN up.role IN ('admin', 'superadmin') AND COALESCE(cu.usage_count, 0) = 0 THEN true
                 ELSE false
             END as can_delete,
-            true as can_duplicate
+            true as can_duplicate,
+            CASE
+                WHEN up.role = 'instructional' 
+                    AND uic.cohort_id IS NOT NULL  -- User is in cohort
+                    AND (
+                        -- Can leave if there are other instructional users
+                        SELECT COUNT(*) > 1
+                        FROM cohort_profiles cp2
+                        JOIN profiles p2 ON p2.id = cp2.profile_id
+                        WHERE cp2.cohort_id = c.id
+                            AND cp2.active = true
+                            AND p2.role = 'instructional'
+                    )
+                THEN true
+                ELSE false
+            END as can_leave
         FROM cohorts c
         LEFT JOIN cohort_profiles cp ON cp.cohort_id = c.id
         LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
         LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
+        LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
         CROSS JOIN user_profile up
         WHERE c.department_id = ANY(:department_ids)
+            AND (
+                -- Admin/superadmin see all
+                up.role IN ('admin', 'superadmin')
+                OR
+                -- Instructional users only see cohorts they're in
+                (up.role = 'instructional' AND uic.cohort_id IS NOT NULL)
+                OR
+                -- Other roles see all
+                up.role NOT IN ('admin', 'superadmin', 'instructional')
+            )
         GROUP BY c.id, c.title, c.description, c.active, c.default_cohort, 
-                 cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role
+                 cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
         ORDER BY c.title
         """
 
@@ -335,5 +367,16 @@ class CohortQueries:
         """Build query to delete cohort."""
         query = "DELETE FROM cohorts WHERE id = :cohort_id"
         params = {"cohort_id": cohort_id}
+        return (query, params)
+
+    def leave_cohort(
+        self, cohort_id: str, profile_id: str
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Build query to remove profile from cohort."""
+        query = """
+        DELETE FROM cohort_profiles 
+        WHERE cohort_id = :cohort_id AND profile_id = :profile_id
+        """
+        params = {"cohort_id": cohort_id, "profile_id": profile_id}
         return (query, params)
 

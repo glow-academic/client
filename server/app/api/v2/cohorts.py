@@ -10,7 +10,8 @@ from app.schemas.cohorts import (CohortDetailDefaultRequest,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
                                  DuplicateCohortRequest,
-                                 DuplicateCohortResponse, UpdateCohortRequest,
+                                 DuplicateCohortResponse, LeaveCohortRequest,
+                                 LeaveCohortResponse, UpdateCohortRequest,
                                  UpdateCohortResponse)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -115,6 +116,21 @@ async def delete_cohort(
     try:
         repo = get_cohort_repository(db)
         return repo.delete_cohort(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/leave", response_model=LeaveCohortResponse)
+async def leave_cohort(
+    request: LeaveCohortRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> LeaveCohortResponse:
+    """Leave a cohort."""
+    try:
+        repo = get_cohort_repository(db)
+        return repo.leave_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

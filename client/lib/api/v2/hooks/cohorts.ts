@@ -20,6 +20,8 @@ import {
   DeleteCohortResponseSchema,
   DuplicateCohortRequest,
   DuplicateCohortResponseSchema,
+  LeaveCohortRequest,
+  LeaveCohortResponseSchema,
   UpdateCohortRequest,
   UpdateCohortResponseSchema,
 } from "@/lib/api/v2/schemas/cohorts";
@@ -179,6 +181,28 @@ export function useDeleteCohort() {
         body: JSON.stringify(request),
       });
       return DeleteCohortResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("cohorts:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useLeaveCohort() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: LeaveCohortRequest) => {
+      const res = await api<unknown>("/api/v2/cohorts/leave", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return LeaveCohortResponseSchema.parse(res);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

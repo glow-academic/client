@@ -16,29 +16,53 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Cohort } from "@/types";
+import {
+  CohortItem,
+  ProfileMapping,
+  SimulationMapping,
+} from "@/lib/api/v2/schemas/cohorts";
 import { CohortsDataTableToolbar } from "./CohortsDataTableToolbar";
 
 export interface CohortsDataTableProps {
-  columns: ColumnDef<Cohort>[];
-  data: Cohort[];
+  data: CohortItem[];
+  profileMapping: ProfileMapping;
+  simulationMapping: SimulationMapping;
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
-  renderCohortCard: (cohort: Cohort) => React.ReactNode;
+  renderCohortCard: (cohort: CohortItem) => React.ReactNode;
 }
 
 export function CohortsDataTable({
-  columns,
   data,
+  profileMapping: _profileMapping,
+  simulationMapping: _simulationMapping,
   profileOptions,
   simulationOptions,
   renderCohortCard,
 }: CohortsDataTableProps) {
+  // Minimal columns for filtering/sorting only (card view, no table)
+  const columns: ColumnDef<CohortItem>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "profile_ids",
+        header: "Profiles",
+      },
+      {
+        accessorKey: "simulation_ids",
+        header: "Simulations",
+      },
+    ],
+    []
+  );
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date

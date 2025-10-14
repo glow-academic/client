@@ -34,8 +34,10 @@ class CohortItem(BaseModel):
     can_edit: bool
     can_delete: bool
     can_duplicate: bool
+    can_leave: bool
     profile_ids: List[str]
     simulation_ids: List[str]
+    num_members: int
 
 
 class CohortsListResponse(BaseModel):
@@ -154,6 +156,20 @@ class DeleteCohortRequest(BaseModel):
 
 class DeleteCohortResponse(BaseModel):
     """Response from delete cohort."""
+
+    success: bool
+    message: str
+
+
+class LeaveCohortRequest(BaseModel):
+    """Request to leave cohort."""
+
+    cohortId: str
+    profileId: str
+
+
+class LeaveCohortResponse(BaseModel):
+    """Response from leave cohort."""
 
     success: bool
     message: str
