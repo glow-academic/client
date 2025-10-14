@@ -174,7 +174,7 @@ export default function Model({ modelId, providerId }: ModelProps) {
           ? "Model updated successfully!"
           : "Model created successfully!"
       );
-      router.push(`/management/providers`);
+      router.push(`/system/providers`);
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`

@@ -50,7 +50,7 @@ export const isMainScreen = (pathname: string): boolean => {
  */
 export const getSectionRoute = (
   section: string,
-  currentPathname?: string,
+  currentPathname?: string
 ): string => {
   switch (section) {
     case "home":
@@ -89,7 +89,7 @@ export const getSectionRoute = (
     case "simulations":
       return "/create/simulations";
     case "rubrics":
-      return "/create/rubrics";
+      return "/management/rubrics";
     case "personas":
       return "/create/personas";
     case "documents":
@@ -102,16 +102,16 @@ export const getSectionRoute = (
       return "/management/parameters";
     case "staff":
       return "/management/staff";
-    case "providers":
-      return "/management/providers";
     case "pricing":
-      return "/management/pricing";
+      return "/analytics/pricing";
+    case "providers":
+      return "/system/providers";
 
     // System routes
     case "system":
       return "/system";
     case "departments":
-      return "/system/departments";
+      return "/management/departments";
     case "agents":
       return "/system/agents";
     case "feedback":
@@ -154,7 +154,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/create/rubrics/r/${rubricId}`;
+        return `/management/rubrics/r/${rubricId}`;
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");
@@ -175,18 +175,18 @@ export const getSectionRoute = (
         return `/home/a/${attemptId}`;
       }
 
-      if (section.startsWith("provider-")) {
-        const providerId = section.replace("provider-", "");
-        return `/management/providers/p/${providerId}`;
-      }
       if (section.startsWith("parameter-")) {
         const parameterId = section.replace("parameter-", "");
         return `/management/parameters/p/${parameterId}`;
       }
+      if (section.startsWith("provider-")) {
+        const providerId = section.replace("provider-", "");
+        return `/system/providers/p/${providerId}`;
+      }
       if (section.startsWith("model-")) {
         const providerId = section.replace("provider-", "");
         const modelId = section.replace("model-", "");
-        return `/management/providers/p/${providerId}/m/${modelId}`;
+        return `/system/providers/p/${providerId}/m/${modelId}`;
       }
       if (section.startsWith("report-")) {
         const profileId = section.replace("report-", "");
@@ -209,7 +209,7 @@ export const getSectionRoute = (
  */
 export const getBreadcrumbSectionRoute = (
   section: string,
-  _currentPathname?: string,
+  _currentPathname?: string
 ): string => {
   switch (section) {
     default:
@@ -223,7 +223,7 @@ export const getBreadcrumbSectionRoute = (
  */
 export const createSectionChangeHandler = (
   router: AppRouterInstance,
-  currentPathname?: string,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     const route = getSectionRoute(section, currentPathname);
@@ -237,7 +237,7 @@ export const createSectionChangeHandler = (
  */
 export const createBreadcrumbSectionChangeHandler = (
   router: AppRouterInstance,
-  currentPathname?: string,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section, currentPathname);
@@ -252,7 +252,7 @@ export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
   currentRole: ProfileRole,
   onSectionChange?: (section: string) => void,
-  currentPathname?: string,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     // Check if the section is available for the current role
@@ -281,7 +281,7 @@ export const createRoleAwareSectionChangeHandler = (
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
   onSectionChange?: (section: string) => void,
-  currentPathname?: string,
+  currentPathname?: string
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)

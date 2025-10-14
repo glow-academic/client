@@ -365,29 +365,40 @@ export function UnifiedSidebar({
     if (
       availableSections.includes("dashboard") ||
       availableSections.includes("reports") ||
-      availableSections.includes("leaderboard")
+      availableSections.includes("leaderboard") ||
+      availableSections.includes("pricing")
     ) {
+      const analyticsItems: MenuItem[] = [
+        {
+          title: "Dashboard",
+          url: "#",
+          section: "dashboard",
+        },
+        {
+          title: "Reports",
+          url: "#",
+          section: "reports",
+        },
+        {
+          title: "Leaderboard",
+          url: "#",
+          section: "leaderboard",
+        },
+      ];
+
+      if (availableSections.includes("pricing")) {
+        analyticsItems.push({
+          title: "Pricing",
+          url: "#",
+          section: "pricing",
+        });
+      }
+
       menu.push({
         title: "Analytics",
         url: "#",
         icon: ChartBar,
-        items: [
-          {
-            title: "Dashboard",
-            url: "#",
-            section: "dashboard",
-          },
-          {
-            title: "Reports",
-            url: "#",
-            section: "reports",
-          },
-          {
-            title: "Leaderboard",
-            url: "#",
-            section: "leaderboard",
-          },
-        ],
+        items: analyticsItems,
       });
     }
 
@@ -396,8 +407,7 @@ export function UnifiedSidebar({
       availableSections.includes("personas") ||
       availableSections.includes("documents") ||
       availableSections.includes("scenarios") ||
-      availableSections.includes("simulations") ||
-      availableSections.includes("rubrics")
+      availableSections.includes("simulations")
     ) {
       menu.push({
         title: "Create",
@@ -424,11 +434,6 @@ export function UnifiedSidebar({
             url: "#",
             section: "simulations",
           },
-          {
-            title: "Rubrics",
-            url: "#",
-            section: "rubrics",
-          },
         ],
       });
     }
@@ -436,9 +441,9 @@ export function UnifiedSidebar({
     // Management - Available from admin level only
     if (
       availableSections.includes("staff") ||
-      availableSections.includes("providers") ||
-      availableSections.includes("pricing") ||
-      availableSections.includes("parameters")
+      availableSections.includes("parameters") ||
+      availableSections.includes("rubrics") ||
+      availableSections.includes("departments")
     ) {
       const managementItems: MenuItem[] = [];
 
@@ -457,22 +462,6 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("providers")) {
-        managementItems.push({
-          title: "Providers",
-          url: "#",
-          section: "providers",
-        });
-      }
-
-      if (availableSections.includes("pricing")) {
-        managementItems.push({
-          title: "Pricing",
-          url: "#",
-          section: "pricing",
-        });
-      }
-
       if (availableSections.includes("parameters")) {
         managementItems.push({
           title: "Parameters",
@@ -480,11 +469,27 @@ export function UnifiedSidebar({
           section: "parameters",
         });
       }
+
+      if (availableSections.includes("rubrics")) {
+        managementItems.push({
+          title: "Rubrics",
+          url: "#",
+          section: "rubrics",
+        });
+      }
+
+      if (availableSections.includes("departments")) {
+        managementItems.push({
+          title: "Departments",
+          url: "#",
+          section: "departments",
+        });
+      }
     }
 
-    // System  - Available from superadmin level only
+    // System  - Available from admin level and up
     if (
-      availableSections.includes("departments") ||
+      availableSections.includes("providers") ||
       availableSections.includes("agents") ||
       availableSections.includes("feedback") ||
       availableSections.includes("logs")
@@ -498,11 +503,11 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      if (availableSections.includes("departments")) {
+      if (availableSections.includes("providers")) {
         systemItems.push({
-          title: "Departments",
+          title: "Providers",
           url: "#",
-          section: "departments",
+          section: "providers",
         });
       }
 

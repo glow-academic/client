@@ -102,6 +102,12 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Profile Report",
         redirectTo: "/analytics/reports",
       },
+      {
+        path: "/analytics/pricing",
+        roles: ["admin", "superadmin"],
+        title: "Pricing",
+        redirectTo: "/analytics/pricing",
+      },
     ],
   },
   {
@@ -203,24 +209,6 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/create/simulations",
       },
       {
-        path: "/create/rubrics",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Rubrics",
-        redirectTo: "/create/rubrics",
-      },
-      {
-        path: "/create/rubrics/new",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Create Rubric",
-        redirectTo: "/create/rubrics",
-      },
-      {
-        path: "/create/rubrics/r/[rubricId]",
-        roles: ["instructional", "admin", "superadmin"],
-        title: "Edit Rubric",
-        redirectTo: "/create/rubrics",
-      },
-      {
         path: "/create/documents",
         roles: ["instructional", "admin", "superadmin"],
         title: "Documents",
@@ -253,42 +241,6 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/management/staff",
       },
       {
-        path: "/management/providers",
-        roles: ["admin", "superadmin"],
-        title: "Providers",
-        redirectTo: "/management/providers",
-      },
-      {
-        path: "/management/providers/new",
-        roles: ["admin", "superadmin"],
-        title: "Create Provider",
-        redirectTo: "/management/providers",
-      },
-      {
-        path: "/management/providers/p/[providerId]",
-        roles: ["admin", "superadmin"],
-        title: "Edit Provider",
-        redirectTo: "/management/providers",
-      },
-      {
-        path: "/management/providers/p/[providerId]/new",
-        roles: ["admin", "superadmin"],
-        title: "Create Model",
-        redirectTo: "/management/providers",
-      },
-      {
-        path: "/management/providers/p/[providerId]/m/[modelId]",
-        roles: ["admin", "superadmin"],
-        title: "Edit Model",
-        redirectTo: "/management/providers",
-      },
-      {
-        path: "/management/pricing",
-        roles: ["admin", "superadmin"],
-        title: "Pricing",
-        redirectTo: "/management/pricing",
-      },
-      {
         path: "/management/parameters",
         roles: ["admin", "superadmin"],
         title: "Parameters",
@@ -306,37 +258,85 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "Edit Parameter",
         redirectTo: "/management/parameters",
       },
+      {
+        path: "/management/rubrics",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Rubrics",
+        redirectTo: "/management/rubrics",
+      },
+      {
+        path: "/management/rubrics/new",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Create Rubric",
+        redirectTo: "/management/rubrics",
+      },
+      {
+        path: "/management/rubrics/r/[rubricId]",
+        roles: ["instructional", "admin", "superadmin"],
+        title: "Edit Rubric",
+        redirectTo: "/management/rubrics",
+      },
+      {
+        path: "/management/departments",
+        roles: ["superadmin"],
+        title: "Departments",
+        redirectTo: "/management/departments",
+      },
+      {
+        path: "/management/departments/new",
+        roles: ["superadmin"],
+        title: "Create Department",
+        redirectTo: "/management/departments",
+      },
+      {
+        path: "/management/departments/d/[departmentId]",
+        roles: ["superadmin"],
+        title: "Edit Department",
+        redirectTo: "/management/departments",
+      },
     ],
   },
   {
     section: "system",
-    roles: ["superadmin"],
+    roles: ["admin", "superadmin"],
     title: "System",
     description: "System administration tools",
     routes: [
       {
         path: "/system",
-        roles: ["superadmin"],
+        roles: ["admin", "superadmin"],
         title: "System Overview",
-        redirectTo: "/system/departments",
+        redirectTo: "/system/providers",
       },
       {
-        path: "/system/departments",
-        roles: ["superadmin"],
-        title: "Departments",
-        redirectTo: "/system/departments",
+        path: "/system/providers",
+        roles: ["admin", "superadmin"],
+        title: "Providers",
+        redirectTo: "/system/providers",
       },
       {
-        path: "/system/departments/new",
-        roles: ["superadmin"],
-        title: "Create Department",
-        redirectTo: "/system/departments",
+        path: "/system/providers/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Provider",
+        redirectTo: "/system/providers",
       },
       {
-        path: "/system/departments/d/[departmentId]",
-        roles: ["superadmin"],
-        title: "Edit Department",
-        redirectTo: "/system/departments",
+        path: "/system/providers/p/[providerId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Provider",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/p/[providerId]/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Model",
+        redirectTo: "/system/providers",
+      },
+      {
+        path: "/system/providers/p/[providerId]/m/[modelId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Model",
+        redirectTo: "/system/providers",
       },
       {
         path: "/system/agents",
@@ -389,7 +389,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
 // Helper function to check if a user has access to a specific path
 export const hasRouteAccess = (
   pathname: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   // Handle dynamic routes by converting them to pattern matches
   const normalizedPath = normalizePathForMatching(pathname);
@@ -410,7 +410,7 @@ export const hasRouteAccess = (
 
 // Helper function to get route permission for a specific path
 export const getRoutePermission = (
-  pathname: string,
+  pathname: string
 ): RoutePermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -427,7 +427,7 @@ export const getRoutePermission = (
 
 // Helper function to get section permission for a specific path
 export const getSectionPermission = (
-  pathname: string,
+  pathname: string
 ): SectionPermission | null => {
   const normalizedPath = normalizePathForMatching(pathname);
 
@@ -543,7 +543,7 @@ export const getAvailableSubsectionsForRole = (role: ProfileRole): string[] => {
 // Helper function to check if a section is available for a role
 export const isSectionAvailableForRole = (
   section: string,
-  role: ProfileRole,
+  role: ProfileRole
 ): boolean => {
   return getAvailableSectionsForRole(role).includes(section);
 };

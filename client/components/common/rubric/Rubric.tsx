@@ -92,7 +92,7 @@ export default function Rubric({ rubricId }: RubricProps) {
 
   // Event handlers
   const handleCancel = () => {
-    router.push("/create/rubrics");
+    router.push("/management/rubrics");
   };
 
   // Loading state

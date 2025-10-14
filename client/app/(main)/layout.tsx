@@ -623,9 +623,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/rubrics") {
+    if (pathname === "/management/rubrics") {
       return (
-        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
+        <Button onClick={() => router.push("/management/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -667,10 +667,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/management/providers") {
+    if (pathname === "/system/providers") {
       return (
         <Button
-          onClick={() => router.push("/management/providers/new")}
+          onClick={() => router.push("/system/providers/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -700,10 +700,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/system/departments") {
+    if (pathname === "/management/departments") {
       return (
         <Button
-          onClick={() => router.push("/system/departments/new")}
+          onClick={() => router.push("/management/departments/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

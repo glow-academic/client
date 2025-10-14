@@ -85,7 +85,7 @@ export default function RubricDetails({
         const data = await createRubricMutation.mutateAsync(formData);
         if (data && "id" in data) {
           // Redirect to the newly created rubric for editing
-          router.push(`/create/rubrics/r/${data.id}`);
+          router.push(`/management/rubrics/r/${data.id}`);
         }
       } else {
         await updateRubricMutation.mutateAsync({

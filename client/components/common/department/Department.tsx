@@ -323,7 +323,7 @@ export default function Department({ departmentId }: DepartmentProps) {
           ? "Department updated successfully!"
           : "Department created successfully!"
       );
-      router.push(`/system/departments`);
+      router.push(`/management/departments`);
     } catch (error) {
       const message = `Error ${isEditMode ? "updating" : "creating"} department:`;
       log.error("department.save.failed", {

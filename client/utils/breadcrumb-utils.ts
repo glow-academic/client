@@ -39,6 +39,9 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "rubric";
 
     case "analytics":
+      if (second === "pricing") {
+        return "pricing";
+      }
       if (second) {
         return second; // dashboard, reports, history
       }
@@ -72,12 +75,6 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "simulations";
       }
-      if (second === "rubrics") {
-        if (third === "r" && fourth) {
-          return `rubric-${fourth}`;
-        }
-        return "rubrics";
-      }
       if (second === "documents") {
         if (third === "d" && fourth) {
           return `document-${fourth}`;
@@ -93,20 +90,23 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "staff";
       }
-      if (second === "providers") {
-        if (third === "p" && fourth) {
-          return `provider-${fourth}`;
-        }
-        return "providers";
-      }
-      if (second === "pricing") {
-        return "pricing";
-      }
       if (second === "parameters") {
         if (third === "p" && fourth) {
           return `parameter-${fourth}`;
         }
         return "parameters";
+      }
+      if (second === "rubrics") {
+        if (third === "r" && fourth) {
+          return `rubric-${fourth}`;
+        }
+        return "rubrics";
+      }
+      if (second === "departments") {
+        if (third === "d" && fourth) {
+          return `department-${fourth}`;
+        }
+        return "departments";
       }
       if (second) {
         return second; // staff, context, logs, models, rubrics
@@ -114,17 +114,17 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "management";
 
     case "system":
-      if (second === "departments") {
-        if (third === "d" && fourth) {
-          return `department-${fourth}`;
-        }
-        return "departments";
-      }
       if (second === "agents") {
         if (third === "a" && fourth) {
           return `agent-${fourth}`;
         }
         return "agents";
+      }
+      if (second === "providers") {
+        if (third === "p" && fourth) {
+          return `provider-${fourth}`;
+        }
+        return "providers";
       }
       if (second === "feedback") {
         return "feedback";
