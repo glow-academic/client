@@ -6,9 +6,17 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { Cpu, Edit, Plus, Settings, Sparkles, Trash2 } from "lucide-react";
+import {
+  Cpu,
+  Edit,
+  Loader2,
+  Plus,
+  Settings,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -38,22 +46,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
+import { useProfile } from "@/contexts/profile-context";
 
-import { useProviderColumns } from "@/hooks/use-provider-columns";
-import { useAgents } from "@/lib/api/v1/hooks/agents";
-import { useDeleteModel, useModels } from "@/lib/api/v1/hooks/models";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
 import {
+  useDeleteModel,
   useDeleteProvider,
-  useProvidersByDepartmentIdBatch,
-} from "@/lib/api/v1/hooks/providers";
-import { Model, Provider } from "@/types";
+  useProvidersList,
+} from "@/lib/api/v2/hooks/providers";
+import type {
+  ModelItem,
+  ProviderWithModels,
+} from "@/lib/api/v2/schemas/providers";
 import { ProvidersDataTable } from "./ProvidersDataTable";
-
-interface ProviderGroup {
-  provider: Provider;
-  models: Model[];
-}
 
 export default function Providers() {
   const router = useRouter();
@@ -71,30 +75,33 @@ export default function Providers() {
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
   const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile } = useProfile();
 
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
   const deleteProviderMutation = useDeleteProvider();
 
-  const { data: models = [] } = useModels();
-  const { data: providers = [] } = useProvidersByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // V2 API: Single fetch with hierarchical data and permissions
+  const filters = useMemo(
+    () => ({
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    }),
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: agents = [] } = useAgents();
 
-  // Get filter options
-  const { columns, providerOptions, customModelOptions, statusOptions } =
-    useProviderColumns();
+  const { data: providersData, isLoading } = useProvidersList(filters);
+  const providers = useMemo(
+    () => providersData?.providers || [],
+    [providersData]
+  );
 
   const handleDelete = async () => {
     if (!deleteItem) return;
 
     setIsDeleting(true);
     try {
-      await deleteModelMutation.mutateAsync(deleteItem.id);
+      await deleteModelMutation.mutateAsync({ modelId: deleteItem.id });
 
       toast.success("Model deleted successfully");
     } catch (error) {
@@ -115,26 +122,21 @@ export default function Providers() {
     }
   };
 
-  const handleDeleteClick = (id: string, name: string) => {
-    const model = models.find((m) => m.id === id);
-    if (model && !canDeleteModel(model)) {
-      toast.error(
-        "Cannot delete model: It is currently in use by personas or agents"
-      );
+  const handleDeleteClick = (model: ModelItem) => {
+    if (!model.can_delete) {
+      toast.error("Cannot delete model: It is currently in use");
       return;
     }
-    setDeleteItem({ id, name });
+    setDeleteItem({ id: model.model_id, name: model.name });
     setShowDeleteDialog(true);
   };
 
-  const handleDeleteProviderClick = (provider: Provider) => {
-    if (!canDeleteProvider(provider)) {
-      toast.error(
-        "Cannot delete provider: Some models are currently in use by personas or agents"
-      );
+  const handleDeleteProviderClick = (provider: ProviderWithModels) => {
+    if (!provider.can_delete) {
+      toast.error("Cannot delete provider: Some models are in use");
       return;
     }
-    setDeleteProviderItem({ id: provider.id, name: provider.name });
+    setDeleteProviderItem({ id: provider.provider_id, name: provider.name });
     setShowDeleteProviderDialog(true);
   };
 
@@ -143,7 +145,9 @@ export default function Providers() {
 
     setIsDeletingProvider(true);
     try {
-      await deleteProviderMutation.mutateAsync(deleteProviderItem.id);
+      await deleteProviderMutation.mutateAsync({
+        providerId: deleteProviderItem.id,
+      });
 
       toast.success("Provider deleted successfully");
     } catch (error) {
@@ -164,46 +168,10 @@ export default function Providers() {
     }
   };
 
-  // Check if a model is being used by any personas or agents
-  const isModelInUse = (modelId: string) => {
-    const usedByPersonas = personas.some(
-      (persona) => persona.modelId === modelId
+  const handleEdit = (model: ModelItem, provider: ProviderWithModels) => {
+    router.push(
+      `/management/providers/p/${provider.provider_id}/m/${model.model_id}`
     );
-    const usedByAgents = agents.some((agent) => agent.modelId === modelId);
-
-    return usedByPersonas || usedByAgents;
-  };
-
-  const canDeleteModel = (model: Model) => {
-    // Don't allow deletion if model is in use
-    if (isModelInUse(model.id)) return false;
-    return true;
-  };
-
-  const canDeleteProvider = (provider: Provider) => {
-    // Get all models for this provider
-    const providerModels = models.filter(
-      (model) => model.providerId === provider.id
-    );
-
-    // Check if any of the provider's models are in use
-    const hasModelsInUse = providerModels.some((model) =>
-      isModelInUse(model.id)
-    );
-
-    // Can only delete if no models are in use
-    return !hasModelsInUse;
-  };
-
-  const handleEdit = (modelId: string) => {
-    // Find the model to get its provider ID
-    const model = models.find((m) => m.id === modelId);
-    if (model) {
-      router.push(`/management/providers/p/${model.providerId}/m/${modelId}`);
-    } else {
-      // Fallback if model not found
-      router.push(`/management/providers/p/${modelId}/m/${modelId}`);
-    }
   };
 
   const renderEmptyState = () => (
@@ -220,45 +188,45 @@ export default function Providers() {
     </div>
   );
 
-  const renderProviderGroup = (providerGroup: ProviderGroup) => (
-    <div key={providerGroup.provider.id} className="space-y-4">
+  const renderProviderGroup = (provider: ProviderWithModels) => (
+    <div key={provider.provider_id} className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="text-sm px-3 py-1">
-            {providerGroup.provider.name}
+            {provider.name}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {providerGroup.provider.description}
+            {provider.description}
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() =>
-                  router.push(
-                    `/management/providers/p/${providerGroup.provider.id}`
-                  )
-                }
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Provider Settings</p>
-            </TooltipContent>
-          </Tooltip>
-          {canDeleteProvider(providerGroup.provider) && (
+          {provider.can_edit && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() =>
+                    router.push(
+                      `/management/providers/p/${provider.provider_id}`
+                    )
+                  }
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Provider Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {provider.can_delete && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    handleDeleteProviderClick(providerGroup.provider)
-                  }
+                  onClick={() => handleDeleteProviderClick(provider)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -272,11 +240,11 @@ export default function Providers() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-        {providerGroup.models
-          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-          .map((model: Model) => (
+        {provider.models
+          .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+          .map((model) => (
             <Card
-              key={model.id}
+              key={model.model_id}
               className="hover:shadow-md transition-shadow flex flex-col h-full min-h-[220px]"
             >
               <CardHeader className="flex-0">
@@ -291,7 +259,7 @@ export default function Providers() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-1">
-                    {model.customModel && (
+                    {model.custom_model && (
                       <Badge variant="default">Custom</Badge>
                     )}
                     {!model.active && (
@@ -301,18 +269,20 @@ export default function Providers() {
                 </div>
               </CardHeader>
               <CardFooter className="mt-auto flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(model.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                {canDeleteModel(model) && (
+                {model.can_edit && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteClick(model.id, model.name)}
+                    onClick={() => handleEdit(model, provider)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
+                {model.can_delete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteClick(model)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -325,9 +295,7 @@ export default function Providers() {
         <Card
           className="border-dashed border-2 hover:border-dashed hover:border-primary/50 transition-colors cursor-pointer flex flex-col h-full min-h-[220px]"
           onClick={() =>
-            router.push(
-              `/management/providers/p/${providerGroup.provider.id}/new`
-            )
+            router.push(`/management/providers/p/${provider.provider_id}/new`)
           }
         >
           <CardContent className="flex flex-col items-center justify-center py-12 grow">
@@ -336,7 +304,7 @@ export default function Providers() {
               Create New Model
             </h3>
             <p className="text-xs text-muted-foreground text-center">
-              Add a new model to {providerGroup.provider.name}
+              Add a new model to {provider.name}
             </p>
           </CardContent>
         </Card>
@@ -347,16 +315,15 @@ export default function Providers() {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {models.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : providers.length === 0 ? (
           renderEmptyState()
         ) : (
           <ProvidersDataTable
-            columns={columns}
-            data={models}
             providers={providers}
-            providerOptions={providerOptions}
-            customModelOptions={customModelOptions}
-            statusOptions={statusOptions}
             renderProviderGroup={renderProviderGroup}
           />
         )}
