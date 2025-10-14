@@ -3,7 +3,8 @@
 from typing import Any, Dict, List
 
 from app.queries.simulation_queries import SimulationQueries
-from app.schemas.personas import DepartmentMappingItem
+from app.schemas.base import (DepartmentMappingItem, RubricMapping,
+                              RubricMappingItem, ScenarioMappingItem)
 from app.schemas.simulations import (CreateSimulationRequest,
                                      CreateSimulationResponse,
                                      DeleteSimulationRequest,
@@ -44,7 +45,7 @@ class SimulationService:
         # Build response
         simulations = []
         scenario_mapping = {}
-        rubric_mapping = {}
+        rubric_mapping: RubricMapping = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
@@ -68,10 +69,6 @@ class SimulationService:
                 )
             )
 
-            # Collect rubric mapping
-            if row.rubric_id:
-                rubric_mapping[str(row.rubric_id)] = ""  # Will fetch names later
-
         # Get scenario names for mapping
         if scenario_ids_to_fetch := list(
             set([sid for s in simulations for sid in s.scenario_ids])
@@ -80,7 +77,10 @@ class SimulationService:
             scenario_result = self.db.execute(text(query), params).fetchall()
 
             for row in scenario_result:
-                scenario_mapping[str(row.id)] = row.name
+                scenario_mapping[str(row.id)] = ScenarioMappingItem(
+                    name=row.name,
+                    description=row.problem_statement
+                )
 
         # Get rubric names for mapping
         if rubric_ids_to_fetch := list(
@@ -90,7 +90,10 @@ class SimulationService:
             rubric_result = self.db.execute(text(query), params).fetchall()
 
             for row in rubric_result:
-                rubric_mapping[str(row.id)] = row.name
+                rubric_mapping[str(row.id)] = RubricMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         return SimulationsListResponse(
             simulations=simulations,
@@ -132,14 +135,18 @@ class SimulationService:
         query, params = self.queries.get_valid_rubrics(valid_department_ids)
         rubrics_result = self.db.execute(text(query), params).fetchall()
         valid_rubric_ids = [str(row.id) for row in rubrics_result]
-        rubric_mapping = {str(row.id): row.name for row in rubrics_result}
+        rubric_mapping = {
+            str(row.id): RubricMappingItem(name=row.name, description=row.description)
+            for row in rubrics_result
+        }
 
         # Get scenario mapping
         if scenario_ids:
             query, params = self.queries.get_scenario_mapping(scenario_ids)
             scenario_mapping_result = self.db.execute(text(query), params).fetchall()
             scenario_mapping = {
-                str(row.id): row.name for row in scenario_mapping_result
+                str(row.id): ScenarioMappingItem(name=row.name, description=row.problem_statement)
+                for row in scenario_mapping_result
             }
         else:
             scenario_mapping = {}
@@ -147,7 +154,7 @@ class SimulationService:
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_result
         }

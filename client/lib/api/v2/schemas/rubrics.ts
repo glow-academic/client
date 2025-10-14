@@ -4,42 +4,11 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema } from "./personas";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (rubric-specific)
-// ============================================================================
-
-export const StandardGroupMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  points: z.number(),
-  passPoints: z.number(),
-});
-
-export type StandardGroupMappingItem = z.infer<
-  typeof StandardGroupMappingItemSchema
->;
-
-export const StandardMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  points: z.number(),
-});
-
-export type StandardMappingItem = z.infer<typeof StandardMappingItemSchema>;
-
-export const StandardGroupsMappingSchema = z.record(
-  z.string(),
-  StandardGroupMappingItemSchema
-);
-export const StandardsMappingSchema = z.record(
-  z.string(),
-  StandardMappingItemSchema
-);
-
-export type StandardGroupsMapping = z.infer<typeof StandardGroupsMappingSchema>;
-export type StandardsMapping = z.infer<typeof StandardsMappingSchema>;
+import {
+  DepartmentMappingSchema,
+  StandardGroupsMappingSchema,
+  StandardsMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

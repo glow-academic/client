@@ -1,27 +1,10 @@
 """Simulations V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
-
-# ============================================================================
-# CENTRALIZED MAPPING TYPES
-# ============================================================================
-
-
-class ScenarioMappingItem(BaseModel):
-    """Scenario mapping item (id -> name)."""
-
-    pass  # Just using Dict[str, str] for scenario_mapping
-
-
-class RubricMappingItem(BaseModel):
-    """Rubric mapping item (id -> name)."""
-
-    pass  # Just using Dict[str, str] for rubric_mapping
-
+from .base import DepartmentMapping, RubricMapping, ScenarioMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -62,8 +45,8 @@ class SimulationsListResponse(BaseModel):
     """Response for simulations list endpoint."""
 
     simulations: List[SimulationItem]
-    scenario_mapping: Dict[str, str]  # scenario_id -> name
-    rubric_mapping: Dict[str, str]  # rubric_id -> name
+    scenario_mapping: ScenarioMapping
+    rubric_mapping: RubricMapping
 
 
 # ============================================================================
@@ -102,9 +85,9 @@ class SimulationDetailResponse(BaseModel):
     image_input_active: bool
 
     # Top-level mappings
-    scenario_mapping: Dict[str, str]
-    rubric_mapping: Dict[str, str]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    scenario_mapping: ScenarioMapping
+    rubric_mapping: RubricMapping
+    department_mapping: DepartmentMapping
 
 
 class SimulationDetailDefaultRequest(BaseModel):

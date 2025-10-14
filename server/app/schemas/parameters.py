@@ -1,10 +1,10 @@
 """Parameters V2 API schemas with nested items."""
 
-from typing import Dict, List
+from typing import List
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
+from .base import DepartmentMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -83,7 +83,7 @@ class ParameterDetailResponse(BaseModel):
     parameter_items: List[ParameterItemDetail]
 
     # Top-level mappings
-    department_mapping: Dict[str, DepartmentMappingItem]
+    department_mapping: DepartmentMapping
 
 
 class ParameterDetailDefaultRequest(BaseModel):

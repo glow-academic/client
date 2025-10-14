@@ -1,10 +1,10 @@
 """Staff V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
+from .base import CohortMapping, DepartmentMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -27,6 +27,9 @@ class StaffItem(BaseModel):
     """Staff item in list response."""
 
     profile_id: str
+    first_name: str
+    last_name: str
+    alias: str
     name: str  # Combined first_name + last_name
     role: str
     email: str  # alias + campus email domain
@@ -35,6 +38,8 @@ class StaffItem(BaseModel):
     lastActive: Optional[str]
     cohort_ids: List[str]
     requests_per_day: Optional[int]
+    default_profile: bool
+    requests_in_last_day: int
     can_edit: bool
     can_delete: bool
 
@@ -43,7 +48,8 @@ class StaffListResponse(BaseModel):
     """Response for staff list endpoint."""
 
     staff: List[StaffItem]
-    cohort_mapping: Dict[str, str]  # cohort_id -> name
+    cohort_mapping: CohortMapping
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================
@@ -75,8 +81,8 @@ class StaffDetailResponse(BaseModel):
     role_options: List[str]
 
     # Top-level mappings
-    cohort_mapping: Dict[str, str]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    cohort_mapping: CohortMapping
+    department_mapping: DepartmentMapping
 
 
 class StaffDetailBulkRequest(BaseModel):
@@ -99,7 +105,7 @@ class StaffDetailBulkResponse(BaseModel):
     role_options: List[str]
 
     # Top-level mappings
-    department_mapping: Dict[str, DepartmentMappingItem]
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================

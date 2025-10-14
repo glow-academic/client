@@ -130,7 +130,7 @@ class ScenarioQueries:
         self, cohort_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for cohort mapping."""
-        query = "SELECT id, name FROM cohorts WHERE id = ANY(:cohort_ids)"
+        query = "SELECT id, name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY(:cohort_ids)"
         params = {"cohort_ids": cohort_ids}
         return (query, params)
 
@@ -138,7 +138,7 @@ class ScenarioQueries:
         self, persona_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for persona mapping."""
-        query = "SELECT id, name FROM personas WHERE id = ANY(:persona_ids)"
+        query = "SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas WHERE id = ANY(:persona_ids)"
         params = {"persona_ids": persona_ids}
         return (query, params)
 

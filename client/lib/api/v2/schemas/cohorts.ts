@@ -4,17 +4,11 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema } from "./personas";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (cohort-specific)
-// ============================================================================
-
-export const ProfileMappingSchema = z.record(z.string(), z.string()); // profile_id -> name
-export type ProfileMapping = z.infer<typeof ProfileMappingSchema>;
-
-export const SimulationMappingSchema = z.record(z.string(), z.string()); // simulation_id -> name
-export type SimulationMapping = z.infer<typeof SimulationMappingSchema>;
+import {
+  DepartmentMappingSchema,
+  ProfileMappingSchema,
+  SimulationMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

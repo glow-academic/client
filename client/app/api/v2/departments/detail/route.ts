@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = DepartmentDetailRequestSchema.parse(body);
 
-    const result = await fetchDepartmentDetail(request.departmentId, request.profileId);
+    const result = await fetchDepartmentDetail(
+      request.departmentId,
+      request.profileId
+    );
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

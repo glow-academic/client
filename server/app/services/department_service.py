@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from app.queries.department_queries import DepartmentQueries
+from app.schemas.base import AgentMapping, AgentMappingItem
 from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
                                      CreateDepartmentResponse,
                                      DeleteDepartmentRequest,
@@ -111,11 +112,14 @@ class DepartmentService:
         agent_rows = result.fetchall()
 
         valid_agent_ids: List[str] = []
-        agent_mapping: Dict[str, str] = {}
+        agent_mapping: AgentMapping = {}
 
         for row in agent_rows:
             valid_agent_ids.append(row.agent_id)
-            agent_mapping[row.agent_id] = row.name
+            agent_mapping[row.agent_id] = AgentMappingItem(
+                name=row.name,
+                description=row.description
+            )
 
         return DepartmentDetailResponse(
             title=dept_row.title,

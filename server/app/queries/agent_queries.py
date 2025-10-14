@@ -102,7 +102,8 @@ class AgentQueries:
         query = """
         SELECT 
             id::text as model_id,
-            name
+            name,
+            COALESCE(description, '') as description
         FROM models
         WHERE active = true
         ORDER BY name
@@ -122,7 +123,8 @@ class AgentQueries:
         query = """
         SELECT 
             id::text as model_id,
-            name
+            name,
+            COALESCE(description, '') as description
         FROM models
         WHERE id = ANY(:model_ids)
         """

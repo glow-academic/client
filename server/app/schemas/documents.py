@@ -1,13 +1,10 @@
 """Documents V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from app.schemas.personas import (DepartmentMappingItem,
-                                  ParameterItemMappingItem)
 from pydantic import BaseModel
 
-# Type aliases
-ParameterItemMapping = Dict[str, ParameterItemMappingItem]
+from .base import DepartmentMapping, ParameterItemMapping, ScenarioMapping
 
 
 class DocumentsFilters(BaseModel):
@@ -39,8 +36,8 @@ class DocumentsListResponse(BaseModel):
     """Response for documents list endpoint."""
 
     documents: List[DocumentItem]
-    scenario_mapping: Dict[str, str]  # scenario_id -> name
-    parameter_item_mapping: ParameterItemMapping  # parameter_item_id -> mapping
+    scenario_mapping: ScenarioMapping
+    parameter_item_mapping: ParameterItemMapping
 
 
 class DocumentDetailRequest(BaseModel):
@@ -59,7 +56,7 @@ class DocumentDetailResponse(BaseModel):
     document_type_options: List[str]
     department_id: str
     valid_department_ids: List[str]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    department_mapping: DepartmentMapping
     parameter_item_ids: List[str]
     valid_parameter_item_ids: List[str]
     parameter_item_mapping: ParameterItemMapping
@@ -72,10 +69,6 @@ class DocumentDetailBulkRequest(BaseModel):
     profileId: str
 
 
-# Reuse DepartmentMappingItem from personas
-from app.schemas.personas import DepartmentMappingItem
-
-
 class DocumentDetailBulkResponse(BaseModel):
     """Bulk document detail response."""
 
@@ -83,7 +76,7 @@ class DocumentDetailBulkResponse(BaseModel):
     type: Optional[str]  # Common type if all same, else None
     department_ids: List[str]  # Union of all department_ids
     valid_department_ids: List[str]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    department_mapping: DepartmentMapping
     parameter_item_ids: List[str]  # Union of all parameter_item_ids
     valid_parameter_item_ids: List[str]
     parameter_item_mapping: ParameterItemMapping

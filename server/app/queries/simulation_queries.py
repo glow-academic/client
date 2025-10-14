@@ -72,7 +72,7 @@ class SimulationQueries:
         self, scenario_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for scenario mapping."""
-        query = "SELECT id, name FROM scenarios WHERE id = ANY(:scenario_ids)"
+        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY(:scenario_ids)"
         params = {"scenario_ids": scenario_ids}
         return (query, params)
 
@@ -80,7 +80,7 @@ class SimulationQueries:
         self, rubric_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for rubric mapping."""
-        query = "SELECT id, name FROM rubrics WHERE id = ANY(:rubric_ids)"
+        query = "SELECT id, name, COALESCE(description, '') as description FROM rubrics WHERE id = ANY(:rubric_ids)"
         params = {"rubric_ids": rubric_ids}
         return (query, params)
 
@@ -136,7 +136,7 @@ class SimulationQueries:
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for valid rubrics."""
         query = """
-        SELECT id, name FROM rubrics 
+        SELECT id, name, COALESCE(description, '') as description FROM rubrics 
         WHERE department_id = ANY(:dept_ids) AND active = true
         ORDER BY name
         """

@@ -4,42 +4,19 @@
  */
 
 import { z } from "zod";
-import { PersonaMappingSchema } from "./personas";
+import {
+  CohortMappingSchema,
+  DocumentMappingSchema,
+  ObjectiveMappingSchema,
+  ParameterItemMappingSchema,
+  ParameterMappingSchema,
+  PersonaMappingSchema,
+  SimulationMappingSchema,
+} from "./base";
 
 // ============================================================================
-// CENTRALIZED MAPPING TYPES (scenario-specific)
+// NO SCENARIO-SPECIFIC MAPPING TYPES - All use base MappingSchema
 // ============================================================================
-
-export const ObjectiveMappingSchema = z.record(z.string(), z.string()); // "scenarioId_idx" -> objective text
-export const CohortMappingSchema = z.record(z.string(), z.string()); // cohort_id -> name
-
-export const ParameterMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string().nullable(),
-});
-
-export const ParameterItemMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string().nullable(),
-  value: z.string(),
-});
-
-export const ParameterMappingSchema = z.record(
-  z.string(),
-  ParameterMappingItemSchema
-); // parameter_id -> {name, description}
-export const ParameterItemMappingSchema = z.record(
-  z.string(),
-  ParameterItemMappingItemSchema
-); // parameter_item_id -> {name, description, value}
-
-export const SimulationMappingSchema = z.record(z.string(), z.string()); // simulation_id -> title
-
-export type ObjectiveMapping = z.infer<typeof ObjectiveMappingSchema>;
-export type CohortMapping = z.infer<typeof CohortMappingSchema>;
-export type ParameterMapping = z.infer<typeof ParameterMappingSchema>;
-export type ParameterItemMapping = z.infer<typeof ParameterItemMappingSchema>;
-export type SimulationMapping = z.infer<typeof SimulationMappingSchema>;
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -132,7 +109,7 @@ export const ScenarioDetailResponseSchema = z.object({
   parameter_item_mapping: ParameterItemMappingSchema,
   simulation_mapping: SimulationMappingSchema,
   persona_mapping: PersonaMappingSchema,
-  document_mapping: z.record(z.string(), z.string()),
+  document_mapping: DocumentMappingSchema,
   objective_mapping: ObjectiveMappingSchema,
 });
 

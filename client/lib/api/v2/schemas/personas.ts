@@ -4,6 +4,11 @@
  */
 
 import { z } from "zod";
+import {
+  DepartmentMappingSchema,
+  ModelMappingSchema,
+  ScenarioMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -15,29 +20,6 @@ export const PersonasFiltersSchema = z.object({
 });
 
 export type PersonasFilters = z.infer<typeof PersonasFiltersSchema>;
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (reusable across v2 services)
-// ============================================================================
-
-export const DepartmentMappingItemSchema = z.object({
-  name: z.string(),
-  description: z.string().nullable(),
-});
-
-export const ModelMappingSchema = z.record(z.string(), z.string()); // model_id -> name
-export const ScenarioMappingSchema = z.record(z.string(), z.string()); // scenario_id -> name
-export const PersonaMappingSchema = z.record(z.string(), z.string()); // persona_id -> name
-export const DepartmentMappingSchema = z.record(
-  z.string(),
-  DepartmentMappingItemSchema
-); // department_id -> {name, description}
-
-export type ModelMapping = z.infer<typeof ModelMappingSchema>;
-export type ScenarioMapping = z.infer<typeof ScenarioMappingSchema>;
-export type PersonaMapping = z.infer<typeof PersonaMappingSchema>;
-export type DepartmentMapping = z.infer<typeof DepartmentMappingSchema>;
-export type DepartmentMappingItem = z.infer<typeof DepartmentMappingItemSchema>;
 
 // ============================================================================
 // RESPONSE SCHEMAS

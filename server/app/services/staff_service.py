@@ -1,10 +1,11 @@
 """Staff service layer - business logic for staff operations."""
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from app.queries.staff_queries import StaffQueries
-from app.schemas.personas import DepartmentMappingItem
+from app.schemas.base import (CohortMapping, CohortMappingItem,
+                              DepartmentMappingItem)
 from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
                                DeleteStaffRequest, DeleteStaffResponse,
@@ -27,15 +28,15 @@ class StaffService:
     def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
         """Get staff list with permissions using dynamic SQL."""
 
+        # Get campus email domain from environment
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
+
         # Get query from query builder
         query, params = self.queries.list_staff(
-            filters.departmentIds, filters.profileId
+            filters.departmentIds, filters.profileId, campus_domain
         )
 
         result = self.db.execute(text(query), params).fetchall()
-
-        # Get campus email domain from environment
-        campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
 
         # Build response
         staff = []
@@ -45,20 +46,22 @@ class StaffService:
             # Convert UUID arrays to string arrays
             cohort_ids = [str(cid) for cid in (row.cohort_ids or [])]
 
-            # Construct email from alias + campus email domain
-            email = row.alias + campus_email
-
             staff.append(
                 StaffItem(
                     profile_id=str(row.profile_id),
+                    first_name=row.first_name,
+                    last_name=row.last_name,
+                    alias=row.alias,
                     name=row.name,
                     role=row.role,
-                    email=email,
+                    email=row.email,
                     initials=row.initials,
                     active=row.active,
                     lastActive=row.lastActive.isoformat() if row.lastActive else None,
                     cohort_ids=cohort_ids,
                     requests_per_day=row.requests_per_day,
+                    default_profile=row.default_profile,
+                    requests_in_last_day=row.requests_in_last_day,
                     can_edit=row.can_edit,
                     can_delete=row.can_delete,
                 )
@@ -70,11 +73,27 @@ class StaffService:
             cohort_result = self.db.execute(text(query), params).fetchall()
 
             for row in cohort_result:
-                cohort_mapping[str(row.id)] = row.name
+                cohort_mapping[str(row.id)] = CohortMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
+
+        # Get department mapping from filter departmentIds
+        department_mapping = {}
+        if filters.departmentIds:
+            query, params = self.queries.get_department_mapping(filters.departmentIds)
+            dept_result = self.db.execute(text(query), params).fetchall()
+
+            for row in dept_result:
+                department_mapping[str(row.id)] = DepartmentMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         return StaffListResponse(
             staff=staff,
             cohort_mapping=cohort_mapping,
+            department_mapping=department_mapping,
         )
 
     def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
@@ -116,12 +135,15 @@ class StaffService:
             query, params = self.queries.get_cohort_mapping(cohort_ids)
             cohort_results = self.db.execute(text(query), params).fetchall()
             for row in cohort_results:
-                cohort_mapping[str(row.id)] = row.name
+                cohort_mapping[str(row.id)] = CohortMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_list
         }

@@ -124,7 +124,8 @@ class DepartmentQueries:
         query = """
         SELECT 
             id::text as agent_id,
-            name
+            name,
+            COALESCE(description, '') as description
         FROM agents
         WHERE active = true
         ORDER BY name

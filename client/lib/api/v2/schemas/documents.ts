@@ -8,13 +8,7 @@ import {
   DepartmentMappingSchema,
   ParameterItemMappingSchema,
   ScenarioMappingSchema,
-} from "./personas"; // Reuse centralized types
-
-// Parameter item mapping for documents (re-export from personas)
-export const ParameterItemMappingSchemaDoc = ParameterItemMappingSchema;
-export type ParameterItemMapping = z.infer<
-  typeof ParameterItemMappingSchemaDoc
->;
+} from "./base";
 
 // ============================================================================
 // LIST ENDPOINT
@@ -46,7 +40,7 @@ export const DocumentItemSchema = z.object({
 export const DocumentsListResponseSchema = z.object({
   documents: z.array(DocumentItemSchema),
   scenario_mapping: ScenarioMappingSchema,
-  parameter_item_mapping: ParameterItemMappingSchemaDoc,
+  parameter_item_mapping: ParameterItemMappingSchema,
 });
 
 export type DocumentsListResponse = z.infer<typeof DocumentsListResponseSchema>;

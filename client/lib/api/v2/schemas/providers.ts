@@ -4,14 +4,7 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema } from "./personas";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (provider-specific)
-// ============================================================================
-
-export const ProviderMappingSchema = z.record(z.string(), z.string()); // provider_id -> name
-export type ProviderMapping = z.infer<typeof ProviderMappingSchema>;
+import { DepartmentMappingSchema, ProviderMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

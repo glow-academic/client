@@ -4,6 +4,10 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
+from .base import (CohortMapping, DocumentMapping, ObjectiveMapping,
+                   ParameterItemMapping, ParameterMapping, PersonaMapping,
+                   SimulationMapping)
+
 
 class ScenariosFilters(BaseModel):
     """Filters for scenarios list request."""
@@ -37,12 +41,10 @@ class ScenariosListResponse(BaseModel):
     """Response for scenarios list endpoint."""
 
     scenarios: List[ScenarioItem]
-    objective_mapping: Dict[str, str]  # "scenarioId_idx" -> objective text
-    parameter_item_mapping: Dict[
-        str, Dict[str, Optional[str]]
-    ]  # parameter_item_id -> {name, description, value}
-    cohort_mapping: Dict[str, str]  # cohort_id -> name
-    persona_mapping: Dict[str, str]  # persona_id -> name
+    objective_mapping: ObjectiveMapping
+    parameter_item_mapping: ParameterItemMapping
+    cohort_mapping: CohortMapping
+    persona_mapping: PersonaMapping
 
 
 class ScenarioDetailRequest(BaseModel):
@@ -85,14 +87,12 @@ class ScenarioDetailResponse(BaseModel):
     active_simulation_ids: List[str]
 
     # Top-level mappings
-    parameter_mapping: Dict[str, Dict[str, Optional[str]]]  # parameter_id -> {name, description}
-    parameter_item_mapping: Dict[
-        str, Dict[str, Optional[str]]
-    ]  # parameter_item_id -> {name, description, value}
-    simulation_mapping: Dict[str, str]  # simulation_id -> title
-    persona_mapping: Dict[str, str]  # persona_id -> name
-    document_mapping: Dict[str, str]  # document_id -> name
-    objective_mapping: Dict[str, str]  # "scenarioId_idx" -> objective text
+    parameter_mapping: ParameterMapping
+    parameter_item_mapping: ParameterItemMapping
+    simulation_mapping: SimulationMapping
+    persona_mapping: PersonaMapping
+    document_mapping: DocumentMapping
+    objective_mapping: ObjectiveMapping
 
 
 class ScenarioDetailDefaultRequest(BaseModel):

@@ -3,12 +3,9 @@
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
-from app.schemas.rubrics import StandardGroupMappingItem, StandardMappingItem
 from pydantic import BaseModel
 
-# Type aliases for rubric mappings
-StandardGroupsMapping = Dict[str, StandardGroupMappingItem]
-StandardsMapping = Dict[str, StandardMappingItem]
+from .base import StandardGroupsMapping, StandardsMapping
 
 
 # Enums

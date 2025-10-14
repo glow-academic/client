@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 from app.queries.parameter_queries import ParameterQueries
+from app.schemas.base import DepartmentMappingItem
 from app.schemas.parameters import (CreateParameterRequest,
                                     CreateParameterResponse,
                                     DeleteParameterRequest,
@@ -16,7 +17,6 @@ from app.schemas.parameters import (CreateParameterRequest,
                                     ParametersListResponse,
                                     UpdateParameterRequest,
                                     UpdateParameterResponse)
-from app.schemas.personas import DepartmentMappingItem
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -114,7 +114,7 @@ class ParameterService:
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_result
         }

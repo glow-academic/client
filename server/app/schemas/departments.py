@@ -1,8 +1,10 @@
 """Departments V2 API schemas with agent role assignments."""
 
-from typing import Dict, List
+from typing import List
 
 from pydantic import BaseModel
+
+from .base import AgentMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -81,7 +83,7 @@ class DepartmentDetailResponse(BaseModel):
     valid_agent_ids: List[str]
 
     # Top-level mappings
-    agent_mapping: Dict[str, str]  # agent_id -> name
+    agent_mapping: AgentMapping
 
 
 class DepartmentDetailDefaultRequest(BaseModel):

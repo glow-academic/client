@@ -3,7 +3,8 @@
 from typing import Any, Dict, List
 
 from app.queries.rubric_queries import RubricQueries
-from app.schemas.personas import DepartmentMappingItem
+from app.schemas.base import (DepartmentMappingItem, StandardGroupMappingItem,
+                              StandardMappingItem)
 from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  DeleteRubricRequest, DeleteRubricResponse,
                                  DuplicateRubricRequest,
@@ -13,7 +14,6 @@ from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  RubricItem, RubricsFilters,
                                  RubricsListResponse, StandardGroupDetail,
                                  StandardGroupMappingDetail,
-                                 StandardGroupMappingItem, StandardMappingItem,
                                  UpdateRubricRequest, UpdateRubricResponse)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -70,9 +70,7 @@ class RubricService:
 
                 standard_groups_mapping[group_id] = StandardGroupMappingItem(
                     name=group.name,
-                    description=group.description,
-                    points=group.points,
-                    passPoints=group.passPoints,
+                    description=group.description or ''
                 )
 
                 # Find the rubric and add group_id
@@ -94,8 +92,7 @@ class RubricService:
 
                 standards_mapping[standard_id] = StandardMappingItem(
                     name=standard.name,
-                    description=standard.description,
-                    points=standard.points,
+                    description=standard.description or ''
                 )
 
                 # Add standard_id to the appropriate group in the appropriate rubric
@@ -151,7 +148,7 @@ class RubricService:
                 standard_ids=standard_ids,
             )
 
-            standard_groups_mapping[group_id] = StandardGroupMappingDetail(
+            standard_groups_mapping[group_id] = StandardGroupMappingItem(
                 name=group.name, description=group.description
             )
 
@@ -165,14 +162,13 @@ class RubricService:
             for standard in standards_result:
                 standards_mapping[str(standard.id)] = StandardMappingItem(
                     name=standard.name,
-                    description=standard.description,
-                    points=standard.points,
+                    description=standard.description or ''
                 )
 
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_result
         }

@@ -15,14 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StaffData } from "@/hooks/use-staff-columns";
+import type { StaffItem } from "@/lib/api/v2/schemas/staff";
 import { Clock, Shield, User as UserIcon } from "lucide-react";
 
 export interface StaffFilterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  staffMembers: StaffData[];
+  staffMembers: StaffItem[];
   onEditUser: (profileId: string) => void;
 }
 
@@ -33,17 +33,6 @@ export function StaffFilterDialog({
   staffMembers,
   onEditUser,
 }: StaffFilterDialogProps) {
-  // Helper function to get initials from name
-  const getInitials = (name?: string): string => {
-    if (!name) return "??";
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "superadmin":
@@ -80,7 +69,7 @@ export function StaffFilterDialog({
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60),
+      (now.getTime() - date.getTime()) / (1000 * 60)
     );
 
     if (diffInMinutes < 1) return "Just now";
@@ -129,7 +118,7 @@ export function StaffFilterDialog({
                 staffMembers.map((staff) => {
                   const RoleIcon = getRoleIcon(staff.role);
                   return (
-                    <TableRow key={staff.id}>
+                    <TableRow key={staff.profile_id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div
@@ -139,13 +128,11 @@ export function StaffFilterDialog({
                               outlineStyle: "solid",
                             }}
                           >
-                            {getInitials(
-                              staff.firstName + " " + staff.lastName,
-                            )}
+                            {staff.initials}
                           </div>
                           <div>
                             <p className="font-medium text-sm">
-                              {staff.firstName} {staff.lastName}
+                              {staff.first_name} {staff.last_name}
                             </p>
                           </div>
                         </div>
@@ -188,33 +175,14 @@ export function StaffFilterDialog({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {staff.cohortNames.length > 0 ? (
-                            staff.cohortNames
-                              .slice(0, 2)
-                              .map((cohort, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
-                                >
-                                  {cohort}
-                                </span>
-                              ))
-                          ) : (
-                            <span className="text-sm text-muted-foreground">
-                              None
-                            </span>
-                          )}
-                          {staff.cohortNames.length > 2 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{staff.cohortNames.length - 2} more
-                            </span>
-                          )}
-                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {staff.cohort_ids.length} cohort
+                          {staff.cohort_ids.length !== 1 ? "s" : ""}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() => onEditUser(staff.id)}
+                          onClick={() => onEditUser(staff.profile_id)}
                           className="inline-flex items-center gap-1 px-3 py-1 text-sm border rounded-md hover:bg-muted transition-colors"
                         >
                           <svg

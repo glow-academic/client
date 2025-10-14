@@ -32,13 +32,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { StaffData } from "@/hooks/use-staff-columns";
+import type { StaffItem } from "@/lib/api/v2/schemas/staff";
 import { Edit, FileText, Trash2 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
 
 export interface StaffDataTableProps {
-  columns: ColumnDef<StaffData>[];
-  data: StaffData[];
+  data: StaffItem[];
+  cohortMapping: Record<string, { name: string; description?: string | null }>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   activityOptions: { value: string; label: string }[];
@@ -50,9 +50,9 @@ export interface StaffDataTableProps {
   onStaffSelect: (profileId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean, visibleRowIds?: string[]) => void;
   onCreate: () => void;
-  onPreview: (staff: StaffData) => void;
-  onEdit: (staff: StaffData) => void;
-  onDelete: (staff: StaffData) => void;
+  onPreview: (staff: StaffItem) => void;
+  onEdit: (staff: StaffItem) => void;
+  onDelete: (staff: StaffItem) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   canDelete: (profileId: string) => boolean;
@@ -62,8 +62,8 @@ export interface StaffDataTableProps {
 }
 
 export function StaffDataTable({
-  columns,
   data,
+  cohortMapping,
   roleOptions,
   cohortOptions,
   activityOptions,
@@ -88,15 +88,49 @@ export function StaffDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "lastActive", desc: true }, // Default sort by last active descending
   ]);
 
+  // Define minimal columns inline for filtering
+  const columns = React.useMemo<ColumnDef<StaffItem>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "role",
+        header: "Role",
+      },
+      {
+        accessorKey: "cohort_ids",
+        header: "Cohorts",
+        cell: ({ row }) => {
+          const cohortIds = row.getValue("cohort_ids") as string[];
+          if (!cohortIds.length) return "None";
+          return cohortIds
+            .map((id) => cohortMapping[id]?.name || id)
+            .join(", ");
+        },
+      },
+      {
+        accessorKey: "active",
+        header: "Active",
+      },
+      {
+        accessorKey: "lastActive",
+        header: "Last Active",
+      },
+    ],
+    [cohortMapping]
+  );
+
   // Build columns with checkbox + actions, filtering out any pre-supplied actions/select
   const columnsWithActions = React.useMemo(() => {
-    const checkboxColumn: ColumnDef<StaffData> = {
+    const checkboxColumn: ColumnDef<StaffItem> = {
       id: "select",
       header: ({ table }) => (
         <div className="pr-2">
@@ -110,7 +144,7 @@ export function StaffDataTable({
               // Get the IDs of currently visible rows
               const visibleRowIds = table
                 .getFilteredRowModel()
-                .rows.map((row) => row.original.id);
+                .rows.map((row) => row.original.profile_id);
               onSelectAll(!!value, visibleRowIds);
             }}
             aria-label="Select all"
@@ -121,8 +155,10 @@ export function StaffDataTable({
       cell: ({ row }) => (
         <div className="pr-2">
           <Checkbox
-            checked={selectedStaffIds.includes(row.original.id)}
-            onCheckedChange={(value) => onStaffSelect(row.original.id, !!value)}
+            checked={selectedStaffIds.includes(row.original.profile_id)}
+            onCheckedChange={(value) =>
+              onStaffSelect(row.original.profile_id, !!value)
+            }
             aria-label="Select row"
             className="translate-y-[2px]"
           />
@@ -132,7 +168,7 @@ export function StaffDataTable({
       enableHiding: false,
     };
 
-    const actionsColumn: ColumnDef<StaffData> = {
+    const actionsColumn: ColumnDef<StaffItem> = {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
@@ -155,7 +191,7 @@ export function StaffDataTable({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEdit(staff.id) && (
+            {canEdit(staff.profile_id) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -173,7 +209,7 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
-            {canDelete(staff.id) && (
+            {canDelete(staff.profile_id) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -199,7 +235,7 @@ export function StaffDataTable({
     };
 
     const filtered = columns.filter(
-      (c) => c.id !== "select" && c.id !== "actions",
+      (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
   }, [
@@ -275,7 +311,7 @@ export function StaffDataTable({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext(),
+                              header.getContext()
                             )}
                       </TableHead>
                     );
@@ -298,7 +334,7 @@ export function StaffDataTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </TableCell>
                     ))}

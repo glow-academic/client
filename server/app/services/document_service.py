@@ -3,6 +3,8 @@
 from typing import Any, Dict, List, Optional
 
 from app.queries.document_queries import DocumentQueries
+from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMappingItem, ScenarioMappingItem)
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
                                    DeleteDocumentRequest,
@@ -14,7 +16,6 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    DocumentsFilters, DocumentsListResponse,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
-from app.schemas.personas import DepartmentMappingItem
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -74,7 +75,10 @@ class DocumentService:
             scenario_result = self.db.execute(text(query), params).fetchall()
 
             for row in scenario_result:
-                scenario_mapping[str(row.id)] = row.name
+                scenario_mapping[str(row.id)] = ScenarioMappingItem(
+                    name=row.name,
+                    description=getattr(row, 'problem_statement', row.name)
+                )
 
         # Build parameter_item_mapping (all items as valid options for now)
         # TODO: Query document_parameter_items junction table for specific items per document
@@ -82,8 +86,7 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                p.name as parameter_name,
-                p.id as parameter_id
+                COALESCE(pi.description, '') as description
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
@@ -92,13 +95,10 @@ class DocumentService:
             param_query, {"dept_ids": filters.departmentIds}
         ).fetchall()
 
-        from app.schemas.personas import ParameterItemMappingItem
-
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                parameter_name=row.parameter_name,
-                parameter_id=str(row.parameter_id),
+                description=row.description or ''
             )
             for row in param_results
         }
@@ -155,11 +155,9 @@ class DocumentService:
             departments_query, {"dept_ids": valid_department_ids}
         ).fetchall()
 
-        from app.schemas.personas import DepartmentMappingItem
-
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in departments_result
         }
@@ -169,8 +167,7 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                p.name as parameter_name,
-                p.id as parameter_id
+                COALESCE(pi.description, '') as description
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE pi.id = ANY(:param_item_ids)
@@ -179,13 +176,10 @@ class DocumentService:
             param_mapping_query, {"param_item_ids": valid_param_items}
         ).fetchall()
 
-        from app.schemas.personas import ParameterItemMappingItem
-
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                parameter_name=row.parameter_name,
-                parameter_id=str(row.parameter_id),
+                description=row.description
             )
             for row in param_mapping_result
         }
@@ -285,11 +279,9 @@ class DocumentService:
             departments_query, {"dept_ids": valid_department_ids}
         ).fetchall()
 
-        from app.schemas.personas import DepartmentMappingItem
-
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in departments_result
         }
@@ -299,8 +291,7 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                p.name as parameter_name,
-                p.id as parameter_id
+                COALESCE(pi.description, '') as description
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE pi.id = ANY(:param_item_ids)
@@ -309,13 +300,10 @@ class DocumentService:
             param_mapping_query, {"param_item_ids": valid_param_items}
         ).fetchall()
 
-        from app.schemas.personas import ParameterItemMappingItem
-
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                parameter_name=row.parameter_name,
-                parameter_id=str(row.parameter_id),
+                description=row.description
             )
             for row in param_mapping_result
         }
@@ -383,36 +371,6 @@ class DocumentService:
 
         self.db.execute(delete_tags_query, {"document_id": request.documentId})
 
-        # Insert new tags
-        if request.tag_ids:
-            for tag_id in request.tag_ids:
-                parts = tag_id.split("_")
-                if len(parts) == 2:
-                    insert_tag_query = text("""
-                    INSERT INTO simulation_tag_documents (
-                        simulation_id,
-                        tag_idx,
-                        document_id,
-                        active
-                    )
-                    VALUES (
-                        :simulation_id,
-                        :tag_idx,
-                        :document_id,
-                        true
-                    )
-                    ON CONFLICT DO NOTHING
-                    """)
-
-                    self.db.execute(
-                        insert_tag_query,
-                        {
-                            "simulation_id": parts[0],
-                            "tag_idx": int(parts[1]),
-                            "document_id": request.documentId,
-                        },
-                    )
-
         self.db.commit()
 
         return UpdateDocumentResponse(
@@ -449,37 +407,7 @@ class DocumentService:
 
         self.db.execute(delete_tags_query, {"document_ids": request.documentIds})
 
-        # Insert new tags for all documents
-        if request.tag_ids:
-            for document_id in request.documentIds:
-                for tag_id in request.tag_ids:
-                    parts = tag_id.split("_")
-                    if len(parts) == 2:
-                        insert_tag_query = text("""
-                        INSERT INTO simulation_tag_documents (
-                            simulation_id,
-                            tag_idx,
-                            document_id,
-                            active
-                        )
-                        VALUES (
-                            :simulation_id,
-                            :tag_idx,
-                            :document_id,
-                            true
-                        )
-                        ON CONFLICT DO NOTHING
-                        """)
-
-                        self.db.execute(
-                            insert_tag_query,
-                            {
-                                "simulation_id": parts[0],
-                                "tag_idx": int(parts[1]),
-                                "document_id": document_id,
-                            },
-                        )
-
+        
         self.db.commit()
 
         return UpdateDocumentResponse(

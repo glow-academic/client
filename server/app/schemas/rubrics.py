@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
+from .base import DepartmentMapping, StandardGroupsMapping, StandardsMapping
 
 # ============================================================================
 # CENTRALIZED MAPPING TYPES
@@ -71,8 +71,8 @@ class RubricsListResponse(BaseModel):
     """Response for rubrics list endpoint."""
 
     rubrics: List[RubricItem]
-    standard_groups_mapping: Dict[str, StandardGroupMappingItem]
-    standards_mapping: Dict[str, StandardMappingItem]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
 
 
 # ============================================================================
@@ -113,9 +113,9 @@ class RubricDetailResponse(BaseModel):
     standard_groups_detail: Dict[str, StandardGroupDetail]
 
     # Top-level mappings
-    standard_groups_mapping: Dict[str, StandardGroupMappingDetail]
-    standards_mapping: Dict[str, StandardMappingItem]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
+    department_mapping: DepartmentMapping
 
 
 class RubricDetailDefaultRequest(BaseModel):

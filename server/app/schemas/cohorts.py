@@ -1,10 +1,10 @@
 """Cohorts V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
+from .base import DepartmentMapping, ProfileMapping, SimulationMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -44,8 +44,8 @@ class CohortsListResponse(BaseModel):
     """Response for cohorts list endpoint."""
 
     cohorts: List[CohortItem]
-    profile_mapping: Dict[str, str]  # profile_id -> name
-    simulation_mapping: Dict[str, str]  # simulation_id -> name
+    profile_mapping: ProfileMapping
+    simulation_mapping: SimulationMapping
 
 
 # ============================================================================
@@ -78,9 +78,9 @@ class CohortDetailResponse(BaseModel):
     valid_profile_ids: List[str]
 
     # Top-level mappings
-    simulation_mapping: Dict[str, str]
-    profile_mapping: Dict[str, str]
-    department_mapping: Dict[str, DepartmentMappingItem]
+    simulation_mapping: SimulationMapping
+    profile_mapping: ProfileMapping
+    department_mapping: DepartmentMapping
 
 
 class CohortDetailDefaultRequest(BaseModel):

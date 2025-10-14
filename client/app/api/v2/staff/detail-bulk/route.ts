@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = StaffDetailBulkRequestSchema.parse(body);
 
-    const result = await fetchStaffDetailBulk(request.profileIds, request.currentProfileId);
+    const result = await fetchStaffDetailBulk(
+      request.profileIds,
+      request.currentProfileId
+    );
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

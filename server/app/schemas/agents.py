@@ -1,8 +1,10 @@
 """Agents V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
+
+from .base import ModelMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -38,7 +40,7 @@ class AgentsListResponse(BaseModel):
     """Response for agents list."""
 
     agents: List[AgentItem]
-    model_mapping: Dict[str, str]  # model_id -> name
+    model_mapping: ModelMapping
 
 
 # ============================================================================
@@ -82,7 +84,7 @@ class AgentDetailResponse(BaseModel):
     debug_info: List[DebugInfoItem]
 
     # Mappings
-    model_mapping: Dict[str, str]
+    model_mapping: ModelMapping
 
 
 # ============================================================================

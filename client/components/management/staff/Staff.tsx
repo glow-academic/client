@@ -36,17 +36,14 @@ import {
 } from "@/components/ui/select";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { StaffData, useStaffColumns } from "@/hooks/use-staff-columns";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useModelRunsByProfileIdBatch } from "@/lib/api/v1/hooks/model_runs";
 import {
-  useDeleteProfile,
-  useDeleteProfiles,
-  useProfilesByDepartmentIdBatch,
-  useUpdateProfiles,
-} from "@/lib/api/v1/hooks/profiles";
-import { Profile } from "@/types";
+  useBulkDeleteStaff,
+  useBulkUpdateStaff,
+  useDeleteStaff,
+  useStaffDetailBulk,
+  useStaffList,
+} from "@/lib/api/v2/hooks/staff";
+import type { StaffItem } from "@/lib/api/v2/schemas/staff";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
@@ -60,15 +57,29 @@ export default function Staff() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dialogTitle, setDialogTitle] = React.useState("");
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
-    StaffData[]
+    StaffItem[]
   >([]);
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
 
+  // V2 API hooks
+  const filters = React.useMemo(
+    () => ({
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    }),
+    [effectiveDepartmentIds, effectiveProfile?.id]
+  );
+
+  const { data: staffData, isLoading } = useStaffList(
+    filters,
+    !!effectiveProfile?.id
+  );
+
   // Mutation hooks
-  const deleteProfileMutation = useDeleteProfile();
-  const deleteProfilesMutation = useDeleteProfiles();
-  const updateProfilesMutation = useUpdateProfiles();
+  const deleteStaffMutation = useDeleteStaff();
+  const bulkDeleteStaffMutation = useBulkDeleteStaff();
+  const bulkUpdateStaffMutation = useBulkUpdateStaff();
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -95,16 +106,20 @@ export default function Staff() {
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] =
     React.useState(false);
   const [deleteStaffMember, setDeleteStaffMember] =
-    React.useState<StaffData | null>(null);
+    React.useState<StaffItem | null>(null);
 
-  const { data: allProfiles = [], isLoading: isLoadingProfiles } =
-    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: allCohorts = [], isLoading: isLoadingCohorts } =
-    useCohortsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: departments = [] } = useDepartmentsHook();
+  // Bulk edit detail hook
+  const { data: bulkStaffDetail } = useStaffDetailBulk(
+    selectedStaffIds,
+    effectiveProfile?.id || "",
+    selectedStaffIds.length > 0 && !!effectiveProfile?.id
+  );
 
-  const { data: recentRuns = [] } = useModelRunsByProfileIdBatch(
-    allProfiles.map((p: Profile) => p.id)
+  // Extract data from V2 API response
+  const staff = React.useMemo(() => staffData?.staff || [], [staffData?.staff]);
+  const cohortMapping = React.useMemo(
+    () => staffData?.cohort_mapping || {},
+    [staffData?.cohort_mapping]
   );
 
   // Listen for layout "Create Staff" button broadcast
@@ -114,98 +129,24 @@ export default function Staff() {
     return () => window.removeEventListener("openCreateStaff", openModal);
   }, []);
 
-  // Filter staff users based on current user's role
-  const staffUsers = React.useMemo(() => {
-    const isCurrentUserSuperadmin = effectiveProfile?.role === "superadmin";
-    const isCurrentUserAdmin = effectiveProfile?.role === "admin";
-
-    // Define which roles to include based on current user's role
-    let allowedRoles = ["instructional", "ta"];
-
-    if (isCurrentUserSuperadmin) {
-      // Superadmins can see superadmins, admins, instructional, ta, and guest
-      allowedRoles = ["superadmin", "admin", "instructional", "ta", "guest"];
-    } else if (isCurrentUserAdmin) {
-      // Admins can see admins, instructional, ta, and guest
-      allowedRoles = ["admin", "instructional", "ta", "guest"];
-    }
-
-    return allProfiles.filter((profile: Profile) =>
-      allowedRoles.includes(profile.role)
-    );
-  }, [allProfiles, effectiveProfile?.role]);
-
-  // Transform staff data for the table
-  const staffData = React.useMemo((): StaffData[] => {
-    return staffUsers.map((profile: Profile) => {
-      // Find cohorts this user belongs to
-      const userCohorts = allCohorts.filter((cohort) =>
-        cohort.profileIds.includes(profile.id)
-      );
-
-      // Compute requests in last 24h for this profile
-      const now = Date.now();
-      const dayAgo = now - 24 * 60 * 60 * 1000;
-      const used = (
-        recentRuns as Array<{ profileId?: string; createdAt?: string }>
-      ).filter(
-        (r) =>
-          r.profileId === profile.id &&
-          r.createdAt &&
-          new Date(r.createdAt).getTime() >= dayAgo
-      ).length;
-
-      return {
-        id: profile.id,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        alias: profile.alias,
-        role: profile.role,
-        active: profile.active,
-        lastActive: profile.lastActive,
-        email: `${profile.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`,
-        cohortIds: userCohorts.map((cohort) => cohort.id),
-        cohortNames: userCohorts.map((cohort) => cohort.title),
-        lastActiveFormatted: formatLastActive(profile.lastActive),
-        roleDisplayName: getRoleDisplayName(profile.role),
-        defaultProfile: Boolean(
-          (profile as unknown as { defaultProfile?: boolean }).defaultProfile
-        ),
-        reqPerDay:
-          (profile as unknown as { reqPerDay?: number | null }).reqPerDay ??
-          null,
-        requestsInLastDay: used,
-      };
-    });
-  }, [staffUsers, allCohorts, recentRuns]);
+  // Filter staff users based on current user's role (done server-side now)
 
   // Get role and activity counts for summary
   const counts = React.useMemo(() => {
-    const activeStaff = staffUsers.filter((profile: Profile) => profile.active);
-    const inactiveStaff = staffUsers.filter(
-      (profile: Profile) => !profile.active
-    );
+    const activeStaff = staff.filter((s) => s.active);
+    const inactiveStaff = staff.filter((s) => !s.active);
 
-    const baseCounts = {
-      total: staffUsers.length,
+    return {
+      total: staff.length,
       active: activeStaff.length,
       inactive: inactiveStaff.length,
-      instructional: staffUsers.filter(
-        (profile: Profile) => profile.role === "instructional"
-      ).length,
-      ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
-      admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
-        .length,
-      superadmin: staffUsers.filter(
-        (profile: Profile) => profile.role === "superadmin"
-      ).length,
-      guest: staffUsers.filter((profile: Profile) => profile.role === "guest")
-        .length,
+      instructional: staff.filter((s) => s.role === "instructional").length,
+      ta: staff.filter((s) => s.role === "ta").length,
+      admin: staff.filter((s) => s.role === "admin").length,
+      superadmin: staff.filter((s) => s.role === "superadmin").length,
+      guest: staff.filter((s) => s.role === "guest").length,
     };
-
-    // Always return base counts (all properties are included)
-    return baseCounts;
-  }, [staffUsers]);
+  }, [staff]);
 
   const handleEditUser = (profileId: string) => {
     // Open modal for in-place edit
@@ -224,35 +165,33 @@ export default function Staff() {
 
   // Handle card clicks to show filtered staff
   const handleCardClick = (filterType: string) => {
-    let filteredStaff: StaffData[] = [];
+    let filteredStaff: StaffItem[] = [];
     let title = "";
 
     switch (filterType) {
       case "active":
-        filteredStaff = staffData.filter((staff) => staff.active);
+        filteredStaff = staff.filter((s) => s.active);
         title = `Active Staff Members (${filteredStaff.length})`;
         break;
       case "admin":
         if (effectiveProfile?.role === "superadmin") {
           // For superadmins, show both superadmins and admins
-          filteredStaff = staffData.filter(
-            (staff) => staff.role === "superadmin" || staff.role === "admin"
+          filteredStaff = staff.filter(
+            (s) => s.role === "superadmin" || s.role === "admin"
           );
           title = `Superadmins/Admins (${filteredStaff.length})`;
         } else {
           // For admins, show only admins
-          filteredStaff = staffData.filter((staff) => staff.role === "admin");
+          filteredStaff = staff.filter((s) => s.role === "admin");
           title = `Administrators (${filteredStaff.length})`;
         }
         break;
       case "instructional":
-        filteredStaff = staffData.filter(
-          (staff) => staff.role === "instructional"
-        );
+        filteredStaff = staff.filter((s) => s.role === "instructional");
         title = `Instructional Staff (${filteredStaff.length})`;
         break;
       case "ta":
-        filteredStaff = staffData.filter((staff) => staff.role === "ta");
+        filteredStaff = staff.filter((s) => s.role === "ta");
         title = `Teaching Assistants (${filteredStaff.length})`;
         break;
       default:
@@ -264,58 +203,51 @@ export default function Staff() {
     setDialogOpen(true);
   };
 
-  const {
-    columns,
-    roleOptions,
-    cohortOptions,
-    activityOptions,
-    lastActiveOptions,
-  } = useStaffColumns({
-    onEditUser: handleEditUser,
-    currentUserRole: effectiveProfile?.role,
-  });
+  // Filter options (inline)
+  const roleOptions = React.useMemo(() => {
+    const baseOptions = [
+      { value: "instructional", label: "Instructional Staff" },
+      { value: "ta", label: "Teaching Assistant" },
+      { value: "guest", label: "Guest" },
+    ];
 
-  // Helper functions
-  function formatLastActive(timestamp: string | null) {
-    if (!timestamp) return "Never";
-
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMinutes = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60)
-    );
-
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 30) return `${diffInDays}d ago`;
-
-    const diffInMonths = Math.floor(diffInDays / 30);
-    return `${diffInMonths}mo ago`;
-  }
-
-  function getRoleDisplayName(role: string) {
-    switch (role) {
-      case "superadmin":
-        return "Super Administrator";
-      case "admin":
-        return "Administrator";
-      case "instructional":
-        return "Instructional Staff";
-      case "ta":
-        return "Teaching Assistant";
-      case "guest":
-        return "Guest";
-      default:
-        return role.charAt(0).toUpperCase() + role.slice(1);
+    if (
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin"
+    ) {
+      baseOptions.unshift({ value: "admin", label: "Administrator" });
     }
-  }
 
-  if (isLoadingProfiles || isLoadingCohorts) {
+    if (effectiveProfile?.role === "superadmin") {
+      baseOptions.unshift({
+        value: "superadmin",
+        label: "Super Administrator",
+      });
+    }
+
+    return baseOptions;
+  }, [effectiveProfile?.role]);
+
+  const cohortOptions = React.useMemo(() => {
+    return Object.entries(cohortMapping).map(([id, item]) => ({
+      value: id,
+      label: item.name,
+    }));
+  }, [cohortMapping]);
+
+  const activityOptions = [
+    { value: "true", label: "Active" },
+    { value: "false", label: "Inactive" },
+  ];
+
+  const lastActiveOptions = [
+    { value: "recent", label: "Recently Active (< 7 days)" },
+    { value: "moderate", label: "Moderately Active (7-30 days)" },
+    { value: "old", label: "Inactive (> 30 days)" },
+    { value: "never", label: "Never Active" },
+  ];
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Card>
@@ -399,8 +331,8 @@ export default function Staff() {
 
       {/* Staff Data Table */}
       <StaffDataTable
-        columns={columns}
-        data={staffData}
+        data={staff}
+        cohortMapping={cohortMapping}
         roleOptions={roleOptions}
         cohortOptions={cohortOptions}
         activityOptions={activityOptions}
@@ -433,86 +365,39 @@ export default function Staff() {
           }
         }}
         onCreate={() => setShowCreateModal(true)}
-        onPreview={(staff) => {
+        onPreview={(staffMember) => {
           window.open(
-            `/analytics/reports/p/${staff.id}`,
+            `/analytics/reports/p/${staffMember.profile_id}`,
             "_blank",
             "noopener,noreferrer"
           );
         }}
-        onEdit={(staff) => setEditProfileId(staff.id)}
-        onDelete={(staff) => {
-          setDeleteStaffMember(staff);
+        onEdit={(staffMember) => setEditProfileId(staffMember.profile_id)}
+        onDelete={(staffMember) => {
+          setDeleteStaffMember(staffMember);
           setShowSingleDeleteDialog(true);
         }}
         onBulkEdit={() => setShowBulkEditModal(true)}
         onBulkDelete={() => setShowBulkDeleteDialog(true)}
         canDelete={(profileId) => {
-          const row = staffData.find((s) => s.id === profileId);
-          if (!row) return false;
-          // Admin cannot delete self, other admins, or superadmins
-          if (effectiveProfile?.role === "admin") {
-            if (row.id === effectiveProfile.id) return false;
-            if (row.role === "admin" || row.role === "superadmin") return false;
-          }
-          // Superadmin cannot delete self
-          if (
-            effectiveProfile?.role === "superadmin" &&
-            row.id === effectiveProfile.id
-          ) {
-            return false;
-          }
-          return !row.defaultProfile;
+          const row = staff.find((s) => s.profile_id === profileId);
+          return row?.can_delete ?? false;
         }}
         deletableCount={
           selectedStaffIds.filter((id) => {
-            const row = staffData.find((s) => s.id === id);
-            if (!row) return false;
-            if (effectiveProfile?.role === "admin") {
-              if (row.id === effectiveProfile.id) return false;
-              if (row.role === "admin" || row.role === "superadmin")
-                return false;
-            }
-            if (
-              effectiveProfile?.role === "superadmin" &&
-              row.id === effectiveProfile.id
-            ) {
-              return false;
-            }
-            return !row.defaultProfile;
+            const row = staff.find((s) => s.profile_id === id);
+            return row?.can_delete ?? false;
           }).length
         }
         editableCount={
           selectedStaffIds.filter((id) => {
-            const row = staffData.find((s) => s.id === id);
-            if (!row) return false;
-            if (effectiveProfile?.role === "superadmin") return true;
-            if (row.defaultProfile) return false;
-            if (effectiveProfile?.role === "admin") {
-              if (
-                (row.role === "admin" || row.role === "superadmin") &&
-                row.id !== effectiveProfile.id
-              ) {
-                return false;
-              }
-            }
-            return true;
+            const row = staff.find((s) => s.profile_id === id);
+            return row?.can_edit ?? false;
           }).length
         }
         canEdit={(profileId) => {
-          const row = staffData.find((s) => s.id === profileId);
-          if (!row) return false;
-          if (effectiveProfile?.role === "superadmin") return true;
-          if (row.defaultProfile) return false;
-          if (effectiveProfile?.role === "admin") {
-            if (
-              (row.role === "admin" || row.role === "superadmin") &&
-              row.id !== effectiveProfile.id
-            ) {
-              return false;
-            }
-          }
-          return true;
+          const row = staff.find((s) => s.profile_id === profileId);
+          return row?.can_edit ?? false;
         }}
       />
 
@@ -620,37 +505,16 @@ export default function Staff() {
             </div>
 
             {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
+            {effectiveProfile?.role === "superadmin" && bulkStaffDetail && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <DepartmentSelector
-                  departments={departments.map((dept) => ({
-                    id: dept.id,
-                    title: dept.title as string,
-                    ...(dept.description && { description: dept.description }),
-                  }))}
-                  selectedDepartment={
-                    bulkDepartmentId
-                      ? (() => {
-                          const dept = departments.find(
-                            (d) => d.id === bulkDepartmentId
-                          );
-                          return dept
-                            ? {
-                                id: dept.id,
-                                title: dept.title as string,
-                                ...(dept.description && {
-                                  description: dept.description,
-                                }),
-                              }
-                            : null;
-                        })()
-                      : null
+                  departmentMapping={bulkStaffDetail.department_mapping}
+                  selectedDepartmentId={
+                    bulkDepartmentId || bulkStaffDetail.department_ids[0] || ""
                   }
-                  onSelect={(department) =>
-                    setBulkDepartmentId(department?.id || null)
-                  }
-                  placeholder="Select department"
+                  validDepartmentIds={bulkStaffDetail.valid_department_ids}
+                  onSelect={(deptId) => setBulkDepartmentId(deptId)}
                 />
               </div>
             )}
@@ -666,44 +530,38 @@ export default function Staff() {
               onClick={async () => {
                 if (selectedStaffIds.length === 0) return;
 
-                // Department validation for superadmin
-                if (
-                  effectiveProfile?.role === "superadmin" &&
-                  !bulkDepartmentId
-                ) {
-                  toast.error(
-                    "Department selection is required for superadmin users"
-                  );
-                  return;
-                }
-
-                const updates: Record<string, unknown> = {
-                  updatedAt: new Date().toISOString(),
-                };
-                if (bulkRole !== "__keep__") updates["role"] = bulkRole;
-                if (bulkUnlimited) {
-                  updates["reqPerDay"] = null;
-                } else if (bulkReqPerDay !== "") {
-                  const num = Number(bulkReqPerDay);
-                  updates["reqPerDay"] = Number.isNaN(num) ? null : num;
-                }
-                if (bulkDepartmentId)
-                  updates["departmentId"] = bulkDepartmentId;
                 try {
-                  if (Object.keys(updates).length > 0) {
-                    // Use bulk update for efficiency
-                    await updateProfilesMutation.mutateAsync({
-                      updates: selectedStaffIds.map((profileId) => ({
-                        id: profileId,
-                        ...(updates as { [key: string]: unknown }),
-                      })),
-                    });
+                  const updates: {
+                    profileIds: string[];
+                    role?: string;
+                    requests_per_day?: number | null;
+                    department_id?: string;
+                  } = {
+                    profileIds: selectedStaffIds,
+                  };
+
+                  if (bulkRole !== "__keep__") {
+                    updates.role = bulkRole;
                   }
+
+                  if (bulkUnlimited) {
+                    updates.requests_per_day = null;
+                  } else if (bulkReqPerDay !== "") {
+                    const num = Number(bulkReqPerDay);
+                    updates.requests_per_day = Number.isNaN(num) ? null : num;
+                  }
+
+                  if (bulkDepartmentId) {
+                    updates.department_id = bulkDepartmentId;
+                  }
+
+                  await bulkUpdateStaffMutation.mutateAsync(updates);
                   toast.success("Staff updated successfully");
                   setShowBulkEditModal(false);
                   setSelectedStaffIds([]);
                   setBulkRole("__keep__");
                   setBulkReqPerDay("");
+                  setBulkUnlimited(false);
                   setBulkDepartmentId(null);
                 } catch {
                   toast.error("Failed to update staff");
@@ -733,18 +591,14 @@ export default function Staff() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {(() => {
-            const selected = staffData.filter((s) =>
-              selectedStaffIds.includes(s.id)
+            const selected = staff.filter((s) =>
+              selectedStaffIds.includes(s.profile_id)
             );
-            const nonDeletable = selected.filter(
-              (s) => s.defaultProfile || s.id === effectiveProfile?.id
-            );
-            const deletable = selected.filter(
-              (s) => !s.defaultProfile && s.id !== effectiveProfile?.id
-            );
+            const nonDeletable = selected.filter((s) => !s.can_delete);
+            const deletable = selected.filter((s) => s.can_delete);
             const impactedCohorts = deletable.map((s) => ({
               staff: s,
-              cohorts: allCohorts.filter((c) => c.profileIds.includes(s.id)),
+              cohortCount: s.cohort_ids.length,
             }));
             return (
               <div className="space-y-3">
@@ -756,23 +610,17 @@ export default function Staff() {
                     </p>
                     <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                       <ul className="text-sm space-y-2">
-                        {impactedCohorts.map(({ staff, cohorts }) => (
+                        {impactedCohorts.map(({ staff, cohortCount }) => (
                           <li
-                            key={staff.id}
+                            key={staff.profile_id}
                             className="text-red-600 dark:text-red-300"
                           >
-                            • {staff.firstName} {staff.lastName} ({staff.alias}){" "}
-                            {cohorts.length > 0 ? (
+                            • {staff.first_name} {staff.last_name} (
+                            {staff.alias}){" "}
+                            {cohortCount > 0 ? (
                               <span className="text-xs text-muted-foreground">
-                                – affects {cohorts.length} cohort
-                                {cohorts.length > 1 ? "s" : ""}:{" "}
-                                {cohorts
-                                  .slice(0, 3)
-                                  .map((c) => c.title)
-                                  .join(", ")}
-                                {cohorts.length > 3
-                                  ? `, +${cohorts.length - 3} more`
-                                  : ""}
+                                – affects {cohortCount} cohort
+                                {cohortCount > 1 ? "s" : ""}
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">
@@ -795,13 +643,15 @@ export default function Staff() {
                       <ul className="text-sm space-y-1">
                         {nonDeletable.map((s) => (
                           <li
-                            key={s.id}
+                            key={s.profile_id}
                             className="text-yellow-700 dark:text-yellow-300"
                           >
-                            • {s.firstName} {s.lastName} ({s.alias})
-                            {s.id === effectiveProfile?.id
+                            • {s.first_name} {s.last_name} ({s.alias})
+                            {s.profile_id === effectiveProfile?.id
                               ? " – your account"
-                              : " – default profile"}
+                              : s.default_profile
+                                ? " – default profile"
+                                : " – cannot delete"}
                           </li>
                         ))}
                       </ul>
@@ -817,21 +667,18 @@ export default function Staff() {
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={async () => {
                 try {
-                  const deletableIds = staffData
+                  const deletableIds = staff
                     .filter(
                       (s) =>
-                        selectedStaffIds.includes(s.id) &&
-                        !s.defaultProfile &&
-                        s.id !== effectiveProfile?.id
+                        selectedStaffIds.includes(s.profile_id) && s.can_delete
                     )
-                    .map((s) => s.id);
+                    .map((s) => s.profile_id);
                   if (deletableIds.length === 0) {
                     setShowBulkDeleteDialog(false);
                     return;
                   }
-                  // Use bulk delete for efficiency
-                  await deleteProfilesMutation.mutateAsync({
-                    ids: deletableIds,
+                  await bulkDeleteStaffMutation.mutateAsync({
+                    profileIds: deletableIds,
                   });
                   toast.success("Selected staff deleted");
                   setSelectedStaffIds([]);
@@ -855,8 +702,8 @@ export default function Staff() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {deleteStaffMember?.firstName}{" "}
-              {deleteStaffMember?.lastName}?
+              Delete {deleteStaffMember?.first_name}{" "}
+              {deleteStaffMember?.last_name}?
             </AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the account. Default profiles and
@@ -865,12 +712,9 @@ export default function Staff() {
           </AlertDialogHeader>
           {deleteStaffMember &&
             (() => {
-              const staff = deleteStaffMember;
-              const canDelete =
-                !staff.defaultProfile && staff.id !== effectiveProfile?.id;
-              const cohorts = allCohorts.filter((c) =>
-                c.profileIds.includes(staff.id)
-              );
+              const staffMember = deleteStaffMember;
+              const canDelete = staffMember.can_delete;
+              const cohortCount = staffMember.cohort_ids.length;
 
               if (!canDelete) {
                 return (
@@ -881,10 +725,13 @@ export default function Staff() {
                       </p>
                       <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                          • {staff.firstName} {staff.lastName} ({staff.alias})
-                          {staff.id === effectiveProfile?.id
+                          • {staffMember.first_name} {staffMember.last_name} (
+                          {staffMember.alias})
+                          {staffMember.profile_id === effectiveProfile?.id
                             ? " – your account"
-                            : " – default profile"}
+                            : staffMember.default_profile
+                              ? " – default profile"
+                              : " – cannot delete"}
                         </p>
                       </div>
                     </div>
@@ -902,18 +749,12 @@ export default function Staff() {
                     <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                       <ul className="text-sm space-y-2">
                         <li className="text-red-600 dark:text-red-300">
-                          • {staff.firstName} {staff.lastName} ({staff.alias}){" "}
-                          {cohorts.length > 0 ? (
+                          • {staffMember.first_name} {staffMember.last_name} (
+                          {staffMember.alias}){" "}
+                          {cohortCount > 0 ? (
                             <span className="text-xs text-muted-foreground">
-                              – affects {cohorts.length} cohort
-                              {cohorts.length > 1 ? "s" : ""}:{" "}
-                              {cohorts
-                                .slice(0, 3)
-                                .map((c) => c.title)
-                                .join(", ")}
-                              {cohorts.length > 3
-                                ? `, +${cohorts.length - 3} more`
-                                : ""}
+                              – affects {cohortCount} cohort
+                              {cohortCount > 1 ? "s" : ""}
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">
@@ -934,22 +775,17 @@ export default function Staff() {
               onClick={async () => {
                 if (!deleteStaffMember) return;
 
-                if (
-                  deleteStaffMember.defaultProfile ||
-                  deleteStaffMember.id === effectiveProfile?.id
-                ) {
-                  toast.error(
-                    deleteStaffMember.id === effectiveProfile?.id
-                      ? "You cannot delete your own account."
-                      : "Default profiles cannot be deleted."
-                  );
+                if (!deleteStaffMember.can_delete) {
+                  toast.error("This user cannot be deleted");
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);
                   return;
                 }
 
                 try {
-                  await deleteProfileMutation.mutateAsync(deleteStaffMember.id);
+                  await deleteStaffMutation.mutateAsync({
+                    profileId: deleteStaffMember.profile_id,
+                  });
                   toast.success("User deleted successfully");
                   setShowSingleDeleteDialog(false);
                   setDeleteStaffMember(null);

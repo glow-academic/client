@@ -1,10 +1,10 @@
 """Providers V2 API schemas with hierarchical structure."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .personas import DepartmentMappingItem
+from .base import DepartmentMapping, ProviderMapping
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -76,7 +76,7 @@ class ProviderDetailResponse(BaseModel):
     valid_department_ids: List[str]
 
     # Top-level mappings
-    department_mapping: Dict[str, DepartmentMappingItem]
+    department_mapping: DepartmentMapping
 
 
 # ============================================================================
@@ -107,7 +107,7 @@ class ModelDetailResponse(BaseModel):
     valid_provider_ids: List[str]
 
     # Top-level mappings
-    provider_mapping: Dict[str, str]
+    provider_mapping: ProviderMapping
 
 
 # ============================================================================

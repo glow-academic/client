@@ -4,14 +4,7 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema } from "./personas";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (staff-specific)
-// ============================================================================
-
-export const CohortMappingSchema = z.record(z.string(), z.string()); // cohort_id -> name
-export type CohortMapping = z.infer<typeof CohortMappingSchema>;
+import { CohortMappingSchema, DepartmentMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -31,6 +24,9 @@ export type StaffFilters = z.infer<typeof StaffFiltersSchema>;
 // Staff item (normalized - IDs only)
 export const StaffItemSchema = z.object({
   profile_id: z.string(),
+  first_name: z.string(),
+  last_name: z.string(),
+  alias: z.string(),
   name: z.string(), // Combined first_name + last_name
   role: z.string(),
   email: z.string(), // alias + NEXT_PUBLIC_CAMPUS_EMAIL
@@ -39,6 +35,8 @@ export const StaffItemSchema = z.object({
   lastActive: z.string().nullable(),
   cohort_ids: z.array(z.string()),
   requests_per_day: z.number().nullable(),
+  default_profile: z.boolean(),
+  requests_in_last_day: z.number(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
 });
@@ -46,6 +44,7 @@ export const StaffItemSchema = z.object({
 export const StaffListResponseSchema = z.object({
   staff: z.array(StaffItemSchema),
   cohort_mapping: CohortMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type StaffListResponse = z.infer<typeof StaffListResponseSchema>;

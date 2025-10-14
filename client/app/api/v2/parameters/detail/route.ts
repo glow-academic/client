@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = ParameterDetailRequestSchema.parse(body);
 
-    const result = await fetchParameterDetail(request.parameterId, request.profileId);
+    const result = await fetchParameterDetail(
+      request.parameterId,
+      request.profileId
+    );
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

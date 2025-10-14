@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema } from "./personas";
+import { DepartmentMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

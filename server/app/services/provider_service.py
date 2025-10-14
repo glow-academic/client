@@ -3,7 +3,7 @@
 from typing import Any, Dict, List
 
 from app.queries.provider_queries import ProviderQueries
-from app.schemas.personas import DepartmentMappingItem
+from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
                                    CreateProviderResponse, DeleteModelRequest,
@@ -133,7 +133,7 @@ class ProviderService:
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_result
         }
@@ -169,7 +169,13 @@ class ProviderService:
         query, params = self.queries.get_valid_providers(valid_dept_ids)
         providers_result = self.db.execute(text(query), params).fetchall()
         valid_provider_ids = [str(row.id) for row in providers_result]
-        provider_mapping = {str(row.id): row.name for row in providers_result}
+        provider_mapping = {
+            str(row.id): ProviderMappingItem(
+                name=row.name,
+                description=row.description
+            )
+            for row in providers_result
+        }
 
         return ModelDetailResponse(
             name=model.name,

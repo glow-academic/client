@@ -3,9 +3,11 @@
 from typing import Any, Dict, List
 
 from app.queries.persona_queries import PersonaQueries
+from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
+                              ScenarioMappingItem)
 from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   DebugInfoItem, DeletePersonaRequest,
-                                  DeletePersonaResponse, DepartmentMappingItem,
+                                  DeletePersonaResponse,
                                   DuplicatePersonaRequest,
                                   DuplicatePersonaResponse,
                                   PersonaDetailDefaultRequest,
@@ -64,7 +66,10 @@ class PersonaService:
             )
 
             if row.model_id and row.model_name:
-                model_mapping[str(row.model_id)] = row.model_name
+                model_mapping[str(row.model_id)] = ModelMappingItem(
+                    name=row.model_name,
+                    description=getattr(row, 'model_description', '') or ''
+                )
 
         # Get scenario names for mapping
         if scenario_ids_to_fetch := list(
@@ -74,7 +79,10 @@ class PersonaService:
             scenario_result = self.db.execute(text(query), params).fetchall()
 
             for row in scenario_result:
-                scenario_mapping[str(row.id)] = row.name
+                scenario_mapping[str(row.id)] = ScenarioMappingItem(
+                    name=row.name,
+                    description=row.problem_statement
+                )
 
         return PersonasListResponse(
             personas=personas,
@@ -176,7 +184,10 @@ class PersonaService:
         models_result = self.db.execute(text(query), params).fetchall()
 
         valid_model_ids = [str(row.id) for row in models_result]
-        model_mapping = {str(row.id): row.name for row in models_result}
+        model_mapping = {
+            str(row.id): ModelMappingItem(name=row.name, description=row.description)
+            for row in models_result
+        }
 
         # Get departments with mapping
         query, params = self.queries.get_departments_mapping(valid_department_ids)
@@ -184,7 +195,7 @@ class PersonaService:
 
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in departments_result
         }

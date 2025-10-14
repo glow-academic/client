@@ -4,14 +4,11 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema, ScenarioMappingSchema } from "./personas";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (simulation-specific)
-// ============================================================================
-
-export const RubricMappingSchema = z.record(z.string(), z.string()); // rubric_id -> name
-export type RubricMapping = z.infer<typeof RubricMappingSchema>;
+import {
+  DepartmentMappingSchema,
+  RubricMappingSchema,
+  ScenarioMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

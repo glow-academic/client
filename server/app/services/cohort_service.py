@@ -3,6 +3,8 @@
 from typing import Any, Dict, List
 
 from app.queries.cohort_queries import CohortQueries
+from app.schemas.base import (DepartmentMappingItem, ProfileMappingItem,
+                              SimulationMappingItem)
 from app.schemas.cohorts import (CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
                                  CohortItem, CohortsFilters,
@@ -12,7 +14,6 @@ from app.schemas.cohorts import (CohortDetailDefaultRequest,
                                  DuplicateCohortResponse, LeaveCohortRequest,
                                  LeaveCohortResponse, UpdateCohortRequest,
                                  UpdateCohortResponse)
-from app.schemas.personas import DepartmentMappingItem
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -70,7 +71,10 @@ class CohortService:
             profile_result = self.db.execute(text(query), params).fetchall()
 
             for row in profile_result:
-                profile_mapping[str(row.id)] = row.name
+                profile_mapping[str(row.id)] = ProfileMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         # Get simulation names for mapping
         if simulation_ids_to_fetch := list(
@@ -82,7 +86,10 @@ class CohortService:
             simulation_result = self.db.execute(text(query), params).fetchall()
 
             for row in simulation_result:
-                simulation_mapping[str(row.id)] = row.name
+                simulation_mapping[str(row.id)] = SimulationMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         return CohortsListResponse(
             cohorts=cohorts,
@@ -136,7 +143,8 @@ class CohortService:
             query, params = self.queries.get_simulation_mapping(simulation_ids)
             sim_mapping_result = self.db.execute(text(query), params).fetchall()
             simulation_mapping = {
-                str(row.id): row.name for row in sim_mapping_result
+                str(row.id): SimulationMappingItem(name=row.name, description=row.description)
+                for row in sim_mapping_result
             }
         else:
             simulation_mapping = {}
@@ -145,14 +153,17 @@ class CohortService:
         if profile_ids:
             query, params = self.queries.get_profile_mapping(profile_ids)
             prof_mapping_result = self.db.execute(text(query), params).fetchall()
-            profile_mapping = {str(row.id): row.name for row in prof_mapping_result}
+            profile_mapping = {
+                str(row.id): ProfileMappingItem(name=row.name, description=row.description)
+                for row in prof_mapping_result
+            }
         else:
             profile_mapping = {}
 
         # Get department mapping
         department_mapping = {
             str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description
+                name=row.name, description=row.description or ''
             )
             for row in dept_result
         }

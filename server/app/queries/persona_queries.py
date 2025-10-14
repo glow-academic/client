@@ -35,7 +35,8 @@ class PersonaQueries:
                 p.default_persona,
                 COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
                 COALESCE(ps.num_scenarios, 0) as num_scenarios,
-                m.name as model_name
+                m.name as model_name,
+                COALESCE(m.description, '') as model_description
             FROM personas p
             LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
@@ -69,7 +70,7 @@ class PersonaQueries:
         self, scenario_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for scenario mapping."""
-        query = "SELECT id, name FROM scenarios WHERE id = ANY(:scenario_ids)"
+        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY(:scenario_ids)"
         params = {"scenario_ids": scenario_ids}
         return (query, params)
 
@@ -96,7 +97,7 @@ class PersonaQueries:
 
     def get_valid_models(self) -> Tuple[str, Dict[str, Any]]:
         """Build query for valid models."""
-        query = "SELECT id, name FROM models WHERE active = true ORDER BY name"
+        query = "SELECT id, name, COALESCE(description, '') as description FROM models WHERE active = true ORDER BY name"
         params: Dict[str, Any] = {}
         return (query, params)
 

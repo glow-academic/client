@@ -127,7 +127,7 @@ class ProviderQueries:
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for valid providers."""
         query = """
-        SELECT id, name FROM providers 
+        SELECT id, name, COALESCE(description, '') as description FROM providers 
         WHERE department_id = ANY(:dept_ids)
         ORDER BY name
         """

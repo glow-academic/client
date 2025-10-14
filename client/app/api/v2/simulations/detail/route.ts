@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = SimulationDetailRequestSchema.parse(body);
 
-    const result = await fetchSimulationDetail(request.simulationId, request.profileId);
+    const result = await fetchSimulationDetail(
+      request.simulationId,
+      request.profileId
+    );
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

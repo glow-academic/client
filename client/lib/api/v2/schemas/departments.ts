@@ -4,13 +4,7 @@
  */
 
 import { z } from "zod";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES (department-specific)
-// ============================================================================
-
-export const AgentMappingSchema = z.record(z.string(), z.string()); // agent_id -> name
-export type AgentMapping = z.infer<typeof AgentMappingSchema>;
+import { AgentMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS

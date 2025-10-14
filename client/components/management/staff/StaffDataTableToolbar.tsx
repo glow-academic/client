@@ -7,10 +7,10 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StaffData } from "@/hooks/use-staff-columns";
+import type { StaffItem } from "@/lib/api/v2/schemas/staff";
 
 export interface StaffDataTableToolbarProps {
-  table: Table<StaffData>;
+  table: Table<StaffItem>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   activityOptions: { value: string; label: string }[];
@@ -42,11 +42,11 @@ export function StaffDataTableToolbar({
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const firstNameColumn = table.getColumn("firstName");
+  const nameColumn = table.getColumn("name");
   const roleColumn = table.getColumn("role");
   const activeColumn = table.getColumn("active");
   const lastActiveColumn = table.getColumn("lastActive");
-  const cohortNamesColumn = table.getColumn("cohortNames");
+  const cohortIdsColumn = table.getColumn("cohort_ids");
 
   return (
     <div className="flex items-center justify-between">
@@ -54,10 +54,8 @@ export function StaffDataTableToolbar({
         <div className="mb-2">
           <Input
             placeholder="Search staff by name or alias..."
-            value={(firstNameColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              firstNameColumn?.setFilterValue(event.target.value)
-            }
+            value={(nameColumn?.getFilterValue() as string) ?? ""}
+            onChange={(event) => nameColumn?.setFilterValue(event.target.value)}
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>
@@ -91,9 +89,9 @@ export function StaffDataTableToolbar({
           )}
 
           {/* Cohort Filter */}
-          {cohortNamesColumn && cohortOptions.length > 0 && (
+          {cohortIdsColumn && cohortOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={cohortNamesColumn}
+              column={cohortIdsColumn}
               title="Cohort"
               options={cohortOptions}
             />

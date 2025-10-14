@@ -1,8 +1,10 @@
 """Personas V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
+
+from .base import DepartmentMapping, ModelMapping, ScenarioMapping
 
 
 class PersonasFilters(BaseModel):
@@ -31,20 +33,12 @@ class PersonaItem(BaseModel):
     can_delete: bool
 
 
-# Centralized mapping types
-class DepartmentMappingItem(BaseModel):
-    """Department mapping item."""
-
-    name: str
-    description: Optional[str]
-
-
 class PersonasListResponse(BaseModel):
     """Response for personas list endpoint."""
 
     personas: List[PersonaItem]
-    scenario_mapping: Dict[str, str]  # scenario_id -> name
-    model_mapping: Dict[str, str]  # model_id -> name
+    scenario_mapping: ScenarioMapping
+    model_mapping: ModelMapping
 
 
 class DuplicatePersonaRequest(BaseModel):
@@ -123,8 +117,8 @@ class PersonaDetailResponse(BaseModel):
     temperature_upper: float
 
     # Mappings
-    model_mapping: Dict[str, str]  # model_id -> name
-    department_mapping: Dict[str, DepartmentMappingItem]  # department_id -> {name, description}
+    model_mapping: ModelMapping
+    department_mapping: DepartmentMapping
 
     # Debug info
     debug_info: List[DebugInfoItem]

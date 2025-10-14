@@ -3,6 +3,10 @@
 from typing import Any, Dict, List
 
 from app.queries.scenario_queries import ScenarioQueries
+from app.schemas.base import (CohortMappingItem, DocumentMappingItem,
+                              ObjectiveMappingItem, ParameterItemMappingItem,
+                              ParameterMappingItem, PersonaMappingItem,
+                              SimulationMappingItem)
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -91,7 +95,10 @@ class ScenarioService:
                 obj_result = self.db.execute(text(query), params).fetchall()
 
                 for row in obj_result:
-                    objective_mapping[row.objective_id] = row.objective
+                    objective_mapping[row.objective_id] = ObjectiveMappingItem(
+                        name=row.objective,
+                        description=row.objective
+                    )
 
         # Get parameter_item names for mapping
         if parameter_item_ids_to_fetch := list(
@@ -103,11 +110,10 @@ class ScenarioService:
             param_item_result = self.db.execute(text(query), params).fetchall()
 
             for row in param_item_result:
-                parameter_item_mapping[str(row.id)] = {
-                    "name": row.name,
-                    "description": row.description,
-                    "value": row.value,
-                }
+                parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
+                    name=row.name,
+                    description=row.description or ''
+                )
 
         # Get cohort names for mapping
         if cohort_ids_to_fetch := list(
@@ -117,7 +123,10 @@ class ScenarioService:
             cohort_result = self.db.execute(text(query), params).fetchall()
 
             for row in cohort_result:
-                cohort_mapping[str(row.id)] = row.name
+                cohort_mapping[str(row.id)] = CohortMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         # Get persona names for mapping
         if persona_ids_to_fetch := list(
@@ -127,7 +136,12 @@ class ScenarioService:
             persona_result = self.db.execute(text(query), params).fetchall()
 
             for row in persona_result:
-                persona_mapping[str(row.id)] = row.name
+                persona_mapping[str(row.id)] = PersonaMappingItem(
+                    name=row.name,
+                    description=row.description,
+                    color=row.color,
+                    icon=row.icon
+                )
 
         return ScenariosListResponse(
             scenarios=scenarios,
@@ -199,7 +213,10 @@ class ScenarioService:
         ).fetchall()
 
         objective_ids = [row.objective_id for row in obj_result]
-        objective_mapping = {row.objective_id: row.objective for row in obj_result}
+        objective_mapping = {
+            row.objective_id: ObjectiveMappingItem(name=row.objective, description=row.objective)
+            for row in obj_result
+        }
 
         # Get parameters grouped by parameter_id
         param_query = text("""
@@ -284,7 +301,7 @@ class ScenarioService:
 
         # Get valid personas
         valid_personas_query = text("""
-        SELECT id, name FROM personas 
+        SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas 
         WHERE department_id = ANY(:dept_ids) AND active = true
         ORDER BY name
         """)
@@ -294,11 +311,19 @@ class ScenarioService:
         ).fetchall()
 
         valid_persona_ids = [str(row.id) for row in persona_results]
-        persona_mapping = {str(row.id): row.name for row in persona_results}
+        persona_mapping = {
+            str(row.id): PersonaMappingItem(
+                name=row.name,
+                description=row.description,
+                color=row.color,
+                icon=row.icon
+            )
+            for row in persona_results
+        }
 
         # Get valid documents
         valid_docs_query = text("""
-        SELECT id, name FROM documents 
+        SELECT id, name, COALESCE(type, '') as description FROM documents 
         WHERE department_id = ANY(:dept_ids) AND active = true
         ORDER BY name
         """)
@@ -308,13 +333,16 @@ class ScenarioService:
         ).fetchall()
 
         valid_document_ids = [str(row.id) for row in doc_results]
-        document_mapping = {str(row.id): row.name for row in doc_results}
+        document_mapping = {
+            str(row.id): DocumentMappingItem(name=row.name, description=row.description)
+            for row in doc_results
+        }
 
         # Get simulation mapping
         simulation_mapping = {}
         if active_simulation_ids:
             sim_mapping_query = text("""
-            SELECT id, title FROM simulations WHERE id = ANY(:sim_ids)
+            SELECT id, title, COALESCE(description, '') as description FROM simulations WHERE id = ANY(:sim_ids)
             """)
 
             sim_mapping_result = self.db.execute(
@@ -322,7 +350,10 @@ class ScenarioService:
             ).fetchall()
 
             for row in sim_mapping_result:
-                simulation_mapping[str(row.id)] = row.title
+                simulation_mapping[str(row.id)] = SimulationMappingItem(
+                    name=row.title,
+                    description=row.description
+                )
 
         # Get parameter mapping
         parameter_mapping = {}
@@ -353,10 +384,10 @@ class ScenarioService:
             ).fetchall()
 
             for row in param_mapping_result:
-                parameter_mapping[str(row.parameter_id)] = {
-                    "name": row.name,
-                    "description": row.description,
-                }
+                parameter_mapping[str(row.parameter_id)] = ParameterMappingItem(
+                    name=row.name,
+                    description=row.description or ''
+                )
 
         # Get parameter_item mapping (already built above)
         param_item_full_mapping = {}
@@ -376,11 +407,10 @@ class ScenarioService:
             ).fetchall()
 
             for row in param_item_mapping_result:
-                param_item_full_mapping[str(row.id)] = {
-                    "name": row.name,
-                    "description": row.description,
-                    "value": row.value,
-                }
+                param_item_full_mapping[str(row.id)] = ParameterItemMappingItem(
+                    name=row.name,
+                    description=row.description or ''
+                )
 
         return ScenarioDetailResponse(
             # Basic fields

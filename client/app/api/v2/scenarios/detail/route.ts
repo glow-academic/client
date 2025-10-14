@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = ScenarioDetailRequestSchema.parse(body);
 
-    const result = await fetchScenarioDetail(request.scenarioId, request.profileId);
+    const result = await fetchScenarioDetail(
+      request.scenarioId,
+      request.profileId
+    );
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

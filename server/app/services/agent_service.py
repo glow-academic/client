@@ -10,6 +10,7 @@ from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 DeleteAgentRequest, DeleteAgentResponse,
                                 DuplicateAgentRequest, DuplicateAgentResponse,
                                 UpdateAgentRequest, UpdateAgentResponse)
+from app.schemas.base import ModelMapping, ModelMappingItem
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,12 +44,18 @@ class AgentService:
         model_ids = list(set([row.model_id for row in rows]))
 
         # Get model mapping
-        model_mapping: Dict[str, str] = {}
+        model_mapping: ModelMapping = {}
         if model_ids:
             query, params = self.queries.get_model_mapping(model_ids)
             result = await session.execute(text(query), params)
             model_rows = result.fetchall()
-            model_mapping = {row.model_id: row.name for row in model_rows}
+            model_mapping = {
+                row.model_id: ModelMappingItem(
+                    name=row.name,
+                    description=getattr(row, 'description', '') or ''
+                )
+                for row in model_rows
+            }
 
         agents: List[AgentItem] = []
         for row in rows:
@@ -112,10 +119,13 @@ class AgentService:
         model_rows = result.fetchall()
 
         valid_model_ids: List[str] = []
-        model_mapping: Dict[str, str] = {}
+        model_mapping: ModelMapping = {}
         for row in model_rows:
             valid_model_ids.append(row.model_id)
-            model_mapping[row.model_id] = row.name
+            model_mapping[row.model_id] = ModelMappingItem(
+                name=row.name,
+                description=row.description
+            )
 
         # Add agent's current model to mapping if not already there
         if agent_row.model_id not in model_mapping:
@@ -123,7 +133,10 @@ class AgentService:
             result = await session.execute(text(query), params)
             model_rows = result.fetchall()
             for row in model_rows:
-                model_mapping[row.model_id] = row.name
+                model_mapping[row.model_id] = ModelMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         # Add debug info model IDs to mapping
         debug_model_ids_list = list(debug_model_ids - set(model_mapping.keys()))
@@ -132,7 +145,10 @@ class AgentService:
             result = await session.execute(text(query), params)
             model_rows = result.fetchall()
             for row in model_rows:
-                model_mapping[row.model_id] = row.name
+                model_mapping[row.model_id] = ModelMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
 
         return AgentDetailResponse(
             name=agent_row.name,

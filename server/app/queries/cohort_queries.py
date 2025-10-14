@@ -108,7 +108,7 @@ class CohortQueries:
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for profile mapping."""
         query = """
-        SELECT id, first_name || ' ' || last_name as name 
+        SELECT id, first_name || ' ' || last_name as name, COALESCE(email, '') as description 
         FROM profiles 
         WHERE id = ANY(:profile_ids)
         """
@@ -119,7 +119,7 @@ class CohortQueries:
         self, simulation_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for simulation mapping."""
-        query = "SELECT id, title as name FROM simulations WHERE id = ANY(:simulation_ids)"
+        query = "SELECT id, title as name, COALESCE(description, '') as description FROM simulations WHERE id = ANY(:simulation_ids)"
         params = {"simulation_ids": simulation_ids}
         return (query, params)
 

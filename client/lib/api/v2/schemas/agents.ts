@@ -4,13 +4,7 @@
  */
 
 import { z } from "zod";
-
-// ============================================================================
-// CENTRALIZED MAPPING TYPES
-// ============================================================================
-
-export const ModelMappingSchema = z.record(z.string(), z.string()); // model_id -> name
-export type ModelMapping = z.infer<typeof ModelMappingSchema>;
+import { ModelMappingSchema } from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
