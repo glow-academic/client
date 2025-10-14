@@ -6,7 +6,15 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { Copy, Edit, Eye, FileCheck, Loader2, Star, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Edit,
+  Eye,
+  FileCheck,
+  Loader2,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -183,7 +191,10 @@ export default function Rubrics() {
             </div>
             <div className="flex items-center gap-2">
               {rubric.can_edit ? (
-                <Button variant="outline" onClick={() => handleEdit(rubric.rubric_id)}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleEdit(rubric.rubric_id)}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
@@ -214,7 +225,9 @@ export default function Rubrics() {
               {rubric.can_delete && (
                 <Button
                   variant="outline"
-                  onClick={() => handleDeleteClick(rubric.rubric_id, rubric.name)}
+                  onClick={() =>
+                    handleDeleteClick(rubric.rubric_id, rubric.name)
+                  }
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete

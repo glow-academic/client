@@ -219,7 +219,8 @@ export default function TableRubric({
                           ) : (
                             <div className="grid grid-cols-1 gap-1">
                               {standardIds.map((standardId) => {
-                                const standardInfo = standardsMapping[standardId];
+                                const standardInfo =
+                                  standardsMapping[standardId];
                                 const isAchievedForS = isStandardAchieved(
                                   standardId,
                                   standardIds
@@ -270,7 +271,10 @@ export default function TableRubric({
                     }
 
                     const feedback = getFeedbackForStandard(standardId);
-                    const isAchieved = isStandardAchieved(standardId, standardIds);
+                    const isAchieved = isStandardAchieved(
+                      standardId,
+                      standardIds
+                    );
                     const isPassed = isStandardPassed(
                       standardId,
                       groupInfo?.passPoints || 0
@@ -311,7 +315,8 @@ export default function TableRubric({
                             if (isAchieved) {
                               setFlippedCells((prev) => {
                                 const next = new Set(prev);
-                                if (next.has(standardId)) next.delete(standardId);
+                                if (next.has(standardId))
+                                  next.delete(standardId);
                                 else next.add(standardId);
                                 return next;
                               });
