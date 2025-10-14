@@ -596,19 +596,26 @@ export function UnifiedSidebar({
           emulationTTL: null,
         });
       } else {
-        // 1) server permission check
-        const r = await fetch("/api/emulate/authorize", {
+        // 1) server permission check using v2 auth endpoint
+        const r = await fetch("/api/v2/auth/authorize-emulation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
+            requesterProfileId: activeProfile!.id,
             targetProfileId: profileId,
             departmentIds: effectiveDepartmentIds,
           }),
         });
+
         if (!r.ok) {
-          const msg = (await r.json().catch(() => ({})))?.error || "Forbidden";
-          toast.error(msg);
+          toast.error("Failed to authorize emulation");
+          return;
+        }
+
+        const result = await r.json().catch(() => ({ allowed: false }));
+        if (!result.allowed) {
+          toast.error(result.reason || "Emulation not allowed");
           return;
         }
 

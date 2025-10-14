@@ -1,6 +1,7 @@
 /**
  * SimulationPicker.tsx
  * Used to pick simulations for filtering or assignment to cohorts
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
@@ -41,84 +42,83 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import type { MappingItem, ParameterItemMappingItem, PersonaMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Parameter, ParameterItem } from "@/types";
 
-export interface Simulation {
-  id: string;
-  title: string | React.ReactNode;
-  description?: string;
+// Extended mapping item for simulations with metadata
+export interface SimulationMappingItemExt extends MappingItem {
   timeLimit?: number | undefined;
-  active: boolean;
-  defaultSimulation?: boolean;
-  practiceSimulation?: boolean;
   scenarioIds?: string[];
   updatedAt?: string;
 }
 
-export interface SimulationPickerProps extends PopoverProps {
-  simulations: Simulation[];
-  scenarios?: {
-    id: string;
-    parameterItemIds?: string[] | null;
-    personaId?: string | null;
-  }[];
-  parameters?: Parameter[];
-  parameterItems?: ParameterItem[];
-  personas?: { id: string; name: string }[];
+// Scenario data for filtering (minimal)
+export interface ScenarioFilterData {
+  id: string;
+  parameterItemIds?: string[];
+  personaId?: string | null;
+}
+
+export interface SimulationPickerProps<
+  T extends SimulationMappingItemExt = SimulationMappingItemExt,
+> extends PopoverProps {
+  simulationMapping: Record<string, T>;
+  validSimulationIds: string[];
+  selectedSimulationIds: string[];
+  onSelect: (ids: string[]) => void;
+  // Data for filtering
+  scenarioFilterData?: ScenarioFilterData[];
+  personaMapping?: Record<string, PersonaMappingItem>;
+  parameterItemMapping?: Record<string, ParameterItemMappingItem>;
+  multiSelect?: boolean;
   label?: string;
   placeholder?: string;
   description?: string;
-  onSelect?: (simulations: Simulation[]) => void;
-  selectedSimulations?: Simulation[];
   hideSelectedChips?: boolean;
-  showOnlyActive?: boolean;
-  showPracticeSimulations?: boolean;
   showLabel?: boolean;
   buttonClassName?: string;
-  singleSelect?: boolean;
 }
 
-export function SimulationPicker({
-  simulations,
-  scenarios = [],
-  parameters = [],
-  parameterItems = [],
-  personas = [],
+export function SimulationPicker<
+  T extends SimulationMappingItemExt = SimulationMappingItemExt,
+>({
+  simulationMapping,
+  validSimulationIds,
+  selectedSimulationIds,
+  onSelect,
+  scenarioFilterData = [],
+  personaMapping = {},
+  parameterItemMapping = {},
+  multiSelect = true,
   label = "Simulations",
   placeholder = "Select simulations...",
   description = "Select one or more simulations to assign to the cohort.",
-  onSelect,
-  selectedSimulations = [],
   hideSelectedChips = true,
-  showOnlyActive = true,
-  showPracticeSimulations = false,
   showLabel = true,
   buttonClassName,
-  singleSelect = false,
   ...props
-}: SimulationPickerProps) {
+}: SimulationPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [peekedSimulation, setPeekedSimulation] = React.useState<
-    Simulation | undefined
-  >(simulations[0]);
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false);
   const [filterPersonaIds, setFilterPersonaIds] = React.useState<string[]>([]);
   const [filterParameterItemIds, setFilterParameterItemIds] = React.useState<
     string[]
   >([]);
 
-  // Filter simulations to show only active ones if requested, and exclude practice simulations unless requested
-  const baseSimulations = (
-    showOnlyActive ? simulations.filter((sim) => sim.active) : simulations
-  ).filter((sim) => showPracticeSimulations || !sim.practiceSimulation);
+  // Build simulations from mapping
+  const baseSimulations = React.useMemo(() => {
+    return validSimulationIds.map((id) => ({
+      id,
+      ...simulationMapping[id],
+    }));
+  }, [validSimulationIds, simulationMapping]);
 
-  // Build lookup maps for scenarios, personaIds, and parameter items per simulation
+  // Build lookup maps for scenarios
   const scenarioById = React.useMemo(() => {
-    const map = new Map<string, (typeof scenarios)[number]>();
-    scenarios.forEach((s) => map.set(s.id, s));
+    const map = new Map<string, ScenarioFilterData>();
+    scenarioFilterData.forEach((s) => map.set(s.id, s));
     return map;
-  }, [scenarios]);
+  }, [scenarioFilterData]);
 
   const simulationToPersonaIds = React.useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -153,39 +153,34 @@ export function SimulationPicker({
       const ids = simulationToPersonaIds.get(sim.id) || new Set<string>();
       ids.forEach((id) => countMap.set(id, (countMap.get(id) || 0) + 1));
     });
-    const byId = new Map(personas.map((p) => [p.id, p.name] as const));
     const rows = Array.from(countMap.entries())
-      .filter(([id]) => byId.has(id))
-      .map(([id, count]) => ({ id, name: byId.get(id)!, count }));
+      .filter(([id]) => personaMapping[id])
+      .map(([id, count]) => ({ 
+        id, 
+        name: personaMapping[id]!.name, 
+        count 
+      }));
     rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     return rows;
-  }, [baseSimulations, simulationToPersonaIds, personas]);
+  }, [baseSimulations, simulationToPersonaIds, personaMapping]);
 
   // Known parameter item options with frequency across all simulations
   const parameterItemOptions = React.useMemo(() => {
-    const itemById = new Map(parameterItems.map((i) => [i.id, i] as const));
-    const paramById = new Map(parameters.map((p) => [p.id, p] as const));
     const countMap = new Map<string, number>();
     baseSimulations.forEach((sim) => {
       const ids = simulationToParameterItemIds.get(sim.id) || new Set<string>();
       ids.forEach((id) => countMap.set(id, (countMap.get(id) || 0) + 1));
     });
     const rows = Array.from(countMap.entries())
-      .filter(([id]) => itemById.has(id))
+      .filter(([id]) => parameterItemMapping[id])
       .map(([id, count]) => {
-        const item = itemById.get(id)!;
-        const param = paramById.get(item.parameterId);
-        const label = param ? `${param.name}: ${item.value}` : item.value;
+        const item = parameterItemMapping[id]!;
+        const label = `${item.parameter_name}: ${item.name}`;
         return { id, label, count };
       });
     rows.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
     return rows;
-  }, [
-    baseSimulations,
-    simulationToParameterItemIds,
-    parameterItems,
-    parameters,
-  ]);
+  }, [baseSimulations, simulationToParameterItemIds, parameterItemMapping]);
 
   // Apply filters
   const filteredSimulations = React.useMemo(() => {

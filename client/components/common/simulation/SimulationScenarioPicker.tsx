@@ -1,6 +1,7 @@
 /**
  * SimulationScenarioPicker.tsx
  * Used to pick scenarios for simulations with parameter badges
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
@@ -42,30 +43,26 @@ import {
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
+import type { MappingItem, ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Parameter, ParameterItem } from "@/types";
 
-export interface SimulationScenario {
-  id: string;
-  title: string | React.ReactNode;
-  description?: string;
-  active: boolean;
-  defaultScenario?: boolean;
-  practiceScenario?: boolean;
+// Extended mapping item for scenarios with parameter item IDs
+export interface ScenarioMappingItemExt extends MappingItem {
   parameterItemIds?: string[];
-  parentId?: string | null;
   updatedAt?: string;
 }
 
-export interface SimulationScenarioPickerProps extends PopoverProps {
-  scenarios: SimulationScenario[];
-  parameters: Parameter[];
-  parameterItems: ParameterItem[];
+export interface SimulationScenarioPickerProps<
+  T extends ScenarioMappingItemExt = ScenarioMappingItemExt,
+> extends PopoverProps {
+  scenarioMapping: Record<string, T>;
+  validScenarioIds: string[];
+  selectedScenarioIds: string[];
+  onSelect: (ids: string[]) => void;
+  parameterItemMapping: Record<string, ParameterItemMappingItem>;
   label?: string;
   placeholder?: string;
   description?: string;
-  onSelect?: (scenarios: SimulationScenario[]) => void;
-  selectedScenarios?: SimulationScenario[];
   hideSelectedChips?: boolean;
   showOnlyActive?: boolean;
   showLabel?: boolean;
@@ -73,26 +70,23 @@ export interface SimulationScenarioPickerProps extends PopoverProps {
   isPracticeSimulation?: boolean;
 }
 
-export function SimulationScenarioPicker({
-  scenarios,
-  parameters,
-  parameterItems,
+export function SimulationScenarioPicker<
+  T extends ScenarioMappingItemExt = ScenarioMappingItemExt,
+>({
+  scenarioMapping,
+  validScenarioIds,
+  selectedScenarioIds,
+  onSelect,
+  parameterItemMapping,
   label = "Scenarios",
   placeholder = "Select scenarios...",
   description = "Select one or more scenarios to assign to the simulation.",
-  onSelect,
-  selectedScenarios = [],
   hideSelectedChips = true,
-  showOnlyActive = true,
   showLabel = true,
   buttonClassName,
-  isPracticeSimulation = false,
   ...props
-}: SimulationScenarioPickerProps) {
+}: SimulationScenarioPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [peekedScenario, setPeekedScenario] = React.useState<
-    SimulationScenario | undefined
-  >(scenarios[0]);
   const [filterPopoverOpen, setFilterPopoverOpen] = React.useState(false);
   const [filterParameterItemIds, setFilterParameterItemIds] = React.useState<
     string[]
@@ -108,17 +102,15 @@ export function SimulationScenarioPicker({
       .map((edge) => edge.childId);
   }, [treeEdges]);
 
-  // Practice mode is now simulation-level only, no filtering needed on scenarios
-  const currentSelection = selectedScenarios;
-
-  // Filter scenarios to show only roots (from scenario_tree), and apply active filter
+  // Build scenarios from mapping and filter to show only roots
   const baseScenarios = React.useMemo(() => {
-    const filtered = (
-      showOnlyActive
-        ? scenarios.filter((scenario) => scenario.active)
-        : scenarios
-    ).filter((scenario) => {
-      // Only show root scenarios (those in tree with self-edge or not in tree at all)
+    const scenarios = validScenarioIds.map((id) => ({
+      id,
+      ...scenarioMapping[id],
+    }));
+
+    // Filter to show only root scenarios
+    const filtered = scenarios.filter((scenario) => {
       // If no tree edges loaded yet, show all scenarios
       if (treeEdges.length === 0) return true;
 
@@ -131,38 +123,14 @@ export function SimulationScenarioPicker({
       return isRoot || !inTree;
     });
 
-    // Sort by updatedAt desc, then title
+    // Sort by updatedAt desc, then name
     return filtered.sort((a, b) => {
       const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       if (bd !== ad) return bd - ad;
-      const at = typeof a.title === "string" ? a.title : "";
-      const bt = typeof b.title === "string" ? b.title : "";
-      return at.localeCompare(bt);
+      return (a.name || "").localeCompare(b.name || "");
     });
-  }, [scenarios, showOnlyActive, treeEdges, rootScenarioIds]);
-
-  // Create a map of parameter items by ID for quick lookup
-  const parameterItemsMap = React.useMemo(() => {
-    return parameterItems.reduce(
-      (acc, item) => {
-        acc[item.id] = item;
-        return acc;
-      },
-      {} as Record<string, ParameterItem>
-    );
-  }, [parameterItems]);
-
-  // Create a map of parameters by ID for quick lookup
-  const parametersMap = React.useMemo(() => {
-    return parameters.reduce(
-      (acc, param) => {
-        acc[param.id] = param;
-        return acc;
-      },
-      {} as Record<string, Parameter>
-    );
-  }, [parameters]);
+  }, [validScenarioIds, scenarioMapping, treeEdges, rootScenarioIds]);
 
   // Build frequency-ranked parameter item options across base scenarios
   const parameterItemOptions = React.useMemo(() => {
@@ -173,16 +141,15 @@ export function SimulationScenarioPicker({
       });
     });
     const rows = Array.from(countMap.entries())
-      .filter(([id]) => Boolean(parameterItemsMap[id]))
+      .filter(([id]) => Boolean(parameterItemMapping[id]))
       .map(([id, count]) => {
-        const item = parameterItemsMap[id]!;
-        const param = parametersMap[item.parameterId];
-        const label = param ? `${param.name}: ${item.value}` : item.value;
+        const item = parameterItemMapping[id]!;
+        const label = `${item.parameter_name}: ${item.name}`;
         return { id, label, count };
       });
     rows.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
     return rows;
-  }, [baseScenarios, parameterItemsMap, parametersMap]);
+  }, [baseScenarios, parameterItemMapping]);
 
   // Apply parameter item filters (all-of) - baseScenarios is already sorted
   const filteredScenarios = React.useMemo(() => {
@@ -193,51 +160,41 @@ export function SimulationScenarioPicker({
     });
   }, [baseScenarios, filterParameterItemIds]);
 
-  const handleSelect = (scenario: SimulationScenario) => {
-    const isSelected = selectedScenarios.some((s) => s.id === scenario.id);
-    let newSelectedScenarios: SimulationScenario[];
+  const [peekedScenario, setPeekedScenario] = React.useState<
+    ({ id: string } & T) | undefined
+  >(filteredScenarios[0] as ({ id: string } & T) | undefined);
 
-    if (isSelected) {
-      // Remove from selection
-      newSelectedScenarios = selectedScenarios.filter(
-        (s) => s.id !== scenario.id
-      );
-    } else {
-      // Add to selection
-      newSelectedScenarios = [...selectedScenarios, scenario];
-    }
-
-    onSelect?.(newSelectedScenarios);
+  const handleSelect = (scenarioId: string) => {
+    const isSelected = selectedScenarioIds.includes(scenarioId);
+    const newIds = isSelected
+      ? selectedScenarioIds.filter((id) => id !== scenarioId)
+      : [...selectedScenarioIds, scenarioId];
+    onSelect(newIds);
     // Don't close popover in multi-select mode
   };
 
   // Allow clearing selection
   const handleClear = () => {
-    onSelect?.([]);
+    onSelect([]);
     setOpen(false);
   };
 
   // Remove individual item
-  const handleRemoveItem = (
-    scenarioToRemove: SimulationScenario,
-    e: React.MouseEvent
-  ) => {
+  const handleRemoveItem = (scenarioId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSelectedScenarios = selectedScenarios.filter(
-      (s) => s.id !== scenarioToRemove.id
-    );
-    onSelect?.(newSelectedScenarios);
+    const newIds = selectedScenarioIds.filter((id) => id !== scenarioId);
+    onSelect(newIds);
   };
 
   const getButtonText = () => {
-    if (currentSelection.length === 0) {
+    if (selectedScenarioIds.length === 0) {
       return placeholder;
     }
-    if (currentSelection.length === 1) {
-      const title = currentSelection[0]!.title;
-      return typeof title === "string" ? title : "Scenario selected";
+    if (selectedScenarioIds.length === 1) {
+      const scenario = scenarioMapping[selectedScenarioIds[0]!];
+      return scenario?.name || placeholder;
     }
-    return `${currentSelection.length} scenarios selected`;
+    return `${selectedScenarioIds.length} scenarios selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -245,7 +202,7 @@ export function SimulationScenarioPicker({
   };
 
   // Helper to render parameter badges in hover (keep for richer preview)
-  const getScenarioParameterBadges = (scenario: SimulationScenario) => {
+  const getScenarioParameterBadges = (scenario: { id: string } & T) => {
     if (!scenario.parameterItemIds || scenario.parameterItemIds.length === 0) {
       return [];
     }
@@ -255,16 +212,13 @@ export function SimulationScenarioPicker({
       parameterId: string;
     }[] = [];
     scenario.parameterItemIds.forEach((parameterItemId) => {
-      const parameterItem = parameterItemsMap[parameterItemId];
+      const parameterItem = parameterItemMapping[parameterItemId];
       if (parameterItem) {
-        const parameter = parametersMap[parameterItem.parameterId];
-        if (parameter && !parameter.numerical) {
-          badges.push({
-            parameterName: parameter.name,
-            value: parameterItem.value,
-            parameterId: parameter.id,
-          });
-        }
+        badges.push({
+          parameterName: parameterItem.parameter_name,
+          value: parameterItem.name,
+          parameterId: parameterItem.parameter_id,
+        });
       }
     });
     return badges;
@@ -288,24 +242,28 @@ export function SimulationScenarioPicker({
       )}
 
       {/* Show selected items */}
-      {currentSelection.length > 0 && !hideSelectedChips && (
+      {selectedScenarioIds.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {currentSelection.map((scenario) => (
-            <div
-              key={scenario.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-            >
-              <span>{scenario.title}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(scenario, e)}
-                className="text-muted-foreground hover:text-destructive"
-                aria-label={`Remove ${typeof scenario.title === "string" ? scenario.title : "scenario"}`}
+          {selectedScenarioIds.map((id) => {
+            const scenario = scenarioMapping[id];
+            if (!scenario) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                <span>{scenario.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove ${scenario.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -332,9 +290,7 @@ export function SimulationScenarioPicker({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {typeof peekedScenario?.title === "string"
-                    ? peekedScenario.title
-                    : "Scenario selected"}
+                  {peekedScenario?.name || "Scenario selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedScenario?.description || "No description available"}
@@ -342,20 +298,6 @@ export function SimulationScenarioPicker({
                 <div className="flex flex-wrap gap-1 mt-2">
                   {peekedScenario && (
                     <>
-                      {peekedScenario.defaultScenario && (
-                        <Badge variant="default" className="text-xs">
-                          Default
-                        </Badge>
-                      )}
-
-                      {peekedScenario.active && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs text-green-600"
-                        >
-                          Active
-                        </Badge>
-                      )}
                       {getScenarioParameterBadges(peekedScenario).map(
                         (badge) => (
                           <TooltipProvider key={badge.parameterId}>
@@ -501,7 +443,7 @@ export function SimulationScenarioPicker({
                 />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {currentSelection.length > 0 && (
+                {selectedScenarioIds.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
@@ -512,21 +454,15 @@ export function SimulationScenarioPicker({
                   </CommandGroup>
                 )}
                 <CommandGroup heading="Scenarios">
-                  {filteredScenarios.map((scenario) => {
-                    const isSelected = selectedScenarios.some(
-                      (s) => s.id === scenario.id
-                    );
-
-                    return (
-                      <ScenarioItem
-                        key={scenario.id}
-                        scenario={scenario}
-                        isSelected={isSelected}
-                        onPeek={(scenario) => setPeekedScenario(scenario)}
-                        onSelect={() => handleSelect(scenario)}
-                      />
-                    );
-                  })}
+                  {filteredScenarios.map((scenario) => (
+                    <ScenarioItem
+                      key={scenario.id}
+                      scenario={scenario as { id: string } & T}
+                      isSelected={selectedScenarioIds.includes(scenario.id)}
+                      onPeek={(s) => setPeekedScenario(s)}
+                      onSelect={() => handleSelect(scenario.id)}
+                    />
+                  ))}
                 </CommandGroup>
               </CommandList>
             </Command>
@@ -537,19 +473,19 @@ export function SimulationScenarioPicker({
   );
 }
 
-interface ScenarioItemProps {
-  scenario: SimulationScenario;
+interface ScenarioItemProps<T extends ScenarioMappingItemExt> {
+  scenario: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (scenario: SimulationScenario) => void;
+  onPeek: (scenario: { id: string } & T) => void;
 }
 
-function ScenarioItem({
+function ScenarioItem<T extends ScenarioMappingItemExt>({
   scenario,
   isSelected,
   onSelect,
   onPeek,
-}: ScenarioItemProps) {
+}: ScenarioItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -575,7 +511,7 @@ function ScenarioItem({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Play className="h-4 w-4 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="truncate">{scenario.title}</div>
+            <div className="truncate">{scenario.name}</div>
             <div className="mt-1 text-xs text-muted-foreground truncate">
               {scenario.description || "No description available"}
             </div>

@@ -1,6 +1,7 @@
 /**
  * ParameterItemPicker.tsx
  * Picker for selecting a single ParameterItem for a given Parameter, with search and create-new flow
+ * Refactored to use mapping-based API pattern
  * 05/20/2025
  */
 "use client";
@@ -11,7 +12,6 @@ import { toast } from "sonner";
 
 import { useCreateParameterItem } from "@/lib/api/v1/hooks/parameter_items";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -36,34 +36,41 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Parameter, ParameterItem } from "@/types";
 import { log } from "@/utils/logger";
 
-export interface ParameterItemPickerProps {
-  parameter: Parameter;
-  items: ParameterItem[];
-  selectedItem?: ParameterItem;
-  onSelect: (parameterItemId: string | null) => void;
+export interface ParameterItemPickerProps<
+  T extends ParameterItemMappingItem = ParameterItemMappingItem,
+> {
+  mapping: Record<string, T>;
+  validIds: string[];
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
+  parameterId: string;
+  parameterName: string;
+  parameterDescription?: string;
   disabled?: boolean;
   allowCreateForDefaultParameters?: boolean;
-  allowCreate?: boolean; // gate creating new items entirely
+  allowCreate?: boolean;
+  isDefaultParameter?: boolean;
 }
 
-export function ParameterItemPicker({
-  parameter,
-  items,
-  selectedItem,
+export function ParameterItemPicker<
+  T extends ParameterItemMappingItem = ParameterItemMappingItem,
+>({
+  mapping,
+  validIds,
+  selectedIds,
   onSelect,
+  parameterId,
+  parameterName,
+  parameterDescription,
   disabled = false,
   allowCreateForDefaultParameters = false,
   allowCreate = true,
-}: ParameterItemPickerProps) {
+  isDefaultParameter = false,
+}: ParameterItemPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -71,7 +78,15 @@ export function ParameterItemPicker({
   const [newDescription, setNewDescription] = useState("");
   const createParameterItemMutation = useCreateParameterItem();
 
-  // Robust multi-term search across name, description, and value
+  // Build items from mapping
+  const items = useMemo(() => {
+    return validIds.map((id) => ({
+      id,
+      ...mapping[id],
+    }));
+  }, [validIds, mapping]);
+
+  // Robust multi-term search across name, description
   const filteredItems = useMemo(() => {
     const tokens = search
       .toLowerCase()
@@ -81,24 +96,24 @@ export function ParameterItemPicker({
     if (tokens.length === 0) return items;
     return items.filter((item) => {
       const haystack =
-        `${item.name} ${item.description ?? ""} ${item.value}`.toLowerCase();
+        `${item.name} ${item.description ?? ""}`.toLowerCase();
       return tokens.every((t) => haystack.includes(t));
     });
   }, [items, search]);
 
-  const handleItemSelect = (item: ParameterItem) => {
-    onSelect(item.id);
+  const handleItemSelect = (itemId: string) => {
+    onSelect([itemId]);
     setOpen(false);
   };
 
   const handleClear = () => {
-    onSelect(null);
+    onSelect([]);
     setOpen(false);
   };
 
   const canOfferCreate =
     allowCreate &&
-    (allowCreateForDefaultParameters || parameter.defaultParameter === false) &&
+    (allowCreateForDefaultParameters || !isDefaultParameter) &&
     search.trim().length > 0 &&
     filteredItems.length === 0;
 
@@ -117,7 +132,7 @@ export function ParameterItemPicker({
     // Enforce uniqueness of value (which equals name) within this parameter
     const proposedValue = newName.trim();
     const duplicate = items.some(
-      (i) => i.value.trim().toLowerCase() === proposedValue.toLowerCase()
+      (i) => i.name?.trim().toLowerCase() === proposedValue.toLowerCase()
     );
     if (duplicate) {
       toast.error("An item with the same value already exists");
@@ -128,20 +143,20 @@ export function ParameterItemPicker({
         name: newName.trim(),
         description: newDescription.trim(),
         value: proposedValue,
-        parameterId: parameter.id,
+        parameterId: parameterId,
       });
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);
       setOpen(false);
-      onSelect((created as ParameterItem).id);
+      onSelect([created.id]);
     } catch (error) {
       log.error("parameter_item.create.failed", {
         message: "Failed to create parameter item",
         error,
         context: {
           component: "ParameterItemPicker",
-          parameterId: parameter.id,
+          parameterId: parameterId,
         },
       });
       toast.error("Failed to create parameter item");
@@ -159,14 +174,14 @@ export function ParameterItemPicker({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label={`Select ${parameter.name}`}
+            aria-label={`Select ${parameterName}`}
             className="w-full justify-between"
             disabled={disabled}
           >
             <span className="truncate">
-              {selectedItem
-                ? selectedItem.name
-                : `Select ${parameter.name.toLowerCase()}`}
+              {selectedIds.length > 0 && mapping[selectedIds[0]!]
+                ? mapping[selectedIds[0]!]!.name
+                : `Select ${parameterName.toLowerCase()}`}
             </span>
             <ChevronsUpDown className="opacity-50" />
           </Button>
@@ -174,7 +189,7 @@ export function ParameterItemPicker({
         <PopoverContent align="end" className="w-[360px] p-0">
           <Command>
             <CommandInput
-              placeholder={`Search ${parameter.name.toLowerCase()}...`}
+              placeholder={`Search ${parameterName.toLowerCase()}...`}
               value={search}
               onValueChange={setSearch}
             />
@@ -183,7 +198,7 @@ export function ParameterItemPicker({
                 <div className="p-3 space-y-2">
                   <div>No items found.</div>
                   <Button size="sm" onClick={openCreateDialog}>
-                    Add “{search.trim()}”
+                    Add "{search.trim()}"
                   </Button>
                 </div>
               </CommandEmpty>
@@ -191,8 +206,8 @@ export function ParameterItemPicker({
               <CommandEmpty>No items found.</CommandEmpty>
             )}
             <CommandList className="max-h-[400px]">
-              <CommandGroup heading={parameter.name}>
-                {selectedItem && (
+              <CommandGroup heading={parameterName}>
+                {selectedIds.length > 0 && (
                   <CommandItem
                     onSelect={handleClear}
                     className="text-muted-foreground"
@@ -203,16 +218,13 @@ export function ParameterItemPicker({
                 {filteredItems
                   .slice()
                   .sort((a, b) => {
-                    if ((a.defaultItem ?? false) !== (b.defaultItem ?? false)) {
-                      return (b.defaultItem ? 1 : 0) - (a.defaultItem ? 1 : 0);
-                    }
-                    return a.name.localeCompare(b.name);
+                    return (a.name || "").localeCompare(b.name || "");
                   })
                   .map((item) => (
                     <CommandItem
                       key={item.id}
-                      onSelect={() => handleItemSelect(item)}
-                      value={`${item.name} ${item.description ?? ""} ${item.value}`}
+                      onSelect={() => handleItemSelect(item.id)}
+                      value={`${item.name} ${item.description ?? ""}`}
                     >
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 min-w-0">
@@ -223,25 +235,10 @@ export function ParameterItemPicker({
                             </div>
                           )}
                         </div>
-                        {!item.defaultItem && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge
-                                variant="secondary"
-                                className="text-xs ml-2 shrink-0"
-                              >
-                                Custom
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Not system approved. Added by a user.
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
                         <Check
                           className={cn(
                             "ml-auto",
-                            selectedItem?.id === item.id
+                            selectedIds.includes(item.id)
                               ? "opacity-100"
                               : "opacity-0"
                           )}
@@ -259,8 +256,8 @@ export function ParameterItemPicker({
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{parameter.name}</DialogTitle>
-            <DialogDescription>{parameter.description}</DialogDescription>
+            <DialogTitle>{parameterName}</DialogTitle>
+            <DialogDescription>{parameterDescription || `Create a new ${parameterName.toLowerCase()} item`}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
@@ -269,7 +266,7 @@ export function ParameterItemPicker({
                 id="new-item-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder={`Name for ${parameter.name.toLowerCase()} option`}
+                placeholder={`Name for ${parameterName.toLowerCase()} option`}
               />
             </div>
             <div className="grid gap-2">

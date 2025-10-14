@@ -57,9 +57,7 @@ export function PracticeCustomizeDialog({
   const [isInfiniteMode, setIsInfiniteMode] = useState(false);
   const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
-  const [selectedPersona, setSelectedPersona] = useState<Persona | undefined>(
-    undefined
-  );
+  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
@@ -95,6 +93,27 @@ export function PracticeCustomizeDialog({
     );
   }, [parameterItems, customParameters]);
 
+  // Build persona mapping for PersonaPicker
+  const personaMapping = useMemo(() => {
+    const mapping: Record<
+      string,
+      { name: string; description: string; color: string; icon: string }
+    > = {};
+    (personas as Persona[]).forEach((p) => {
+      mapping[p.id] = {
+        name: p.name,
+        description: p.description,
+        color: p.color,
+        icon: p.icon,
+      };
+    });
+    return mapping;
+  }, [personas]);
+
+  const validPersonaIds = useMemo(() => {
+    return (personas as Persona[]).filter((p) => p.active).map((p) => p.id);
+  }, [personas]);
+
   const handleStartAttempt = async () => {
     if (isInfiniteMode) {
       if (!selectedSimulationId) {
@@ -111,8 +130,17 @@ export function PracticeCustomizeDialog({
         timeLimit: parseInt(infiniteTimeLimit),
       });
     } else {
-      if (!selectedPersona) {
+      const selectedPersonaId = selectedPersonaIds[0];
+      if (!selectedPersonaId) {
         toast.error("Please select a persona");
+        return;
+      }
+
+      const selectedPersona = (personas as Persona[]).find(
+        (p) => p.id === selectedPersonaId
+      );
+      if (!selectedPersona) {
+        toast.error("Selected persona not found");
         return;
       }
 
@@ -236,9 +264,11 @@ export function PracticeCustomizeDialog({
             <div className="grid gap-6">
               <div className="grid gap-2">
                 <PersonaPicker
-                  personas={personas as Persona[]}
-                  onSelect={(p) => setSelectedPersona(p)}
-                  selectedPersona={selectedPersona}
+                  mapping={personaMapping}
+                  validIds={validPersonaIds}
+                  selectedIds={selectedPersonaIds}
+                  onSelect={setSelectedPersonaIds}
+                  multiSelect={false}
                   label="Persona"
                   description="Choose who you'll practice with."
                 />

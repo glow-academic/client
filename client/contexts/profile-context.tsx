@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useProfile as useProfileQuery } from "@/lib/api/v1/hooks/profiles";
+import { useProfileV2 } from "@/lib/api/v2/hooks/auth";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
@@ -78,10 +78,13 @@ export function ProfileProvider({
     bootstrapProfile?.id ??
     null;
 
-  const { data: effectiveProfile, isLoading: isEffLoading } = useProfileQuery(
+  const { data: profileResponse, isLoading: isEffLoading } = useProfileV2(
     effectiveId || "",
     !!effectiveId && effectiveId !== "guest-profile-id"
   );
+
+  // Extract profile from v2 response format
+  const effectiveProfile = profileResponse?.profile;
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {

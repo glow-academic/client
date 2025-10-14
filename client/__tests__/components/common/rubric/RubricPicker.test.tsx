@@ -1,5 +1,4 @@
-import { render } from "@/test/custom-render";
-import { screen } from "@/test/custom-render";
+import { render, screen } from "@/test/custom-render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -7,15 +6,29 @@ import {
   RubricPicker,
   RubricPickerProps,
 } from "@/components/common/rubric/RubricPicker";
+import type { MappingItem } from "@/lib/api/v2/schemas/base";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
+const mockMapping: Record<string, MappingItem> = {
+  "rubric-1": {
+    name: "Test Rubric 1",
+    description: "Test description",
+  },
+  "rubric-2": {
+    name: "Test Rubric 2",
+    description: "Another description",
+  },
+};
+
 const mockProps: RubricPickerProps = {
-  rubrics: [],
-  // placeholder: 'test-placeholder', /* optional */
-  // selectedRubrics: [], /* optional */
-  // hideSelectedChips: false, /* optional */
+  mapping: mockMapping,
+  validIds: ["rubric-1", "rubric-2"],
+  selectedIds: [],
+  onSelect: () => {},
   // multiSelect: false, /* optional */
+  // placeholder: 'test-placeholder', /* optional */
+  // hideSelectedChips: false, /* optional */
   // open: false, /* optional */
   // defaultOpen: false, /* optional */
   // modal: false, /* optional */
@@ -39,16 +52,11 @@ describe("RubricPicker", () => {
     it("should render with props", () => {
       // Test with different props
       const propsWithRubrics: RubricPickerProps = {
-        rubrics: [
-          { id: "1", name: "Test Rubric 1", description: "Test description" },
-          {
-            id: "2",
-            name: "Test Rubric 2",
-            description: "Another description",
-          },
-        ],
+        mapping: mockMapping,
+        validIds: ["rubric-1", "rubric-2"],
+        selectedIds: [],
+        onSelect: () => {},
         placeholder: "Choose rubrics...",
-        selectedRubrics: [],
         hideSelectedChips: false,
         multiSelect: true,
       };
@@ -91,9 +99,12 @@ describe("RubricPicker", () => {
 
   describe("Edge Cases", () => {
     it("should handle edge cases gracefully", () => {
-      // Test with empty rubrics array
+      // Test with empty mapping and validIds
       const propsWithEmptyRubrics: RubricPickerProps = {
-        rubrics: [],
+        mapping: {},
+        validIds: [],
+        selectedIds: [],
+        onSelect: () => {},
         placeholder: "No rubrics available",
       };
 
@@ -107,7 +118,10 @@ describe("RubricPicker", () => {
     it("should handle missing or invalid props", () => {
       // Test with minimal props
       const minimalProps: RubricPickerProps = {
-        rubrics: [],
+        mapping: {},
+        validIds: [],
+        selectedIds: [],
+        onSelect: () => {},
       };
 
       render(<RubricPicker {...minimalProps} />);

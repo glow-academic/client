@@ -1,6 +1,7 @@
 /**
  * PersonaPicker.tsx
  * Used to pick a persona as part of the scenario
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
@@ -8,7 +9,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Brain, Check, ChevronsUpDown } from "lucide-react";
+import { Brain, Check, ChevronsUpDown, X } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import type { PersonaMappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Persona } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
 // Utility function to generate gradient from hex color
@@ -57,72 +58,94 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
-export interface PersonaPickerProps extends PopoverProps {
-  personas: Persona[];
+export interface PersonaPickerProps<
+  T extends PersonaMappingItem = PersonaMappingItem,
+> extends PopoverProps {
+  mapping: Record<string, T>;
+  validIds: string[];
+  selectedIds: string[];
+  multiSelect?: boolean;
+  onSelect: (ids: string[]) => void;
   label?: string;
   placeholder?: string;
   description?: string;
-  onSelect?: (persona: Persona) => void;
-  selectedPersona?: Persona | undefined;
-  disabled?: boolean; // Disable the picker
+  hideSelectedChips?: boolean;
+  disabled?: boolean;
 }
 
-export function PersonaPicker({
-  personas,
+export function PersonaPicker<
+  T extends PersonaMappingItem = PersonaMappingItem,
+>({
+  mapping,
+  validIds,
+  selectedIds,
+  multiSelect = false,
+  onSelect,
   label = "Persona",
   placeholder = "Select a persona...",
   description = "Choose the persona that will interact with students in this scenario.",
-  onSelect,
-  selectedPersona: externalSelectedPersona,
+  hideSelectedChips = false,
   disabled = false,
   ...props
-}: PersonaPickerProps) {
+}: PersonaPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [internalSelectedPersona, setInternalSelectedPersona] = React.useState<
-    Persona | undefined
-  >(undefined);
-  const [peekedPersona, setPeekedPersona] = React.useState<Persona | undefined>(
-    personas.find((p) => p.active) || personas[0]
-  );
 
-  // Use external selectedPersona if provided, otherwise use internal state
-  const selectedPersona = externalSelectedPersona || internalSelectedPersona;
+  // Build personas from mapping
+  const personas = React.useMemo(() => {
+    return validIds.map((id) => ({
+      id,
+      ...mapping[id],
+    }));
+  }, [validIds, mapping]);
 
-  const handleSelect = (persona: Persona) => {
-    if (!externalSelectedPersona) {
-      setInternalSelectedPersona(persona);
+  const [peekedPersona, setPeekedPersona] = React.useState<
+    ({ id: string } & T) | undefined
+  >(personas[0]);
+
+  const handleSelect = (personaId: string) => {
+    if (multiSelect) {
+      const isSelected = selectedIds.includes(personaId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== personaId)
+        : [...selectedIds, personaId];
+      onSelect(newIds);
+    } else {
+      onSelect([personaId]);
+      setOpen(false);
     }
-    onSelect?.(persona);
-    setOpen(false);
   };
 
   // Allow clearing selection
   const handleClear = () => {
-    if (!externalSelectedPersona) {
-      setInternalSelectedPersona(undefined);
-    }
-    // Call onSelect with a special "clear" persona to indicate clearing
-    onSelect?.({
-      id: "",
-      name: "",
-      description: "",
-      color: "#64748b",
-      icon: "Brain",
-      reasoning: "low",
-      temperature: 50,
-      defaultPersona: false,
-      active: true,
-      createdAt: "",
-      updatedAt: "",
-      systemPrompt: "",
-      modelId: "",
-      departmentId: "",
-    });
+    onSelect([]);
     setOpen(false);
   };
 
+  // Remove individual item in multi-select mode
+  const handleRemoveItem = (personaId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (multiSelect) {
+      const newIds = selectedIds.filter((id) => id !== personaId);
+      onSelect(newIds);
+    }
+  };
+
   const getButtonText = () => {
-    return selectedPersona ? selectedPersona.name : placeholder;
+    if (multiSelect) {
+      if (selectedIds.length === 0) {
+        return placeholder;
+      }
+      if (selectedIds.length === 1) {
+        const persona = mapping[selectedIds[0]!];
+        return persona?.name || placeholder;
+      }
+      return `${selectedIds.length} selected`;
+    }
+    if (selectedIds.length === 0) {
+      return placeholder;
+    }
+    const persona = mapping[selectedIds[0]!];
+    return persona?.name || placeholder;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -143,6 +166,31 @@ export function PersonaPicker({
           {description}
         </HoverCardContent>
       </HoverCard>
+
+      {/* Show selected items in multi-select mode */}
+      {multiSelect && selectedIds.length > 0 && !hideSelectedChips && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {selectedIds.map((id) => {
+            const persona = mapping[id];
+            if (!persona) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+              >
+                <span>{persona.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Popover
         open={disabled ? false : open}
@@ -204,28 +252,26 @@ export function PersonaPicker({
                 <CommandInput placeholder="Search personas..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedPersona && (
+                {selectedIds.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
                       className="text-muted-foreground"
                     >
-                      Clear Selection
+                      Clear {multiSelect ? "All" : "Selection"}
                     </CommandItem>
                   </CommandGroup>
                 )}
                 <CommandGroup heading="Personas">
-                  {personas
-                    .filter((persona) => persona.active)
-                    .map((persona) => (
-                      <PersonaItem
-                        key={persona.id}
-                        persona={persona}
-                        isSelected={selectedPersona?.id === persona.id}
-                        onPeek={(persona) => setPeekedPersona(persona)}
-                        onSelect={() => handleSelect(persona)}
-                      />
-                    ))}
+                  {personas.map((persona) => (
+                    <PersonaItem
+                      key={persona.id}
+                      persona={persona}
+                      isSelected={selectedIds.includes(persona.id)}
+                      onPeek={(persona) => setPeekedPersona(persona)}
+                      onSelect={() => handleSelect(persona.id)}
+                    />
+                  ))}
                 </CommandGroup>
               </CommandList>
             </Command>
@@ -236,19 +282,19 @@ export function PersonaPicker({
   );
 }
 
-interface PersonaItemProps {
-  persona: Persona;
+interface PersonaItemProps<T extends PersonaMappingItem> {
+  persona: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (persona: Persona) => void;
+  onPeek: (persona: { id: string } & T) => void;
 }
 
-function PersonaItem({
+function PersonaItem<T extends PersonaMappingItem>({
   persona,
   isSelected,
   onSelect,
   onPeek,
-}: PersonaItemProps) {
+}: PersonaItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {

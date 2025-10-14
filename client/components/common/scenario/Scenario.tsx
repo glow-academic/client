@@ -217,6 +217,27 @@ export default function Scenario({
   const { data: scenario, isLoading } = useScenario(scenarioId!);
   const { data: departments = [] } = useDepartmentsHook();
 
+  // Build persona mapping for PersonaPicker
+  const personaMapping = useMemo(() => {
+    const mapping: Record<
+      string,
+      { name: string; description: string; color: string; icon: string }
+    > = {};
+    personas.forEach((p: any) => {
+      mapping[p.id] = {
+        name: p.name,
+        description: p.description,
+        color: p.color,
+        icon: p.icon,
+      };
+    });
+    return mapping;
+  }, [personas]);
+
+  const validPersonaIds = useMemo(() => {
+    return personas.filter((p: any) => p.active).map((p: any) => p.id);
+  }, [personas]);
+
   // Load scenario data if editing
   useEffect(() => {
     if (isEditMode && scenario) {
@@ -688,6 +709,16 @@ export default function Scenario({
     (persona) => persona.id === selectedPersonaId
   );
 
+  // Convert selectedPersonaId to selectedPersonaIds array for PersonaPicker
+  const selectedPersonaIds = useMemo(() => {
+    return selectedPersonaId ? [selectedPersonaId] : [];
+  }, [selectedPersonaId]);
+
+  // Handler to convert PersonaPicker output (array) to single ID
+  const handlePersonaSelect = (ids: string[]) => {
+    setSelectedPersonaId(ids[0] || null);
+  };
+
   return (
     <div className="w-full p-6 space-y-8">
       {isReadonly && (
@@ -832,12 +863,14 @@ export default function Scenario({
           </CardHeader>
           <CardContent>
             <PersonaPicker
-              personas={personas}
+              mapping={personaMapping}
+              validIds={validPersonaIds}
+              selectedIds={selectedPersonaIds}
+              onSelect={handlePersonaSelect}
+              multiSelect={false}
               label=""
               placeholder="Select a persona..."
               description="Choose the persona that will interact with students in this scenario."
-              onSelect={(persona) => setSelectedPersonaId(persona.id)}
-              selectedPersona={selectedPersona}
               disabled={isReadonly}
             />
           </CardContent>

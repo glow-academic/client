@@ -1,6 +1,7 @@
 /**
  * ScenarioPicker.tsx
  * Used to pick a certain item as part of the scenario
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
@@ -32,55 +33,61 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Model, ModelType } from "@/utils/scenario";
+import { ModelType } from "@/utils/scenario";
 
-export interface ScenarioPickerProps extends PopoverProps {
+// Extended mapping item for scenarios/models with type grouping
+export interface ScenarioModelMappingItem extends MappingItem {
+  type: ModelType;
+  strengths?: string;
+}
+
+export interface ScenarioPickerProps<
+  T extends ScenarioModelMappingItem = ScenarioModelMappingItem,
+> extends PopoverProps {
   types: readonly ModelType[];
-  models: Model[];
+  mapping: Record<string, T>;
+  validIds: string[];
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
+  multiSelect?: boolean;
   label?: string;
   placeholder?: string;
   description?: string;
-  onSelect?: (model: Model) => void;
-  selectedModel?: Model | undefined;
-  selectedModels?: Model[]; // For multiple selection
-  multiSelect?: boolean; // Enable multiple selection mode
-  onMultiSelect?: (models: Model[]) => void; // Callback for multiple selection
-  hideSelectedChips?: boolean; // Hide the built-in selected chips display
-  disabled?: boolean; // Disable the picker
+  hideSelectedChips?: boolean;
+  disabled?: boolean;
 }
 
-export function ScenarioPicker({
-  models,
+export function ScenarioPicker<
+  T extends ScenarioModelMappingItem = ScenarioModelMappingItem,
+>({
+  mapping,
+  validIds,
+  selectedIds,
+  onSelect,
   types,
+  multiSelect = false,
   label = "Model",
   placeholder = "Select a model...",
   description = "The model which will generate the completion. Some models are suitable for natural language tasks, others specialize in code. Learn more.",
-  onSelect,
-  selectedModel: externalSelectedModel,
-  selectedModels: externalSelectedModels = [],
-  multiSelect = false,
-  onMultiSelect,
   hideSelectedChips = false,
   disabled = false,
   ...props
-}: ScenarioPickerProps) {
+}: ScenarioPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [internalSelectedModel, setInternalSelectedModel] = React.useState<
-    Model | undefined
-  >(undefined);
-  const [internalSelectedModels, setInternalSelectedModels] = React.useState<
-    Model[]
-  >([]);
-  const [peekedModel, setPeekedModel] = React.useState<Model | undefined>(
-    models[0],
-  );
 
-  // Use external selectedModel if provided, otherwise use internal state
-  const selectedModel = externalSelectedModel || internalSelectedModel;
-  const selectedModels = multiSelect
-    ? externalSelectedModels
-    : internalSelectedModels;
+  // Build models from mapping
+  const models = React.useMemo(() => {
+    return validIds.map((id) => ({
+      id,
+      ...mapping[id],
+    }));
+  }, [validIds, mapping]);
+
+  const [peekedModel, setPeekedModel] = React.useState<
+    ({ id: string } & T) | undefined
+  >(models[0] as ({ id: string } & T) | undefined);
 
   // Generate search placeholder based on types
   const getSearchPlaceholder = () => {
@@ -95,75 +102,42 @@ export function ScenarioPicker({
     return `Search ${otherTypes.map((t) => t.toLowerCase()).join(", ")} & ${lastType?.toLowerCase()}...`;
   };
 
-  const handleSelect = (model: Model) => {
+  const handleSelect = (modelId: string) => {
     if (multiSelect) {
-      const isSelected = selectedModels.some((m) => m.id === model.id);
-      let newSelectedModels: Model[];
-
-      if (isSelected) {
-        // Remove from selection
-        newSelectedModels = selectedModels.filter((m) => m.id !== model.id);
-      } else {
-        // Add to selection
-        newSelectedModels = [...selectedModels, model];
-      }
-
-      if (!externalSelectedModels.length) {
-        setInternalSelectedModels(newSelectedModels);
-      }
-      onMultiSelect?.(newSelectedModels);
+      const isSelected = selectedIds.includes(modelId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== modelId)
+        : [...selectedIds, modelId];
+      onSelect(newIds);
       // Don't close popover in multi-select mode
     } else {
-      if (!externalSelectedModel) {
-        setInternalSelectedModel(model);
-      }
-      onSelect?.(model);
+      onSelect([modelId]);
       setOpen(false);
     }
   };
 
   // Allow clearing selection
   const handleClear = () => {
-    if (multiSelect) {
-      if (!externalSelectedModels.length) {
-        setInternalSelectedModels([]);
-      }
-      onMultiSelect?.([]);
-    } else {
-      if (!externalSelectedModel) {
-        setInternalSelectedModel(undefined);
-      }
-      // Call onSelect with a special "clear" model to indicate clearing
-      onSelect?.({ id: "", name: "", description: "", type: types[0]! });
-    }
+    onSelect([]);
     setOpen(false);
   };
 
   // Remove individual item in multi-select mode
-  const handleRemoveItem = (modelToRemove: Model, e: React.MouseEvent) => {
+  const handleRemoveItem = (modelId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (multiSelect) {
-      const newSelectedModels = selectedModels.filter(
-        (m) => m.id !== modelToRemove.id,
-      );
-      if (!externalSelectedModels.length) {
-        setInternalSelectedModels(newSelectedModels);
-      }
-      onMultiSelect?.(newSelectedModels);
-    }
+    const newIds = selectedIds.filter((id) => id !== modelId);
+    onSelect(newIds);
   };
 
   const getButtonText = () => {
-    if (multiSelect) {
-      if (selectedModels.length === 0) {
-        return placeholder;
-      }
-      if (selectedModels.length === 1) {
-        return selectedModels[0]!.name;
-      }
-      return `${selectedModels.length} selected`;
+    if (selectedIds.length === 0) {
+      return placeholder;
     }
-    return selectedModel ? selectedModel.name : placeholder;
+    if (selectedIds.length === 1) {
+      const model = mapping[selectedIds[0]!];
+      return model?.name || placeholder;
+    }
+    return `${selectedIds.length} selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -186,23 +160,27 @@ export function ScenarioPicker({
       </HoverCard>
 
       {/* Show selected items in multi-select mode */}
-      {multiSelect && selectedModels.length > 0 && !hideSelectedChips && (
+      {multiSelect && selectedIds.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {selectedModels.map((model) => (
-            <div
-              key={model.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-            >
-              <span>{model.name}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(model, e)}
-                className="text-muted-foreground hover:text-destructive"
+          {selectedIds.map((id) => {
+            const model = mapping[id];
+            if (!model) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                <span>{model.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -256,8 +234,7 @@ export function ScenarioPicker({
                 <CommandInput placeholder={getSearchPlaceholder()} />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {((multiSelect && selectedModels.length > 0) ||
-                  (!multiSelect && selectedModel)) && (
+                {selectedIds.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
@@ -274,14 +251,10 @@ export function ScenarioPicker({
                       .map((model) => (
                         <ModelItem
                           key={model.id}
-                          model={model}
-                          isSelected={
-                            multiSelect
-                              ? selectedModels.some((m) => m.id === model.id)
-                              : selectedModel?.id === model.id
-                          }
-                          onPeek={(model) => setPeekedModel(model)}
-                          onSelect={() => handleSelect(model)}
+                          model={model as { id: string } & T}
+                          isSelected={selectedIds.includes(model.id)}
+                          onPeek={(m) => setPeekedModel(m)}
+                          onSelect={() => handleSelect(model.id)}
                         />
                       ))}
                   </CommandGroup>
@@ -295,14 +268,19 @@ export function ScenarioPicker({
   );
 }
 
-interface ModelItemProps {
-  model: Model;
+interface ModelItemProps<T extends ScenarioModelMappingItem> {
+  model: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (model: Model) => void;
+  onPeek: (model: { id: string } & T) => void;
 }
 
-function ModelItem({ model, isSelected, onSelect, onPeek }: ModelItemProps) {
+function ModelItem<T extends ScenarioModelMappingItem>({
+  model,
+  isSelected,
+  onSelect,
+  onPeek,
+}: ModelItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {

@@ -1,0 +1,93 @@
+"""Auth V2 API schemas for profile and emulation operations."""
+
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+# ============================================================================
+# PROFILE OPERATIONS
+# ============================================================================
+
+
+class ProfileDetailRequest(BaseModel):
+    """Request to get profile details."""
+
+    profileId: str
+
+
+class ProfileItem(BaseModel):
+    """Profile data item."""
+
+    id: str
+    firstName: str
+    lastName: str
+    alias: str
+    role: str  # 'superadmin' | 'admin' | 'instructional' | 'ta' | 'guest'
+    active: bool
+    viewedIntro: bool
+    viewedChat: bool
+    defaultProfile: bool
+    reqPerDay: Optional[int]
+    lastLogin: str  # ISO datetime
+    lastActive: Optional[str]  # ISO datetime
+    createdAt: str  # ISO datetime
+    updatedAt: str  # ISO datetime
+
+
+class ProfileDetailResponse(BaseModel):
+    """Response containing profile details."""
+
+    profile: ProfileItem
+
+
+class UpdateProfileRequest(BaseModel):
+    """Request to update profile fields."""
+
+    profileId: str
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    role: Optional[str] = None
+    active: Optional[bool] = None
+    viewedIntro: Optional[bool] = None
+    viewedChat: Optional[bool] = None
+    reqPerDay: Optional[int] = None
+
+
+class UpdateProfileResponse(BaseModel):
+    """Response containing updated profile."""
+
+    profile: ProfileItem
+
+
+# ============================================================================
+# EMULATION OPERATIONS
+# ============================================================================
+
+
+class SimulatableProfilesRequest(BaseModel):
+    """Request to get profiles available for emulation."""
+
+    profileId: str
+    departmentIds: List[str]
+
+
+class SimulatableProfilesResponse(BaseModel):
+    """Response containing profiles that can be emulated."""
+
+    profiles: List[ProfileItem]
+
+
+class AuthorizeEmulationRequest(BaseModel):
+    """Request to authorize emulation."""
+
+    requesterProfileId: str
+    targetProfileId: str
+    departmentIds: List[str]
+
+
+class AuthorizeEmulationResponse(BaseModel):
+    """Response indicating if emulation is allowed."""
+
+    allowed: bool
+    reason: Optional[str] = None
+

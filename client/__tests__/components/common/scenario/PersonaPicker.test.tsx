@@ -1,21 +1,41 @@
-import { describe, it } from "vitest";
 import { render } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
+import { describe, it } from "vitest";
 
 // ——————————————————————————————————————————
 import {
   PersonaPicker,
   PersonaPickerProps,
 } from "@/components/common/scenario/PersonaPicker";
+import type { PersonaMappingItem } from "@/lib/api/v2/schemas/base";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
+const mockMapping: Record<string, PersonaMappingItem> = {
+  "persona-1": {
+    name: "Test Persona 1",
+    description: "Test description 1",
+    color: "#64748b",
+    icon: "Brain",
+  },
+  "persona-2": {
+    name: "Test Persona 2",
+    description: "Test description 2",
+    color: "#3b82f6",
+    icon: "User",
+  },
+};
+
 const mockProps: PersonaPickerProps = {
-  personas: [],
+  mapping: mockMapping,
+  validIds: ["persona-1", "persona-2"],
+  selectedIds: [],
+  onSelect: () => {},
+  // multiSelect: false, /* optional */
   // label: 'test-label', /* optional */
   // placeholder: 'test-placeholder', /* optional */
   // description: 'test-description', /* optional */
-  // selectedPersona: 'low', /* optional */
+  // hideSelectedChips: false, /* optional */
   // disabled: false, /* optional */
   // open: false, /* optional */
   // defaultOpen: false, /* optional */

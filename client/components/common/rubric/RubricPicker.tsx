@@ -1,6 +1,7 @@
 /**
  * RubricPicker.tsx
  * Used to pick rubrics for filtering analytics views
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 07/23/2025
  */
@@ -31,80 +32,82 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
-export interface Rubric {
-  id: string;
-  name: string;
-  description?: string;
-  points?: number;
-  active?: boolean;
-}
-
-export interface RubricPickerProps extends PopoverProps {
-  rubrics: Rubric[];
-  placeholder?: string;
-  onSelect?: (rubrics: Rubric[]) => void;
-  selectedRubrics?: Rubric[];
-  hideSelectedChips?: boolean;
+export interface RubricPickerProps<T extends MappingItem = MappingItem>
+  extends PopoverProps {
+  mapping: Record<string, T>;
+  validIds: string[];
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
   multiSelect?: boolean;
+  placeholder?: string;
+  hideSelectedChips?: boolean;
   buttonClassName?: string;
 }
 
-export function RubricPicker({
-  rubrics,
-  placeholder = "Select rubrics...",
+export function RubricPicker<T extends MappingItem = MappingItem>({
+  mapping,
+  validIds,
+  selectedIds,
   onSelect,
-  selectedRubrics = [],
-  hideSelectedChips = true,
   multiSelect = false,
+  placeholder = "Select rubrics...",
+  hideSelectedChips = true,
   buttonClassName,
   ...props
-}: RubricPickerProps) {
+}: RubricPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
-  const [peekedRubric, setPeekedRubric] = React.useState<Rubric | undefined>(
-    rubrics[0],
-  );
 
-  const handleSelect = (rubric: Rubric) => {
+  // Build rubrics from mapping
+  const rubrics = React.useMemo(() => {
+    return validIds.map((id) => ({
+      id,
+      ...mapping[id],
+    }));
+  }, [validIds, mapping]);
+
+  const [peekedRubric, setPeekedRubric] = React.useState<
+    ({ id: string } & T) | undefined
+  >(rubrics[0]);
+
+  const handleSelect = (rubricId: string) => {
     if (multiSelect) {
-      const isSelected = selectedRubrics.some((r) => r.id === rubric.id);
-      let newSelectedRubrics: Rubric[];
-
-      if (isSelected) {
-        // Remove from selection
-        newSelectedRubrics = selectedRubrics.filter((r) => r.id !== rubric.id);
-      } else {
-        // Add to selection
-        newSelectedRubrics = [...selectedRubrics, rubric];
-      }
-
-      onSelect?.(newSelectedRubrics);
+      const isSelected = selectedIds.includes(rubricId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== rubricId)
+        : [...selectedIds, rubricId];
+      onSelect(newIds);
       // Don't close popover in multi-select mode
     } else {
-      // Single select mode
-      onSelect?.([rubric]);
+      onSelect([rubricId]);
       setOpen(false);
     }
   };
 
+  // Allow clearing selection
+  const handleClear = () => {
+    onSelect([]);
+    setOpen(false);
+  };
+
   // Remove individual item
-  const handleRemoveItem = (rubricToRemove: Rubric, e: React.MouseEvent) => {
+  const handleRemoveItem = (rubricId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSelectedRubrics = selectedRubrics.filter(
-      (r) => r.id !== rubricToRemove.id,
-    );
-    onSelect?.(newSelectedRubrics);
+    const newIds = selectedIds.filter((id) => id !== rubricId);
+    onSelect(newIds);
   };
 
   const getButtonText = () => {
-    if (selectedRubrics.length === 0) {
+    if (selectedIds.length === 0) {
       return placeholder;
     }
-    if (selectedRubrics.length === 1) {
-      return selectedRubrics[0]!.name;
+    if (selectedIds.length === 1) {
+      const rubric = mapping[selectedIds[0]!];
+      return rubric?.name || placeholder;
     }
-    return `${selectedRubrics.length} rubrics selected`;
+    return `${selectedIds.length} rubrics selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -114,23 +117,27 @@ export function RubricPicker({
   return (
     <div>
       {/* Show selected items */}
-      {selectedRubrics.length > 0 && !hideSelectedChips && (
+      {selectedIds.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {selectedRubrics.map((rubric) => (
-            <div
-              key={rubric.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
-            >
-              <span className="truncate">{rubric.name}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(rubric, e)}
-                className="text-muted-foreground hover:text-destructive flex-shrink-0"
+          {selectedIds.map((id) => {
+            const rubric = mapping[id];
+            if (!rubric) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                <span className="truncate">{rubric.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -163,16 +170,6 @@ export function RubricPicker({
                 <div className="text-sm text-muted-foreground">
                   {peekedRubric?.description || "No description available"}
                 </div>
-                {peekedRubric?.points !== undefined && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {peekedRubric.points} points
-                  </div>
-                )}
-                {peekedRubric?.active !== undefined && (
-                  <div className="text-sm text-muted-foreground">
-                    Status: {peekedRubric.active ? "Active" : "Inactive"}
-                  </div>
-                )}
               </div>
             </HoverCardContent>
             <Command loop>
@@ -180,17 +177,24 @@ export function RubricPicker({
                 <CommandInput placeholder="Search rubrics..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-
+                {selectedIds.length > 0 && (
+                  <CommandGroup heading="Actions">
+                    <CommandItem
+                      onSelect={handleClear}
+                      className="text-muted-foreground"
+                    >
+                      Clear {multiSelect ? "All" : "Selection"}
+                    </CommandItem>
+                  </CommandGroup>
+                )}
                 <CommandGroup heading="Rubrics">
                   {rubrics.map((rubric) => (
                     <RubricItem
                       key={rubric.id}
                       rubric={rubric}
-                      isSelected={selectedRubrics.some(
-                        (r) => r.id === rubric.id,
-                      )}
+                      isSelected={selectedIds.includes(rubric.id)}
                       onPeek={(rubric) => setPeekedRubric(rubric)}
-                      onSelect={() => handleSelect(rubric)}
+                      onSelect={() => handleSelect(rubric.id)}
                     />
                   ))}
                 </CommandGroup>
@@ -203,14 +207,19 @@ export function RubricPicker({
   );
 }
 
-interface RubricItemProps {
-  rubric: Rubric;
+interface RubricItemProps<T extends MappingItem> {
+  rubric: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (rubric: Rubric) => void;
+  onPeek: (rubric: { id: string } & T) => void;
 }
 
-function RubricItem({ rubric, isSelected, onSelect, onPeek }: RubricItemProps) {
+function RubricItem<T extends MappingItem>({
+  rubric,
+  isSelected,
+  onSelect,
+  onPeek,
+}: RubricItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -236,9 +245,9 @@ function RubricItem({ rubric, isSelected, onSelect, onPeek }: RubricItemProps) {
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
             <div className="truncate">{rubric.name}</div>
-            {rubric.points && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {rubric.points} points
+            {rubric.description && (
+              <div className="text-xs text-muted-foreground mt-1 truncate">
+                {rubric.description}
               </div>
             )}
           </div>
@@ -246,7 +255,7 @@ function RubricItem({ rubric, isSelected, onSelect, onPeek }: RubricItemProps) {
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

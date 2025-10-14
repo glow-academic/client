@@ -2,6 +2,7 @@
 
 from app.api.v2.agents import router as agents_router
 from app.api.v2.analytics.router import router as analytics_router
+from app.api.v2.auth import router as auth_router
 from app.api.v2.cohorts import router as cohorts_router
 from app.api.v2.departments import router as departments_router
 from app.api.v2.documents import router as documents_router
@@ -18,6 +19,9 @@ from fastapi import APIRouter
 
 # Create main v2 router
 router = APIRouter(prefix="/api/v2")
+
+# Include auth router
+router.include_router(auth_router)
 
 # Include analytics router
 router.include_router(analytics_router)
