@@ -15,6 +15,7 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonaItem, PersonasFilters,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
+from app.services.scenario_service import ScenarioService
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ class PersonaService:
         """Initialize service with database session."""
         self.db = db
         self.queries = PersonaQueries()
+        self.scenario_service = ScenarioService(db)
 
     def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list with permissions and scenario details using dynamic SQL."""
@@ -71,18 +73,13 @@ class PersonaService:
                     description=getattr(row, 'model_description', '') or ''
                 )
 
-        # Get scenario names for mapping
+        # Get scenario mapping with enhanced data
         if scenario_ids_to_fetch := list(
             set([sid for p in personas for sid in p.scenario_ids])
         ):
-            query, params = self.queries.get_scenario_mapping(scenario_ids_to_fetch)
-            scenario_result = self.db.execute(text(query), params).fetchall()
-
-            for row in scenario_result:
-                scenario_mapping[str(row.id)] = ScenarioMappingItem(
-                    name=row.name,
-                    description=row.problem_statement
-                )
+            scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(
+                scenario_ids_to_fetch
+            )
 
         return PersonasListResponse(
             personas=personas,

@@ -6,7 +6,7 @@ from app.queries.scenario_queries import ScenarioQueries
 from app.schemas.base import (CohortMappingItem, DocumentMappingItem,
                               ObjectiveMappingItem, ParameterItemMappingItem,
                               ParameterMappingItem, PersonaMappingItem,
-                              SimulationMappingItem)
+                              ScenarioMappingItem, SimulationMappingItem)
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
