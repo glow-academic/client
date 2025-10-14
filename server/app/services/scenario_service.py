@@ -31,6 +31,118 @@ class ScenarioService:
         self.db = db
         self.queries = ScenarioQueries()
 
+    def build_enhanced_scenario_mapping(
+        self, scenario_ids: List[str]
+    ) -> Dict[str, ScenarioMappingItem]:
+        """Build enhanced scenario mapping with nested persona, document, and parameter data."""
+        if not scenario_ids:
+            return {}
+
+        # Get base scenario data with persona_id and parameter_item_ids
+        query, params = self.queries.get_enhanced_scenario_mapping(scenario_ids)
+        scenario_result = self.db.execute(text(query), params).fetchall()
+
+        # Collect all IDs we need to fetch
+        all_persona_ids = list(set([str(row.persona_id) for row in scenario_result if row.persona_id]))
+        all_parameter_item_ids = list(set([
+            str(pid) for row in scenario_result 
+            for pid in (row.parameter_item_ids or [])
+        ]))
+
+        # Get document IDs for each scenario
+        scenario_document_map: Dict[str, List[str]] = {}
+        if scenario_ids:
+            doc_query = text("""
+            SELECT scenario_id, ARRAY_AGG(document_id) as document_ids
+            FROM scenario_documents
+            WHERE scenario_id = ANY(:scenario_ids) AND active = true
+            GROUP BY scenario_id
+            """)
+            doc_result = self.db.execute(doc_query, {"scenario_ids": scenario_ids}).fetchall()
+            for row in doc_result:
+                scenario_document_map[str(row.scenario_id)] = [str(did) for did in (row.document_ids or [])]
+
+        all_document_ids = list(set([
+            did for doc_ids in scenario_document_map.values() for did in doc_ids
+        ]))
+
+        # Fetch persona mapping
+        persona_mapping = {}
+        if all_persona_ids:
+            query, params = self.queries.get_persona_mapping(all_persona_ids)
+            persona_result = self.db.execute(text(query), params).fetchall()
+            for row in persona_result:
+                persona_mapping[str(row.id)] = PersonaMappingItem(
+                    name=row.name,
+                    description=row.description or '',
+                    color=row.color,
+                    icon=row.icon
+                )
+
+        # Fetch document mapping
+        document_mapping = {}
+        if all_document_ids:
+            doc_mapping_query = text("""
+            SELECT id, name, COALESCE(type, '') as description
+            FROM documents
+            WHERE id = ANY(:document_ids)
+            """)
+            doc_mapping_result = self.db.execute(
+                doc_mapping_query, {"document_ids": all_document_ids}
+            ).fetchall()
+            for row in doc_mapping_result:
+                document_mapping[str(row.id)] = DocumentMappingItem(
+                    name=row.name,
+                    description=row.description
+                )
+
+        # Fetch parameter_item mapping
+        parameter_item_mapping = {}
+        if all_parameter_item_ids:
+            query, params = self.queries.get_parameter_item_mapping(all_parameter_item_ids)
+            param_item_result = self.db.execute(text(query), params).fetchall()
+            for row in param_item_result:
+                parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
+                    name=row.name,
+                    description=row.description or '',
+                    parameter_id=str(row.parameter_id),
+                    parameter_name=row.parameter_name
+                )
+
+        # Build the final mapping
+        enhanced_mapping = {}
+        for row in scenario_result:
+            scenario_id = str(row.scenario_id)
+            parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
+            document_ids = scenario_document_map.get(scenario_id, [])
+
+            # Filter mappings to only include relevant items for this scenario
+            scenario_persona_mapping = {}
+            if row.persona_id:
+                persona_id_str = str(row.persona_id)
+                if persona_id_str in persona_mapping:
+                    scenario_persona_mapping[persona_id_str] = persona_mapping[persona_id_str]
+
+            scenario_document_mapping = {
+                did: document_mapping[did] for did in document_ids if did in document_mapping
+            }
+
+            scenario_parameter_item_mapping = {
+                pid: parameter_item_mapping[pid] for pid in parameter_item_ids if pid in parameter_item_mapping
+            }
+
+            enhanced_mapping[scenario_id] = ScenarioMappingItem(
+                name=row.name,
+                description=row.description,
+                persona_id=str(row.persona_id) if row.persona_id else None,
+                persona_mapping=scenario_persona_mapping,
+                document_mapping=scenario_document_mapping,
+                parameter_item_mapping=scenario_parameter_item_mapping,
+                parameter_item_ids=parameter_item_ids
+            )
+
+        return enhanced_mapping
+
     def get_scenarios_list(
         self, filters: ScenariosFilters
     ) -> ScenariosListResponse:

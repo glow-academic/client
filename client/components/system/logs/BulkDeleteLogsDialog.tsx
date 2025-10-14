@@ -15,7 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { useDeleteAppLogs } from "@/lib/api/v1/hooks/app_logs";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
 
 export interface BulkDeleteLogsDialogProps {
@@ -67,7 +66,7 @@ export function BulkDeleteLogsDialog({
     setIsDeleting(true);
     try {
       await deleteLogsMutation.mutateAsync({
-        logIds: logsToDelete.map((log) => log.log_id),
+        ids: logsToDelete.map((log) => log.log_id),
       });
 
       // Show success toast and close dialog only after successful deletion

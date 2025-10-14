@@ -531,3 +531,26 @@ class ScenarioQueries:
         params = {"scenario_id": scenario_id}
         return (query, params)
 
+    def get_enhanced_scenario_mapping(
+        self, scenario_ids: List[str]
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Build query for enhanced scenario mapping with nested data."""
+        query = """
+        SELECT 
+            s.id as scenario_id,
+            s.name,
+            s.problem_statement as description,
+            sp.persona_id,
+            COALESCE(
+                (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
+                 FROM scenario_parameter_items spi
+                 WHERE spi.scenario_id = s.id AND spi.active = true),
+                ARRAY[]::uuid[]
+            ) as parameter_item_ids
+        FROM scenarios s
+        LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+        WHERE s.id = ANY(:scenario_ids)
+        """
+        params = {"scenario_ids": scenario_ids}
+        return (query, params)
+

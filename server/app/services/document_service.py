@@ -16,6 +16,7 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    DocumentsFilters, DocumentsListResponse,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
+from app.services.scenario_service import ScenarioService
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -27,6 +28,7 @@ class DocumentService:
         """Initialize service with database session."""
         self.db = db
         self.queries = DocumentQueries()
+        self.scenario_service = ScenarioService(db)
 
     def get_documents_list(
         self, filters: DocumentsFilters
@@ -67,18 +69,13 @@ class DocumentService:
                 )
             )
 
-        # Get scenario names for mapping
+        # Get scenario mapping with enhanced data
         if scenario_ids_to_fetch := list(
             set([sid for d in documents for sid in d.scenario_ids])
         ):
-            query, params = self.queries.get_scenario_mapping(scenario_ids_to_fetch)
-            scenario_result = self.db.execute(text(query), params).fetchall()
-
-            for row in scenario_result:
-                scenario_mapping[str(row.id)] = ScenarioMappingItem(
-                    name=row.name,
-                    description=getattr(row, 'problem_statement', row.name)
-                )
+            scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(
+                scenario_ids_to_fetch
+            )
 
         # Build parameter_item_mapping (all items as valid options for now)
         # TODO: Query document_parameter_items junction table for specific items per document
@@ -86,7 +83,9 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                COALESCE(pi.description, '') as description
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
@@ -98,7 +97,9 @@ class DocumentService:
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                description=row.description or ''
+                description=row.description or '',
+                parameter_id=str(row.parameter_id),
+                parameter_name=row.parameter_name
             )
             for row in param_results
         }
@@ -167,7 +168,9 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                COALESCE(pi.description, '') as description
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE pi.id = ANY(:param_item_ids)
@@ -179,7 +182,9 @@ class DocumentService:
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                description=row.description
+                description=row.description,
+                parameter_id=str(row.parameter_id),
+                parameter_name=row.parameter_name
             )
             for row in param_mapping_result
         }
@@ -291,7 +296,9 @@ class DocumentService:
             SELECT 
                 pi.id,
                 pi.name,
-                COALESCE(pi.description, '') as description
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
             WHERE pi.id = ANY(:param_item_ids)
@@ -303,7 +310,9 @@ class DocumentService:
         parameter_item_mapping = {
             str(row.id): ParameterItemMappingItem(
                 name=row.name,
-                description=row.description
+                description=row.description,
+                parameter_id=str(row.parameter_id),
+                parameter_name=row.parameter_name
             )
             for row in param_mapping_result
         }

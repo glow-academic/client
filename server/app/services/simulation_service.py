@@ -18,6 +18,7 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      SimulationsListResponse,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
+from app.services.scenario_service import ScenarioService
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -29,6 +30,7 @@ class SimulationService:
         """Initialize service with database session."""
         self.db = db
         self.queries = SimulationQueries()
+        self.scenario_service = ScenarioService(db)
 
     def get_simulations_list(
         self, filters: SimulationsFilters
@@ -69,18 +71,13 @@ class SimulationService:
                 )
             )
 
-        # Get scenario names for mapping
+        # Get scenario mapping with enhanced data
         if scenario_ids_to_fetch := list(
             set([sid for s in simulations for sid in s.scenario_ids])
         ):
-            query, params = self.queries.get_scenario_mapping(scenario_ids_to_fetch)
-            scenario_result = self.db.execute(text(query), params).fetchall()
-
-            for row in scenario_result:
-                scenario_mapping[str(row.id)] = ScenarioMappingItem(
-                    name=row.name,
-                    description=row.problem_statement
-                )
+            scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(
+                scenario_ids_to_fetch
+            )
 
         # Get rubric names for mapping
         if rubric_ids_to_fetch := list(
@@ -140,16 +137,8 @@ class SimulationService:
             for row in rubrics_result
         }
 
-        # Get scenario mapping
-        if scenario_ids:
-            query, params = self.queries.get_scenario_mapping(scenario_ids)
-            scenario_mapping_result = self.db.execute(text(query), params).fetchall()
-            scenario_mapping = {
-                str(row.id): ScenarioMappingItem(name=row.name, description=row.problem_statement)
-                for row in scenario_mapping_result
-            }
-        else:
-            scenario_mapping = {}
+        # Get scenario mapping with enhanced data
+        scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(scenario_ids) if scenario_ids else {}
 
         # Get department mapping
         department_mapping = {
