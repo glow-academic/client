@@ -23,31 +23,32 @@ import {
 } from "@/components/ui/table";
 import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/v1/hooks/simulation_chat_feedbacks";
 import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/v1/hooks/simulation_chat_grades";
-import { useStandardGroupsByRubricId } from "@/lib/api/v1/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
-import { Standard, StandardGroup } from "@/types";
+import type {
+  StandardGroupMappingItem,
+  StandardMappingItem,
+} from "@/lib/api/v2/schemas/rubrics";
 
 export interface TableRubricProps {
-  rubricId: string;
+  // Core rubric structure (from V2 API)
+  standardGroups: Record<string, string[]>; // group_id -> [standard_ids]
+  standardGroupsMapping: Record<string, StandardGroupMappingItem>;
+  standardsMapping: Record<string, StandardMappingItem>;
+
+  // Optional: for grading view (AttemptChat, future use)
   simulationChatId?: string;
 }
 
 export default function TableRubric({
-  rubricId,
+  standardGroups,
+  standardGroupsMapping,
+  standardsMapping,
   simulationChatId,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>()
   );
 
-  const { data: standardGroups, isLoading: loadingStandardGroups } =
-    useStandardGroupsByRubricId(rubricId || "");
-
-  const { data: standards, isLoading: loadingStandards } =
-    useStandardsByStandardGroupIdBatch(
-      standardGroups?.map((group) => group.id) || []
-    );
-
+  // Only fetch grading data if simulationChatId is provided
   const { data: simulationGrades, isLoading: loadingSimulationGrades } =
     useSimulationChatGradesBySimulationChatId(simulationChatId || "");
 
@@ -75,15 +76,15 @@ export default function TableRubric({
 
   // Helper function to determine if a standard was achieved
   const isStandardAchieved = (
-    standard: Standard,
-    groupStandards: Standard[]
+    standardId: string,
+    groupStandardIds: string[]
   ) => {
-    const feedback = getFeedbackForStandard(standard.id);
+    const feedback = getFeedbackForStandard(standardId);
     if (!feedback) return false;
 
     // Find the highest achieved standard in this group
-    const groupFeedbacks = groupStandards
-      .map((s) => getFeedbackForStandard(s.id))
+    const groupFeedbacks = groupStandardIds
+      .map((id) => getFeedbackForStandard(id))
       .filter(Boolean);
 
     if (groupFeedbacks.length === 0) return false;
@@ -93,35 +94,37 @@ export default function TableRubric({
   };
 
   // Helper function to determine if a standard has been passed based on pass points
-  const isStandardPassed = (standard: Standard, group: StandardGroup) => {
-    const feedback = getFeedbackForStandard(standard.id);
+  const isStandardPassed = (standardId: string, groupPassPoints: number) => {
+    const feedback = getFeedbackForStandard(standardId);
     if (!feedback) return false;
 
     // Check if the feedback total meets or exceeds the pass points for this group
-    return feedback.total >= group.passPoints;
+    return feedback.total >= groupPassPoints;
   };
 
   // Helper function to determine if a standard should be highlighted (achieved or below achieved)
-  const shouldHighlight = (standard: Standard, groupStandards: Standard[]) => {
-    const feedback = getFeedbackForStandard(standard.id);
+  const shouldHighlight = (
+    standardId: string,
+    standardPoints: number,
+    groupStandardIds: string[]
+  ) => {
+    const feedback = getFeedbackForStandard(standardId);
     if (!feedback) return false;
 
     // Find the achieved standard in this group
-    const achievedStandard = groupStandards.find((s) =>
-      isStandardAchieved(s, groupStandards)
+    const achievedStandardId = groupStandardIds.find((id) =>
+      isStandardAchieved(id, groupStandardIds)
     );
+    if (!achievedStandardId) return false;
+
+    const achievedStandard = standardsMapping[achievedStandardId];
     if (!achievedStandard) return false;
 
     // Highlight if this standard's points are <= achieved standard's points
-    return standard.points <= achievedStandard.points;
+    return standardPoints <= achievedStandard.points;
   };
 
-  if (
-    loadingStandardGroups ||
-    loadingStandards ||
-    loadingSimulationGrades ||
-    loadingSimulationFeedbacks
-  ) {
+  if (loadingSimulationGrades || loadingSimulationFeedbacks) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center space-y-2">
@@ -132,21 +135,27 @@ export default function TableRubric({
     );
   }
 
-  // Group standards by standard group
-  const groupedStandards =
-    standardGroups?.map((group: StandardGroup) => ({
-      group,
-      standards:
-        standards
-          ?.filter(
-            (standard: Standard) => standard.standardGroupId === group.id
-          )
-          ?.sort((a, b) => b.points - a.points) || [], // Sort by points descending (Level 5 to Level 1)
-    })) || [];
+  // Group standards by standard group using props data
+  const groupedStandards = Object.entries(standardGroups).map(
+    ([groupId, standardIds]) => {
+      const groupInfo = standardGroupsMapping[groupId];
+      return {
+        groupId,
+        groupInfo,
+        standardIds: standardIds.sort((a, b) => {
+          // Sort by points descending (Level 5 to Level 1)
+          const aPoints = standardsMapping[a]?.points || 0;
+          const bPoints = standardsMapping[b]?.points || 0;
+          return bPoints - aPoints;
+        }),
+      };
+    }
+  );
 
   // Determine the maximum number of standards across all groups for consistent column count
   const maxStandards = Math.max(
-    ...groupedStandards.map((g) => g.standards.length)
+    ...groupedStandards.map((g) => g.standardIds.length),
+    0
   );
 
   return (
@@ -161,23 +170,31 @@ export default function TableRubric({
               >
                 Criteria
               </TableHead>
-              {Array.from({ length: maxStandards }, (_, i) => (
-                <TableHead
-                  key={i}
-                  className="bg-primary text-primary-foreground font-semibold text-xs px-2"
-                  style={{ width: `${(100 - 20) / maxStandards}%` }}
-                >
-                  {groupedStandards[0]?.standards[i]?.name} (
-                  {groupedStandards[0]?.standards[i]?.points})
-                </TableHead>
-              ))}
+              {Array.from({ length: maxStandards }, (_, i) => {
+                const firstGroupStandardId =
+                  groupedStandards[0]?.standardIds[i];
+                const standardInfo = firstGroupStandardId
+                  ? standardsMapping[firstGroupStandardId]
+                  : null;
+                return (
+                  <TableHead
+                    key={i}
+                    className="bg-primary text-primary-foreground font-semibold text-xs px-2"
+                    style={{ width: `${(100 - 20) / maxStandards}%` }}
+                  >
+                    {standardInfo
+                      ? `${standardInfo.name} (${standardInfo.points})`
+                      : ""}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
             {groupedStandards.map(
-              ({ group, standards: groupStandards }, groupIndex) => (
+              ({ groupId, groupInfo, standardIds }, groupIndex) => (
                 <TableRow
-                  key={group.id}
+                  key={groupId}
                   className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}
                 >
                   <TableCell
@@ -187,7 +204,7 @@ export default function TableRubric({
                     <HoverCard openDelay={200} closeDelay={150}>
                       <HoverCardTrigger asChild>
                         <div className="break-words whitespace-normal overflow-hidden cursor-pointer px-2 py-1 rounded-sm hover:bg-accent/40">
-                          {group.name}
+                          {groupInfo?.name || "Unknown Group"}
                         </div>
                       </HoverCardTrigger>
                       <HoverCardContent side="right" className="w-80">
@@ -195,20 +212,21 @@ export default function TableRubric({
                           <div className="text-xs font-semibold">
                             Standards in this group
                           </div>
-                          {groupStandards.length === 0 ? (
+                          {standardIds.length === 0 ? (
                             <div className="text-xs text-muted-foreground">
                               No standards in this group.
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 gap-1">
-                              {groupStandards.map((s) => {
+                              {standardIds.map((standardId) => {
+                                const standardInfo = standardsMapping[standardId];
                                 const isAchievedForS = isStandardAchieved(
-                                  s,
-                                  groupStandards
+                                  standardId,
+                                  standardIds
                                 );
                                 return (
                                   <div
-                                    key={s.id}
+                                    key={standardId}
                                     className="flex items-center justify-between text-xs"
                                   >
                                     <span
@@ -218,7 +236,8 @@ export default function TableRubric({
                                           : "text-muted-foreground"
                                       }
                                     >
-                                      {s.name} ({s.points})
+                                      {standardInfo?.name || "Unknown"} (
+                                      {standardInfo?.points || 0})
                                     </span>
                                   </div>
                                 );
@@ -230,8 +249,8 @@ export default function TableRubric({
                     </HoverCard>
                   </TableCell>
                   {Array.from({ length: maxStandards }, (_, standardIndex) => {
-                    const standard = groupStandards[standardIndex];
-                    if (!standard) {
+                    const standardId = standardIds[standardIndex];
+                    if (!standardId) {
                       return (
                         <TableCell
                           key={standardIndex}
@@ -240,23 +259,34 @@ export default function TableRubric({
                       );
                     }
 
-                    const feedback = getFeedbackForStandard(standard.id);
-                    const isAchieved = isStandardAchieved(
-                      standard,
-                      groupStandards
+                    const standardInfo = standardsMapping[standardId];
+                    if (!standardInfo) {
+                      return (
+                        <TableCell
+                          key={standardIndex}
+                          className="whitespace-normal text-xs align-top p-2"
+                        ></TableCell>
+                      );
+                    }
+
+                    const feedback = getFeedbackForStandard(standardId);
+                    const isAchieved = isStandardAchieved(standardId, standardIds);
+                    const isPassed = isStandardPassed(
+                      standardId,
+                      groupInfo?.passPoints || 0
                     );
-                    const isPassed = isStandardPassed(standard, group);
                     const shouldHighlightCell = shouldHighlight(
-                      standard,
-                      groupStandards
+                      standardId,
+                      standardInfo.points,
+                      standardIds
                     );
 
                     return (
                       <TableCell
-                        key={standard.id}
+                        key={standardId}
                         className={`whitespace-normal text-xs relative align-top p-2 ${
                           // If flipped on an achieved cell, force white background to show the standard cleanly
-                          isAchieved && flippedCells.has(standard.id)
+                          isAchieved && flippedCells.has(standardId)
                             ? "bg-white dark:bg-white/10"
                             : shouldHighlightCell
                               ? isPassed
@@ -281,9 +311,8 @@ export default function TableRubric({
                             if (isAchieved) {
                               setFlippedCells((prev) => {
                                 const next = new Set(prev);
-                                if (next.has(standard.id))
-                                  next.delete(standard.id);
-                                else next.add(standard.id);
+                                if (next.has(standardId)) next.delete(standardId);
+                                else next.add(standardId);
                                 return next;
                               });
                             }
@@ -293,9 +322,8 @@ export default function TableRubric({
                           if (isAchieved) {
                             setFlippedCells((prev) => {
                               const next = new Set(prev);
-                              if (next.has(standard.id))
-                                next.delete(standard.id);
-                              else next.add(standard.id);
+                              if (next.has(standardId)) next.delete(standardId);
+                              else next.add(standardId);
                               return next;
                             });
                             return;
@@ -304,7 +332,7 @@ export default function TableRubric({
                       >
                         {(() => {
                           const isFlippable = isAchieved; // flip only on achieved cell
-                          const isFlipped = flippedCells.has(standard.id);
+                          const isFlipped = flippedCells.has(standardId);
 
                           /* If we're ABOUT to show the back (isFlipped true), spin forward (+1).
                              If we're ABOUT to show the front (isFlipped false), spin backward (-1). */
@@ -312,12 +340,12 @@ export default function TableRubric({
 
                           const frontContent = (
                             <div className="text-xs leading-tight">
-                              {feedback?.feedback || standard.description}
+                              {feedback?.feedback || standardInfo.description}
                             </div>
                           );
                           const backContent = (
                             <div className="text-xs leading-tight">
-                              {standard.description}
+                              {standardInfo.description}
                             </div>
                           );
 

@@ -6,12 +6,10 @@
  */
 "use client";
 import { log } from "@/utils/logger";
-import { Copy, Edit, Eye, FileCheck, Star, Trash2 } from "lucide-react";
+import { Copy, Edit, Eye, FileCheck, Loader2, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-
-import { duplicateRubric } from "@/utils/rubric/duplicate-rubric";
 
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
@@ -24,18 +22,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useRubricColumns } from "@/hooks/use-rubric-columns";
 import {
   useDeleteRubric,
-  useRubricsByDepartmentIdBatch,
-} from "@/lib/api/v1/hooks/rubrics";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
-import { Rubric } from "@/types";
+  useDuplicateRubric,
+  useRubricsList,
+} from "@/lib/api/v2/hooks/rubrics";
+import type { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import { RubricsDataTable } from "./RubricsDataTable";
 
 export default function Rubrics() {
@@ -52,44 +48,34 @@ export default function Rubrics() {
 
   // Mutation hooks
   const deleteRubricMutation = useDeleteRubric();
+  const duplicateRubricMutation = useDuplicateRubric();
 
-  const { data: rubrics = [], isLoading: isRubricsLoading } =
-    useRubricsByDepartmentIdBatch(effectiveDepartmentIds);
-
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // V2 API: Single fetch with hierarchical data and permissions
+  const filters = useMemo(
+    () => ({
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    }),
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
-  // Check if a rubric is being used by any simulations
-  const isRubricInUse = (rubricId: string) => {
-    return simulations.some((sim) => sim.rubricId === rubricId);
-  };
-
-  // Only superadmin can edit default rubrics; others can edit non-default if admin/superadmin or not in use
-  const canEditRubric = (rubric: Rubric) => {
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-    if (rubric.defaultRubric) {
-      return effectiveProfile?.role === "superadmin";
-    }
-    return isAdmin || !isRubricInUse(rubric.id);
-  };
-
-  // Get table columns and filter options
-  const {
-    columns,
-    passPointsOptions,
-    totalPointsOptions,
-    passPercentageOptions,
-  } = useRubricColumns();
+  const { data: rubricsData, isLoading } = useRubricsList(filters);
+  const rubrics = useMemo(() => rubricsData?.rubrics || [], [rubricsData]);
+  const standardGroupsMapping = useMemo(
+    () => rubricsData?.standard_groups_mapping || {},
+    [rubricsData]
+  );
+  const standardsMapping = useMemo(
+    () => rubricsData?.standards_mapping || {},
+    [rubricsData]
+  );
 
   const handleDelete = async () => {
     if (!deleteItem) return;
 
     setIsDeleting(true);
     try {
-      await deleteRubricMutation.mutateAsync(deleteItem.id);
+      await deleteRubricMutation.mutateAsync({ rubricId: deleteItem.id });
       await log.info("rubric.delete.success", {
         message: "Rubric deleted successfully",
         subject: { entityType: "rubric", entityId: deleteItem.id },
@@ -115,19 +101,20 @@ export default function Rubrics() {
     }
   };
 
-  const handleDuplicate = async (rubric: Rubric) => {
-    // Only allow duplicating default rubrics
-    if (!rubric.defaultRubric) {
+  const handleDuplicate = async (rubric: RubricItem) => {
+    if (!rubric.can_duplicate) {
       toast.error("This rubric cannot be duplicated");
       return;
     }
 
-    setIsDuplicating(rubric.id);
+    setIsDuplicating(rubric.rubric_id);
     try {
-      await duplicateRubric(rubric.id, `${rubric.name} Copy`);
+      await duplicateRubricMutation.mutateAsync({
+        rubricId: rubric.rubric_id,
+      });
       await log.info("rubric.duplicate.success", {
         message: "Rubric duplicated successfully",
-        subject: { entityType: "rubric", entityId: rubric.id },
+        subject: { entityType: "rubric", entityId: rubric.rubric_id },
         context: {
           component: "Rubrics",
           function: "handleDuplicate",
@@ -138,7 +125,7 @@ export default function Rubrics() {
     } catch (error) {
       await log.error("rubric.duplicate.failed", {
         message: "Error duplicating rubric",
-        subject: { entityType: "rubric", entityId: rubric.id },
+        subject: { entityType: "rubric", entityId: rubric.rubric_id },
         context: {
           component: "Rubrics",
           function: "handleDuplicate",
@@ -161,21 +148,16 @@ export default function Rubrics() {
     router.push(`/create/rubrics/r/${id}`);
   };
 
-  const canDuplicate = (rubric: Rubric) => {
-    // Can only duplicate default rubrics
-    return rubric.defaultRubric;
-  };
-
-  const getPassPercentage = (rubric: Rubric) => {
+  const getPassPercentage = (rubric: RubricItem) => {
     if (!rubric.points || rubric.points === 0) return 0;
     return Math.round((rubric.passPoints / rubric.points) * 100);
   };
 
-  const renderRubricCard = (rubric: Rubric) => {
+  const renderRubricCard = (rubric: RubricItem) => {
     const passPercentage = getPassPercentage(rubric);
 
     return (
-      <Card key={rubric.id} className="w-full">
+      <Card key={rubric.rubric_id} className="w-full">
         {/* Header */}
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
@@ -192,7 +174,6 @@ export default function Rubrics() {
                   <FileCheck className="h-4 w-4" />
                   Pass: {rubric.passPoints} pts ({passPercentage}%)
                 </div>
-                {!rubric.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
               {rubric.description && (
                 <p className="text-sm text-muted-foreground max-w-2xl">
@@ -201,8 +182,8 @@ export default function Rubrics() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {canEditRubric(rubric) ? (
-                <Button variant="outline" onClick={() => handleEdit(rubric.id)}>
+              {rubric.can_edit ? (
+                <Button variant="outline" onClick={() => handleEdit(rubric.rubric_id)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
@@ -210,19 +191,19 @@ export default function Rubrics() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(rubric.id)}
+                  onClick={() => handleEdit(rubric.rubric_id)}
                   aria-label={`View ${rubric.name}`}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
               )}
-              {canDuplicate(rubric) && (
+              {rubric.can_duplicate && (
                 <Button
                   variant="outline"
                   onClick={() => handleDuplicate(rubric)}
-                  disabled={isDuplicating === rubric.id}
+                  disabled={isDuplicating === rubric.rubric_id}
                 >
-                  {isDuplicating === rubric.id ? (
+                  {isDuplicating === rubric.rubric_id ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                   ) : (
                     <Copy className="h-4 w-4 mr-2" />
@@ -230,10 +211,10 @@ export default function Rubrics() {
                   Duplicate
                 </Button>
               )}
-              {!isRubricInUse(rubric.id) && (
+              {rubric.can_delete && (
                 <Button
                   variant="outline"
-                  onClick={() => handleDeleteClick(rubric.id, rubric.name)}
+                  onClick={() => handleDeleteClick(rubric.rubric_id, rubric.name)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -245,7 +226,11 @@ export default function Rubrics() {
 
         {/* Rubric Table */}
         <CardContent className="p-6">
-          <TableRubric rubricId={rubric.id} />
+          <TableRubric
+            standardGroups={rubric.standard_groups}
+            standardGroupsMapping={standardGroupsMapping}
+            standardsMapping={standardsMapping}
+          />
         </CardContent>
       </Card>
     );
@@ -253,18 +238,15 @@ export default function Rubrics() {
 
   return (
     <div className="space-y-6">
-      {isRubricsLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading rubrics...</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <RubricsDataTable
-          columns={columns}
-          data={rubrics}
-          passPointsOptions={passPointsOptions}
-          totalPointsOptions={totalPointsOptions}
-          passPercentageOptions={passPercentageOptions}
+          rubrics={rubrics}
+          standardGroupsMapping={standardGroupsMapping}
+          standardsMapping={standardsMapping}
           renderRubricCard={renderRubricCard}
         />
       )}
