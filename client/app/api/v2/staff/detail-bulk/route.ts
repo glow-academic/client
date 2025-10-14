@@ -1,5 +1,5 @@
-import { getApiBase } from "@/lib/api-base";
 import { StaffDetailBulkRequestSchema } from "@/lib/api/v2/schemas/staff";
+import { fetchStaffDetailBulk } from "@/lib/api/v2/server/staff";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,21 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = StaffDetailBulkRequestSchema.parse(body);
 
-    const response = await fetch(`${getApiBase()}/api/v2/staff/detail-bulk`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || "Server request failed");
-    }
-
-    const result = await response.json();
+    const result = await fetchStaffDetailBulk(request.profileIds, request.currentProfileId);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

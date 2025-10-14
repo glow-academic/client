@@ -1,5 +1,5 @@
-import { getApiBase } from "@/lib/api-base";
 import { ModelDetailRequestSchema } from "@/lib/api/v2/schemas/providers";
+import { fetchModelDetail } from "@/lib/api/v2/server/models";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,24 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = ModelDetailRequestSchema.parse(body);
 
-    const response = await fetch(
-      `${getApiBase()}/api/v2/providers/models/detail`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(request),
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || "Server request failed");
-    }
-
-    const result = await response.json();
+    const result = await fetchModelDetail(request.modelId, request.providerId, request.profileId);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

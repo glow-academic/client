@@ -1,28 +1,40 @@
 /**
  * Server-side fetcher functions for personas v2 API
- * These are used for server-side prefetching in Next.js pages
+ * These are used for server-side prefetching in Next.js pages and BFF routes
+ * Memoized with React cache to prevent duplicate requests
  */
 
 import { getApiBase } from "@/lib/api-base";
+import { cache } from "react";
 import { PersonaDetailResponseSchema } from "../schemas/personas";
 
-export async function fetchPersonaDetail(personaId: string, profileId: string) {
-  const res = await fetch(`${getApiBase()}/api/v2/personas/detail`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ personaId, profileId }),
-  });
+/**
+ * Fetch persona detail from FastAPI server (memoized)
+ * Used in both BFF routes and server components
+ */
+export const fetchPersonaDetail = cache(
+  async (personaId: string, profileId: string) => {
+    const res = await fetch(`${getApiBase()}/api/v2/personas/detail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ personaId, profileId }),
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch persona detail");
+    if (!res.ok) {
+      throw new Error("Failed to fetch persona detail");
+    }
+
+    const data = await res.json();
+    return PersonaDetailResponseSchema.parse(data);
   }
+);
 
-  const data = await res.json();
-  return PersonaDetailResponseSchema.parse(data);
-}
-
-export async function fetchPersonaDetailDefault(profileId: string) {
+/**
+ * Fetch default persona detail from FastAPI server (memoized)
+ * Used in both BFF routes and server components
+ */
+export const fetchPersonaDetailDefault = cache(async (profileId: string) => {
   const res = await fetch(`${getApiBase()}/api/v2/personas/detail-default`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -36,4 +48,4 @@ export async function fetchPersonaDetailDefault(profileId: string) {
 
   const data = await res.json();
   return PersonaDetailResponseSchema.parse(data);
-}
+});

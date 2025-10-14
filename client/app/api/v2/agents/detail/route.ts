@@ -1,35 +1,23 @@
 import { AgentDetailRequestSchema } from "@/lib/api/v2/schemas/agents";
+import { fetchAgentDetail } from "@/lib/api/v2/server/agents";
+import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
-const SERVER_URL = process.env.SERVER_URL || "http://localhost:8000";
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const detailRequest = AgentDetailRequestSchema.parse(body);
+    const body = await req.json();
+    const request = AgentDetailRequestSchema.parse(body);
 
-    const response = await fetch(`${SERVER_URL}/api/v2/agents/detail`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(detailRequest),
+    const result = await fetchAgentDetail(request.agentId, request.profileId);
+    return NextResponse.json(result);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.error("agents.v2.detail.error", {
+      message: errorMessage,
+      error,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Server error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch agent detail" },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in agent detail route:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

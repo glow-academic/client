@@ -1,5 +1,5 @@
-import { getApiBase } from "@/lib/api-base";
 import { SimulationDetailRequestSchema } from "@/lib/api/v2/schemas/simulations";
+import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,21 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = SimulationDetailRequestSchema.parse(body);
 
-    const response = await fetch(`${getApiBase()}/api/v2/simulations/detail`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || "Server request failed");
-    }
-
-    const result = await response.json();
+    const result = await fetchSimulationDetail(request.simulationId, request.profileId);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

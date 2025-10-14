@@ -1,5 +1,5 @@
-import { getApiBase } from "@/lib/api-base";
 import { DocumentDetailBulkRequestSchema } from "@/lib/api/v2/schemas/documents";
+import { fetchDocumentDetailBulk } from "@/lib/api/v2/server/documents";
 import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,24 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const request = DocumentDetailBulkRequestSchema.parse(body);
 
-    const response = await fetch(
-      `${getApiBase()}/api/v2/documents/detail-bulk`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(request),
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || "Server request failed");
-    }
-
-    const result = await response.json();
+    const result = await fetchDocumentDetailBulk(request.documentIds, request.profileId);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =
