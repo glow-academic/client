@@ -1,9 +1,14 @@
 """Analytics request and response schemas."""
 
 from enum import Enum
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
+from app.schemas.rubrics import StandardGroupMappingItem, StandardMappingItem
 from pydantic import BaseModel
+
+# Type aliases for rubric mappings
+StandardGroupsMapping = Dict[str, StandardGroupMappingItem]
+StandardsMapping = Dict[str, StandardMappingItem]
 
 
 # Enums
@@ -445,7 +450,7 @@ class HomeSimulationItem(BaseModel):
     timeLimit: Optional[int] = None
     numSessions: int
     highestScore: Optional[float] = None
-    rubric_id: Optional[str] = None
+    standard_groups: Dict[str, List[str]]
     color: Optional[str] = None
     icon: Optional[str] = None
     hasPassed: Optional[bool] = None
@@ -467,6 +472,8 @@ class HomeOverviewResponse(BaseModel):
     mode: Literal["ta", "instructional", "empty"]
     hasData: bool
     items: List[HomeSimulationItem]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
 
 
 class PracticeSimulationItem(BaseModel):
@@ -480,7 +487,7 @@ class PracticeSimulationItem(BaseModel):
     timeLimit: Optional[int] = None
     numSessions: int
     highestScore: Optional[float] = None
-    rubric_id: Optional[str] = None
+    standard_groups: Dict[str, List[str]]
     color: Optional[str] = None
     icon: Optional[str] = None
     hasPassed: Optional[bool] = None
@@ -503,6 +510,8 @@ class PracticeOverviewResponse(BaseModel):
     mode: Literal["practice"]
     hasData: bool
     items: List[PracticeSimulationItem]
+    standard_groups_mapping: StandardGroupsMapping
+    standards_mapping: StandardsMapping
 
 
 class AttemptHistoryRow(BaseModel):

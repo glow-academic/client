@@ -34,6 +34,8 @@ class DocumentQueries:
                 d.type,
                 d.updated_at,
                 d.mime_type,
+                d.active,
+                d.department_id,
                 COALESCE(dt.tag_ids, ARRAY[]::text[]) as tag_ids,
                 COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids
             FROM documents d

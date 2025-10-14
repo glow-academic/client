@@ -1,4 +1,8 @@
 import { PracticeSimulationItem } from "@/lib/analytics";
+import type {
+  StandardGroupsMapping,
+  StandardsMapping,
+} from "@/lib/api/v2/schemas/rubrics";
 import { Profile } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -6,6 +10,8 @@ import SimulationCard from "../common/simulation/SimulationCard";
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];
+  standardGroupsMapping: StandardGroupsMapping;
+  standardsMapping: StandardsMapping;
   profile: Profile | null;
   onStartSimulation: (simulationId: string) => void;
   loadingSimulation: string | null;
@@ -13,6 +19,8 @@ interface PracticeZoneProps {
 
 export default function PracticeZone({
   simulations,
+  standardGroupsMapping,
+  standardsMapping,
   profile,
   onStartSimulation,
   loadingSimulation,
@@ -96,9 +104,9 @@ export default function PracticeZone({
                 })}
                 simulationTitle={simulation.simulationTitle}
                 simulationDescription={simulation.simulationDescription || ""}
-                {...(simulation.rubric_id && {
-                  rubric_id: simulation.rubric_id,
-                })}
+                standard_groups={simulation.standard_groups}
+                standardGroupsMapping={standardGroupsMapping}
+                standardsMapping={standardsMapping}
                 {...(simulation.color && { color: simulation.color })}
                 {...(simulation.icon && { icon: simulation.icon })}
                 {...(typeof simulation.hasPassed === "boolean" && {
@@ -110,7 +118,7 @@ export default function PracticeZone({
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />
-            ),
+            )
         )}
       </div>
 

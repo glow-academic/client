@@ -267,7 +267,7 @@ export function UnifiedSidebar({
       section: `cohort-${c.id}`,
       isSubItem: true,
     }));
-  }, [cohorts, effectiveProfile, stableProfileId, cohortProfiles]);
+  }, [cohorts, effectiveProfile, cohortProfiles]);
 
   // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {
@@ -487,8 +487,7 @@ export function UnifiedSidebar({
       availableSections.includes("departments") ||
       availableSections.includes("agents") ||
       availableSections.includes("feedback") ||
-      availableSections.includes("logs") ||
-      availableSections.includes("health")
+      availableSections.includes("logs")
     ) {
       const systemItems: MenuItem[] = [];
 
@@ -530,15 +529,6 @@ export function UnifiedSidebar({
           title: "Logs",
           url: "#",
           section: "logs",
-        });
-      }
-
-      // Health - available for admin
-      if (availableSections.includes("health")) {
-        systemItems.push({
-          title: "Health",
-          url: "#",
-          section: "health",
         });
       }
     }

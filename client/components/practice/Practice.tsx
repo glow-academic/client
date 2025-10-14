@@ -96,6 +96,16 @@ export default function Practice() {
     return practiceOverview?.items ?? [];
   }, [practiceOverview?.items]);
 
+  // Extract rubric mappings from practice overview data
+  const standardGroupsMapping = useMemo(
+    () => practiceOverview?.standard_groups_mapping || {},
+    [practiceOverview]
+  );
+  const standardsMapping = useMemo(
+    () => practiceOverview?.standards_mapping || {},
+    [practiceOverview]
+  );
+
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
     // Listen for successful simulation starts to handle navigation
@@ -413,6 +423,8 @@ export default function Practice() {
       <div className="container mx-auto p-4 md:p-6 space-y-12">
         <PracticeZone
           simulations={simulationItems}
+          standardGroupsMapping={standardGroupsMapping}
+          standardsMapping={standardsMapping}
           profile={effectiveProfile}
           onStartSimulation={handleStartSimulation}
           loadingSimulation={loadingSimulation}

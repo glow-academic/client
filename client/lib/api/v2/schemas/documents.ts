@@ -31,6 +31,8 @@ export const DocumentItemSchema = z.object({
   scenario_ids: z.array(z.string()),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
+  active: z.boolean(),
+  department_id: z.string(),
 });
 
 export const DocumentsListResponseSchema = z.object({

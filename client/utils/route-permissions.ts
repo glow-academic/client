@@ -368,12 +368,6 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         title: "System Logs",
         redirectTo: "/system/logs",
       },
-      {
-        path: "/system/health",
-        roles: ["superadmin"],
-        title: "System Health",
-        redirectTo: "/system/health",
-      },
     ],
   },
   {

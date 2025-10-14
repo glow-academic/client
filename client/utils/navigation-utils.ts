@@ -118,8 +118,6 @@ export const getSectionRoute = (
       return "/system/feedback";
     case "logs":
       return "/system/logs";
-    case "health":
-      return "/system/health";
 
     // Profile route
     case "profile":

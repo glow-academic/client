@@ -24,6 +24,8 @@ class DocumentItem(BaseModel):
     scenario_ids: List[str]
     can_edit: bool
     can_delete: bool
+    active: bool
+    department_id: str
 
 
 class DocumentsListResponse(BaseModel):

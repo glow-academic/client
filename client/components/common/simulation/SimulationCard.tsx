@@ -25,6 +25,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import type {
+  StandardGroupsMapping,
+  StandardsMapping,
+} from "@/lib/api/v2/schemas/rubrics";
 import { Profile } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
@@ -57,7 +61,9 @@ export interface SimulationCardProps {
   highestScore?: number;
   simulationTitle: string;
   simulationDescription: string;
-  rubric_id?: string;
+  standard_groups: Record<string, string[]>;
+  standardGroupsMapping: StandardGroupsMapping;
+  standardsMapping: StandardsMapping;
   color?: string;
   icon?: string;
   hasPassed?: boolean;
@@ -75,7 +81,9 @@ export default function SimulationCard({
   highestScore,
   simulationTitle,
   simulationDescription,
-  rubric_id,
+  standard_groups,
+  standardGroupsMapping,
+  standardsMapping,
   color,
   icon,
   hasPassed,
@@ -89,7 +97,7 @@ export default function SimulationCard({
   const isEmulatingAnother = Boolean(
     effectiveProfile?.id &&
       activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id,
+      effectiveProfile.id !== activeProfile.id
   );
 
   // Get persona configuration and icon based on persona data
@@ -193,8 +201,13 @@ export default function SimulationCard({
                         {passRate && passRate > 0 && ` (${passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
-                    {rubric_id ? (
-                      <TableRubric rubricId={rubric_id} />
+                    {standard_groups &&
+                    Object.keys(standard_groups).length > 0 ? (
+                      <TableRubric
+                        standardGroups={standard_groups}
+                        standardGroupsMapping={standardGroupsMapping}
+                        standardsMapping={standardsMapping}
+                      />
                     ) : (
                       <p className="text-sm text-gray-500">
                         No rubric is associated with this simulation.
@@ -289,7 +302,7 @@ export default function SimulationCard({
                       window.dispatchEvent(
                         new CustomEvent("simulationButtonPressed", {
                           detail: { simulationId: id },
-                        }),
+                        })
                       );
                       onStartSimulation(id);
                     }}
@@ -322,7 +335,7 @@ export default function SimulationCard({
                 window.dispatchEvent(
                   new CustomEvent("simulationButtonPressed", {
                     detail: { simulationId: id },
-                  }),
+                  })
                 );
                 onStartSimulation(id);
               }}

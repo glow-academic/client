@@ -54,21 +54,77 @@ class PageQueries:
                 FROM filt
                 WHERE simulation_id IS NOT NULL
                 GROUP BY simulation_id, simulation_title, simulation_description
+            ),
+            simulation_rubrics AS (
+                SELECT DISTINCT
+                    si.simulation_id,
+                    s.rubric_id,
+                    (
+                        SELECT jsonb_object_agg(
+                            sg.id::text,
+                            (
+                                SELECT jsonb_agg(st.id::text ORDER BY st.points DESC)
+                                FROM standards st
+                                WHERE st.standard_group_id = sg.id
+                            )
+                        )
+                        FROM standard_groups sg
+                        WHERE sg.rubric_id = s.rubric_id
+                    ) AS standard_groups
+                FROM simulation_items si
+                JOIN simulations s ON s.id = si.simulation_id
+            ),
+            all_rubric_ids AS (
+                SELECT DISTINCT rubric_id FROM simulation_rubrics
+            ),
+            standard_groups_mapping AS (
+                SELECT jsonb_object_agg(
+                    sg.id::text,
+                    jsonb_build_object(
+                        'name', sg.name,
+                        'description', sg.description,
+                        'points', sg.points,
+                        'passPoints', sg.pass_points
+                    )
+                ) AS mapping
+                FROM standard_groups sg
+                WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+            ),
+            standards_mapping AS (
+                SELECT jsonb_object_agg(
+                    st.id::text,
+                    jsonb_build_object(
+                        'name', st.name,
+                        'description', st.description,
+                        'points', st.points
+                    )
+                ) AS mapping
+                FROM standards st
+                WHERE st.standard_group_id IN (
+                    SELECT sg.id FROM standard_groups sg
+                    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+                )
             )
             SELECT json_build_object(
                 'mode', '{view_mode}',
                 'hasData', (SELECT COUNT(*) > 0 FROM simulation_items),
                 'items', COALESCE((SELECT json_agg(json_build_object(
                     'viewMode', '{view_mode}',
-                    'id', simulation_id::text,
-                    'simulationTitle', simulation_title,
-                    'simulationDescription', simulation_description,
-                    'simulationName', simulation_title,
-                    'numSessions', num_sessions,
-                    'highestScore', ROUND(highest_score),
-                    'status', status,
+                    'id', si.simulation_id::text,
+                    'simulationTitle', si.simulation_title,
+                    'simulationDescription', si.simulation_description,
+                    'simulationName', si.simulation_title,
+                    'numSessions', si.num_sessions,
+                    'highestScore', ROUND(si.highest_score),
+                    'standard_groups', sr.standard_groups,
+                    'status', si.status,
                     'completionPct', 0
-                ) ORDER BY simulation_title) FROM simulation_items), '[]'::json)
+                ) ORDER BY si.simulation_title) 
+                FROM simulation_items si
+                LEFT JOIN simulation_rubrics sr ON sr.simulation_id = si.simulation_id
+                ), '[]'::json),
+                'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
+                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb)
             ) AS result
         """
 
@@ -175,19 +231,75 @@ class PageQueries:
                 FROM filt
                 WHERE simulation_id IS NOT NULL
                 GROUP BY simulation_id, simulation_title, simulation_description
+            ),
+            simulation_rubrics AS (
+                SELECT DISTINCT
+                    pi.simulation_id,
+                    s.rubric_id,
+                    (
+                        SELECT jsonb_object_agg(
+                            sg.id::text,
+                            (
+                                SELECT jsonb_agg(st.id::text ORDER BY st.points DESC)
+                                FROM standards st
+                                WHERE st.standard_group_id = sg.id
+                            )
+                        )
+                        FROM standard_groups sg
+                        WHERE sg.rubric_id = s.rubric_id
+                    ) AS standard_groups
+                FROM practice_items pi
+                JOIN simulations s ON s.id = pi.simulation_id
+            ),
+            all_rubric_ids AS (
+                SELECT DISTINCT rubric_id FROM simulation_rubrics
+            ),
+            standard_groups_mapping AS (
+                SELECT jsonb_object_agg(
+                    sg.id::text,
+                    jsonb_build_object(
+                        'name', sg.name,
+                        'description', sg.description,
+                        'points', sg.points,
+                        'passPoints', sg.pass_points
+                    )
+                ) AS mapping
+                FROM standard_groups sg
+                WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+            ),
+            standards_mapping AS (
+                SELECT jsonb_object_agg(
+                    st.id::text,
+                    jsonb_build_object(
+                        'name', st.name,
+                        'description', st.description,
+                        'points', st.points
+                    )
+                ) AS mapping
+                FROM standards st
+                WHERE st.standard_group_id IN (
+                    SELECT sg.id FROM standard_groups sg
+                    WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
+                )
             )
             SELECT json_build_object(
                 'mode', 'practice',
                 'hasData', (SELECT COUNT(*) > 0 FROM practice_items),
                 'items', COALESCE((SELECT json_agg(json_build_object(
                     'viewMode', 'practice',
-                    'id', simulation_id::text,
-                    'simulationTitle', simulation_title,
-                    'simulationDescription', simulation_description,
-                    'simulationName', simulation_title,
-                    'numSessions', num_sessions,
-                    'highestScore', ROUND(highest_score)
-                ) ORDER BY simulation_title) FROM practice_items), '[]'::json)
+                    'id', pi.simulation_id::text,
+                    'simulationTitle', pi.simulation_title,
+                    'simulationDescription', pi.simulation_description,
+                    'simulationName', pi.simulation_title,
+                    'numSessions', pi.num_sessions,
+                    'highestScore', ROUND(pi.highest_score),
+                    'standard_groups', sr.standard_groups
+                ) ORDER BY pi.simulation_title) 
+                FROM practice_items pi
+                LEFT JOIN simulation_rubrics sr ON sr.simulation_id = pi.simulation_id
+                ), '[]'::json),
+                'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
+                'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb)
             ) AS result
         """
 

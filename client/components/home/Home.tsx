@@ -85,6 +85,16 @@ export default function Home() {
       departmentIds: effectiveDepartmentIds,
     });
 
+  // Extract rubric mappings from home overview data
+  const standardGroupsMapping = useMemo(
+    () => homeOverview?.standard_groups_mapping || {},
+    [homeOverview]
+  );
+  const standardsMapping = useMemo(
+    () => homeOverview?.standards_mapping || {},
+    [homeOverview]
+  );
+
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
 
@@ -688,7 +698,9 @@ export default function Home() {
                   })}
                   simulationTitle={item.simulationTitle}
                   simulationDescription={item.simulationDescription || ""}
-                  {...(item.rubric_id && { rubric_id: item.rubric_id })}
+                  standard_groups={item.standard_groups}
+                  standardGroupsMapping={standardGroupsMapping}
+                  standardsMapping={standardsMapping}
                   {...(item.color && { color: item.color })}
                   {...(item.icon && { icon: item.icon })}
                   {...(typeof item.hasPassed === "boolean" && {

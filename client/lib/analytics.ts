@@ -1,3 +1,7 @@
+import {
+  StandardGroupsMappingSchema,
+  StandardsMappingSchema,
+} from "@/lib/api/v2/schemas/rubrics";
 import { z } from "zod";
 
 // Analytics Filter Schema
@@ -96,7 +100,7 @@ export const RubricMatrixPackageSchema = z.object({
       name: z.string(),
       shortName: z.string().nullable(),
       rubricId: z.string(),
-    }),
+    })
   ),
   matrix: z.array(
     z.array(
@@ -107,8 +111,8 @@ export const RubricMatrixPackageSchema = z.object({
         color: z.string(),
         strength: z.string(),
         dataPoints: z.number(),
-      }),
-    ),
+      })
+    )
   ),
   insights: z.string().nullable(),
   hasData: z.boolean(),
@@ -218,7 +222,7 @@ export function computeCurrent(
   method: Method,
   rows: DataPoint[],
   valueField: ValueField = "value",
-  keyField?: KeyField,
+  keyField?: KeyField
 ): number {
   if (!rows.length) return 0;
 
@@ -231,11 +235,11 @@ export function computeCurrent(
     }
     case "max":
       return Math.round(
-        Math.max(...rows.map((r) => Number(r[valueField] ?? 0))),
+        Math.max(...rows.map((r) => Number(r[valueField] ?? 0)))
       );
     case "sum":
       return Math.round(
-        rows.reduce((s, r) => s + Number(r[valueField] ?? 0), 0),
+        rows.reduce((s, r) => s + Number(r[valueField] ?? 0), 0)
       );
     case "countDistinct": {
       if (!keyField) return 0;
@@ -250,7 +254,7 @@ export function computeCurrent(
       // Simple slope: (last - first) / days
       const sorted = rows
         .filter(
-          (r): r is DataPoint & { date: string } => typeof r.date === "string",
+          (r): r is DataPoint & { date: string } => typeof r.date === "string"
         )
         .sort((a, b) => a.date.localeCompare(b.date));
       if (sorted.length < 2) return 0;
@@ -264,7 +268,7 @@ export function computeCurrent(
       const days = Math.max(
         1,
         (new Date(lastDate).getTime() - new Date(firstDate).getTime()) /
-          (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24)
       );
       return Math.round(((last - first) / days) * 100) / 100;
     }
@@ -276,7 +280,7 @@ export function computeCurrent(
 // Utility function to compute trend analysis
 export function computeTrendAnalysis(
   trendData: TrendData[],
-  metricName: string,
+  metricName: string
 ): string | null {
   if (!trendData || trendData.length < 2) return null;
 
@@ -506,10 +510,10 @@ export const SimulationCompositionResponseSchema = z.object({
   validSimulationIds: z.array(z.string()),
   simulationFacts: z.array(SimulationFactSchema),
   simulationParameterFactsCategorical: z.array(
-    SimulationParameterFactCategoricalSchema,
+    SimulationParameterFactCategoricalSchema
   ),
   simulationParameterFactsNumeric: z.array(
-    SimulationParameterFactNumericSchema,
+    SimulationParameterFactNumericSchema
   ),
   hasData: z.boolean(),
 });
@@ -573,7 +577,7 @@ export const HomeSimulationItemSchema = z.object({
   timeLimit: z.number().nullable().optional(),
   numSessions: z.number(),
   highestScore: z.number().nullable().optional(),
-  rubric_id: z.string().nullable().optional(),
+  standard_groups: z.record(z.string(), z.array(z.string())),
   color: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
   hasPassed: z.boolean().nullable().optional(),
@@ -594,6 +598,8 @@ export const HomeOverviewResponseSchema = z.object({
   mode: z.enum(["ta", "instructional", "empty"]),
   hasData: z.boolean(),
   items: z.array(HomeSimulationItemSchema),
+  standard_groups_mapping: StandardGroupsMappingSchema,
+  standards_mapping: StandardsMappingSchema,
 });
 
 // Type exports for home analytics
@@ -612,7 +618,7 @@ export const PracticeSimulationItemSchema = z.object({
   timeLimit: z.number().nullable().optional(),
   numSessions: z.number(),
   highestScore: z.number().nullable().optional(),
-  rubric_id: z.string().nullable().optional(),
+  standard_groups: z.record(z.string(), z.array(z.string())),
   color: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
   hasPassed: z.boolean().nullable().optional(),
@@ -638,6 +644,8 @@ export const PracticeOverviewResponseSchema = z.object({
   mode: z.enum(["practice"]),
   hasData: z.boolean(),
   items: z.array(PracticeSimulationItemSchema),
+  standard_groups_mapping: StandardGroupsMappingSchema,
+  standards_mapping: StandardsMappingSchema,
 });
 
 // Type exports for practice analytics
@@ -999,7 +1007,7 @@ export type LeaderboardBundleResponse = z.infer<
 
 // Growth Analytics Utilities
 export function computeGrowthActionableInsight(
-  windowAverages: GrowthWindowAverages,
+  windowAverages: GrowthWindowAverages
 ): string | null {
   const current = windowAverages?.averageScore?.last;
   const previous = windowAverages?.averageScore?.prev;
@@ -1056,7 +1064,7 @@ export function computeGrowthActionableInsight(
 // Persona Performance Analytics Utilities
 export function computePersonaPerformanceStatus(
   chartData: PersonaPerformanceData[],
-  thresholds: { danger: number; warning: number; success: number },
+  thresholds: { danger: number; warning: number; success: number }
 ): "success" | "warning" | "danger" | "neutral" {
   if (chartData.length === 0) return "neutral";
 
@@ -1071,7 +1079,7 @@ export function computePersonaPerformanceStatus(
 }
 
 export function computePersonaActionableInsight(
-  trendData: PersonaTrendData[],
+  trendData: PersonaTrendData[]
 ): string | null {
   if (trendData.length < 2) return null;
 
@@ -1100,7 +1108,7 @@ export function computePersonaActionableInsight(
 export function computePersonaMultipleActionableInsights(
   trendData: PersonaTrendData[],
   _personaName: string,
-  currentScore: number,
+  currentScore: number
 ): Record<string, string | null> {
   const insights: Record<string, string | null> = {};
 
@@ -1143,7 +1151,7 @@ export function computePersonaMultipleActionableInsights(
 // Attempt Improvement Analytics Utilities
 export function computeAttemptImprovementStatus(
   chartData: AttemptImprovementData[],
-  thresholds: { danger: number; warning: number; success: number },
+  thresholds: { danger: number; warning: number; success: number }
 ): "success" | "warning" | "danger" | "neutral" {
   if (chartData.length < 2) return "neutral";
 
@@ -1166,7 +1174,7 @@ export function computeAttemptImprovementStatus(
 }
 
 export function computeAttemptImprovementActionableInsight(
-  chartData: AttemptImprovementData[],
+  chartData: AttemptImprovementData[]
 ): string | null {
   if (chartData.length < 2) return null;
 
@@ -1195,7 +1203,7 @@ export function computeAttemptImprovementActionableInsight(
 // Cohort Performance Analytics Utilities
 export function computeCohortPerformanceStatus(
   cohortData: CohortData[],
-  thresholds: { danger: number; warning: number; success: number },
+  thresholds: { danger: number; warning: number; success: number }
 ): "success" | "warning" | "danger" | "neutral" {
   if (cohortData.length === 0) return "neutral";
 
@@ -1210,13 +1218,13 @@ export function computeCohortPerformanceStatus(
 }
 
 export function computeCohortPerformanceActionableInsight(
-  cohortData: CohortData[],
+  cohortData: CohortData[]
 ): string | null {
   if (cohortData.length === 0) return null;
 
   // Find the best performing cohort
   const bestCohort = cohortData.reduce((best, current) =>
-    current.passRate > best.passRate ? current : best,
+    current.passRate > best.passRate ? current : best
   );
 
   if (bestCohort.passRate > 0) {
@@ -1227,7 +1235,7 @@ export function computeCohortPerformanceActionableInsight(
 }
 
 export function computeCohortMultipleActionableInsights(
-  cohortData: CohortData[],
+  cohortData: CohortData[]
 ): Record<string, Record<string, string | null>> {
   const insights: Record<string, Record<string, string | null>> = {};
 
@@ -1293,7 +1301,7 @@ export function computeCohortMultipleActionableInsights(
 // Skill Performance Analytics Utilities
 export function computeSkillPerformanceStatus(
   radarData: SkillRadarData[],
-  thresholds: { danger: number; warning: number; success: number },
+  thresholds: { danger: number; warning: number; success: number }
 ): "success" | "warning" | "danger" | "neutral" {
   if (radarData.length === 0) return "neutral";
 
@@ -1307,7 +1315,7 @@ export function computeSkillPerformanceStatus(
 }
 
 export function computeSkillPerformanceActionableInsight(
-  radarData: SkillRadarData[],
+  radarData: SkillRadarData[]
 ): string | null {
   if (radarData.length === 0) return null;
 
@@ -1326,7 +1334,7 @@ export function computeSkillPerformanceActionableInsight(
   // Significant skill gaps
   if (skillGap > 0.4) {
     const weakestSkill = radarData.reduce((weakest, current) =>
-      current.value < weakest.value ? current : weakest,
+      current.value < weakest.value ? current : weakest
     );
     return `Large skill gap - focus on ${weakestSkill.metric} (${Math.round(weakestSkill.value * 100)}%).`;
   }
@@ -1361,7 +1369,7 @@ export function computeSkillPerformanceActionableInsight(
  * Compute actionable insights for rubric heatmap data
  */
 export function computeRubricHeatmapActionableInsight(
-  matrices: RubricMatrixPackage[],
+  matrices: RubricMatrixPackage[]
 ): string | null {
   if (matrices.length === 0) return null;
 
@@ -1413,7 +1421,7 @@ export function computeRubricHeatmapActionableInsight(
  * Compute actionable insights for scenario performance data
  */
 export function computeScenarioPerformanceActionableInsight(
-  attributeAttemptFacts: ScenarioAttributeAttemptFact[],
+  attributeAttemptFacts: ScenarioAttributeAttemptFact[]
 ): string | null {
   if (attributeAttemptFacts.length === 0) return null;
 
@@ -1454,7 +1462,7 @@ export function computeScenarioPerformanceActionableInsight(
  * Compute actionable insights for scenario stats data
  */
 export function computeScenarioStatsActionableInsight(
-  numericAttemptFacts: NumericAttemptFact[],
+  numericAttemptFacts: NumericAttemptFact[]
 ): string | null {
   if (numericAttemptFacts.length === 0) return null;
 
@@ -1507,7 +1515,7 @@ export function computeScenarioStatsActionableInsight(
  * Compute actionable insights for simulation performance data
  */
 export function computeSimulationPerformanceActionableInsight(
-  scenarioFacts: ScenarioFact[],
+  scenarioFacts: ScenarioFact[]
 ): string | null {
   if (scenarioFacts.length === 0) return null;
 
@@ -1534,7 +1542,7 @@ export function computeSimulationPerformanceActionableInsight(
 
 // Simulation Composition Utility Functions
 export function computeSimulationCompositionActionableInsight(
-  simulationFacts: SimulationFact[],
+  simulationFacts: SimulationFact[]
 ): string | null {
   if (!simulationFacts || simulationFacts.length === 0) {
     return null;
@@ -1550,7 +1558,7 @@ export function computeSimulationCompositionActionableInsight(
 
   // Find top and bottom performers
   const sortedByScore = [...simulationFacts].sort(
-    (a, b) => b.avgScore - a.avgScore,
+    (a, b) => b.avgScore - a.avgScore
   );
   const topPerformer = sortedByScore[0];
   const bottomPerformer = sortedByScore[sortedByScore.length - 1];
