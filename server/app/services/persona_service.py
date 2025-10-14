@@ -189,6 +189,31 @@ class PersonaService:
             for row in departments_result
         }
 
+        # Get persona usage in scenarios
+        usage_query, usage_params = self.queries.check_persona_usage(request.personaId)
+        usage_result = self.db.execute(text(usage_query), usage_params).fetchone()
+        scenario_count = int(usage_result.usage_count) if usage_result else 0
+        in_use = scenario_count > 0
+
+        # Get profile role for permissions
+        role_query, role_params = self.queries.get_profile_role(request.profileId)
+        role_result = self.db.execute(text(role_query), role_params).fetchone()
+        user_role = role_result.role if role_result else "student"
+
+        # Calculate permissions
+        is_superadmin = user_role == "superadmin"
+        is_admin = user_role in ("admin", "superadmin")
+        is_default = persona.default_persona
+
+        # Edit permission: superadmin can edit everything, non-default can be edited by admins
+        can_edit = is_superadmin or (is_admin and not is_default)
+        
+        # Duplicate permission: everyone can duplicate
+        can_duplicate = True
+        
+        # Delete permission: can delete if not in use
+        can_delete = not in_use
+
         # Get debug info (placeholder - adjust based on actual debug table)
         debug_info: List[DebugInfoItem] = []
         # Optional: implement debug log fetching if table exists
@@ -274,6 +299,12 @@ class PersonaService:
             reasoning=persona.reasoning,
             temperature=float(persona.temperature),
             system_prompt=persona.system_prompt,
+            # Usage and permissions
+            in_use=in_use,
+            scenario_count=scenario_count,
+            can_edit=can_edit,
+            can_duplicate=can_duplicate,
+            can_delete=can_delete,
             # Metadata
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,

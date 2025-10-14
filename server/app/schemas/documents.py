@@ -2,7 +2,12 @@
 
 from typing import Dict, List, Optional
 
+from app.schemas.personas import (DepartmentMappingItem,
+                                  ParameterItemMappingItem)
 from pydantic import BaseModel
+
+# Type aliases
+ParameterItemMapping = Dict[str, ParameterItemMappingItem]
 
 
 class DocumentsFilters(BaseModel):
@@ -19,21 +24,23 @@ class DocumentItem(BaseModel):
     name: str
     type: str
     updatedAt: str
-    tag_ids: List[str]
     extension: str
     scenario_ids: List[str]
     can_edit: bool
     can_delete: bool
     active: bool
     department_id: str
+    file_path: str
+    mime_type: str
+    parameter_item_ids: List[str]
 
 
 class DocumentsListResponse(BaseModel):
     """Response for documents list endpoint."""
 
     documents: List[DocumentItem]
-    tag_mapping: Dict[str, str]  # tag_id -> name
     scenario_mapping: Dict[str, str]  # scenario_id -> name
+    parameter_item_mapping: ParameterItemMapping  # parameter_item_id -> mapping
 
 
 class DocumentDetailRequest(BaseModel):
@@ -50,10 +57,12 @@ class DocumentDetailResponse(BaseModel):
     active: bool
     type: str
     document_type_options: List[str]
-    tag_ids: List[str]
-    valid_tag_ids: List[str]
     department_id: str
     valid_department_ids: List[str]
+    department_mapping: Dict[str, DepartmentMappingItem]
+    parameter_item_ids: List[str]
+    valid_parameter_item_ids: List[str]
+    parameter_item_mapping: ParameterItemMapping
 
 
 class DocumentDetailBulkRequest(BaseModel):
@@ -72,12 +81,12 @@ class DocumentDetailBulkResponse(BaseModel):
 
     document_type_options: List[str]
     type: Optional[str]  # Common type if all same, else None
-    tag_ids: List[str]  # Union of all tag_ids
-    valid_tag_ids: List[str]
     department_ids: List[str]  # Union of all department_ids
     valid_department_ids: List[str]
-    tag_mapping: Dict[str, str]
     department_mapping: Dict[str, DepartmentMappingItem]
+    parameter_item_ids: List[str]  # Union of all parameter_item_ids
+    valid_parameter_item_ids: List[str]
+    parameter_item_mapping: ParameterItemMapping
 
 
 class UpdateDocumentRequest(BaseModel):
@@ -85,8 +94,11 @@ class UpdateDocumentRequest(BaseModel):
 
     documentId: str
     type: str
-    tag_ids: List[str]
     department_id: str
+    parameter_item_ids: List[str]
+
+    # TODO: Update document_parameter_items table when this endpoint is called
+    # Currently just accepting parameter_item_ids but not storing the relationship
 
 
 class BulkUpdateDocumentsRequest(BaseModel):
@@ -94,8 +106,11 @@ class BulkUpdateDocumentsRequest(BaseModel):
 
     documentIds: List[str]
     type: str
-    tag_ids: List[str]
     department_id: str
+    parameter_item_ids: List[str]
+
+    # TODO: Update document_parameter_items table for each document
+    # Currently just accepting parameter_item_ids but not storing the relationship
 
 
 class UpdateDocumentResponse(BaseModel):

@@ -293,3 +293,9 @@ class PersonaQueries:
         params = {"dept_ids": dept_ids}
         return (query, params)
 
+    def get_profile_role(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to get profile role."""
+        query = "SELECT role FROM profiles WHERE id = :profile_id"
+        params = {"profile_id": profile_id}
+        return (query, params)
+

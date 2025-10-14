@@ -12,11 +12,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Document } from "@/types";
+import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 export interface DocumentsDataTableToolbarProps {
-  table: Table<Document>;
+  table: Table<DocumentItem>;
   typeOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   extensionOptions: { value: string; label: string }[];
@@ -47,12 +47,12 @@ export function DocumentsDataTableToolbar({
   // Get columns for filters
   const nameColumn = table.getColumn("name");
   const typeColumn = table.getColumn("type");
-  const scenariosColumn = table.getColumn("scenarios");
+  const scenariosColumn = table.getColumn("scenario_ids");
   const extensionColumn = table.getColumn("extension");
 
   // Calculate deletable documents count
   const deletableCount = selectedDocuments.filter((documentId) =>
-    canDeleteDocument(documentId),
+    canDeleteDocument(documentId)
   ).length;
 
   return (

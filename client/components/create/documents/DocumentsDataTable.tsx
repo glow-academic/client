@@ -27,22 +27,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Document } from "@/types";
+import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
+import type { ParameterItemMapping } from "@/lib/api/v2/schemas/personas";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import { DocumentsDataTableToolbar } from "./DocumentsDataTableToolbar";
 
 export interface DocumentsDataTableProps {
-  columns: ColumnDef<Document>[];
-  data: Document[];
+  columns: ColumnDef<DocumentItem>[];
+  data: DocumentItem[];
+  scenarioMapping: Record<string, string>;
+  parameterItemMapping: ParameterItemMapping;
   typeOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   extensionOptions: { value: string; label: string }[];
-  renderDocumentCard: (document: Document) => React.ReactNode;
+  renderDocumentCard: (document: DocumentItem) => React.ReactNode;
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
-  onEdit: (document: Document) => void;
-  onPreview: (document: Document) => void;
-  onDelete: (document: Document) => void;
+  onEdit: (document: DocumentItem) => void;
+  onPreview: (document: DocumentItem) => void;
+  onDelete: (document: DocumentItem) => void;
   canDelete: (documentId: string) => boolean;
   selectedDocuments: string[];
   onDocumentSelect: (documentId: string, checked: boolean) => void;
@@ -54,6 +57,8 @@ export interface DocumentsDataTableProps {
 export function DocumentsDataTable({
   columns,
   data,
+  scenarioMapping: _scenarioMapping,
+  parameterItemMapping: _parameterItemMapping,
   typeOptions,
   scenarioOptions,
   extensionOptions,
@@ -77,14 +82,14 @@ export function DocumentsDataTable({
     },
   ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
 
   // Add checkbox and actions columns to the columns array
   const columnsWithActions = React.useMemo(() => {
-    const checkboxColumn: ColumnDef<Document> = {
+    const checkboxColumn: ColumnDef<DocumentItem> = {
       id: "select",
       header: ({ table }) => (
         <Checkbox
@@ -102,9 +107,9 @@ export function DocumentsDataTable({
       ),
       cell: ({ row }) => (
         <Checkbox
-          checked={selectedDocuments.includes(row.original.id)}
+          checked={selectedDocuments.includes(row.original.document_id)}
           onCheckedChange={(value) =>
-            onDocumentSelect(row.original.id, !!value)
+            onDocumentSelect(row.original.document_id, !!value)
           }
           aria-label="Select row"
           className="translate-y-[2px]"
@@ -114,7 +119,7 @@ export function DocumentsDataTable({
       enableHiding: false,
     };
 
-    const actionsColumn: ColumnDef<Document> = {
+    const actionsColumn: ColumnDef<DocumentItem> = {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
@@ -139,7 +144,7 @@ export function DocumentsDataTable({
             >
               <Edit className="h-3 w-3" />
             </Button>
-            {canDelete(document.id) && (
+            {canDelete(document.document_id) && (
               <Button
                 type="button"
                 variant="outline"
@@ -159,7 +164,7 @@ export function DocumentsDataTable({
 
     // Filter out the existing select and actions columns and add our custom ones
     const filteredColumns = columns.filter(
-      (col) => col.id !== "select" && col.id !== "actions",
+      (col) => col.id !== "select" && col.id !== "actions"
     );
     return [checkboxColumn, ...filteredColumns, actionsColumn];
   }, [
@@ -245,7 +250,7 @@ export function DocumentsDataTable({
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext(),
+                                header.getContext()
                               )}
                         </TableHead>
                       );
@@ -264,7 +269,7 @@ export function DocumentsDataTable({
                         <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext(),
+                            cell.getContext()
                           )}
                         </TableCell>
                       ))}

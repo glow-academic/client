@@ -6,7 +6,8 @@
  */
 
 "use client";
-import { useCallback, useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,24 +45,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Document as DocumentObject, DocumentType } from "@/types";
-import { documents as documentsTable } from "@/utils/drizzle/schema";
+import { DocumentType } from "@/types";
 import { UploadCloud } from "lucide-react";
 
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
-import TagSelector from "@/components/common/tags/TagSelector";
+import { ParameterItemSelector } from "@/components/common/scenario/ParameterItemSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDocumentColumns } from "@/hooks/use-document-columns";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import {
+  useBulkDeleteDocuments,
+  useBulkUpdateDocuments,
   useDeleteDocument,
-  useDeleteDocuments,
-  useDocumentsByDepartmentIdBatch,
+  useDocumentDetail,
+  useDocumentDetailBulk,
+  useDocumentsList,
   useUpdateDocument,
-  useUpdateDocuments,
-} from "@/lib/api/v1/hooks/documents";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
+} from "@/lib/api/v2/hooks/documents";
+import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { log } from "@/utils/logger";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
@@ -69,9 +70,9 @@ export default function Documents() {
 
   // Mutation hooks
   const deleteDocumentMutation = useDeleteDocument();
-  const deleteDocumentsMutation = useDeleteDocuments();
+  const bulkDeleteDocumentsMutation = useBulkDeleteDocuments();
   const updateDocumentMutation = useUpdateDocument();
-  const updateDocumentsMutation = useUpdateDocuments();
+  const bulkUpdateDocumentsMutation = useBulkUpdateDocuments();
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -80,10 +81,10 @@ export default function Documents() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<DocumentObject | null>(
+  const [editingDocument, setEditingDocument] = useState<DocumentItem | null>(
     null
   );
-  const [previewDocument, setPreviewDocument] = useState<DocumentObject | null>(
+  const [previewDocument, setPreviewDocument] = useState<DocumentItem | null>(
     null
   );
   const [isDeleting, setIsDeleting] = useState(false);
@@ -92,35 +93,185 @@ export default function Documents() {
   const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
     "__keep__"
   );
-  const [bulkTags, setBulkTags] = useState<string[]>([]);
+  const [bulkParameterItemIds, setBulkParameterItemIds] = useState<string[]>(
+    []
+  );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
   const { effectiveDepartmentIds } = useDepartments();
 
-  const { data: documents = [], isLoading: isLoadingDocuments } =
-    useDocumentsByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: scenarios = [], isLoading: isLoadingScenarios } =
-    useScenariosByDepartmentIdBatch(effectiveDepartmentIds);
-  const { data: departments = [] } = useDepartmentsHook();
-
-  // Check if document can be deleted (not used by active scenarios)
-  const canDeleteDocument = useCallback(
-    (documentId: string) => {
-      const activeScenarios = scenarios.filter((scenario) => scenario.active);
-      return !activeScenarios.some((scenario) =>
-        scenario.documentIds?.includes(documentId)
-      );
-    },
-    [scenarios]
+  // V2 API: Build filters
+  const filters = useMemo(
+    () => ({
+      departmentIds: effectiveDepartmentIds,
+      profileId: effectiveProfile?.id || "",
+    }),
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
-  // Get scenarios that use this document
-  const getScenariosUsingDocument = useCallback(
+  // V2 API: Fetch documents list
+  const { data: documentsData, isLoading } = useDocumentsList(filters);
+
+  // Extract data from V2 response
+  const documents = useMemo(
+    () => documentsData?.documents || [],
+    [documentsData]
+  );
+  const scenarioMapping = useMemo(
+    () => documentsData?.scenario_mapping || {},
+    [documentsData]
+  );
+  const parameterItemMapping = useMemo(
+    () => documentsData?.parameter_item_mapping || {},
+    [documentsData]
+  );
+
+  // V2 API: Fetch single document detail for editing
+  const { data: documentDetail } = useDocumentDetail(
+    editingDocument?.document_id || "",
+    effectiveProfile?.id || "",
+    !!editingDocument && !!effectiveProfile?.id
+  );
+
+  // V2 API: Fetch bulk document detail for bulk editing
+  const { data: bulkDocumentDetail } = useDocumentDetailBulk(
+    selectedDocuments,
+    effectiveProfile?.id || "",
+    showBulkEditDialog && selectedDocuments.length > 0 && !!effectiveProfile?.id
+  );
+
+  // Filter options
+  const typeOptions = useMemo(
+    () => [
+      { value: "homework", label: "📚 Homework" },
+      { value: "project", label: "🎯 Project" },
+      { value: "quiz", label: "❓ Quiz" },
+      { value: "midterm", label: "📝 Midterm" },
+      { value: "lab", label: "🧪 Lab" },
+      { value: "lecture", label: "📖 Lecture" },
+      { value: "syllabus", label: "📋 Syllabus" },
+    ],
+    []
+  );
+
+  const scenarioOptions = useMemo(
+    () =>
+      Object.entries(scenarioMapping).map(([id, name]) => ({
+        value: id,
+        label: name,
+      })),
+    [scenarioMapping]
+  );
+
+  const extensionOptions = useMemo(() => {
+    const extensions = new Set(documents.map((d) => d.extension));
+    return Array.from(extensions).map((ext) => ({
+      value: ext,
+      label: ext.toUpperCase(),
+    }));
+  }, [documents]);
+
+  // Define columns inline using useMemo
+  const columns = useMemo<ColumnDef<DocumentItem>[]>(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
+      },
+      {
+        accessorKey: "type",
+        header: "Type",
+        cell: ({ row }) => row.getValue("type"),
+        filterFn: (row, _id, value) => {
+          return value.length === 0 || value.includes(row.getValue("type"));
+        },
+      },
+      {
+        accessorKey: "parameter_item_ids",
+        header: "Parameters",
+        cell: ({ row }) => {
+          const itemIds = row.getValue("parameter_item_ids") as string[];
+          if (!itemIds.length)
+            return <span className="text-xs text-muted-foreground">None</span>;
+          return itemIds
+            .map((id) => {
+              const item = parameterItemMapping[id];
+              return item ? item["name"] : id;
+            })
+            .join(", ");
+        },
+      },
+      {
+        accessorKey: "scenario_ids",
+        header: "Scenarios",
+        cell: ({ row }) => {
+          const scenarioIds = row.getValue("scenario_ids") as string[];
+          return scenarioIds.map((id) => scenarioMapping[id] || id).join(", ");
+        },
+        filterFn: (row, _id, value) => {
+          const scenarioIds = row.getValue("scenario_ids") as string[];
+          return (
+            value.length === 0 ||
+            scenarioIds.some((id: string) => value.includes(id))
+          );
+        },
+      },
+      {
+        accessorKey: "extension",
+        header: "Extension",
+        cell: ({ row }) => row.getValue("extension"),
+        filterFn: (row, _id, value) => {
+          return (
+            value.length === 0 || value.includes(row.getValue("extension"))
+          );
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Updated",
+        cell: ({ row }) => {
+          const date = new Date(row.getValue("updatedAt"));
+          return date.toLocaleDateString();
+        },
+        sortingFn: "datetime",
+      },
+    ],
+    [scenarioMapping, parameterItemMapping]
+  );
+
+  // Permission checking using server-provided flags
+  const canDeleteDocument = useCallback(
     (documentId: string) => {
-      return scenarios.filter((scenario) =>
-        scenario.documentIds?.includes(documentId)
-      );
+      const doc = documents.find((d) => d.document_id === documentId);
+      return doc?.can_delete ?? false;
     },
-    [scenarios]
+    [documents]
   );
 
   // Handle document selection (for bulk operations in list view only)
@@ -134,30 +285,26 @@ export default function Documents() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedDocuments(documents.map((doc) => doc.id));
+      setSelectedDocuments(documents.map((doc) => doc.document_id));
     } else {
       setSelectedDocuments([]);
     }
   };
 
   // Handle document edit
-  const handleEdit = (document: DocumentObject) => {
+  const handleEdit = (document: DocumentItem) => {
     setEditingDocument({ ...document });
     setShowEditDialog(true);
   };
 
   // Handle document preview (for table view)
-  const handlePreview = (document: DocumentObject) => {
+  const handlePreview = (document: DocumentItem) => {
     setPreviewDocument(document);
     setShowPreviewDialog(true);
   };
 
-  // Get table columns and filter options
-  const { columns, typeOptions, scenarioOptions, extensionOptions } =
-    useDocumentColumns(handlePreview);
-
   // Handle single document delete
-  const handleSingleDelete = (document: DocumentObject) => {
+  const handleSingleDelete = (document: DocumentItem) => {
     setEditingDocument(document);
     setShowDeleteDialog(true);
   };
@@ -173,17 +320,7 @@ export default function Documents() {
   const handleBulkEdit = () => {
     if (selectedDocuments.length > 0) {
       setBulkType("__keep__");
-      // Pre-populate with intersection of tags across selected documents
-      const selectedDocs = documents.filter((doc) =>
-        selectedDocuments.includes(doc.id)
-      );
-      if (selectedDocs.length > 0) {
-        // Note: Document tags removed - tags are now managed via simulation_tags → simulation_tag_documents
-        // Documents don't have a direct tags property anymore
-        setBulkTags([]);
-      } else {
-        setBulkTags([]);
-      }
+      setBulkParameterItemIds([]);
       setBulkDepartmentId(null);
       setShowBulkEditDialog(true);
     }
@@ -198,7 +335,7 @@ export default function Documents() {
       // Single document delete
       if (!editingDocument) return;
 
-      if (!canDeleteDocument(editingDocument.id)) {
+      if (!canDeleteDocument(editingDocument.document_id)) {
         toast.error(
           "This document cannot be deleted as it is used in active scenarios"
         );
@@ -209,10 +346,15 @@ export default function Documents() {
 
       setIsDeleting(true);
       try {
-        await deleteDocumentMutation.mutateAsync(editingDocument.id);
+        await deleteDocumentMutation.mutateAsync({
+          documentId: editingDocument.document_id,
+        });
         await log.info("document.delete.success", {
           message: "Document deleted",
-          subject: { entityType: "document", entityId: editingDocument.id },
+          subject: {
+            entityType: "document",
+            entityId: editingDocument.document_id,
+          },
           context: { component: "Documents", function: "handleDelete" },
         });
         toast.success("Document deleted successfully");
@@ -221,7 +363,10 @@ export default function Documents() {
       } catch (error) {
         await log.error("document.delete.failed", {
           message: "Error deleting document",
-          subject: { entityType: "document", entityId: editingDocument.id },
+          subject: {
+            entityType: "document",
+            entityId: editingDocument.document_id,
+          },
           context: { component: "Documents", function: "handleDelete" },
           error,
         });
@@ -247,7 +392,9 @@ export default function Documents() {
       setIsDeleting(true);
       try {
         // Use bulk delete for efficiency
-        await deleteDocumentsMutation.mutateAsync({ ids: deletableDocuments });
+        await bulkDeleteDocumentsMutation.mutateAsync({
+          documentIds: deletableDocuments,
+        });
 
         // Log success for each document
         for (const documentId of deletableDocuments) {
@@ -284,17 +431,15 @@ export default function Documents() {
 
   // Handle document update
   const handleUpdate = async () => {
-    if (!editingDocument) return;
+    if (!editingDocument || !documentDetail) return;
 
     setIsUpdating(true);
     try {
       await updateDocumentMutation.mutateAsync({
-        id: editingDocument.id,
-        name: editingDocument.name,
-        type: editingDocument.type,
-        // Note: tags removed - documents don't have tags property
-        active: editingDocument.active,
-        updatedAt: new Date().toISOString(),
+        documentId: editingDocument.document_id,
+        type: documentDetail.type,
+        department_id: documentDetail.department_id,
+        parameter_item_ids: documentDetail.parameter_item_ids,
       });
 
       toast.success("Document updated successfully");
@@ -303,7 +448,10 @@ export default function Documents() {
     } catch (error) {
       await log.error("document.update.failed", {
         message: "Error updating document",
-        subject: { entityType: "document", entityId: editingDocument.id },
+        subject: {
+          entityType: "document",
+          entityId: editingDocument.document_id,
+        },
         context: { component: "Documents", function: "handleUpdate" },
         error,
       });
@@ -314,31 +462,28 @@ export default function Documents() {
   };
 
   // Execute bulk update
-  type DocumentInsert = typeof documentsTable.$inferInsert;
-
   const handleBulkUpdate = async () => {
-    if (selectedDocuments.length === 0) return;
+    if (selectedDocuments.length === 0 || !bulkDocumentDetail) return;
     setIsBulkUpdating(true);
     try {
-      const updates: Partial<DocumentInsert> = {
-        updatedAt: new Date().toISOString(),
-      };
-      if (bulkType !== "__keep__") updates.type = bulkType;
-      // Note: tags removed - documents don't have tags property anymore
-      if (bulkDepartmentId) updates.departmentId = bulkDepartmentId;
+      const type =
+        bulkType !== "__keep__"
+          ? bulkType
+          : bulkDocumentDetail.type || "homework";
+      const parameter_item_ids =
+        bulkParameterItemIds.length > 0
+          ? bulkParameterItemIds
+          : bulkDocumentDetail.parameter_item_ids;
+      const department_id =
+        bulkDepartmentId || bulkDocumentDetail.department_ids[0] || "";
 
-      if (Object.keys(updates).length > 0) {
-        // Use bulk update for efficiency
-        await updateDocumentsMutation.mutateAsync({
-          updates: selectedDocuments.map(
-            (id) =>
-              ({
-                id,
-                ...updates,
-              }) as { id: string } & Partial<DocumentInsert>
-          ),
-        });
-      }
+      await bulkUpdateDocumentsMutation.mutateAsync({
+        documentIds: selectedDocuments,
+        type,
+        department_id,
+        parameter_item_ids,
+      });
+
       toast.success("Documents updated successfully");
       setShowBulkEditDialog(false);
       setSelectedDocuments([]);
@@ -360,12 +505,12 @@ export default function Documents() {
   };
 
   // Render document card for grid view
-  const renderDocumentCard = (document: DocumentObject) => {
-    const canDelete = canDeleteDocument(document.id);
+  const renderDocumentCard = (document: DocumentItem) => {
+    const canDelete = canDeleteDocument(document.document_id);
 
     return (
       <DocumentPreviewCard
-        key={document.id}
+        key={document.document_id}
         document={document}
         onEdit={handleEdit}
         onPreview={handlePreview}
@@ -377,7 +522,7 @@ export default function Documents() {
   };
 
   // Loading state
-  if (isLoadingDocuments || isLoadingScenarios) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
@@ -408,6 +553,8 @@ export default function Documents() {
         <DocumentsDataTable
           columns={columns}
           data={documents}
+          scenarioMapping={scenarioMapping}
+          parameterItemMapping={parameterItemMapping}
           typeOptions={typeOptions}
           scenarioOptions={scenarioOptions}
           extensionOptions={extensionOptions}
@@ -435,7 +582,7 @@ export default function Documents() {
               Update document properties. Changes will be saved immediately.
             </DialogDescription>
           </DialogHeader>
-          {editingDocument && (
+          {editingDocument && documentDetail && (
             <div className="space-y-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="name">Name</Label>
@@ -466,20 +613,22 @@ export default function Documents() {
               <div className="flex flex-col gap-2">
                 <Label htmlFor="type">Type</Label>
                 <Select
-                  value={editingDocument.type}
-                  onValueChange={(value) =>
+                  defaultValue={documentDetail.type}
+                  onValueChange={(value) => {
+                    // Update in temporary state for submission
                     setEditingDocument((prev) =>
                       prev ? { ...prev, type: value as DocumentType } : null
-                    )
-                  }
+                    );
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {typeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {documentDetail.document_type_options.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {typeOptions.find((o) => o.value === option)?.label ||
+                          option}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -487,48 +636,34 @@ export default function Documents() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {/* Note: Tags functionality removed - documents don't have direct tags
-                    Tags are now managed via simulation_tags → simulation_tag_documents */}
+                <Label>Parameter Items</Label>
+                <ParameterItemSelector
+                  parameterItemMapping={documentDetail.parameter_item_mapping}
+                  selectedParameterItemIds={documentDetail.parameter_item_ids}
+                  validParameterItemIds={
+                    documentDetail.valid_parameter_item_ids
+                  }
+                  onChange={(ids) =>
+                    setEditingDocument((prev) =>
+                      prev ? { ...prev, parameter_item_ids: ids } : null
+                    )
+                  }
+                />
               </div>
 
               {/* Department Selection - Only for superadmin */}
               {effectiveProfile?.role === "superadmin" && (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
+                <div className="flex flex-col gap-2">
+                  <Label>Department</Label>
                   <DepartmentSelector
-                    departments={departments.map((dept) => ({
-                      id: dept.id,
-                      title: dept.title as string,
-                      ...(dept.description && {
-                        description: dept.description,
-                      }),
-                    }))}
-                    selectedDepartment={
-                      editingDocument.departmentId
-                        ? (() => {
-                            const dept = departments.find(
-                              (d) => d.id === editingDocument.departmentId
-                            );
-                            return dept
-                              ? {
-                                  id: dept.id,
-                                  title: dept.title as string,
-                                  ...(dept.description && {
-                                    description: dept.description,
-                                  }),
-                                }
-                              : null;
-                          })()
-                        : null
-                    }
-                    onSelect={(department) =>
+                    departmentMapping={documentDetail.department_mapping}
+                    selectedDepartmentId={documentDetail.department_id}
+                    validDepartmentIds={documentDetail.valid_department_ids}
+                    onSelect={(deptId) =>
                       setEditingDocument((prev) =>
-                        prev
-                          ? { ...prev, departmentId: department?.id || "" }
-                          : null
+                        prev ? { ...prev, department_id: deptId || "" } : null
                       )
                     }
-                    placeholder="Select department"
                   />
                 </div>
               )}
@@ -563,77 +698,63 @@ export default function Documents() {
               want to change it for all selected documents.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <Label>Type</Label>
-              <Select
-                value={bulkType}
-                onValueChange={(value) =>
-                  setBulkType(value as DocumentType | "__keep__")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Keep existing" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__keep__">Keep existing</SelectItem>
-                  {typeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Tags</Label>
-              <TagSelector
-                value={bulkTags}
-                onChange={setBulkTags}
-                knownTags={Array.from(
-                  new Set(documents.flatMap((d) => d.tags ?? []))
-                )}
-                badgesPosition="below"
-                showClearAll
-              />
-            </div>
+          {bulkDocumentDetail && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <Label>Type</Label>
+                <Select
+                  defaultValue={bulkDocumentDetail.type || "__keep__"}
+                  onValueChange={(value) =>
+                    setBulkType(value as DocumentType | "__keep__")
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Keep existing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__keep__">Keep existing</SelectItem>
+                    {bulkDocumentDetail.document_type_options.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {typeOptions.find((o) => o.value === option)?.label ||
+                          option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Department Selection - Only for superadmin */}
-            {effectiveProfile?.role === "superadmin" && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <DepartmentSelector
-                  departments={departments.map((dept) => ({
-                    id: dept.id,
-                    title: dept.title as string,
-                    ...(dept.description && { description: dept.description }),
-                  }))}
-                  selectedDepartment={
-                    bulkDepartmentId
-                      ? (() => {
-                          const dept = departments.find(
-                            (d) => d.id === bulkDepartmentId
-                          );
-                          return dept
-                            ? {
-                                id: dept.id,
-                                title: dept.title as string,
-                                ...(dept.description && {
-                                  description: dept.description,
-                                }),
-                              }
-                            : null;
-                        })()
-                      : null
+              <div className="flex flex-col gap-2">
+                <Label>Parameter Items</Label>
+                <ParameterItemSelector
+                  parameterItemMapping={
+                    bulkDocumentDetail.parameter_item_mapping
                   }
-                  onSelect={(department) =>
-                    setBulkDepartmentId(department?.id || null)
+                  selectedParameterItemIds={bulkParameterItemIds}
+                  validParameterItemIds={
+                    bulkDocumentDetail.valid_parameter_item_ids
                   }
-                  placeholder="Select department"
+                  onChange={setBulkParameterItemIds}
                 />
               </div>
-            )}
-          </div>
+
+              {/* Department Selection - Only for superadmin */}
+              {effectiveProfile?.role === "superadmin" && (
+                <div className="flex flex-col gap-2">
+                  <Label>Department</Label>
+                  <DepartmentSelector
+                    departmentMapping={bulkDocumentDetail.department_mapping}
+                    selectedDepartmentId={
+                      bulkDepartmentId ||
+                      bulkDocumentDetail.department_ids[0] ||
+                      ""
+                    }
+                    validDepartmentIds={bulkDocumentDetail.valid_department_ids}
+                    onSelect={(deptId) => setBulkDepartmentId(deptId)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
           <DialogFooter>
             <Button
               variant="outline"
@@ -667,15 +788,6 @@ export default function Documents() {
                 // Single document delete
                 <>
                   Are you sure you want to delete "{editingDocument.name}"?
-                  {(() => {
-                    const scenariosUsing = getScenariosUsingDocument(
-                      editingDocument.id
-                    );
-                    if (scenariosUsing.length > 0) {
-                      return ` This document is used by ${scenariosUsing.length} scenario${scenariosUsing.length > 1 ? "s" : ""}.`;
-                    }
-                    return "";
-                  })()}
                   <br />
                   <br />
                   <span className="text-sm text-muted-foreground">
@@ -710,7 +822,7 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {deletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId
+                                    (d) => d.document_id === documentId
                                   );
                                   return (
                                     <li
@@ -736,19 +848,14 @@ export default function Documents() {
                               <ul className="text-sm space-y-1">
                                 {nonDeletableDocuments.map((documentId) => {
                                   const doc = documents.find(
-                                    (d) => d.id === documentId
+                                    (d) => d.document_id === documentId
                                   );
-                                  const scenariosUsing = doc
-                                    ? getScenariosUsingDocument(doc.id)
-                                    : [];
                                   return (
                                     <li
                                       key={documentId}
                                       className="text-red-600 dark:text-red-300"
                                     >
-                                      • {doc?.name} (used in{" "}
-                                      {scenariosUsing.length} scenario
-                                      {scenariosUsing.length > 1 ? "s" : ""})
+                                      • {doc?.name} (cannot delete)
                                     </li>
                                   );
                                 })}
@@ -788,7 +895,7 @@ export default function Documents() {
                 isDeleting ||
                 deleteDocumentMutation.isPending ||
                 (editingDocument && !selectedDocuments.length
-                  ? !canDeleteDocument(editingDocument.id)
+                  ? !canDeleteDocument(editingDocument.document_id)
                   : selectedDocuments.filter((documentId) =>
                       canDeleteDocument(documentId)
                     ).length === 0)
@@ -819,7 +926,26 @@ export default function Documents() {
           {previewDocument && (
             <div className="flex-1 min-h-0">
               <DocumentViewer
-                document={previewDocument}
+                document={{
+                  id: previewDocument.document_id,
+                  name: previewDocument.name,
+                  type: previewDocument.type as
+                    | "homework"
+                    | "project"
+                    | "quiz"
+                    | "midterm"
+                    | "lab"
+                    | "lecture"
+                    | "syllabus",
+                  active: previewDocument.active,
+                  filePath: previewDocument.file_path,
+                  mimeType: previewDocument.mime_type,
+                  departmentId: previewDocument.department_id,
+                  updatedAt: previewDocument.updatedAt,
+                  createdAt: previewDocument.updatedAt,
+                  classified: false,
+                  fileId: null,
+                }}
                 bare={true}
                 isFormDocument={false}
               />

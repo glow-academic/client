@@ -1,6 +1,6 @@
 /**
  * DepartmentSelector.tsx
- * Single department selection component for forms
+ * Single department selection component for forms - V2 (mapping-based)
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -31,47 +31,61 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
+import type { DepartmentMappingItem } from "@/lib/api/v2/schemas/personas";
 import { cn } from "@/lib/utils";
 
-export interface Department {
-  id: string;
-  title: string;
-  description?: string;
-}
-
 export interface DepartmentSelectorProps extends PopoverProps {
-  departments: Department[];
-  selectedDepartment?: Department | null;
-  onSelect?: (department: Department | null) => void;
+  departmentMapping: Record<string, DepartmentMappingItem>;
+  selectedDepartmentId: string;
+  validDepartmentIds: string[];
+  onSelect: (departmentId: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
 }
 
+interface Department {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
 export function DepartmentSelector({
-  departments,
-  selectedDepartment,
+  departmentMapping,
+  selectedDepartmentId,
+  validDepartmentIds,
   onSelect,
   placeholder = "Select department...",
   disabled = false,
   ...props
 }: DepartmentSelectorProps) {
   const [open, setOpen] = React.useState(false);
+
+  // Build departments from mapping
+  const departments = React.useMemo(() => {
+    return validDepartmentIds.map((id) => ({
+      id,
+      name: departmentMapping[id]?.name || id,
+      description: departmentMapping[id]?.description ?? null,
+    }));
+  }, [validDepartmentIds, departmentMapping]);
+
+  const selectedDepartment = React.useMemo(() => {
+    if (!selectedDepartmentId) return null;
+    return departments.find((d) => d.id === selectedDepartmentId) || null;
+  }, [selectedDepartmentId, departments]);
+
   const [peekedDepartment, setPeekedDepartment] = React.useState<
     Department | undefined
   >(departments[0]);
 
   const handleSelect = (department: Department) => {
-    onSelect?.(department);
+    onSelect(department.id);
     setOpen(false);
   };
 
   const handleClear = () => {
-    onSelect?.(null);
+    onSelect(null);
     setOpen(false);
-  };
-
-  const getSearchNotFoundMessage = () => {
-    return `No departments found.`;
   };
 
   return (
@@ -87,7 +101,7 @@ export function DepartmentSelector({
             disabled={disabled}
           >
             <span className="truncate text-left">
-              {selectedDepartment ? selectedDepartment.title : placeholder}
+              {selectedDepartment ? selectedDepartment.name : placeholder}
             </span>
             <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
           </Button>
@@ -102,7 +116,7 @@ export function DepartmentSelector({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedDepartment?.title || "No department selected"}
+                  {peekedDepartment?.name || "No department selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedDepartment?.description || "No description available"}
@@ -112,7 +126,7 @@ export function DepartmentSelector({
             <Command loop>
               <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
                 <CommandInput placeholder="Search departments..." />
-                <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
+                <CommandEmpty>No departments found.</CommandEmpty>
                 <HoverCardTrigger />
 
                 {selectedDepartment && (
@@ -182,9 +196,9 @@ function DepartmentItem({
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <div className="truncate">{department.title}</div>
+            <div className="truncate">{department.name}</div>
             {department.description && (
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
                 {department.description}
               </div>
             )}
@@ -193,7 +207,7 @@ function DepartmentItem({
         <Check
           className={cn(
             "ml-auto flex-shrink-0",
-            isSelected ? "opacity-100" : "opacity-0",
+            isSelected ? "opacity-100" : "opacity-0"
           )}
         />
       </div>

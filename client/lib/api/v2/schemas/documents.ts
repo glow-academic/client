@@ -4,11 +4,17 @@
  */
 
 import { z } from "zod";
-import { DepartmentMappingSchema, ScenarioMappingSchema } from "./personas"; // Reuse centralized types
+import {
+  DepartmentMappingSchema,
+  ParameterItemMappingSchema,
+  ScenarioMappingSchema,
+} from "./personas"; // Reuse centralized types
 
-// Tag mapping (reusable)
-export const TagMappingSchema = z.record(z.string(), z.string()); // tag_id -> name
-export type TagMapping = z.infer<typeof TagMappingSchema>;
+// Parameter item mapping for documents (re-export from personas)
+export const ParameterItemMappingSchemaDoc = ParameterItemMappingSchema;
+export type ParameterItemMapping = z.infer<
+  typeof ParameterItemMappingSchemaDoc
+>;
 
 // ============================================================================
 // LIST ENDPOINT
@@ -26,19 +32,21 @@ export const DocumentItemSchema = z.object({
   name: z.string(),
   type: z.string(),
   updatedAt: z.string(),
-  tag_ids: z.array(z.string()),
   extension: z.string(),
   scenario_ids: z.array(z.string()),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   active: z.boolean(),
   department_id: z.string(),
+  file_path: z.string(),
+  mime_type: z.string(),
+  parameter_item_ids: z.array(z.string()),
 });
 
 export const DocumentsListResponseSchema = z.object({
   documents: z.array(DocumentItemSchema),
-  tag_mapping: TagMappingSchema,
   scenario_mapping: ScenarioMappingSchema,
+  parameter_item_mapping: ParameterItemMappingSchemaDoc,
 });
 
 export type DocumentsListResponse = z.infer<typeof DocumentsListResponseSchema>;
@@ -60,10 +68,12 @@ export const DocumentDetailResponseSchema = z.object({
   active: z.boolean(),
   type: z.string(),
   document_type_options: z.array(z.string()),
-  tag_ids: z.array(z.string()),
-  valid_tag_ids: z.array(z.string()),
   department_id: z.string(),
   valid_department_ids: z.array(z.string()),
+  department_mapping: DepartmentMappingSchema,
+  parameter_item_ids: z.array(z.string()),
+  valid_parameter_item_ids: z.array(z.string()),
+  parameter_item_mapping: ParameterItemMappingSchemaDoc,
 });
 
 export type DocumentDetailResponse = z.infer<
@@ -86,12 +96,12 @@ export type DocumentDetailBulkRequest = z.infer<
 export const DocumentDetailBulkResponseSchema = z.object({
   document_type_options: z.array(z.string()),
   type: z.string().nullable(), // Common type if all same, else null
-  tag_ids: z.array(z.string()), // Union of all tag_ids
-  valid_tag_ids: z.array(z.string()),
   department_ids: z.array(z.string()), // Union of all department_ids
   valid_department_ids: z.array(z.string()),
-  tag_mapping: TagMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  parameter_item_ids: z.array(z.string()), // Union of all parameter_item_ids
+  valid_parameter_item_ids: z.array(z.string()),
+  parameter_item_mapping: ParameterItemMappingSchemaDoc,
 });
 
 export type DocumentDetailBulkResponse = z.infer<
@@ -105,8 +115,8 @@ export type DocumentDetailBulkResponse = z.infer<
 export const UpdateDocumentRequestSchema = z.object({
   documentId: z.string(),
   type: z.string(),
-  tag_ids: z.array(z.string()),
   department_id: z.string(),
+  parameter_item_ids: z.array(z.string()),
 });
 
 export type UpdateDocumentRequest = z.infer<typeof UpdateDocumentRequestSchema>;
@@ -114,8 +124,8 @@ export type UpdateDocumentRequest = z.infer<typeof UpdateDocumentRequestSchema>;
 export const BulkUpdateDocumentsRequestSchema = z.object({
   documentIds: z.array(z.string()),
   type: z.string(),
-  tag_ids: z.array(z.string()),
   department_id: z.string(),
+  parameter_item_ids: z.array(z.string()),
 });
 
 export type BulkUpdateDocumentsRequest = z.infer<

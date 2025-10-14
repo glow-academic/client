@@ -39,6 +39,14 @@ class DepartmentMappingItem(BaseModel):
     description: Optional[str]
 
 
+class ParameterItemMappingItem(BaseModel):
+    """Parameter item mapping item."""
+
+    name: str
+    parameter_name: str
+    parameter_id: str
+
+
 class PersonasListResponse(BaseModel):
     """Response for personas list endpoint."""
 
@@ -104,6 +112,13 @@ class PersonaDetailResponse(BaseModel):
     reasoning: Optional[str]
     temperature: float
     system_prompt: str
+
+    # Usage and permissions
+    in_use: bool
+    scenario_count: int
+    can_edit: bool
+    can_duplicate: bool
+    can_delete: bool
 
     # Metadata/Options
     preset_colors: List[str]

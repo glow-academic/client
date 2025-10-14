@@ -41,12 +41,11 @@ class DocumentService:
 
         # Build response
         documents = []
-        tag_mapping = {}
         scenario_mapping = {}
 
         for row in result:
-            tag_ids = row.tag_ids or []
             scenario_ids = [str(sid) for sid in (row.scenario_ids or [])]
+            parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
             extension = row.extension or ""
 
             documents.append(
@@ -55,33 +54,17 @@ class DocumentService:
                     name=row.name,
                     type=row.type,
                     updatedAt=row.updated_at.isoformat() if row.updated_at else "",
-                    tag_ids=tag_ids,
                     extension=extension,
                     scenario_ids=scenario_ids,
                     can_edit=row.can_edit,
                     can_delete=row.can_delete,
+                    active=row.active,
+                    department_id=str(row.department_id),
+                    file_path=row.file_path,
+                    mime_type=row.mime_type,
+                    parameter_item_ids=parameter_item_ids,
                 )
             )
-
-        # Get tag names for mapping
-        if tag_ids_to_fetch := list(
-            set([tid for d in documents for tid in d.tag_ids])
-        ):
-            # Parse simulation_id and tag_idx from composite tag_id
-            tag_parts = [tid.split("_") for tid in tag_ids_to_fetch]
-            sim_tag_pairs = [
-                (parts[0], int(parts[1])) for parts in tag_parts if len(parts) == 2
-            ]
-
-            if sim_tag_pairs:
-                sim_ids = [pair[0] for pair in sim_tag_pairs]
-                tag_idxs = [pair[1] for pair in sim_tag_pairs]
-
-                query, params = self.queries.get_tag_mapping(sim_ids, tag_idxs)
-                tag_result = self.db.execute(text(query), params).fetchall()
-
-                for row in tag_result:
-                    tag_mapping[row.tag_id] = row.name
 
         # Get scenario names for mapping
         if scenario_ids_to_fetch := list(
@@ -93,10 +76,37 @@ class DocumentService:
             for row in scenario_result:
                 scenario_mapping[str(row.id)] = row.name
 
+        # Build parameter_item_mapping (all items as valid options for now)
+        # TODO: Query document_parameter_items junction table for specific items per document
+        param_query = text("""
+            SELECT 
+                pi.id,
+                pi.name,
+                p.name as parameter_name,
+                p.id as parameter_id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
+        """)
+        param_results = self.db.execute(
+            param_query, {"dept_ids": filters.departmentIds}
+        ).fetchall()
+
+        from app.schemas.personas import ParameterItemMappingItem
+
+        parameter_item_mapping = {
+            str(row.id): ParameterItemMappingItem(
+                name=row.name,
+                parameter_name=row.parameter_name,
+                parameter_id=str(row.parameter_id),
+            )
+            for row in param_results
+        }
+
         return DocumentsListResponse(
             documents=documents,
-            tag_mapping=tag_mapping,
             scenario_mapping=scenario_mapping,
+            parameter_item_mapping=parameter_item_mapping,
         )
 
     def get_document_detail(
@@ -111,11 +121,6 @@ class DocumentService:
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
 
-        # Get tag IDs for this document
-        query, params = self.queries.get_document_tags(request.documentId)
-        tag_result = self.db.execute(text(query), params).fetchall()
-        tag_ids = [row.tag_id for row in tag_result]
-
         # Get user's accessible department IDs
         query, params = self.queries.get_valid_departments_for_profile(
             request.profileId
@@ -124,11 +129,66 @@ class DocumentService:
             str(row.id) for row in self.db.execute(text(query), params).fetchall()
         ]
 
-        # Get valid tag IDs
-        query, params = self.queries.get_valid_tags(valid_department_ids)
-        valid_tag_ids = [
-            row.tag_id for row in self.db.execute(text(query), params).fetchall()
+        # Get all valid parameter items for this department
+        # TODO: Query document_parameter_items junction table for specific items
+        param_query = text("""
+            SELECT pi.id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = :dept_id AND pi.active = true
+        """)
+        valid_param_items = [
+            str(row.id)
+            for row in self.db.execute(
+                param_query, {"dept_id": document.department_id}
+            ).fetchall()
         ]
+
+        # Get departments with mapping
+        departments_query = text("""
+        SELECT id, name, description 
+        FROM departments 
+        WHERE id = ANY(:dept_ids)
+        ORDER BY name
+        """)
+        departments_result = self.db.execute(
+            departments_query, {"dept_ids": valid_department_ids}
+        ).fetchall()
+
+        from app.schemas.personas import DepartmentMappingItem
+
+        department_mapping = {
+            str(row.id): DepartmentMappingItem(
+                name=row.name, description=row.description
+            )
+            for row in departments_result
+        }
+
+        # Build parameter_item_mapping for valid items
+        param_mapping_query = text("""
+            SELECT 
+                pi.id,
+                pi.name,
+                p.name as parameter_name,
+                p.id as parameter_id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id = ANY(:param_item_ids)
+        """)
+        param_mapping_result = self.db.execute(
+            param_mapping_query, {"param_item_ids": valid_param_items}
+        ).fetchall()
+
+        from app.schemas.personas import ParameterItemMappingItem
+
+        parameter_item_mapping = {
+            str(row.id): ParameterItemMappingItem(
+                name=row.name,
+                parameter_name=row.parameter_name,
+                parameter_id=str(row.parameter_id),
+            )
+            for row in param_mapping_result
+        }
 
         # Document type options
         document_type_options = [
@@ -146,10 +206,12 @@ class DocumentService:
             active=document.active,
             type=document.type,
             document_type_options=document_type_options,
-            tag_ids=tag_ids,
-            valid_tag_ids=valid_tag_ids,
             department_id=str(document.department_id),
             valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
+            parameter_item_ids=[],  # TODO: Query document_parameter_items
+            valid_parameter_item_ids=valid_param_items,
+            parameter_item_mapping=parameter_item_mapping,
         )
 
     def get_document_detail_bulk(
@@ -181,20 +243,6 @@ class DocumentService:
         # Aggregate department IDs
         department_ids = list(set([str(row.department_id) for row in documents_result]))
 
-        # Get tag IDs for these documents
-        tag_query = text("""
-        SELECT DISTINCT
-            (simulation_id::text || '_' || tag_idx::text) as tag_id
-        FROM simulation_tag_documents
-        WHERE document_id = ANY(:document_ids) AND active = true
-        """)
-
-        tag_result = self.db.execute(
-            tag_query, {"document_ids": request.documentIds}
-        ).fetchall()
-
-        tag_ids = [row.tag_id for row in tag_result]
-
         # Get user's accessible department IDs
         user_dept_query = text("""
         SELECT DISTINCT d.id
@@ -211,50 +259,20 @@ class DocumentService:
             ).fetchall()
         ]
 
-        # Get valid tag IDs
-        valid_tags_query = text("""
-        SELECT DISTINCT
-            (st.simulation_id::text || '_' || st.idx::text) as tag_id
-        FROM simulation_tags st
-        JOIN simulations s ON s.id = st.simulation_id
-        WHERE s.department_id = ANY(:dept_ids) AND s.active = true
+        # Get all valid parameter items for these departments
+        # TODO: Query document_parameter_items junction table for union of items across docs
+        valid_param_query = text("""
+            SELECT pi.id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
         """)
-
-        valid_tag_ids = [
-            row.tag_id
+        valid_param_items = [
+            str(row.id)
             for row in self.db.execute(
-                valid_tags_query, {"dept_ids": valid_department_ids}
+                valid_param_query, {"dept_ids": department_ids}
             ).fetchall()
         ]
-
-        # Get tag names for mapping
-        tag_mapping = {}
-        if tag_ids:
-            tag_parts = [tid.split("_") for tid in tag_ids]
-            sim_tag_pairs = [(parts[0], int(parts[1])) for parts in tag_parts if len(parts) == 2]
-            
-            if sim_tag_pairs:
-                tag_name_query = text("""
-                SELECT 
-                    simulation_id,
-                    idx,
-                    name,
-                    (simulation_id::text || '_' || idx::text) as tag_id
-                FROM simulation_tags
-                WHERE (simulation_id, idx) IN (
-                    SELECT unnest(:sim_ids::uuid[]), unnest(:tag_idxs::integer[])
-                )
-                """)
-                
-                sim_ids = [pair[0] for pair in sim_tag_pairs]
-                tag_idxs = [pair[1] for pair in sim_tag_pairs]
-                
-                tag_name_result = self.db.execute(
-                    tag_name_query, {"sim_ids": sim_ids, "tag_idxs": tag_idxs}
-                ).fetchall()
-
-                for row in tag_name_result:
-                    tag_mapping[row.tag_id] = row.name
 
         # Get departments with mapping
         departments_query = text("""
@@ -267,11 +285,39 @@ class DocumentService:
             departments_query, {"dept_ids": valid_department_ids}
         ).fetchall()
 
+        from app.schemas.personas import DepartmentMappingItem
+
         department_mapping = {
             str(row.id): DepartmentMappingItem(
                 name=row.name, description=row.description
             )
             for row in departments_result
+        }
+
+        # Build parameter_item_mapping for valid items
+        param_mapping_query = text("""
+            SELECT 
+                pi.id,
+                pi.name,
+                p.name as parameter_name,
+                p.id as parameter_id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id = ANY(:param_item_ids)
+        """)
+        param_mapping_result = self.db.execute(
+            param_mapping_query, {"param_item_ids": valid_param_items}
+        ).fetchall()
+
+        from app.schemas.personas import ParameterItemMappingItem
+
+        parameter_item_mapping = {
+            str(row.id): ParameterItemMappingItem(
+                name=row.name,
+                parameter_name=row.parameter_name,
+                parameter_id=str(row.parameter_id),
+            )
+            for row in param_mapping_result
         }
 
         document_type_options = [
@@ -287,12 +333,12 @@ class DocumentService:
         return DocumentDetailBulkResponse(
             document_type_options=document_type_options,
             type=common_type,
-            tag_ids=tag_ids,
-            valid_tag_ids=valid_tag_ids,
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
-            tag_mapping=tag_mapping,
             department_mapping=department_mapping,
+            parameter_item_ids=[],  # TODO: Query document_parameter_items for union
+            valid_parameter_item_ids=valid_param_items,
+            parameter_item_mapping=parameter_item_mapping,
         )
 
     def update_document(

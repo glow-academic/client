@@ -6,14 +6,18 @@
  */
 
 import PersonaEdit from "@/components/create/personas/PersonaEdit";
-import { use } from "react";
 
+import { auth } from "@/auth";
+import { personasDetailKeys } from "@/lib/api/v2/keys";
+import { fetchPersonaDetail } from "@/lib/api/v2/server/personas";
 import { personaRepo } from "@/lib/repos/personaRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ personaId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { personaId } = await params;
   const persona = await personaRepo.find(personaId);
@@ -23,15 +27,28 @@ export async function generateMetadata(
   };
 }
 
-export default function PersonaEditPage({
+export default async function PersonaEditPage({
   params,
 }: {
   params: Promise<{ personaId: string }>;
 }) {
-  const { personaId } = use(params);
+  const { personaId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch persona detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: personasDetailKeys.detail(personaId, profileId),
+    queryFn: () => fetchPersonaDetail(personaId, profileId),
+  });
+
   return (
-    <div className="space-y-6">
-      <PersonaEdit personaId={personaId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <PersonaEdit personaId={personaId} />
+      </div>
+    </HydrationBoundary>
   );
 }

@@ -10,16 +10,9 @@ class DocumentQueries:
         self, department_ids: List[str], profile_id: str
     ) -> Tuple[str, Dict[str, Any]]:
         """Build query for documents list with permissions and relationships."""
+        # TODO: Create document_parameter_items junction table and query specific items per document
         query = """
-        WITH document_tags AS (
-            SELECT 
-                std.document_id,
-                ARRAY_AGG(DISTINCT (std.simulation_id || '_' || std.tag_idx::text)) as tag_ids
-            FROM simulation_tag_documents std
-            WHERE std.active = true
-            GROUP BY std.document_id
-        ),
-        document_scenarios AS (
+        WITH document_scenarios AS (
             SELECT 
                 sd.document_id,
                 ARRAY_AGG(DISTINCT sd.scenario_id) as scenario_ids
@@ -36,10 +29,10 @@ class DocumentQueries:
                 d.mime_type,
                 d.active,
                 d.department_id,
-                COALESCE(dt.tag_ids, ARRAY[]::text[]) as tag_ids,
-                COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids
+                d.file_path,
+                COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+                ARRAY[]::uuid[] as parameter_item_ids
             FROM documents d
-            LEFT JOIN document_tags dt ON dt.document_id = d.id
             LEFT JOIN document_scenarios ds ON ds.document_id = d.id
             WHERE d.department_id = ANY(:department_ids)
         ),
