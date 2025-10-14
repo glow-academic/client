@@ -43,7 +43,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
-import type { MappingItem, ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
+import type {
+  MappingItem,
+  ParameterItemMappingItem,
+} from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
 // Extended mapping item for scenarios with parameter item IDs

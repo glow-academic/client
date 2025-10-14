@@ -164,7 +164,9 @@ export function DocumentPicker<
     return typeMap[type || "other"] || "📄";
   };
 
-  const previewDocument = previewDocumentId ? mapping[previewDocumentId] : undefined;
+  const previewDocument = previewDocumentId
+    ? mapping[previewDocumentId]
+    : undefined;
 
   return (
     <div className="grid gap-2">
@@ -213,7 +215,9 @@ export function DocumentPicker<
                 {/* Document preview - note: DocumentViewer expects full document object */}
                 <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
                   <div className="flex items-center justify-center h-full">
-                    <span className="text-4xl">{getDocumentTypeIcon(document.type)}</span>
+                    <span className="text-4xl">
+                      {getDocumentTypeIcon(document.type)}
+                    </span>
                   </div>
 
                   {/* Document name */}
@@ -262,7 +266,9 @@ export function DocumentPicker<
                 </div>
                 {peekedDocument && (
                   <div className="mt-4 text-center">
-                    <div className="text-6xl mb-2">{getDocumentTypeIcon(peekedDocument.type)}</div>
+                    <div className="text-6xl mb-2">
+                      {getDocumentTypeIcon(peekedDocument.type)}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {peekedDocument.filePath || "No file path"}
                     </div>
@@ -311,13 +317,16 @@ export function DocumentPicker<
               {previewDocument?.name || "Document Preview"}
             </DialogTitle>
             <DialogDescription>
-              {previewDocument?.description || "Preview the document content below."}
+              {previewDocument?.description ||
+                "Preview the document content below."}
             </DialogDescription>
           </DialogHeader>
           {previewDocument && (
             <div className="flex-1 min-h-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-8xl mb-4">{getDocumentTypeIcon(previewDocument.type)}</div>
+                <div className="text-8xl mb-4">
+                  {getDocumentTypeIcon(previewDocument.type)}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {previewDocument.filePath || "No file path available"}
                 </p>

@@ -95,8 +95,7 @@ export function ParameterItemPicker<
       .filter(Boolean);
     if (tokens.length === 0) return items;
     return items.filter((item) => {
-      const haystack =
-        `${item.name} ${item.description ?? ""}`.toLowerCase();
+      const haystack = `${item.name} ${item.description ?? ""}`.toLowerCase();
       return tokens.every((t) => haystack.includes(t));
     });
   }, [items, search]);
@@ -257,7 +256,10 @@ export function ParameterItemPicker<
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{parameterName}</DialogTitle>
-            <DialogDescription>{parameterDescription || `Create a new ${parameterName.toLowerCase()} item`}</DialogDescription>
+            <DialogDescription>
+              {parameterDescription ||
+                `Create a new ${parameterName.toLowerCase()} item`}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid gap-2">

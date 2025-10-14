@@ -35,14 +35,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem, ParameterItemMappingItem, PersonaMappingItem } from "@/lib/api/v2/schemas/base";
+import type {
+  MappingItem,
+  ParameterItemMappingItem,
+  PersonaMappingItem,
+} from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
 // Extended mapping item for simulations with metadata
@@ -155,10 +153,10 @@ export function SimulationPicker<
     });
     const rows = Array.from(countMap.entries())
       .filter(([id]) => personaMapping[id])
-      .map(([id, count]) => ({ 
-        id, 
-        name: personaMapping[id]!.name, 
-        count 
+      .map(([id, count]) => ({
+        id,
+        name: personaMapping[id]!.name,
+        count,
       }));
     rows.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     return rows;
@@ -222,77 +220,50 @@ export function SimulationPicker<
       const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       if (bd !== ad) return bd - ad;
-      const at = typeof a.title === "string" ? a.title : "";
-      const bt = typeof b.title === "string" ? b.title : "";
-      return at.localeCompare(bt);
+      return (a.name || "").localeCompare(b.name || "");
     });
   }, [filteredSimulations]);
 
-  // Get scenario badges for a simulation
-  // TODO: Load from simulation_scenarios and scenario_parameter_items junctions
-  const getSimulationScenarioBadges = (_simulation: Simulation) => {
-    // Badges require loading from multiple junction tables which adds complexity
-    // Returning empty for now - can be enhanced with dedicated hooks later
-    return [] as {
-      parameterName: string;
-      value: string;
-      parameterId: string;
-    }[];
-  };
+  const [peekedSimulation, setPeekedSimulation] = React.useState<
+    ({ id: string } & T) | undefined
+  >(sortedFilteredSimulations[0] as ({ id: string } & T) | undefined);
 
-  const handleSelect = (simulation: Simulation) => {
-    const isSelected = selectedSimulations.some((s) => s.id === simulation.id);
-    let newSelectedSimulations: Simulation[];
-
-    if (isSelected) {
-      // Remove from selection
-      newSelectedSimulations = selectedSimulations.filter(
-        (s) => s.id !== simulation.id
-      );
+  const handleSelect = (simulationId: string) => {
+    if (multiSelect) {
+      const isSelected = selectedSimulationIds.includes(simulationId);
+      const newIds = isSelected
+        ? selectedSimulationIds.filter((id) => id !== simulationId)
+        : [...selectedSimulationIds, simulationId];
+      onSelect(newIds);
+      // Don't close popover in multi-select mode
     } else {
-      if (singleSelect) {
-        // For single select, replace the entire selection
-        newSelectedSimulations = [simulation];
-      } else {
-        // Add to selection for multi-select
-        newSelectedSimulations = [...selectedSimulations, simulation];
-      }
-    }
-
-    onSelect?.(newSelectedSimulations);
-    // Close popover for single select, keep open for multi-select
-    if (singleSelect) {
+      onSelect([simulationId]);
       setOpen(false);
     }
   };
 
   // Allow clearing selection
   const handleClear = () => {
-    onSelect?.([]);
+    onSelect([]);
     setOpen(false);
   };
 
   // Remove individual item
-  const handleRemoveItem = (
-    simulationToRemove: Simulation,
-    e: React.MouseEvent
-  ) => {
+  const handleRemoveItem = (simulationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSelectedSimulations = selectedSimulations.filter(
-      (s) => s.id !== simulationToRemove.id
-    );
-    onSelect?.(newSelectedSimulations);
+    const newIds = selectedSimulationIds.filter((id) => id !== simulationId);
+    onSelect(newIds);
   };
 
   const getButtonText = () => {
-    if (selectedSimulations.length === 0) {
+    if (selectedSimulationIds.length === 0) {
       return placeholder;
     }
-    if (selectedSimulations.length === 1) {
-      const title = selectedSimulations[0]!.title;
-      return typeof title === "string" ? title : "Simulation selected";
+    if (selectedSimulationIds.length === 1) {
+      const simulation = simulationMapping[selectedSimulationIds[0]!];
+      return simulation?.name || placeholder;
     }
-    return `${selectedSimulations.length} simulations selected`;
+    return `${selectedSimulationIds.length} simulations selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -326,24 +297,28 @@ export function SimulationPicker<
       )}
 
       {/* Show selected items */}
-      {selectedSimulations.length > 0 && !hideSelectedChips && (
+      {selectedSimulationIds.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {selectedSimulations.map((simulation) => (
-            <div
-              key={simulation.id}
-              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-            >
-              <span>{simulation.title}</span>
-              <button
-                type="button"
-                onClick={(e) => handleRemoveItem(simulation, e)}
-                className="text-muted-foreground hover:text-destructive"
-                aria-label={`Remove ${typeof simulation.title === "string" ? simulation.title : "simulation"}`}
+          {selectedSimulationIds.map((id) => {
+            const simulation = simulationMapping[id];
+            if (!simulation) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                <span>{simulation.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove ${simulation.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -376,9 +351,7 @@ export function SimulationPicker<
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {typeof peekedSimulation?.title === "string"
-                    ? peekedSimulation.title
-                    : "Simulation selected"}
+                  {peekedSimulation?.name || "Simulation selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedSimulation?.description || "No description available"}
@@ -387,42 +360,6 @@ export function SimulationPicker<
                   <Badge variant="outline" className="text-xs">
                     {formatTimeLimit(peekedSimulation?.timeLimit)}
                   </Badge>
-                  {peekedSimulation?.defaultSimulation && (
-                    <Badge variant="default" className="text-xs">
-                      Default
-                    </Badge>
-                  )}
-                  {peekedSimulation?.active && (
-                    <Badge variant="outline" className="text-xs text-green-600">
-                      Active
-                    </Badge>
-                  )}
-                  {peekedSimulation &&
-                    getSimulationScenarioBadges(peekedSimulation)
-                      .slice(0, 3)
-                      .map((badge) => (
-                        <TooltipProvider key={badge.parameterId}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge variant="outline" className="text-xs">
-                                {badge.value}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{badge.parameterName}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                  {peekedSimulation &&
-                    getSimulationScenarioBadges(peekedSimulation).length >
-                      3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +
-                        {getSimulationScenarioBadges(peekedSimulation).length -
-                          3}
-                      </Badge>
-                    )}
                 </div>
               </div>
             </HoverCardContent>
@@ -607,7 +544,7 @@ export function SimulationPicker<
                 />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedSimulations.length > 0 && (
+                {selectedSimulationIds.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
@@ -621,12 +558,10 @@ export function SimulationPicker<
                   {sortedFilteredSimulations.map((simulation) => (
                     <SimulationItem
                       key={simulation.id}
-                      simulation={simulation}
-                      isSelected={selectedSimulations.some(
-                        (s) => s.id === simulation.id
-                      )}
-                      onPeek={(simulation) => setPeekedSimulation(simulation)}
-                      onSelect={() => handleSelect(simulation)}
+                      simulation={simulation as { id: string } & T}
+                      isSelected={selectedSimulationIds.includes(simulation.id)}
+                      onPeek={(s) => setPeekedSimulation(s)}
+                      onSelect={() => handleSelect(simulation.id)}
                     />
                   ))}
                 </CommandGroup>
@@ -639,19 +574,19 @@ export function SimulationPicker<
   );
 }
 
-interface SimulationItemProps {
-  simulation: Simulation;
+interface SimulationItemProps<T extends SimulationMappingItemExt> {
+  simulation: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (simulation: Simulation) => void;
+  onPeek: (simulation: { id: string } & T) => void;
 }
 
-function SimulationItem({
+function SimulationItem<T extends SimulationMappingItemExt>({
   simulation,
   isSelected,
   onSelect,
   onPeek,
-}: SimulationItemProps) {
+}: SimulationItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -677,7 +612,7 @@ function SimulationItem({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Play className="h-4 w-4 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="truncate">{simulation.title}</div>
+            <div className="truncate">{simulation.name}</div>
             <div className="mt-1 text-xs text-muted-foreground truncate">
               {simulation.description || "No description available"}
             </div>
