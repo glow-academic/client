@@ -47,6 +47,9 @@ class SimulationItem(BaseModel):
     name: str  # Maps to simulations.title
     description: str
     time_limit: Optional[int]
+    active: bool
+    default_simulation: bool
+    practice_simulation: bool
     can_edit: bool
     can_delete: bool
     can_duplicate: bool

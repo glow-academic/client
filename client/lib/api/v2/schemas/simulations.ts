@@ -34,6 +34,9 @@ export const SimulationItemSchema = z.object({
   name: z.string(), // Maps to simulations.title
   description: z.string(),
   time_limit: z.number().nullable(),
+  active: z.boolean(),
+  default_simulation: z.boolean(),
+  practice_simulation: z.boolean(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),

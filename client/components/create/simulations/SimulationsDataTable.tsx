@@ -16,31 +16,59 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { Simulation } from "@/types";
+import {
+  RubricMapping,
+  ScenarioMapping,
+  SimulationItem,
+} from "@/lib/api/v2/schemas/simulations";
 import { SimulationsDataTableToolbar } from "./SimulationsDataTableToolbar";
 
 export interface SimulationsDataTableProps {
-  columns: ColumnDef<Simulation>[];
-  data: Simulation[];
+  data: SimulationItem[];
+  scenarioMapping: ScenarioMapping;
+  rubricMapping: RubricMapping;
   scenarioOptions: { value: string; label: string }[];
   rubricOptions: { value: string; label: string }[];
   timeLimitOptions: { value: string; label: string }[];
-  renderSimulationCard: (simulation: Simulation) => React.ReactNode;
+  renderSimulationCard: (simulation: SimulationItem) => React.ReactNode;
 }
 
 export function SimulationsDataTable({
-  columns,
   data,
+  scenarioMapping,
+  rubricMapping,
   scenarioOptions,
   rubricOptions,
   timeLimitOptions,
   renderSimulationCard,
 }: SimulationsDataTableProps) {
+  // Minimal columns for filtering/sorting only (card view, no table)
+  const columns: ColumnDef<SimulationItem>[] = React.useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "scenario_ids",
+        header: "Scenarios",
+      },
+      {
+        accessorKey: "rubric_id",
+        header: "Rubric",
+      },
+      {
+        accessorKey: "time_limit",
+        header: "Time Limit",
+      },
+    ],
+    []
+  );
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "updatedAt", desc: true }, // Default to descending order by date
