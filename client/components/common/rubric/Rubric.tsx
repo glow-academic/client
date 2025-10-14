@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
-import { useRubric } from "@/lib/api/v1/hooks/rubrics";
-import { useStandardGroupsByRubricId } from "@/lib/api/v1/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
+import {
+  useRubricDetail,
+  useRubricDetailDefault,
+} from "@/lib/api/v2/hooks/rubrics";
 import RubricDetails from "./RubricDetails";
 import RubricStandardGroup from "./RubricStandardGroup";
 
@@ -29,6 +30,21 @@ export default function Rubric({ rubricId }: RubricProps) {
   const { effectiveProfile } = useProfile();
 
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
+
+  // V2 API hooks
+  const { data: rubricDetail, isLoading: isLoadingRubricDetail } =
+    useRubricDetail(
+      rubricId || "",
+      effectiveProfile?.id || "",
+      !!rubricId && isEditMode
+    );
+
+  const { data: rubricDetailDefault, isLoading: isLoadingRubricDefault } =
+    useRubricDetailDefault(effectiveProfile?.id || "", !isEditMode);
+
+  // Use edit detail when editing, default detail when creating
+  const rubricData = isEditMode ? rubricDetail : rubricDetailDefault;
+  const isLoading = isEditMode ? isLoadingRubricDetail : isLoadingRubricDefault;
 
   // Create a default rubric for creation mode
   const defaultRubric = {
@@ -44,32 +60,85 @@ export default function Rubric({ rubricId }: RubricProps) {
     departmentId: "",
   };
 
-  const { data: rubric, isLoading: rubricLoading } = useRubric(rubricId!);
-  const { data: standardGroups, isLoading: standardGroupsLoading } =
-    useStandardGroupsByRubricId(rubricId!);
-  const { data: standards, isLoading: standardsLoading } =
-    useStandardsByStandardGroupIdBatch(
-      standardGroups!.map((group) => group.id)
-    );
+  // Transform v2 data to current rubric format
+  const currentRubric = useMemo(() => {
+    if (!isEditMode) return defaultRubric;
+    if (!rubricData) return defaultRubric;
+    return {
+      id: rubricId || "new",
+      name: rubricData.name,
+      description: rubricData.description,
+      points: rubricData.points,
+      passPoints: rubricData.passPoints,
+      active: rubricData.active,
+      defaultRubric: rubricData.default_rubric,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      departmentId: rubricData.department_id,
+    };
+  }, [isEditMode, rubricData, rubricId]);
 
-  const isLoading = rubricLoading || standardGroupsLoading || standardsLoading;
-
-  // Use default rubric for creation mode, actual rubric for edit mode
-  const currentRubric = isEditMode ? rubric || defaultRubric : defaultRubric;
   const currentRubricId = isEditMode ? rubricId! : "new";
 
-  // Determine readonly based on default rubric and role
+  // Transform v2 structure to standard groups array
+  const standardGroups = useMemo(() => {
+    if (!rubricData?.standard_group_ids) return [];
+    return rubricData.standard_group_ids.map((groupId) => ({
+      id: groupId,
+      name: rubricData.standard_groups_mapping[groupId]?.name || "",
+      description:
+        rubricData.standard_groups_mapping[groupId]?.description || "",
+      points: rubricData.standard_groups_detail[groupId]?.points || 0,
+      passPoints: rubricData.standard_groups_detail[groupId]?.passPoints || 0,
+      rubricId: currentRubricId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      shortName: "",
+    }));
+  }, [rubricData, currentRubricId]);
+
+  // Transform v2 structure to standards array
+  const standards = useMemo(() => {
+    if (!rubricData?.standards_mapping) return [];
+    const result: Array<{
+      id: string;
+      name: string;
+      description: string;
+      points: number;
+      standardGroupId: string;
+      createdAt: string;
+      updatedAt: string;
+    }> = [];
+
+    // Map standards to their groups
+    rubricData.standard_group_ids?.forEach((groupId) => {
+      const standardIds =
+        rubricData.standard_groups_detail[groupId]?.standard_ids || [];
+      standardIds.forEach((standardId) => {
+        const standard = rubricData.standards_mapping[standardId];
+        if (standard) {
+          result.push({
+            id: standardId,
+            name: standard.name,
+            description: standard.description,
+            points: standard.points,
+            standardGroupId: groupId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      });
+    });
+
+    return result;
+  }, [rubricData]);
+
+  // Determine readonly based on v2 permission flag
   const isReadonly = useMemo(() => {
     if (!isEditMode) return false;
-    if (!currentRubric) return true;
-    if (
-      currentRubric.defaultRubric &&
-      effectiveProfile?.role !== "superadmin"
-    ) {
-      return true;
-    }
-    return false;
-  }, [isEditMode, currentRubric, effectiveProfile?.role]);
+    if (!rubricData) return true;
+    return !rubricData.can_edit;
+  }, [isEditMode, rubricData]);
 
   // Initialize open cards when standard groups load
   useEffect(() => {
@@ -144,6 +213,8 @@ export default function Rubric({ rubricId }: RubricProps) {
       <RubricDetails
         rubric={currentRubric}
         rubricId={currentRubricId}
+        departmentMapping={rubricData?.department_mapping || {}}
+        validDepartmentIds={rubricData?.valid_department_ids || []}
         isCreateMode={!isEditMode}
         isReadonly={isReadonly}
       />

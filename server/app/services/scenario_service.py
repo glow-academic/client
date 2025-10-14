@@ -3,10 +3,11 @@
 from typing import Any, Dict, List
 
 from app.queries.scenario_queries import ScenarioQueries
-from app.schemas.base import (CohortMappingItem, DocumentMappingItem,
-                              ObjectiveMappingItem, ParameterItemMappingItem,
-                              ParameterMappingItem, PersonaMappingItem,
-                              ScenarioMappingItem, SimulationMappingItem)
+from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
+                              DocumentMappingItem, ObjectiveMappingItem,
+                              ParameterItemMappingItem, ParameterMappingItem,
+                              PersonaMappingItem, ScenarioMappingItem,
+                              SimulationMappingItem)
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -270,15 +271,18 @@ class ScenarioService:
     ) -> ScenarioDetailResponse:
         """Get detailed scenario information using dynamic SQL."""
 
-        # Get scenario basic info
+        # Get scenario basic info including generated and parent_scenario_id
         scenario_query = text("""
         SELECT 
             s.name,
             s.problem_statement,
             s.active,
             s.default_scenario,
-            s.department_id
+            s.department_id,
+            COALESCE(s.generated, false) as generated,
+            st.parent_scenario_id
         FROM scenarios s
+        LEFT JOIN scenario_tree st ON st.child_scenario_id = s.id
         WHERE s.id = :scenario_id
         """)
 
@@ -531,12 +535,70 @@ class ScenarioService:
                     parameter_name=row.parameter_name
                 )
 
+        # Compute permissions
+        # Check if scenario is in use by active simulations
+        active_sim_check_query = text("""
+            SELECT COUNT(*) as usage_count
+            FROM simulation_scenarios ss
+            JOIN simulations s ON s.id = ss.simulation_id
+            WHERE ss.scenario_id = :scenario_id 
+            AND ss.active = true 
+            AND s.active = true
+        """)
+        
+        active_sim_count_result = self.db.execute(
+            active_sim_check_query, {"scenario_id": request.scenarioId}
+        ).fetchone()
+        
+        in_use_by_active = (active_sim_count_result.usage_count > 0) if active_sim_count_result else False
+        is_generated = scenario.generated
+        
+        # Get profile role for permissions
+        role_query = text("""
+            SELECT role FROM profiles WHERE id = :profile_id
+        """)
+        
+        role_result = self.db.execute(
+            role_query, {"profile_id": request.profileId}
+        ).fetchone()
+        
+        is_superadmin = role_result.role == 'superadmin' if role_result else False
+        
+        # Compute permission flags
+        can_edit = not in_use_by_active and not is_generated
+        can_duplicate = True  # Always allowed
+        can_delete = not in_use_by_active and is_superadmin
+
+        # Get department mapping
+        department_mapping = {}
+        if dept_ids:
+            dept_mapping_query = text("""
+                SELECT id, title, COALESCE(description, '') as description 
+                FROM departments 
+                WHERE id = ANY(:dept_ids)
+            """)
+            
+            dept_mapping_result = self.db.execute(
+                dept_mapping_query, {"dept_ids": dept_ids}
+            ).fetchall()
+            
+            for row in dept_mapping_result:
+                department_mapping[str(row.id)] = DepartmentMappingItem(
+                    name=row.title,
+                    description=row.description
+                )
+
         return ScenarioDetailResponse(
             # Basic fields
             name=scenario.name,
             problem_statement=scenario.problem_statement,
             active=scenario.active,
             default_scenario=scenario.default_scenario,
+            generated=is_generated,
+            parent_scenario_id=str(scenario.parent_scenario_id) if scenario.parent_scenario_id else None,
+            # Department
+            department_id=str(scenario.department_id),
+            valid_department_ids=dept_ids,
             # IDs
             persona_id=persona_id,
             valid_persona_ids=valid_persona_ids,
@@ -549,6 +611,10 @@ class ScenarioService:
             parameters=parameters_dict,
             # Simulations
             active_simulation_ids=active_simulation_ids,
+            # Permissions
+            can_edit=can_edit,
+            can_duplicate=can_duplicate,
+            can_delete=can_delete,
             # Mappings
             parameter_mapping=parameter_mapping,
             parameter_item_mapping=param_item_full_mapping,
@@ -556,45 +622,173 @@ class ScenarioService:
             persona_mapping=persona_mapping,
             document_mapping=document_mapping,
             objective_mapping=objective_mapping,
+            department_mapping=department_mapping,
         )
 
     def get_scenario_detail_default(
         self, request: ScenarioDetailDefaultRequest
     ) -> ScenarioDetailResponse:
-        """Get default scenario details based on profile."""
+        """Get default scenario structure for creation mode."""
 
-        # Get first active scenario from user's departments
-        scenario_query = text("""
-        WITH user_departments AS (
-            SELECT DISTINCT pd.department_id
-            FROM profile_departments pd
-            WHERE pd.profile_id = :profile_id
-        ),
-        user_scenarios AS (
-            SELECT s.*
-            FROM scenarios s
-            JOIN user_departments ud ON ud.department_id = s.department_id
-            WHERE s.active = true
-            ORDER BY s.default_scenario ASC, s.created_at DESC
-            LIMIT 1
-        )
-        SELECT id
-        FROM user_scenarios
+        # Get user's accessible department IDs
+        user_dept_query = text("""
+        SELECT DISTINCT d.id
+        FROM departments d
+        JOIN profile_departments pd ON pd.department_id = d.id
+        WHERE pd.profile_id = :profile_id AND d.active = true
         """)
 
-        scenario = self.db.execute(
-            scenario_query, {"profile_id": request.profileId}
-        ).fetchone()
+        dept_results = self.db.execute(
+            user_dept_query, {"profile_id": request.profileId}
+        ).fetchall()
+        
+        dept_ids = [str(row.id) for row in dept_results]
+        
+        if not dept_ids:
+            raise ValueError("No accessible departments found for user")
+        
+        # Default department (first accessible)
+        default_dept_id = dept_ids[0]
 
-        if not scenario:
-            raise ValueError("No scenarios found for user's departments")
+        # Get valid personas
+        valid_personas_query = text("""
+        SELECT id, name, COALESCE(description, '') as description, color, icon 
+        FROM personas 
+        WHERE department_id = ANY(:dept_ids) AND active = true
+        ORDER BY name
+        """)
 
-        # Reuse detail logic
-        detail_request = ScenarioDetailRequest(
-            scenarioId=str(scenario.id), profileId=request.profileId
+        persona_results = self.db.execute(
+            valid_personas_query, {"dept_ids": dept_ids}
+        ).fetchall()
+
+        valid_persona_ids = [str(row.id) for row in persona_results]
+        persona_mapping = {
+            str(row.id): PersonaMappingItem(
+                name=row.name,
+                description=row.description,
+                color=row.color,
+                icon=row.icon
+            )
+            for row in persona_results
+        }
+
+        # Get valid documents
+        valid_docs_query = text("""
+        SELECT id, name, COALESCE(type, '') as description 
+        FROM documents 
+        WHERE department_id = ANY(:dept_ids) AND active = true
+        ORDER BY name
+        """)
+
+        doc_results = self.db.execute(
+            valid_docs_query, {"dept_ids": dept_ids}
+        ).fetchall()
+
+        valid_document_ids = [str(row.id) for row in doc_results]
+        document_mapping = {
+            str(row.id): DocumentMappingItem(name=row.name, description=row.description)
+            for row in doc_results
+        }
+
+        # Get all parameters for valid departments
+        parameters_query = text("""
+        SELECT DISTINCT p.id, p.name, p.description
+        FROM parameters p
+        WHERE p.department_id = ANY(:dept_ids) AND p.active = true
+        ORDER BY p.name
+        """)
+
+        param_results = self.db.execute(
+            parameters_query, {"dept_ids": dept_ids}
+        ).fetchall()
+
+        parameter_mapping = {
+            str(row.id): ParameterMappingItem(
+                name=row.name,
+                description=row.description or ''
+            )
+            for row in param_results
+        }
+
+        # Get all parameter items
+        param_items_query = text("""
+        SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
+        ORDER BY p.name, pi.name
+        """)
+
+        param_item_results = self.db.execute(
+            param_items_query, {"dept_ids": dept_ids}
+        ).fetchall()
+
+        parameter_item_mapping = {
+            str(row.id): ParameterItemMappingItem(
+                name=row.name,
+                description=row.description or '',
+                parameter_id=str(row.parameter_id),
+                parameter_name=row.parameter_name
+            )
+            for row in param_item_results
+        }
+
+        # Get department mapping
+        department_mapping = {}
+        dept_mapping_query = text("""
+            SELECT id, title, COALESCE(description, '') as description 
+            FROM departments 
+            WHERE id = ANY(:dept_ids)
+        """)
+        
+        dept_mapping_results = self.db.execute(
+            dept_mapping_query, {"dept_ids": dept_ids}
+        ).fetchall()
+        
+        for row in dept_mapping_results:
+            department_mapping[str(row.id)] = DepartmentMappingItem(
+                name=row.title,
+                description=row.description
+            )
+
+        # Return empty scenario with all valid options
+        return ScenarioDetailResponse(
+            # Basic fields (empty defaults)
+            name="",
+            problem_statement="",
+            active=True,
+            default_scenario=False,
+            generated=False,
+            parent_scenario_id=None,
+            # Department
+            department_id=default_dept_id,
+            valid_department_ids=dept_ids,
+            # IDs (empty defaults)
+            persona_id=None,
+            valid_persona_ids=valid_persona_ids,
+            document_ids=[],
+            valid_document_ids=valid_document_ids,
+            # Objectives (empty defaults)
+            objective_ids=[],
+            valid_objectives=[],
+            # Parameters (empty defaults)
+            parameters={},
+            # Simulations (empty defaults)
+            active_simulation_ids=[],
+            # Permissions (allow all for new scenarios)
+            can_edit=True,
+            can_duplicate=False,  # Can't duplicate non-existent scenario
+            can_delete=False,  # Can't delete non-existent scenario
+            # Mappings
+            parameter_mapping=parameter_mapping,
+            parameter_item_mapping=parameter_item_mapping,
+            simulation_mapping={},
+            persona_mapping=persona_mapping,
+            document_mapping=document_mapping,
+            objective_mapping={},
+            department_mapping=department_mapping,
         )
-
-        return self.get_scenario_detail(detail_request)
 
     def create_scenario(
         self, request: CreateScenarioRequest

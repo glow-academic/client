@@ -6,9 +6,13 @@
  */
 
 import RubricEdit from "@/components/management/rubrics/RubricEdit";
-import { use } from "react";
 
+import { auth } from "@/auth";
+import { rubricsDetailKeys } from "@/lib/api/v2/keys";
+import { fetchRubricDetail } from "@/lib/api/v2/server/rubrics";
 import { rubricRepo } from "@/lib/repos/rubricRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
@@ -24,16 +28,28 @@ export async function generateMetadata(
   };
 }
 
-export default function EditRubricPage({
+export default async function EditRubricPage({
   params,
 }: {
   params: Promise<{ rubricId: string }>;
 }) {
-  const { rubricId } = use(params);
+  const { rubricId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch rubric detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: rubricsDetailKeys.detail(rubricId, profileId),
+    queryFn: () => fetchRubricDetail(rubricId, profileId),
+  });
 
   return (
-    <div className="space-y-6">
-      <RubricEdit rubricId={rubricId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <RubricEdit rubricId={rubricId} />
+      </div>
+    </HydrationBoundary>
   );
 }

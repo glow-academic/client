@@ -69,7 +69,7 @@ class DepartmentService:
         self, request: DepartmentDetailRequest, session: AsyncSession
     ) -> DepartmentDetailResponse:
         """
-        Get department detail with agent role assignments.
+        Get department detail with agent role assignments, permissions, and stats.
 
         Args:
             request: Detail request
@@ -78,8 +78,10 @@ class DepartmentService:
         Returns:
             DepartmentDetailResponse
         """
-        # Get basic department info
-        query, params = self.queries.get_department_basic(request.departmentId)
+        # Get department info with permissions and stats
+        query, params = self.queries.get_department_detail_with_stats(
+            request.departmentId, request.profileId
+        )
         result = await session.execute(text(query), params)
         dept_row = result.fetchone()
 
@@ -128,34 +130,83 @@ class DepartmentService:
             agent_roles=AgentRoles(**agent_roles_dict),
             valid_agent_ids=valid_agent_ids,
             agent_mapping=agent_mapping,
+            # Permissions
+            can_edit=dept_row.can_edit,
+            can_duplicate=dept_row.can_duplicate,
+            can_delete=dept_row.can_delete,
+            # Usage/Stats
+            in_use=dept_row.in_use,
+            staff_count=int(dept_row.staff_count),
+            total_price_spent=float(dept_row.total_price_spent),
         )
 
     async def get_department_detail_default(
         self, profile_id: str, session: AsyncSession
     ) -> DepartmentDetailResponse:
         """
-        Get default department detail for a profile.
+        Get default department detail for creation mode.
 
         Args:
             profile_id: Profile ID
             session: Database session
 
         Returns:
-            DepartmentDetailResponse
+            DepartmentDetailResponse with defaults
         """
-        # Get first department for profile
-        query, params = self.queries.get_first_department_for_profile(profile_id)
+        # Get user role for permissions
+        query = """
+        SELECT role FROM profiles WHERE id = :profile_id
+        """
+        params = {"profile_id": profile_id}
         result = await session.execute(text(query), params)
-        dept_row = result.fetchone()
+        profile_row = result.fetchone()
 
-        if not dept_row:
-            raise ValueError(f"No departments found for profile {profile_id}")
+        if not profile_row:
+            raise ValueError(f"Profile {profile_id} not found")
 
-        # Use detail endpoint with found department_id
-        detail_request = DepartmentDetailRequest(
-            departmentId=dept_row.department_id, profileId=profile_id
+        is_superadmin = profile_row.role == "superadmin"
+
+        # Get valid agents for selection
+        query, params = self.queries.get_valid_agents()
+        result = await session.execute(text(query), params)
+        agent_rows = result.fetchall()
+
+        valid_agent_ids: List[str] = []
+        agent_mapping: AgentMapping = {}
+
+        for row in agent_rows:
+            valid_agent_ids.append(row.agent_id)
+            agent_mapping[row.agent_id] = AgentMappingItem(
+                name=row.name,
+                description=row.description
+            )
+
+        # Return defaults for creation
+        return DepartmentDetailResponse(
+            title="",
+            description="",
+            active=True,
+            agent_roles=AgentRoles(
+                title="",
+                scenario="",
+                classify="",
+                assistant="",
+                grade="",
+                input_guardrail="",
+                output_guardrail="",
+                hint="",
+            ),
+            valid_agent_ids=valid_agent_ids,
+            agent_mapping=agent_mapping,
+            # Permissions (only superadmin can create)
+            can_edit=is_superadmin,
+            can_duplicate=False,  # Can't duplicate when creating
+            can_delete=False,  # Can't delete when creating
+            # Usage/Stats (all zero for new department)
+            in_use=False,
+            staff_count=0,
+            total_price_spent=0.0,
         )
-        return await self.get_department_detail(detail_request, session)
 
     async def create_department(
         self, request: CreateDepartmentRequest, session: AsyncSession

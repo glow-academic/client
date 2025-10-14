@@ -5,16 +5,18 @@
  * 06/08/2025
  */
 
+import { auth } from "@/auth";
 import ModelEdit from "@/components/system/providers/ModelEdit";
+import { modelsDetailKeys } from "@/lib/api/v2/keys";
+import { fetchModelDetail } from "@/lib/api/v2/server/models";
 import { modelRepo } from "@/lib/repos/modelRepo";
-import { providerRepo } from "@/lib/repos/providerRepo";
 import { getQueryClient } from "@/utils/react-query/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ modelId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { modelId } = await params;
@@ -35,23 +37,22 @@ export default async function ModelEditPage({
   params: Promise<{ providerId: string; modelId: string }>;
 }) {
   const { providerId, modelId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
   const queryClient = getQueryClient();
 
+  // Prefetch model detail for instant hydration
   await queryClient.prefetchQuery({
-    queryKey: ["model", modelId],
-    queryFn: () => modelRepo.find(modelId),
-  });
-
-  await queryClient.prefetchQuery({
-    queryKey: ["providers"],
-    queryFn: () => providerRepo.list(),
+    queryKey: modelsDetailKeys.detail(modelId, providerId, profileId),
+    queryFn: () => fetchModelDetail(modelId, providerId, profileId),
   });
 
   return (
-    <div className="space-y-6">
-      <HydrationBoundary state={dehydrate(queryClient)}>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
         <ModelEdit modelId={modelId} providerId={providerId} />
-      </HydrationBoundary>
-    </div>
+      </div>
+    </HydrationBoundary>
   );
 }

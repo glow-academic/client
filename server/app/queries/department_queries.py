@@ -91,6 +91,81 @@ class DepartmentQueries:
 
         return query, params
 
+    def get_department_detail_with_stats(
+        self, department_id: str, profile_id: str
+    ) -> tuple[str, Dict[str, Any]]:
+        """
+        Get department detail with permissions, usage, and stats.
+
+        Computes:
+        - total_price_spent from model_runs
+        - staff_count from profile_departments
+        - in_use from various entity counts
+        - can_edit/can_duplicate/can_delete from user role (superadmin only)
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH department_price_spent AS (
+            SELECT 
+                mr.department_id,
+                SUM(
+                    (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
+                    (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
+                ) as total_price_spent
+            FROM model_runs mr
+            JOIN model_run_models mrm ON mrm.model_run_id = mr.id
+            JOIN models m ON m.id = mrm.model_id
+            WHERE mr.department_id = :department_id
+            GROUP BY mr.department_id
+        ),
+        department_staff_count AS (
+            SELECT 
+                department_id, 
+                COUNT(DISTINCT profile_id) as staff_count
+            FROM profile_departments
+            WHERE department_id = :department_id
+            GROUP BY department_id
+        ),
+        department_usage AS (
+            SELECT
+                (SELECT COUNT(*) FROM profile_departments WHERE department_id = :department_id) +
+                (SELECT COUNT(*) FROM simulations WHERE department_id = :department_id) +
+                (SELECT COUNT(*) FROM scenarios WHERE department_id = :department_id) +
+                (SELECT COUNT(*) FROM personas WHERE department_id = :department_id) +
+                (SELECT COUNT(*) FROM documents WHERE department_id = :department_id) +
+                (SELECT COUNT(*) FROM cohorts WHERE department_id = :department_id) as total_usage
+        ),
+        user_profile AS (
+            SELECT role FROM profiles WHERE id = :profile_id
+        )
+        SELECT 
+            d.id::text as department_id,
+            d.title,
+            d.description,
+            d.active,
+            COALESCE(dps.total_price_spent, 0) as total_price_spent,
+            COALESCE(dsc.staff_count, 0) as staff_count,
+            CASE WHEN du.total_usage > 0 THEN true ELSE false END as in_use,
+            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
+            CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_duplicate,
+            CASE WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true ELSE false END as can_delete
+        FROM departments d
+        LEFT JOIN department_price_spent dps ON dps.department_id = d.id
+        LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
+        CROSS JOIN department_usage du
+        CROSS JOIN user_profile up
+        WHERE d.id = :department_id
+        """
+
+        params: Dict[str, Any] = {
+            "department_id": department_id,
+            "profile_id": profile_id,
+        }
+
+        return query, params
+
     def get_department_agent_roles(
         self, department_id: str
     ) -> tuple[str, Dict[str, Any]]:

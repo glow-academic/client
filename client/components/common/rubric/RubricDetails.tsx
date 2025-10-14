@@ -18,7 +18,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import { useCreateRubric, useUpdateRubric } from "@/lib/api/v1/hooks/rubrics";
 import { Rubric as RubricType } from "@/types";
 import { log } from "@/utils/logger";
@@ -28,6 +27,8 @@ import { useRouter } from "next/navigation";
 export interface RubricDetailsProps {
   rubric: RubricType;
   rubricId: string;
+  departmentMapping: Record<string, string>;
+  validDepartmentIds: string[];
   isCreateMode?: boolean;
   isReadonly?: boolean;
 }
@@ -35,6 +36,8 @@ export interface RubricDetailsProps {
 export default function RubricDetails({
   rubric,
   rubricId,
+  departmentMapping,
+  validDepartmentIds,
   isCreateMode = false,
   isReadonly = false,
 }: RubricDetailsProps) {
@@ -42,7 +45,6 @@ export default function RubricDetails({
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: departments = [] } = useDepartmentsHook();
 
   // Mutation hooks
   const createRubricMutation = useCreateRubric();
@@ -67,10 +69,8 @@ export default function RubricDetails({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDepartmentChange = (
-    department: { id: string; title: string; description?: string } | null
-  ) => {
-    setFormData((prev) => ({ ...prev, departmentId: department?.id || "" }));
+  const handleDepartmentChange = (departmentId: string | null) => {
+    setFormData((prev) => ({ ...prev, departmentId: departmentId || "" }));
   };
 
   const handleSave = async () => {
@@ -158,31 +158,9 @@ export default function RubricDetails({
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
                   <DepartmentSelector
-                    departments={departments.map((dept) => ({
-                      id: dept.id,
-                      title: dept.title as string,
-                      ...(dept.description && {
-                        description: dept.description,
-                      }),
-                    }))}
-                    selectedDepartment={
-                      formData.departmentId
-                        ? (() => {
-                            const dept = departments.find(
-                              (d) => d.id === formData.departmentId
-                            );
-                            return dept
-                              ? {
-                                  id: dept.id,
-                                  title: dept.title as string,
-                                  ...(dept.description && {
-                                    description: dept.description,
-                                  }),
-                                }
-                              : null;
-                          })()
-                        : null
-                    }
+                    departmentMapping={departmentMapping}
+                    selectedDepartmentId={formData.departmentId || ""}
+                    validDepartmentIds={validDepartmentIds}
                     onSelect={handleDepartmentChange}
                     placeholder="Select department"
                     disabled={updateRubricMutation.isPending || isReadonly}

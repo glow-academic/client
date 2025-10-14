@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default async function NewPersonaPage() {
   const session = await auth();
-  const profileId = session?.user?.profileId || "";
+  const profileId = session?.effectiveProfileId || "";
 
   const queryClient = getQueryClient();
 

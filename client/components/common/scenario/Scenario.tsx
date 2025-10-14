@@ -48,38 +48,21 @@ import { PersonaPicker } from "./PersonaPicker";
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
-import {
-  useCreateScenarioDocument,
-  useScenarioDocumentsByScenarioId,
-} from "@/lib/api/v1/hooks/scenario_documents";
-import {
-  useCreateScenarioObjective,
-  useScenarioObjectivesByScenarioId,
-} from "@/lib/api/v1/hooks/scenario_objectives";
-import {
-  useCreateScenarioParameterItem,
-  useScenarioParameterItemsByScenarioId,
-} from "@/lib/api/v1/hooks/scenario_parameter_items";
-import {
-  useCreateScenarioPersona,
-  useScenarioPersonasByScenarioId,
-} from "@/lib/api/v1/hooks/scenario_personas";
 import {
   useCreateScenario,
-  useScenario,
+  useScenarioDetail,
+  useScenarioDetailDefault,
   useUpdateScenario,
-} from "@/lib/api/v1/hooks/scenarios";
-import { useSimulationScenariosByScenarioId } from "@/lib/api/v1/hooks/simulation_scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
-import { Scenario as ScenarioType, Simulation } from "@/types";
+} from "@/lib/api/v2/hooks/scenarios";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
 import { randomizeScenario } from "@/utils/api/scenarios/randomize";
 import { log } from "@/utils/logger";
+import {
+  getAllValidParameterItemIds,
+  getObjectivesFromMapping,
+  getParameterItemIdsFromStructure,
+  groupParameterItemsByParameterId,
+} from "@/utils/scenario-helpers";
 
 export interface ScenarioProps {
   scenarioId?: string;
@@ -105,37 +88,46 @@ export default function Scenario({
   const { effectiveDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!scenarioId;
 
-  // Mutation hooks
-  const createScenarioMutation = useCreateScenario();
-  const updateScenarioMutation = useUpdateScenario();
-  const createScenarioObjectiveMutation = useCreateScenarioObjective();
-  const createScenarioParameterItemMutation = useCreateScenarioParameterItem();
-  const createScenarioDocumentMutation = useCreateScenarioDocument();
-  const createScenarioPersonaMutation = useCreateScenarioPersona();
+  // V2 API hooks - single hook for all data
+  const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } =
+    useScenarioDetail(
+      scenarioId || "",
+      effectiveProfile?.id || "",
+      !!scenarioId && isEditMode
+    );
 
-  // Load linked data from junction tables
-  const { data: linkedObjectives = [] } = useScenarioObjectivesByScenarioId(
-    scenarioId || ""
-  );
-  const { data: linkedParameterItems = [] } =
-    useScenarioParameterItemsByScenarioId(scenarioId || "");
-  const { data: linkedDocuments = [] } = useScenarioDocumentsByScenarioId(
-    scenarioId || ""
-  );
-  const { data: linkedPersonas = [] } = useScenarioPersonasByScenarioId(
-    scenarioId || ""
-  );
+  const { data: scenarioDetailDefault, isLoading: isLoadingScenarioDefault } =
+    useScenarioDetailDefault(effectiveProfile?.id || "", !isEditMode);
+
+  // Use edit detail when editing, default detail when creating
+  const scenarioData = isEditMode ? scenarioDetail : scenarioDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingScenarioDetail
+    : isLoadingScenarioDefault;
+
+  // V2 Mutation hooks
+  const { mutate: createScenario } = useCreateScenario();
+  const { mutate: updateScenario } = useUpdateScenario();
 
   // Form data state
-  const initialFormData: Partial<ScenarioType> = {
-    name: "",
-    problemStatement: "",
-    defaultScenario: false,
-    departmentId: "",
-  };
+  const initialFormData = useMemo(
+    () => ({
+      name: "",
+      problemStatement: "",
+      defaultScenario: false,
+      departmentId:
+        effectiveProfile?.role === "superadmin"
+          ? scenarioData?.department_id || ""
+          : effectiveDepartmentIds[0] || "",
+    }),
+    [
+      effectiveProfile?.role,
+      scenarioData?.department_id,
+      effectiveDepartmentIds,
+    ]
+  );
 
-  const [formData, setFormData] =
-    useState<Partial<ScenarioType>>(initialFormData);
+  const [formData, setFormData] = useState(initialFormData);
 
   // Store personaId separately since it's now in junction table
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(
@@ -152,8 +144,7 @@ export default function Scenario({
   const [isRandomizingParameters, setIsRandomizingParameters] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [originalFormData, setOriginalFormData] =
-    useState<Partial<ScenarioType>>(initialFormData);
+  const [originalFormData, setOriginalFormData] = useState(initialFormData);
   const [noDocuments, setNoDocuments] = useState(false);
 
   // State for junction data (managed separately from scenario)
@@ -163,95 +154,88 @@ export default function Scenario({
   >([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
 
-  // Sync junction data when linked data loads
-  useEffect(() => {
-    if (linkedObjectives.length > 0) {
-      const sorted = [...linkedObjectives].sort((a, b) => a.idx - b.idx);
-      setCurrentObjectives(sorted.map((o) => o.objective));
-    }
-  }, [linkedObjectives]);
-
-  useEffect(() => {
-    if (linkedParameterItems.length > 0) {
-      const paramIds = linkedParameterItems.map((lpi) => lpi.parameterItemId);
-      setCurrentParameterItemIds(paramIds);
-      if (isEditMode) {
-        setOriginalParameterItemIds(paramIds);
-      }
-    }
-  }, [linkedParameterItems, isEditMode]);
-
-  useEffect(() => {
-    if (linkedDocuments.length > 0) {
-      const docIds = linkedDocuments.map((ld) => ld.documentId);
-      setCurrentDocumentIds(docIds);
-      if (isEditMode) {
-        setOriginalDocumentIds(docIds);
-      }
-    }
-  }, [linkedDocuments, isEditMode]);
-
-  useEffect(() => {
-    if (linkedPersonas.length > 0 && isEditMode) {
-      // Load persona from junction table (only one active persona per scenario)
-      const activePersona = linkedPersonas.find((lp) => lp.active);
-      if (activePersona) {
-        setSelectedPersonaId(activePersona.personaId);
-      }
-    }
-  }, [linkedPersonas, isEditMode]);
-
-  const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // Extract mappings from V2 response
+  const personaMapping = useMemo(
+    () => scenarioData?.persona_mapping || {},
+    [scenarioData]
   );
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const documentMapping = useMemo(
+    () => scenarioData?.document_mapping || {},
+    [scenarioData]
   );
-  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const parameterMapping = useMemo(
+    () => scenarioData?.parameter_mapping || {},
+    [scenarioData]
   );
-  const { data: parameterItems = [] } = useParameterItems();
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+  const parameterItemMapping = useMemo(
+    () => scenarioData?.parameter_item_mapping || {},
+    [scenarioData]
   );
-  const { data: scenario, isLoading } = useScenario(scenarioId!);
-  const { data: departments = [] } = useDepartmentsHook();
+  const simulationMapping = useMemo(
+    () => scenarioData?.simulation_mapping || {},
+    [scenarioData]
+  );
+  const departmentMapping = useMemo(
+    () => scenarioData?.department_mapping || {},
+    [scenarioData]
+  );
 
-  // Build persona mapping for PersonaPicker
-  const personaMapping = useMemo(() => {
-    const mapping: Record<
-      string,
-      { name: string; description: string; color: string; icon: string }
-    > = {};
-    personas.forEach((p: any) => {
-      mapping[p.id] = {
-        name: p.name,
-        description: p.description,
-        color: p.color,
-        icon: p.icon,
-      };
-    });
-    return mapping;
-  }, [personas]);
+  // Extract valid IDs from V2 response
+  const validPersonaIds = useMemo(
+    () => scenarioData?.valid_persona_ids || [],
+    [scenarioData]
+  );
+  const validDocumentIds = useMemo(
+    () => scenarioData?.valid_document_ids || [],
+    [scenarioData]
+  );
+  const validParameterItemIds = useMemo(
+    () => getAllValidParameterItemIds(scenarioData?.parameters || {}),
+    [scenarioData]
+  );
 
-  const validPersonaIds = useMemo(() => {
-    return personas.filter((p: any) => p.active).map((p: any) => p.id);
-  }, [personas]);
-
-  // Load scenario data if editing
+  // Load scenario data from V2 response
   useEffect(() => {
-    if (isEditMode && scenario) {
-      const scenarioData = {
-        personaId: null, // Will be loaded from junction table via separate useEffect
-        name: scenario.name || "",
-        problemStatement: scenario.problemStatement || "",
-        defaultScenario: scenario.defaultScenario ?? false,
-        departmentId: scenario.departmentId,
-      };
-      setFormData(scenarioData);
-      setOriginalFormData(scenarioData); // Set original data for comparison
+    if (scenarioData && isEditMode) {
+      // Edit mode: load existing scenario data
+      setFormData({
+        name: scenarioData.name,
+        problemStatement: scenarioData.problem_statement,
+        defaultScenario: scenarioData.default_scenario,
+        departmentId: scenarioData.department_id,
+      });
+      setSelectedPersonaId(scenarioData.persona_id);
+      setCurrentDocumentIds(scenarioData.document_ids);
+      setCurrentParameterItemIds(
+        getParameterItemIdsFromStructure(scenarioData.parameters)
+      );
+      setCurrentObjectives(
+        getObjectivesFromMapping(
+          scenarioData.objective_ids,
+          scenarioData.objective_mapping
+        )
+      );
+      // Store originals for change tracking
+      setOriginalFormData({
+        name: scenarioData.name,
+        problemStatement: scenarioData.problem_statement,
+        defaultScenario: scenarioData.default_scenario,
+        departmentId: scenarioData.department_id,
+      });
+      setOriginalDocumentIds(scenarioData.document_ids);
+      setOriginalParameterItemIds(
+        getParameterItemIdsFromStructure(scenarioData.parameters)
+      );
+    } else if (!isEditMode && scenarioData) {
+      // Create mode: use defaults from API
+      setFormData({
+        name: "",
+        problemStatement: "",
+        defaultScenario: false,
+        departmentId: scenarioData.department_id,
+      });
     }
-  }, [isEditMode, scenario]);
+  }, [scenarioData, isEditMode]);
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -259,10 +243,7 @@ export default function Scenario({
 
     const current = formData;
     const original = originalFormData;
-
-    // Compare current state with original
-    // Note: personaId, documentIds, and parameterItemIds are now tracked separately
-    const originalPersonaId = linkedPersonas[0]?.personaId || null;
+    const originalPersonaId = scenarioData?.persona_id || null;
 
     return (
       selectedPersonaId !== originalPersonaId ||
@@ -279,43 +260,28 @@ export default function Scenario({
     originalFormData,
     isEditMode,
     selectedPersonaId,
-    linkedPersonas,
+    scenarioData,
     currentDocumentIds,
     originalDocumentIds,
     currentParameterItemIds,
     originalParameterItemIds,
   ]);
 
-  // Get simulations using this scenario via junction table
-  const { data: simulationScenarios = [] } = useSimulationScenariosByScenarioId(
-    scenarioId || ""
-  );
-
-  // Count simulations using this scenario
-  const affectedSimulations = useMemo(() => {
-    if (!isEditMode || !scenarioId) return [];
-    const simulationIds = simulationScenarios
-      .filter((ss) => ss.active)
-      .map((ss) => ss.simulationId);
-    return simulations.filter((sim: Simulation) =>
-      simulationIds.includes(sim.id)
-    );
-  }, [simulations, simulationScenarios, scenarioId, isEditMode]);
-
-  // Check if scenario is readonly (used by active simulations or is a generated scenario)
+  // Use server-computed readonly flag from V2 API
   const isReadonly = useMemo(() => {
-    if (!isEditMode || !scenarioId) return false;
+    if (!isEditMode || !scenarioData) return false;
+    return !scenarioData.can_edit;
+  }, [isEditMode, scenarioData]);
 
-    const usedByActiveSimulations = affectedSimulations.some(
-      (sim: Simulation) => sim.active
-    );
-
-    // Note: parentId is now in scenario_tree junction table
-    // For now, just check if scenario is marked as generated
-    const isGeneratedScenario = !!scenario?.generated;
-
-    return usedByActiveSimulations || isGeneratedScenario;
-  }, [affectedSimulations, isEditMode, scenarioId, scenario]);
+  // Get affected simulations from V2 data
+  const affectedSimulations = useMemo(() => {
+    if (!scenarioData?.active_simulation_ids) return [];
+    return scenarioData.active_simulation_ids.map((id) => ({
+      id,
+      name: simulationMapping[id]?.name || "",
+      active: true, // These are active simulations from server
+    }));
+  }, [scenarioData, simulationMapping]);
 
   // Calculate step status
   const getStepStatus = (stepId: string): StepStatus => {
@@ -374,7 +340,7 @@ export default function Scenario({
 
   // Event handlers
   const handleInputChange = (
-    field: keyof Partial<ScenarioType>,
+    field: string,
     value: string | string[] | boolean | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -577,85 +543,70 @@ export default function Scenario({
     setIsSubmitting(true);
 
     try {
+      // Prepare payload for V2 API
       const payload = {
         name: formData.name?.trim() || "",
-        problemStatement: formData.problemStatement?.trim() || "",
-        defaultScenario: formData.defaultScenario || false,
-        departmentId: formData.departmentId || effectiveDepartmentIds[0] || "",
+        problem_statement: formData.problemStatement?.trim() || "",
+        department_id: formData.departmentId || effectiveDepartmentIds[0] || "",
+        active: true,
+        default_scenario: formData.defaultScenario || false,
+        persona_id: selectedPersonaId,
+        document_ids: currentDocumentIds,
+        objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
+        parameters: groupParameterItemsByParameterId(
+          currentParameterItemIds,
+          parameterItemMapping
+        ),
       };
 
       if (isEditMode) {
-        // UPDATE mode
-        await updateScenarioMutation.mutateAsync({
-          id: scenarioId!,
-          ...payload,
-          updatedAt: new Date().toISOString(),
-        });
-
-        // Update persona junction if changed
-        const currentPersonaId = linkedPersonas[0]?.personaId;
-        if (selectedPersonaId !== currentPersonaId) {
-          // TODO: Need delete endpoint for scenario_personas composite key
-          // For now, backend should handle via CASCADE or manual cleanup
-          if (selectedPersonaId) {
-            await createScenarioPersonaMutation.mutateAsync({
-              scenarioId: scenarioId!,
-              personaId: selectedPersonaId,
-            });
+        // UPDATE mode - V2 handles all junction tables automatically
+        updateScenario(
+          {
+            scenarioId: scenarioId!,
+            ...payload,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Scenario updated successfully!");
+              router.push("/create/scenarios");
+            },
+            onError: (error) => {
+              log.error("scenario.update.failed", {
+                message: "Error updating scenario",
+                error,
+                context: {
+                  component: "Scenario",
+                  function: "handleSubmit",
+                  scenarioId,
+                },
+              });
+              toast.error(`Failed to update scenario: ${error.message}`);
+              setIsSubmitting(false);
+            },
           }
-        }
-
-        toast.success("Scenario updated successfully!");
+        );
       } else {
-        // CREATE mode
-        const newScenario = await createScenarioMutation.mutateAsync(payload);
-
-        // Create junction records if scenario was created successfully
-        if (newScenario?.id) {
-          // Create persona link
-          if (selectedPersonaId && newScenario.id) {
-            await createScenarioPersonaMutation.mutateAsync({
-              scenarioId: newScenario.id,
-              personaId: selectedPersonaId,
+        // CREATE mode - V2 handles all junction tables automatically
+        createScenario(payload, {
+          onSuccess: () => {
+            toast.success("Scenario created successfully!");
+            router.push("/create/scenarios");
+          },
+          onError: (error) => {
+            log.error("scenario.create.failed", {
+              message: "Error creating scenario",
+              error,
+              context: {
+                component: "Scenario",
+                function: "handleSubmit",
+              },
             });
-          }
-
-          // Create objectives
-          for (let i = 0; i < currentObjectives.length; i++) {
-            if (currentObjectives[i]?.trim()) {
-              await createScenarioObjectiveMutation.mutateAsync({
-                scenarioId: newScenario.id,
-                idx: i + 1,
-                objective: currentObjectives[i] || "",
-              });
-            }
-          }
-
-          // Create parameter item links
-          for (const paramItemId of currentParameterItemIds) {
-            if (paramItemId) {
-              await createScenarioParameterItemMutation.mutateAsync({
-                scenarioId: newScenario.id,
-                parameterItemId: paramItemId,
-              });
-            }
-          }
-
-          // Create document links
-          for (const docId of currentDocumentIds) {
-            if (docId) {
-              await createScenarioDocumentMutation.mutateAsync({
-                scenarioId: newScenario.id,
-                documentId: docId,
-              });
-            }
-          }
-        }
-
-        toast.success("Scenario created successfully!");
+            toast.error(`Failed to create scenario: ${error.message}`);
+            setIsSubmitting(false);
+          },
+        });
       }
-
-      router.push("/create/scenarios");
     } catch (error) {
       log.error("scenario.submit.failed", {
         message: "Error submitting scenario",
@@ -670,7 +621,6 @@ export default function Scenario({
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -688,8 +638,18 @@ export default function Scenario({
     handleSubmit();
   };
 
+  // Convert selectedPersonaId to selectedPersonaIds array for PersonaPicker
+  const selectedPersonaIds = useMemo(() => {
+    return selectedPersonaId ? [selectedPersonaId] : [];
+  }, [selectedPersonaId]);
+
+  // Handler to convert PersonaPicker output (array) to single ID
+  const handlePersonaSelect = (ids: string[]) => {
+    setSelectedPersonaId(ids[0] || null);
+  };
+
   // Loading state for edit mode
-  if (isEditMode && isLoading) {
+  if (isLoadingData) {
     return (
       <div className="space-y-6">
         <div>
@@ -701,23 +661,6 @@ export default function Scenario({
       </div>
     );
   }
-
-  const selectedDocuments = documents.filter((doc) =>
-    currentDocumentIds.includes(doc.id)
-  );
-  const selectedPersona = personas.find(
-    (persona) => persona.id === selectedPersonaId
-  );
-
-  // Convert selectedPersonaId to selectedPersonaIds array for PersonaPicker
-  const selectedPersonaIds = useMemo(() => {
-    return selectedPersonaId ? [selectedPersonaId] : [];
-  }, [selectedPersonaId]);
-
-  // Handler to convert PersonaPicker output (array) to single ID
-  const handlePersonaSelect = (ids: string[]) => {
-    setSelectedPersonaId(ids[0] || null);
-  };
 
   return (
     <div className="w-full p-6 space-y-8">
@@ -739,12 +682,12 @@ export default function Scenario({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                {scenario?.generated
+                {scenarioData?.generated
                   ? "Generated scenario cannot be edited"
                   : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                {scenario?.generated ? (
+                {scenarioData?.generated ? (
                   <p>
                     This is a generated scenario that cannot be directly edited.
                     You can duplicate this scenario to create a new editable
@@ -753,14 +696,10 @@ export default function Scenario({
                 ) : (
                   <p>
                     This scenario is currently being used by{" "}
-                    {affectedSimulations.filter((sim) => sim.active).length}{" "}
-                    active simulation
-                    {affectedSimulations.filter((sim) => sim.active).length !==
-                    1
-                      ? "s"
-                      : ""}
-                    . You can view the details but cannot make changes to
-                    prevent disruption to ongoing simulations.
+                    {affectedSimulations.length} active simulation
+                    {affectedSimulations.length !== 1 ? "s" : ""}. You can view
+                    the details but cannot make changes to prevent disruption to
+                    ongoing simulations.
                   </p>
                 )}
               </div>
@@ -965,15 +904,13 @@ export default function Scenario({
           </CardHeader>
           <CardContent>
             <DocumentPicker
-              documents={documents}
+              mapping={documentMapping}
+              validIds={validDocumentIds}
+              selectedIds={currentDocumentIds}
+              onSelect={setCurrentDocumentIds}
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."
-              multiSelect={true}
-              selectedDocuments={selectedDocuments}
-              onMultiSelect={(selectedDocs) =>
-                setCurrentDocumentIds(selectedDocs.map((doc) => doc.id))
-              }
               disabled={isReadonly || noDocuments}
             />
           </CardContent>
@@ -1051,8 +988,9 @@ export default function Scenario({
           </CardHeader>
           <CardContent>
             <ParameterSelector
-              parameters={parameters}
-              parameterItems={parameterItems}
+              parameterMapping={parameterMapping}
+              parameterItemMapping={parameterItemMapping}
+              validParameterItemIds={validParameterItemIds}
               selectedParameterItemIds={currentParameterItemIds}
               onParameterItemIdsChange={(parameterItemIds) =>
                 setCurrentParameterItemIds(parameterItemIds)
@@ -1161,15 +1099,11 @@ export default function Scenario({
             isSubmitting ||
             isGeneratingScenario ||
             (isEditMode && !hasChanges) ||
-            isReadonly ||
-            createScenarioMutation.isPending ||
-            updateScenarioMutation.isPending
+            isReadonly
           }
           className="min-w-[120px]"
         >
-          {isSubmitting ||
-          createScenarioMutation.isPending ||
-          updateScenarioMutation.isPending ? (
+          {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               {isEditMode ? "Updating..." : "Saving..."}
@@ -1200,31 +1134,11 @@ export default function Scenario({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <DepartmentSelector
-                  departments={departments.map((dept) => ({
-                    id: dept.id,
-                    title: dept.title as string,
-                    ...(dept.description && { description: dept.description }),
-                  }))}
-                  selectedDepartment={
-                    formData?.departmentId
-                      ? (() => {
-                          const dept = departments.find(
-                            (d) => d.id === formData.departmentId
-                          );
-                          return dept
-                            ? {
-                                id: dept.id,
-                                title: dept.title as string,
-                                ...(dept.description && {
-                                  description: dept.description,
-                                }),
-                              }
-                            : null;
-                        })()
-                      : null
-                  }
-                  onSelect={(department) =>
-                    handleInputChange("departmentId", department?.id || "")
+                  departmentMapping={departmentMapping}
+                  selectedDepartmentId={formData?.departmentId || ""}
+                  validDepartmentIds={scenarioData?.valid_department_ids || []}
+                  onSelect={(departmentId) =>
+                    handleInputChange("departmentId", departmentId || "")
                   }
                   placeholder="Select department"
                   disabled={isReadonly}
@@ -1279,7 +1193,7 @@ export default function Scenario({
               <ul className="mt-2 list-disc list-inside">
                 {affectedSimulations.map((sim) => (
                   <li key={sim.id} className="text-sm">
-                    {sim.title}
+                    {sim.name}
                   </li>
                 ))}
               </ul>

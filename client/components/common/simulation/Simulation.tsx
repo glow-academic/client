@@ -24,10 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 // Replaced standard select with RubricPicker
-import {
-  RubricPicker,
-  Rubric as RubricPickerItem,
-} from "@/components/common/rubric/RubricPicker";
+import { RubricPicker } from "@/components/common/rubric/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
@@ -35,29 +32,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCohortSimulations } from "@/lib/api/v1/hooks/cohort_simulations";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
 import {
-  useCreateSimulationScenario,
-  useSimulationScenariosBySimulationId,
-} from "@/lib/api/v1/hooks/simulation_scenarios";
-import {
-  useCreateSimulation,
-  useSimulation,
-  useUpdateSimulation,
-} from "@/lib/api/v1/hooks/simulations";
-import { Rubric, Scenario } from "@/types";
+  useCreateSimulation as useCreateSimulationV2,
+  useSimulationDetail,
+  useSimulationDetailDefault,
+  useUpdateSimulation as useUpdateSimulationV2,
+} from "@/lib/api/v2/hooks/simulations";
+import type { SimulationDetailResponse } from "@/lib/api/v2/schemas/simulations";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  SimulationScenario,
-  SimulationScenarioPicker,
-} from "./SimulationScenarioPicker";
+import { SimulationScenarioPicker } from "./SimulationScenarioPicker";
 
 export interface SimulationProps {
   simulationId?: string;
@@ -91,10 +75,9 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
 
-  // Mutation hooks
-  const createSimulationMutation = useCreateSimulation();
-  const updateSimulationMutation = useUpdateSimulation();
-  const createSimulationScenarioMutation = useCreateSimulationScenario();
+  // Mutation hooks (v2)
+  const createSimulationMutation = useCreateSimulationV2();
+  const updateSimulationMutation = useUpdateSimulationV2();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -106,10 +89,26 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   const isEditMode = !!simulationId;
 
-  // Load linked scenarios from junction table
-  const { data: linkedScenarios = [] } = useSimulationScenariosBySimulationId(
-    simulationId || editingSimulationId || ""
-  );
+  // V2 API hooks - fetch data from server
+  const { data: simulationDetail, isLoading: isLoadingSimulationDetail } =
+    useSimulationDetail(
+      simulationId || "",
+      effectiveProfile?.id || "",
+      !!simulationId && isEditMode
+    );
+
+  const {
+    data: simulationDetailDefault,
+    isLoading: isLoadingSimulationDefault,
+  } = useSimulationDetailDefault(effectiveProfile?.id || "", !isEditMode);
+
+  // Use edit detail when editing, default detail when creating
+  const simulationData: SimulationDetailResponse | undefined = isEditMode
+    ? simulationDetail
+    : simulationDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingSimulationDetail
+    : isLoadingSimulationDefault;
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -134,75 +133,39 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [originalFormData, setOriginalFormData] = useState<FormData>();
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: simulation, isLoading: isLoadingSimulation } = useSimulation(
-    simulationId!
-  );
-  const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
-    useParameterItems();
-  // Load cohorts (for display, not currently used in logic)
-  const { data: _cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: departments = [] } = useDepartmentsHook();
-  const { data: allCohortSimulations = [] } = useCohortSimulations();
+  const isLoading = isLoadingData;
 
-  const isLoading = isLoadingSimulation || isLoadingParameterItems;
-
-  // Determine readonly based on permissions and usage
-  const isDefaultNonSuperadmin =
-    !!formData?.defaultSimulation && effectiveProfile?.role !== "superadmin";
-
-  const isAdmin =
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin";
-
-  const isInUse = useMemo(() => {
-    const targetId = simulationId || editingSimulationId;
-    if (!targetId) return false;
-    // Check if simulation is linked to any cohort via junction table
-    return allCohortSimulations.some((cs) => cs.simulationId === targetId);
-  }, [allCohortSimulations, simulationId, editingSimulationId]);
-
+  // Permission logic - server computes can_edit flag
   const isReadonly = useMemo(() => {
-    if (!isEditMode) return false; // creating new simulation is editable
-    if (isDefaultNonSuperadmin) return true;
-    if (isAdmin) return false;
-    // Non-admin: editable only if not in use
-    return isInUse;
-  }, [isEditMode, isDefaultNonSuperadmin, isAdmin, isInUse]);
+    if (!isEditMode || !simulationData) return false;
+    return !simulationData.can_edit;
+  }, [isEditMode, simulationData]);
 
   useEffect(() => {
-    if (simulation && isEditMode) {
-      const simulationData = {
-        title: simulation.title,
-        description: simulation.description,
-        timeLimit: simulation.timeLimit,
-        rubricId: simulation.rubricId,
-        active: simulation.active,
-        defaultSimulation: simulation.defaultSimulation ?? false,
-        practiceSimulation: simulation.practiceSimulation ?? false,
-        departmentId: simulation.departmentId,
-        outputGuardrailActive: simulation.outputGuardrailActive ?? false,
-        inputGuardrailActive: simulation.inputGuardrailActive ?? false,
-        imageInputActive: simulation.imageInputActive ?? false,
-        hintsEnabled: simulation.hintsEnabled ?? false,
+    if (simulationData && isEditMode) {
+      const formDataFromServer = {
+        title: simulationData.name,
+        description: simulationData.description,
+        timeLimit: simulationData.time_limit,
+        rubricId: simulationData.rubric_id,
+        active: simulationData.active,
+        defaultSimulation: simulationData.default_simulation ?? false,
+        practiceSimulation: simulationData.practice_simulation ?? false,
+        departmentId: simulationData.department_id,
+        outputGuardrailActive: simulationData.output_guardrail_active ?? false,
+        inputGuardrailActive: simulationData.input_guardrail_active ?? false,
+        imageInputActive: simulationData.image_input_active ?? false,
+        hintsEnabled: simulationData.hints_enabled ?? false,
       };
-      setFormData(simulationData);
-      setOriginalFormData(simulationData); // Set original data for comparison
-    } else if (!isEditMode) {
+      setFormData(formDataFromServer);
+      setOriginalFormData(formDataFromServer);
+      // Set current scenario IDs from server (already ordered by position)
+      setCurrentScenarioIds(simulationData.scenario_ids);
+    } else if (!isEditMode && simulationData) {
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
     }
-  }, [simulation, isEditMode, initialFormData]);
+  }, [simulationData, isEditMode, initialFormData]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -224,20 +187,8 @@ export default function Simulation({ simulationId }: SimulationProps) {
     e.dataTransfer.dropEffect = "move";
   };
 
-  // State for managing scenario IDs (extracted from junction table)
+  // State for managing scenario IDs
   const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
-
-  // Update currentScenarioIds when linkedScenarios changes
-  useEffect(() => {
-    if (linkedScenarios.length > 0) {
-      const sortedScenarios = [...linkedScenarios].sort(
-        (a, b) => a.position - b.position
-      );
-      setCurrentScenarioIds(sortedScenarios.map((ls) => ls.scenarioId));
-    } else {
-      setCurrentScenarioIds([]);
-    }
-  }, [linkedScenarios]);
 
   const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
@@ -307,66 +258,47 @@ export default function Simulation({ simulationId }: SimulationProps) {
       const targetSimulationId = simulationId || editingSimulationId;
 
       if (targetSimulationId) {
-        // UPDATE mode - update simulation metadata
+        // UPDATE mode - v2 API handles scenarios in one request
         const updatePayload = {
-          id: targetSimulationId,
+          simulationId: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
-          timeLimit: formData?.timeLimit || null,
-          rubricId: formData?.rubricId || "",
-          active: formData?.active ?? true,
-          defaultSimulation: formData?.defaultSimulation || false,
-          practiceSimulation: formData?.practiceSimulation || false,
-          departmentId:
+          department_id:
             formData?.departmentId || effectiveDepartmentIds[0] || "",
-          outputGuardrailActive: formData?.outputGuardrailActive || false,
-          inputGuardrailActive: formData?.inputGuardrailActive || false,
-          imageInputActive: formData?.imageInputActive || false,
-          hintsEnabled: formData?.hintsEnabled || false,
-          updatedAt: new Date().toISOString(),
+          active: formData?.active ?? true,
+          default_simulation: formData?.defaultSimulation || false,
+          practice_simulation: formData?.practiceSimulation || false,
+          hints_enabled: formData?.hintsEnabled || false,
+          input_guardrail_active: formData?.inputGuardrailActive || false,
+          output_guardrail_active: formData?.outputGuardrailActive || false,
+          image_input_active: formData?.imageInputActive || false,
+          time_limit: formData?.timeLimit || null,
+          rubric_id: formData?.rubricId || "",
+          scenario_ids: currentScenarioIds,
         };
 
         await updateSimulationMutation.mutateAsync(updatePayload);
-
-        // Note: Junction table scenario management requires API endpoint updates
-        // For now, scenarios are managed separately through the UI
-        // TODO: Add batch update endpoint for simulation_scenarios
-
         toast.success("Simulation updated successfully!");
       } else {
-        // CREATE mode - create simulation first, then junction records
-        const newSimulation = await createSimulationMutation.mutateAsync({
+        // CREATE mode - v2 API handles scenarios in one request
+        const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
-          rubricId: formData?.rubricId || "",
-          timeLimit: formData?.timeLimit || null,
-          active: formData?.active || true,
-          defaultSimulation: formData?.defaultSimulation || false,
-          practiceSimulation: formData?.practiceSimulation || false,
-          departmentId:
+          department_id:
             formData?.departmentId || effectiveDepartmentIds[0] || "",
-          outputGuardrailActive: formData?.outputGuardrailActive || false,
-          inputGuardrailActive: formData?.inputGuardrailActive || false,
-          imageInputActive: formData?.imageInputActive || false,
-          hintsEnabled: formData?.hintsEnabled || false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+          active: formData?.active || true,
+          default_simulation: formData?.defaultSimulation || false,
+          practice_simulation: formData?.practiceSimulation || false,
+          hints_enabled: formData?.hintsEnabled || false,
+          input_guardrail_active: formData?.inputGuardrailActive || false,
+          output_guardrail_active: formData?.outputGuardrailActive || false,
+          image_input_active: formData?.imageInputActive || false,
+          time_limit: formData?.timeLimit || null,
+          rubric_id: formData?.rubricId || "",
+          scenario_ids: currentScenarioIds,
+        };
 
-        // Create junction records for scenarios
-        if (newSimulation?.id) {
-          for (let i = 0; i < currentScenarioIds.length; i++) {
-            const scenarioId = currentScenarioIds[i];
-            if (scenarioId) {
-              await createSimulationScenarioMutation.mutateAsync({
-                simulationId: newSimulation.id,
-                scenarioId: scenarioId,
-                position: i + 1,
-              });
-            }
-          }
-        }
-
+        await createSimulationMutation.mutateAsync(createPayload);
         toast.success("Simulation created successfully!");
       }
 
@@ -400,45 +332,21 @@ export default function Simulation({ simulationId }: SimulationProps) {
     window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
   };
 
-  // Transform scenarios to match SimulationScenarioPicker interface
-  const transformedScenarios: SimulationScenario[] = useMemo(() => {
-    return scenarios.map((scenario) => ({
-      id: scenario.id,
-      title: scenario.name,
-      description: scenario.problemStatement,
-      active: scenario.active,
-      defaultScenario: scenario.defaultScenario,
-      practiceScenario: false, // practice is simulation-level only now
-      parameterItemIds: [], // managed via junction table
-      parentId: null, // managed via scenario_tree junction
-      updatedAt: scenario.updatedAt,
-    }));
-  }, [scenarios]);
-
-  // Handle scenario selection from picker
-  const handleScenarioSelection = (scenarios: SimulationScenario[]) => {
-    const scenarioIds = scenarios.map((scenario) => scenario.id);
+  // Handle scenario selection from picker (now works with IDs)
+  const handleScenarioSelection = (scenarioIds: string[]) => {
     setCurrentScenarioIds(scenarioIds);
   };
 
-  // Combine scenarios for display
-  const selectedScenarios = React.useMemo(() => {
-    return currentScenarioIds
-      .map((id) => transformedScenarios.find((s) => s.id === id))
-      .filter(Boolean) as SimulationScenario[];
-  }, [currentScenarioIds, transformedScenarios]);
-
   // Check if form has changes
   const hasChanges = useMemo(() => {
-    if (!isEditMode || !formData || !originalFormData) return false;
+    if (!isEditMode || !formData || !originalFormData || !simulationData)
+      return false;
 
     const current = formData;
     const original = originalFormData;
 
-    // Get original scenario IDs from linkedScenarios
-    const originalScenarioIds = linkedScenarios
-      .sort((a, b) => a.position - b.position)
-      .map((ls) => ls.scenarioId);
+    // Get original scenario IDs from server data
+    const originalScenarioIds = simulationData.scenario_ids || [];
 
     return (
       current.title !== original.title ||
@@ -460,7 +368,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
     originalFormData,
     isEditMode,
     currentScenarioIds,
-    linkedScenarios,
+    simulationData,
   ]);
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
@@ -511,31 +419,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
             <Label htmlFor="department">Department</Label>
             {formData?.departmentId !== undefined && !isLoading ? (
               <DepartmentSelector
-                departments={departments.map((dept) => ({
-                  id: dept.id,
-                  title: dept.title as string,
-                  ...(dept.description && { description: dept.description }),
-                }))}
-                selectedDepartment={
-                  formData?.departmentId
-                    ? (() => {
-                        const dept = departments.find(
-                          (d) => d.id === formData.departmentId
-                        );
-                        return dept
-                          ? {
-                              id: dept.id,
-                              title: dept.title as string,
-                              ...(dept.description && {
-                                description: dept.description,
-                              }),
-                            }
-                          : null;
-                      })()
-                    : null
-                }
-                onSelect={(department) =>
-                  handleInputChange("departmentId", department?.id || "")
+                departmentMapping={simulationData?.department_mapping || {}}
+                selectedDepartmentId={formData?.departmentId || ""}
+                validDepartmentIds={simulationData?.valid_department_ids || []}
+                onSelect={(departmentId) =>
+                  handleInputChange("departmentId", departmentId || "")
                 }
                 placeholder="Select department"
                 disabled={isReadonly}
@@ -588,48 +476,21 @@ export default function Simulation({ simulationId }: SimulationProps) {
                   disabled
                 >
                   <span className="truncate text-left">
-                    {(() => {
-                      const selected = rubrics.find(
-                        (r: Rubric) => r.id === formData.rubricId
-                      );
-                      return selected ? selected.name : "No rubric selected";
-                    })()}
+                    {(formData.rubricId &&
+                      simulationData?.rubric_mapping[formData.rubricId]
+                        ?.name) ||
+                      "No rubric selected"}
                   </span>
                 </Button>
               ) : (
                 <RubricPicker
-                  rubrics={rubrics
-                    .filter((rubric: Rubric) => rubric.active)
-                    .map(
-                      (r: Rubric) =>
-                        ({
-                          id: r.id,
-                          name: r.name,
-                          description: r.description,
-                          points: r.points,
-                          active: r.active,
-                        }) as RubricPickerItem
-                    )}
-                  placeholder="Select a rubric..."
-                  onSelect={(selected) =>
-                    handleInputChange("rubricId", selected[0]?.id || "")
+                  mapping={simulationData?.rubric_mapping || {}}
+                  validIds={simulationData?.valid_rubric_ids || []}
+                  selectedIds={formData.rubricId ? [formData.rubricId] : []}
+                  onSelect={(ids) =>
+                    handleInputChange("rubricId", ids[0] || "")
                   }
-                  selectedRubrics={(() => {
-                    const selected = rubrics.find(
-                      (r: Rubric) => r.id === formData.rubricId
-                    );
-                    return selected
-                      ? [
-                          {
-                            id: selected.id,
-                            name: selected.name,
-                            description: selected.description,
-                            points: selected.points,
-                            active: selected.active,
-                          } as RubricPickerItem,
-                        ]
-                      : [];
-                  })()}
+                  placeholder="Select a rubric..."
                   hideSelectedChips={true}
                   buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
                 />
@@ -789,14 +650,16 @@ export default function Simulation({ simulationId }: SimulationProps) {
               <Skeleton className="h-10 w-full" />
             ) : (
               <SimulationScenarioPicker
-                scenarios={transformedScenarios}
-                parameters={parameters}
-                parameterItems={parameterItems}
+                scenarioMapping={simulationData?.scenario_mapping || {}}
+                validScenarioIds={simulationData?.valid_scenario_ids || []}
+                selectedScenarioIds={currentScenarioIds}
+                onSelect={handleScenarioSelection}
+                parameterItemMapping={
+                  simulationData?.parameter_item_mapping || {}
+                }
                 label=""
                 placeholder="Select scenarios..."
                 description="Choose scenarios to include in this simulation"
-                onSelect={handleScenarioSelection}
-                selectedScenarios={selectedScenarios}
                 hideSelectedChips={true}
                 showOnlyActive={true}
                 showLabel={false}
@@ -806,32 +669,31 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </div>
 
           {/* Display selected scenarios with preview functionality */}
-          {selectedScenarios.length > 0 ? (
+          {currentScenarioIds.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {selectedScenarios.map((scenario) => {
-                const originalScenario = scenarios.find(
-                  (s: Scenario) => s.id === scenario.id
-                );
-                if (!originalScenario) return null;
+              {currentScenarioIds.map((scenarioId) => {
+                const scenarioData =
+                  simulationData?.scenario_mapping[scenarioId];
+                if (!scenarioData) return null;
 
                 return (
                   <Card
-                    key={scenario.id}
+                    key={scenarioId}
                     className={`p-3 min-h-[180px] cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedScenario === scenario.id ? "opacity-50" : ""
+                      draggedScenario === scenarioId ? "opacity-50" : ""
                     }`}
                     draggable={!isReadonly}
                     onDragStart={(e) =>
-                      !isReadonly && handleDragStartScenario(e, scenario.id)
+                      !isReadonly && handleDragStartScenario(e, scenarioId)
                     }
                     onDragOver={handleDragOver}
-                    onDrop={(e) => !isReadonly && handleDrop(e, scenario.id)}
+                    onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
                   >
                     <div className="space-y-3 h-full flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-sm">
-                            {scenario.title || "Unnamed Scenario"}
+                            {scenarioData.name || "Unnamed Scenario"}
                           </h4>
                           <div className="flex items-center gap-2">
                             {!isReadonly && (
@@ -840,7 +702,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => editScenario(scenario.id)}
+                                  onClick={() => editScenario(scenarioId)}
                                   className="h-6 w-6 p-0"
                                 >
                                   <Pencil className="h-3 w-3" />
@@ -850,13 +712,11 @@ export default function Simulation({ simulationId }: SimulationProps) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    const newSelectedScenarios =
-                                      selectedScenarios.filter(
-                                        (s) => s.id !== scenario.id
+                                    const newScenarioIds =
+                                      currentScenarioIds.filter(
+                                        (id) => id !== scenarioId
                                       );
-                                    handleScenarioSelection(
-                                      newSelectedScenarios
-                                    );
+                                    handleScenarioSelection(newScenarioIds);
                                   }}
                                   className="h-6 w-6 p-0"
                                 >
@@ -870,9 +730,10 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
                         <div className="space-y-2 mt-2">
                           <p className="text-xs text-muted-foreground line-clamp-3">
-                            {scenario.description || "No description provided"}
+                            {scenarioData.description ||
+                              "No description provided"}
                           </p>
-                          {/* Parameter badges - TODO: Load from junction table */}
+                          {/* Parameter badges - available in scenarioData.parameter_item_ids */}
                         </div>
                       </div>
                     </div>

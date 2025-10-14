@@ -142,9 +142,9 @@ export default function Persona({
   // Extract data from v2 response
   const modelOptions = useMemo(() => {
     if (!personaData?.model_mapping) return [];
-    return Object.entries(personaData.model_mapping).map(([id, name]) => ({
+    return Object.entries(personaData.model_mapping).map(([id, info]) => ({
       id,
-      name,
+      name: info.name,
     }));
   }, [personaData?.model_mapping]);
 
@@ -828,8 +828,13 @@ export default function Persona({
                     disabled={isReadonly}
                     className="h-full"
                     debugContent={
-                      isEditMode && effectiveProfile?.role === "superadmin" ? (
-                        <PersonaDebugInfo personaId={personaId!} />
+                      isEditMode &&
+                      personaData &&
+                      effectiveProfile?.role === "superadmin" ? (
+                        <PersonaDebugInfo
+                          debugInfo={personaData.debug_info}
+                          modelMapping={personaData.model_mapping}
+                        />
                       ) : undefined
                     }
                     activeMode={editorMode}

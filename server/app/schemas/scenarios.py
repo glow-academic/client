@@ -4,9 +4,9 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from .base import (CohortMapping, DocumentMapping, ObjectiveMapping,
-                   ParameterItemMapping, ParameterMapping, PersonaMapping,
-                   SimulationMapping)
+from .base import (CohortMapping, DepartmentMapping, DocumentMapping,
+                   ObjectiveMapping, ParameterItemMapping, ParameterMapping,
+                   PersonaMapping, SimulationMapping)
 
 
 class ScenariosFilters(BaseModel):
@@ -69,6 +69,12 @@ class ScenarioDetailResponse(BaseModel):
     problem_statement: str
     active: bool
     default_scenario: bool
+    generated: bool
+    parent_scenario_id: Optional[str]
+
+    # Department
+    department_id: str
+    valid_department_ids: List[str]
 
     # IDs
     persona_id: Optional[str]
@@ -86,6 +92,11 @@ class ScenarioDetailResponse(BaseModel):
     # Simulations
     active_simulation_ids: List[str]
 
+    # Permissions
+    can_edit: bool
+    can_duplicate: bool
+    can_delete: bool
+
     # Top-level mappings
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
@@ -93,6 +104,7 @@ class ScenarioDetailResponse(BaseModel):
     persona_mapping: PersonaMapping
     document_mapping: DocumentMapping
     objective_mapping: ObjectiveMapping
+    department_mapping: DepartmentMapping
 
 
 class ScenarioDetailDefaultRequest(BaseModel):

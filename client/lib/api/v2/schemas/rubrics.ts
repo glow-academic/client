@@ -4,11 +4,39 @@
  */
 
 import { z } from "zod";
-import {
-  DepartmentMappingSchema,
-  StandardGroupsMappingSchema,
-  StandardsMappingSchema,
-} from "./base";
+import { DepartmentMappingSchema } from "./base";
+
+// Custom mapping schemas for rubrics (include points unlike base)
+export const StandardGroupMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  points: z.number(),
+  passPoints: z.number(),
+});
+
+export const StandardMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  points: z.number(),
+});
+
+export const StandardGroupMappingDetailSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+});
+
+export const StandardGroupsMappingSchema = z.record(
+  z.string(),
+  StandardGroupMappingItemSchema
+);
+export const StandardsMappingSchema = z.record(
+  z.string(),
+  StandardMappingItemSchema
+);
+export const StandardGroupsMappingDetailSchema = z.record(
+  z.string(),
+  StandardGroupMappingDetailSchema
+);
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -67,15 +95,6 @@ export const StandardGroupDetailSchema = z.object({
 
 export type StandardGroupDetail = z.infer<typeof StandardGroupDetailSchema>;
 
-export const StandardGroupsMappingDetailSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-});
-
-export type StandardGroupsMappingDetail = z.infer<
-  typeof StandardGroupsMappingDetailSchema
->;
-
 export const RubricDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(),
@@ -86,16 +105,14 @@ export const RubricDetailResponseSchema = z.object({
   passPoints: z.number(),
   active: z.boolean(),
   default_rubric: z.boolean(),
+  can_edit: z.boolean(), // Permission flag for editing
 
   // Standard groups structure
   standard_group_ids: z.array(z.string()),
   standard_groups_detail: z.record(z.string(), StandardGroupDetailSchema),
 
   // Top-level mappings
-  standard_groups_mapping: z.record(
-    z.string(),
-    StandardGroupsMappingDetailSchema
-  ),
+  standard_groups_mapping: StandardGroupsMappingDetailSchema,
   standards_mapping: StandardsMappingSchema,
   department_mapping: DepartmentMappingSchema,
 });

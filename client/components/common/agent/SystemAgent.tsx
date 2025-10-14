@@ -29,12 +29,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import {
-  useAgent,
-  useCreateAgent,
-  useUpdateAgent,
-} from "@/lib/api/v1/hooks/agents";
-import { useModels } from "@/lib/api/v1/hooks/models";
+  useAgentDetail,
+  useCreateAgent as useCreateAgentV2,
+  useUpdateAgent as useUpdateAgentV2,
+} from "@/lib/api/v2/hooks/agents";
 import { log } from "@/utils/logger";
 import { Bug, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
@@ -62,6 +62,7 @@ interface FormErrors {
 
 export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -72,13 +73,38 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
 
   const isEditMode = !!agentId;
 
-  const { data: agent, isLoading: isLoadingAgent } = useAgent(agentId!);
-  const { data: models, isLoading: isModelsLoading } = useModels();
+  // V2 API hooks
+  const { data: agentDetail, isLoading: isLoadingAgentDetail } = useAgentDetail(
+    agentId || "",
+    effectiveProfile?.id || "",
+    isEditMode
+  );
 
-  const { mutateAsync: createAgent } = useCreateAgent();
-  const { mutateAsync: updateAgent } = useUpdateAgent();
+  const { mutate: createAgent } = useCreateAgentV2();
+  const { mutate: updateAgent } = useUpdateAgentV2();
 
-  const isLoading = isLoadingAgent || isModelsLoading;
+  const isLoading = isLoadingAgentDetail;
+
+  // Extract model options from v2 response
+  const modelOptions = useMemo(() => {
+    if (!agentDetail?.model_mapping) return [];
+    return Object.entries(agentDetail.model_mapping).map(([id, info]) => ({
+      id,
+      name: info.name,
+      description: info.description,
+    }));
+  }, [agentDetail?.model_mapping]);
+
+  // Extract reasoning options from v2 response
+  const reasoningOptions = useMemo(() => {
+    if (!agentDetail?.reasoning_options)
+      return ["none", "minimal", "low", "medium", "high"];
+    return agentDetail.reasoning_options;
+  }, [agentDetail?.reasoning_options]);
+
+  // Temperature bounds from v2 response
+  const temperatureLower = agentDetail?.temperature_lower ?? 0.0;
+  const temperatureUpper = agentDetail?.temperature_upper ?? 1.0;
 
   const initialFormData: SystemAgentFormData = useMemo(
     () => ({
@@ -93,25 +119,33 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
   );
 
   useEffect(() => {
-    if (isEditMode && agent) {
+    if (isEditMode && agentDetail) {
       setFormData({
-        name: agent.name,
-        description: agent.description,
-        systemPrompt: agent.systemPrompt,
-        temperature: agent.temperature,
-        modelId: agent.modelId || "",
+        name: agentDetail.name,
+        description: agentDetail.description,
+        systemPrompt: agentDetail.system_prompt,
+        temperature: agentDetail.temperature,
+        modelId: agentDetail.model_id || "",
         reasoning:
-          (agent.reasoning as
+          (agentDetail.reasoning as
             | "minimal"
             | "low"
             | "medium"
             | "high"
             | undefined) || "none",
       });
-    } else if (!isEditMode) {
-      setFormData(initialFormData);
+    } else if (!isEditMode && agentDetail) {
+      // For create mode, use defaults from API response
+      setFormData({
+        ...initialFormData,
+        temperature:
+          agentDetail.temperature ?? initialFormData.temperature ?? 0.7,
+        modelId: agentDetail.model_id || initialFormData.modelId || "",
+        systemPrompt:
+          agentDetail.system_prompt || initialFormData.systemPrompt || "",
+      });
     }
-  }, [isEditMode, agent, initialFormData]);
+  }, [isEditMode, agentDetail, initialFormData]);
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
@@ -164,47 +198,74 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
     setIsSubmitting(true);
 
     try {
-      if (isEditMode && agentId && agent) {
-        // Update existing agent
-        const updatePayload: any = {
-          id: agentId,
-          name: formData.name,
-          description: formData.description,
-          systemPrompt: formData.systemPrompt,
-          temperature: Number(formData.temperature),
-        };
-        
-        if (formData.modelId && formData.modelId !== "") {
-          updatePayload.modelId = formData.modelId;
-        }
-        
-        if (formData.reasoning && formData.reasoning !== "none") {
-          updatePayload.reasoning = formData.reasoning;
-        }
-        
-        await updateAgent(updatePayload);
+      if (isEditMode && agentId && agentDetail) {
+        // Update existing agent using v2 API
+        updateAgent(
+          {
+            agentId,
+            name: formData.name!,
+            description: formData.description!,
+            system_prompt: formData.systemPrompt!,
+            temperature: Number(formData.temperature),
+            model_id: formData.modelId!,
+            reasoning:
+              formData.reasoning && formData.reasoning !== "none"
+                ? formData.reasoning
+                : null,
+          },
+          {
+            onSuccess: () => {
+              toast.success("Agent updated successfully!");
+              resetFormAndState();
+              router.push("/system/agents");
+              setIsSubmitting(false);
+            },
+            onError: (error) => {
+              const msg =
+                error instanceof Error ? error.message : "Unknown error";
+              log.error("agent.update.failed", {
+                error,
+                context: { component: "SystemAgent", agentId },
+              });
+              toast.error(`Failed to update agent: ${msg}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       } else {
-        // Create new agent
-        await createAgent({
-          name: formData.name!,
-          description: formData.description!,
-          systemPrompt: formData.systemPrompt!,
-          temperature: Number(formData.temperature),
-          modelId: formData.modelId!,
-          reasoning:
-            formData.reasoning && formData.reasoning !== "none"
-              ? formData.reasoning
-              : undefined,
-        });
+        // Create new agent using v2 API
+        createAgent(
+          {
+            name: formData.name!,
+            description: formData.description!,
+            system_prompt: formData.systemPrompt!,
+            temperature: Number(formData.temperature),
+            model_id: formData.modelId!,
+            reasoning:
+              formData.reasoning && formData.reasoning !== "none"
+                ? formData.reasoning
+                : null,
+          },
+          {
+            onSuccess: (response) => {
+              toast.success("Agent created successfully!");
+              resetFormAndState();
+              router.push(`/system/agents/a/${response.agentId}`);
+              setIsSubmitting(false);
+            },
+            onError: (error) => {
+              const msg =
+                error instanceof Error ? error.message : "Unknown error";
+              log.error("agent.create.failed", {
+                error,
+                context: { component: "SystemAgent" },
+              });
+              toast.error(`Failed to create agent: ${msg}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       }
-
-      toast.success(
-        isEditMode
-          ? "Agent updated successfully!"
-          : "Agent created successfully!"
-      );
-      resetFormAndState();
-      router.push("/system/agents");
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       log.error("agent.save.failed", {
@@ -214,7 +275,6 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -283,13 +343,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                         <SelectValue placeholder="Select a model" />
                       </SelectTrigger>
                       <SelectContent>
-                        {models
-                          ?.filter((model) => model.active)
-                          ?.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.name}
-                            </SelectItem>
-                          ))}
+                        {modelOptions.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.modelId && (
@@ -327,11 +385,11 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                         <SelectValue placeholder="Select reasoning effort" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="minimal">Minimal</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                        {reasoningOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -353,8 +411,8 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                   <Slider
                     id="temperature"
                     data-testid="temperature-slider"
-                    min={0}
-                    max={1}
+                    min={temperatureLower}
+                    max={temperatureUpper}
                     step={0.01}
                     value={[formData?.temperature || 0]}
                     onValueChange={(value) =>
@@ -438,8 +496,13 @@ export default function SystemAgent({ agentId }: SystemAgentProps) {
                     placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
                     className="h-full"
                     debugContent={
-                      isEditMode && agentId ? (
-                        <AgentDebugInfo agentId={agentId} />
+                      isEditMode &&
+                      agentDetail &&
+                      effectiveProfile?.role === "superadmin" ? (
+                        <AgentDebugInfo
+                          debugInfo={agentDetail.debug_info}
+                          modelMapping={agentDetail.model_mapping}
+                        />
                       ) : undefined
                     }
                     activeMode={editorMode}

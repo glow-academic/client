@@ -84,6 +84,16 @@ export const DepartmentDetailResponseSchema = z.object({
 
   // Top-level mappings
   agent_mapping: AgentMappingSchema,
+
+  // Permissions
+  can_edit: z.boolean(),
+  can_duplicate: z.boolean(),
+  can_delete: z.boolean(),
+
+  // Usage/Stats
+  in_use: z.boolean(),
+  staff_count: z.number(),
+  total_price_spent: z.number(),
 });
 
 export type DepartmentDetailResponse = z.infer<

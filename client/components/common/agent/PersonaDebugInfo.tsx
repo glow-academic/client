@@ -1,17 +1,12 @@
+/**
+ * PersonaDebugInfo.tsx
+ * Debug info component that uses pre-fetched data from parent
+ * Eliminates 4 API calls by using data already in PersonaDetailResponse
+ */
 "use client";
 
 import { useMemo } from "react";
-
-import { useDebugInfoByModelRunIdBatch } from "@/lib/api/v1/hooks/debug_info";
-import { useModelRunModelsByModelRunIdBatch } from "@/lib/api/v1/hooks/model_run_models";
-import { useModelRunsByPersonaId } from "@/lib/api/v1/hooks/model_runs";
-import { useModels } from "@/lib/api/v1/hooks/models";
-import { DebugInfo as DebugInfoType, Model, ModelRun } from "@/types";
 import PersonaDebugInfoDataTable from "./PersonaDebugInfoDataTable";
-
-export interface PersonaDebugInfoProps {
-  personaId: string;
-}
 
 export interface PersonaDebugInfoRow {
   id: string;
@@ -22,74 +17,51 @@ export interface PersonaDebugInfoRow {
   modelName: string;
 }
 
-export function PersonaDebugInfo({ personaId }: PersonaDebugInfoProps) {
-  const { data: modelRuns = [], isLoading: isLoadingRuns } =
-    useModelRunsByPersonaId(personaId);
+export interface DebugInfoItem {
+  created_at: string;
+  model_id: string;
+  content: string;
+}
 
-  const modelRunIds = useMemo(
-    () => (modelRuns as ModelRun[]).map((mr) => mr.id),
-    [modelRuns]
-  );
+export interface ModelMapping {
+  [modelId: string]: {
+    name: string;
+    description: string;
+  };
+}
 
-  const { data: debugInfo = [], isLoading: isLoadingDebug } =
-    useDebugInfoByModelRunIdBatch(modelRunIds);
+export interface PersonaDebugInfoProps {
+  debugInfo: DebugInfoItem[];
+  modelMapping: ModelMapping;
+}
 
-  const { data: models = [], isLoading: isLoadingModels } = useModels();
-
-  // Get model run models from junction table
-  const { data: modelRunModels = [] } = useModelRunModelsByModelRunIdBatch(
-    (modelRuns as ModelRun[]).map((mr) => mr.id)
-  );
-
-  const modelIdByRunId = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const mrm of modelRunModels || []) {
-      if (mrm.active) {
-        map.set(mrm.modelRunId, mrm.modelId);
-      }
-    }
-    return map;
-  }, [modelRunModels]);
-
-  const modelNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const m of (models as Model[]) || []) {
-      map.set(m.id, m.name);
-    }
-    return map;
-  }, [models]);
-
+export function PersonaDebugInfo({
+  debugInfo,
+  modelMapping,
+}: PersonaDebugInfoProps) {
   const rows: PersonaDebugInfoRow[] = useMemo(() => {
-    return (debugInfo as DebugInfoType[]).map((d) => {
-      const modelId = modelIdByRunId.get(d.modelRunId) ?? null;
-      const modelName = modelId ? (modelNameById.get(modelId) ?? modelId) : "";
-      return {
-        id: d.id,
-        createdAt: d.createdAt,
-        modelRunId: d.modelRunId,
-        content: d.content,
-        modelId,
-        modelName,
-      } satisfies PersonaDebugInfoRow;
-    });
-  }, [debugInfo, modelIdByRunId, modelNameById]);
+    return debugInfo.map((item, idx) => ({
+      id: `${item.created_at}-${idx}`,
+      createdAt: item.created_at,
+      content: item.content,
+      modelId: item.model_id,
+      modelName: modelMapping[item.model_id]?.name || item.model_id,
+      modelRunId: "", // Not needed for v2, kept for interface compatibility
+    }));
+  }, [debugInfo, modelMapping]);
 
-  const modelOptions = useMemo(
-    () =>
-      ((models as Model[]) || []).map((m) => ({
-        value: m.id,
-        label: m.name,
-      })),
-    [models]
-  );
-
-  const isLoading = isLoadingRuns || isLoadingDebug || isLoadingModels;
+  const modelOptions = useMemo(() => {
+    return Object.entries(modelMapping).map(([id, info]) => ({
+      value: id,
+      label: info.name,
+    }));
+  }, [modelMapping]);
 
   return (
     <PersonaDebugInfoDataTable
       data={rows}
       modelOptions={modelOptions}
-      isLoading={isLoading}
+      isLoading={false}
     />
   );
 }

@@ -66,6 +66,56 @@ export type SimulationDetailRequest = z.infer<
   typeof SimulationDetailRequestSchema
 >;
 
+// Scenario in simulation with position
+export const ScenarioInSimulationSchema = z.object({
+  scenario_id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  active: z.boolean(),
+  default_scenario: z.boolean(),
+  position: z.number(),
+  parameter_item_ids: z.array(z.string()),
+});
+
+// Parameter item schemas
+export const ParameterItemSchema = z.object({
+  id: z.string(),
+  parameter_id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+});
+
+export const ParameterItemDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  parameter_id: z.string(),
+});
+
+// Parameter mapping
+export const ParameterMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+});
+
+export const ParameterMappingSchema = z.record(
+  z.string(),
+  ParameterMappingItemSchema
+);
+
+// Parameter item mapping
+export const ParameterItemMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  parameter_id: z.string(),
+  parameter_name: z.string(),
+});
+
+export const ParameterItemMappingSchema = z.record(
+  z.string(),
+  ParameterItemMappingItemSchema
+);
+
 export const SimulationDetailResponseSchema = z.object({
   // Basic fields
   name: z.string(), // Maps to simulations.title
@@ -87,10 +137,28 @@ export const SimulationDetailResponseSchema = z.object({
   output_guardrail_active: z.boolean(),
   image_input_active: z.boolean(),
 
+  // Permission flags
+  can_edit: z.boolean(),
+  can_duplicate: z.boolean(),
+  can_delete: z.boolean(),
+
+  // Usage status
+  in_use: z.boolean(),
+  cohort_count: z.number(),
+
+  // Full scenario objects (ordered by position)
+  scenarios: z.array(ScenarioInSimulationSchema),
+
+  // Parameter data for scenario picker
+  parameters: z.array(ParameterItemSchema),
+  parameter_items: z.array(ParameterItemDetailSchema),
+  parameter_mapping: ParameterMappingSchema,
+
   // Top-level mappings
   scenario_mapping: ScenarioMappingSchema,
   rubric_mapping: RubricMappingSchema,
   department_mapping: DepartmentMappingSchema,
+  parameter_item_mapping: ParameterItemMappingSchema,
 });
 
 export type SimulationDetailResponse = z.infer<

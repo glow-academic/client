@@ -3,7 +3,9 @@
 from typing import Any, Dict, List
 
 from app.queries.simulation_queries import SimulationQueries
-from app.schemas.base import (DepartmentMappingItem, RubricMapping,
+from app.schemas.base import (DepartmentMappingItem, ParameterItemMapping,
+                              ParameterItemMappingItem, ParameterMapping,
+                              ParameterMappingItem, RubricMapping,
                               RubricMappingItem, ScenarioMappingItem)
 from app.schemas.simulations import (CreateSimulationRequest,
                                      CreateSimulationResponse,
@@ -11,6 +13,8 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      DeleteSimulationResponse,
                                      DuplicateSimulationRequest,
                                      DuplicateSimulationResponse,
+                                     ParameterItem, ParameterItemDetail,
+                                     ScenarioInSimulation,
                                      SimulationDetailDefaultRequest,
                                      SimulationDetailRequest,
                                      SimulationDetailResponse, SimulationItem,
@@ -110,10 +114,80 @@ class SimulationService:
         if not simulation:
             raise ValueError(f"Simulation not found: {request.simulationId}")
 
-        # Get scenario IDs for this simulation
+        # Get user profile for permission checks
+        query = "SELECT role FROM profiles WHERE id = :profile_id"
+        profile = self.db.execute(text(query), {"profile_id": request.profileId}).fetchone()
+        user_role = profile.role if profile else 'trainee'
+
+        # Check if simulation is in use (linked to cohorts)
+        query = """
+        SELECT COUNT(*) as cohort_count
+        FROM cohort_simulations
+        WHERE simulation_id = :simulation_id
+        """
+        cohort_usage = self.db.execute(
+            text(query), {"simulation_id": request.simulationId}
+        ).fetchone()
+        cohort_count = cohort_usage.cohort_count if cohort_usage else 0
+        in_use = cohort_count > 0
+
+        # Compute permissions
+        is_admin = user_role in ('admin', 'superadmin')
+        can_edit = is_admin and (not simulation.default_simulation or user_role == 'superadmin')
+        can_duplicate = is_admin
+        can_delete = is_admin and not in_use
+
+        # Get scenario IDs with positions from junction table
         query, params = self.queries.get_simulation_scenarios(request.simulationId)
         scenario_result = self.db.execute(text(query), params).fetchall()
         scenario_ids = [str(row.scenario_id) for row in scenario_result]
+
+        # Get full scenario data with positions
+        scenarios_list: List[ScenarioInSimulation] = []
+        if scenario_ids:
+            # Get scenarios with their data
+            query = """
+            SELECT 
+                s.id,
+                s.name,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                ss.position
+            FROM scenarios s
+            JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+            WHERE ss.simulation_id = :simulation_id AND s.id = ANY(:scenario_ids)
+            ORDER BY ss.position
+            """
+            scenarios_data = self.db.execute(
+                text(query),
+                {"simulation_id": request.simulationId, "scenario_ids": scenario_ids}
+            ).fetchall()
+
+            # Get parameter items for each scenario
+            for scenario_data in scenarios_data:
+                # Get parameter item IDs for this scenario
+                query = """
+                SELECT parameter_item_id
+                FROM scenario_parameter_items
+                WHERE scenario_id = :scenario_id
+                """
+                param_items = self.db.execute(
+                    text(query), {"scenario_id": str(scenario_data.id)}
+                ).fetchall()
+                param_item_ids = [str(row.parameter_item_id) for row in param_items]
+
+                scenarios_list.append(
+                    ScenarioInSimulation(
+                        scenario_id=str(scenario_data.id),
+                        title=scenario_data.name,
+                        description=scenario_data.problem_statement or '',
+                        active=scenario_data.active,
+                        default_scenario=scenario_data.default_scenario or False,
+                        position=scenario_data.position,
+                        parameter_item_ids=param_item_ids
+                    )
+                )
 
         # Get user's accessible department IDs
         query, params = self.queries.get_valid_departments_for_profile(
@@ -148,6 +222,68 @@ class SimulationService:
             for row in dept_result
         }
 
+        # Get parameters for valid departments
+        query = """
+        SELECT id, name, COALESCE(description, '') as description
+        FROM parameters
+        WHERE department_id = ANY(:department_ids)
+        ORDER BY name
+        """
+        params_result = self.db.execute(
+            text(query), {"department_ids": valid_department_ids}
+        ).fetchall()
+        
+        parameters_list = []
+        parameter_mapping: ParameterMapping = {}
+        for row in params_result:
+            parameter_mapping[str(row.id)] = ParameterMappingItem(
+                name=row.name,
+                description=row.description
+            )
+
+        # Get parameter items for valid departments
+        query = """
+        SELECT pi.id, pi.parameter_id, pi.name, COALESCE(pi.description, '') as description
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.department_id = ANY(:department_ids)
+        ORDER BY p.name, pi.name
+        """
+        param_items_result = self.db.execute(
+            text(query), {"department_ids": valid_department_ids}
+        ).fetchall()
+        
+        parameter_items_list = []
+        parameter_item_mapping: ParameterItemMapping = {}
+        for row in param_items_result:
+            parameter_items_list.append(
+                ParameterItemDetail(
+                    id=str(row.id),
+                    name=row.name,
+                    description=row.description if row.description else None,
+                    parameter_id=str(row.parameter_id)
+                )
+            )
+            parameters_list.append(
+                ParameterItem(
+                    id=str(row.id),
+                    parameter_id=str(row.parameter_id),
+                    name=row.name,
+                    description=row.description if row.description else None
+                )
+            )
+            # Get parameter name for the mapping
+            param_name = next(
+                (p.name for p in params_result if str(p.id) == str(row.parameter_id)),
+                "Unknown"
+            )
+            parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
+                name=row.name,
+                description=row.description,
+                parameter_id=str(row.parameter_id),
+                parameter_name=param_name
+            )
+
         return SimulationDetailResponse(
             # Basic fields
             name=simulation.title,
@@ -167,10 +303,24 @@ class SimulationService:
             input_guardrail_active=simulation.input_guardrail_active,
             output_guardrail_active=simulation.output_guardrail_active,
             image_input_active=simulation.image_input_active,
+            # Permission flags
+            can_edit=can_edit,
+            can_duplicate=can_duplicate,
+            can_delete=can_delete,
+            # Usage status
+            in_use=in_use,
+            cohort_count=cohort_count,
+            # Full scenario objects
+            scenarios=scenarios_list,
+            # Parameter data
+            parameters=parameters_list,
+            parameter_items=parameter_items_list,
+            parameter_mapping=parameter_mapping,
             # Mappings
             scenario_mapping=scenario_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
+            parameter_item_mapping=parameter_item_mapping,
         )
 
     def get_simulation_detail_default(

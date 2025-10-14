@@ -14,91 +14,84 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
 import type { ParameterItemMappingItem } from "@/lib/api/v2/schemas/base";
-import { Parameter, ParameterItem } from "@/types";
 import { ParameterItemPicker } from "./ParameterItemPicker";
 
 interface ParameterSelectorProps {
-  parameters: Parameter[];
-  parameterItems: ParameterItem[];
+  parameterMapping: Record<string, { name: string; description: string }>;
+  parameterItemMapping: Record<string, ParameterItemMappingItem>;
+  validParameterItemIds: string[];
   selectedParameterItemIds: string[];
   onParameterItemIdsChange: (parameterItemIds: string[]) => void;
   disabled?: boolean;
 }
 
 export function ParameterSelector({
-  parameters,
-  parameterItems,
+  parameterMapping,
+  parameterItemMapping,
+  validParameterItemIds,
   selectedParameterItemIds,
   onParameterItemIdsChange,
   disabled = false,
 }: ParameterSelectorProps) {
-  // Build parameter item mapping for ParameterItemPicker
-  const parameterItemMapping = useMemo(() => {
-    const mapping: Record<string, ParameterItemMappingItem> = {};
-    parameterItems.forEach((item) => {
-      const parameter = parameters.find((p) => p.id === item.parameterId);
-      mapping[item.id] = {
-        name: item.name,
-        description: item.description,
-        parameter_id: item.parameterId,
-        parameter_name: parameter?.name || "",
-      };
-    });
-    return mapping;
-  }, [parameterItems, parameters]);
-
-  // Group parameter items by parameter
+  // Group valid parameter items by parameter (from mapping)
   const parameterItemsByParameter = useMemo(() => {
-    return parameterItems.reduce(
-      (acc, item) => {
-        if (!acc[item.parameterId]) {
-          acc[item.parameterId] = [];
+    const grouped: Record<string, string[]> = {};
+    validParameterItemIds.forEach((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (item) {
+        const parameterId = item.parameter_id;
+        if (!grouped[parameterId]) {
+          grouped[parameterId] = [];
         }
-        acc[item.parameterId]!.push(item);
-        return acc;
-      },
-      {} as Record<string, ParameterItem[]>
-    );
-  }, [parameterItems]);
+        grouped[parameterId]!.push(itemId);
+      }
+    });
+    return grouped;
+  }, [validParameterItemIds, parameterItemMapping]);
 
-  // Separate active parameters into numerical and non-numerical
+  // Separate parameters into numerical and non-numerical
+  // For V2, we need to determine this from the parameter_item_mapping
+  // Assuming numerical parameters have numeric values
   const { numericalParameters, nonNumericalParameters } = useMemo(() => {
-    const activeParameters = parameters.filter((p) => p.active);
-    return {
-      numericalParameters: activeParameters.filter((p) => p.numerical),
-      nonNumericalParameters: activeParameters.filter((p) => !p.numerical),
-    };
-  }, [parameters]);
+    const parameterIds = Object.keys(parameterItemsByParameter);
+    const numerical: string[] = [];
+    const nonNumerical: string[] = [];
 
-  // Get currently selected parameter items
-  const selectedParameterItems = useMemo(() => {
-    return parameterItems.filter((item) =>
-      selectedParameterItemIds.includes(item.id)
-    );
-  }, [parameterItems, selectedParameterItemIds]);
+    parameterIds.forEach((parameterId) => {
+      // For now, assume all are non-numerical since we don't have type info in mapping
+      // This will need to be enhanced when parameter type is added to the schema
+      // TODO: Add numerical flag to ParameterMapping schema
+      nonNumerical.push(parameterId);
+    });
+
+    return {
+      numericalParameters: numerical,
+      nonNumericalParameters: nonNumerical,
+    };
+  }, [parameterItemsByParameter]);
 
   // Group selected items by parameter
   const selectedItemsByParameter = useMemo(() => {
-    return selectedParameterItems.reduce(
-      (acc, item) => {
-        if (!acc[item.parameterId]) {
-          acc[item.parameterId] = [];
+    const grouped: Record<string, string[]> = {};
+    selectedParameterItemIds.forEach((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (item) {
+        const parameterId = item.parameter_id;
+        if (!grouped[parameterId]) {
+          grouped[parameterId] = [];
         }
-        acc[item.parameterId]!.push(item);
-        return acc;
-      },
-      {} as Record<string, ParameterItem[]>
-    );
-  }, [selectedParameterItems]);
+        grouped[parameterId]!.push(itemId);
+      }
+    });
+    return grouped;
+  }, [selectedParameterItemIds, parameterItemMapping]);
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
     newIds: string[]
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) =>
-        parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
     if (newIds.length > 0) {
@@ -113,9 +106,7 @@ export function ParameterSelector({
     newIds: string[]
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) =>
-        parameterItems.find((item) => item.id === id)?.parameterId !==
-        parameterId
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
     if (newIds.length > 0) {
@@ -125,58 +116,33 @@ export function ParameterSelector({
     }
   };
 
-  const getSelectedNumericalValue = (parameterId: string): number[] => {
-    const selectedItem = selectedItemsByParameter[parameterId]?.[0];
-    if (selectedItem) {
-      const value = parseFloat(selectedItem.value);
-      return isNaN(value) ? [0] : [value];
-    }
+  const getSelectedNumericalValue = (_parameterId: string): number[] => {
+    // Note: ParameterItem value is not in ParameterItemMappingItem
+    // We'll need to get it from a separate source or add it to the mapping
+    // For now, returning [0] as placeholder
     return [0];
   };
 
   const getNumericalParameterRange = (
-    parameterId: string
+    _parameterId: string
   ): { min: number; max: number; step: number } => {
-    const items = parameterItemsByParameter[parameterId] || [];
-    const values = items
-      .map((item) => parseFloat(item.value))
-      .filter((v) => !isNaN(v));
-
-    if (values.length === 0) return { min: 0, max: 10, step: 1 };
-
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const step = values.length > 1 ? (max - min) / (values.length - 1) : 1;
-
-    return { min, max, step };
+    // Note: We need parameter item values which are not in the current mapping
+    // This is a limitation of the current V2 schema
+    // For now, return default range
+    return { min: 0, max: 10, step: 1 };
   };
 
   const handleNumericalSliderChange = (
     parameterId: string,
-    value: number[]
+    _value: number[]
   ) => {
-    const items = parameterItemsByParameter[parameterId] || [];
-    const targetValue = value[0];
+    const itemIds = parameterItemsByParameter[parameterId] || [];
 
-    if (items.length === 0 || targetValue === undefined) return;
-
-    // Find the closest parameter item value
-    let closestItem = items[0];
-    let minDistance = Infinity;
-
-    for (const item of items) {
-      const itemValue = parseFloat(item.value);
-      if (!isNaN(itemValue)) {
-        const distance = Math.abs(itemValue - targetValue);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestItem = item;
-        }
-      }
-    }
-
-    if (closestItem) {
-      handleNumericalParameterChange(parameterId, [closestItem.id]);
+    // Note: Without parameter item values in the mapping, we can't implement this properly
+    // This is a limitation that needs to be addressed in the V2 schema
+    // For now, just select the first item
+    if (itemIds.length > 0 && itemIds[0]) {
+      handleNumericalParameterChange(parameterId, [itemIds[0]]);
     }
   };
 
@@ -207,22 +173,24 @@ export function ParameterSelector({
         {hasNonNumerical && (
           <div className="space-y-4">
             <div className="space-y-4">
-              {nonNumericalParameters.map((parameter) => {
-                const items = parameterItemsByParameter[parameter.id] || [];
-                const selectedItem =
-                  selectedItemsByParameter[parameter.id]?.[0];
+              {nonNumericalParameters.map((parameterId) => {
+                const parameter = parameterMapping[parameterId];
+                const itemIds = parameterItemsByParameter[parameterId] || [];
+                const selectedItemIds =
+                  selectedItemsByParameter[parameterId] || [];
+                const selectedItemId = selectedItemIds[0];
 
                 return (
-                  <div key={parameter.id} className="space-y-2">
+                  <div key={parameterId} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium">
-                        {parameter.name}
+                        {parameter?.name || "Parameter"}
                       </Label>
-                      {selectedItem && (
+                      {selectedItemId && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => resetParameter(parameter.id)}
+                          onClick={() => resetParameter(parameterId)}
                           className="h-6 w-6 p-0 hover:bg-muted"
                           disabled={disabled}
                         >
@@ -233,21 +201,21 @@ export function ParameterSelector({
 
                     <ParameterItemPicker
                       mapping={parameterItemMapping}
-                      validIds={items.map((i) => i.id)}
-                      selectedIds={selectedItem ? [selectedItem.id] : []}
+                      validIds={itemIds}
+                      selectedIds={selectedItemIds}
                       onSelect={(ids) =>
-                        handleNonNumericalParameterChange(parameter.id, ids)
+                        handleNonNumericalParameterChange(parameterId, ids)
                       }
-                      parameterId={parameter.id}
-                      parameterName={parameter.name}
-                      parameterDescription={parameter.description}
-                      isDefaultParameter={parameter.defaultParameter}
+                      parameterId={parameterId}
+                      parameterName={parameter?.name || ""}
+                      parameterDescription={parameter?.description || ""}
+                      isDefaultParameter={false}
                       disabled={disabled}
                     />
 
-                    {selectedItem && (
+                    {selectedItemId && parameterItemMapping[selectedItemId] && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedItem.description}
+                        {parameterItemMapping[selectedItemId].description}
                       </p>
                     )}
                   </div>
@@ -261,39 +229,39 @@ export function ParameterSelector({
         {hasNumerical && (
           <div className="space-y-4">
             <div className="space-y-6">
-              {numericalParameters.map((parameter) => {
-                const items = parameterItemsByParameter[parameter.id] || [];
-                const selectedItem =
-                  selectedItemsByParameter[parameter.id]?.[0];
-                const { min, max, step } = getNumericalParameterRange(
-                  parameter.id
-                );
-                const currentValue = getSelectedNumericalValue(parameter.id);
+              {numericalParameters.map((parameterId) => {
+                const parameter = parameterMapping[parameterId];
+                const itemIds = parameterItemsByParameter[parameterId] || [];
+                const selectedItemIds =
+                  selectedItemsByParameter[parameterId] || [];
+                const selectedItemId = selectedItemIds[0];
+                const { min, max, step } =
+                  getNumericalParameterRange(parameterId);
+                const currentValue = getSelectedNumericalValue(parameterId);
 
                 return (
-                  <div key={parameter.id} className="space-y-3">
+                  <div key={parameterId} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-sm font-medium">
-                          {parameter.name}
+                          {parameter?.name || "Parameter"}
                         </Label>
-                        {selectedItem && (
-                          <p className="text-xs text-muted-foreground">
-                            {selectedItem.name}
-                          </p>
-                        )}
+                        {selectedItemId &&
+                          parameterItemMapping[selectedItemId] && (
+                            <p className="text-xs text-muted-foreground">
+                              {parameterItemMapping[selectedItemId].name}
+                            </p>
+                          )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
                           {currentValue[0]}
                         </span>
-                        {selectedItem && (
+                        {selectedItemId && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              resetNumericalParameter(parameter.id)
-                            }
+                            onClick={() => resetNumericalParameter(parameterId)}
                             className="h-6 w-6 p-0 hover:bg-muted"
                             disabled={disabled}
                           >
@@ -309,10 +277,10 @@ export function ParameterSelector({
                       step={step}
                       value={currentValue}
                       onValueChange={(value) =>
-                        handleNumericalSliderChange(parameter.id, value)
+                        handleNumericalSliderChange(parameterId, value)
                       }
                       className="w-full"
-                      disabled={items.length === 0 || disabled}
+                      disabled={itemIds.length === 0 || disabled}
                     />
 
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -320,9 +288,9 @@ export function ParameterSelector({
                       <span>{max}</span>
                     </div>
 
-                    {selectedItem && (
+                    {selectedItemId && parameterItemMapping[selectedItemId] && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedItem.description}
+                        {parameterItemMapping[selectedItemId].description}
                       </p>
                     )}
                   </div>

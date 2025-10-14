@@ -6,6 +6,7 @@
 import { z } from "zod";
 import {
   CohortMappingSchema,
+  DepartmentMappingSchema,
   DocumentMappingSchema,
   ObjectiveMappingSchema,
   ParameterItemMappingSchema,
@@ -87,6 +88,12 @@ export const ScenarioDetailResponseSchema = z.object({
   problem_statement: z.string(),
   active: z.boolean(),
   default_scenario: z.boolean(),
+  generated: z.boolean(),
+  parent_scenario_id: z.string().nullable(),
+
+  // Department
+  department_id: z.string(),
+  valid_department_ids: z.array(z.string()),
 
   // IDs
   persona_id: z.string().nullable(),
@@ -104,6 +111,11 @@ export const ScenarioDetailResponseSchema = z.object({
   // Simulations
   active_simulation_ids: z.array(z.string()),
 
+  // Permissions
+  can_edit: z.boolean(),
+  can_duplicate: z.boolean(),
+  can_delete: z.boolean(),
+
   // Top-level mappings
   parameter_mapping: ParameterMappingSchema,
   parameter_item_mapping: ParameterItemMappingSchema,
@@ -111,6 +123,7 @@ export const ScenarioDetailResponseSchema = z.object({
   persona_mapping: PersonaMappingSchema,
   document_mapping: DocumentMappingSchema,
   objective_mapping: ObjectiveMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type ScenarioDetailResponse = z.infer<

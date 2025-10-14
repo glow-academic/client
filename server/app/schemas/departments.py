@@ -85,6 +85,16 @@ class DepartmentDetailResponse(BaseModel):
     # Top-level mappings
     agent_mapping: AgentMapping
 
+    # Permissions
+    can_edit: bool
+    can_duplicate: bool
+    can_delete: bool
+
+    # Usage/Stats
+    in_use: bool
+    staff_count: int
+    total_price_spent: float
+
 
 class DepartmentDetailDefaultRequest(BaseModel):
     """Request for default department detail."""

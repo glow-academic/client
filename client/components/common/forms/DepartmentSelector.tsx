@@ -1,7 +1,6 @@
 /**
- * DepartmentPicker.tsx
- * Used to pick departments for filtering analytics
- * Refactored to use mapping-based API pattern
+ * DepartmentSelector.tsx
+ * Single department selection component for forms - V2 (mapping-based)
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -9,7 +8,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -32,118 +31,79 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem } from "@/lib/api/v2/schemas/base";
+import type { DepartmentMappingItem } from "@/lib/api/v2/schemas/personas";
 import { cn } from "@/lib/utils";
 
-export interface DepartmentPickerProps<T extends MappingItem = MappingItem>
-  extends PopoverProps {
-  mapping: Record<string, T>;
-  validIds: string[];
-  selectedIds: string[];
-  onSelect: (ids: string[]) => void;
+export interface DepartmentSelectorProps extends PopoverProps {
+  departmentMapping: Record<string, DepartmentMappingItem>;
+  selectedDepartmentId: string;
+  validDepartmentIds: string[];
+  onSelect: (departmentId: string | null) => void;
   placeholder?: string;
-  hideSelectedChips?: boolean;
+  disabled?: boolean;
 }
 
-export function DepartmentPicker<T extends MappingItem = MappingItem>({
-  mapping,
-  validIds,
-  selectedIds,
+interface Department {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+export function DepartmentSelector({
+  departmentMapping,
+  selectedDepartmentId,
+  validDepartmentIds,
   onSelect,
-  placeholder = "Departments",
-  hideSelectedChips = true,
+  placeholder = "Select department...",
+  disabled = false,
   ...props
-}: DepartmentPickerProps<T>) {
+}: DepartmentSelectorProps) {
   const [open, setOpen] = React.useState(false);
 
   // Build departments from mapping
   const departments = React.useMemo(() => {
-    return validIds.map((id) => ({
+    return validDepartmentIds.map((id) => ({
       id,
-      ...mapping[id],
+      name: departmentMapping[id]?.name || id,
+      description: departmentMapping[id]?.description ?? null,
     }));
-  }, [validIds, mapping]);
+  }, [validDepartmentIds, departmentMapping]);
+
+  const selectedDepartment = React.useMemo(() => {
+    if (!selectedDepartmentId) return null;
+    return departments.find((d) => d.id === selectedDepartmentId) || null;
+  }, [selectedDepartmentId, departments]);
 
   const [peekedDepartment, setPeekedDepartment] = React.useState<
-    ({ id: string } & T) | undefined
-  >(departments[0] as ({ id: string } & T) | undefined);
+    Department | undefined
+  >(departments[0]);
 
-  const handleSelect = (departmentId: string) => {
-    const isSelected = selectedIds.includes(departmentId);
-    const newIds = isSelected
-      ? selectedIds.filter((id) => id !== departmentId)
-      : [...selectedIds, departmentId];
-    onSelect(newIds);
-    // Don't close popover in multi-select mode
-  };
-
-  // Allow clearing selection
-  const handleClear = () => {
-    onSelect([]);
+  const handleSelect = (department: Department) => {
+    onSelect(department.id);
     setOpen(false);
   };
 
-  // Remove individual item
-  const handleRemoveItem = (departmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newIds = selectedIds.filter((id) => id !== departmentId);
-    onSelect(newIds);
-  };
-
-  const getButtonText = () => {
-    if (selectedIds.length === 0) {
-      return placeholder;
-    }
-    if (selectedIds.length === 1) {
-      const dept = mapping[selectedIds[0]!];
-      return dept?.name || placeholder;
-    }
-    return `${selectedIds.length} departments selected`;
-  };
-
-  const getSearchNotFoundMessage = () => {
-    return `No departments found.`;
+  const handleClear = () => {
+    onSelect(null);
+    setOpen(false);
   };
 
   return (
     <div>
-      {/* Show selected items */}
-      {selectedIds.length > 0 && !hideSelectedChips && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {selectedIds.map((id) => {
-            const department = mapping[id];
-            if (!department) return null;
-            return (
-              <div
-                key={id}
-                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-              >
-                <span>{department.name}</span>
-                <button
-                  type="button"
-                  onClick={(e) => handleRemoveItem(id, e)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
+            variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select departments"
+            aria-label="Select department"
             className="w-full justify-between"
-            size="sm"
+            disabled={disabled}
           >
-            {getButtonText()}
-            <ChevronsUpDown className="opacity-50" />
+            <span className="truncate text-left">
+              {selectedDepartment ? selectedDepartment.name : placeholder}
+            </span>
+            <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[300px] p-0">
@@ -156,7 +116,7 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedDepartment?.name || "Department selected"}
+                  {peekedDepartment?.name || "No department selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedDepartment?.description || "No description available"}
@@ -166,15 +126,16 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
             <Command loop>
               <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
                 <CommandInput placeholder="Search departments..." />
-                <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
+                <CommandEmpty>No departments found.</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedIds.length > 0 && (
+
+                {selectedDepartment && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
                       className="text-muted-foreground"
                     >
-                      Clear All
+                      Clear selection
                     </CommandItem>
                   </CommandGroup>
                 )}
@@ -182,10 +143,10 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
                   {departments.map((department) => (
                     <DepartmentItem
                       key={department.id}
-                      department={department as { id: string } & T}
-                      isSelected={selectedIds.includes(department.id)}
-                      onPeek={(dept) => setPeekedDepartment(dept)}
-                      onSelect={() => handleSelect(department.id)}
+                      department={department}
+                      isSelected={selectedDepartment?.id === department.id}
+                      onPeek={(department) => setPeekedDepartment(department)}
+                      onSelect={() => handleSelect(department)}
                     />
                   ))}
                 </CommandGroup>
@@ -198,19 +159,19 @@ export function DepartmentPicker<T extends MappingItem = MappingItem>({
   );
 }
 
-interface DepartmentItemProps<T extends MappingItem> {
-  department: { id: string } & T;
+interface DepartmentItemProps {
+  department: Department;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (department: { id: string } & T) => void;
+  onPeek: (department: Department) => void;
 }
 
-function DepartmentItem<T extends MappingItem>({
+function DepartmentItem({
   department,
   isSelected,
   onSelect,
   onPeek,
-}: DepartmentItemProps<T>) {
+}: DepartmentItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -233,9 +194,21 @@ function DepartmentItem<T extends MappingItem>({
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">{department.name}</div>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{department.name}</div>
+            {department.description && (
+              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                {department.description}
+              </div>
+            )}
+          </div>
+        </div>
         <Check
-          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+          className={cn(
+            "ml-auto flex-shrink-0",
+            isSelected ? "opacity-100" : "opacity-0"
+          )}
         />
       </div>
     </CommandItem>

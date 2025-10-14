@@ -16,11 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateModel,
-  useModel,
+  useModelDetail,
   useUpdateModel,
-} from "@/lib/api/v1/hooks/models";
+} from "@/lib/api/v2/hooks/providers";
 import { Model as ModelType } from "@/types";
 import { useRouter } from "next/navigation";
 interface FormErrors {
@@ -46,6 +47,7 @@ export interface ModelProps {
 
 export default function Model({ modelId, providerId }: ModelProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
@@ -65,34 +67,37 @@ export default function Model({ modelId, providerId }: ModelProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: modelToEdit, isLoading: isModelLoading } = useModel(
-    modelId!,
-    !!modelId
+  // V2 API hooks
+  const { data: modelDetail, isLoading: isLoadingModelDetail } = useModelDetail(
+    modelId || "",
+    providerId,
+    effectiveProfile?.id || "",
+    !!modelId && isEditMode
   );
 
-  // Mutation hooks
-  const createModelMutation = useCreateModel();
-  const updateModelMutation = useUpdateModel();
+  const isLoading = isLoadingModelDetail;
 
-  const isLoading = isModelLoading;
+  // Mutation hooks
+  const { mutate: createModel } = useCreateModel();
+  const { mutate: updateModel } = useUpdateModel();
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
-    if (isEditMode && modelToEdit) {
+    if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
       setFormData({
-        name: modelToEdit.name,
-        description: modelToEdit.description,
-        active: modelToEdit.active,
-        customModel: modelToEdit.customModel,
-        inputPpm: modelToEdit.inputPpm?.toString?.() ?? "0",
-        outputPpm: modelToEdit.outputPpm?.toString?.() ?? "0",
+        name: modelDetail.name,
+        description: modelDetail.description,
+        active: modelDetail.active,
+        customModel: modelDetail.custom_model,
+        inputPpm: modelDetail.input_ppm?.toString?.() ?? "0",
+        outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
       setFormData(initialFormData);
     }
-  }, [isEditMode, modelToEdit, initialFormData]);
+  }, [isEditMode, modelDetail, initialFormData]);
 
   const handleInputChange = (
     field: keyof ModelType,
@@ -144,42 +149,56 @@ export default function Model({ modelId, providerId }: ModelProps) {
 
     try {
       if (isEditMode && modelId) {
-        await updateModelMutation.mutateAsync({
-          id: modelId,
-          name: formData.name,
-          description: formData.description,
-          active: formData.active,
-          customModel: formData.customModel,
-          inputPpm: inputPpmNum,
-          outputPpm: outputPpmNum,
-          updatedAt: new Date().toISOString(),
-        });
+        updateModel(
+          {
+            modelId: modelId,
+            name: formData.name!,
+            description: formData.description!,
+            active: formData.active ?? true,
+            custom_model: formData.customModel ?? false,
+            input_ppm: inputPpmNum,
+            output_ppm: outputPpmNum,
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Model updated successfully!");
+              router.push(`/system/providers`);
+            },
+            onError: (error) => {
+              toast.error(`Failed to update model: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       } else {
-        await createModelMutation.mutateAsync({
-          name: formData.name,
-          description: formData.description,
-          providerId: providerId,
-          active: formData.active,
-          customModel: formData.customModel,
-          inputPpm: inputPpmNum,
-          outputPpm: outputPpmNum,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        createModel(
+          {
+            provider_id: providerId,
+            name: formData.name!,
+            description: formData.description!,
+            active: formData.active ?? true,
+            custom_model: formData.customModel ?? false,
+            input_ppm: inputPpmNum,
+            output_ppm: outputPpmNum,
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Model created successfully!");
+              router.push(`/system/providers`);
+            },
+            onError: (error) => {
+              toast.error(`Failed to create model: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       }
-
-      resetFormAndState();
-      toast.success(
-        isEditMode && modelId
-          ? "Model updated successfully!"
-          : "Model created successfully!"
-      );
-      router.push(`/system/providers`);
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode && modelId ? "update" : "create"} model: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };

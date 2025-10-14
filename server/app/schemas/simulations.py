@@ -1,10 +1,11 @@
 """Simulations V2 API schemas."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, RubricMapping, ScenarioMapping
+from .base import (DepartmentMapping, ParameterItemMapping, ParameterMapping,
+                   RubricMapping, ScenarioMapping)
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -54,6 +55,36 @@ class SimulationsListResponse(BaseModel):
 # ============================================================================
 
 
+class ScenarioInSimulation(BaseModel):
+    """Scenario with position in simulation."""
+
+    scenario_id: str
+    title: str
+    description: str
+    active: bool
+    default_scenario: bool
+    position: int  # From simulation_scenarios junction table
+    parameter_item_ids: List[str]  # For displaying badges
+
+
+class ParameterItem(BaseModel):
+    """Parameter data for dropdown."""
+
+    id: str
+    parameter_id: str
+    name: str
+    description: Optional[str]
+
+
+class ParameterItemDetail(BaseModel):
+    """Full parameter item details."""
+
+    id: str
+    name: str
+    description: Optional[str]
+    parameter_id: str
+
+
 class SimulationDetailRequest(BaseModel):
     """Request for simulation detail."""
 
@@ -84,10 +115,28 @@ class SimulationDetailResponse(BaseModel):
     output_guardrail_active: bool
     image_input_active: bool
 
+    # Permission flags
+    can_edit: bool
+    can_duplicate: bool
+    can_delete: bool
+
+    # Usage status
+    in_use: bool
+    cohort_count: int
+
+    # Full scenario objects (ordered by position)
+    scenarios: List[ScenarioInSimulation]
+
+    # Parameter data for scenario picker
+    parameters: List[ParameterItem]
+    parameter_items: List[ParameterItemDetail]
+    parameter_mapping: ParameterMapping
+
     # Top-level mappings
     scenario_mapping: ScenarioMapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
+    parameter_item_mapping: ParameterItemMapping
 
 
 class SimulationDetailDefaultRequest(BaseModel):

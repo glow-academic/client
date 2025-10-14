@@ -34,7 +34,7 @@ export default async function PersonaEditPage({
 }) {
   const { personaId } = await params;
   const session = await auth();
-  const profileId = session?.user?.profileId || "";
+  const profileId = session?.effectiveProfileId || "";
 
   const queryClient = getQueryClient();
 

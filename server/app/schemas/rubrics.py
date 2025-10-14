@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, StandardGroupsMapping, StandardsMapping
+from .base import DepartmentMapping
 
 # ============================================================================
 # CENTRALIZED MAPPING TYPES
@@ -21,7 +21,7 @@ class StandardGroupMappingItem(BaseModel):
 
 
 class StandardMappingItem(BaseModel):
-    """Standard mapping item."""
+    """Standard mapping item - includes points."""
 
     name: str
     description: str
@@ -29,10 +29,16 @@ class StandardMappingItem(BaseModel):
 
 
 class StandardGroupMappingDetail(BaseModel):
-    """Standard group mapping for detail response."""
+    """Standard group mapping for detail response - no points here, they're in detail."""
 
     name: str
     description: str
+
+
+# Custom type aliases for rubric mappings (include points unlike base)
+StandardGroupsMapping = Dict[str, StandardGroupMappingItem]
+StandardsMapping = Dict[str, StandardMappingItem]
+StandardGroupsMappingDetail = Dict[str, StandardGroupMappingDetail]
 
 
 # ============================================================================
@@ -107,13 +113,14 @@ class RubricDetailResponse(BaseModel):
     passPoints: int
     active: bool
     default_rubric: bool
+    can_edit: bool  # Permission flag for editing
 
     # Standard groups structure
     standard_group_ids: List[str]
     standard_groups_detail: Dict[str, StandardGroupDetail]
 
     # Top-level mappings
-    standard_groups_mapping: StandardGroupsMapping
+    standard_groups_mapping: StandardGroupsMappingDetail
     standards_mapping: StandardsMapping
     department_mapping: DepartmentMapping
 

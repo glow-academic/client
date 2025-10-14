@@ -6,14 +6,18 @@
  */
 
 import SimulationEdit from "@/components/create/simulations/SimulationEdit";
-import { use } from "react";
 
+import { auth } from "@/auth";
+import { simulationsDetailKeys } from "@/lib/api/v2/keys";
+import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
 import { simulationRepo } from "@/lib/repos/simulationRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ simulationId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { simulationId } = await params;
   const simulation = await simulationRepo.find(simulationId);
@@ -24,16 +28,28 @@ export async function generateMetadata(
   };
 }
 
-export default function EditSimulationPage({
+export default async function EditSimulationPage({
   params,
 }: {
   params: Promise<{ simulationId: string }>;
 }) {
-  const { simulationId } = use(params);
+  const { simulationId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch simulation detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: simulationsDetailKeys.detail(simulationId, profileId),
+    queryFn: () => fetchSimulationDetail(simulationId, profileId),
+  });
 
   return (
-    <div className="space-y-6">
-      <SimulationEdit simulationId={simulationId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <SimulationEdit simulationId={simulationId} />
+      </div>
+    </HydrationBoundary>
   );
 }

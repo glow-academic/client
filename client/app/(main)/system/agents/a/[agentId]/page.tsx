@@ -6,13 +6,18 @@
  */
 
 import EditSystemAgent from "@/components/system/agents/EditAgent";
+
+import { auth } from "@/auth";
+import { agentsDetailKeys } from "@/lib/api/v2/keys";
+import { fetchAgentDetail } from "@/lib/api/v2/server/agents";
 import { agentRepo } from "@/lib/repos/agentRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
-import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ agentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { agentId } = await params;
   const agent = await agentRepo.find(agentId);
@@ -22,15 +27,28 @@ export async function generateMetadata(
   };
 }
 
-export default function AgentEditPage({
+export default async function AgentEditPage({
   params,
 }: {
   params: Promise<{ agentId: string }>;
 }) {
-  const { agentId } = use(params);
+  const { agentId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch agent detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: agentsDetailKeys.detail(agentId, profileId),
+    queryFn: () => fetchAgentDetail(agentId, profileId),
+  });
+
   return (
-    <div className="space-y-6">
-      <EditSystemAgent agentId={agentId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <EditSystemAgent agentId={agentId} />
+      </div>
+    </HydrationBoundary>
   );
 }

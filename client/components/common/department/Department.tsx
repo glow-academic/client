@@ -22,17 +22,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useAgents } from "@/lib/api/v1/hooks/agents";
-import {
-  useCreateDepartmentAgent,
-  useDepartmentAgentsByDepartmentId,
-} from "@/lib/api/v1/hooks/department_agents";
+import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateDepartment,
-  useDepartment,
+  useDepartmentDetail,
+  useDepartmentDetailDefault,
   useUpdateDepartment,
-} from "@/lib/api/v1/hooks/departments";
-import { Agent } from "@/types";
+} from "@/lib/api/v2/hooks/departments";
 import { log } from "@/utils/logger";
 
 export interface DepartmentProps {
@@ -116,6 +112,7 @@ const REQUIRED_AGENT_TYPES = [
 
 export default function Department({ departmentId }: DepartmentProps) {
   const router = useRouter();
+  const { effectiveProfile } = useProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!departmentId;
@@ -146,61 +143,74 @@ export default function Department({ departmentId }: DepartmentProps) {
     hint: "",
   });
 
-  // Data fetching
-  const { data: department, isLoading: isDepartmentLoading } = useDepartment(
-    departmentId!,
-    !!departmentId
-  );
+  // V2 API hooks
+  const { data: departmentDetail, isLoading: isLoadingDepartmentDetail } =
+    useDepartmentDetail(
+      departmentId || "",
+      effectiveProfile?.id || "",
+      !!departmentId && isEditMode
+    );
 
-  // Load department agents from junction table
-  const { data: linkedAgents = [] } = useDepartmentAgentsByDepartmentId(
-    departmentId || ""
-  );
+  const {
+    data: departmentDetailDefault,
+    isLoading: isLoadingDepartmentDefault,
+  } = useDepartmentDetailDefault(effectiveProfile?.id || "", !isEditMode);
 
-  // Get all agents for selection
-  const { data: agents = [], isLoading: isAgentsLoading } = useAgents();
+  // Use edit detail when editing, default detail when creating
+  const departmentData = isEditMode
+    ? departmentDetail
+    : departmentDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingDepartmentDetail
+    : isLoadingDepartmentDefault;
 
-  // Mutation hooks
-  const createDepartmentMutation = useCreateDepartment();
-  const updateDepartmentMutation = useUpdateDepartment(departmentId);
-  const createDepartmentAgentMutation = useCreateDepartmentAgent();
+  // Mutations
+  const { mutate: createDepartment } = useCreateDepartment();
+  const { mutate: updateDepartment } = useUpdateDepartment();
 
-  const isLoading = isDepartmentLoading || isAgentsLoading;
+  const isLoading = isLoadingData;
+
+  // Extract agent options from v2 response
+  const agentOptions = useMemo(() => {
+    if (!departmentData?.agent_mapping) return [];
+    return Object.entries(departmentData.agent_mapping).map(
+      ([id, agentData]) => ({
+        id,
+        name: agentData.name,
+      })
+    );
+  }, [departmentData?.agent_mapping]);
+
+  // Readonly logic using v2 permission flags
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !departmentData) return false;
+    return !departmentData.can_edit;
+  }, [isEditMode, departmentData]);
 
   // Initialize form when department data loads or in create mode
   useEffect(() => {
-    if (department && isEditMode) {
+    if (departmentData && isEditMode) {
       setFormData({
-        title: department.title,
-        description: department.description || "",
-        active: department.active ?? true,
+        title: departmentData.title,
+        description: departmentData.description || "",
+        active: departmentData.active ?? true,
       });
-    } else if (!isEditMode) {
+      // Set agent roles directly from response
+      setDepartmentAgents({
+        title: departmentData.agent_roles.title,
+        scenario: departmentData.agent_roles.scenario,
+        classify: departmentData.agent_roles.classify,
+        assistant: departmentData.agent_roles.assistant,
+        grade: departmentData.agent_roles.grade,
+        input_guardrail: departmentData.agent_roles.input_guardrail,
+        output_guardrail: departmentData.agent_roles.output_guardrail,
+        hint: departmentData.agent_roles.hint,
+      });
+    } else if (!isEditMode && departmentData) {
+      // For create mode, use defaults
       setFormData(initialFormData);
     }
-  }, [department, isEditMode, initialFormData]);
-
-  // Load department agents from junction table
-  useEffect(() => {
-    if (linkedAgents.length > 0) {
-      const agentMap: Record<AgentRole, string> = {
-        title: "",
-        scenario: "",
-        classify: "",
-        assistant: "",
-        grade: "",
-        input_guardrail: "",
-        output_guardrail: "",
-        hint: "",
-      };
-
-      linkedAgents.forEach((link) => {
-        agentMap[link.role as AgentRole] = link.agentId;
-      });
-
-      setDepartmentAgents(agentMap);
-    }
-  }, [linkedAgents]);
+  }, [departmentData, isEditMode, initialFormData]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -228,6 +238,7 @@ export default function Department({ departmentId }: DepartmentProps) {
     // Validation
     if (!formData?.title) {
       setErrors((prev) => ({ ...prev, title: "Title is required" }));
+      toast.error("Title is required");
       return;
     }
 
@@ -236,6 +247,7 @@ export default function Department({ departmentId }: DepartmentProps) {
         ...prev,
         description: "Description is required",
       }));
+      toast.error("Description is required");
       return;
     }
 
@@ -252,78 +264,57 @@ export default function Department({ departmentId }: DepartmentProps) {
           agents: `Please select a ${firstMissing.label.toLowerCase()}`,
         }));
       }
-      toast.error(`Please select all required agents`);
+      toast.error("Please select all required agents");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      let result;
       if (isEditMode && departmentId) {
-        // UPDATE mode - update department metadata
-        result = await updateDepartmentMutation.mutateAsync({
-          title: formData.title!,
-          description: formData.description!,
-          active: formData.active,
-          updatedAt: new Date().toISOString(),
-        });
-
-        // Update department agents via junction table (upsert pattern via API)
-        // Note: This requires server-side upsert support or batch update endpoint
-        // TODO: Add batch upsert endpoint for department_agents
-        for (const agentType of REQUIRED_AGENT_TYPES) {
-          const role = agentType.type as AgentRole;
-          const agentId = departmentAgents[role];
-
-          if (agentId) {
-            // Create or update will be handled by API upsert logic
-            await createDepartmentAgentMutation.mutateAsync({
-              departmentId: departmentId,
-              role: role,
-              agentId: agentId,
-            });
+        // UPDATE mode - single mutation with all data
+        updateDepartment(
+          {
+            departmentId: departmentId,
+            title: formData.title,
+            description: formData.description,
+            active: formData.active ?? true,
+            agent_roles: departmentAgents, // Send all 8 roles at once
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Department updated successfully!");
+              router.push("/management/departments");
+            },
+            onError: (error) => {
+              toast.error(`Failed to update department: ${error.message}`);
+              setIsSubmitting(false);
+            },
           }
-        }
+        );
       } else {
-        // CREATE mode - create department first, then junction records
-        result = await createDepartmentMutation.mutateAsync({
-          title: formData.title!,
-          description: formData.description!,
-          active: formData.active ?? true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-
-        // Create department agent links
-        if (result?.id) {
-          for (const agentType of REQUIRED_AGENT_TYPES) {
-            const role = agentType.type as AgentRole;
-            const agentId = departmentAgents[role];
-
-            if (agentId) {
-              await createDepartmentAgentMutation.mutateAsync({
-                departmentId: result.id,
-                role: role,
-                agentId: agentId,
-              });
-            }
+        // CREATE mode - single mutation with all data
+        createDepartment(
+          {
+            title: formData.title,
+            description: formData.description,
+            active: formData.active ?? true,
+            agent_roles: departmentAgents, // Send all 8 roles at once
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Department created successfully!");
+              router.push("/management/departments");
+            },
+            onError: (error) => {
+              toast.error(`Failed to create department: ${error.message}`);
+              setIsSubmitting(false);
+            },
           }
-        }
+        );
       }
-
-      if (!result) {
-        toast.error(`Failed to ${isEditMode ? "update" : "create"} department`);
-        return;
-      }
-
-      resetFormAndState();
-      toast.success(
-        isEditMode
-          ? "Department updated successfully!"
-          : "Department created successfully!"
-      );
-      router.push(`/management/departments`);
     } catch (error) {
       const message = `Error ${isEditMode ? "updating" : "creating"} department:`;
       log.error("department.save.failed", {
@@ -334,13 +325,44 @@ export default function Department({ departmentId }: DepartmentProps) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} department: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      {isReadonly && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Department is read-only
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  {departmentData?.in_use
+                    ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
+                    : "You do not have permission to edit this department. You can view the details but cannot make changes."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title Field */}
         <div className="space-y-2">
@@ -353,6 +375,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               placeholder="Enter department title"
               className={errors.title ? "border-destructive" : ""}
               required
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -374,6 +397,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               rows={3}
               className={errors.description ? "border-destructive" : ""}
               required
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-10 w-full" />
@@ -395,6 +419,7 @@ export default function Department({ departmentId }: DepartmentProps) {
               onCheckedChange={(checked) =>
                 handleInputChange("active", checked)
               }
+              disabled={isReadonly}
             />
           ) : (
             <Skeleton className="h-6 w-11" />
@@ -417,12 +442,13 @@ export default function Department({ departmentId }: DepartmentProps) {
                     >
                       {agentType.label}
                     </Label>
-                    {agents.length > 0 ? (
+                    {agentOptions.length > 0 ? (
                       <Select
                         value={fieldValue}
                         onValueChange={(value) =>
                           handleAgentChange(role, value)
                         }
+                        disabled={isReadonly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
@@ -430,7 +456,7 @@ export default function Department({ departmentId }: DepartmentProps) {
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {agents.map((agent: Agent) => (
+                          {agentOptions.map((agent) => (
                             <SelectItem key={agent.id} value={agent.id}>
                               {agent.name}
                             </SelectItem>
@@ -485,7 +511,7 @@ export default function Department({ departmentId }: DepartmentProps) {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting || isLoading || isReadonly}
             className="min-w-[120px]"
           >
             {isSubmitting ? (

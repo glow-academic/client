@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
-import { updateProviderWithEncryption } from "@/utils/model/update-provider-with-encryption";
 
 import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
 import { Button } from "@/components/ui/button";
@@ -22,8 +21,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useCreateProvider, useProvider } from "@/lib/api/v1/hooks/providers";
+import {
+  useCreateProvider,
+  useProviderDetail,
+  useUpdateProvider,
+} from "@/lib/api/v2/hooks/providers";
 import { log } from "@/utils/logger";
 
 export interface ProviderProps {
@@ -48,7 +50,6 @@ export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: departments = [] } = useDepartmentsHook();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -74,30 +75,34 @@ export default function Provider({ providerId }: ProviderProps) {
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: provider, isLoading: isProviderLoading } = useProvider(
-    providerId!,
-    !!providerId
-  );
+  // V2 API hooks
+  const { data: providerDetail, isLoading: isLoadingProviderDetail } =
+    useProviderDetail(
+      providerId || "",
+      effectiveProfile?.id || "",
+      !!providerId && isEditMode
+    );
+
+  const isLoading = isLoadingProviderDetail;
 
   // Mutation hooks
-  const createProviderMutation = useCreateProvider();
+  const { mutate: createProvider } = useCreateProvider();
+  const { mutate: updateProvider } = useUpdateProvider();
 
   // Initialize form when provider data loads or in create mode
   useEffect(() => {
-    if (isEditMode && provider) {
+    if (isEditMode && providerDetail) {
       setFormData({
-        name: provider.name,
-        description: provider.description,
+        name: providerDetail.name,
+        description: providerDetail.description,
         apiKey: "",
-        baseUrl: provider.baseUrl || "",
-        departmentId: provider.departmentId,
+        baseUrl: providerDetail.base_url || "",
+        departmentId: providerDetail.department_id,
       });
     } else if (!isEditMode) {
       setFormData(initialFormData);
     }
-  }, [isEditMode, provider, initialFormData]);
-
-  const isLoading = isProviderLoading;
+  }, [isEditMode, providerDetail, initialFormData]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -151,74 +156,61 @@ export default function Provider({ providerId }: ProviderProps) {
     setIsSubmitting(true);
 
     try {
-      let result;
-      if (isEditMode && providerId && provider) {
-        // Prepare update data - only include changed fields
-        const updateData: {
-          name?: string;
-          description?: string;
-          apiKey?: string;
-          baseUrl?: string;
-          departmentId?: string;
-        } = {};
-
-        if (formData.name !== provider.name) {
-          updateData.name = formData.name;
-        }
-
-        if (formData.description !== provider.description) {
-          updateData.description = formData.description;
-        }
-
-        if (formData.baseUrl !== (provider.baseUrl || "")) {
-          updateData.baseUrl = formData.baseUrl || "";
-        }
-
-        if (formData.departmentId !== provider.departmentId) {
-          updateData.departmentId =
-            formData.departmentId || effectiveDepartmentIds[0] || "";
-        }
-
-        // Only include API key if user is editing it and entered a new one
-        if (
-          isEditingApiKey &&
-          formData.apiKey &&
-          formData.apiKey.trim() !== ""
-        ) {
-          updateData.apiKey = formData.apiKey;
-        }
-
-        // Call secure server action that handles encryption
-        await updateProviderWithEncryption(providerId, updateData);
-        result = true;
+      if (isEditMode && providerId && providerDetail) {
+        // For updates, we use the updateProvider mutation
+        updateProvider(
+          {
+            providerId: providerId,
+            name: formData.name!,
+            description: formData.description!,
+            api_key:
+              isEditingApiKey &&
+              formData.apiKey &&
+              formData.apiKey.trim() !== ""
+                ? formData.apiKey
+                : undefined,
+            base_url: formData.baseUrl || null,
+            department_id:
+              formData.departmentId || effectiveDepartmentIds[0] || "",
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Provider updated successfully!");
+              router.push(`/system/providers`);
+            },
+            onError: (error) => {
+              toast.error(`Failed to update provider: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       } else {
-        result = await createProviderMutation.mutateAsync({
-          name: formData.name!,
-          description: formData.description!,
-          apiKey: formData.apiKey!,
-          baseUrl: formData.baseUrl || "",
-          departmentId:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        // For creates
+        createProvider(
+          {
+            name: formData.name!,
+            description: formData.description!,
+            api_key: formData.apiKey!,
+            base_url: formData.baseUrl || null,
+            department_id:
+              formData.departmentId || effectiveDepartmentIds[0] || "",
+          },
+          {
+            onSuccess: () => {
+              resetFormAndState();
+              toast.success("Provider created successfully!");
+              router.push(`/system/providers`);
+            },
+            onError: (error) => {
+              toast.error(`Failed to create provider: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       }
-
-      if (!result) {
-        toast.error(`Failed to ${isEditMode ? "update" : "create"} provider`);
-        return;
-      }
-
-      resetFormAndState();
-      toast.success(
-        isEditMode && providerId
-          ? "Provider updated successfully!"
-          : "Provider created successfully!"
-      );
-      router.push(`/system/providers`);
     } catch (error) {
       const message = `Error ${isEditMode ? "updating" : "creating"} provider:`;
-      // Keep toast text as-is, switch to structured log
       log.error("provider.save.failed", {
         message,
         error,
@@ -227,18 +219,17 @@ export default function Provider({ providerId }: ProviderProps) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} provider: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleToggleApiKey = async () => {
-    if (!provider) return;
+    if (!providerDetail) return;
 
     if (!showApiKey) {
       setIsDecrypting(true);
       try {
-        const decrypted = await decryptProviderKey(provider.apiKey);
+        const decrypted = await decryptProviderKey(providerDetail.api_key);
         setDecryptedApiKey(decrypted);
         setShowApiKey(true);
       } catch (error) {
@@ -319,31 +310,11 @@ export default function Provider({ providerId }: ProviderProps) {
             <Label htmlFor="department">Department</Label>
             {formData?.departmentId !== undefined && !isLoading ? (
               <DepartmentSelector
-                departments={departments.map((dept) => ({
-                  id: dept.id,
-                  title: dept.title as string,
-                  ...(dept.description && { description: dept.description }),
-                }))}
-                selectedDepartment={
-                  formData?.departmentId
-                    ? (() => {
-                        const dept = departments.find(
-                          (d) => d.id === formData.departmentId
-                        );
-                        return dept
-                          ? {
-                              id: dept.id,
-                              title: dept.title as string,
-                              ...(dept.description && {
-                                description: dept.description,
-                              }),
-                            }
-                          : null;
-                      })()
-                    : null
-                }
-                onSelect={(department) =>
-                  handleInputChange("departmentId", department?.id || "")
+                departmentMapping={providerDetail?.department_mapping || {}}
+                selectedDepartmentId={formData?.departmentId || ""}
+                validDepartmentIds={providerDetail?.valid_department_ids || []}
+                onSelect={(departmentId) =>
+                  handleInputChange("departmentId", departmentId || "")
                 }
                 placeholder="Select department"
               />
@@ -368,7 +339,7 @@ export default function Provider({ providerId }: ProviderProps) {
                         ? formData.apiKey
                         : showApiKey
                           ? decryptedApiKey
-                          : maskApiKey(provider?.apiKey || "")
+                          : maskApiKey(providerDetail?.api_key || "")
                       : formData.apiKey
                   }
                   onChange={(e) =>

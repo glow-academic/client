@@ -3,8 +3,7 @@
 from typing import Any, Dict, List
 
 from app.queries.rubric_queries import RubricQueries
-from app.schemas.base import (DepartmentMappingItem, StandardGroupMappingItem,
-                              StandardMappingItem)
+from app.schemas.base import DepartmentMappingItem
 from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  DeleteRubricRequest, DeleteRubricResponse,
                                  DuplicateRubricRequest,
@@ -14,6 +13,7 @@ from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  RubricItem, RubricsFilters,
                                  RubricsListResponse, StandardGroupDetail,
                                  StandardGroupMappingDetail,
+                                 StandardGroupMappingItem, StandardMappingItem,
                                  UpdateRubricRequest, UpdateRubricResponse)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -70,7 +70,9 @@ class RubricService:
 
                 standard_groups_mapping[group_id] = StandardGroupMappingItem(
                     name=group.name,
-                    description=group.description or ''
+                    description=group.description or '',
+                    points=group.points,
+                    passPoints=group.passPoints
                 )
 
                 # Find the rubric and add group_id
@@ -92,7 +94,8 @@ class RubricService:
 
                 standards_mapping[standard_id] = StandardMappingItem(
                     name=standard.name,
-                    description=standard.description or ''
+                    description=standard.description or '',
+                    points=standard.points
                 )
 
                 # Add standard_id to the appropriate group in the appropriate rubric
@@ -118,12 +121,28 @@ class RubricService:
         if not rubric:
             raise ValueError(f"Rubric not found: {request.rubricId}")
 
-        # Get user's accessible department IDs
+        # Get user's accessible department IDs and role
         query, params = self.queries.get_valid_departments_for_profile(
             request.profileId
         )
         dept_result = self.db.execute(text(query), params).fetchall()
         valid_department_ids = [str(row.id) for row in dept_result]
+
+        # Get user role for permission checks
+        query = """
+        SELECT role FROM profiles WHERE id = :profile_id
+        """
+        user_result = self.db.execute(
+            text(query), {"profile_id": request.profileId}
+        ).fetchone()
+        user_role = user_result.role if user_result else "student"
+
+        # Compute can_edit permission
+        # Default rubrics can only be edited by superadmin
+        is_admin = user_role in ("admin", "superadmin")
+        can_edit = is_admin and (
+            not rubric.default_rubric or user_role == "superadmin"
+        )
 
         # Get standard groups for this rubric
         query, params = self.queries.get_standard_groups_for_rubric(request.rubricId)
@@ -148,7 +167,7 @@ class RubricService:
                 standard_ids=standard_ids,
             )
 
-            standard_groups_mapping[group_id] = StandardGroupMappingItem(
+            standard_groups_mapping[group_id] = StandardGroupMappingDetail(
                 name=group.name, description=group.description
             )
 
@@ -162,7 +181,8 @@ class RubricService:
             for standard in standards_result:
                 standards_mapping[str(standard.id)] = StandardMappingItem(
                     name=standard.name,
-                    description=standard.description or ''
+                    description=standard.description or '',
+                    points=standard.points
                 )
 
         # Get department mapping
@@ -182,6 +202,7 @@ class RubricService:
             passPoints=rubric.passPoints,
             active=rubric.active,
             default_rubric=rubric.default_rubric,
+            can_edit=can_edit,
             standard_group_ids=standard_group_ids,
             standard_groups_detail=standard_groups_detail,
             standard_groups_mapping=standard_groups_mapping,
