@@ -1,7 +1,8 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { Activity, RefreshCw, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
@@ -10,6 +11,7 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
 import { AppLog } from "@/hooks/use-log-columns";
 import type { DateRange } from "react-day-picker";
+import { HealthModal } from "./HealthModal";
 
 export interface LogsDataTableToolbarProps {
   table: Table<AppLog>;
@@ -42,6 +44,8 @@ export function LogsDataTableToolbar({
   isRefreshing,
   onBulkDelete,
 }: LogsDataTableToolbarProps) {
+  const [showHealthModal, setShowHealthModal] = useState(false);
+
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -179,9 +183,22 @@ export function LogsDataTableToolbar({
           />
         </Button>
 
+        {/* Health Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowHealthModal(true)}
+          className="h-8 px-2"
+        >
+          <Activity className="h-4 w-4" />
+        </Button>
+
         {/* Column Visibility */}
         <DataTableViewOptions table={table} />
       </div>
+
+      {/* Health Modal */}
+      <HealthModal open={showHealthModal} onOpenChange={setShowHealthModal} />
     </div>
   );
 }
