@@ -39,14 +39,6 @@ class DepartmentMappingItem(BaseModel):
     description: Optional[str]
 
 
-class ParameterItemMappingItem(BaseModel):
-    """Parameter item mapping item."""
-
-    name: str
-    parameter_name: str
-    parameter_id: str
-
-
 class PersonasListResponse(BaseModel):
     """Response for personas list endpoint."""
 

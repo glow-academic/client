@@ -47,21 +47,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useModels } from "@/lib/api/v1/hooks/models";
 import {
-  useCreatePersona,
-  usePersona,
-  useUpdatePersona,
-} from "@/lib/api/v1/hooks/personas";
-import { useScenarioPersonasByPersonaId } from "@/lib/api/v1/hooks/scenario_personas";
+  useCreatePersona as useCreatePersonaV2,
+  usePersonaDetail,
+  usePersonaDetailDefault,
+  useUpdatePersona as useUpdatePersonaV2,
+} from "@/lib/api/v2/hooks/personas";
 // import { useScenariosByDepartmentIdBatch } from "@/lib/api/hooks/scenarios";
 import { cn } from "@/lib/utils";
 import {
   getPersonaIconComponent,
-  getSuggestedIconsForPersona,
   PERSONA_ICON_MAP,
-  PERSONA_ICONS,
 } from "@/utils/persona-icons";
 import { Bug, Check, ChevronsUpDown, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
@@ -78,8 +74,6 @@ interface FormData {
   icon?: string;
   active?: boolean;
   defaultPersona?: boolean;
-  guardrailActive?: boolean;
-  imageInputActive?: boolean;
   departmentId?: string | null;
 }
 
@@ -125,71 +119,78 @@ export default function Persona({
     "editor"
   );
 
-  const { data: persona, isLoading: isLoadingPersona } = usePersona(personaId!);
+  // V2 API hooks
+  const { data: personaDetail, isLoading: isLoadingPersonaDetail } =
+    usePersonaDetail(
+      personaId || "",
+      effectiveProfile?.id || "",
+      !!personaId && isEditMode
+    );
 
-  const { data: models, isLoading: isModelsLoading } = useModels();
-  const { data: departments = [] } = useDepartmentsHook();
+  const { data: personaDetailDefault, isLoading: isLoadingPersonaDefault } =
+    usePersonaDetailDefault(effectiveProfile?.id || "", !isEditMode);
 
-  // const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-  //   effectiveDepartmentIds,
-  // );
+  // Use edit detail when editing, default detail when creating
+  const personaData = isEditMode ? personaDetail : personaDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingPersonaDetail
+    : isLoadingPersonaDefault;
 
-  const { mutate: createPersona } = useCreatePersona();
-  const { mutate: updatePersona } = useUpdatePersona();
+  const { mutate: createPersona } = useCreatePersonaV2();
+  const { mutate: updatePersona } = useUpdatePersonaV2();
 
-  // Load scenario_personas junction to check if persona is in use
-  const { data: scenarioPersonas = [] } = useScenarioPersonasByPersonaId(
-    personaId || ""
-  );
+  // Extract data from v2 response
+  const modelOptions = useMemo(() => {
+    if (!personaData?.model_mapping) return [];
+    return Object.entries(personaData.model_mapping).map(([id, name]) => ({
+      id,
+      name,
+    }));
+  }, [personaData?.model_mapping]);
 
-  // Readonly rules: default persona editable only by superadmin; otherwise admin/superadmin can edit; others read-only if in use
+  // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
-    if (!isEditMode || !persona) return false;
+    if (!isEditMode || !personaData) return false;
+    return !personaData.can_edit;
+  }, [isEditMode, personaData]);
 
-    const isSuperAdmin = effectiveProfile?.role === "superadmin";
-    const isAdmin = effectiveProfile?.role === "admin" || isSuperAdmin;
-    const isDefaultPersona = persona.defaultPersona;
-
-    if (isDefaultPersona && !isSuperAdmin) {
-      return true;
-    }
-
-    // Check if persona is in use via junction table
-    const inUse = scenarioPersonas.some((sp) => sp.active);
-    if (!isAdmin && inUse) {
-      return true;
-    }
-
-    return false;
-  }, [isEditMode, persona, effectiveProfile?.role, scenarioPersonas]);
-
-  const isLoading = isLoadingPersona || isModelsLoading;
+  const isLoading = isLoadingData;
 
   useEffect(() => {
-    if (persona && isEditMode) {
+    if (personaData && isEditMode) {
       setFormData({
-        name: persona.name,
-        description: persona.description,
-        systemPrompt: persona.systemPrompt,
-        temperature: persona.temperature,
-        modelId: persona.modelId || "",
+        name: personaData.name,
+        description: personaData.description || "",
+        systemPrompt: personaData.system_prompt,
+        temperature: personaData.temperature,
+        modelId: personaData.model_id || "",
         reasoning:
-          (persona.reasoning as
+          (personaData.reasoning as
             | "minimal"
             | "low"
             | "medium"
             | "high"
             | undefined) || "none",
-        color: persona.color || "#000000",
-        icon: persona.icon || "Zap",
-        active: persona.active ?? true,
-        defaultPersona: persona.defaultPersona ?? false,
-        departmentId: persona.departmentId,
+        color: personaData.color || "#000000",
+        icon: personaData.icon || "Zap",
+        active: personaData.active ?? true,
+        defaultPersona: personaData.default_persona ?? false,
+        departmentId: personaData.department_id,
       });
-    } else if (!isEditMode) {
-      setFormData(initialFormData);
+    } else if (!isEditMode && personaData) {
+      // For create mode, use defaults from the API response
+      setFormData({
+        ...initialFormData,
+        color: personaData.color || initialFormData.color || "#000000",
+        icon: personaData.icon || initialFormData.icon || "Zap",
+        temperature:
+          personaData.temperature ?? initialFormData.temperature ?? 0.0,
+        modelId: personaData.model_id || initialFormData.modelId || "",
+        systemPrompt:
+          personaData.system_prompt || initialFormData.systemPrompt || "",
+      });
     }
-  }, [persona, isEditMode, initialFormData]);
+  }, [personaData, isEditMode, initialFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,47 +226,67 @@ export default function Persona({
 
     try {
       if (isEditMode) {
-        await updatePersona({
-          id: personaId!,
-          name: formData.name,
-          description: formData.description,
-          systemPrompt: formData.systemPrompt,
-          temperature: Number(formData.temperature),
-          modelId: formData.modelId,
-          reasoning: formData.reasoning === "none" ? null : formData.reasoning,
-          color: formData.color || "#000000",
-          icon: formData.icon || "Zap",
-          active: formData.active ?? true,
-          defaultPersona: formData.defaultPersona ?? false,
-          departmentId:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
-          updatedAt: new Date().toISOString(),
-        });
-        toast.success("Persona updated successfully!");
+        updatePersona(
+          {
+            personaId: personaId!,
+            name: formData.name,
+            description: formData.description || null,
+            system_prompt: formData.systemPrompt,
+            temperature: Number(formData.temperature),
+            model_id: formData.modelId,
+            reasoning:
+              formData.reasoning === "none" ? null : formData.reasoning || null,
+            color: formData.color || "#000000",
+            icon: formData.icon || "Zap",
+            active: formData.active ?? true,
+            default_persona: formData.defaultPersona ?? false,
+            department_id:
+              formData.departmentId || effectiveDepartmentIds[0] || "",
+          },
+          {
+            onSuccess: () => {
+              toast.success("Persona updated successfully!");
+              router.push("/create/personas");
+            },
+            onError: (error) => {
+              toast.error(`Failed to update persona: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       } else {
-        await createPersona({
-          name: formData.name,
-          description: formData.description,
-          systemPrompt: formData.systemPrompt,
-          temperature: Number(formData.temperature),
-          modelId: formData.modelId,
-          reasoning: formData.reasoning === "none" ? null : formData.reasoning,
-          color: formData.color || "#000000",
-          icon: formData.icon || "Zap",
-          active: formData.active ?? true,
-          defaultPersona: formData.defaultPersona ?? false,
-          departmentId:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
-        });
-        toast.success("Persona created successfully!");
+        createPersona(
+          {
+            name: formData.name,
+            description: formData.description || null,
+            system_prompt: formData.systemPrompt,
+            temperature: Number(formData.temperature),
+            model_id: formData.modelId,
+            reasoning:
+              formData.reasoning === "none" ? null : formData.reasoning || null,
+            color: formData.color || "#000000",
+            icon: formData.icon || "Zap",
+            active: formData.active ?? true,
+            default_persona: formData.defaultPersona ?? false,
+            department_id:
+              formData.departmentId || effectiveDepartmentIds[0] || "",
+          },
+          {
+            onSuccess: () => {
+              toast.success("Persona created successfully!");
+              router.push("/create/personas");
+            },
+            onError: (error) => {
+              toast.error(`Failed to create persona: ${error.message}`);
+              setIsSubmitting(false);
+            },
+          }
+        );
       }
-
-      router.push("/create/personas");
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} persona: ${error}`
       );
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -276,11 +297,10 @@ export default function Persona({
     return getPersonaIconComponent(formData.icon) || null;
   }, [formData?.icon]);
 
-  // Get suggested icons when persona name changes
+  // Get suggested icons from v2 response
   const _suggestedIcons = useMemo(() => {
-    if (!formData?.name) return [];
-    return getSuggestedIconsForPersona(formData.name);
-  }, [formData?.name]);
+    return personaData?.suggested_icons || [];
+  }, [personaData?.suggested_icons]);
 
   return (
     <TooltipProvider>
@@ -307,7 +327,7 @@ export default function Persona({
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700">
                   <p>
-                    {persona?.defaultPersona
+                    {personaData?.default_persona
                       ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
                       : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
                   </p>
@@ -325,23 +345,9 @@ export default function Persona({
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => {
-                    const newName = e.target.value;
-                    setFormData((prev) => {
-                      const updatedData = { ...prev, name: newName };
-
-                      // Auto-suggest icon if no icon is selected yet or if it's the default
-                      if (!prev?.icon || prev.icon === "Zap") {
-                        const suggestions =
-                          getSuggestedIconsForPersona(newName);
-                        if (suggestions.length > 0) {
-                          updatedData.icon = suggestions[0] || "Zap";
-                        }
-                      }
-
-                      return updatedData;
-                    });
-                  }}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="e.g., Enthusiastic Student"
                   required
                   disabled={isReadonly}
@@ -379,35 +385,13 @@ export default function Persona({
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentId !== undefined && !isLoading ? (
                   <DepartmentSelector
-                    departments={departments.map((dept) => ({
-                      id: dept.id,
-                      title: dept.title as string,
-                      ...(dept.description && {
-                        description: dept.description,
-                      }),
-                    }))}
-                    selectedDepartment={
-                      formData?.departmentId
-                        ? (() => {
-                            const dept = departments.find(
-                              (d) => d.id === formData.departmentId
-                            );
-                            return dept
-                              ? {
-                                  id: dept.id,
-                                  title: dept.title as string,
-                                  ...(dept.description && {
-                                    description: dept.description,
-                                  }),
-                                }
-                              : null;
-                          })()
-                        : null
-                    }
-                    onSelect={(department) =>
+                    departmentMapping={personaData?.department_mapping || {}}
+                    selectedDepartmentId={formData?.departmentId || ""}
+                    validDepartmentIds={personaData?.valid_department_ids || []}
+                    onSelect={(departmentId) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentId: department?.id || null,
+                        departmentId: departmentId || null,
                       }))
                     }
                     placeholder="Select department"
@@ -527,40 +511,7 @@ export default function Persona({
                         <div className="space-y-2">
                           <Label>Preset Colors</Label>
                           <div className="grid grid-cols-8 gap-2">
-                            {[
-                              "#ef4444",
-                              "#f97316",
-                              "#eab308",
-                              "#22c55e",
-                              "#06b6d4",
-                              "#3b82f6",
-                              "#8b5cf6",
-                              "#ec4899",
-                              "#dc2626",
-                              "#ea580c",
-                              "#ca8a04",
-                              "#16a34a",
-                              "#0891b2",
-                              "#2563eb",
-                              "#7c3aed",
-                              "#db2777",
-                              "#b91c1c",
-                              "#c2410c",
-                              "#a16207",
-                              "#15803d",
-                              "#0e7490",
-                              "#1d4ed8",
-                              "#6d28d9",
-                              "#be185d",
-                              "#991b1b",
-                              "#9a3412",
-                              "#854d0e",
-                              "#166534",
-                              "#155e75",
-                              "#1e40af",
-                              "#581c87",
-                              "#9d174d",
-                            ].map((color) => (
+                            {(personaData?.preset_colors || []).map((color) => (
                               <button
                                 key={color}
                                 type="button"
@@ -649,38 +600,40 @@ export default function Persona({
                             </CommandGroup>
                           )}
                           <CommandGroup heading="All Icons">
-                            {PERSONA_ICONS.map((iconName: string) => {
-                              const IconComponent =
-                                PERSONA_ICON_MAP[
-                                  iconName as keyof typeof PERSONA_ICON_MAP
-                                ];
-                              if (!IconComponent) return null;
+                            {(personaData?.valid_icons || []).map(
+                              (iconName: string) => {
+                                const IconComponent =
+                                  PERSONA_ICON_MAP[
+                                    iconName as keyof typeof PERSONA_ICON_MAP
+                                  ];
+                                if (!IconComponent) return null;
 
-                              return (
-                                <CommandItem
-                                  key={iconName}
-                                  value={iconName}
-                                  onSelect={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      icon: iconName,
-                                    }));
-                                    setIconPickerOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.icon === iconName
-                                        ? "opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
-                                  <IconComponent className="mr-2 h-4 w-4" />
-                                  {iconName}
-                                </CommandItem>
-                              );
-                            })}
+                                return (
+                                  <CommandItem
+                                    key={iconName}
+                                    value={iconName}
+                                    onSelect={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        icon: iconName,
+                                      }));
+                                      setIconPickerOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        formData.icon === iconName
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <IconComponent className="mr-2 h-4 w-4" />
+                                    {iconName}
+                                  </CommandItem>
+                                );
+                              }
+                            )}
                           </CommandGroup>
                         </CommandList>
                       </Command>
@@ -712,13 +665,11 @@ export default function Persona({
                         <SelectValue placeholder="Select a model" />
                       </SelectTrigger>
                       <SelectContent>
-                        {models
-                          ?.filter((model) => model.active)
-                          ?.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              {model.name}
-                            </SelectItem>
-                          ))}
+                        {modelOptions.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -753,10 +704,13 @@ export default function Persona({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="minimal">Minimal</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                        {(personaData?.reasoning_options || []).map(
+                          (option) => (
+                            <SelectItem key={option} value={option}>
+                              {option.charAt(0).toUpperCase() + option.slice(1)}
+                            </SelectItem>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -778,8 +732,8 @@ export default function Persona({
                   <Slider
                     id="temperature"
                     data-testid="temperature-slider"
-                    min={0}
-                    max={1}
+                    min={personaData?.temperature_lower ?? 0}
+                    max={personaData?.temperature_upper ?? 1}
                     step={0.01}
                     value={[formData?.temperature || 0]}
                     onValueChange={(value) =>

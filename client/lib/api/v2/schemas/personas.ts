@@ -25,12 +25,6 @@ export const DepartmentMappingItemSchema = z.object({
   description: z.string().nullable(),
 });
 
-export const ParameterItemMappingItemSchema = z.object({
-  name: z.string(),
-  parameter_name: z.string(),
-  parameter_id: z.string(),
-});
-
 export const ModelMappingSchema = z.record(z.string(), z.string()); // model_id -> name
 export const ScenarioMappingSchema = z.record(z.string(), z.string()); // scenario_id -> name
 export const PersonaMappingSchema = z.record(z.string(), z.string()); // persona_id -> name
@@ -38,20 +32,12 @@ export const DepartmentMappingSchema = z.record(
   z.string(),
   DepartmentMappingItemSchema
 ); // department_id -> {name, description}
-export const ParameterItemMappingSchema = z.record(
-  z.string(),
-  ParameterItemMappingItemSchema
-); // parameter_item_id -> {name, parameter_name, parameter_id}
 
 export type ModelMapping = z.infer<typeof ModelMappingSchema>;
 export type ScenarioMapping = z.infer<typeof ScenarioMappingSchema>;
 export type PersonaMapping = z.infer<typeof PersonaMappingSchema>;
 export type DepartmentMapping = z.infer<typeof DepartmentMappingSchema>;
 export type DepartmentMappingItem = z.infer<typeof DepartmentMappingItemSchema>;
-export type ParameterItemMappingItem = z.infer<
-  typeof ParameterItemMappingItemSchema
->;
-export type ParameterItemMapping = z.infer<typeof ParameterItemMappingSchema>;
 
 // ============================================================================
 // RESPONSE SCHEMAS

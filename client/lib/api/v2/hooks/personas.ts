@@ -158,11 +158,15 @@ export function useCreatePersona() {
       return CreatePersonaResponseSchema.parse(res);
     },
     onSuccess: () => {
-      // Invalidate all personas list queries
+      // Invalidate all personas queries (list, detail, and default detail)
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
-          return typeof key === "string" && key.startsWith("personas:v2:list");
+          return (
+            typeof key === "string" &&
+            (key.startsWith("personas:v2:list") ||
+              key.startsWith("personas:v2:detail"))
+          );
         },
       });
     },
@@ -181,13 +185,14 @@ export function useUpdatePersona() {
       return UpdatePersonaResponseSchema.parse(res);
     },
     onSuccess: () => {
-      // Invalidate all personas queries
+      // Invalidate all personas queries (list, detail, and default detail)
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];
           return (
-            (typeof key === "string" && key.startsWith("personas:v2:list")) ||
-            (typeof key === "string" && key.startsWith("personas:v2:detail"))
+            typeof key === "string" &&
+            (key.startsWith("personas:v2:list") ||
+              key.startsWith("personas:v2:detail"))
           );
         },
       });
