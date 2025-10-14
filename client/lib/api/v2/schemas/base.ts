@@ -20,6 +20,18 @@ export const MappingItemSchema = z.object({
 export type MappingItem = z.infer<typeof MappingItemSchema>;
 
 /**
+ * Enhanced parameter item mapping with parameter context
+ */
+export const ParameterItemMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  parameter_id: z.string(),
+  parameter_name: z.string(),
+});
+
+export type ParameterItemMappingItem = z.infer<typeof ParameterItemMappingItemSchema>;
+
+/**
  * Custom persona mapping item with additional color and icon fields
  */
 export const PersonaMappingItemSchema = z.object({
@@ -44,6 +56,21 @@ export type Mapping = z.infer<typeof MappingSchema>;
  * All currently use the same MappingSchema, but are exported separately
  * for future extensibility (e.g., if ScenarioMappingSchema needs custom fields)
  */
+/**
+ * Enhanced scenario mapping item with nested data
+ */
+export const ScenarioMappingItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  persona_id: z.string().nullable(),
+  persona_mapping: z.lazy(() => PersonaMappingSchema),
+  document_mapping: z.lazy(() => DocumentMappingSchema),
+  parameter_item_mapping: z.lazy(() => ParameterItemMappingSchema),
+  parameter_item_ids: z.array(z.string()),
+});
+
+export type ScenarioMappingItem = z.infer<typeof ScenarioMappingItemSchema>;
+
 export const DepartmentMappingSchema = MappingSchema;
 export const PersonaMappingSchema = z.record(
   z.string(),
@@ -57,9 +84,9 @@ export const DocumentMappingSchema = MappingSchema;
 export const StaffMappingSchema = MappingSchema;
 export const AgentMappingSchema = MappingSchema;
 export const ProviderMappingSchema = MappingSchema;
-export const ScenarioMappingSchema = MappingSchema;
+export const ScenarioMappingSchema = z.record(z.string(), ScenarioMappingItemSchema);
 export const ModelMappingSchema = MappingSchema;
-export const ParameterItemMappingSchema = MappingSchema;
+export const ParameterItemMappingSchema = z.record(z.string(), ParameterItemMappingItemSchema);
 export const ObjectiveMappingSchema = MappingSchema;
 export const ProfileMappingSchema = MappingSchema;
 export const StandardGroupsMappingSchema = MappingSchema;

@@ -6,12 +6,14 @@
  */
 "use client";
 
+import { useProfile } from "@/contexts/profile-context";
+import { useLogsList } from "@/lib/api/v2/hooks/logs";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { AppLog, useLogColumns } from "@/hooks/use-log-columns";
 import type { DateRange } from "react-day-picker";
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
 import { LogsDataTable } from "./LogsDataTable";
@@ -21,23 +23,31 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useAppLogs } from "@/lib/api/v1/hooks/app_logs";
-import { useProfiles } from "@/lib/api/v1/hooks/profiles";
 
 export default function Logs() {
-  const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
 
-  const { data: logsData = [] } = useAppLogs(); // TODO: need some limiting here
-  const { data: profilesData = [] } = useProfiles();
+  // V2 API hook
+  const profileId = effectiveProfile?.id || "";
+  const { data: logsData, isLoading } = useLogsList(profileId, !!profileId);
+
+  // Extract data from V2 response
+  const logs = useMemo(() => logsData?.logs || [], [logsData?.logs]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ["logs"] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("logs:v2:list");
+        },
+      });
       log.info("logs.refresh.success", {
         message: "Logs refreshed successfully",
         context: { component: "Logs" },
@@ -55,8 +65,8 @@ export default function Logs() {
     }
   };
 
-  const handleViewLog = (log: AppLog) => {
-    setSelectedLog(log);
+  const handleViewLog = (logItem: LogItem) => {
+    setSelectedLog(logItem);
   };
 
   const handleBulkDelete = () => {
@@ -68,41 +78,17 @@ export default function Logs() {
     // Dialog will close automatically after successful deletion
   };
 
-  type ProfileRow = { id?: string; firstName?: string; lastName?: string };
-  const profileIdToName = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of (profilesData as unknown as ProfileRow[]) ?? []) {
-      const first = p?.firstName;
-      const last = p?.lastName;
-      const id = p?.id;
-      if (id) {
-        const full = [first, last].filter(Boolean).join(" ");
-        if (full) map.set(id, full);
-      }
-    }
-    return map;
-  }, [profilesData]);
-
-  const resolveActorName = useCallback(
-    (actor: Record<string, unknown> | null | undefined) => {
-      if (!actor) return null;
-      const explicit = actor["profileName"] as string | undefined;
-      if (explicit) return explicit;
-      const profileId = actor["profileId"] as string | undefined;
-      if (profileId && profileIdToName.has(profileId))
-        return profileIdToName.get(profileId)!;
-      const userId = actor["userId"] as string | undefined;
-      return explicit ?? profileId ?? userId ?? null;
-    },
-    [profileIdToName]
+  // Filter options using V2 typed JSONB fields
+  const levelOptions = useMemo(
+    () => [
+      { value: "info", label: "Info" },
+      { value: "warn", label: "Warn" },
+      { value: "error", label: "Error" },
+      { value: "debug", label: "Debug" },
+    ],
+    []
   );
 
-  const { columns, levelOptions } = useLogColumns({
-    onViewLog: handleViewLog,
-    resolveActorName,
-  });
-
-  // Build dynamic facet options from current data
   const {
     eventOptions,
     providerOptions,
@@ -111,40 +97,18 @@ export default function Logs() {
     componentOptions,
     functionOptions,
   } = useMemo(() => {
-    const logs = logsData ?? [];
-    const events = new Set<string>();
-    const providers = new Set<string>();
-    const models = new Set<string>();
-    const actors = new Set<string>();
-    const components = new Set<string>();
-    const functions = new Set<string>();
-    // hasError flags removed
-
-    const getContextString = (
-      ctx: unknown,
-      key: string
-    ): string | undefined => {
-      if (!ctx || typeof ctx !== "object") return undefined;
-      const value = (ctx as Record<string, unknown>)[key];
-      return typeof value === "string" ? value : undefined;
-    };
-
-    for (const l of logs) {
-      if (l.event) events.add(l.event);
-      const provider = getContextString(l.context, "provider");
-      const model = getContextString(l.context, "model");
-      const component = getContextString(l.context, "component");
-      const fn = getContextString(l.context, "function");
-      const actor = resolveActorName(
-        l.actor as Record<string, unknown> | null | undefined
-      );
-      if (provider) providers.add(provider);
-      if (model) models.add(model);
-      if (component) components.add(component);
-      if (fn) functions.add(fn);
-      if (actor) actors.add(actor);
-      // hasError counting removed
-    }
+    const events = new Set(logs.map((l) => l.event));
+    const providers = new Set(
+      logs.map((l) => l.context?.provider).filter(Boolean)
+    );
+    const models = new Set(logs.map((l) => l.context?.model).filter(Boolean));
+    const actors = new Set(logs.map((l) => l.actor_name).filter(Boolean));
+    const components = new Set(
+      logs.map((l) => l.context?.component).filter(Boolean)
+    );
+    const functions = new Set(
+      logs.map((l) => l.context?.function).filter(Boolean)
+    );
 
     return {
       eventOptions: Array.from(events)
@@ -152,28 +116,30 @@ export default function Logs() {
         .map((v) => ({ value: v, label: v })),
       providerOptions: Array.from(providers)
         .sort()
-        .map((v) => ({ value: v, label: v })),
+        .map((v) => ({ value: v!, label: v! })),
       modelOptions: Array.from(models)
         .sort()
-        .map((v) => ({ value: v, label: v })),
+        .map((v) => ({ value: v!, label: v! })),
       actorOptions: Array.from(actors)
         .sort()
-        .map((v) => ({ value: v, label: v })),
+        .map((v) => ({ value: v!, label: v! })),
       componentOptions: Array.from(components)
         .sort()
-        .map((v) => ({ value: v, label: v })),
+        .map((v) => ({ value: v!, label: v! })),
       functionOptions: Array.from(functions)
         .sort()
-        .map((v) => ({ value: v, label: v })),
-      // hasError options removed
+        .map((v) => ({ value: v!, label: v! })),
     };
-  }, [logsData, resolveActorName]);
+  }, [logs]);
+
+  if (isLoading) {
+    return <div className="text-center p-6">Loading logs...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <LogsDataTable
-        columns={columns}
-        data={logsData}
+        data={logs}
         levelOptions={levelOptions}
         eventOptions={eventOptions}
         providerOptions={providerOptions}
@@ -186,6 +152,7 @@ export default function Logs() {
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         onBulkDelete={handleBulkDelete}
+        onViewLog={handleViewLog}
       />
 
       {/* Detail Dialog */}
@@ -212,15 +179,15 @@ export default function Logs() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Created:</span>{" "}
-                    {selectedLog.createdAt ?? ""}
+                    {selectedLog.created_at ?? ""}
                   </div>
-                  {selectedLog.correlationId && (
+                  {selectedLog.correlation_id && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">
                         Correlation:
                       </span>{" "}
                       <span className="font-mono">
-                        {selectedLog.correlationId}
+                        {selectedLog.correlation_id}
                       </span>
                     </div>
                   )}
@@ -242,7 +209,7 @@ export default function Logs() {
       <BulkDeleteLogsDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        logs={logsData}
+        logs={logs}
         onSuccess={handleBulkDeleteSuccess}
       />
     </div>

@@ -15,13 +15,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { AppLog } from "@/hooks/use-log-columns";
 import { useDeleteAppLogs } from "@/lib/api/v1/hooks/app_logs";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 
 export interface BulkDeleteLogsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  logs: AppLog[];
+  logs: LogItem[];
   onSuccess?: () => void;
 }
 
@@ -36,20 +36,20 @@ export function BulkDeleteLogsDialog({
   const [selectedPercentage, setSelectedPercentage] =
     useState<DeletePercentage>("10");
   const [isDeleting, setIsDeleting] = useState(false);
-  const deleteLogsMutation = useDeleteAppLogs();
+  const deleteLogsMutation = useBulkDeleteLogs();
 
-  const getLogsToDelete = (percentage: DeletePercentage): AppLog[] => {
+  const getLogsToDelete = (percentage: DeletePercentage): LogItem[] => {
     const totalLogs = logs.length;
     if (totalLogs === 0) return [];
 
     const percentageNum = parseInt(percentage);
     const countToDelete = Math.ceil((totalLogs * percentageNum) / 100);
 
-    // Sort by createdAt ascending (oldest first) and take the specified count
+    // Sort by created_at ascending (oldest first) and take the specified count
     return logs
       .sort((a, b) => {
-        const dateA = new Date(a.createdAt || 0).getTime();
-        const dateB = new Date(b.createdAt || 0).getTime();
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
         return dateA - dateB;
       })
       .slice(0, countToDelete);
@@ -67,7 +67,7 @@ export function BulkDeleteLogsDialog({
     setIsDeleting(true);
     try {
       await deleteLogsMutation.mutateAsync({
-        ids: logsToDelete.map((log) => log.id),
+        logIds: logsToDelete.map((log) => log.log_id),
       });
 
       // Show success toast and close dialog only after successful deletion

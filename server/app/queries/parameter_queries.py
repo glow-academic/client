@@ -83,14 +83,17 @@ class ParameterQueries:
         """Build query to get parameter items."""
         query = """
         SELECT 
-            id,
-            name,
-            description,
-            value,
-            default_item
-        FROM parameter_items
-        WHERE parameter_id = :parameter_id
-        ORDER BY name
+            pi.id,
+            pi.name,
+            pi.description,
+            pi.value,
+            pi.default_item,
+            pi.parameter_id,
+            p.name as parameter_name
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE pi.parameter_id = :parameter_id
+        ORDER BY pi.name
         """
         params = {"parameter_id": parameter_id}
         return (query, params)

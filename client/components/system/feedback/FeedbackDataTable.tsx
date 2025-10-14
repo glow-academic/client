@@ -26,12 +26,11 @@ import {
 } from "@/components/ui/table";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { FeedbackData } from "@/hooks/use-feedback-columns";
+import type { FeedbackItem } from "@/lib/api/v2/schemas/feedback";
 import { FeedbackDataTableToolbar } from "./FeedbackDataTableToolbar";
 
 export interface FeedbackDataTableProps {
-  columns: ColumnDef<FeedbackData>[];
-  data: FeedbackData[];
+  data: FeedbackItem[];
   typeOptions: { value: string; label: string }[];
   profileOptions: { value: string; label: string }[];
   isRefreshing: boolean;
@@ -39,7 +38,6 @@ export interface FeedbackDataTableProps {
 }
 
 export function FeedbackDataTable({
-  columns,
   data,
   typeOptions,
   profileOptions,
@@ -50,11 +48,48 @@ export function FeedbackDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "createdAt", desc: true }, // Default to descending order by date
+    { id: "created_at", desc: true }, // Default to descending order by date
   ]);
+
+  // Define columns inline for filtering
+  const columns = React.useMemo<ColumnDef<FeedbackItem>[]>(
+    () => [
+      {
+        accessorKey: "feedback_id",
+        header: "ID",
+      },
+      {
+        accessorKey: "author_name",
+        header: "Author",
+      },
+      {
+        accessorKey: "type",
+        header: "Type",
+      },
+      {
+        accessorKey: "message",
+        header: "Message",
+      },
+      {
+        accessorKey: "created_at",
+        header: "Created At",
+        cell: ({ row }) => {
+          const date = row.getValue("created_at") as string;
+          return new Date(date).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        },
+      },
+    ],
+    []
+  );
 
   const table = useReactTable({
     data,

@@ -119,8 +119,11 @@ class ScenarioQueries:
             pi.id,
             pi.name,
             pi.description,
-            pi.value
+            pi.value,
+            pi.parameter_id,
+            p.name as parameter_name
         FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
         WHERE pi.id = ANY(:parameter_item_ids)
         """
         params = {"parameter_item_ids": parameter_item_ids}

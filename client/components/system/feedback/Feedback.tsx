@@ -6,135 +6,62 @@
  */
 "use client";
 
-import { FeedbackData, useFeedbackColumns } from "@/hooks/use-feedback-columns";
-import { useAppFeedbacks } from "@/lib/api/v1/hooks/app_feedback";
-import { useAppFeedbackProfiles } from "@/lib/api/v1/hooks/app_feedback_profiles";
-import { useProfiles } from "@/lib/api/v1/hooks/profiles";
-import { appFeedbackKeys, profileKeys } from "@/lib/api/v1/keys";
+import { useProfile } from "@/contexts/profile-context";
+import { useFeedbackList } from "@/lib/api/v2/hooks/feedback";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FeedbackDataTable } from "./FeedbackDataTable";
-
-// Removed dialog; no actions column anymore
-
-interface Profile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  alias: string;
-}
 
 export default function Feedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
+  const { effectiveProfile } = useProfile();
 
-  const { data: feedbackData = [] } = useAppFeedbacks();
-  const { data: profiles = [] } = useProfiles();
-  const { data: appFeedbackProfiles = [] } = useAppFeedbackProfiles();
-
-  const profileMap = useMemo(() => {
-    const map: Record<string, Profile> = {};
-    profiles.forEach((profile) => {
-      if (profile) {
-        map[profile.id] = profile;
-      }
-    });
-    return map;
-  }, [profiles]);
-
-  // Create a map from feedback ID to profile ID using junction table
-  const feedbackProfileMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    appFeedbackProfiles.forEach((afp) => {
-      if (afp.role === "author") {
-        map[afp.appFeedbackId] = afp.profileId;
-      }
-    });
-    return map;
-  }, [appFeedbackProfiles]);
-
-  const formatTimestamp = useCallback((timestamp: string | null) => {
-    if (!timestamp) return "N/A";
-    return new Date(timestamp).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
-
-  const getAuthorName = useCallback(
-    (profileId: string | null) => {
-      if (!profileId) return "Anonymous";
-      const profile = profileMap[profileId];
-      if (!profile) return "Unknown User";
-      return `${profile.firstName} ${profile.lastName}`;
-    },
-    [profileMap]
+  // V2 API hook
+  const profileId = effectiveProfile?.id || "";
+  const { data: feedbackData, isLoading } = useFeedbackList(
+    profileId,
+    !!profileId
   );
 
-  const getAuthorAlias = useCallback(
-    (profileId: string | null) => {
-      if (!profileId) return "";
-      const profile = profileMap[profileId];
-      if (!profile) return "";
-      return profile.alias;
-    },
-    [profileMap]
+  // Extract data from V2 response
+  const feedback = useMemo(
+    () => feedbackData?.feedback || [],
+    [feedbackData?.feedback]
   );
 
-  // Feedback type helpers removed (no longer used)
+  // Filter options (inline)
+  const typeOptions = useMemo(
+    () => [
+      { value: "feature", label: "Feature" },
+      { value: "bug", label: "Bug" },
+      { value: "question", label: "Question" },
+      { value: "other", label: "Other" },
+    ],
+    []
+  );
 
-  // Transform feedback data for the table
-  const tableData = useMemo((): FeedbackData[] => {
-    if (!feedbackData) return [];
-
-    return feedbackData.map((feedback) => {
-      const profileId = feedbackProfileMap[feedback.id] || null;
-      return {
-        id: feedback.id,
-        createdAt: feedback.createdAt,
-        profileId: profileId,
-        type: feedback.type,
-        message: feedback.message,
-        authorName: getAuthorName(profileId),
-        authorAlias: getAuthorAlias(profileId),
-        formattedDate: formatTimestamp(feedback.createdAt),
-      };
-    });
-  }, [
-    feedbackData,
-    feedbackProfileMap,
-    getAuthorName,
-    getAuthorAlias,
-    formatTimestamp,
-  ]);
-
-  // Generate profile options for filtering
   const profileOptions = useMemo(() => {
-    const uniqueProfiles = new Set<string>();
-    tableData.forEach((item) => {
-      if (item.authorName && item.authorName !== "Anonymous") {
-        uniqueProfiles.add(item.authorName);
-      }
-    });
-
-    return Array.from(uniqueProfiles).map((name) => ({
+    const uniqueAuthors = new Set(
+      feedback.map((f) => f.author_name).filter(Boolean)
+    );
+    return Array.from(uniqueAuthors).map((name) => ({
       value: name,
       label: name,
     }));
-  }, [tableData]);
+  }, [feedback]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: appFeedbackKeys.all }),
-        queryClient.invalidateQueries({ queryKey: profileKeys.all }),
-      ]);
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("feedback:v2:list");
+        },
+      });
       await log.info("feedback.refresh.success", {
         message: "Feedback data refreshed successfully",
         context: { component: "Feedback", function: "handleRefresh" },
@@ -152,13 +79,13 @@ export default function Feedback() {
     }
   };
 
-  // Get table columns and filter options
-  const { columns, typeOptions } = useFeedbackColumns();
+  if (isLoading) {
+    return <div className="text-center p-6">Loading feedback...</div>;
+  }
 
   return (
     <FeedbackDataTable
-      columns={columns}
-      data={tableData}
+      data={feedback}
       typeOptions={typeOptions}
       profileOptions={profileOptions}
       isRefreshing={isRefreshing}

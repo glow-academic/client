@@ -49,8 +49,9 @@ class ParameterMappingItem(MappingItem):
 
 
 class ParameterItemMappingItem(MappingItem):
-    """Parameter item mapping item - extends MappingItem"""
-    pass
+    """Parameter item mapping item - extends MappingItem with parameter context"""
+    parameter_id: str
+    parameter_name: str
 
 
 class CohortMappingItem(MappingItem):
@@ -78,9 +79,15 @@ class ProviderMappingItem(MappingItem):
     pass
 
 
-class ScenarioMappingItem(MappingItem):
-    """Scenario mapping item - extends MappingItem"""
-    pass
+class ScenarioMappingItem(BaseModel):
+    """Scenario mapping item with extended fields for nested data"""
+    name: str
+    description: str
+    persona_id: str | None
+    persona_mapping: "PersonaMapping"
+    document_mapping: "DocumentMapping"
+    parameter_item_mapping: "ParameterItemMapping"
+    parameter_item_ids: list[str]
 
 
 class ModelMappingItem(MappingItem):

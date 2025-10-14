@@ -112,7 +112,9 @@ class ScenarioService:
             for row in param_item_result:
                 parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
                     name=row.name,
-                    description=row.description or ''
+                    description=row.description or '',
+                    parameter_id=str(row.parameter_id),
+                    parameter_name=row.parameter_name
                 )
 
         # Get cohort names for mapping
@@ -397,8 +399,11 @@ class ScenarioService:
                 pi.id,
                 pi.name,
                 pi.description,
-                pi.value
+                pi.value,
+                pi.parameter_id,
+                p.name as parameter_name
             FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
             WHERE pi.id = ANY(:param_item_ids)
             """)
 
@@ -409,7 +414,9 @@ class ScenarioService:
             for row in param_item_mapping_result:
                 param_item_full_mapping[str(row.id)] = ParameterItemMappingItem(
                     name=row.name,
-                    description=row.description or ''
+                    description=row.description or '',
+                    parameter_id=str(row.parameter_id),
+                    parameter_name=row.parameter_name
                 )
 
         return ScenarioDetailResponse(

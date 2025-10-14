@@ -9,12 +9,12 @@ import { DataTableViewOptions } from "@/components/common/history/DataTableViewO
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { Input } from "@/components/ui/input";
-import { AppLog } from "@/hooks/use-log-columns";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import type { DateRange } from "react-day-picker";
 import { HealthModal } from "./HealthModal";
 
 export interface LogsDataTableToolbarProps {
-  table: Table<AppLog>;
+  table: Table<LogItem>;
   levelOptions: { value: string; label: string }[];
   eventOptions: { value: string; label: string }[];
   providerOptions: { value: string; label: string }[];
@@ -27,6 +27,7 @@ export interface LogsDataTableToolbarProps {
   onRefresh: () => void;
   isRefreshing: boolean;
   onBulkDelete: () => void;
+  onViewLog: (log: LogItem) => void;
 }
 
 export function LogsDataTableToolbar({
@@ -43,33 +44,29 @@ export function LogsDataTableToolbar({
   onRefresh,
   isRefreshing,
   onBulkDelete,
+  onViewLog: _onViewLog,
 }: LogsDataTableToolbarProps) {
   const [showHealthModal, setShowHealthModal] = useState(false);
 
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
-  const messageColumn = table.getColumn("message");
-  const levelColumn = table.getColumn("level");
   const eventColumn = table.getColumn("event");
-  const providerColumn = table.getColumn("provider");
-  const modelColumn = table.getColumn("model");
-  // removed hasError column
-  const createdAtColumn = table.getColumn("createdAt");
-  const actorColumn = table.getColumn("actor");
-  const componentColumn = table.getColumn("component");
-  const functionColumn = table.getColumn("function");
+  const levelColumn = table.getColumn("level");
+  const actorColumn = table.getColumn("actor_name");
+  const componentColumn = table.getColumn("context_component");
+  const functionColumn = table.getColumn("context_function");
+  const providerColumn = table.getColumn("context_provider");
+  const modelColumn = table.getColumn("context_model");
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
         <div className="mb-2">
           <Input
-            placeholder="Search messages..."
-            value={(messageColumn?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              messageColumn?.setFilterValue(event.target.value)
-            }
+            placeholder="Search by event..."
+            value={(eventColumn?.getFilterValue() as string) ?? ""}
+            onChange={(event) => eventColumn?.setFilterValue(event.target.value)}
             className="h-8 w-[150px] lg:w-[250px]"
           />
         </div>

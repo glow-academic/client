@@ -16,13 +16,12 @@ import {
 import * as React from "react";
 
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { AppLog } from "@/hooks/use-log-columns";
+import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import type { DateRange } from "react-day-picker";
 import { LogsDataTableToolbar } from "./LogsDataTableToolbar";
 
 export interface LogsDataTableProps {
-  columns: ColumnDef<AppLog>[];
-  data: AppLog[];
+  data: LogItem[];
   levelOptions: { value: string; label: string }[];
   onRefresh: () => void;
   isRefreshing: boolean;
@@ -35,10 +34,10 @@ export interface LogsDataTableProps {
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
   onBulkDelete: () => void;
+  onViewLog: (log: LogItem) => void;
 }
 
 export function LogsDataTable({
-  columns,
   data,
   levelOptions,
   onRefresh,
@@ -52,24 +51,78 @@ export function LogsDataTable({
   dateRange,
   setDateRange,
   onBulkDelete,
+  onViewLog,
 }: LogsDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
-      id: false,
-      durationMs: false,
-      hasError: false,
-      correlationId: false,
-      provider: false,
-      model: false,
-      function: false,
+      log_id: false,
+      correlation_id: false,
+      context_provider: false,
+      context_model: false,
+      context_function: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "createdAt", desc: true }, // Default to descending order by date
+    { id: "created_at", desc: true }, // Default to descending order by date
   ]);
+
+  // Define columns inline with proper JSONB access
+  const columns = React.useMemo<ColumnDef<LogItem>[]>(
+    () => [
+      {
+        accessorKey: "log_id",
+        header: "ID",
+      },
+      {
+        accessorKey: "event",
+        header: "Event",
+      },
+      {
+        accessorKey: "level",
+        header: "Level",
+      },
+      {
+        accessorKey: "actor_name",
+        header: "Actor",
+      },
+      {
+        id: "context_component",
+        accessorFn: (row) => row.context?.component || "",
+        header: "Component",
+      },
+      {
+        id: "context_function",
+        accessorFn: (row) => row.context?.function || "",
+        header: "Function",
+      },
+      {
+        id: "context_provider",
+        accessorFn: (row) => row.context?.provider || "",
+        header: "Provider",
+      },
+      {
+        id: "context_model",
+        accessorFn: (row) => row.context?.model || "",
+        header: "Model",
+      },
+      {
+        accessorKey: "correlation_id",
+        header: "Correlation ID",
+      },
+      {
+        accessorKey: "created_at",
+        header: "Created At",
+        cell: ({ row }) => {
+          const date = row.getValue("created_at") as string;
+          return new Date(date).toLocaleString();
+        },
+      },
+    ],
+    []
+  );
 
   const table = useReactTable({
     data,
@@ -96,12 +149,11 @@ export function LogsDataTable({
         pageSize: 20,
       },
       columnVisibility: {
-        message: false,
-        correlationId: false,
-        durationMs: false,
-        provider: false,
-        model: false,
-        context: false,
+        log_id: false,
+        correlation_id: false,
+        context_provider: false,
+        context_model: false,
+        context_function: false,
       } as VisibilityState,
     },
   });
@@ -122,6 +174,7 @@ export function LogsDataTable({
         onRefresh={onRefresh}
         isRefreshing={isRefreshing}
         onBulkDelete={onBulkDelete}
+        onViewLog={onViewLog}
       />
       <div className="border rounded-lg">
         <table className="w-full">

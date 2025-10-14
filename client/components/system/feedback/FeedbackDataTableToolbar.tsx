@@ -31,14 +31,16 @@ export function FeedbackDataTableToolbar<TData extends object>({
 
   const messageColumn = table.getColumn(searchColumnId);
   const typeColumn = table.getColumn("type");
-  const authorColumn = table.getColumn("authorName");
-  const idColumn = table.getColumn("id");
+  const authorColumn = table.getColumn("author_name");
+  const idColumn = table.getColumn("feedback_id");
 
   const idOptions = useMemo(() => {
     if (!idColumn) return [] as { value: string; label: string }[];
     const uniqueIds = new Set<string>();
     table.getFilteredRowModel().rows.forEach((row) => {
-      uniqueIds.add(String((row as { original: { id: string } }).original.id));
+      uniqueIds.add(
+        String((row as { original: { feedback_id: number } }).original.feedback_id)
+      );
     });
     return Array.from(uniqueIds)
       .sort((a, b) => {
