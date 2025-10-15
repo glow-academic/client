@@ -11,7 +11,7 @@ import {
   attemptsFullKeys,
   layoutContextKeys,
 } from "@/lib/api/v2/keys";
-import { log, type LogEntry } from "@/lib/api/v2/server/logs";
+import { log, type LogEntry } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
