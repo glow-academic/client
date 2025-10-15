@@ -11,6 +11,8 @@ import {
   parametersListKeys,
 } from "@/lib/api/v2/keys";
 import {
+  CreateParameterItemRequest,
+  CreateParameterItemResponseSchema,
   CreateParameterRequest,
   CreateParameterResponseSchema,
   DeleteParameterRequest,
@@ -190,6 +192,36 @@ export function useDeleteParameter() {
           const key = query.queryKey[0];
           return (
             typeof key === "string" && key.startsWith("parameters:v2:list")
+          );
+        },
+      });
+    },
+  });
+}
+
+// ============================================================================
+// PARAMETER ITEM CREATION (for inline creation from pickers)
+// ============================================================================
+
+export function useCreateParameterItemV2() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: CreateParameterItemRequest) => {
+      const res = await api<unknown>("/api/v2/parameters/items/create", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return CreateParameterItemResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" &&
+              key.startsWith("parameters:v2:detail")) ||
+            (typeof key === "string" && key.startsWith("scenarios:v2:detail"))
           );
         },
       });

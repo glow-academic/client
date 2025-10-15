@@ -4,7 +4,9 @@ from typing import Annotated
 
 from app.db import get_session
 from app.repositories.parameter_repository import get_parameter_repository
-from app.schemas.parameters import (CreateParameterRequest,
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
                                     CreateParameterResponse,
                                     DeleteParameterRequest,
                                     DeleteParameterResponse,
@@ -119,6 +121,26 @@ async def delete_parameter(
     try:
         repo = get_parameter_repository(db)
         return repo.delete_parameter(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# PARAMETER ITEM CREATION (for inline creation from pickers)
+# ============================================================================
+
+
+@router.post("/items/create", response_model=CreateParameterItemResponse)
+async def create_parameter_item(
+    request: CreateParameterItemRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> CreateParameterItemResponse:
+    """Create a single parameter item (for inline creation from pickers)."""
+    try:
+        repo = get_parameter_repository(db)
+        return repo.create_parameter_item(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

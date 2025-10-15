@@ -4,7 +4,9 @@ from typing import Any, Dict, List
 
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
-from app.schemas.parameters import (CreateParameterRequest,
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
                                     CreateParameterResponse,
                                     DeleteParameterRequest,
                                     DeleteParameterResponse,
@@ -336,5 +338,41 @@ class ParameterService:
 
         return DeleteParameterResponse(
             success=True, message=f"Parameter '{parameter.name}' deleted successfully"
+        )
+
+    def create_parameter_item(
+        self, request: CreateParameterItemRequest
+    ) -> CreateParameterItemResponse:
+        """Create a single parameter item (for inline creation from pickers)."""
+
+        # Verify parameter exists
+        query, params = self.queries.get_parameter_by_id(request.parameterId)
+        parameter = self.db.execute(text(query), params).fetchone()
+
+        if not parameter:
+            raise ValueError(f"Parameter not found: {request.parameterId}")
+
+        # Create parameter item
+        item_query, _ = self.queries.create_parameter_item()
+        result = self.db.execute(
+            text(item_query),
+            {
+                "parameter_id": request.parameterId,
+                "name": request.name,
+                "description": request.description,
+                "value": request.value,
+                "default_item": request.default_item,
+            },
+        ).fetchone()
+
+        if not result:
+            raise ValueError("Failed to create parameter item")
+
+        self.db.commit()
+
+        return CreateParameterItemResponse(
+            success=True,
+            parameterItemId=str(result.id),
+            message=f"Parameter item '{request.name}' created successfully",
         )
 

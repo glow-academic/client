@@ -10,7 +10,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useCreateParameterItem } from "@/lib/api/v1/hooks/parameter_items";
+import { useCreateParameterItemV2 } from "@/lib/api/v2/hooks/parameters";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +76,7 @@ export function ParameterItemPicker<
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const createParameterItemMutation = useCreateParameterItem();
+  const createParameterItemMutation = useCreateParameterItemV2();
 
   // Build items from mapping
   const items = useMemo(() => {
@@ -139,16 +139,17 @@ export function ParameterItemPicker<
     }
     try {
       const created = await createParameterItemMutation.mutateAsync({
+        parameterId: parameterId,
         name: newName.trim(),
         description: newDescription.trim(),
         value: proposedValue,
-        parameterId: parameterId,
+        default_item: false,
       });
 
       toast.success("Parameter item created");
       setShowCreateDialog(false);
       setOpen(false);
-      onSelect([created.id]);
+      onSelect([created.parameterItemId]);
     } catch (error) {
       log.error("parameter_item.create.failed", {
         message: "Failed to create parameter item",

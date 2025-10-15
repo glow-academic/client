@@ -172,3 +172,26 @@ class DeleteParameterResponse(BaseModel):
     success: bool
     message: str
 
+
+# ============================================================================
+# PARAMETER ITEM CREATION (for inline creation from pickers)
+# ============================================================================
+
+
+class CreateParameterItemRequest(BaseModel):
+    """Request to create a single parameter item."""
+
+    parameterId: str
+    name: str
+    description: str
+    value: str
+    default_item: bool
+
+
+class CreateParameterItemResponse(BaseModel):
+    """Response from create parameter item."""
+
+    success: bool
+    parameterItemId: str
+    message: str
+

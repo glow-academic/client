@@ -1,6 +1,8 @@
 """Parameter repository - thin wrapper around parameter service."""
 
-from app.schemas.parameters import (CreateParameterRequest,
+from app.schemas.parameters import (CreateParameterItemRequest,
+                                    CreateParameterItemResponse,
+                                    CreateParameterRequest,
                                     CreateParameterResponse,
                                     DeleteParameterRequest,
                                     DeleteParameterResponse,
@@ -64,6 +66,12 @@ class ParameterRepository:
     ) -> DeleteParameterResponse:
         """Delete parameter."""
         return self.service.delete_parameter(request)
+
+    def create_parameter_item(
+        self, request: CreateParameterItemRequest
+    ) -> CreateParameterItemResponse:
+        """Create a single parameter item."""
+        return self.service.create_parameter_item(request)
 
 
 def get_parameter_repository(db: Session) -> ParameterRepository:

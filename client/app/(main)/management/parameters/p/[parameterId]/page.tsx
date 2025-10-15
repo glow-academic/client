@@ -5,14 +5,18 @@
  * 07/26/2025
  */
 
+import { auth } from "@/auth";
 import EditParameter from "@/components/common/parameter/Parameter";
+import { parametersDetailKeys } from "@/lib/api/v2/keys";
+import { fetchParameterDetail } from "@/lib/api/v2/server/parameters";
 import { parameterRepo } from "@/lib/repos/parameterRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
-import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ parameterId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { parameterId } = await params;
   const parameter = await parameterRepo.find(parameterId);
@@ -22,15 +26,30 @@ export async function generateMetadata(
   };
 }
 
-export default function ParameterEditPage({
+export default async function ParameterEditPage({
   params,
 }: {
   params: Promise<{ parameterId: string }>;
 }) {
-  const { parameterId } = use(params);
+  const { parameterId } = await params;
+  const session = await auth();
+  const queryClient = getQueryClient();
+
+  // Prefetch parameter detail data
+  await queryClient.prefetchQuery({
+    queryKey: parametersDetailKeys.detail(
+      parameterId,
+      session?.effectiveProfileId || ""
+    ),
+    queryFn: () =>
+      fetchParameterDetail(parameterId, session?.effectiveProfileId || ""),
+  });
+
   return (
-    <div className="space-y-6">
-      <EditParameter parameterId={parameterId} mode="edit" />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <EditParameter parameterId={parameterId} mode="edit" />
+      </div>
+    </HydrationBoundary>
   );
 }

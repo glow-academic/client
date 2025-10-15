@@ -199,3 +199,29 @@ export const DeleteParameterResponseSchema = z.object({
 export type DeleteParameterResponse = z.infer<
   typeof DeleteParameterResponseSchema
 >;
+
+// ============================================================================
+// PARAMETER ITEM CREATION (for inline creation from pickers)
+// ============================================================================
+
+export const CreateParameterItemRequestSchema = z.object({
+  parameterId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  value: z.string(),
+  default_item: z.boolean(),
+});
+
+export type CreateParameterItemRequest = z.infer<
+  typeof CreateParameterItemRequestSchema
+>;
+
+export const CreateParameterItemResponseSchema = z.object({
+  success: z.boolean(),
+  parameterItemId: z.string(),
+  message: z.string(),
+});
+
+export type CreateParameterItemResponse = z.infer<
+  typeof CreateParameterItemResponseSchema
+>;

@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import Report from "@/components/analytics/report/Report";
 import { profileDetailKeys } from "@/lib/api/v2/keys";
 import { fetchProfileDetail } from "@/lib/api/v2/server/profile";
-import { getQueryClient } from "@/lib/query-client";
+import { getQueryClient } from "@/utils/react-query/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -27,7 +27,7 @@ export async function generateMetadata(
       title: profileData.name,
       description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
-  } catch (error) {
+  } catch {
     return {
       title: "Profile Report",
       description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,

@@ -33,19 +33,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import {
-  useCreateParameterItem,
-  useCreateParameterItems,
-  useDeleteParameterItems,
-  useParameterItemsByParameterId,
-  useUpdateParameterItems,
-} from "@/lib/api/v1/hooks/parameter_items";
 import {
   useCreateParameter,
-  useParameter,
+  useParameterDetail,
+  useParameterDetailDefault,
   useUpdateParameter,
-} from "@/lib/api/v1/hooks/parameters";
+} from "@/lib/api/v2/hooks/parameters";
 import { Plus, Trash2 } from "lucide-react";
 
 interface FormData {
@@ -65,6 +58,7 @@ interface ParameterItemFormData {
   isNew?: boolean;
   isDeleted?: boolean;
   defaultItem?: boolean;
+  canDelete?: boolean;
 }
 
 export interface ParameterProps {
@@ -102,75 +96,81 @@ export default function Parameter({
     ParameterItemFormData[]
   >([]);
 
-  const { data: parameter, isLoading: isLoadingParameter } = useParameter(
-    parameterId!
+  // V2 API hooks - single hook for all data
+  const { data: parameterDetail, isLoading: isLoadingParameterDetail } =
+    useParameterDetail(
+      parameterId || "",
+      effectiveProfile?.id || "",
+      !!parameterId && isEditMode
+    );
+
+  const { data: parameterDetailDefault, isLoading: isLoadingParameterDefault } =
+    useParameterDetailDefault(effectiveProfile?.id || "", !isEditMode);
+
+  // Use edit detail when editing, default detail when creating
+  const parameterData = isEditMode ? parameterDetail : parameterDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingParameterDetail
+    : isLoadingParameterDefault;
+
+  // Extract mappings from v2 response
+  const departmentMapping = useMemo(
+    () => parameterData?.department_mapping || {},
+    [parameterData]
   );
-  const { data: parameterItems, isLoading: isLoadingParameterItems } =
-    useParameterItemsByParameterId(parameterId!);
 
-  // Temporarily disabled: these would need junction table updates
-  // const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-  //   effectiveDepartmentIds,
-  // );
-  // const { data: sims = [] } = useSimulationsByDepartmentIdBatch(
-  //   effectiveDepartmentIds,
-  // );
-  // const { data: allScenarios = [] } = useScenariosByDepartmentIdBatch(
-  //   effectiveDepartmentIds,
-  // );
-  const { data: departments = [] } = useDepartmentsHook();
+  const validDepartmentIds = useMemo(
+    () => parameterData?.valid_department_ids || [],
+    [parameterData]
+  );
 
-  // Transform V1 departments to mapping format for DepartmentPicker
-  const departmentMapping = useMemo(() => {
-    const mapping: Record<string, { name: string; description: string }> = {};
-    departments.forEach((dept) => {
-      mapping[dept.id] = {
-        name: dept.title as string,
-        description: dept.description || "",
-      };
-    });
-    return mapping;
-  }, [departments]);
+  // Parameter items come nested in response
+  const parameterItems = useMemo(
+    () => parameterData?.parameter_items || [],
+    [parameterData]
+  );
 
-  const validDepartmentIds = useMemo(() => {
-    return departments.map((dept) => dept.id);
-  }, [departments]);
-
-  // Mutation hooks
+  // V2 Mutation hooks
   const createParameterMutation = useCreateParameter();
   const updateParameterMutation = useUpdateParameter();
-  const createParameterItemMutation = useCreateParameterItem();
-  const createParameterItemsMutation = useCreateParameterItems();
-  const updateParameterItemsMutation = useUpdateParameterItems();
-  const deleteParameterItemsMutation = useDeleteParameterItems();
 
-  const inUseParameterItemIds = useMemo(() => {
-    // TODO: Update to use junction tables (cohort_simulations, simulation_scenarios, scenario_parameter_items)
-    // For now, return empty set (all items considered not in use)
-    return new Set<string>();
-
-    // Previous logic relied on cohort.simulationIds and simulation.scenarioIds
-    // which are now in junction tables. This needs to be refactored to:
-    // 1. Get simulation IDs from cohort_simulations junction
-    // 2. Get scenario IDs from simulation_scenarios junction
-    // 3. Get parameter item IDs from scenario_parameter_items junction
-  }, []);
-
-  const isLoading = isLoadingParameter || isLoadingParameterItems;
+  const isLoading = isLoadingData;
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
+  // Initialize form data from v2 response
+  useEffect(() => {
+    if (isEditMode && parameterData) {
+      setFormData({
+        name: parameterData.name,
+        description: parameterData.description,
+        numerical: parameterData.numerical,
+        active: parameterData.active,
+        defaultParameter: parameterData.default_parameter ?? false,
+        departmentId: parameterData.department_id ?? null,
+      });
+    } else if (!isEditMode && parameterData) {
+      // For create mode, use data from default detail endpoint
+      setFormData({
+        ...initialFormData,
+        departmentId: parameterData.department_id ?? initialFormData.departmentId ?? null,
+      });
+    }
+  }, [parameterData, isEditMode, initialFormData]);
+
+  // Initialize parameter items from v2 nested data
   useEffect(() => {
     if (!initiallySorted && parameterItems && parameterItems.length > 0) {
       const sorted = parameterItems
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name));
       const formData = sorted.map((item) => ({
-        id: item.id,
+        id: item.parameter_item_id,
         name: item.name,
         description: item.description,
         value: item.value,
-        defaultItem: item.defaultItem ?? false,
+        defaultItem: item.default_item ?? false,
+        canDelete: item.can_delete,
         isNew: false,
         isDeleted: false,
       }));
@@ -179,22 +179,7 @@ export default function Parameter({
     }
   }, [initiallySorted, parameterItems]);
 
-  useEffect(() => {
-    if (parameter && isEditMode) {
-      setFormData({
-        name: parameter.name,
-        description: parameter.description,
-        numerical: parameter.numerical,
-        active: parameter.active,
-        defaultParameter: parameter.defaultParameter ?? false,
-        departmentId: parameter.departmentId,
-      });
-    } else if (!isEditMode) {
-      setFormData(initialFormData);
-    }
-  }, [parameter, isEditMode, initialFormData]);
-
-  // After initial sort is applied (or for create mode), update on changes without re-sorting
+  // Update parameter items when data changes (for edit mode)
   useEffect(() => {
     if (mode === "create") {
       return;
@@ -205,11 +190,12 @@ export default function Parameter({
     const mapped = parameterItems
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((item) => ({
-        id: item.id,
+        id: item.parameter_item_id,
         name: item.name,
         description: item.description,
         value: item.value,
-        defaultItem: item.defaultItem ?? false,
+        defaultItem: item.default_item ?? false,
+        canDelete: item.can_delete,
         isNew: false,
         isDeleted: false,
       }));
@@ -233,105 +219,43 @@ export default function Parameter({
     setIsSubmitting(true);
 
     try {
+      // Prepare parameter items for submission (only non-deleted items)
+      const parameter_items = parameterItemsFormData
+        .filter((item) => !item.isDeleted)
+        .map((item) => ({
+          name: item.name,
+          description: item.description,
+          value: formData.numerical ? item.value : item.name,
+          default_item: !!item.defaultItem,
+        }));
+
       if (isEditMode) {
-        // Update existing parameter
+        // V2 API: Single atomic update with nested items
         await updateParameterMutation.mutateAsync({
-          id: parameterId!,
-          name: formData.name!,
-          description: formData.description!,
-          numerical: formData.numerical,
-          active: formData.active,
-          defaultParameter: formData.defaultParameter || false,
-          departmentId:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
-          updatedAt: new Date().toISOString(),
-        });
-
-        // Handle parameter items with bulk operations
-        const promises: Promise<unknown>[] = [];
-
-        // Collect items to delete for bulk operation
-        const itemsToDelete = parameterItemsFormData
-          .filter((item) => item.isDeleted && item.id)
-          .map((item) => item.id!);
-
-        // Collect items to create
-        const itemsToCreate = parameterItemsFormData
-          .filter((item) => item.isNew && !item.isDeleted)
-          .map((item) => ({
-            name: item.name,
-            description: item.description,
-            value: formData.numerical ? item.value : item.name,
-            parameterId: parameterId!,
-            defaultItem: !!item.defaultItem,
-          }));
-
-        // Collect items to update
-        const itemsToUpdate = parameterItemsFormData
-          .filter((item) => !item.isNew && !item.isDeleted && item.id)
-          .map((item) => ({
-            id: item.id!,
-            name: item.name,
-            description: item.description,
-            value: formData.numerical ? item.value : item.name,
-            defaultItem: !!item.defaultItem,
-            updatedAt: new Date().toISOString(),
-          }));
-
-        // Execute bulk operations
-        if (itemsToDelete.length > 0) {
-          promises.push(
-            deleteParameterItemsMutation.mutateAsync({ ids: itemsToDelete })
-          );
-        }
-
-        if (itemsToCreate.length > 0) {
-          promises.push(
-            createParameterItemsMutation.mutateAsync({ items: itemsToCreate })
-          );
-        }
-
-        if (itemsToUpdate.length > 0) {
-          promises.push(
-            updateParameterItemsMutation.mutateAsync({
-              updates: itemsToUpdate,
-            })
-          );
-        }
-
-        await Promise.all(promises);
-        toast.success("Parameter updated successfully!");
-      } else {
-        // Create new parameter
-        const newParameter = await createParameterMutation.mutateAsync({
+          parameterId: parameterId!,
           name: formData.name!,
           description: formData.description!,
           numerical: formData.numerical || false,
           active: formData.active || false,
-          defaultParameter: formData.defaultParameter || false,
-          departmentId:
+          default_parameter: formData.defaultParameter || false,
+          department_id:
             formData.departmentId || effectiveDepartmentIds[0] || "",
+          parameter_items,
         });
 
-        // Create parameter items for the new parameter
-        if (newParameter?.id) {
-          const promises: Promise<unknown>[] = [];
-          parameterItemsFormData.forEach((item) => {
-            if (!item.isDeleted) {
-              promises.push(
-                createParameterItemMutation.mutateAsync({
-                  name: item.name,
-                  description: item.description,
-                  value: formData.numerical || false ? item.value : item.name,
-                  parameterId: newParameter.id,
-                  defaultItem: !!item.defaultItem,
-                })
-              );
-            }
-          });
-
-          await Promise.all(promises);
-        }
+        toast.success("Parameter updated successfully!");
+      } else {
+        // V2 API: Single atomic create with nested items
+        await createParameterMutation.mutateAsync({
+          name: formData.name!,
+          description: formData.description!,
+          numerical: formData.numerical || false,
+          active: formData.active || false,
+          default_parameter: formData.defaultParameter || false,
+          department_id:
+            formData.departmentId || effectiveDepartmentIds[0] || "",
+          parameter_items,
+        });
 
         toast.success("Parameter created successfully!");
       }
@@ -660,7 +584,7 @@ export default function Parameter({
                                 </TooltipContent>
                               </Tooltip>
                             )}
-                            {!inUseParameterItemIds.has(item.id || "") && (
+                            {(item.canDelete !== false) && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -712,22 +636,25 @@ export default function Parameter({
               type="submit"
               disabled={
                 isSubmitting ||
-                (JSON.stringify(formData) ===
-                  JSON.stringify({
-                    name: parameter?.name,
-                    description: parameter?.description,
-                    numerical: parameter?.numerical,
-                    active: parameter?.active,
-                    defaultParameter: parameter?.defaultParameter ?? false,
-                  }) &&
+                (isEditMode &&
+                  JSON.stringify(formData) ===
+                    JSON.stringify({
+                      name: parameterData?.name,
+                      description: parameterData?.description,
+                      numerical: parameterData?.numerical,
+                      active: parameterData?.active,
+                      defaultParameter: parameterData?.default_parameter ?? false,
+                      departmentId: parameterData?.department_id,
+                    }) &&
                   JSON.stringify(parameterItemsFormData) ===
                     JSON.stringify(
                       (parameterItems || []).map((item) => ({
-                        id: item.id,
+                        id: item.parameter_item_id,
                         name: item.name,
                         description: item.description,
                         value: item.value,
-                        defaultItem: item.defaultItem ?? false,
+                        defaultItem: item.default_item ?? false,
+                        canDelete: item.can_delete,
                         isNew: false,
                         isDeleted: false,
                       }))
