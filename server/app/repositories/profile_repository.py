@@ -1,19 +1,19 @@
-"""Auth repository - thin wrapper around service."""
+"""Profile repository - thin wrapper around service."""
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.schemas.auth import (ProfileContextRequest, ProfileContextResponse,
-                              ProfileItem)
-from app.services.auth_service import AuthService
+from app.schemas.profile import (ProfileContextRequest, ProfileContextResponse,
+                                 ProfileItem)
+from app.services.profile_service import ProfileService
 from sqlalchemy.orm import Session
 
 
-class AuthRepository:
-    """Repository for authentication and profile management."""
+class ProfileRepository:
+    """Repository for profile management."""
 
     def __init__(self, db: Session):
         """Initialize repository with database session."""
-        self.service = AuthService(db)
+        self.service = ProfileService(db)
 
     def get_profile(self, profile_id: str) -> Optional[ProfileItem]:
         """Get profile by ID.

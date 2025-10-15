@@ -1,10 +1,10 @@
-"""Auth queries - SQL query builders for profile and emulation operations."""
+"""Profile queries - SQL query builders for profile and emulation operations."""
 
 from typing import Any, Dict, List, Tuple
 
 
-class AuthQueries:
-    """Query builders for auth operations."""
+class ProfileQueries:
+    """Query builders for profile operations."""
 
     def get_profile(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
         """Build query to get profile by ID."""

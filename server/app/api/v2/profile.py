@@ -3,15 +3,16 @@
 from typing import Annotated
 
 from app.db import get_session
-from app.repositories.auth_repository import AuthRepository
+from app.repositories.profile_repository import ProfileRepository
 from app.repositories.staff_repository import get_staff_repository
-from app.schemas.auth import (AuthorizeEmulationRequest,
-                              AuthorizeEmulationResponse,
-                              MarkChatCompleteRequest,
-                              MarkIntroCompleteRequest, MarkTourStepResponse,
-                              ProfileContextRequest, ProfileContextResponse,
-                              ProfileDetailRequest, ProfileDetailResponse,
-                              UpdateProfileRequest, UpdateProfileResponse)
+from app.schemas.profile import (AuthorizeEmulationRequest,
+                                 AuthorizeEmulationResponse,
+                                 MarkChatCompleteRequest,
+                                 MarkIntroCompleteRequest,
+                                 MarkTourStepResponse, ProfileContextRequest,
+                                 ProfileContextResponse, ProfileDetailRequest,
+                                 ProfileDetailResponse, UpdateProfileRequest,
+                                 UpdateProfileResponse)
 from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
                                DeleteStaffRequest, DeleteStaffResponse,
@@ -155,7 +156,7 @@ async def get_profile_detail_simple(
 ) -> ProfileDetailResponse:
     """Get simple profile by ID (auth version without permissions)."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
         profile = repo.get_profile(request.profileId)
 
         if not profile:
@@ -175,7 +176,7 @@ async def update_profile_simple(
 ) -> UpdateProfileResponse:
     """Update profile fields (simple auth version)."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
 
         # Extract updates from request, excluding profileId and None values
         updates = request.model_dump(exclude={"profileId"}, exclude_none=True)
@@ -204,7 +205,7 @@ async def authorize_emulation(
 ) -> AuthorizeEmulationResponse:
     """Check if emulation is authorized."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
         allowed, reason = repo.authorize_emulation(
             request.requesterProfileId,
             request.targetProfileId,
@@ -228,7 +229,7 @@ async def get_profile_context(
 ) -> ProfileContextResponse:
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
         return repo.get_profile_context(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -248,7 +249,7 @@ async def mark_intro_complete(
 ) -> MarkTourStepResponse:
     """Mark intro tour step as complete."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
         success = repo.mark_intro_complete(request.profileId)
 
         if not success:
@@ -271,7 +272,7 @@ async def mark_chat_complete(
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
     try:
-        repo = AuthRepository(db)
+        repo = ProfileRepository(db)
         success = repo.mark_chat_complete(request.profileId)
 
         if not success:

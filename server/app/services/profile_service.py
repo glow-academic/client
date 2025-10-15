@@ -1,24 +1,24 @@
-"""Auth service layer - business logic for profile and emulation operations."""
+"""Profile service layer - business logic for profile and emulation operations."""
 
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.queries.auth_queries import AuthQueries
-from app.schemas.auth import (BreadcrumbItem, CohortItem, CohortsData,
-                              DepartmentItem, ProfileContextRequest,
-                              ProfileContextResponse, ProfileItem,
-                              SimulationContextItem, SimulationsData)
+from app.queries.profile_queries import ProfileQueries
+from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
+                                 DepartmentItem, ProfileContextRequest,
+                                 ProfileContextResponse, ProfileItem,
+                                 SimulationContextItem, SimulationsData)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
-class AuthService:
-    """Service layer for auth operations."""
+class ProfileService:
+    """Service layer for profile operations."""
 
     def __init__(self, db: Session):
         """Initialize service with database session."""
         self.db = db
-        self.queries = AuthQueries()
+        self.queries = ProfileQueries()
 
     def get_profile(self, profile_id: str) -> Optional[ProfileItem]:
         """Get profile by ID.
