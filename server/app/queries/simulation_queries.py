@@ -122,11 +122,25 @@ class SimulationQueries:
     def get_valid_scenarios(
         self, dept_ids: List[str]
     ) -> Tuple[str, Dict[str, Any]]:
-        """Build query for valid scenarios."""
+        """Build query for valid scenarios - only returns root/parent scenarios."""
         query = """
-        SELECT id FROM scenarios 
-        WHERE department_id = ANY(:dept_ids) AND active = true
-        ORDER BY name
+        SELECT s.id 
+        FROM scenarios s
+        WHERE s.department_id = ANY(:dept_ids) 
+          AND s.active = true
+          AND (
+            -- Either not in tree at all (standalone)
+            NOT EXISTS (
+              SELECT 1 FROM scenario_tree st 
+              WHERE st.child_id = s.id AND st.parent_id != st.child_id
+            )
+            -- Or is a root (self-edge)
+            OR EXISTS (
+              SELECT 1 FROM scenario_tree st 
+              WHERE st.child_id = s.id AND st.parent_id = st.child_id
+            )
+          )
+        ORDER BY s.name
         """
         params = {"dept_ids": dept_ids}
         return (query, params)

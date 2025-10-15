@@ -42,7 +42,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import { useScenarioTrees } from "@/lib/api/v1/hooks/scenario_tree";
 import type {
   MappingItem,
   ParameterItemMappingItem,
@@ -95,45 +94,21 @@ export function SimulationScenarioPicker<
     string[]
   >([]);
 
-  // Load scenario tree to identify roots
-  const { data: treeEdges = [] } = useScenarioTrees();
-
-  // Get root scenario IDs (self-edges)
-  const rootScenarioIds = React.useMemo(() => {
-    return treeEdges
-      .filter((edge) => edge.parentId === edge.childId)
-      .map((edge) => edge.childId);
-  }, [treeEdges]);
-
-  // Build scenarios from mapping and filter to show only roots
+  // Build scenarios from mapping (server already filters to root scenarios only)
   const baseScenarios = React.useMemo(() => {
     const scenarios = validScenarioIds.map((id) => ({
       id,
       ...scenarioMapping[id],
     }));
 
-    // Filter to show only root scenarios
-    const filtered = scenarios.filter((scenario) => {
-      // If no tree edges loaded yet, show all scenarios
-      if (treeEdges.length === 0) return true;
-
-      const isRoot = rootScenarioIds.includes(scenario.id);
-      const inTree = treeEdges.some(
-        (e) => e.childId === scenario.id || e.parentId === scenario.id
-      );
-
-      // Show if it's a root OR not in tree at all (standalone)
-      return isRoot || !inTree;
-    });
-
     // Sort by updatedAt desc, then name
-    return filtered.sort((a, b) => {
+    return scenarios.sort((a, b) => {
       const ad = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const bd = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       if (bd !== ad) return bd - ad;
       return (a.name || "").localeCompare(b.name || "");
     });
-  }, [validScenarioIds, scenarioMapping, treeEdges, rootScenarioIds]);
+  }, [validScenarioIds, scenarioMapping]);
 
   // Build frequency-ranked parameter item options across base scenarios
   const parameterItemOptions = React.useMemo(() => {
