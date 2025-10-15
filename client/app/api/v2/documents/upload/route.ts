@@ -6,7 +6,7 @@
  */
 
 import { getApiBase } from "@/lib/api-base";
-import { log } from "@/utils/server-logger";
+import { log } from "@/lib/api/v2/server/logs";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch

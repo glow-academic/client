@@ -1,4 +1,5 @@
 // auth.ts
+import { log } from "@/lib/api/v2/server/logs";
 import {
   createUserProfile,
   fetchProfileByAlias,
@@ -9,7 +10,6 @@ import {
 } from "@/lib/api/v2/server/profile";
 import { db } from "@/utils/drizzle/db";
 import { profiles } from "@/utils/drizzle/schema";
-import { log } from "@/utils/server-logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";

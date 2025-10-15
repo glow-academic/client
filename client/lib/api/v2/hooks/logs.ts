@@ -1,38 +1,50 @@
 /**
  * Logs hooks for v2 API
- * Read-only hook for fetching logs list with comprehensive JSONB data
+ * Provides useLogger hook that automatically includes profile context
  */
 
-import { api } from "@/lib/api/fetcher";
-import { logsListKeys } from "@/lib/api/v2/keys";
-import { LogsListResponseSchema } from "@/lib/api/v2/schemas/logs";
-import { useQuery } from "@tanstack/react-query";
+import { useProfile } from "@/contexts/profile-context";
+import { log as baseLog } from "@/utils/logger";
 
-// Type for logs hook options
-type LogsHookOptions = {
-  enabled?: boolean;
-  staleTime?: number;
-};
+/**
+ * Logger hook that automatically includes the current profile as actor
+ * Use this in components for automatic context injection
+ */
+export function useLogger() {
+  const { effectiveProfile } = useProfile();
 
-export function useLogsList(
-  profileId: string,
-  options: LogsHookOptions | boolean = true
-) {
-  const queryOptions =
-    typeof options === "boolean"
-      ? { enabled: options }
-      : { enabled: true, ...options };
-
-  return useQuery({
-    queryKey: logsListKeys.list(profileId),
-    ...queryOptions,
-    queryFn: async () => {
-      const res = await api<unknown>("/api/v2/logs/list", {
-        method: "POST",
-        body: JSON.stringify({ profileId }),
-      });
-      return LogsListResponseSchema.parse(res);
-    },
-    enabled: queryOptions.enabled && !!profileId,
-  });
+  return {
+    info: (
+      event: string,
+      rest: Omit<Parameters<typeof baseLog.info>[1], "actor">
+    ) =>
+      baseLog.info(event, {
+        actor: { profileId: effectiveProfile?.id },
+        ...rest,
+      }),
+    warn: (
+      event: string,
+      rest: Omit<Parameters<typeof baseLog.warn>[1], "actor">
+    ) =>
+      baseLog.warn(event, {
+        actor: { profileId: effectiveProfile?.id },
+        ...rest,
+      }),
+    error: (
+      event: string,
+      rest: Omit<Parameters<typeof baseLog.error>[1], "actor">
+    ) =>
+      baseLog.error(event, {
+        actor: { profileId: effectiveProfile?.id },
+        ...rest,
+      }),
+    debug: (
+      event: string,
+      rest: Omit<Parameters<typeof baseLog.debug>[1], "actor">
+    ) =>
+      baseLog.debug(event, {
+        actor: { profileId: effectiveProfile?.id },
+        ...rest,
+      }),
+  };
 }
