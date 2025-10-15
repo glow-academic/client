@@ -20,6 +20,9 @@ import {
   BulkUpdateProfileResponseSchema,
   DeleteProfileRequest,
   DeleteProfileResponseSchema,
+  MarkChatCompleteRequest,
+  MarkIntroCompleteRequest,
+  MarkTourStepResponseSchema,
   ProfileDetailBulkResponseSchema,
   ProfileDetailResponseSchema,
   ProfileFilters,
@@ -273,6 +276,66 @@ export async function authorizeEmulation(
     body: JSON.stringify(request),
   });
   return AuthorizeEmulationResponseSchema.parse(res);
+}
+
+// ============================================================================
+// TOUR COMPLETION HOOKS
+// ============================================================================
+
+/**
+ * Hook to mark intro tour step as complete.
+ */
+export function useMarkIntroComplete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: MarkIntroCompleteRequest) => {
+      const res = await api<unknown>("/api/v2/profile/mark-intro-complete", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return MarkTourStepResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("profile:v2")) ||
+            (typeof key === "string" && key === "v2")
+          );
+        },
+      });
+    },
+  });
+}
+
+/**
+ * Hook to mark chat tour step as complete.
+ */
+export function useMarkChatComplete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: MarkChatCompleteRequest) => {
+      const res = await api<unknown>("/api/v2/profile/mark-chat-complete", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return MarkTourStepResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("profile:v2")) ||
+            (typeof key === "string" && key === "v2")
+          );
+        },
+      });
+    },
+  });
 }
 
 // ============================================================================

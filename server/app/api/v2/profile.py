@@ -7,6 +7,8 @@ from app.repositories.auth_repository import AuthRepository
 from app.repositories.staff_repository import get_staff_repository
 from app.schemas.auth import (AuthorizeEmulationRequest,
                               AuthorizeEmulationResponse,
+                              MarkChatCompleteRequest,
+                              MarkIntroCompleteRequest, MarkTourStepResponse,
                               ProfileContextRequest, ProfileContextResponse,
                               ProfileDetailRequest, ProfileDetailResponse,
                               UpdateProfileRequest, UpdateProfileResponse)
@@ -230,6 +232,57 @@ async def get_profile_context(
         return repo.get_profile_context(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# TOUR COMPLETION OPERATIONS
+# ============================================================================
+
+
+@router.post("/mark-intro-complete", response_model=MarkTourStepResponse)
+async def mark_intro_complete(
+    request: MarkIntroCompleteRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> MarkTourStepResponse:
+    """Mark intro tour step as complete."""
+    try:
+        repo = AuthRepository(db)
+        success = repo.mark_intro_complete(request.profileId)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        return MarkTourStepResponse(
+            success=True,
+            message=f"Profile {request.profileId} intro marked complete",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/mark-chat-complete", response_model=MarkTourStepResponse)
+async def mark_chat_complete(
+    request: MarkChatCompleteRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> MarkTourStepResponse:
+    """Mark chat tour step as complete."""
+    try:
+        repo = AuthRepository(db)
+        success = repo.mark_chat_complete(request.profileId)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        return MarkTourStepResponse(
+            success=True,
+            message=f"Profile {request.profileId} chat marked complete",
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

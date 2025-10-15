@@ -86,3 +86,25 @@ class AuthRepository:
             ProfileContextResponse with all consolidated data
         """
         return self.service.get_profile_context(request)
+
+    def mark_intro_complete(self, profile_id: str) -> bool:
+        """Mark viewedIntro as complete.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.service.mark_intro_complete(profile_id)
+
+    def mark_chat_complete(self, profile_id: str) -> bool:
+        """Mark viewedChat as complete.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.service.mark_chat_complete(profile_id)

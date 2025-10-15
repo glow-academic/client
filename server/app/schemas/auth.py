@@ -60,6 +60,30 @@ class UpdateProfileResponse(BaseModel):
 
 
 # ============================================================================
+# TOUR COMPLETION OPERATIONS
+# ============================================================================
+
+
+class MarkIntroCompleteRequest(BaseModel):
+    """Request to mark intro tour step as complete."""
+
+    profileId: str
+
+
+class MarkChatCompleteRequest(BaseModel):
+    """Request to mark chat tour step as complete."""
+
+    profileId: str
+
+
+class MarkTourStepResponse(BaseModel):
+    """Response from marking a tour step complete."""
+
+    success: bool
+    message: str
+
+
+# ============================================================================
 # EMULATION OPERATIONS
 # ============================================================================
 

@@ -62,6 +62,30 @@ class AuthService:
 
         return self._row_to_profile_item(result)
 
+    def mark_intro_complete(self, profile_id: str) -> bool:
+        """Mark viewedIntro as complete for a profile.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            True if successful, False otherwise
+        """
+        result = self.update_profile(profile_id, {"viewedIntro": True})
+        return result is not None
+
+    def mark_chat_complete(self, profile_id: str) -> bool:
+        """Mark viewedChat as complete for a profile.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            True if successful, False otherwise
+        """
+        result = self.update_profile(profile_id, {"viewedChat": True})
+        return result is not None
+
     def get_simulatable_profiles(
         self, profile_id: str, department_ids: List[str]
     ) -> List[ProfileItem]:

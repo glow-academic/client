@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
 import {
   profileKeys,
   simulationAttemptKeys,
@@ -25,6 +24,10 @@ import {
   simulationChatKeysByAttemptId,
   simulationMessageKeys,
 } from "@/lib/api/v1/keys";
+import {
+  useMarkChatComplete,
+  useMarkIntroComplete,
+} from "@/lib/api/v2/hooks/profile";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
@@ -99,7 +102,8 @@ export default function TATour() {
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
-  const updateProfileMutation = useUpdateProfile();
+  const markIntroCompleteMutation = useMarkIntroComplete();
+  const markChatCompleteMutation = useMarkChatComplete();
 
   // Comprehensive debug logging on every render
   useEffect(() => {
@@ -185,9 +189,8 @@ export default function TATour() {
         let profileUpdated = false;
 
         if (introStepsComplete && !effectiveProfile.viewedIntro) {
-          await updateProfileMutation.mutateAsync({
-            id: effectiveProfile.id,
-            viewedIntro: true,
+          await markIntroCompleteMutation.mutateAsync({
+            profileId: effectiveProfile.id,
           });
           log.info("tour.profile.flag.updated", {
             message: "Updated profile viewedIntro",
@@ -204,9 +207,8 @@ export default function TATour() {
         }
 
         if (chatStepsComplete && !effectiveProfile.viewedChat) {
-          await updateProfileMutation.mutateAsync({
-            id: effectiveProfile.id,
-            viewedChat: true,
+          await markChatCompleteMutation.mutateAsync({
+            profileId: effectiveProfile.id,
           });
           log.info("tour.profile.flag.updated", {
             message: "Updated profile viewedChat",
@@ -262,7 +264,8 @@ export default function TATour() {
       effectiveProfile,
       completeStep,
       tourState.steps,
-      updateProfileMutation,
+      markIntroCompleteMutation,
+      markChatCompleteMutation,
       queryClient,
     ]
   );

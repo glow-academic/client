@@ -273,6 +273,33 @@ export type AuthorizeEmulationResponse = z.infer<
 >;
 
 // ============================================================================
+// TOUR COMPLETION OPERATIONS (from auth)
+// ============================================================================
+
+export const MarkIntroCompleteRequestSchema = z.object({
+  profileId: z.string(),
+});
+
+export type MarkIntroCompleteRequest = z.infer<
+  typeof MarkIntroCompleteRequestSchema
+>;
+
+export const MarkChatCompleteRequestSchema = z.object({
+  profileId: z.string(),
+});
+
+export type MarkChatCompleteRequest = z.infer<
+  typeof MarkChatCompleteRequestSchema
+>;
+
+export const MarkTourStepResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type MarkTourStepResponse = z.infer<typeof MarkTourStepResponseSchema>;
+
+// ============================================================================
 // PROFILE CONTEXT (from auth)
 // ============================================================================
 
