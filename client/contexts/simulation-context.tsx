@@ -16,14 +16,10 @@ import {
 import { log } from "@/utils/logger";
 
 import {
-  simulationAttemptKeys,
-  simulationChatKeysByAttemptId,
-  simulationMessageKeysByChatId,
-} from "@/lib/api/v1/keys";
-import {
   useAttemptFull,
   useUpdateChatCompletedAt,
 } from "@/lib/api/v2/hooks/attempts";
+import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -561,23 +557,8 @@ export function SimulationProvider({
       setEndChatLoading(true);
 
       try {
-        // Optimistically update the chat's completedAt timestamp
+        // Update the database immediately for persistence
         const completionTime = new Date().toISOString();
-        queryClient.setQueryData(
-          simulationChatKeysByAttemptId.one(attemptId),
-          (old: SimulationChat[] = []) => {
-            return old.map((chat) =>
-              chat.id === targetChatId
-                ? {
-                    ...chat,
-                    completedAt: completionTime,
-                  }
-                : chat
-            );
-          }
-        );
-
-        // Also update the database immediately for persistence
         try {
           await updateChatCompletedAt({
             chatId: targetChatId,
@@ -604,9 +585,9 @@ export function SimulationProvider({
           end_all: false,
         });
       } catch (error) {
-        // Revert the optimistic update on error
+        // Invalidate to refetch on error
         queryClient.invalidateQueries({
-          queryKey: simulationChatKeysByAttemptId.one(attemptId),
+          queryKey: attemptsFullKeys.all,
         });
         toast.error(`Failed to end chat: ${error}`);
         setEndChatLoading(false);
@@ -633,22 +614,7 @@ export function SimulationProvider({
       const incompleteChats = chats.filter((chat) => !chat.completed);
       const completionTime = new Date().toISOString();
 
-      // Optimistically update all incomplete chats' completedAt timestamps
-      queryClient.setQueryData(
-        simulationChatKeysByAttemptId.one(attemptId),
-        (old: SimulationChat[] = []) => {
-          return old.map((chat) =>
-            !chat.completed
-              ? {
-                  ...chat,
-                  completedAt: completionTime,
-                }
-              : chat
-          );
-        }
-      );
-
-      // Also update the database immediately for persistence
+      // Update the database immediately for persistence
       try {
         // Update each chat individually since there's no bulk update function
         await Promise.all(
@@ -681,9 +647,9 @@ export function SimulationProvider({
         end_all: true,
       });
     } catch (error) {
-      // Revert the optimistic update on error
+      // Invalidate to refetch on error
       queryClient.invalidateQueries({
-        queryKey: simulationChatKeysByAttemptId.one(attemptId),
+        queryKey: attemptsFullKeys.all,
       });
       toast.error(`Failed to end all chats: ${error}`);
       setEndChatLoading(false);
@@ -710,33 +676,15 @@ export function SimulationProvider({
 
     const handleSimulationMessageComplete = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
-        // Update React Query cache with final content if messageId is provided (from data channel or Socket.IO)
-        if (event.detail.messageId && event.detail.finalContent !== undefined) {
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(event.detail.chatId),
-            (old: SimulationMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === event.detail.messageId
-                  ? {
-                      ...msg,
-                      content: event.detail.finalContent,
-                      completed: true,
-                    }
-                  : msg
-              );
-            }
-          );
-
-          // Invalidate queries for fresh data
-          setTimeout(() => {
-            queryClient.invalidateQueries({
-              queryKey: simulationMessageKeysByChatId.one(event.detail.chatId),
-            });
-          }, 0);
-        }
-
         // Reset loading states
         setIsSendingMessage(false);
+
+        // Invalidate v2 attempts for fresh data
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: attemptsFullKeys.all,
+          });
+        }, 0);
 
         // Dispatch responseComplete event for tour progression and navigating state management
         window.dispatchEvent(
@@ -752,19 +700,13 @@ export function SimulationProvider({
     };
 
     // Handle data channel token events
+    // Note: Real-time streaming is handled via window events and UI components
+    // The query cache will be updated when the message is complete
     const handleSimulationMessageToken = (event: CustomEvent) => {
+      // Token streaming is handled by UI components listening to window events
+      // No need for optimistic updates here
       if (event.detail.chatId === currentChatIdRef.current) {
-        // Update React Query cache with token data immediately
-        queryClient.setQueryData(
-          simulationMessageKeysByChatId.one(event.detail.chatId),
-          (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === event.detail.messageId
-                ? { ...msg, content: event.detail.accumulatedContent }
-                : msg
-            );
-          }
-        );
+        // Streaming handled by AttemptMessages component
       }
     };
 
@@ -815,17 +757,9 @@ export function SimulationProvider({
         );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
-        // V2: Invalidate the full attempt data query to refetch everything
+        // Invalidate v2 attempts to refetch everything
         queryClient.invalidateQueries({
-          queryKey: ["v2", "attempts", attemptId, "full"],
-        });
-
-        // Also invalidate v1 queries for backwards compatibility with message caches
-        queryClient.invalidateQueries({
-          queryKey: simulationChatKeysByAttemptId.one(attemptId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationAttemptKeys.detail(attemptId),
+          queryKey: attemptsFullKeys.all,
         });
 
         // Turn off the loading indicator for the "End Chat" button
@@ -858,17 +792,9 @@ export function SimulationProvider({
 
     const handleEndAllCompleted = (event: CustomEvent) => {
       if (event.detail.attemptId === attemptId) {
-        // V2: Invalidate the full attempt data query to refetch everything
+        // Invalidate v2 attempts to refetch everything
         queryClient.invalidateQueries({
-          queryKey: ["v2", "attempts", attemptId, "full"],
-        });
-
-        // Also invalidate v1 queries for backwards compatibility
-        queryClient.invalidateQueries({
-          queryKey: simulationChatKeysByAttemptId.one(attemptId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationAttemptKeys.detail(attemptId),
+          queryKey: attemptsFullKeys.all,
         });
 
         // Show results since all chats are now completed

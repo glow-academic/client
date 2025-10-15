@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { profileKeys } from "@/lib/api/v1/keys";
 import {
   useMarkChatComplete,
   useMarkIntroComplete,
@@ -220,18 +219,13 @@ export default function TATour() {
 
         // Invalidate profile queries to ensure immediate UI updates
         if (profileUpdated) {
-          // Invalidate the specific profile query
+          // Invalidate layout context (includes profile data)
           queryClient.invalidateQueries({
-            queryKey: profileKeys.detail(effectiveProfile.id),
-          });
-
-          // Invalidate all profiles query to update any lists that show this profile
-          queryClient.invalidateQueries({
-            queryKey: profileKeys.all,
+            queryKey: layoutContextKeys.all,
           });
 
           log.debug("tour.profile.invalidate_queries", {
-            message: "Invalidated profile queries after update",
+            message: "Invalidated layout context after profile update",
             actor: { profileId: effectiveProfile.id },
             context: {
               component: "TATour",

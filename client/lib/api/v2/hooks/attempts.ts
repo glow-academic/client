@@ -4,7 +4,6 @@
  */
 
 import { api } from "@/lib/api/fetcher";
-import { simulationAttemptKeys, simulationChatKeys } from "@/lib/api/v1/keys";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -230,8 +229,8 @@ export function useBulkArchiveAttempts() {
         body: JSON.stringify(request),
       }),
     onSuccess: () => {
-      // Invalidate all simulation attempt queries
-      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
+      // Invalidate v2 attempts
+      qc.invalidateQueries({ queryKey: attemptsFullKeys.all });
       // Refresh analytics MV
       refreshAnalytics();
     },
@@ -253,16 +252,9 @@ export function useUpdateChatCreatedAt() {
       return UpdateChatTimestampResponseSchema.parse(res);
     },
     onSuccess: () => {
-      // Invalidate v2 attempt queries to refetch updated data
+      // Invalidate v2 attempts to refetch updated data
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && key[0] === "v2" && key[1] === "attempts";
-        },
-      });
-      // Also invalidate v1 chat queries for backwards compatibility
-      queryClient.invalidateQueries({
-        queryKey: simulationChatKeys.all,
+        queryKey: attemptsFullKeys.all,
       });
     },
   });
@@ -283,16 +275,9 @@ export function useUpdateChatCompletedAt() {
       return UpdateChatTimestampResponseSchema.parse(res);
     },
     onSuccess: () => {
-      // Invalidate v2 attempt queries to refetch updated data
+      // Invalidate v2 attempts to refetch updated data
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return Array.isArray(key) && key[0] === "v2" && key[1] === "attempts";
-        },
-      });
-      // Also invalidate v1 chat queries for backwards compatibility
-      queryClient.invalidateQueries({
-        queryKey: simulationChatKeys.all,
+        queryKey: attemptsFullKeys.all,
       });
     },
   });
