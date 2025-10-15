@@ -1,41 +1,40 @@
-import { authOptions } from "@/auth";
-import { getServerSession } from "next-auth";
+import { getApiBase } from "@/lib/api-base";
+import { CreateParameterItemRequestSchema } from "@/lib/api/v2/schemas/parameters";
+import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const body = await req.json();
+    const request = CreateParameterItemRequestSchema.parse(body);
 
-    const body = await request.json();
-
-    // Call FastAPI backend
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v2/parameters/items/create`,
+      `${getApiBase()}/api/v2/parameters/items/create`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify(body),
+        credentials: "include",
+        body: JSON.stringify(request),
       }
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || error.message || "Server request failed");
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const result = await response.json();
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("Error creating parameter item:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.error("parameters.v2.items.create.error", {
+      message: errorMessage,
+      error,
+    });
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

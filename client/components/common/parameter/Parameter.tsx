@@ -153,7 +153,8 @@ export default function Parameter({
       // For create mode, use data from default detail endpoint
       setFormData({
         ...initialFormData,
-        departmentId: parameterData.department_id ?? initialFormData.departmentId ?? null,
+        departmentId:
+          parameterData.department_id ?? initialFormData.departmentId ?? null,
       });
     }
   }, [parameterData, isEditMode, initialFormData]);
@@ -584,7 +585,7 @@ export default function Parameter({
                                 </TooltipContent>
                               </Tooltip>
                             )}
-                            {(item.canDelete !== false) && (
+                            {item.canDelete !== false && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -643,7 +644,8 @@ export default function Parameter({
                       description: parameterData?.description,
                       numerical: parameterData?.numerical,
                       active: parameterData?.active,
-                      defaultParameter: parameterData?.default_parameter ?? false,
+                      defaultParameter:
+                        parameterData?.default_parameter ?? false,
                       departmentId: parameterData?.department_id,
                     }) &&
                   JSON.stringify(parameterItemsFormData) ===
