@@ -1,23 +1,30 @@
 """Cohort service layer - business logic for cohort operations."""
 
+import os
+import uuid
 from typing import Any, Dict, List
 
 from app.queries.cohort_queries import CohortQueries
-from app.schemas.base import (DepartmentMappingItem, ProfileMappingItem,
-                              SimulationMappingItem)
+from app.queries.staff_queries import StaffQueries
+from app.schemas.base import (CohortMapping, CohortMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              ProfileMappingItem, SimulationMappingItem)
 from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  AddProfilesToCohortResponse,
                                  CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
-                                 CohortItem, CohortsFilters,
-                                 CohortsListResponse, CreateCohortRequest,
-                                 CreateCohortResponse, DeleteCohortRequest,
-                                 DeleteCohortResponse, DuplicateCohortRequest,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse, CohortItem,
+                                 CohortsFilters, CohortsListResponse,
+                                 CreateCohortRequest, CreateCohortResponse,
+                                 DeleteCohortRequest, DeleteCohortResponse,
+                                 DuplicateCohortRequest,
                                  DuplicateCohortResponse, LeaveCohortRequest,
                                  LeaveCohortResponse,
                                  RemoveProfilesFromCohortRequest,
                                  RemoveProfilesFromCohortResponse,
                                  UpdateCohortRequest, UpdateCohortResponse)
+from app.schemas.staff import StaffItem
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -29,6 +36,7 @@ class CohortService:
         """Initialize service with database session."""
         self.db = db
         self.queries = CohortQueries()
+        self.staff_queries = StaffQueries()
 
     def get_cohorts_list(self, filters: CohortsFilters) -> CohortsListResponse:
         """Get cohorts list with permissions and relationships."""
@@ -206,6 +214,94 @@ class CohortService:
         )
 
         return self.get_cohort_detail(detail_request)
+
+    def get_cohort_detail_with_profiles(
+        self, request: CohortDetailWithProfilesRequest
+    ) -> CohortDetailWithProfilesResponse:
+        """Get cohort detail with available profiles in one call."""
+
+        # Get campus email domain
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
+
+        # 1. Get cohort basic info
+        query, params = self.queries.get_cohort_title(request.cohortId)
+        cohort = self.db.execute(text(query), params).fetchone()
+
+        if not cohort:
+            raise ValueError(f"Cohort not found: {request.cohortId}")
+
+        # 2. Get profile IDs currently in this cohort
+        query, params = self.queries.get_cohort_profiles(request.cohortId)
+        profile_result = self.db.execute(text(query), params).fetchall()
+        current_profile_ids = [str(row.profile_id) for row in profile_result]
+
+        # 3. Get all staff for the departments using staff query
+        query, params = self.staff_queries.list_staff(
+            request.departmentIds, request.currentProfileId, campus_domain
+        )
+        result = self.db.execute(text(query), params).fetchall()
+
+        # 4. Filter to available profiles (instructional/ta, not in cohort, not default)
+        available_profiles = []
+        for row in result:
+            profile_id = str(row.profile_id)
+            
+            # Skip if already in cohort, is default, or not correct role
+            if (
+                profile_id not in current_profile_ids
+                and not row.default_profile
+                and row.role in ["instructional", "ta"]
+            ):
+                cohort_ids = [str(cid) for cid in (row.cohort_ids or [])]
+                available_profiles.append(
+                    StaffItem(
+                        profile_id=profile_id,
+                        first_name=row.first_name,
+                        last_name=row.last_name,
+                        alias=row.alias,
+                        name=row.name,
+                        role=row.role,
+                        email=row.email,
+                        initials=row.initials,
+                        active=row.active,
+                        lastActive=row.lastActive.isoformat() if row.lastActive else None,
+                        cohort_ids=cohort_ids,
+                        requests_per_day=row.requests_per_day,
+                        default_profile=row.default_profile,
+                        requests_in_last_day=row.requests_in_last_day,
+                        can_edit=row.can_edit,
+                        can_delete=row.can_delete,
+                    )
+                )
+
+        # 5. Get department mapping
+        department_mapping: DepartmentMapping = {}
+        if request.departmentIds:
+            query, params = self.staff_queries.get_department_mapping(request.departmentIds)
+            dept_result = self.db.execute(text(query), params).fetchall()
+            for row in dept_result:
+                department_mapping[str(row.id)] = DepartmentMappingItem(
+                    name=row.name, description=row.description
+                )
+
+        # 6. Get cohort mapping (just this cohort)
+        cohort_mapping: CohortMapping = {
+            str(cohort.id): CohortMappingItem(
+                name=cohort.title,
+                description=cohort.description or ""
+            )
+        }
+
+        return CohortDetailWithProfilesResponse(
+            cohort_id=str(cohort.id),
+            title=cohort.title,
+            description=cohort.description,
+            active=cohort.active,
+            current_profile_ids=current_profile_ids,
+            available_profiles=available_profiles,
+            department_mapping=department_mapping,
+            cohort_mapping=cohort_mapping,
+        )
 
     def create_cohort(self, request: CreateCohortRequest) -> CreateCohortResponse:
         """Create a new cohort with relationships."""
@@ -409,7 +505,7 @@ class CohortService:
     def add_profiles_to_cohort(
         self, request: AddProfilesToCohortRequest
     ) -> AddProfilesToCohortResponse:
-        """Add profiles to cohort."""
+        """Add profiles to cohort (handles both existing and new profiles)."""
 
         # Check if cohort exists
         query, params = self.queries.get_cohort_title(request.cohortId)
@@ -418,9 +514,55 @@ class CohortService:
         if not cohort:
             raise ValueError(f"Cohort not found: {request.cohortId}")
 
-        # Add profiles to cohort
+        profile_ids_to_add = []
+
+        # Handle existing profile IDs
+        if request.existingProfileIds:
+            profile_ids_to_add.extend(request.existingProfileIds)
+
+        # Handle new profiles (create them first)
+        if request.newProfiles:
+            for profile_req in request.newProfiles:
+                # Check if alias already exists
+                query, params = self.staff_queries.check_alias_exists(profile_req.alias)
+                existing = self.db.execute(text(query), params).fetchone()
+
+                if existing:
+                    raise ValueError(f"Alias '{profile_req.alias}' already exists")
+
+                # Generate new profile ID
+                profile_id = str(uuid.uuid4())
+                profile_ids_to_add.append(profile_id)
+
+                # Insert profile
+                query, _ = self.staff_queries.create_profile()
+                self.db.execute(
+                    text(query),
+                    {
+                        "id": profile_id,
+                        "first_name": profile_req.firstName,
+                        "last_name": profile_req.lastName,
+                        "alias": profile_req.alias,
+                        "role": profile_req.role,
+                        "active": True,
+                        "default_profile": False,
+                        "viewed_intro": False,
+                        "viewed_chat": False,
+                        "req_per_day": None,
+                    },
+                )
+
+                # Insert profile-department relationships for all departments
+                for dept_id in request.departmentIds:
+                    query, _ = self.staff_queries.insert_profile_department()
+                    self.db.execute(
+                        text(query),
+                        {"profile_id": profile_id, "department_id": dept_id},
+                    )
+
+        # Add all profiles to cohort
         query, _ = self.queries.insert_cohort_profile()
-        for profile_id in request.profileIds:
+        for profile_id in profile_ids_to_add:
             self.db.execute(
                 text(query),
                 {"cohort_id": request.cohortId, "profile_id": profile_id},
@@ -428,10 +570,15 @@ class CohortService:
 
         self.db.commit()
 
-        return AddProfilesToCohortResponse(
-            success=True,
-            message=f"Added {len(request.profileIds)} profile(s) to cohort '{cohort.title}' successfully",
-        )
+        total_count = len(profile_ids_to_add)
+        new_count = len(request.newProfiles) if request.newProfiles else 0
+        existing_count = len(request.existingProfileIds) if request.existingProfileIds else 0
+
+        message = f"Added {total_count} profile(s) to cohort '{cohort.title}'"
+        if new_count > 0:
+            message += f" ({new_count} newly created)"
+
+        return AddProfilesToCohortResponse(success=True, message=message)
 
     def remove_profiles_from_cohort(
         self, request: RemoveProfilesFromCohortRequest

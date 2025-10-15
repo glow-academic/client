@@ -14,6 +14,8 @@ import {
   AddProfilesToCohortRequest,
   AddProfilesToCohortResponseSchema,
   CohortDetailResponseSchema,
+  CohortDetailWithProfilesRequest,
+  CohortDetailWithProfilesResponseSchema,
   CohortsFilters,
   CohortsListResponseSchema,
   CreateCohortRequest,
@@ -103,6 +105,38 @@ export function useCohortDetailDefault(
       return CohortDetailResponseSchema.parse(res);
     },
     enabled: queryOptions.enabled && !!profileId,
+  });
+}
+
+export function useCohortDetailWithProfiles(
+  request: CohortDetailWithProfilesRequest,
+  options: CohortsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: [
+      "cohorts:v2:detail-with-profiles",
+      request.cohortId,
+      request.departmentIds,
+      request.currentProfileId,
+    ],
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/cohorts/detail-with-profiles", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return CohortDetailWithProfilesResponseSchema.parse(res);
+    },
+    enabled:
+      queryOptions.enabled &&
+      !!request.cohortId &&
+      !!request.currentProfileId &&
+      request.departmentIds.length > 0,
   });
 }
 

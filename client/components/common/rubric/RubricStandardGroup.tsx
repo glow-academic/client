@@ -33,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/useRubricUnifiedUpdate";
+import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/rubrics";
 import type {
   StandardGroupUpdate,
   StandardUpdate,

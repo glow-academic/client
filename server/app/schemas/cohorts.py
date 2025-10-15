@@ -4,7 +4,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .base import DepartmentMapping, ProfileMapping, SimulationMapping
+from .base import (CohortMapping, DepartmentMapping, ProfileMapping,
+                   SimulationMapping)
+from .staff import StaffItem
 
 # ============================================================================
 # REQUEST SCHEMAS
@@ -175,11 +177,22 @@ class LeaveCohortResponse(BaseModel):
     message: str
 
 
+class NewProfileForCohort(BaseModel):
+    """New profile to create and add to cohort."""
+
+    firstName: str
+    lastName: str
+    alias: str
+    role: str
+
+
 class AddProfilesToCohortRequest(BaseModel):
-    """Request to add profiles to cohort."""
+    """Request to add profiles to cohort (supports both existing and new)."""
 
     cohortId: str
-    profileIds: List[str]
+    departmentIds: List[str]  # Needed for creating new profiles with dept relationships
+    existingProfileIds: Optional[List[str]] = None
+    newProfiles: Optional[List[NewProfileForCohort]] = None
 
 
 class AddProfilesToCohortResponse(BaseModel):
@@ -201,4 +214,37 @@ class RemoveProfilesFromCohortResponse(BaseModel):
 
     success: bool
     message: str
+
+
+# ============================================================================
+# COHORT DETAIL WITH PROFILES (unified endpoint)
+# ============================================================================
+
+
+class CohortDetailWithProfilesRequest(BaseModel):
+    """Request for cohort detail with available profiles."""
+
+    cohortId: str
+    departmentIds: List[str]
+    currentProfileId: str
+
+
+class CohortDetailWithProfilesResponse(BaseModel):
+    """Response for cohort detail with available profiles."""
+
+    # Cohort info
+    cohort_id: str
+    title: str
+    description: Optional[str]
+    active: bool
+
+    # Profile IDs already in cohort
+    current_profile_ids: List[str]
+
+    # Available profiles (filtered: instructional/ta, not in cohort, not default)
+    available_profiles: List[StaffItem]
+
+    # Mappings
+    department_mapping: DepartmentMapping
+    cohort_mapping: CohortMapping
 

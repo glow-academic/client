@@ -9,6 +9,7 @@ import {
   ProfileMappingSchema,
   SimulationMappingSchema,
 } from "./base";
+import { ProfileListItemSchema } from "./profile";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -187,10 +188,22 @@ export const LeaveCohortResponseSchema = z.object({
 
 export type LeaveCohortResponse = z.infer<typeof LeaveCohortResponseSchema>;
 
-// Add profiles to cohort request
+// New profile for cohort (to create and add)
+export const NewProfileForCohortSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.enum(["ta", "instructional"]),
+});
+
+export type NewProfileForCohort = z.infer<typeof NewProfileForCohortSchema>;
+
+// Add profiles to cohort request (supports both existing and new)
 export const AddProfilesToCohortRequestSchema = z.object({
   cohortId: z.string(),
-  profileIds: z.array(z.string()),
+  departmentIds: z.array(z.string()),
+  existingProfileIds: z.array(z.string()).optional(),
+  newProfiles: z.array(NewProfileForCohortSchema).optional(),
 });
 
 export type AddProfilesToCohortRequest = z.infer<
@@ -223,4 +236,46 @@ export const RemoveProfilesFromCohortResponseSchema = z.object({
 
 export type RemoveProfilesFromCohortResponse = z.infer<
   typeof RemoveProfilesFromCohortResponseSchema
+>;
+
+// ============================================================================
+// COHORT DETAIL WITH PROFILES (unified endpoint)
+// ============================================================================
+
+export const CohortDetailWithProfilesRequestSchema = z.object({
+  cohortId: z.string(),
+  departmentIds: z.array(z.string()),
+  currentProfileId: z.string(),
+});
+
+export type CohortDetailWithProfilesRequest = z.infer<
+  typeof CohortDetailWithProfilesRequestSchema
+>;
+
+export const CohortDetailWithProfilesResponseSchema = z.object({
+  // Cohort info
+  cohort_id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  active: z.boolean(),
+
+  // Profile IDs already in cohort
+  current_profile_ids: z.array(z.string()),
+
+  // Available profiles (filtered: instructional/ta, not in cohort, not default)
+  available_profiles: z.array(ProfileListItemSchema),
+
+  // Mappings
+  department_mapping: DepartmentMappingSchema,
+  cohort_mapping: z.record(
+    z.string(),
+    z.object({
+      name: z.string(),
+      description: z.string(),
+    })
+  ),
+});
+
+export type CohortDetailWithProfilesResponse = z.infer<
+  typeof CohortDetailWithProfilesResponseSchema
 >;

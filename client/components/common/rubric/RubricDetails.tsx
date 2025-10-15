@@ -18,8 +18,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateRubric } from "@/lib/api/v2/hooks/rubrics";
-import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/useRubricUnifiedUpdate";
+import {
+  useCreateRubric,
+  useRubricUnifiedUpdate,
+} from "@/lib/api/v2/hooks/rubrics";
 import { Rubric as RubricType } from "@/types";
 import { log } from "@/utils/logger";
 import { Edit } from "lucide-react";

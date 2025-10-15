@@ -8,6 +8,8 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  AddProfilesToCohortResponse,
                                  CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse,
                                  CohortsFilters, CohortsListResponse,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
@@ -60,6 +62,21 @@ async def get_cohort_detail_default(
     try:
         repo = get_cohort_repository(db)
         return repo.get_cohort_detail_default(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/detail-with-profiles", response_model=CohortDetailWithProfilesResponse)
+async def get_cohort_detail_with_profiles(
+    request: CohortDetailWithProfilesRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> CohortDetailWithProfilesResponse:
+    """Get cohort detail with available profiles in one call."""
+    try:
+        repo = get_cohort_repository(db)
+        return repo.get_cohort_detail_with_profiles(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

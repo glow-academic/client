@@ -4,6 +4,8 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  AddProfilesToCohortResponse,
                                  CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
+                                 CohortDetailWithProfilesRequest,
+                                 CohortDetailWithProfilesResponse,
                                  CohortsFilters, CohortsListResponse,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
@@ -39,6 +41,12 @@ class CohortRepository:
     ) -> CohortDetailResponse:
         """Get default cohort detail."""
         return self.service.get_cohort_detail_default(request)
+
+    def get_cohort_detail_with_profiles(
+        self, request: CohortDetailWithProfilesRequest
+    ) -> CohortDetailWithProfilesResponse:
+        """Get cohort detail with available profiles."""
+        return self.service.get_cohort_detail_with_profiles(request)
 
     def create_cohort(self, request: CreateCohortRequest) -> CreateCohortResponse:
         """Create cohort."""
