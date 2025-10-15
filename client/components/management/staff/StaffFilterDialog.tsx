@@ -15,14 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { StaffItem } from "@/lib/api/v2/schemas/staff";
+import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { Clock, Shield, User as UserIcon } from "lucide-react";
 
 export interface StaffFilterDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  staffMembers: StaffItem[];
+  staffMembers: ProfileListItem[];
   onEditUser: (profileId: string) => void;
 }
 

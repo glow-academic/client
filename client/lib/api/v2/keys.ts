@@ -297,23 +297,38 @@ export const rubricsDetailDefaultKeys = {
     [...rubricsDetailDefaultKeys.all, { profileId }] as const,
 };
 
-// Staff Keys
-export const staffListKeys = {
-  all: ["staff:v2:list"] as const,
+// Profile Keys (unified auth + staff)
+export const profileListKeys = {
+  all: ["profile:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...staffListKeys.all, { filters }] as const,
+    [...profileListKeys.all, { filters }] as const,
 };
 
-export const staffDetailKeys = {
-  all: ["staff:v2:detail"] as const,
+export const profileDetailKeys = {
+  all: ["profile:v2:detail"] as const,
   detail: (profileId: string, currentProfileId: string) =>
-    [...staffDetailKeys.all, { profileId, currentProfileId }] as const,
+    [...profileDetailKeys.all, { profileId, currentProfileId }] as const,
 };
 
-export const staffDetailBulkKeys = {
-  all: ["staff:v2:detail-bulk"] as const,
+export const profileDetailBulkKeys = {
+  all: ["profile:v2:detail-bulk"] as const,
   detail: (profileIds: string[], currentProfileId: string) =>
-    [...staffDetailBulkKeys.all, { profileIds, currentProfileId }] as const,
+    [...profileDetailBulkKeys.all, { profileIds, currentProfileId }] as const,
+};
+
+export const profileSimulatableKeys = {
+  all: ["profile:v2:simulatable"] as const,
+  list: (profileId: string, departmentIds: string[]) =>
+    [...profileSimulatableKeys.all, { profileId, departmentIds }] as const,
+};
+
+export const profileContextKeys = {
+  all: ["profile:v2:context"] as const,
+  detail: (userId: string, effectiveProfileId: string, pathname: string) =>
+    [
+      ...profileContextKeys.all,
+      { userId, effectiveProfileId, pathname },
+    ] as const,
 };
 
 // Cohorts Keys

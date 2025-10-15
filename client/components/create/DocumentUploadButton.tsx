@@ -9,7 +9,6 @@
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
-import { useUpdateDocument } from "@/lib/api/v1/hooks/documents";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 import { log } from "@/utils/logger";
 import { inferMimeFromName } from "@/utils/mime-map";
@@ -19,7 +18,16 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-export function DocumentUploadButton() {
+
+interface DocumentUploadButtonProps {
+  departmentMapping: Record<string, { name: string; description: string }>;
+  validDepartmentIds: string[];
+}
+
+export function DocumentUploadButton({
+  departmentMapping,
+  validDepartmentIds,
+}: DocumentUploadButtonProps) {
   const { effectiveProfile } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -35,8 +43,6 @@ export function DocumentUploadButton() {
       }
     >
   >(new Map());
-
-  const { mutate: updateDocument } = useUpdateDocument();
 
   // Listen for upload:remove-file events
   useEffect(() => {
@@ -58,8 +64,6 @@ export function DocumentUploadButton() {
 
   const uploadFile = async (
     file: File,
-    classification?: { type: import("@/types").DocumentType; tags: string[] },
-    zipDefaults?: { type: import("@/types").DocumentType; tags: string[] }
   ) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
@@ -188,38 +192,6 @@ export function DocumentUploadButton() {
                 return newMap;
               });
 
-              // Apply client-side classification (type/tags)
-              try {
-                if (!isZipFile && result.document_id && classification) {
-                  await updateDocument({
-                    id: result.document_id,
-                    type: classification.type,
-                    classified: true,
-                    updatedAt: new Date().toISOString(),
-                  });
-                }
-                if (
-                  isZipFile &&
-                  Array.isArray(result.documents) &&
-                  zipDefaults
-                ) {
-                  for (const d of result.documents) {
-                    await updateDocument({
-                      id: d.id,
-                      type: zipDefaults.type,
-                      classified: true,
-                      updatedAt: new Date().toISOString(),
-                    });
-                  }
-                }
-              } catch (classificationError) {
-                log.error("upload.classification.update.failed", {
-                  message: "Post-upload classification update failed",
-                  error: classificationError,
-                  context: { component: "DocumentUploadButton" },
-                });
-              }
-
               // Remove from active uploads after a delay to show completion
               setTimeout(() => {
                 setActiveUploads((prev) => {
@@ -340,14 +312,13 @@ export function DocumentUploadButton() {
             setPendingFiles([]);
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
-          onConfirm={async (perFile, zipDefaults) => {
+          onConfirm={async () => {
             setShowUploadDialog(false);
             // Kick off uploads with provided classifications
             for (const file of pendingFiles) {
-              const classification = perFile[file.name];
               // Fire without awaiting to allow parallel uploads
               (async () => {
-                await uploadFile(file, classification, zipDefaults);
+                await uploadFile(file);
               })();
             }
             // Clear state so user can add the same docs again if needed
@@ -360,6 +331,8 @@ export function DocumentUploadButton() {
           onRemoveFile={(fileName) =>
             setPendingFiles((prev) => prev.filter((f) => f.name !== fileName))
           }
+          departmentMapping={departmentMapping}
+          validDepartmentIds={validDepartmentIds}
         />
       )}
     </>

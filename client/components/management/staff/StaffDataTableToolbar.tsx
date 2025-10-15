@@ -7,10 +7,10 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { StaffItem } from "@/lib/api/v2/schemas/staff";
+import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 
 export interface StaffDataTableToolbarProps {
-  table: Table<StaffItem>;
+  table: Table<ProfileListItem>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
   activityOptions: { value: string; label: string }[];

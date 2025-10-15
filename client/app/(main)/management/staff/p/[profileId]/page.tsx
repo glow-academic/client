@@ -5,35 +5,58 @@
  * 06/08/2025
  */
 
+import { auth } from "@/auth";
 import StaffEdit from "@/components/management/staff/StaffEdit";
-import { profileRepo } from "@/lib/repos/profileRepo";
+import { profileDetailKeys } from "@/lib/api/v2/keys";
+import { fetchProfileDetail } from "@/lib/api/v2/server/profile";
+import { getQueryClient } from "@/lib/query-client";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
-import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // read route params
   const { profileId } = await params;
+  const session = await auth();
+  const currentProfileId = session?.effectiveProfileId || "";
 
-  const staff = await profileRepo.find(profileId);
-
-  return {
-    title: `${staff?.firstName} ${staff?.lastName}`,
-    description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const profileData = await fetchProfileDetail(profileId, currentProfileId);
+    return {
+      title: profileData.name,
+      description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch (error) {
+    return {
+      title: "Staff Profile",
+      description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
-export default function StaffEditPage({
+export default async function StaffEditPage({
   params,
 }: {
   params: Promise<{ profileId: string }>;
 }) {
-  const { profileId } = use(params);
+  const { profileId } = await params;
+  const session = await auth();
+  const currentProfileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch profile detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: profileDetailKeys.detail(profileId, currentProfileId),
+    queryFn: () => fetchProfileDetail(profileId, currentProfileId),
+  });
+
   return (
-    <div className="space-y-6">
-      <StaffEdit profileId={profileId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <StaffEdit profileId={profileId} />
+      </div>
+    </HydrationBoundary>
   );
 }

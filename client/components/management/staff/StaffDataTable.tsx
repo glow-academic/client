@@ -32,12 +32,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { StaffItem } from "@/lib/api/v2/schemas/staff";
+import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { Edit, FileText, Trash2 } from "lucide-react";
 import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
 
 export interface StaffDataTableProps {
-  data: StaffItem[];
+  data: ProfileListItem[];
   cohortMapping: Record<string, { name: string; description?: string | null }>;
   roleOptions: { value: string; label: string }[];
   cohortOptions: { value: string; label: string }[];
@@ -50,9 +50,9 @@ export interface StaffDataTableProps {
   onStaffSelect: (profileId: string, checked: boolean) => void;
   onSelectAll: (checked: boolean, visibleRowIds?: string[]) => void;
   onCreate: () => void;
-  onPreview: (staff: StaffItem) => void;
-  onEdit: (staff: StaffItem) => void;
-  onDelete: (staff: StaffItem) => void;
+  onPreview: (staff: ProfileListItem) => void;
+  onEdit: (staff: ProfileListItem) => void;
+  onDelete: (staff: ProfileListItem) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   canDelete: (profileId: string) => boolean;

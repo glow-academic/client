@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
 import { DocumentType } from "@/types";
 import { inferMimeFromName } from "@/utils/mime-map";
 
@@ -42,6 +41,8 @@ export interface UploadClassificationDialogProps {
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
+  departmentMapping: Record<string, { name: string; description: string }>;
+  validDepartmentIds: string[];
 }
 
 const TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
@@ -61,25 +62,10 @@ export function UploadClassificationDialog({
   onConfirm,
   onAddFiles,
   onRemoveFile,
+  departmentMapping,
+  validDepartmentIds,
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
-  const { data: departments = [] } = useDepartmentsHook();
-
-  // Transform V1 departments to mapping format for DepartmentPicker
-  const departmentMapping = React.useMemo(() => {
-    const mapping: Record<string, { name: string; description: string }> = {};
-    departments.forEach((dept) => {
-      mapping[dept.id] = {
-        name: dept.title as string,
-        description: dept.description || "",
-      };
-    });
-    return mapping;
-  }, [departments]);
-
-  const validDepartmentIds = React.useMemo(() => {
-    return departments.map((dept) => dept.id);
-  }, [departments]);
 
   // Per-file classification state (keyed by file.name)
   const [perFile, setPerFile] = React.useState<

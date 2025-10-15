@@ -32,9 +32,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile as useEffectiveProfile } from "@/contexts/profile-context";
 import {
   useDeleteProfile,
-  useProfile,
-  useUpdateProfile,
-} from "@/lib/api/v1/hooks/profiles";
+  useProfileSimple,
+  useUpdateProfileSimple,
+} from "@/lib/api/v2/hooks/profile";
 import { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
@@ -71,11 +71,12 @@ const useStaffEditBusinessLogic = (
   const { effectiveProfile } = useEffectiveProfile();
 
   // Mutation hooks
-  const updateProfileMutation = useUpdateProfile();
+  const updateProfileMutation = useUpdateProfileSimple();
   const deleteProfileMutation = useDeleteProfile();
 
-  const { data: targetUser, isLoading: isProfileLoading } =
-    useProfile(profileId);
+  const { data: profileData, isLoading: isProfileLoading } =
+    useProfileSimple(profileId);
+  const targetUser = profileData?.profile;
 
   const isCurrentUserAdmin =
     effectiveProfile?.role === "admin" ||
@@ -97,11 +98,10 @@ const useStaffEditBusinessLogic = (
             ? null
             : Number(formData.reqPerDay);
         await updateProfileMutation.mutateAsync({
-          id: profileId,
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
-          alias: formData.alias || "",
-          role: formData.role as ProfileRole,
+          profileId: profileId,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          role: formData.role,
           reqPerDay: parsedReqPerDay,
         });
         setHasChanges(false);
@@ -139,7 +139,7 @@ const useStaffEditBusinessLogic = (
   const handleDelete = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      await deleteProfileMutation.mutateAsync(profileId);
+      await deleteProfileMutation.mutateAsync({ profileId });
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {

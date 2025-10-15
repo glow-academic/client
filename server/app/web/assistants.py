@@ -38,18 +38,18 @@ def get_sio_instance() -> socketio.AsyncServer:
 async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
     """
     Handle assistant start requests via WebSocket
-    Replaces /assistants/start endpoint
+    Creates a new assistant chat and processes the initial message
     """
     try:
         logger.info(f"Received start_assistant request from {sid} with data: {data}")
 
-        chat_id = data.get("chat_id")
+        profile_id = data.get("profile_id")
         initial_message = data.get("initial_message")
         department_id = data.get("department_id")
 
-        if not chat_id or not initial_message:
-            logger.error(f"Missing chat_id or initial_message in request from {sid}")
-            await emit_assistant_error(sid, "Missing chat_id or initial_message")
+        if not profile_id or not initial_message:
+            logger.error(f"Missing profile_id or initial_message in request from {sid}")
+            await emit_assistant_error(sid, "Missing profile_id or initial_message")
             return
 
         if not department_id:
@@ -57,23 +57,37 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             await emit_assistant_error(sid, "Missing department_id - please refresh the page")
             return
 
-        logger.info(f"Processing assistant start: chat_id={chat_id}, sid={sid}")
+        logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
 
         # Create a new session for this operation
         db_session = next(get_session())
 
         try:
-            # Generate a trace id for the chat and refresh the chat
-            trace_id = gen_trace_id()
-            chat = db_session.get(AssistantChats, uuid.UUID(chat_id))
-            if not chat:
-                await emit_assistant_error(sid, "Chat not found")
+            # Verify profile exists
+            profile = db_session.get(Profiles, uuid.UUID(profile_id))
+            if not profile:
+                await emit_assistant_error(sid, "Profile not found")
                 return
 
-            chat.trace_id = trace_id
+            # Generate a trace id for the chat
+            trace_id = gen_trace_id()
+
+            # Create the assistant chat (similar to simulation chat creation)
+            from datetime import datetime, timezone
+            
+            chat = AssistantChats(
+                created_at=datetime.now(timezone.utc),
+                title="New Chat",  # Will be updated by title agent
+                profile_id=uuid.UUID(profile_id),
+                trace_id=trace_id,
+            )
+
             db_session.add(chat)
             db_session.commit()
             db_session.refresh(chat)
+
+            chat_id = str(chat.id)
+            logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room
             sio_instance = get_sio_instance()
@@ -83,24 +97,24 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
             # Update the title with the title agent
             chat_title = await run_title_agent(
-                uuid.UUID(chat_id), initial_message, department_id, db_session
+                chat.id, initial_message, department_id, db_session
             )
             logger.info(f"Chat title: {chat_title}")
 
             # Emit title update to connected clients
             await sio_instance.emit(
                 "title_updated",
-                {"chat_id": str(chat_id), "title": chat_title},
+                {"chat_id": chat_id, "title": chat_title},
                 room=assistant_room,
             )
 
-            # Emit success response
+            # Emit success response with chat_id
             await sio_instance.emit(
                 "assistant_started",
                 {
                     "success": True,
                     "message": "Assistant started successfully",
-                    "chat_id": str(chat_id),
+                    "chat_id": chat_id,
                 },
                 room=sid,
             )

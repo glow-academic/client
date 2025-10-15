@@ -37,13 +37,13 @@ import {
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
-  useBulkDeleteStaff,
-  useBulkUpdateStaff,
-  useDeleteStaff,
-  useStaffDetailBulk,
-  useStaffList,
-} from "@/lib/api/v2/hooks/staff";
-import type { StaffItem } from "@/lib/api/v2/schemas/staff";
+  useBulkDeleteProfile,
+  useBulkUpdateProfile,
+  useDeleteProfile,
+  useProfileDetailBulk,
+  useProfileList,
+} from "@/lib/api/v2/hooks/profile";
+import type { ProfileListItem } from "@/lib/api/v2/schemas/profile";
 import { Activity, Shield, User as UserIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
@@ -57,7 +57,7 @@ export default function Staff() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dialogTitle, setDialogTitle] = React.useState("");
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
-    StaffItem[]
+    ProfileListItem[]
   >([]);
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
@@ -71,15 +71,15 @@ export default function Staff() {
     [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
-  const { data: staffData, isLoading } = useStaffList(
+  const { data: staffData, isLoading } = useProfileList(
     filters,
     !!effectiveProfile?.id
   );
 
   // Mutation hooks
-  const deleteStaffMutation = useDeleteStaff();
-  const bulkDeleteStaffMutation = useBulkDeleteStaff();
-  const bulkUpdateStaffMutation = useBulkUpdateStaff();
+  const deleteStaffMutation = useDeleteProfile();
+  const bulkDeleteStaffMutation = useBulkDeleteProfile();
+  const bulkUpdateStaffMutation = useBulkUpdateProfile();
 
   // Selection
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
@@ -106,10 +106,10 @@ export default function Staff() {
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] =
     React.useState(false);
   const [deleteStaffMember, setDeleteStaffMember] =
-    React.useState<StaffItem | null>(null);
+    React.useState<ProfileListItem | null>(null);
 
   // Bulk edit detail hook
-  const { data: bulkStaffDetail } = useStaffDetailBulk(
+  const { data: bulkStaffDetail } = useProfileDetailBulk(
     selectedStaffIds,
     effectiveProfile?.id || "",
     selectedStaffIds.length > 0 && !!effectiveProfile?.id
@@ -165,7 +165,7 @@ export default function Staff() {
 
   // Handle card clicks to show filtered staff
   const handleCardClick = (filterType: string) => {
-    let filteredStaff: StaffItem[] = [];
+    let filteredStaff: ProfileListItem[] = [];
     let title = "";
 
     switch (filterType) {

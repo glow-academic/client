@@ -154,7 +154,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
     queryKey: ["v2", "layout", "context", userId, effectiveProfileId, pathname],
     queryFn: async () => {
-      const res = await api<unknown>("/api/v2/auth/profile-context", {
+      const res = await api<unknown>("/api/v2/profile/context", {
         method: "POST",
         body: JSON.stringify({
           userId,

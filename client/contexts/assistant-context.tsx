@@ -3,7 +3,6 @@
  * Provides functionality for creating chats, sending messages, and real-time updates
  */
 "use client";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useCreateAssistantChat } from "@/lib/api/v1/hooks/assistant_chats";
 import { useAssistantChatFull } from "@/lib/api/v2/hooks/assistant";
@@ -75,7 +74,7 @@ interface AssistantProviderProps {
 
 export function AssistantProvider({ children }: AssistantProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
-  const { effectiveDepartmentIds } = useDepartments();
+  const { departmentIds } = useProfile();
   const [currentChatId, setCurrentChatId] = useState<string>();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -120,12 +119,31 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     [assistantData]
   );
 
-  // Create new chat mutation
+  // Create new chat mutation - only used for blank chats (startBlankChat/createNewChat)
+  // For message-initiated chats, the server creates the chat via WebSocket
   const createChatMutation = useCreateAssistantChat();
 
   // Set up assistant-specific event listeners
   useEffect(() => {
     if (!isConnected) return;
+
+    // Listen for assistant started event (when server creates new chat)
+    const handleAssistantStarted = (event: Event) => {
+      const data = (event as CustomEvent).detail as { chat_id?: string };
+      if (data.chat_id) {
+        log.info("assistant.started", {
+          message: "Assistant started, received chat_id from server",
+          subject: { entityType: "assistant_chat", entityId: data.chat_id },
+          context: {
+            component: "AssistantContext",
+            function: "handleAssistantStarted",
+          },
+        });
+        setCurrentChatId(data.chat_id);
+        // Invalidate queries to refetch chat list with new chat
+        queryClient.invalidateQueries({ queryKey: ["assistant"] });
+      }
+    };
 
     // Listen for assistant message completion to reset loading state
     const handleAssistantMessageComplete = () => {
@@ -162,6 +180,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     };
 
     // Add event listeners
+    window.addEventListener("assistant_started", handleAssistantStarted);
     window.addEventListener(
       "assistant_message_complete",
       handleAssistantMessageComplete
@@ -174,6 +193,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
     return () => {
       // Remove event listeners
+      window.removeEventListener("assistant_started", handleAssistantStarted);
       window.removeEventListener(
         "assistant_message_complete",
         handleAssistantMessageComplete
@@ -306,62 +326,41 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       setIsSendingMessage(true);
 
       try {
-        let chatId = currentChatId;
+        const chatId = currentChatId;
 
-        // If no chat is selected, create a new one
-        if (!chatId) {
-          if (!activeProfile?.id) {
-            toast.error("Profile not found");
-            setIsSendingMessage(false);
-            return;
-          }
+        // Validate profile is available
+        if (!activeProfile?.id) {
+          toast.error("Profile not found");
+          setIsSendingMessage(false);
+          return;
+        }
 
-          log.debug("assistant.message.no_chat", {
-            message: "No chat selected, creating new chat for message",
-            context: { component: "AssistantContext", function: "sendMessage" },
-          });
-          // Don't allow creating chats for guest profiles with invalid UUIDs
-          if (activeProfile.id === "guest-profile-id") {
-            throw new Error("Cannot create chats for guest profiles");
-          }
-          const newChat = await createChatMutation.mutateAsync({
-            profileId: activeProfile.id,
-            title: "New Chat",
-          });
-          if (!newChat?.id) {
-            toast.error("Failed to create new chat");
-            setIsSendingMessage(false);
-            return;
-          }
-
-          chatId = newChat.id;
-          setCurrentChatId(chatId);
-          log.info("assistant.chat.created", {
-            message: "Created new chat for message",
-            subject: { entityType: "assistant_chat", entityId: chatId },
-            context: { component: "AssistantContext", function: "sendMessage" },
-          });
+        // Don't allow creating chats for guest profiles with invalid UUIDs
+        if (activeProfile.id === "guest-profile-id") {
+          toast.error("Cannot create chats for guest profiles");
+          setIsSendingMessage(false);
+          return;
         }
 
         // Validate department_id is available
-        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+        if (departmentIds.length === 0 || !departmentIds[0]) {
           toast.error("No department found. Please contact support.");
           setIsSendingMessage(false);
           return;
         }
 
-        // Check if this is the first message in the chat
-        // If we just created a new chat or if the existing chat has title "New Chat"
-        const isNewlyCreatedChat = !currentChatId; // We just created this chat
-        const existingChat = chats.find((chat) => chat.id === chatId);
-        const isFirstMessage =
-          isNewlyCreatedChat || existingChat?.title === "New Chat";
+        // Check if this is the first message in a new chat (no chat selected)
+        // or if the existing chat has title "New Chat"
+        const existingChat = chatId
+          ? chats.find((chat) => chat.id === chatId)
+          : null;
+        const isFirstMessage = !chatId || existingChat?.title === "New Chat";
 
         if (isFirstMessage) {
-          // 1️⃣ Tell the server to create/initialise this assistant chat and process the initial message
+          // Server will create the chat and process the initial message
           log.info("assistant.message.first.start", {
-            message: "Sending first message via emitStartAssistant",
-            subject: { entityType: "assistant_chat", entityId: chatId },
+            message:
+              "Sending first message via emitStartAssistant (server will create chat)",
             context: {
               component: "AssistantContext",
               function: "sendMessage",
@@ -369,34 +368,47 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
             },
           });
           emitStartAssistant({
-            chat_id: chatId,
+            profile_id: activeProfile.id,
             initial_message: message,
-            department_id: effectiveDepartmentIds[0],
+            department_id: departmentIds[0],
+          });
+        } else {
+          // For subsequent messages, send via WebSocket
+          log.debug("assistant.message.subsequent.start", {
+            message: "Sending subsequent message via WebSocket",
+            subject: { entityType: "assistant_chat", entityId: chatId },
+            context: {
+              component: "AssistantContext",
+              function: "sendMessage",
+              messageLength: message.length,
+            },
+          });
+          emitSendAssistantMessage({ chat_id: chatId, message });
+        }
+
+        if (chatId) {
+          log.info("assistant.message.sent", {
+            message: "Message sent via WebSocket",
+            subject: { entityType: "assistant_chat", entityId: chatId },
+            context: {
+              component: "AssistantContext",
+              function: "sendMessage",
+              isFirstMessage,
+              messageLength: message.length,
+            },
+          });
+        } else {
+          log.info("assistant.message.sent", {
+            message:
+              "Message sent via WebSocket (first message, no chatId yet)",
+            context: {
+              component: "AssistantContext",
+              function: "sendMessage",
+              isFirstMessage,
+              messageLength: message.length,
+            },
           });
         }
-        // 2️⃣ For subsequent messages, deliver the text via the best transport:
-
-        log.debug("assistant.message.subsequent.start", {
-          message: "Sending subsequent message via WebSocket",
-          subject: { entityType: "assistant_chat", entityId: chatId },
-          context: {
-            component: "AssistantContext",
-            function: "sendMessage",
-            messageLength: message.length,
-          },
-        });
-        emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
-
-        log.info("assistant.message.sent", {
-          message: "Message sent via WebSocket",
-          subject: { entityType: "assistant_chat", entityId: chatId },
-          context: {
-            component: "AssistantContext",
-            function: "sendMessage",
-            isFirstMessage,
-            messageLength: message.length,
-          },
-        });
       } catch (error) {
         log.error("assistant.message.send.failed", {
           message: "Error sending message",
@@ -416,10 +428,9 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       isSendingMessage,
       chats,
       activeProfile?.id,
-      createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
-      effectiveDepartmentIds,
+      departmentIds,
     ]
   );
 

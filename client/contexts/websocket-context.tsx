@@ -80,7 +80,7 @@ export interface WebSocketContextType {
 
   // Assistant event emitters
   emitStartAssistant: (data: {
-    chat_id: string;
+    profile_id: string;
     initial_message: string;
     department_id: string;
   }) => void;
@@ -833,6 +833,13 @@ export function WebSocketProvider({
           setIsStartingAssistant(false);
           if (data.success) {
             // toast.success(data.message);
+
+            // Dispatch custom event for assistant context to handle chat_id
+            window.dispatchEvent(
+              new CustomEvent("assistant_started", {
+                detail: { chat_id: data.chat_id },
+              })
+            );
           } else {
             toast.error(data.message);
           }
@@ -1241,7 +1248,7 @@ export function WebSocketProvider({
   // Assistant event emitters
   const emitStartAssistant = useCallback(
     (data: {
-      chat_id: string;
+      profile_id: string;
       initial_message: string;
       department_id: string;
     }) => {

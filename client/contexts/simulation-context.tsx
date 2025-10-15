@@ -15,10 +15,8 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
-import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
 import { useUpdateSimulationChat } from "@/lib/api/v1/hooks/simulation_chats";
 import {
-  profileKeys,
   simulationAttemptKeys,
   simulationChatKeysByAttemptId,
   simulationMessageKeysByChatId,
@@ -35,7 +33,6 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
 
 // Dynamic rubric interface based on grades/feedback
@@ -219,7 +216,6 @@ export function SimulationProvider({
   const [isGrading, setIsGrading] = useState(false);
 
   const queryClient = useQueryClient();
-  const updateProfileMutation = useUpdateProfile();
   const updateSimulationChatMutation = useUpdateSimulationChat();
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
@@ -238,59 +234,11 @@ export function SimulationProvider({
     emitContinueSimulation,
   } = useWebSocket();
 
-  // Use the profile context to access the effective profile
-  const { effectiveProfile } = useProfile();
-
   // Function to set viewedChat to true when simulation is completed
+  // NOTE: viewedChat is now handled by TATour component when step 4 completes
   const handleSimulationCompletion = useCallback(async () => {
-    if (!effectiveProfile?.id || effectiveProfile.viewedChat) {
-      return; // Already viewed or no profile
-    }
-
-    try {
-      // mark both complete for simplicity
-      await updateProfileMutation.mutateAsync({
-        id: effectiveProfile.id,
-        viewedIntro: true,
-        viewedChat: true,
-      });
-      log.info("simulation.completion.viewedChat.updated", {
-        message: "Updated profile viewedChat flag after simulation completion",
-        actor: { profileId: effectiveProfile.id },
-        subject: { entityType: "profile", entityId: effectiveProfile.id },
-        context: {
-          component: "SimulationContext",
-          function: "handleSimulationCompletion",
-        },
-      });
-
-      // Invalidate profile queries to ensure UI updates
-      queryClient.invalidateQueries({
-        queryKey: profileKeys.detail(effectiveProfile.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: profileKeys.detail(effectiveProfile.id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: profileKeys.all,
-      });
-    } catch (error) {
-      log.error("simulation.completion.viewedChat.update.failed", {
-        message: "Failed to update viewedChat flag after simulation completion",
-        error,
-        actor: { profileId: effectiveProfile.id },
-        context: {
-          component: "SimulationContext",
-          function: "handleSimulationCompletion",
-        },
-      });
-    }
-  }, [
-    effectiveProfile?.id,
-    effectiveProfile?.viewedChat,
-    queryClient,
-    updateProfileMutation,
-  ]);
+    return; // viewedChat is now handled by TATour component
+  }, []);
 
   // V2: Single hook to fetch all attempt data with server-side computations
   const { data: attemptData, isLoading: isLoadingChats } =
