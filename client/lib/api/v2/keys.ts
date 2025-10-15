@@ -316,12 +316,6 @@ export const profileDetailBulkKeys = {
     [...profileDetailBulkKeys.all, { profileIds, currentProfileId }] as const,
 };
 
-export const profileSimulatableKeys = {
-  all: ["profile:v2:simulatable"] as const,
-  list: (profileId: string, departmentIds: string[]) =>
-    [...profileSimulatableKeys.all, { profileId, departmentIds }] as const,
-};
-
 export const profileContextKeys = {
   all: ["profile:v2:context"] as const,
   detail: (userId: string, effectiveProfileId: string, pathname: string) =>

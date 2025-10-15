@@ -44,14 +44,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCohortProfilesByProfileId } from "@/lib/api/v1/hooks/cohort_profiles";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
-import { Cohort } from "@/types";
-import { getSimulatableProfiles } from "@/utils/auth/get-simulatable-profiles";
 import { log } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
-import { useQuery } from "@tanstack/react-query";
 import {
   Brain,
   ChartBar,
@@ -205,69 +200,26 @@ export function UnifiedSidebar({
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Use the profile context
-  const { activeProfile, effectiveProfile, isLoading } = useProfile();
+  const {
+    activeProfile,
+    effectiveProfile,
+    isLoading,
+    cohorts,
+    simulatableProfiles,
+  } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
   const { update } = useSession();
-
-  // Get simulatable profiles for the dropdown
-  const { data: simulatableProfiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: [
-      "simulatableProfiles",
-      activeProfile?.id,
-      effectiveDepartmentIds,
-    ],
-    queryFn: () => getSimulatableProfiles(effectiveDepartmentIds),
-    enabled:
-      !!activeProfile &&
-      ["superadmin", "admin", "instructional"].includes(activeProfile.role),
-  });
-
-  const { data: cohorts } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-
-  // Extract stable profile ID to avoid complex dependency expressions
-  const stableProfileId = effectiveProfile?.id || "";
-
-  // Fetch cohort-profile junction data for the current profile
-  const { data: cohortProfiles = [] } =
-    useCohortProfilesByProfileId(stableProfileId);
 
   const getCohortSubItems = React.useMemo(() => {
     if (!cohorts || !effectiveProfile) return [];
 
-    let profileCohorts: Cohort[] = [];
-
-    switch (effectiveProfile.role) {
-      case "superadmin":
-      case "admin":
-        profileCohorts = cohorts;
-        break;
-      case "instructional":
-      case "ta":
-        if (effectiveProfile.defaultProfile) {
-          profileCohorts = cohorts;
-          break;
-        }
-        // Filter cohorts using junction table data
-        const cohortIds = cohortProfiles
-          .filter((cp) => cp.active)
-          .map((cp) => cp.cohortId);
-        profileCohorts = cohorts.filter((cohortData: Cohort) =>
-          cohortIds.includes(cohortData.id)
-        );
-        break;
-      default:
-        return [];
-    }
-
-    return profileCohorts.map((c: { id: string; title: string }) => ({
+    return cohorts.map((c: { id: string; title: string }) => ({
       title: c.title,
       url: `/cohorts/c/${c.id}`,
       section: `cohort-${c.id}`,
       isSubItem: true,
     }));
-  }, [cohorts, effectiveProfile, cohortProfiles]);
+  }, [cohorts, effectiveProfile]);
 
   // Create the final profile list for the dropdown, organized by priority
   const profileOptions = React.useMemo(() => {
@@ -778,45 +730,39 @@ export function UnifiedSidebar({
 
                   <DropdownMenuSeparator />
 
-                  {isLoadingProfiles ? (
-                    <DropdownMenuItem disabled>
-                      Loading profiles...
-                    </DropdownMenuItem>
-                  ) : (
-                    <div className="max-h-60 overflow-y-auto">
-                      {profileOptions.map((profile) => (
-                        <DropdownMenuItem
-                          key={profile.id}
-                          onSelect={() => handleProfileSelect(profile.id)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Avatar
-                              className="h-6 w-6 text-xs outline outline-muted-foreground"
-                              style={{
-                                outlineWidth: "1px",
-                                outlineStyle: "solid",
-                              }}
-                            >
-                              <AvatarFallback>
-                                {getInitials(
-                                  `${profile.firstName} ${profile.lastName}`
-                                )}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col leading-tight">
-                              <span>{`${profile.firstName} ${profile.lastName}`}</span>
-                              <span className="text-xs capitalize text-muted-foreground">
-                                {profile.role}
-                              </span>
-                            </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {profileOptions.map((profile) => (
+                      <DropdownMenuItem
+                        key={profile.id}
+                        onSelect={() => handleProfileSelect(profile.id)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar
+                            className="h-6 w-6 text-xs outline outline-muted-foreground"
+                            style={{
+                              outlineWidth: "1px",
+                              outlineStyle: "solid",
+                            }}
+                          >
+                            <AvatarFallback>
+                              {getInitials(
+                                `${profile.firstName} ${profile.lastName}`
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col leading-tight">
+                            <span>{`${profile.firstName} ${profile.lastName}`}</span>
+                            <span className="text-xs capitalize text-muted-foreground">
+                              {profile.role}
+                            </span>
                           </div>
-                          {profile.id === effectiveProfile.id && (
-                            <Check className="ml-auto size-4" />
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  )}
+                        </div>
+                        {profile.id === effectiveProfile.id && (
+                          <Check className="ml-auto size-4" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </SidebarMenuItem>

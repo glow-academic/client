@@ -9,7 +9,6 @@ import {
   profileDetailBulkKeys,
   profileDetailKeys,
   profileListKeys,
-  profileSimulatableKeys,
 } from "@/lib/api/v2/keys";
 import {
   AuthorizeEmulationRequest,
@@ -27,7 +26,6 @@ import {
   ProfileItem,
   ProfileListResponseSchema,
   ProfileSimpleDetailResponse,
-  SimulatableProfilesResponseSchema,
   UpdateProfileRequest,
   UpdateProfileResponseSchema,
   UpdateProfileSimpleRequest,
@@ -263,27 +261,6 @@ export function useUpdateProfileSimple() {
 // ============================================================================
 // EMULATION HOOKS
 // ============================================================================
-
-/**
- * Hook to fetch profiles that can be emulated by the current user.
- */
-export function useSimulatableProfiles(
-  profileId: string,
-  departmentIds: string[],
-  enabled = true
-) {
-  return useQuery({
-    queryKey: profileSimulatableKeys.list(profileId, departmentIds),
-    queryFn: async () => {
-      const res = await api<unknown>("/api/v2/profile/simulatable", {
-        method: "POST",
-        body: JSON.stringify({ profileId, departmentIds }),
-      });
-      return SimulatableProfilesResponseSchema.parse(res);
-    },
-    enabled: enabled && !!profileId && profileId !== "",
-  });
-}
 
 /**
  * Function to check if emulation is authorized (not a hook, used for one-time checks).

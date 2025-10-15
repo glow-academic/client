@@ -94,7 +94,7 @@ export default function RubricDetails({
           passPoints: 0,
           standard_groups: [], // Start with no standard groups
         });
-        
+
         if (data && data.rubricId) {
           toast.success("Rubric created successfully");
           // Redirect to the newly created rubric for editing
@@ -125,7 +125,9 @@ export default function RubricDetails({
       }
     } catch (error) {
       log.error("rubric.save.failed", {
-        message: isCreateMode ? "Error creating rubric" : "Error updating rubric",
+        message: isCreateMode
+          ? "Error creating rubric"
+          : "Error updating rubric",
         error,
         context: { component: "RubricDetails", rubricId },
       });
@@ -163,7 +165,9 @@ export default function RubricDetails({
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="text-2xl font-bold"
                   placeholder="Rubric Name"
-                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
+                  disabled={
+                    createRubricMutation.isPending || isUpdating || isReadonly
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -175,7 +179,9 @@ export default function RubricDetails({
                     handleInputChange("description", e.target.value)
                   }
                   placeholder="Rubric Description"
-                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
+                  disabled={
+                    createRubricMutation.isPending || isUpdating || isReadonly
+                  }
                 />
               </div>
 
@@ -191,7 +197,9 @@ export default function RubricDetails({
                     }
                     onSelect={(ids) => handleDepartmentChange(ids[0] || null)}
                     placeholder="Select department"
-                    disabled={createRubricMutation.isPending || isUpdating || isReadonly}
+                    disabled={
+                      createRubricMutation.isPending || isUpdating || isReadonly
+                    }
                     multiSelect={false}
                   />
                 </div>
@@ -203,7 +211,9 @@ export default function RubricDetails({
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
                   }
-                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
+                  disabled={
+                    createRubricMutation.isPending || isUpdating || isReadonly
+                  }
                 />
                 <Label htmlFor="active">Active</Label>
               </div>

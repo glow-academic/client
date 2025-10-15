@@ -9,8 +9,6 @@ from app.schemas.auth import (AuthorizeEmulationRequest,
                               AuthorizeEmulationResponse,
                               ProfileContextRequest, ProfileContextResponse,
                               ProfileDetailRequest, ProfileDetailResponse,
-                              SimulatableProfilesRequest,
-                              SimulatableProfilesResponse,
                               UpdateProfileRequest, UpdateProfileResponse)
 from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
@@ -195,24 +193,6 @@ async def update_profile_simple(
 # ============================================================================
 # EMULATION OPERATIONS (from auth)
 # ============================================================================
-
-
-@router.post("/simulatable", response_model=SimulatableProfilesResponse)
-async def get_simulatable_profiles(
-    request: SimulatableProfilesRequest,
-    db: Annotated[Session, Depends(get_session)],
-) -> SimulatableProfilesResponse:
-    """Get profiles that the requester can emulate."""
-    try:
-        repo = AuthRepository(db)
-        profiles = repo.get_simulatable_profiles(
-            request.profileId,
-            request.departmentIds,
-        )
-
-        return SimulatableProfilesResponse(profiles=profiles)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/authorize-emulation", response_model=AuthorizeEmulationResponse)

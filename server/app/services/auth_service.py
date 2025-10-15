@@ -241,6 +241,12 @@ class AuthService:
         # Resolve breadcrumbs
         breadcrumbs = self._resolve_breadcrumbs(pathname)
 
+        # Fetch simulatable profiles based on ACTUAL profile (not effective)
+        # This allows users to see who they can emulate based on their real permissions
+        simulatable_profiles = self.get_simulatable_profiles(
+            actual_profile_id, department_ids
+        )
+
         return ProfileContextResponse(
             actualProfile=actual_profile,
             effectiveProfile=effective_profile,
@@ -251,6 +257,7 @@ class AuthService:
             simulations=simulations,
             simulationIds=simulation_ids,
             breadcrumbs=breadcrumbs,
+            simulatableProfiles=simulatable_profiles,
         )
 
     def _get_profile_id_from_user_id(self, user_id: str) -> Optional[str]:

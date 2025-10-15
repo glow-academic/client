@@ -99,6 +99,7 @@ const LayoutContextResponseSchema = z.object({
   simulations: SimulationsDataSchema,
   simulationIds: z.array(z.string()),
   breadcrumbs: z.array(BreadcrumbItemSchema),
+  simulatableProfiles: z.array(ProfileItemSchema),
 });
 
 export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
@@ -146,6 +147,7 @@ interface ProfileContextType {
   simulationIds: string[];
   cohortMemberCounts: Record<string, number>;
   breadcrumbs: BreadcrumbItem[];
+  simulatableProfiles: ProfileItem[];
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -283,6 +285,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     simulationIds: layoutData?.simulationIds ?? [],
     cohortMemberCounts: layoutData?.cohorts.memberCounts ?? {},
     breadcrumbs: layoutData?.breadcrumbs ?? [],
+    simulatableProfiles: layoutData?.simulatableProfiles ?? [],
   };
 
   return (

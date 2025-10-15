@@ -253,23 +253,6 @@ export type UpdateProfileSimpleResponse = z.infer<
 // EMULATION OPERATIONS (from auth)
 // ============================================================================
 
-export const SimulatableProfilesRequestSchema = z.object({
-  profileId: z.string(),
-  departmentIds: z.array(z.string()),
-});
-
-export type SimulatableProfilesRequest = z.infer<
-  typeof SimulatableProfilesRequestSchema
->;
-
-export const SimulatableProfilesResponseSchema = z.object({
-  profiles: z.array(ProfileItemSchema),
-});
-
-export type SimulatableProfilesResponse = z.infer<
-  typeof SimulatableProfilesResponseSchema
->;
-
 export const AuthorizeEmulationRequestSchema = z.object({
   requesterProfileId: z.string(),
   targetProfileId: z.string(),

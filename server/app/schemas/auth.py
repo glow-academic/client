@@ -64,19 +64,6 @@ class UpdateProfileResponse(BaseModel):
 # ============================================================================
 
 
-class SimulatableProfilesRequest(BaseModel):
-    """Request to get profiles available for emulation."""
-
-    profileId: str
-    departmentIds: List[str]
-
-
-class SimulatableProfilesResponse(BaseModel):
-    """Response containing profiles that can be emulated."""
-
-    profiles: List[ProfileItem]
-
-
 class AuthorizeEmulationRequest(BaseModel):
     """Request to authorize emulation."""
 
@@ -174,4 +161,5 @@ class ProfileContextResponse(BaseModel):
     simulations: SimulationsData
     simulationIds: List[str]
     breadcrumbs: List[BreadcrumbItem]
+    simulatableProfiles: List[ProfileItem]
 

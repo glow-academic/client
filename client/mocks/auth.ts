@@ -67,10 +67,6 @@ vi.mock("@/utils/auth/get-profile-by-alias", () => ({
   getProfileByAlias: vi.fn().mockResolvedValue(mockProfile),
 }));
 
-vi.mock("@/utils/auth/get-simulatable-profiles", () => ({
-  getSimulatableProfiles: vi.fn().mockResolvedValue([mockProfile]),
-}));
-
 // --- Test Utilities ---
 // Note: These mocks are set up above with vi.mock(), so we can access them directly
 export const authMocks = {
