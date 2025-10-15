@@ -4,7 +4,6 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateAssistantChat } from "@/lib/api/v1/hooks/assistant_chats";
 import { useAssistantChatFull } from "@/lib/api/v2/hooks/assistant";
 import { AssistantChat, AssistantMessage, AssistantToolCall } from "@/types";
 import { log } from "@/utils/logger";
@@ -118,10 +117,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     () => (assistantData?.toolCalls || []) as AssistantToolCall[],
     [assistantData]
   );
-
-  // Create new chat mutation - only used for blank chats (startBlankChat/createNewChat)
-  // For message-initiated chats, the server creates the chat via WebSocket
-  const createChatMutation = useCreateAssistantChat();
 
   // Set up assistant-specific event listeners
   useEffect(() => {
@@ -256,60 +251,18 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     setCurrentChatId(chatId);
   }, []);
 
-  const startBlankChat = useCallback(async () => {
-    if (!activeProfile?.id) {
-      toast.error("Profile not found");
-      return;
-    }
-
-    try {
-      // Don't allow creating chats for guest profiles with invalid UUIDs
-      if (activeProfile.id === "guest-profile-id") {
-        throw new Error("Cannot create chats for guest profiles");
-      }
-      const newChat = await createChatMutation.mutateAsync({
-        profileId: activeProfile.id,
-        title: "New Chat",
-      });
-      if (newChat?.id) {
-        setCurrentChatId(newChat.id);
-      }
-    } catch (error) {
-      log.error("assistant.chat.create.failed", {
-        message: "Failed to create chat",
-        context: { component: "AssistantContext", function: "startBlankChat" },
-        error,
-      });
-      toast.error("Failed to create new chat");
-    }
-  }, [activeProfile?.id, createChatMutation]);
+  // Removed startBlankChat and createNewChat - all chat creation now happens
+  // server-side when user sends their first message via emitStartAssistant
+  const startBlankChat = useCallback(() => {
+    // Clear current chat to prepare for new chat (will be created on first message)
+    setCurrentChatId(undefined);
+  }, []);
 
   const createNewChat = useCallback(async (): Promise<string | null> => {
-    if (!activeProfile?.id) {
-      toast.error("Profile not found");
-      return null;
-    }
-
-    try {
-      // Don't allow creating chats for guest profiles with invalid UUIDs
-      if (activeProfile.id === "guest-profile-id") {
-        throw new Error("Cannot create chats for guest profiles");
-      }
-      const newChat = await createChatMutation.mutateAsync({
-        profileId: activeProfile.id,
-        title: "New Chat",
-      });
-      return newChat?.id || null;
-    } catch (error) {
-      log.error("assistant.chat.create.failed", {
-        message: "Failed to create chat",
-        context: { component: "AssistantContext", function: "createNewChat" },
-        error,
-      });
-      toast.error("Failed to create new chat");
-      return null;
-    }
-  }, [activeProfile?.id, createChatMutation]);
+    // Clear current chat to prepare for new chat (will be created on first message)
+    setCurrentChatId(undefined);
+    return null;
+  }, []);
 
   const sendMessage = useCallback(
     async (message: string) => {

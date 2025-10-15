@@ -87,16 +87,38 @@ export default function Practice() {
   const historyData = bundle?.history;
   const isHistoryLoading = isPracticeOverviewLoading;
 
+  // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
+  const personaMapping = useMemo(
+    () => bundle?.persona_mapping || {},
+    [bundle?.persona_mapping]
+  );
+  const scenarioMapping = useMemo(
+    () => bundle?.scenario_mapping || {},
+    [bundle?.scenario_mapping]
+  );
+  const parameterMapping = useMemo(
+    () => bundle?.parameter_mapping || {},
+    [bundle?.parameter_mapping]
+  );
+  const parameterItemMapping = useMemo(
+    () => bundle?.parameter_item_mapping || {},
+    [bundle?.parameter_item_mapping]
+  );
+  const simulationMapping = useMemo(
+    () => bundle?.simulation_mapping || {},
+    [bundle?.simulation_mapping]
+  );
+
   // Build simulations array from mapping
   const simulations = useMemo(
     () =>
-      Object.entries(bundle?.simulation_mapping || {}).map(([id, sim]) => ({
+      Object.entries(simulationMapping).map(([id, sim]) => ({
         id,
         title: sim.name,
         description: sim.description,
         departmentId: effectiveDepartmentIds[0] || "", // Use first department
       })),
-    [bundle?.simulation_mapping, effectiveDepartmentIds]
+    [simulationMapping, effectiveDepartmentIds]
   );
 
   // Use data directly from the hook
@@ -482,6 +504,11 @@ export default function Practice() {
         <PracticeCustomizeDialog
           open={customizeOpen}
           onClose={() => setCustomizeOpen(false)}
+          personaMapping={personaMapping}
+          scenarioMapping={scenarioMapping}
+          parameterMapping={parameterMapping}
+          parameterItemMapping={parameterItemMapping}
+          simulationMapping={simulationMapping}
           onStartAttempt={async (params) => {
             if (params.timeLimit) {
               // Infinite mode - use WebSocket

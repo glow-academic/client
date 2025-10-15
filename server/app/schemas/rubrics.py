@@ -1,6 +1,6 @@
 """Rubrics V2 API schemas with hierarchical structure."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -144,6 +144,16 @@ class StandardCreate(BaseModel):
     points: int
 
 
+class StandardUpdate(BaseModel):
+    """Standard update schema for incremental updates."""
+
+    id: Optional[str] = None  # Present for updates, None for creates
+    name: str
+    description: str
+    points: int
+    deleted: bool = False  # Mark for deletion
+
+
 class StandardGroupCreate(BaseModel):
     """Standard group creation schema with nested standards."""
 
@@ -153,6 +163,19 @@ class StandardGroupCreate(BaseModel):
     points: int
     passPoints: int
     standards: List[StandardCreate]
+
+
+class StandardGroupUpdate(BaseModel):
+    """Standard group update schema for incremental updates."""
+
+    id: Optional[str] = None  # Present for updates, None for creates
+    name: str
+    short_name: str
+    description: str
+    points: int
+    passPoints: int
+    standards: List[StandardUpdate]
+    deleted: bool = False  # Mark for deletion
 
 
 class CreateRubricRequest(BaseModel):
@@ -177,7 +200,7 @@ class CreateRubricResponse(BaseModel):
 
 
 class UpdateRubricRequest(BaseModel):
-    """Request to update rubric with nested structure."""
+    """Request to update rubric with nested structure and incremental updates."""
 
     rubricId: str
     name: str
@@ -185,16 +208,17 @@ class UpdateRubricRequest(BaseModel):
     department_id: str
     active: bool
     default_rubric: bool
-    points: int
-    passPoints: int
-    standard_groups: List[StandardGroupCreate]
+    standard_groups: List[StandardGroupUpdate]
+    # points and passPoints are auto-calculated by server
 
 
 class UpdateRubricResponse(BaseModel):
-    """Response from update rubric."""
+    """Response from update rubric with calculated points."""
 
     success: bool
     message: str
+    points: int  # Auto-calculated from standard groups
+    passPoints: int  # Auto-calculated from standard groups
 
 
 class DuplicateRubricRequest(BaseModel):

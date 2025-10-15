@@ -4,7 +4,13 @@
  */
 
 import { api } from "@/lib/api/fetcher";
-import { useQuery } from "@tanstack/react-query";
+import { simulationAttemptKeys } from "@/lib/api/v1/keys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRefreshAnalytics } from "./analytics";
+import {
+  BulkArchiveAttemptsRequest,
+  BulkArchiveAttemptsResponse,
+} from "../schemas/attempts";
 
 export interface AttemptFullResponse {
   attempt: {

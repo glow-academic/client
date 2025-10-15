@@ -34,6 +34,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    SkillPerformanceResponse)
 from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
+                              PersonaMapping, PersonaMappingItem,
                               RubricMapping, RubricMappingItem,
                               ScenarioMapping, ScenarioMappingItem,
                               SimulationMapping, SimulationMappingItem)
@@ -414,7 +415,7 @@ class AnalyticsService:
         return [AttemptHistoryRow.model_validate(row) for row in result]
 
     def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:
-        """Get practice overview data with history and simulation mapping."""
+        """Get practice overview data with history and all entity mappings."""
         # Get overview items
         query, params = self.page_queries.practice_overview(
             start_date=filters.startDate,
@@ -431,8 +432,12 @@ class AnalyticsService:
         # Fetch history data
         history = self.get_attempt_history(filters)
         
-        # Build simulation mapping
+        # Build all entity mappings
         simulation_mapping = self._build_simulation_mapping(filters)
+        persona_mapping = self._build_persona_mapping(filters)
+        scenario_mapping = self._build_scenario_mapping(filters)
+        parameter_mapping = self._build_parameter_mapping(filters)
+        parameter_item_mapping = self._build_parameter_item_mapping(filters)
         
         return PracticeOverviewResponse(
             mode=overview_data.get("mode", "practice"),
@@ -442,6 +447,10 @@ class AnalyticsService:
             standard_groups_mapping=overview_data.get("standard_groups_mapping", {}),
             standards_mapping=overview_data.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,
+            persona_mapping=persona_mapping,
+            scenario_mapping=scenario_mapping,
+            parameter_mapping=parameter_mapping,
+            parameter_item_mapping=parameter_item_mapping,
         )
 
     # Bundle Analytics
@@ -804,13 +813,14 @@ class AnalyticsService:
     def _build_simulation_mapping(
         self, filters: AnalyticsFilters
     ) -> SimulationMapping:
-        """Build simulation mapping from database."""
-        # Get all unique simulation IDs from the dashboard data
+        """Build simulation mapping from database - only practice simulations."""
+        # Get only practice simulations for the practice page
         query = text("""
             SELECT DISTINCT s.id, s.title, s.description
             FROM simulations s
             WHERE (:department_ids::uuid[] IS NULL OR s.department_id = ANY(:department_ids::uuid[]))
             AND s.active = true
+            AND s.practice_simulation = true
         """)
         params = {
             "department_ids": filters.departmentIds,
@@ -849,12 +859,13 @@ class AnalyticsService:
         }
 
     def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
-        """Build parameter mapping from database."""
+        """Build parameter mapping from database - only non-default parameters for customization."""
         query = text("""
             SELECT DISTINCT p.id, p.name, p.description
             FROM parameters p
             WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
             AND p.active = true
+            AND p.default_parameter = false
         """)
         params = {
             "department_ids": filters.departmentIds,
@@ -873,13 +884,15 @@ class AnalyticsService:
     def _build_parameter_item_mapping(
         self, filters: AnalyticsFilters
     ) -> ParameterItemMapping:
-        """Build parameter item mapping from database."""
+        """Build parameter item mapping from database - only default items for non-default parameters."""
         query = text("""
             SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON pi.parameter_id = p.id
             WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
             AND p.active = true
+            AND p.default_parameter = false
+            AND pi.default_item = true
         """)
         params = {
             "department_ids": filters.departmentIds,
@@ -893,6 +906,30 @@ class AnalyticsService:
                 description=row.description or "",
                 parameter_id=str(row.parameter_id),
                 parameter_name=row.parameter_name,
+            )
+            for row in results
+        }
+
+    def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
+        """Build persona mapping from database."""
+        query = text("""
+            SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon
+            FROM personas p
+            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            AND p.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): PersonaMappingItem(
+                name=row.name,
+                description=row.description or "",
+                color=row.color,
+                icon=row.icon,
             )
             for row in results
         }

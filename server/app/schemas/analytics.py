@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel
 
-from .base import (ParameterItemMapping, ParameterMapping, RubricMapping,
-                   ScenarioMapping, SimulationMapping, StandardGroupsMapping,
-                   StandardsMapping)
+from .base import (ParameterItemMapping, ParameterMapping, PersonaMapping,
+                   RubricMapping, ScenarioMapping, SimulationMapping,
+                   StandardGroupsMapping, StandardsMapping)
 
 
 # Enums
@@ -515,6 +515,10 @@ class PracticeOverviewResponse(BaseModel):
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
     simulation_mapping: SimulationMapping
+    persona_mapping: PersonaMapping
+    scenario_mapping: ScenarioMapping
+    parameter_mapping: ParameterMapping
+    parameter_item_mapping: ParameterItemMapping
 
 
 class AttemptHistoryRow(BaseModel):

@@ -14,20 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDepartments } from "@/contexts/departments-context";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import type {
-  Parameter,
-  ParameterItem,
-  Persona,
-  Profile,
-  Scenario,
-  Simulation,
-} from "@/types";
+  ParameterItemMapping,
+  ParameterMapping,
+  PersonaMapping,
+  ScenarioMapping,
+  SimulationMapping,
+} from "@/lib/api/v2/schemas/base";
+import type { Profile } from "@/types";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -43,6 +37,12 @@ interface PracticeCustomizeDialogProps {
   isStartingAttempt: boolean;
   effectiveProfile: Profile | null;
   activeProfile: Profile | null;
+  // Entity mappings from parent
+  personaMapping: PersonaMapping;
+  scenarioMapping: ScenarioMapping;
+  parameterMapping: ParameterMapping;
+  parameterItemMapping: ParameterItemMapping;
+  simulationMapping: SimulationMapping;
 }
 
 export function PracticeCustomizeDialog({
@@ -52,6 +52,11 @@ export function PracticeCustomizeDialog({
   isStartingAttempt,
   effectiveProfile,
   activeProfile,
+  personaMapping,
+  scenarioMapping,
+  parameterMapping,
+  parameterItemMapping,
+  simulationMapping,
 }: PracticeCustomizeDialogProps) {
   // State for the dialog
   const [isInfiniteMode, setIsInfiniteMode] = useState(false);
@@ -61,58 +66,38 @@ export function PracticeCustomizeDialog({
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
-  const { effectiveDepartmentIds } = useDepartments();
 
-  // API calls - only made when dialog is open
-  const { data: simulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
+  // Build valid IDs from mappings (server already filtered to relevant items)
+  const validSimulationIds = useMemo(
+    () => Object.keys(simulationMapping),
+    [simulationMapping]
   );
-  const { data: scenarios = [] } = useScenariosByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: parameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: parameterItems = [] } = useParameterItems();
 
-  // Only allow customizing non-default parameters and non-default items
-  const customParameters = useMemo(() => {
-    return (parameters as Parameter[]).filter(
-      (p) => p.defaultParameter === false
-    );
-  }, [parameters]);
+  const validPersonaIds = useMemo(
+    () => Object.keys(personaMapping),
+    [personaMapping]
+  );
 
-  const customParameterItems = useMemo(() => {
-    // Use ONLY default items, but only for the non-default parameters
-    const customParamIds = new Set(customParameters.map((p) => p.id));
-    return (parameterItems as ParameterItem[]).filter(
-      (pi) => pi.defaultItem === true && customParamIds.has(pi.parameterId)
-    );
-  }, [parameterItems, customParameters]);
+  // Build arrays from mappings for components that need them
+  const scenarios = useMemo(
+    () =>
+      Object.entries(scenarioMapping).map(([id, sc]) => ({
+        id,
+        name: sc.name,
+        defaultScenario: true, // Server filters to defaults
+        personaId: sc.persona_id,
+      })),
+    [scenarioMapping]
+  );
 
-  // Build persona mapping for PersonaPicker
-  const personaMapping = useMemo(() => {
-    const mapping: Record<
-      string,
-      { name: string; description: string; color: string; icon: string }
-    > = {};
-    (personas as Persona[]).forEach((p) => {
-      mapping[p.id] = {
+  const personas = useMemo(
+    () =>
+      Object.entries(personaMapping).map(([id, p]) => ({
+        id,
         name: p.name,
-        description: p.description,
-        color: p.color,
-        icon: p.icon,
-      };
-    });
-    return mapping;
-  }, [personas]);
-
-  const validPersonaIds = useMemo(() => {
-    return (personas as Persona[]).filter((p) => p.active).map((p) => p.id);
-  }, [personas]);
+      })),
+    [personaMapping]
+  );
 
   const handleStartAttempt = async () => {
     if (isInfiniteMode) {
@@ -136,36 +121,20 @@ export function PracticeCustomizeDialog({
         return;
       }
 
-      const selectedPersona = (personas as Persona[]).find(
-        (p) => p.id === selectedPersonaId
-      );
+      const selectedPersona = personas.find((p) => p.id === selectedPersonaId);
       if (!selectedPersona) {
         toast.error("Selected persona not found");
         return;
       }
 
-      // Find base default practice scenario for this persona via junction table
-      // Note: This requires querying scenario_personas junction
-      // For now, we'll use the simulation directly since practice sims are pre-linked
-      const baseScenario = (scenarios as Scenario[]).find(
-        (s) =>
-          s.defaultScenario === true &&
-          s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
+      // Find base default practice scenario for this persona
+      const baseScenario = scenarios.find((s) =>
+        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
       );
 
-      // Find simulation that includes the base scenario (prefer default+practice)
-      const targetSimulation =
-        (simulations as Simulation[]).find(
-          (sim) =>
-            (sim.scenarioIds || []).includes(baseScenario?.id || "") &&
-            sim.defaultSimulation === true &&
-            sim.practiceSimulation === true
-        ) ||
-        (simulations as Simulation[]).find((sim) =>
-          (sim.scenarioIds || []).includes(baseScenario?.id || "")
-        );
-
-      if (!targetSimulation) {
+      // Use first available practice simulation (server filtered to practice only)
+      const firstSimulationId = validSimulationIds[0];
+      if (!firstSimulationId || !baseScenario) {
         toast.error(
           `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
         );
@@ -173,7 +142,7 @@ export function PracticeCustomizeDialog({
       }
 
       onStartAttempt({
-        simulationId: targetSimulation.id,
+        simulationId: firstSimulationId,
         personaId: selectedPersona.id,
         parameterItemIds: selectedParameterItemIds,
       });
@@ -212,37 +181,20 @@ export function PracticeCustomizeDialog({
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <SimulationPicker
-                  simulations={(simulations as Simulation[])
-                    .filter((sim) => sim.practiceSimulation === true)
-                    .map((sim) => ({
-                      ...sim,
-                      timeLimit: sim.timeLimit || undefined,
-                    }))}
+                  simulationMapping={simulationMapping}
+                  validSimulationIds={validSimulationIds}
+                  selectedSimulationIds={
+                    selectedSimulationId ? [selectedSimulationId] : []
+                  }
+                  onSelect={(ids) => {
+                    setSelectedSimulationId(ids[0] || "");
+                  }}
+                  multiSelect={false}
                   label="Start Simulation"
                   placeholder="Choose a practice simulation"
                   description="Select a practice simulation to start in infinite mode."
-                  onSelect={(selectedSims) => {
-                    if (selectedSims.length > 0) {
-                      setSelectedSimulationId(selectedSims[0]!.id);
-                    } else {
-                      setSelectedSimulationId("");
-                    }
-                  }}
-                  selectedSimulations={
-                    selectedSimulationId
-                      ? (simulations as Simulation[])
-                          .filter((sim) => sim.id === selectedSimulationId)
-                          .map((sim) => ({
-                            ...sim,
-                            timeLimit: sim.timeLimit || undefined,
-                          }))
-                      : []
-                  }
-                  showPracticeSimulations={true}
-                  showOnlyActive={false}
                   hideSelectedChips={true}
                   showLabel={true}
-                  singleSelect={true}
                 />
               </div>
               <div className="grid gap-2">
@@ -275,8 +227,9 @@ export function PracticeCustomizeDialog({
               </div>
               <div className="grid gap-2">
                 <ParameterSelector
-                  parameters={customParameters}
-                  parameterItems={customParameterItems}
+                  parameterMapping={parameterMapping}
+                  parameterItemMapping={parameterItemMapping}
+                  validParameterItemIds={Object.keys(parameterItemMapping)}
                   selectedParameterItemIds={selectedParameterItemIds}
                   onParameterItemIdsChange={setSelectedParameterItemIds}
                 />

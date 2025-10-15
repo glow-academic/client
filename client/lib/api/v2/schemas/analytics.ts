@@ -9,6 +9,7 @@ import { z } from "zod";
 import {
   ParameterItemMappingSchema,
   ParameterMappingSchema,
+  PersonaMappingSchema,
   RubricMappingSchema,
   ScenarioMappingSchema,
   SimulationMappingSchema,
@@ -522,6 +523,10 @@ export const PracticeOverviewResponseSchema = z.object({
   standard_groups_mapping: StandardGroupsMappingSchema,
   standards_mapping: StandardsMappingSchema,
   simulation_mapping: SimulationMappingSchema,
+  persona_mapping: PersonaMappingSchema,
+  scenario_mapping: ScenarioMappingSchema,
+  parameter_mapping: ParameterMappingSchema,
+  parameter_item_mapping: ParameterItemMappingSchema,
 });
 
 export type PracticeOverviewResponse = z.infer<
