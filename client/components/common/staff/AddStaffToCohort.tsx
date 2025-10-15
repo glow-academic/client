@@ -229,12 +229,15 @@ export default function AddStaffToCohort({
               await addProfilesToCohortMutation.mutateAsync({
                 cohortId,
                 departmentIds: effectiveDepartmentIds,
-                existingProfileIds: existingIds.length > 0 ? existingIds : undefined,
+                existingProfileIds:
+                  existingIds.length > 0 ? existingIds : undefined,
                 newProfiles: newProfiles.length > 0 ? newProfiles : undefined,
               });
 
               const total = existingIds.length + newProfiles.length;
-              toast.success(`Successfully added ${total} profile(s) to cohort.`);
+              toast.success(
+                `Successfully added ${total} profile(s) to cohort.`
+              );
             } catch (error) {
               toast.error("Failed to add profiles to cohort.");
               log.error("cohort.add_profiles.failed", {
