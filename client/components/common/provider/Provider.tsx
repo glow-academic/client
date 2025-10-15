@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -309,14 +309,17 @@ export default function Provider({ providerId }: ProviderProps) {
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             {formData?.departmentId !== undefined && !isLoading ? (
-              <DepartmentSelector
-                departmentMapping={providerDetail?.department_mapping || {}}
-                selectedDepartmentId={formData?.departmentId || ""}
-                validDepartmentIds={providerDetail?.valid_department_ids || []}
-                onSelect={(departmentId) =>
-                  handleInputChange("departmentId", departmentId || "")
+              <DepartmentPicker
+                mapping={providerDetail?.department_mapping || {}}
+                validIds={providerDetail?.valid_department_ids || []}
+                selectedIds={
+                  formData?.departmentId ? [formData.departmentId] : []
+                }
+                onSelect={(ids) =>
+                  handleInputChange("departmentId", ids[0] || "")
                 }
                 placeholder="Select department"
+                multiSelect={false}
               />
             ) : (
               <Skeleton className="h-10 w-full" />

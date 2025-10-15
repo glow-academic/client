@@ -2,22 +2,92 @@
  * Profile Context for managing the active user profile and simulation across the application.
  * This provides a centralized way to manage profile switching and ensures
  * all components stay in sync with the effective user's data (ID, role, name, etc.).
+ *
+ * Now also provides departments, cohorts, and breadcrumbs from a single data source.
  */
 "use client";
 
-import { ProfileItem, useProfileV2 } from "@/lib/api/v2/hooks/auth";
+import { api } from "@/lib/api/fetcher";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
   isSectionAvailableForRole,
 } from "@/utils/navigation-utils";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
+import { z } from "zod";
 
 type Profile = typeof profiles.$inferSelect;
 type ProfileRole = Profile["role"];
+
+// ============================================================================
+// INTERNAL TYPES (for consolidated API)
+// ============================================================================
+
+const ProfileItemSchema = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.enum(["superadmin", "admin", "instructional", "ta", "guest"]),
+  active: z.boolean(),
+  viewedIntro: z.boolean(),
+  viewedChat: z.boolean(),
+  defaultProfile: z.boolean(),
+  reqPerDay: z.number().nullable(),
+  lastLogin: z.string(),
+  lastActive: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const DepartmentItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional().nullable(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const CohortItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional().nullable(),
+  departmentId: z.string(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const BreadcrumbItemSchema = z.object({
+  segment: z.string(),
+  title: z.string(),
+  context: z.string().optional().nullable(),
+});
+
+const CohortsDataSchema = z.object({
+  items: z.array(CohortItemSchema),
+  memberCounts: z.record(z.string(), z.number()),
+});
+
+const LayoutContextResponseSchema = z.object({
+  actualProfile: ProfileItemSchema,
+  effectiveProfile: ProfileItemSchema,
+  departments: z.array(DepartmentItemSchema),
+  departmentIds: z.array(z.string()),
+  cohorts: CohortsDataSchema,
+  cohortIds: z.array(z.string()),
+  breadcrumbs: z.array(BreadcrumbItemSchema),
+});
+
+export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
+export type ProfileItem = z.infer<typeof ProfileItemSchema>;
+export type DepartmentItem = z.infer<typeof DepartmentItemSchema>;
+export type CohortItem = z.infer<typeof CohortItemSchema>;
 
 // A generic, fallback guest profile for when no user is logged in or during loading states.
 const GUEST_PROFILE: Profile = {
@@ -38,13 +108,24 @@ const GUEST_PROFILE: Profile = {
 };
 
 interface ProfileContextType {
+  // Profile data
   activeProfile: ProfileItem | null;
   simulatedProfile: Profile | null;
   effectiveProfile: Profile | null;
   isSimulating: boolean;
   isLoading: boolean;
+
+  // Helper functions
   navigateToDefault: (role: ProfileRole) => void;
   isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
+
+  // Layout data (from useLayoutContext)
+  departments: DepartmentItem[];
+  departmentIds: string[];
+  cohorts: CohortItem[];
+  cohortIds: string[];
+  cohortMemberCounts: Record<string, number>;
+  breadcrumbs: BreadcrumbItem[];
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -59,32 +140,36 @@ export const useProfile = () => {
 
 interface ProfileProviderProps {
   children: React.ReactNode;
-  activeProfile: ProfileItem | null;
-  isProfileLoading?: boolean;
 }
 
-export function ProfileProvider({
-  children,
-  activeProfile: bootstrapProfile, // server-provided profile of the signed-in user (or null)
-  isProfileLoading = false,
-}: ProfileProviderProps) {
+export function ProfileProvider({ children }: ProfileProviderProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
-  const effectiveId =
-    session?.effectiveProfileId ??
-    session?.user?.profileId ??
-    bootstrapProfile?.id ??
-    null;
+  // Internal hook: Get ALL data from consolidated API (single source of truth!)
+  const userId = session?.user?.id ?? "";
+  const effectiveProfileId = session?.effectiveProfileId ?? "";
 
-  const { data: profileResponse, isLoading: isEffLoading } = useProfileV2(
-    effectiveId || "",
-    !!effectiveId && effectiveId !== "guest-profile-id"
-  );
+  const { data: layoutData, isLoading: layoutLoading } = useQuery({
+    queryKey: ["v2", "layout", "context", userId, effectiveProfileId, pathname],
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/auth/profile-context", {
+        method: "POST",
+        body: JSON.stringify({
+          userId,
+          effectiveProfileId,
+          pathname: pathname ?? "/",
+        }),
+      });
+      return LayoutContextResponseSchema.parse(res);
+    },
+    enabled: !!userId && !!effectiveProfileId,
+    staleTime: 5 * 60 * 1000, // 5 minutes default
+  });
 
-  // Extract profile from v2 response format
-  const effectiveProfile = profileResponse?.profile;
+  const bootstrapProfile = layoutData?.actualProfile ?? null;
+  const effectiveProfile = layoutData?.effectiveProfile ?? null;
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
@@ -104,7 +189,7 @@ export function ProfileProvider({
 
   const resolvedActiveProfile = useMemo<Profile | null>(() => {
     // When authenticated but no effective fetched yet, show null/loading
-    if (status === "loading" || isProfileLoading || isEffLoading) return null;
+    if (status === "loading" || layoutLoading) return null;
     // If not authenticated at all, fallback to guest
     if (status === "unauthenticated" && !bootstrapProfile) return GUEST_PROFILE;
 
@@ -119,8 +204,7 @@ export function ProfileProvider({
     }
   }, [
     status,
-    isProfileLoading,
-    isEffLoading,
+    layoutLoading,
     bootstrapProfile,
     effectiveProfile,
     isFullEmulation,
@@ -154,6 +238,7 @@ export function ProfileProvider({
   );
 
   const value: ProfileContextType = {
+    // Profile data
     activeProfile: resolvedActiveProfile,
     simulatedProfile,
     effectiveProfile:
@@ -163,9 +248,19 @@ export function ProfileProvider({
       effectiveProfile &&
       effectiveProfile.id !== bootstrapProfile.id
     ),
-    isLoading: status === "loading" || isProfileLoading || isEffLoading,
+    isLoading: status === "loading" || layoutLoading,
+
+    // Helper functions
     navigateToDefault,
     isSectionAvailable,
+
+    // Layout data (from useLayoutContext)
+    departments: layoutData?.departments ?? [],
+    departmentIds: layoutData?.departmentIds ?? [],
+    cohorts: layoutData?.cohorts.items ?? [],
+    cohortIds: layoutData?.cohortIds ?? [],
+    cohortMemberCounts: layoutData?.cohorts.memberCounts ?? {},
+    breadcrumbs: layoutData?.breadcrumbs ?? [],
   };
 
   return (

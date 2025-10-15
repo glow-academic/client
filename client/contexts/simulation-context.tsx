@@ -415,7 +415,7 @@ export function SimulationProvider({
 
   // Update simulation ref when simulation changes
   useEffect(() => {
-    simulationRef.current = (simulation as any) || null;
+    simulationRef.current = (simulation as Simulation) || null;
   }, [simulation]);
 
   // Check if timer expired and finish simulation
@@ -1085,8 +1085,8 @@ export function SimulationProvider({
   const value: SimulationContextType = {
     // Data (from v2)
     attemptId,
-    attempt: attempt as any,
-    simulation: simulation as any,
+    attempt: attempt,
+    simulation: simulation,
     scenario: scenario as any,
     documents: documents as any,
     scenarioDocuments: scenarioDocuments as any,

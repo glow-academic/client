@@ -1,6 +1,6 @@
 """Auth V2 API schemas for profile and emulation operations."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -90,4 +90,67 @@ class AuthorizeEmulationResponse(BaseModel):
 
     allowed: bool
     reason: Optional[str] = None
+
+
+# ============================================================================
+# PROFILE CONTEXT OPERATIONS (Consolidated Layout Data)
+# ============================================================================
+
+
+class ProfileContextRequest(BaseModel):
+    """Request to get consolidated profile context."""
+
+    userId: str
+    effectiveProfileId: str
+    pathname: str
+
+
+class BreadcrumbItem(BaseModel):
+    """Breadcrumb item with resolved title."""
+
+    segment: str
+    title: str
+    context: Optional[str] = None
+
+
+class CohortItem(BaseModel):
+    """Cohort item."""
+
+    id: str
+    title: str
+    description: Optional[str] = None
+    departmentId: str
+    active: bool
+    createdAt: str
+    updatedAt: str
+
+
+class DepartmentItem(BaseModel):
+    """Department item."""
+
+    id: str
+    title: str
+    description: Optional[str] = None
+    active: bool
+    createdAt: str
+    updatedAt: str
+
+
+class CohortsData(BaseModel):
+    """Cohorts data with member counts."""
+
+    items: List[CohortItem]
+    memberCounts: Dict[str, int]
+
+
+class ProfileContextResponse(BaseModel):
+    """Response with consolidated profile context data."""
+
+    actualProfile: ProfileItem
+    effectiveProfile: ProfileItem
+    departments: List[DepartmentItem]
+    departmentIds: List[str]
+    cohorts: CohortsData
+    cohortIds: List[str]
+    breadcrumbs: List[BreadcrumbItem]
 

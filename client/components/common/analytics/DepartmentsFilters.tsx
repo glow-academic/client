@@ -8,19 +8,21 @@
 "use client";
 
 import { DepartmentSelector } from "@/components/common/analytics/DepartmentSelector";
-import { useDepartments as useDepartmentsContext } from "@/contexts/departments-context";
-import { useDepartments } from "@/lib/api/v1/hooks/departments";
+import { useProfile } from "@/contexts/profile-context";
+import { useState } from "react";
 
 export function DepartmentsFilters() {
-  const { selectedDepartmentIds, setSelectedDepartmentIds } =
-    useDepartmentsContext();
+  // Local state for selected department IDs (filtering)
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
+    []
+  );
 
-  const { data: departments = [] } = useDepartments();
+  const { departments } = useProfile();
 
   // Convert departments to the format expected by DepartmentPicker
   const departmentOptions = departments.map((department) => ({
     id: department.id,
-    title: department.title as string,
+    title: department.title,
     ...(department.description && { description: department.description }),
   }));
 

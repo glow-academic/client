@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,36 +27,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
-  useCohortProfilesByCohortId,
-  useCreateCohortProfile,
-} from "@/lib/api/v1/hooks/cohort_profiles";
-import {
-  useCohortSimulationsByCohortId,
-  useCreateCohortSimulation,
-} from "@/lib/api/v1/hooks/cohort_simulations";
-import {
-  useCohortsByDepartmentIdBatch,
+  useCohortDetail,
+  useCohortDetailDefault,
   useCreateCohort,
   useUpdateCohort,
-} from "@/lib/api/v1/hooks/cohorts";
-import { useDepartments as useDepartmentsHook } from "@/lib/api/v1/hooks/departments";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { usePersonasByDepartmentIdBatch } from "@/lib/api/v1/hooks/personas";
-import { useProfilesByDepartmentIdBatch } from "@/lib/api/v1/hooks/profiles";
-import { useScenariosByDepartmentIdBatch } from "@/lib/api/v1/hooks/scenarios";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
-import { Cohort as CohortType, Profile, Simulation } from "@/types";
+} from "@/lib/api/v2/hooks/cohorts";
+import { Cohort as CohortType, Profile, ProfileRole } from "@/types";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  SimulationPicker,
-  Simulation as SimulationPickerType,
-} from "./SimulationPicker";
+import { SimulationPicker } from "./SimulationPicker";
 import CohortStaff from "./staff/CohortStaff";
 
 export interface CohortProps {
@@ -124,224 +106,118 @@ export default function Cohort({ cohortId }: CohortProps) {
     setProfilesToDelete(profileIds);
   }, []);
 
-  // Fetch cohorts for the list mode
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
+  // V2 API hooks
+  const { data: cohortDetail, isLoading: isLoadingCohortDetail } =
+    useCohortDetail(
+      cohortId || "",
+      effectiveProfile?.id || "",
+      !!cohortId && isEditMode
+    );
 
-  const { data: profiles = [], isLoading: isLoadingProfiles } =
-    useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
+  const { data: cohortDetailDefault, isLoading: isLoadingCohortDefault } =
+    useCohortDetailDefault(effectiveProfile?.id || "", !isEditMode);
 
-  const { data: simulations = [], isLoading: isLoadingSimulations } =
-    useSimulationsByDepartmentIdBatch(effectiveDepartmentIds);
-
-  const { data: scenarios = [], isLoading: isLoadingScenarios } =
-    useScenariosByDepartmentIdBatch(effectiveDepartmentIds);
-
-  const { data: parameters = [], isLoading: isLoadingParameters } =
-    useParametersByDepartmentIdBatch(effectiveDepartmentIds);
-
-  const { data: parameterItems = [], isLoading: isLoadingParameterItems } =
-    useParameterItems();
-
-  const { data: personas = [] } = usePersonasByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-
-  const { data: departments = [] } = useDepartmentsHook();
+  // Use edit detail when editing, default detail when creating
+  const cohortData = isEditMode ? cohortDetail : cohortDetailDefault;
+  const isLoadingData = isEditMode
+    ? isLoadingCohortDetail
+    : isLoadingCohortDefault;
 
   // Mutation hooks
   const createCohortMutation = useCreateCohort();
   const updateCohortMutation = useUpdateCohort();
-  const createCohortProfileMutation = useCreateCohortProfile();
-  const createCohortSimulationMutation = useCreateCohortSimulation();
-
-  // Load linked data from junction tables
-  const { data: linkedProfiles = [] } = useCohortProfilesByCohortId(
-    cohortId || ""
-  );
-  const { data: linkedSimulations = [] } = useCohortSimulationsByCohortId(
-    cohortId || ""
-  );
 
   // State for junction data
   const [currentSimulationIds, setCurrentSimulationIds] = useState<string[]>(
     []
   );
 
-  React.useEffect(() => {
-    if (linkedSimulations.length > 0) {
-      setCurrentSimulationIds(linkedSimulations.map((ls) => ls.simulationId));
+  const isLoading = isLoadingData;
+
+  // Readonly logic using v2 permission flags
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !cohortData) return false;
+    // V2 API doesn't return explicit can_edit flag in detail response
+    // Infer from default_cohort and user role
+    const isDefaultCohort = cohortData.default_cohort;
+    if (isDefaultCohort && effectiveProfile?.role !== "superadmin") {
+      return true; // Only superadmins can edit default cohorts
     }
-  }, [linkedSimulations]);
+    return false; // Otherwise editable (permissions handled server-side)
+  }, [isEditMode, cohortData, effectiveProfile?.role]);
 
-  const isLoading =
-    isLoadingProfiles ||
-    isLoadingSimulations ||
-    isLoadingScenarios ||
-    isLoadingParameters ||
-    isLoadingParameterItems;
+  // Handle simulation selection from picker (V2 uses IDs directly)
+  const handleSimulationSelection = useCallback((simulationIds: string[]) => {
+    setCurrentSimulationIds(simulationIds);
+  }, []);
 
-  // Readonly logic similar to scenarios
-  const currentCohort = useMemo(() => {
-    const targetCohortId = cohortId || editingCohortId;
-    if (!targetCohortId) return null;
-    return cohorts.find((c: CohortType) => c.id === targetCohortId) || null;
-  }, [cohortId, editingCohortId, cohorts]);
-
-  const isCohortInUse = useCallback(
-    (c?: CohortType | null) => {
-      const target = c ?? currentCohort;
-      if (!target) return false;
-      // Check if cohort has linked profiles via junction table
-      const cohortProfileLinks = linkedProfiles.filter(
-        (lp) => lp.cohortId === target.id
-      );
-      return cohortProfileLinks.length > 0;
-    },
-    [currentCohort, linkedProfiles]
-  );
-
-  const canEditThisCohort = useMemo(() => {
-    if (!isEditMode) return true; // creating new is editable
-    if (!currentCohort) return false;
-
-    const isAdmin =
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin";
-
-    // Only superadmins can edit default cohorts
-    if (
-      currentCohort.defaultCohort &&
-      effectiveProfile?.role !== "superadmin"
-    ) {
-      return false;
-    }
-
-    if (isAdmin) return true;
-
-    // Check if user is in cohort via junction table
-    const isUserInCohort = linkedProfiles.some(
-      (lp) =>
-        lp.cohortId === currentCohort.id &&
-        lp.profileId === effectiveProfile?.id
-    );
-
-    return isUserInCohort || !isCohortInUse(currentCohort);
-  }, [
-    isEditMode,
-    currentCohort,
-    effectiveProfile?.role,
-    effectiveProfile?.id,
-    isCohortInUse,
-    linkedProfiles,
-  ]);
-
-  const isReadonly = isEditMode ? !canEditThisCohort : false;
-
-  // Transform simulations to match SimulationPicker interface
-  const transformedSimulations: SimulationPickerType[] = useMemo(() => {
-    return simulations.map((sim) => ({
-      id: sim.id,
-      title: sim.title,
-      description: sim.description,
-      timeLimit: sim.timeLimit || undefined,
-      active: sim.active,
-      defaultSimulation: sim.defaultSimulation,
-      practiceSimulation: sim.practiceSimulation,
-      scenarioIds: [], // Managed via simulation_scenarios junction
-      updatedAt: sim.updatedAt,
-    }));
-  }, [simulations]);
-
-  // Compute selected simulations from current state
-  const selectedSimulations = useMemo(() => {
-    if (currentSimulationIds.length === 0 || simulations.length === 0) {
-      return [];
-    }
-    return transformedSimulations.filter((sim) =>
-      currentSimulationIds.includes(sim.id)
-    );
-  }, [currentSimulationIds, transformedSimulations, simulations.length]);
-
-  // Handle simulation selection from picker
-  const handleSimulationSelection = useCallback(
-    (selectedSims: SimulationPickerType[]) => {
-      const simulationIds = selectedSims.map((sim) => sim.id);
-      setCurrentSimulationIds(simulationIds);
-    },
-    []
-  );
-
-  // Load cohort data if editing
+  // Load cohort data from V2 API response
   useEffect(() => {
-    const targetCohortId = cohortId || editingCohortId;
-    if (
-      targetCohortId &&
-      cohorts.length > 0 &&
-      profiles.length > 0 &&
-      isEditMode
-    ) {
-      const cohortToEdit = cohorts.find(
-        (c: CohortType) => c.id === targetCohortId
+    if (cohortData && isEditMode) {
+      const cohortFormData = {
+        title: cohortData.title || "",
+        description: cohortData.description || "",
+        active: cohortData.active ?? true,
+        defaultCohort: cohortData.default_cohort ?? false,
+        departmentId: cohortData.department_id,
+      };
+
+      // Only update if the data has actually changed to prevent infinite loops
+      setFormData((prev) => {
+        const hasChanged =
+          prev.title !== cohortFormData.title ||
+          prev.description !== cohortFormData.description ||
+          prev.active !== cohortFormData.active ||
+          prev.defaultCohort !== cohortFormData.defaultCohort ||
+          prev.departmentId !== cohortFormData.departmentId;
+
+        return hasChanged ? cohortFormData : prev;
+      });
+
+      setOriginalFormData((prev) => {
+        const hasChanged =
+          prev.title !== cohortFormData.title ||
+          prev.description !== cohortFormData.description ||
+          prev.active !== cohortFormData.active ||
+          prev.defaultCohort !== cohortFormData.defaultCohort ||
+          prev.departmentId !== cohortFormData.departmentId;
+
+        return hasChanged ? cohortFormData : prev;
+      });
+
+      // Load simulation IDs
+      setCurrentSimulationIds((prev) => {
+        const newIds = cohortData.simulation_ids;
+        const hasChanged =
+          JSON.stringify(prev.sort()) !== JSON.stringify(newIds.sort());
+        return hasChanged ? newIds : prev;
+      });
+
+      // Load staff profiles from profile_ids
+      // Build EditableProfile array from profile_mapping
+      const cohortProfiles: EditableProfile[] = cohortData.profile_ids.map(
+        (profileId) => {
+          const profileInfo = cohortData.profile_mapping[profileId];
+          return {
+            id: profileId,
+            firstName: profileInfo?.name || "",
+            lastName: "",
+            alias: profileInfo?.name || "",
+            role: "student" as ProfileRole,
+          } as Profile;
+        }
       );
-      if (cohortToEdit) {
-        const cohortData = {
-          title: cohortToEdit.title || "",
-          description: cohortToEdit.description || "",
-          active: cohortToEdit.active ?? true,
-          defaultCohort: cohortToEdit.defaultCohort ?? false,
-          departmentId: cohortToEdit.departmentId,
-        };
 
-        // Only update if the data has actually changed to prevent infinite loops
-        setFormData((prev) => {
-          const hasChanged =
-            prev.title !== cohortData.title ||
-            prev.description !== cohortData.description ||
-            prev.active !== cohortData.active ||
-            prev.defaultCohort !== cohortData.defaultCohort ||
-            prev.departmentId !== cohortData.departmentId;
+      setStaffProfiles((prev) => {
+        const hasChanged =
+          prev.length !== cohortProfiles.length ||
+          JSON.stringify(prev.map((p) => p.id).sort()) !==
+            JSON.stringify(cohortProfiles.map((p) => p.id).sort());
 
-          return hasChanged ? cohortData : prev;
-        });
-
-        setOriginalFormData((prev) => {
-          const hasChanged =
-            prev.title !== cohortData.title ||
-            prev.description !== cohortData.description ||
-            prev.active !== cohortData.active ||
-            prev.defaultCohort !== cohortData.defaultCohort ||
-            prev.departmentId !== cohortData.departmentId;
-
-          return hasChanged ? cohortData : prev;
-        });
-
-        // Load staff profiles from junction table
-        const profileIds = linkedProfiles.map((lp) => lp.profileId);
-        const cohortProfiles = profiles.filter((profile: Profile) =>
-          profileIds.includes(profile.id)
-        );
-
-        setStaffProfiles((prev) => {
-          const hasChanged =
-            prev.length !== cohortProfiles.length ||
-            JSON.stringify(prev.map((p) => p.id).sort()) !==
-              JSON.stringify(cohortProfiles.map((p) => p.id).sort());
-
-          return hasChanged ? cohortProfiles : prev;
-        });
-      }
+        return hasChanged ? cohortProfiles : prev;
+      });
     }
-  }, [
-    cohortId,
-    editingCohortId,
-    cohorts,
-    profiles,
-    simulations.length,
-    isEditMode,
-    linkedProfiles,
-  ]);
+  }, [cohortData, isEditMode]);
 
   // Auto-fill current user for instructional users when creating a new cohort
   useEffect(() => {
@@ -349,13 +225,19 @@ export default function Cohort({ cohortId }: CohortProps) {
       !isEditMode &&
       effectiveProfile?.role === "instructional" &&
       effectiveProfile?.id &&
-      profiles.length > 0 &&
-      staffProfiles.length === 0
+      staffProfiles.length === 0 &&
+      cohortData?.valid_profile_ids
     ) {
-      const currentUserProfile = profiles.find(
-        (profile: Profile) => profile.id === effectiveProfile.id
-      );
-      if (currentUserProfile) {
+      // Create profile from cohortData mapping if user is in valid list
+      if (cohortData.valid_profile_ids.includes(effectiveProfile.id)) {
+        const profileInfo = cohortData.profile_mapping[effectiveProfile.id];
+        const currentUserProfile: Profile = {
+          id: effectiveProfile.id,
+          firstName: profileInfo?.name || "",
+          lastName: "",
+          alias: profileInfo?.name || "",
+          role: effectiveProfile.role,
+        } as Profile;
         setStaffProfiles([currentUserProfile]);
       }
     }
@@ -363,7 +245,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     isEditMode,
     effectiveProfile?.role,
     effectiveProfile?.id,
-    profiles,
+    cohortData?.valid_profile_ids,
+    cohortData?.profile_mapping,
     staffProfiles.length,
   ]);
 
@@ -374,10 +257,9 @@ export default function Cohort({ cohortId }: CohortProps) {
     const current = formData;
     const original = originalFormData;
 
-    // Get original simulation IDs from junction table
-    const originalSimulationIds = linkedSimulations
-      .sort((a, b) => a.simulationId.localeCompare(b.simulationId))
-      .map((ls) => ls.simulationId);
+    // Get original simulation IDs from cohortData
+    const originalSimulationIds = cohortData?.simulation_ids || [];
+    const originalProfileIds = cohortData?.profile_ids || [];
 
     return (
       current.title !== original.title ||
@@ -386,8 +268,8 @@ export default function Cohort({ cohortId }: CohortProps) {
       current.defaultCohort !== original.defaultCohort ||
       current.departmentId !== original.departmentId ||
       JSON.stringify([...currentSimulationIds].sort()) !==
-        JSON.stringify(originalSimulationIds) ||
-      staffProfiles.length !== linkedProfiles.length ||
+        JSON.stringify(originalSimulationIds.sort()) ||
+      staffProfiles.length !== originalProfileIds.length ||
       profilesToDelete.length > 0
     );
   }, [
@@ -397,8 +279,8 @@ export default function Cohort({ cohortId }: CohortProps) {
     staffProfiles,
     profilesToDelete,
     currentSimulationIds,
-    linkedSimulations,
-    linkedProfiles,
+    cohortData?.simulation_ids,
+    cohortData?.profile_ids,
   ]);
 
   const handleInputChange = (
@@ -499,53 +381,32 @@ export default function Cohort({ cohortId }: CohortProps) {
 
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
-        // UPDATE mode - just update cohort metadata
+        // UPDATE mode - V2 API handles junction tables
         await updateCohortMutation.mutateAsync({
-          id: targetCohortId,
+          cohortId: targetCohortId,
           title: formData.title || "",
           description: formData.description || "",
-          departmentId:
+          department_id:
             formData.departmentId || effectiveDepartmentIds[0] || "",
           active: formData.active ?? true,
-          defaultCohort: formData.defaultCohort ?? false,
-          updatedAt: new Date().toISOString(),
+          default_cohort: formData.defaultCohort ?? false,
+          simulation_ids: currentSimulationIds,
+          profile_ids: profileIds,
         });
-
-        // TODO: Add batch update endpoints for junction tables
-        // For now, junction records are managed via the staff component
 
         toast.success("Cohort updated successfully!");
       } else {
-        // CREATE mode - create cohort first, then junction records
-        const newCohort = await createCohortMutation.mutateAsync({
+        // CREATE mode - V2 API handles junction tables
+        await createCohortMutation.mutateAsync({
           title: formData.title || "",
           description: formData.description || "",
-          departmentId:
+          department_id:
             formData.departmentId || effectiveDepartmentIds[0] || "",
           active: formData.active || true,
-          defaultCohort: formData.defaultCohort ?? false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          default_cohort: formData.defaultCohort ?? false,
+          simulation_ids: currentSimulationIds,
+          profile_ids: profileIds,
         });
-
-        // Create junction records if cohort was created successfully
-        if (newCohort?.id) {
-          // Create profile links
-          for (const profileId of profileIds) {
-            await createCohortProfileMutation.mutateAsync({
-              cohortId: newCohort.id,
-              profileId: profileId,
-            });
-          }
-
-          // Create simulation links
-          for (const simulationId of currentSimulationIds) {
-            await createCohortSimulationMutation.mutateAsync({
-              cohortId: newCohort.id,
-              simulationId: simulationId,
-            });
-          }
-        }
 
         toast.success("Cohort created successfully!");
       }
@@ -600,13 +461,13 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                {currentCohort?.defaultCohort &&
+                {cohortData?.default_cohort &&
                 effectiveProfile?.role !== "superadmin"
                   ? "Default cohort cannot be edited"
                   : "You don't have permission to edit this cohort"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
-                {currentCohort?.defaultCohort &&
+                {cohortData?.default_cohort &&
                 effectiveProfile?.role !== "superadmin" ? (
                   <p>
                     This is a default cohort template restricted to superadmins.
@@ -684,35 +545,18 @@ export default function Cohort({ cohortId }: CohortProps) {
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             {formData?.departmentId !== undefined && !isLoading ? (
-              <DepartmentSelector
-                departments={departments.map((dept) => ({
-                  id: dept.id,
-                  title: dept.title as string,
-                  ...(dept.description && { description: dept.description }),
-                }))}
-                selectedDepartment={
-                  formData?.departmentId && formData.departmentId !== ""
-                    ? (() => {
-                        const dept = departments.find(
-                          (d) => d.id === formData.departmentId
-                        );
-                        return dept
-                          ? {
-                              id: dept.id,
-                              title: dept.title as string,
-                              ...(dept.description && {
-                                description: dept.description,
-                              }),
-                            }
-                          : null;
-                      })()
-                    : null
+              <DepartmentPicker
+                mapping={cohortData?.department_mapping || {}}
+                validIds={cohortData?.valid_department_ids || []}
+                selectedIds={
+                  formData.departmentId ? [formData.departmentId] : []
                 }
-                onSelect={(department) =>
-                  handleInputChange("departmentId", department?.id || "")
+                onSelect={(ids) =>
+                  handleInputChange("departmentId", ids[0] || null)
                 }
                 placeholder="Select department"
                 disabled={isReadonly}
+                multiSelect={false}
               />
             ) : (
               <Skeleton className="h-10 w-full" />
@@ -751,16 +595,14 @@ export default function Cohort({ cohortId }: CohortProps) {
               <div className="flex gap-2">
                 {!isLoading ? (
                   <SimulationPicker
-                    simulations={transformedSimulations}
-                    scenarios={scenarios}
-                    parameters={parameters}
-                    parameterItems={parameterItems}
-                    personas={personas?.map((p) => ({
-                      id: p.id,
-                      name: p.name,
-                    }))}
-                    selectedSimulations={selectedSimulations}
+                    simulationMapping={cohortData?.simulation_mapping || {}}
+                    validSimulationIds={cohortData?.valid_simulation_ids || []}
+                    selectedSimulationIds={currentSimulationIds}
                     onSelect={handleSimulationSelection}
+                    // Filtering data not available in cohort detail response
+                    scenarioFilterData={[]}
+                    personaMapping={{}}
+                    parameterItemMapping={{}}
                     placeholder="Add simulation"
                     showLabel={false}
                     buttonClassName="w-48"
@@ -811,9 +653,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {currentSimulationIds.map((simulationId) => {
-                const simulation = simulations.find(
-                  (s: Simulation) => s.id === simulationId
-                );
+                const simulation = cohortData?.simulation_mapping[simulationId];
                 if (!simulation) return null;
 
                 return (
@@ -833,12 +673,9 @@ export default function Cohort({ cohortId }: CohortProps) {
                       <div>
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-sm">
-                            {simulation.title || "Unnamed Simulation"}
+                            {simulation.name || "Unnamed Simulation"}
                           </h4>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              Time: {simulation.timeLimit || "No limit"} min
-                            </Badge>
                             {!isReadonly && (
                               <>
                                 <Button
@@ -872,7 +709,6 @@ export default function Cohort({ cohortId }: CohortProps) {
                           </p>
                         </div>
                       </div>
-                      {/* TODO: Load scenario badges from simulation_scenarios junction */}
                     </div>
                   </Card>
                 );
@@ -891,6 +727,8 @@ export default function Cohort({ cohortId }: CohortProps) {
           isSubmitting={isSubmitting}
           effectiveProfile={effectiveProfile}
           isReadonly={isReadonly}
+          profileMapping={cohortData?.profile_mapping || {}}
+          validProfileIds={cohortData?.valid_profile_ids || []}
         />
 
         {/* Submit Button */}
@@ -945,12 +783,10 @@ export default function Cohort({ cohortId }: CohortProps) {
               {(currentSimulationIds.length || 0) !== 1 ? "s" : ""}:
               <ul className="mt-2 list-disc list-inside">
                 {currentSimulationIds.map((simId) => {
-                  const sim = simulations.find(
-                    (s: Simulation) => s.id === simId
-                  );
+                  const sim = cohortData?.simulation_mapping[simId];
                   return (
                     <li key={simId} className="text-sm">
-                      {sim?.title || "Unknown Simulation"}
+                      {sim?.name || "Unknown Simulation"}
                     </li>
                   );
                 })}

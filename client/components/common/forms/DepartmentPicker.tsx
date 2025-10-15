@@ -1,6 +1,7 @@
 /**
- * DepartmentSelector.tsx
- * Single department selection component for forms - V2 (mapping-based)
+ * DepartmentPicker.tsx
+ * Used to pick departments for filtering or assignment
+ * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -8,7 +9,7 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -31,78 +32,128 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { DepartmentMappingItem } from "@/lib/api/v2/schemas/personas";
+import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
-export interface DepartmentSelectorProps extends PopoverProps {
-  departmentMapping: Record<string, DepartmentMappingItem>;
-  selectedDepartmentId: string;
-  validDepartmentIds: string[];
-  onSelect: (departmentId: string | null) => void;
+export interface DepartmentPickerProps<T extends MappingItem = MappingItem>
+  extends PopoverProps {
+  mapping: Record<string, T>;
+  validIds: string[];
+  selectedIds: string[];
+  onSelect: (ids: string[]) => void;
+  multiSelect?: boolean;
   placeholder?: string;
+  hideSelectedChips?: boolean;
+  buttonClassName?: string;
   disabled?: boolean;
 }
 
-interface Department {
-  id: string;
-  name: string;
-  description?: string | null;
-}
-
-export function DepartmentSelector({
-  departmentMapping,
-  selectedDepartmentId,
-  validDepartmentIds,
+export function DepartmentPicker<T extends MappingItem = MappingItem>({
+  mapping,
+  validIds,
+  selectedIds,
   onSelect,
-  placeholder = "Select department...",
+  multiSelect = false,
+  placeholder = "Select departments...",
+  hideSelectedChips = true,
+  buttonClassName,
   disabled = false,
   ...props
-}: DepartmentSelectorProps) {
+}: DepartmentPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
 
   // Build departments from mapping
   const departments = React.useMemo(() => {
-    return validDepartmentIds.map((id) => ({
+    return validIds.map((id) => ({
       id,
-      name: departmentMapping[id]?.name || id,
-      description: departmentMapping[id]?.description ?? null,
-    }));
-  }, [validDepartmentIds, departmentMapping]);
-
-  const selectedDepartment = React.useMemo(() => {
-    if (!selectedDepartmentId) return null;
-    return departments.find((d) => d.id === selectedDepartmentId) || null;
-  }, [selectedDepartmentId, departments]);
+      ...mapping[id],
+    })) as ({ id: string } & T)[];
+  }, [validIds, mapping]);
 
   const [peekedDepartment, setPeekedDepartment] = React.useState<
-    Department | undefined
+    ({ id: string } & T) | undefined
   >(departments[0]);
 
-  const handleSelect = (department: Department) => {
-    onSelect(department.id);
+  const handleSelect = (departmentId: string) => {
+    if (multiSelect) {
+      const isSelected = selectedIds.includes(departmentId);
+      const newIds = isSelected
+        ? selectedIds.filter((id) => id !== departmentId)
+        : [...selectedIds, departmentId];
+      onSelect(newIds);
+      // Don't close popover in multi-select mode
+    } else {
+      onSelect([departmentId]);
+      setOpen(false);
+    }
+  };
+
+  // Allow clearing selection
+  const handleClear = () => {
+    onSelect([]);
     setOpen(false);
   };
 
-  const handleClear = () => {
-    onSelect(null);
-    setOpen(false);
+  // Remove individual item
+  const handleRemoveItem = (departmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIds = selectedIds.filter((id) => id !== departmentId);
+    onSelect(newIds);
+  };
+
+  const getButtonText = () => {
+    if (selectedIds.length === 0) {
+      return placeholder;
+    }
+    if (selectedIds.length === 1) {
+      const department = mapping[selectedIds[0]!];
+      return department?.name || placeholder;
+    }
+    return `${selectedIds.length} departments selected`;
+  };
+
+  const getSearchNotFoundMessage = () => {
+    return `No departments found.`;
   };
 
   return (
     <div>
+      {/* Show selected items */}
+      {selectedIds.length > 0 && !hideSelectedChips && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {selectedIds.map((id) => {
+            const department = mapping[id];
+            if (!department) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm max-w-full"
+              >
+                <span className="truncate">{department.name}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleRemoveItem(id, e)}
+                  className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <Popover open={open} onOpenChange={setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select department"
-            className="w-full justify-between"
+            aria-label="Select departments"
+            className={cn("w-full justify-between", buttonClassName)}
             disabled={disabled}
           >
-            <span className="truncate text-left">
-              {selectedDepartment ? selectedDepartment.name : placeholder}
-            </span>
+            <span className="truncate text-left">{getButtonText()}</span>
             <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
@@ -126,16 +177,15 @@ export function DepartmentSelector({
             <Command loop>
               <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
                 <CommandInput placeholder="Search departments..." />
-                <CommandEmpty>No departments found.</CommandEmpty>
+                <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-
-                {selectedDepartment && (
+                {selectedIds.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
                       className="text-muted-foreground"
                     >
-                      Clear selection
+                      Clear {multiSelect ? "All" : "Selection"}
                     </CommandItem>
                   </CommandGroup>
                 )}
@@ -144,9 +194,9 @@ export function DepartmentSelector({
                     <DepartmentItem
                       key={department.id}
                       department={department}
-                      isSelected={selectedDepartment?.id === department.id}
+                      isSelected={selectedIds.includes(department.id)}
                       onPeek={(department) => setPeekedDepartment(department)}
-                      onSelect={() => handleSelect(department)}
+                      onSelect={() => handleSelect(department.id)}
                     />
                   ))}
                 </CommandGroup>
@@ -159,19 +209,19 @@ export function DepartmentSelector({
   );
 }
 
-interface DepartmentItemProps {
-  department: Department;
+interface DepartmentItemProps<T extends MappingItem> {
+  department: { id: string } & T;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (department: Department) => void;
+  onPeek: (department: { id: string } & T) => void;
 }
 
-function DepartmentItem({
+function DepartmentItem<T extends MappingItem>({
   department,
   isSelected,
   onSelect,
   onPeek,
-}: DepartmentItemProps) {
+}: DepartmentItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -198,7 +248,7 @@ function DepartmentItem({
           <div className="flex-1 min-w-0">
             <div className="truncate">{department.name}</div>
             {department.description && (
-              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+              <div className="text-xs text-muted-foreground mt-1 truncate">
                 {department.description}
               </div>
             )}

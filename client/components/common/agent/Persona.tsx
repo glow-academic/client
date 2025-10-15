@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 import { useProfile } from "@/contexts/profile-context";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -384,18 +384,21 @@ export default function Persona({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentId !== undefined && !isLoading ? (
-                  <DepartmentSelector
-                    departmentMapping={personaData?.department_mapping || {}}
-                    selectedDepartmentId={formData?.departmentId || ""}
-                    validDepartmentIds={personaData?.valid_department_ids || []}
-                    onSelect={(departmentId) =>
+                  <DepartmentPicker
+                    mapping={personaData?.department_mapping || {}}
+                    validIds={personaData?.valid_department_ids || []}
+                    selectedIds={
+                      formData?.departmentId ? [formData.departmentId] : []
+                    }
+                    onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentId: departmentId || null,
+                        departmentId: ids[0] || null,
                       }))
                     }
                     placeholder="Select department"
                     disabled={isReadonly}
+                    multiSelect={false}
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -119,6 +119,22 @@ export default function Parameter({
   //   effectiveDepartmentIds,
   // );
   const { data: departments = [] } = useDepartmentsHook();
+
+  // Transform V1 departments to mapping format for DepartmentPicker
+  const departmentMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    departments.forEach((dept) => {
+      mapping[dept.id] = {
+        name: dept.title as string,
+        description: dept.description || "",
+      };
+    });
+    return mapping;
+  }, [departments]);
+
+  const validDepartmentIds = useMemo(() => {
+    return departments.map((dept) => dept.id);
+  }, [departments]);
 
   // Mutation hooks
   const createParameterMutation = useCreateParameter();
@@ -466,39 +482,20 @@ export default function Parameter({
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 {formData?.departmentId !== undefined && !isLoading ? (
-                  <DepartmentSelector
-                    departments={departments.map((dept) => ({
-                      id: dept.id,
-                      title: dept.title as string,
-                      ...(dept.description && {
-                        description: dept.description,
-                      }),
-                    }))}
-                    selectedDepartment={
-                      formData?.departmentId
-                        ? (() => {
-                            const dept = departments.find(
-                              (d) => d.id === formData.departmentId
-                            );
-                            return dept
-                              ? {
-                                  id: dept.id,
-                                  title: dept.title as string,
-                                  ...(dept.description && {
-                                    description: dept.description,
-                                  }),
-                                }
-                              : null;
-                          })()
-                        : null
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={
+                      formData?.departmentId ? [formData.departmentId] : []
                     }
-                    onSelect={(department) =>
+                    onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        departmentId: department?.id || "",
+                        departmentId: ids[0] || "",
                       }))
                     }
                     placeholder="Select department"
+                    multiSelect={false}
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />

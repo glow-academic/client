@@ -6,14 +6,18 @@
  */
 
 import CohortEdit from "@/components/cohorts/CohortEdit";
-import { use } from "react";
 
+import { auth } from "@/auth";
+import { cohortsDetailKeys } from "@/lib/api/v2/keys";
+import { fetchCohortDetail } from "@/lib/api/v2/server/cohorts";
 import { cohortRepo } from "@/lib/repos/cohortRepo";
+import { getQueryClient } from "@/utils/react-query/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { cohortId } = await params;
@@ -26,15 +30,28 @@ export async function generateMetadata(
   };
 }
 
-export default function CohortEditPage({
+export default async function CohortEditPage({
   params,
 }: {
   params: Promise<{ cohortId: string }>;
 }) {
-  const { cohortId } = use(params);
+  const { cohortId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  const queryClient = getQueryClient();
+
+  // Prefetch cohort detail for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: cohortsDetailKeys.detail(cohortId, profileId),
+    queryFn: () => fetchCohortDetail(cohortId, profileId),
+  });
+
   return (
-    <div className="space-y-6">
-      <CohortEdit cohortId={cohortId} />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <CohortEdit cohortId={cohortId} />
+      </div>
+    </HydrationBoundary>
   );
 }

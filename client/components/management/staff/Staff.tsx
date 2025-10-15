@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 "use client";
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -508,13 +508,18 @@ export default function Staff() {
             {effectiveProfile?.role === "superadmin" && bulkStaffDetail && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <DepartmentSelector
-                  departmentMapping={bulkStaffDetail.department_mapping}
-                  selectedDepartmentId={
-                    bulkDepartmentId || bulkStaffDetail.department_ids[0] || ""
+                <DepartmentPicker
+                  mapping={bulkStaffDetail.department_mapping}
+                  validIds={bulkStaffDetail.valid_department_ids}
+                  selectedIds={
+                    bulkDepartmentId
+                      ? [bulkDepartmentId]
+                      : bulkStaffDetail.department_ids[0]
+                        ? [bulkStaffDetail.department_ids[0]]
+                        : []
                   }
-                  validDepartmentIds={bulkStaffDetail.valid_department_ids}
-                  onSelect={(deptId) => setBulkDepartmentId(deptId)}
+                  onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
+                  multiSelect={false}
                 />
               </div>
             )}

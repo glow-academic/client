@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useCohortProfilesByCohortId } from "@/lib/api/v1/hooks/cohort_profiles";
@@ -178,6 +178,22 @@ export default function StaffManager({
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
   const { data: departments = [] } = useDepartmentsHook();
+
+  // Transform V1 departments to mapping format for DepartmentPicker
+  const departmentMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    departments.forEach((dept) => {
+      mapping[dept.id] = {
+        name: dept.title as string,
+        description: dept.description || "",
+      };
+    });
+    return mapping;
+  }, [departments]);
+
+  const validDepartmentIds = useMemo(() => {
+    return departments.map((dept) => dept.id);
+  }, [departments]);
 
   const { data: allProfiles = [], isLoading: isLoadingProfiles } =
     useProfilesByDepartmentIdBatch(effectiveDepartmentIds);
@@ -1448,39 +1464,18 @@ export default function StaffManager({
                 {effectiveProfile?.role === "superadmin" && (
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
-                    <DepartmentSelector
-                      departments={departments.map((dept) => ({
-                        id: dept.id,
-                        title: dept.title as string,
-                        ...(dept.description && {
-                          description: dept.description,
-                        }),
-                      }))}
-                      selectedDepartment={
-                        manualProfileGlobal.departmentId
-                          ? (() => {
-                              const dept = departments.find(
-                                (d) => d.id === manualProfileGlobal.departmentId
-                              );
-                              return dept
-                                ? {
-                                    id: dept.id,
-                                    title: dept.title as string,
-                                    ...(dept.description && {
-                                      description: dept.description,
-                                    }),
-                                  }
-                                : null;
-                            })()
-                          : null
-                      }
-                      onSelect={(department) =>
+                    <DepartmentPicker
+                      mapping={departmentMapping}
+                      validIds={validDepartmentIds}
+                      selectedIds={manualProfileGlobal.departmentId ? [manualProfileGlobal.departmentId] : []}
+                      onSelect={(ids) =>
                         setManualProfileGlobal((p) => ({
                           ...p,
-                          departmentId: department?.id || "",
+                          departmentId: ids[0] || "",
                         }))
                       }
                       placeholder="Select department"
+                      multiSelect={false}
                     />
                     {globalFormErrors.departmentId && (
                       <p className="text-sm text-red-500">

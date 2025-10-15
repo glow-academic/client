@@ -2,7 +2,8 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.schemas.auth import ProfileItem
+from app.schemas.auth import (ProfileContextRequest, ProfileContextResponse,
+                              ProfileItem)
 from app.services.auth_service import AuthService
 from sqlalchemy.orm import Session
 
@@ -72,3 +73,16 @@ class AuthRepository:
         return self.service.authorize_emulation(
             requester_profile_id, target_profile_id, department_ids
         )
+
+    def get_profile_context(
+        self, request: ProfileContextRequest
+    ) -> ProfileContextResponse:
+        """Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
+
+        Args:
+            request: ProfileContextRequest with userId, effectiveProfileId, pathname
+
+        Returns:
+            ProfileContextResponse with all consolidated data
+        """
+        return self.service.get_profile_context(request)

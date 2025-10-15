@@ -5,8 +5,9 @@ from typing import Annotated
 from app.db import get_session
 from app.repositories.auth_repository import AuthRepository
 from app.schemas.auth import (AuthorizeEmulationRequest,
-                              AuthorizeEmulationResponse, ProfileDetailRequest,
-                              ProfileDetailResponse,
+                              AuthorizeEmulationResponse,
+                              ProfileContextRequest, ProfileContextResponse,
+                              ProfileDetailRequest, ProfileDetailResponse,
                               SimulatableProfilesRequest,
                               SimulatableProfilesResponse,
                               UpdateProfileRequest, UpdateProfileResponse)
@@ -103,6 +104,21 @@ async def authorize_emulation(
         )
 
         return AuthorizeEmulationResponse(allowed=allowed, reason=reason)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/profile-context", response_model=ProfileContextResponse)
+async def get_profile_context(
+    request: ProfileContextRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> ProfileContextResponse:
+    """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
+    try:
+        repo = AuthRepository(db)
+        return repo.get_profile_context(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

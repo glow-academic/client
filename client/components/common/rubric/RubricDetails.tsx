@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 export interface RubricDetailsProps {
   rubric: RubricType;
   rubricId: string;
-  departmentMapping: Record<string, string>;
+  departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
   isCreateMode?: boolean;
   isReadonly?: boolean;
@@ -157,13 +157,16 @@ export default function RubricDetails({
               {effectiveProfile?.role === "superadmin" && (
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <DepartmentSelector
-                    departmentMapping={departmentMapping}
-                    selectedDepartmentId={formData.departmentId || ""}
-                    validDepartmentIds={validDepartmentIds}
-                    onSelect={handleDepartmentChange}
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={
+                      formData.departmentId ? [formData.departmentId] : []
+                    }
+                    onSelect={(ids) => handleDepartmentChange(ids[0] || null)}
                     placeholder="Select department"
                     disabled={updateRubricMutation.isPending || isReadonly}
+                    multiSelect={false}
                   />
                 </div>
               )}

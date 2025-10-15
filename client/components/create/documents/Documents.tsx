@@ -48,7 +48,7 @@ import {
 import { DocumentType } from "@/types";
 import { UploadCloud } from "lucide-react";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemSelector } from "@/components/common/scenario/ParameterItemSelector";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -655,15 +655,20 @@ export default function Documents() {
               {effectiveProfile?.role === "superadmin" && (
                 <div className="flex flex-col gap-2">
                   <Label>Department</Label>
-                  <DepartmentSelector
-                    departmentMapping={documentDetail.department_mapping}
-                    selectedDepartmentId={documentDetail.department_id}
-                    validDepartmentIds={documentDetail.valid_department_ids}
-                    onSelect={(deptId) =>
+                  <DepartmentPicker
+                    mapping={documentDetail.department_mapping}
+                    validIds={documentDetail.valid_department_ids}
+                    selectedIds={
+                      documentDetail.department_id
+                        ? [documentDetail.department_id]
+                        : []
+                    }
+                    onSelect={(ids) =>
                       setEditingDocument((prev) =>
-                        prev ? { ...prev, department_id: deptId || "" } : null
+                        prev ? { ...prev, department_id: ids[0] || "" } : null
                       )
                     }
+                    multiSelect={false}
                   />
                 </div>
               )}
@@ -741,15 +746,18 @@ export default function Documents() {
               {effectiveProfile?.role === "superadmin" && (
                 <div className="flex flex-col gap-2">
                   <Label>Department</Label>
-                  <DepartmentSelector
-                    departmentMapping={bulkDocumentDetail.department_mapping}
-                    selectedDepartmentId={
-                      bulkDepartmentId ||
-                      bulkDocumentDetail.department_ids[0] ||
-                      ""
+                  <DepartmentPicker
+                    mapping={bulkDocumentDetail.department_mapping}
+                    validIds={bulkDocumentDetail.valid_department_ids}
+                    selectedIds={
+                      bulkDepartmentId
+                        ? [bulkDepartmentId]
+                        : bulkDocumentDetail.department_ids[0]
+                          ? [bulkDocumentDetail.department_ids[0]]
+                          : []
                     }
-                    validDepartmentIds={bulkDocumentDetail.valid_department_ids}
-                    onSelect={(deptId) => setBulkDepartmentId(deptId)}
+                    onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
+                    multiSelect={false}
                   />
                 </div>
               )}

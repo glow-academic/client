@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { RubricPicker } from "@/components/common/rubric/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useDepartments } from "@/contexts/departments-context";
@@ -418,15 +418,18 @@ export default function Simulation({ simulationId }: SimulationProps) {
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             {formData?.departmentId !== undefined && !isLoading ? (
-              <DepartmentSelector
-                departmentMapping={simulationData?.department_mapping || {}}
-                selectedDepartmentId={formData?.departmentId || ""}
-                validDepartmentIds={simulationData?.valid_department_ids || []}
-                onSelect={(departmentId) =>
-                  handleInputChange("departmentId", departmentId || "")
+              <DepartmentPicker
+                mapping={simulationData?.department_mapping || {}}
+                validIds={simulationData?.valid_department_ids || []}
+                selectedIds={
+                  formData?.departmentId ? [formData.departmentId] : []
+                }
+                onSelect={(ids) =>
+                  handleInputChange("departmentId", ids[0] || "")
                 }
                 placeholder="Select department"
                 disabled={isReadonly}
+                multiSelect={false}
               />
             ) : (
               <Skeleton className="h-10 w-full" />

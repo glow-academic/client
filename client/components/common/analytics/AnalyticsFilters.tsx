@@ -7,19 +7,17 @@
 
 "use client";
 
-import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import {
   CohortSelector,
   Cohort as CohortSelectorCohort,
 } from "@/components/common/analytics/CohortSelector";
+import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import { RolePicker } from "@/components/common/profile/RolePicker";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
+import { useProfile } from "@/contexts/profile-context";
 import { useRefreshAnalytics } from "@/lib/api/v1/hooks/analytics";
-import { useCohortProfilesByCohortIdBatch } from "@/lib/api/v1/hooks/cohort_profiles";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
 import type { ProfileRole } from "@/types";
 import { log } from "@/utils/logger";
 import { useIsFetching } from "@tanstack/react-query";
@@ -49,21 +47,10 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalytics();
 
-  const { effectiveDepartmentIds } = useDepartments();
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
+  const { cohorts, cohortMemberCounts } = useProfile();
 
-  // Get cohort profiles data to get member counts
-  const { data: cohortProfiles = [] } = useCohortProfilesByCohortIdBatch(
-    cohorts.map((c) => c.id)
-  );
-
-  // Helper function to get profile count for a cohort
-  const getCohortProfileCount = (cohortId: string) => {
-    return cohortProfiles.filter((cp) => cp.cohortId === cohortId && cp.active)
-      .length;
-  };
+  const getCohortMemberCount = (cohortId: string) =>
+    cohortMemberCounts[cohortId] ?? 0;
   const { mutate: refreshAnalytics, isPending: isRefreshing } =
     useRefreshAnalytics();
 
@@ -197,8 +184,8 @@ export function AnalyticsFilters({
     title: cohort.title,
     description:
       cohort.description ||
-      `Cohort with ${getCohortProfileCount(cohort.id)} members`,
-    memberCount: getCohortProfileCount(cohort.id),
+      `Cohort with ${getCohortMemberCount(cohort.id)} members`,
+    memberCount: getCohortMemberCount(cohort.id),
   }));
 
   // Get selected cohorts for the picker

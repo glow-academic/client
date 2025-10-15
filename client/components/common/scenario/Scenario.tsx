@@ -45,7 +45,7 @@ import { ParameterSelector } from "./ParameterSelector";
 import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -1133,15 +1133,18 @@ export default function Scenario({
             {effectiveProfile?.role === "superadmin" && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <DepartmentSelector
-                  departmentMapping={departmentMapping}
-                  selectedDepartmentId={formData?.departmentId || ""}
-                  validDepartmentIds={scenarioData?.valid_department_ids || []}
-                  onSelect={(departmentId) =>
-                    handleInputChange("departmentId", departmentId || "")
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={scenarioData?.valid_department_ids || []}
+                  selectedIds={
+                    formData?.departmentId ? [formData.departmentId] : []
+                  }
+                  onSelect={(ids) =>
+                    handleInputChange("departmentId", ids[0] || "")
                   }
                   placeholder="Select department"
                   disabled={isReadonly}
+                  multiSelect={false}
                 />
               </div>
             )}

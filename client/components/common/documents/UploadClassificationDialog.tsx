@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 
-import { DepartmentSelector } from "@/components/common/forms/DepartmentSelector";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { TagSelector } from "@/components/common/tags/TagSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,22 @@ export function UploadClassificationDialog({
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
   const { data: departments = [] } = useDepartmentsHook();
+
+  // Transform V1 departments to mapping format for DepartmentPicker
+  const departmentMapping = React.useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    departments.forEach((dept) => {
+      mapping[dept.id] = {
+        name: dept.title as string,
+        description: dept.description || "",
+      };
+    });
+    return mapping;
+  }, [departments]);
+
+  const validDepartmentIds = React.useMemo(() => {
+    return departments.map((dept) => dept.id);
+  }, [departments]);
 
   // Per-file classification state (keyed by file.name)
   const [perFile, setPerFile] = React.useState<
@@ -220,36 +236,13 @@ export function UploadClassificationDialog({
         {effectiveProfile?.role === "superadmin" && (
           <div className="space-y-2 mb-4">
             <Label htmlFor="department">Department</Label>
-            <DepartmentSelector
-              departments={departments.map((dept) => ({
-                id: dept.id,
-                title: dept.title as string,
-                ...(dept.description && {
-                  description: dept.description,
-                }),
-              }))}
-              selectedDepartment={
-                selectedDepartmentId
-                  ? (() => {
-                      const dept = departments.find(
-                        (d) => d.id === selectedDepartmentId
-                      );
-                      return dept
-                        ? {
-                            id: dept.id,
-                            title: dept.title as string,
-                            ...(dept.description && {
-                              description: dept.description,
-                            }),
-                          }
-                        : null;
-                    })()
-                  : null
-              }
-              onSelect={(department) =>
-                setSelectedDepartmentId(department?.id || null)
-              }
+            <DepartmentPicker
+              mapping={departmentMapping}
+              validIds={validDepartmentIds}
+              selectedIds={selectedDepartmentId ? [selectedDepartmentId] : []}
+              onSelect={(ids) => setSelectedDepartmentId(ids[0] || null)}
               placeholder="Select department"
+              multiSelect={false}
             />
           </div>
         )}
