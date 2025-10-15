@@ -426,3 +426,39 @@ export const logsListKeys = {
   all: ["logs:v2:list"] as const,
   list: (profileId: string) => [...logsListKeys.all, { profileId }] as const,
 };
+
+// Attempts Keys (full data with chats, messages, hints, grades)
+export const attemptsFullKeys = {
+  all: ["v2", "attempts"] as const,
+  lists: () => [...attemptsFullKeys.all, "list"] as const,
+  details: () => [...attemptsFullKeys.all, "detail"] as const,
+  detail: (attemptId: string) =>
+    [...attemptsFullKeys.details(), attemptId, "full"] as const,
+};
+
+// Assistant Chats Keys (full data with messages and tool calls)
+export const assistantChatsFullKeys = {
+  all: ["v2", "assistant", "chats"] as const,
+  lists: () => [...assistantChatsFullKeys.all, "list"] as const,
+  details: () => [...assistantChatsFullKeys.all, "detail"] as const,
+  detail: (chatId: string | undefined, profileId: string) =>
+    [
+      ...assistantChatsFullKeys.details(),
+      chatId || "new",
+      "full",
+      profileId,
+    ] as const,
+};
+
+// Profile Simple Keys (lightweight profile data)
+export const profileSimpleKeys = {
+  all: ["v2", "profile", "simple"] as const,
+  detail: (profileId: string) => [...profileSimpleKeys.all, profileId] as const,
+};
+
+// Layout Context Keys (profile + departments + simulations + cohorts)
+export const layoutContextKeys = {
+  all: ["v2", "layout", "context"] as const,
+  detail: (userId: string, effectiveProfileId: string, pathname: string) =>
+    [...layoutContextKeys.all, userId, effectiveProfileId, pathname] as const,
+};

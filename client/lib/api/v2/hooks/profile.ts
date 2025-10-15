@@ -9,6 +9,7 @@ import {
   profileDetailBulkKeys,
   profileDetailKeys,
   profileListKeys,
+  profileSimpleKeys,
 } from "@/lib/api/v2/keys";
 import {
   AuthorizeEmulationRequest,
@@ -280,7 +281,7 @@ export function useBulkDeleteProfile() {
  */
 export function useProfileSimple(profileId: string, enabled = true) {
   return useQuery<ProfileSimpleDetailResponse>({
-    queryKey: ["v2", "profile", "simple", profileId],
+    queryKey: profileSimpleKeys.detail(profileId),
     queryFn: () =>
       api<ProfileSimpleDetailResponse>("/api/v2/profile/detail-simple", {
         method: "POST",
@@ -307,7 +308,7 @@ export function useUpdateProfileSimple() {
       }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({
-        queryKey: ["v2", "profile", "simple", variables.profileId],
+        queryKey: profileSimpleKeys.detail(variables.profileId),
       });
     },
   });

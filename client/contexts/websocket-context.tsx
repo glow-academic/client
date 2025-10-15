@@ -7,24 +7,10 @@
 
 import { getApiBase } from "@/lib/api-base";
 import {
-  agentKeys,
-  cohortKeys,
-  parameterItemKeys,
-  parameterKeys,
-  personaKeys,
-  profileKeys,
-  rubricKeys,
-  scenarioKeys,
-  simulationAttemptKeys,
-  simulationChatFeedbackKeys,
-  simulationChatGradeKeys,
-  simulationChatKeys,
-  simulationKeys,
-  simulationMessageKeysByChatId,
-  standardGroupKeys,
-  standardKeys,
-} from "@/lib/api/v1/keys";
-import { SimulationMessage } from "@/types";
+  assistantChatsFullKeys,
+  attemptsFullKeys,
+  layoutContextKeys,
+} from "@/lib/api/v2/keys";
 import { log, type LogEntry } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -169,7 +155,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["v2", "assistant", "chats"],
+              queryKey: assistantChatsFullKeys.all,
             });
           }, 0);
         }
@@ -193,31 +179,6 @@ export function WebSocketProvider({
               role: data.role,
             },
           });
-
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(data.chat_id),
-            (old: SimulationMessage[] = []) => {
-              const exists = old.find((msg) => msg.id === data.message_id);
-              if (exists) return old;
-
-              const newMessage = {
-                id: data.message_id,
-                chatId: data.chat_id,
-                type: data.role === "user" ? "query" : "response",
-                content: data.content,
-                completed: data.completed,
-                createdAt: data.created_at,
-                audio: false,
-                filePath: null,
-              };
-
-              return [...old, newMessage].sort(
-                (a, b) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
-              );
-            }
-          );
 
           // Dispatch simulationMessageStart event for response messages to trigger immediate UI display
           if (data.role === "assistant" || data.role === "response") {
@@ -243,9 +204,10 @@ export function WebSocketProvider({
             );
           }
 
+          // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: simulationMessageKeysByChatId.one(data.chat_id),
+              queryKey: attemptsFullKeys.all,
             });
           }, 0);
         }
@@ -266,7 +228,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["v2", "assistant", "chats"],
+              queryKey: assistantChatsFullKeys.all,
             });
           }, 0);
         }
@@ -285,17 +247,7 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(data.chat_id),
-            (old: SimulationMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.accumulated_content }
-                  : msg
-              );
-            }
-          );
-
+          // Dispatch window event for UI updates (used by streaming display)
           window.dispatchEvent(
             new CustomEvent("simulationMessageToken", {
               detail: {
@@ -339,7 +291,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["v2", "assistant", "chats"],
+              queryKey: assistantChatsFullKeys.all,
             });
           }, 0);
         }
@@ -375,7 +327,7 @@ export function WebSocketProvider({
           // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["v2", "assistant", "chats"],
+              queryKey: assistantChatsFullKeys.all,
             });
           }, 0);
         }
@@ -395,20 +347,10 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(data.chat_id),
-            (old: SimulationMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
-              );
-            }
-          );
-
           // Reset loading states
           setIsSendingSimulationMessage(false);
 
+          // Dispatch window event for UI updates
           window.dispatchEvent(
             new CustomEvent("simulationMessageComplete", {
               detail: {
@@ -419,9 +361,10 @@ export function WebSocketProvider({
             })
           );
 
+          // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: simulationMessageKeysByChatId.one(data.chat_id),
+              queryKey: attemptsFullKeys.all,
             });
           }, 0);
         }
@@ -489,21 +432,11 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(data.chat_id),
-            (old: SimulationMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
-              );
-            }
-          );
-
           // Reset loading states
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
 
+          // Dispatch window event for UI updates
           window.dispatchEvent(
             new CustomEvent("simulationMessageCancelled", {
               detail: {
@@ -514,9 +447,10 @@ export function WebSocketProvider({
             })
           );
 
+          // Invalidate v2 attempts (includes messages)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: simulationMessageKeysByChatId.one(data.chat_id),
+              queryKey: attemptsFullKeys.all,
             });
           }, 0);
         }
@@ -558,10 +492,10 @@ export function WebSocketProvider({
           // Invalidate v2 queries (for both assistant and simulation)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["v2", "assistant", "chats"],
+              queryKey: assistantChatsFullKeys.all,
             });
             queryClient.invalidateQueries({
-              queryKey: ["v2", "attempts"],
+              queryKey: attemptsFullKeys.all,
             });
           }, 0);
         }
@@ -574,7 +508,7 @@ export function WebSocketProvider({
 
         // Invalidate v2 assistant chat query (will refetch all data with updated title)
         queryClient.invalidateQueries({
-          queryKey: ["v2", "assistant", "chats"],
+          queryKey: assistantChatsFullKeys.all,
         });
       });
 
@@ -597,7 +531,7 @@ export function WebSocketProvider({
           });
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: ["v2", "assistant", "chats"],
+            queryKey: assistantChatsFullKeys.all,
           });
         }
       );
@@ -610,7 +544,7 @@ export function WebSocketProvider({
           });
           // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: ["v2", "assistant", "chats"],
+            queryKey: assistantChatsFullKeys.all,
           });
         }
       );
@@ -632,63 +566,14 @@ export function WebSocketProvider({
           if (data.success) {
             toast.success(data.message);
 
-            // Invalidate queries to ensure fresh data when navigating back
-            // Invalidate all simulation attempts queries (including profile-specific ones)
+            // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: simulationAttemptKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: simulationKeys.all,
+              queryKey: attemptsFullKeys.all,
             });
 
-            // Also invalidate related queries that depend on attempts
+            // Invalidate v2 layout context (includes simulations, cohorts, scenarios, etc.)
             queryClient.invalidateQueries({
-              queryKey: simulationChatKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: simulationChatGradeKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: simulationChatFeedbackKeys.all,
-            });
-
-            // Invalidate profiles query since simulation attempts depend on it
-            queryClient.invalidateQueries({
-              queryKey: profileKeys.all,
-            });
-
-            // Invalidate analytics-related queries that might be affected
-            queryClient.invalidateQueries({
-              queryKey: cohortKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: scenarioKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: parameterKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: parameterItemKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: personaKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: agentKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: rubricKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: standardGroupKeys.all,
-            });
-            queryClient.invalidateQueries({
-              queryKey: standardKeys.all,
-            });
-
-            // Invalidate simulation attempts to refresh analytics data
-            queryClient.invalidateQueries({
-              queryKey: simulationAttemptKeys.all,
+              queryKey: layoutContextKeys.all,
             });
 
             // Trigger navigation by emitting a custom event
@@ -753,9 +638,9 @@ export function WebSocketProvider({
           if (data.success) {
             toast.success(data.message);
 
-            // Invalidate simulation attempts to refresh analytics data
+            // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: simulationAttemptKeys.all,
+              queryKey: attemptsFullKeys.all,
             });
 
             // Dispatch a custom event with the new, richer detail object
@@ -792,9 +677,9 @@ export function WebSocketProvider({
           if (data.success) {
             toast.success(data.message);
 
-            // Invalidate simulation attempts to refresh analytics data
+            // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
             queryClient.invalidateQueries({
-              queryKey: simulationAttemptKeys.all,
+              queryKey: attemptsFullKeys.all,
             });
 
             // Dispatch a custom event for end all completion
@@ -886,7 +771,7 @@ export function WebSocketProvider({
         }
       );
     },
-    [queryClient, profileId]
+    [queryClient]
   );
 
   // Initialize WebSocket connection when profileId is resolved (may be null for guest)

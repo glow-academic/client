@@ -35,7 +35,7 @@ import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { simulationHintKeysBySimulationMessageId } from "@/lib/api/v1/keys";
+import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -96,11 +96,9 @@ export default function AttemptInput({
       // Only handle hints for the current message
       if (data.message_id === latestAssistantMessage.id) {
         if (data.type === "complete" && data.hint_ids) {
-          // Invalidate the hints query cache to trigger a refetch
+          // Invalidate the attempts query cache to trigger a refetch (includes hints)
           queryClient.invalidateQueries({
-            queryKey: simulationHintKeysBySimulationMessageId.one(
-              latestAssistantMessage.id
-            ),
+            queryKey: attemptsFullKeys.all,
           });
         }
       }

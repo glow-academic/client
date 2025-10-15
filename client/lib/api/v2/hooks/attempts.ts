@@ -5,6 +5,7 @@
 
 import { api } from "@/lib/api/fetcher";
 import { simulationAttemptKeys, simulationChatKeys } from "@/lib/api/v1/keys";
+import { attemptsFullKeys } from "@/lib/api/v2/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BulkArchiveAttemptsRequest,
@@ -209,7 +210,7 @@ export interface AttemptFullResponse {
 
 export function useAttemptFull(attemptId: string) {
   return useQuery<AttemptFullResponse>({
-    queryKey: ["v2", "attempts", attemptId, "full"],
+    queryKey: attemptsFullKeys.detail(attemptId),
     queryFn: () =>
       api<AttemptFullResponse>(`/api/v2/attempts/${attemptId}/full`),
     enabled: Boolean(attemptId),

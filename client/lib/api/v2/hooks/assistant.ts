@@ -4,6 +4,7 @@
  */
 
 import { api } from "@/lib/api/fetcher";
+import { assistantChatsFullKeys } from "@/lib/api/v2/keys";
 import { useQuery } from "@tanstack/react-query";
 
 export interface AssistantChatFullResponse {
@@ -58,7 +59,7 @@ export function useAssistantChatFull(
   enabled = true
 ) {
   return useQuery<AssistantChatFullResponse>({
-    queryKey: ["v2", "assistant", "chats", chatId || "new", "full", profileId],
+    queryKey: assistantChatsFullKeys.detail(chatId, profileId),
     queryFn: async () => {
       if (!chatId) {
         // Fetch only the chats list for new chat state

@@ -8,6 +8,7 @@
 "use client";
 
 import { api } from "@/lib/api/fetcher";
+import { layoutContextKeys } from "@/lib/api/v2/keys";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
@@ -174,7 +175,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
-    queryKey: ["v2", "layout", "context", userId, effectiveProfileId, pathname],
+    queryKey: layoutContextKeys.detail(
+      userId,
+      effectiveProfileId,
+      pathname ?? "/"
+    ),
     queryFn: async () => {
       const res = await api<unknown>("/api/v2/profile/context", {
         method: "POST",

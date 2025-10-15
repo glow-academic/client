@@ -16,18 +16,12 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import {
-  profileKeys,
-  simulationAttemptKeys,
-  simulationChatFeedbackKeys,
-  simulationChatGradeKeys,
-  simulationChatKeysByAttemptId,
-  simulationMessageKeys,
-} from "@/lib/api/v1/keys";
+import { profileKeys } from "@/lib/api/v1/keys";
 import {
   useMarkChatComplete,
   useMarkIntroComplete,
 } from "@/lib/api/v2/hooks/profile";
+import { attemptsFullKeys, layoutContextKeys } from "@/lib/api/v2/keys";
 import { createTATourSteps } from "@/utils/tour-steps";
 
 // Guide Button Component
@@ -1013,23 +1007,14 @@ export default function TATour() {
           context: { component: "TATour", attemptId },
         });
 
-        // Invalidate attempt-specific queries
+        // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
         queryClient.invalidateQueries({
-          queryKey: simulationAttemptKeys.detail(attemptId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatKeysByAttemptId.one(attemptId),
+          queryKey: attemptsFullKeys.all,
         });
 
-        // Invalidate related simulation data queries
+        // Invalidate v2 layout context (for updated simulations list)
         queryClient.invalidateQueries({
-          queryKey: simulationChatGradeKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatFeedbackKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationMessageKeys.all,
+          queryKey: layoutContextKeys.all,
         });
       }
 
@@ -1296,23 +1281,14 @@ export default function TATour() {
           context: { component: "TATour", attemptId: event.detail.attemptId },
         });
 
-        // Invalidate attempt-specific queries
+        // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
         queryClient.invalidateQueries({
-          queryKey: simulationAttemptKeys.detail(event.detail.attemptId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatKeysByAttemptId.one(event.detail.attemptId),
+          queryKey: attemptsFullKeys.all,
         });
 
-        // Invalidate related simulation data queries
+        // Invalidate v2 layout context (for updated simulations list)
         queryClient.invalidateQueries({
-          queryKey: simulationChatGradeKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatFeedbackKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationMessageKeys.all,
+          queryKey: layoutContextKeys.all,
         });
       }
     };
@@ -1441,23 +1417,14 @@ export default function TATour() {
             context: { component: "TATour", attemptId: tourState.attemptId },
           });
 
-          // Invalidate attempt-specific queries
+          // Invalidate v2 attempts (includes chats, messages, grades, feedbacks)
           queryClient.invalidateQueries({
-            queryKey: simulationAttemptKeys.detail(tourState.attemptId),
-          });
-          queryClient.invalidateQueries({
-            queryKey: simulationChatKeysByAttemptId.one(tourState.attemptId),
+            queryKey: attemptsFullKeys.all,
           });
 
-          // Invalidate related simulation data queries
+          // Invalidate v2 layout context (for updated simulations list)
           queryClient.invalidateQueries({
-            queryKey: simulationChatGradeKeys.all,
-          });
-          queryClient.invalidateQueries({
-            queryKey: simulationChatFeedbackKeys.all,
-          });
-          queryClient.invalidateQueries({
-            queryKey: simulationMessageKeys.all,
+            queryKey: layoutContextKeys.all,
           });
 
           // Dispatch existingSimulationNavigation event to set navigating to false
