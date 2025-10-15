@@ -1,7 +1,6 @@
 /**
  * CohortPicker.tsx
  * Used to pick cohorts for filtering the progress view
- * Refactored to use mapping-based API pattern
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
  */
@@ -32,73 +31,76 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
-import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 
-export interface CohortPickerProps<T extends MappingItem = MappingItem>
-  extends PopoverProps {
-  mapping: Record<string, T>;
-  validIds: string[];
-  selectedIds: string[];
-  onSelect: (ids: string[]) => void;
+export interface Cohort {
+  id: string;
+  title: string | React.ReactNode;
+  description?: string;
+  memberCount?: number;
+}
+
+export interface CohortSelectorProps extends PopoverProps {
+  cohorts: Cohort[];
   placeholder?: string;
+  onSelect?: (cohorts: Cohort[]) => void;
+  selectedCohorts?: Cohort[];
   hideSelectedChips?: boolean;
 }
 
-export function CohortPicker<T extends MappingItem = MappingItem>({
-  mapping,
-  validIds,
-  selectedIds,
-  onSelect,
+export function CohortSelector({
+  cohorts,
   placeholder = "Select cohorts...",
+  onSelect,
+  selectedCohorts = [],
   hideSelectedChips = true,
   ...props
-}: CohortPickerProps<T>) {
+}: CohortSelectorProps) {
   const [open, setOpen] = React.useState(false);
+  const [peekedCohort, setPeekedCohort] = React.useState<Cohort | undefined>(
+    cohorts[0],
+  );
 
-  // Build cohorts from mapping
-  const cohorts = React.useMemo(() => {
-    return validIds.map((id) => ({
-      id,
-      ...mapping[id],
-    }));
-  }, [validIds, mapping]);
+  const handleSelect = (cohort: Cohort) => {
+    const isSelected = selectedCohorts.some((c) => c.id === cohort.id);
+    let newSelectedCohorts: Cohort[];
 
-  const [peekedCohort, setPeekedCohort] = React.useState<
-    ({ id: string } & T) | undefined
-  >(cohorts[0] as ({ id: string } & T) | undefined);
+    if (isSelected) {
+      // Remove from selection
+      newSelectedCohorts = selectedCohorts.filter((c) => c.id !== cohort.id);
+    } else {
+      // Add to selection
+      newSelectedCohorts = [...selectedCohorts, cohort];
+    }
 
-  const handleSelect = (cohortId: string) => {
-    const isSelected = selectedIds.includes(cohortId);
-    const newIds = isSelected
-      ? selectedIds.filter((id) => id !== cohortId)
-      : [...selectedIds, cohortId];
-    onSelect(newIds);
+    onSelect?.(newSelectedCohorts);
     // Don't close popover in multi-select mode
   };
 
   // Allow clearing selection
   const handleClear = () => {
-    onSelect([]);
+    onSelect?.([]);
     setOpen(false);
   };
 
   // Remove individual item
-  const handleRemoveItem = (cohortId: string, e: React.MouseEvent) => {
+  const handleRemoveItem = (cohortToRemove: Cohort, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newIds = selectedIds.filter((id) => id !== cohortId);
-    onSelect(newIds);
+    const newSelectedCohorts = selectedCohorts.filter(
+      (c) => c.id !== cohortToRemove.id,
+    );
+    onSelect?.(newSelectedCohorts);
   };
 
   const getButtonText = () => {
-    if (selectedIds.length === 0) {
+    if (selectedCohorts.length === 0) {
       return placeholder;
     }
-    if (selectedIds.length === 1) {
-      const cohort = mapping[selectedIds[0]!];
-      return cohort?.name || placeholder;
+    if (selectedCohorts.length === 1) {
+      const title = selectedCohorts[0]!.title;
+      return typeof title === "string" ? title : "Cohort selected";
     }
-    return `${selectedIds.length} cohorts selected`;
+    return `${selectedCohorts.length} cohorts selected`;
   };
 
   const getSearchNotFoundMessage = () => {
@@ -108,27 +110,23 @@ export function CohortPicker<T extends MappingItem = MappingItem>({
   return (
     <div>
       {/* Show selected items */}
-      {selectedIds.length > 0 && !hideSelectedChips && (
+      {selectedCohorts.length > 0 && !hideSelectedChips && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {selectedIds.map((id) => {
-            const cohort = mapping[id];
-            if (!cohort) return null;
-            return (
-              <div
-                key={id}
-                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+          {selectedCohorts.map((cohort) => (
+            <div
+              key={cohort.id}
+              className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+            >
+              <span>{cohort.title}</span>
+              <button
+                type="button"
+                onClick={(e) => handleRemoveItem(cohort, e)}
+                className="text-muted-foreground hover:text-destructive"
               >
-                <span>{cohort.name}</span>
-                <button
-                  type="button"
-                  onClick={(e) => handleRemoveItem(id, e)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            );
-          })}
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -156,11 +154,19 @@ export function CohortPicker<T extends MappingItem = MappingItem>({
             >
               <div className="grid gap-2">
                 <h4 className="font-medium leading-none">
-                  {peekedCohort?.name || "Cohort selected"}
+                  {typeof peekedCohort?.title === "string"
+                    ? peekedCohort.title
+                    : "Cohort selected"}
                 </h4>
                 <div className="text-sm text-muted-foreground">
                   {peekedCohort?.description || "No description available"}
                 </div>
+                {peekedCohort?.memberCount !== undefined && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {peekedCohort.memberCount} member
+                    {peekedCohort.memberCount !== 1 ? "s" : ""}
+                  </div>
+                )}
               </div>
             </HoverCardContent>
             <Command loop>
@@ -168,7 +174,7 @@ export function CohortPicker<T extends MappingItem = MappingItem>({
                 <CommandInput placeholder="Search cohorts..." />
                 <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
                 <HoverCardTrigger />
-                {selectedIds.length > 0 && (
+                {selectedCohorts.length > 0 && (
                   <CommandGroup heading="Actions">
                     <CommandItem
                       onSelect={handleClear}
@@ -182,10 +188,12 @@ export function CohortPicker<T extends MappingItem = MappingItem>({
                   {cohorts.map((cohort) => (
                     <CohortItem
                       key={cohort.id}
-                      cohort={cohort as { id: string } & T}
-                      isSelected={selectedIds.includes(cohort.id)}
-                      onPeek={(c) => setPeekedCohort(c)}
-                      onSelect={() => handleSelect(cohort.id)}
+                      cohort={cohort}
+                      isSelected={selectedCohorts.some(
+                        (c) => c.id === cohort.id,
+                      )}
+                      onPeek={(cohort) => setPeekedCohort(cohort)}
+                      onSelect={() => handleSelect(cohort)}
                     />
                   ))}
                 </CommandGroup>
@@ -198,19 +206,14 @@ export function CohortPicker<T extends MappingItem = MappingItem>({
   );
 }
 
-interface CohortItemProps<T extends MappingItem> {
-  cohort: { id: string } & T;
+interface CohortItemProps {
+  cohort: Cohort;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (cohort: { id: string } & T) => void;
+  onPeek: (cohort: Cohort) => void;
 }
 
-function CohortItem<T extends MappingItem>({
-  cohort,
-  isSelected,
-  onSelect,
-  onPeek,
-}: CohortItemProps<T>) {
+function CohortItem({ cohort, isSelected, onSelect, onPeek }: CohortItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   useMutationObserver(ref, (mutations) => {
@@ -233,7 +236,7 @@ function CohortItem<T extends MappingItem>({
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2">{cohort.name}</div>
+        <div className="flex items-center gap-2">{cohort.title}</div>
         <Check
           className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
         />

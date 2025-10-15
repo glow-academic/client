@@ -10,9 +10,21 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import type { LeaderboardRow } from "@/lib/analytics";
-import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
+import {
+  computeCurrent,
+  type DataPoint,
+  type HighestScoreAvgMetricResponse,
+  type ImprovementRatePerDayMetricResponse,
+  type LeaderboardRow,
+  type MessagesPerSessionMetricResponse,
+  type PerfectScoreCountMetricResponse,
+  type PersonaResponseSecondsMetricResponse,
+  type QuickestPassMinutesMetricResponse,
+  type TimeSpentMinutesMetricResponse,
+  type TotalAttemptsMetricResponse,
+} from "@/lib/analytics";
 import { useAnalyticsLeaderboardBundle } from "@/lib/api/v2/hooks/analytics";
+import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
 import type { Profile } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import {

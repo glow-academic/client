@@ -94,8 +94,9 @@ export default function Practice() {
         id,
         title: sim.name,
         description: sim.description,
+        departmentId: effectiveDepartmentIds[0] || "", // Use first department
       })),
-    [bundle?.simulation_mapping]
+    [bundle?.simulation_mapping, effectiveDepartmentIds]
   );
 
   // Use data directly from the hook

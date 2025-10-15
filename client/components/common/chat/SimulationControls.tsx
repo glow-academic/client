@@ -19,27 +19,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useSimulation } from "@/contexts/simulation-context";
-import { useAttemptProfilesByAttemptId } from "@/lib/api/v1/hooks/attempt_profiles";
-import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
 import { useEffect, useMemo, useState } from "react";
 
 export function SimulationControls() {
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
 
-  // All hooks must be called before any early returns
-  const currentChatId = simulationContext?.currentChat?.id;
-  const { data: currentChatMessages = [] } = useSimulationMessagesByChatId(
-    currentChatId!
-  );
-
-  // Get attempt profile from junction table
-  const { data: attemptProfileLinks = [] } = useAttemptProfilesByAttemptId(
-    simulationContext?.attempt?.id || ""
-  );
-  const attemptProfileId = attemptProfileLinks.find(
-    (ap) => ap.active
-  )?.profileId;
+  // Get data from context (v2 single source of truth)
+  const currentChatMessages = simulationContext?.currentMessages || [];
+  const attemptProfileId = simulationContext?.attemptProfileId;
 
   // Check if current user is the owner of this attempt
   const isAttemptOwner = useMemo(() => {

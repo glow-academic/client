@@ -422,6 +422,7 @@ export const HomeSimulationItemSchema = z.object({
   timeLimit: z.number().nullable().optional(),
   numSessions: z.number(),
   highestScore: z.number().nullable().optional(),
+  standard_groups: z.record(z.string(), z.array(z.string())),
   rubric_id: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
@@ -437,18 +438,6 @@ export const HomeSimulationItemSchema = z.object({
   notStartedCount: z.number().nullable().optional(),
   passPct: z.number().nullable().optional(),
 });
-
-export const HomeOverviewResponseSchema = z.object({
-  mode: z.enum(["ta", "instructional", "empty"]),
-  hasData: z.boolean(),
-  items: z.array(HomeSimulationItemSchema),
-  history: AttemptHistoryResponseSchema,
-  standard_groups_mapping: StandardGroupsMappingSchema,
-  standards_mapping: StandardsMappingSchema,
-  simulation_mapping: SimulationMappingSchema,
-});
-
-export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
 
 // Attempt History
 export const AttemptHistoryRowSchema = z.object({
@@ -481,6 +470,19 @@ export type AttemptHistoryResponse = z.infer<
   typeof AttemptHistoryResponseSchema
 >;
 
+// Home Overview
+export const HomeOverviewResponseSchema = z.object({
+  mode: z.enum(["ta", "instructional", "empty"]),
+  hasData: z.boolean(),
+  items: z.array(HomeSimulationItemSchema),
+  history: AttemptHistoryResponseSchema,
+  standard_groups_mapping: StandardGroupsMappingSchema,
+  standards_mapping: StandardsMappingSchema,
+  simulation_mapping: SimulationMappingSchema,
+});
+
+export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
+
 // Practice Overview
 export const PracticeSimulationItemSchema = z.object({
   viewMode: z.enum(["practice"]),
@@ -491,6 +493,7 @@ export const PracticeSimulationItemSchema = z.object({
   timeLimit: z.number().nullable().optional(),
   numSessions: z.number(),
   highestScore: z.number().nullable().optional(),
+  standard_groups: z.record(z.string(), z.array(z.string())),
   rubric_id: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),

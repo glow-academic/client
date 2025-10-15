@@ -9,9 +9,9 @@
 
 import { PracticePicker } from "@/components/common/analytics/PracticePicker";
 import {
-  CohortPicker,
-  Cohort as CohortPickerCohort,
-} from "@/components/common/cohort/CohortPicker";
+  CohortSelector,
+  Cohort as CohortSelectorCohort,
+} from "@/components/common/analytics/CohortSelector";
 import { RolePicker } from "@/components/common/profile/RolePicker";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
@@ -221,7 +221,7 @@ export function AnalyticsFilters({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCohortIds, selectedRoles]);
 
-  const handleCohortSelect = (cohorts: CohortPickerCohort[]) => {
+  const handleCohortSelect = (cohorts: CohortSelectorCohort[]) => {
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
@@ -265,7 +265,7 @@ export function AnalyticsFilters({
         )}
 
         {/* Cohort Picker */}
-        <CohortPicker
+        <CohortSelector
           cohorts={cohortOptions}
           selectedCohorts={selectedCohorts}
           onSelect={handleCohortSelect}

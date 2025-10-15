@@ -7,7 +7,7 @@
 
 "use client";
 
-import { DepartmentPicker } from "@/components/common/analytics/DepartmentPicker";
+import { DepartmentSelector } from "@/components/common/analytics/DepartmentSelector";
 import { useDepartments as useDepartmentsContext } from "@/contexts/departments-context";
 import { useDepartments } from "@/lib/api/v1/hooks/departments";
 
@@ -37,7 +37,7 @@ export function DepartmentsFilters() {
     <div className="pr-0">
       <div className="flex items-center gap-2">
         {/* Department Picker */}
-        <DepartmentPicker
+        <DepartmentSelector
           departments={departmentOptions}
           selectedDepartments={selectedDepartments}
           onSelect={handleDepartmentSelect}
