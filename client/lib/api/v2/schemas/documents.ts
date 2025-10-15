@@ -161,3 +161,39 @@ export const DeleteDocumentResponseSchema = z.object({
 export type DeleteDocumentResponse = z.infer<
   typeof DeleteDocumentResponseSchema
 >;
+
+// ============================================================================
+// UPLOAD/FINALIZE ENDPOINTS
+// ============================================================================
+
+export const FinalizeUploadRequestSchema = z.object({
+  fileId: z.string(),
+  zip: z.boolean().optional(),
+  autoClassify: z.boolean().optional(),
+  csv: z.boolean().optional(),
+  test: z.boolean().optional(),
+  profile_id: z.string().optional(),
+  department_id: z.string().optional(),
+});
+
+export type FinalizeUploadRequest = z.infer<typeof FinalizeUploadRequestSchema>;
+
+export const FinalizeUploadResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  status: z.string(),
+  document_id: z.string().optional(),
+  documents: z.array(z.record(z.any())).optional(),
+  extracted_count: z.number().optional(),
+  classification_result: z.record(z.any()).optional(),
+  course_result: z.record(z.any()).optional(),
+  users_created: z.number().optional(),
+  users_skipped: z.number().optional(),
+  errors: z.array(z.string()).optional(),
+  created_users: z.array(z.record(z.any())).optional(),
+  skipped_users: z.array(z.record(z.any())).optional(),
+});
+
+export type FinalizeUploadResponse = z.infer<
+  typeof FinalizeUploadResponseSchema
+>;

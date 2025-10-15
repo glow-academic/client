@@ -14,7 +14,6 @@ from urllib.parse import parse_qs
 
 import socketio  # type: ignore
 from app.db import init_db
-from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -583,7 +582,6 @@ fastapi_app.add_middleware(
 )
 
 # Include routers
-fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 
 # Include API v2 router (analytics)

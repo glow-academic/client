@@ -9,7 +9,7 @@
 import UploadClassificationDialog from "@/components/common/documents/UploadClassificationDialog";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
-import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
+import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
 import { log } from "@/utils/logger";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { Upload } from "lucide-react";
@@ -28,6 +28,7 @@ export function DocumentUploadButton({
   validDepartmentIds,
 }: DocumentUploadButtonProps) {
   const { effectiveProfile } = useProfile();
+  const finalizeMutation = useFinalizeDocumentUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -158,17 +159,23 @@ export function DocumentUploadButton({
             // Auto-classify ZIP files by default
             const shouldAutoClassify = isZipFile;
 
-            const result = await finalizeDocumentUpload(
+            // Call finalize using mutation hook
+            const result = await finalizeMutation.mutateAsync({
               fileId,
-              isZipFile, // zip parameter
-              shouldAutoClassify, // autoClassify parameter
-              effectiveProfile?.id
-            );
+              zip: isZipFile,
+              autoClassify: shouldAutoClassify,
+              profile_id: effectiveProfile?.id,
+            });
 
             if (result.success) {
               const isZipFile = file.name.toLowerCase().endsWith(".zip");
+              const classificationSuccess =
+                result.classification_result &&
+                "success" in result.classification_result
+                  ? result.classification_result.success
+                  : false;
               const description = isZipFile
-                ? `Extracted ${result.extracted_count || 0} documents${result.classification_result?.success ? " and auto-classified" : ""}`
+                ? `Extracted ${result.extracted_count || 0} documents${classificationSuccess ? " and auto-classified" : ""}`
                 : "File uploaded and processed successfully";
 
               toast.success(`Upload completed: ${file.name}!`, {

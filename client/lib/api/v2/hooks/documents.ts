@@ -19,6 +19,8 @@ import {
   DocumentDetailResponseSchema,
   DocumentsFilters,
   DocumentsListResponseSchema,
+  FinalizeUploadRequest,
+  FinalizeUploadResponseSchema,
   UpdateDocumentRequest,
   UpdateDocumentResponseSchema,
 } from "@/lib/api/v2/schemas/documents";
@@ -184,6 +186,29 @@ export function useBulkDeleteDocuments() {
       return DeleteDocumentResponseSchema.parse(res);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("documents:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useFinalizeDocumentUpload() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: FinalizeUploadRequest) => {
+      const res = await api<unknown>("/api/v2/documents/upload/finalize", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return FinalizeUploadResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate documents list to refresh with new uploads
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey[0];

@@ -450,21 +450,32 @@ class DocumentService:
     def delete_document(
         self, request: DeleteDocumentRequest
     ) -> DeleteDocumentResponse:
-        """Delete a document using dynamic SQL."""
+        """Delete a document from database and filesystem."""
 
-        # Get document name for response
-        name_query = text("""
-        SELECT name FROM documents WHERE id = :document_id
+        # Get document info including file_path
+        info_query = text("""
+        SELECT name, file_path FROM documents WHERE id = :document_id
         """)
 
         document = self.db.execute(
-            name_query, {"document_id": request.documentId}
+            info_query, {"document_id": request.documentId}
         ).fetchone()
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
 
-        # Delete document (cascades will handle junction tables)
+        # Delete physical file from filesystem
+        file_path = os.path.join(UPLOAD_FOLDER, document.file_path)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted file: {file_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete file {file_path}: {str(e)}")
+        else:
+            logger.warning(f"File not found in filesystem: {file_path}")
+
+        # Delete document from database (cascades will handle junction tables)
         delete_query = text("""
         DELETE FROM documents WHERE id = :document_id
         """)
@@ -479,9 +490,35 @@ class DocumentService:
     def bulk_delete_documents(
         self, request: BulkDeleteDocumentsRequest
     ) -> DeleteDocumentResponse:
-        """Bulk delete documents using dynamic SQL."""
+        """Bulk delete documents from database and filesystem."""
 
-        # Delete all documents
+        # Get all document file paths
+        info_query = text("""
+        SELECT id, name, file_path FROM documents WHERE id = ANY(:document_ids)
+        """)
+
+        documents = self.db.execute(
+            info_query, {"document_ids": request.documentIds}
+        ).fetchall()
+
+        if not documents:
+            raise ValueError("No documents found to delete")
+
+        # Delete physical files from filesystem
+        deleted_count = 0
+        for doc in documents:
+            file_path = os.path.join(UPLOAD_FOLDER, doc.file_path)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Deleted file: {file_path}")
+                    deleted_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to delete file {file_path}: {str(e)}")
+            else:
+                logger.warning(f"File not found in filesystem: {file_path}")
+
+        # Delete all documents from database
         delete_query = text("""
         DELETE FROM documents WHERE id = ANY(:document_ids)
         """)
@@ -491,7 +528,7 @@ class DocumentService:
 
         return DeleteDocumentResponse(
             success=True,
-            message=f"{len(request.documentIds)} documents deleted successfully",
+            message=f"{len(request.documentIds)} documents deleted successfully ({deleted_count} files removed)",
         )
 
     # TUS Upload Methods
@@ -818,11 +855,11 @@ class DocumentService:
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import (ParagraphStyle,  # type: ignore
-                                              getSampleStyleSheet)
+            from reportlab.lib.styles import ParagraphStyle  # type: ignore
+            from reportlab.lib.styles import getSampleStyleSheet
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import (Frame,  # type: ignore
-                                            PageTemplate, Paragraph,
+            from reportlab.platypus import Frame  # type: ignore
+            from reportlab.platypus import (PageTemplate, Paragraph,
                                             SimpleDocTemplate, Spacer, Table,
                                             TableStyle)
 
