@@ -4,11 +4,14 @@
  */
 
 import { api } from "@/lib/api/fetcher";
-import { simulationAttemptKeys } from "@/lib/api/v1/keys";
+import { simulationAttemptKeys, simulationChatKeys } from "@/lib/api/v1/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BulkArchiveAttemptsRequest,
   BulkArchiveAttemptsResponse,
+  UpdateChatCompletedAtRequest,
+  UpdateChatCreatedAtRequest,
+  UpdateChatTimestampResponseSchema,
 } from "../schemas/attempts";
 import { useRefreshAnalytics } from "./analytics";
 
@@ -230,6 +233,66 @@ export function useBulkArchiveAttempts() {
       qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
       // Refresh analytics MV
       refreshAnalytics();
+    },
+  });
+}
+
+export function useUpdateChatCreatedAt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: UpdateChatCreatedAtRequest) => {
+      const res = await api<unknown>(
+        "/api/v2/attempts/chats/update-created-at",
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+        }
+      );
+      return UpdateChatTimestampResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate v2 attempt queries to refetch updated data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === "v2" && key[1] === "attempts";
+        },
+      });
+      // Also invalidate v1 chat queries for backwards compatibility
+      queryClient.invalidateQueries({
+        queryKey: simulationChatKeys.all,
+      });
+    },
+  });
+}
+
+export function useUpdateChatCompletedAt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: UpdateChatCompletedAtRequest) => {
+      const res = await api<unknown>(
+        "/api/v2/attempts/chats/update-completed-at",
+        {
+          method: "POST",
+          body: JSON.stringify(request),
+        }
+      );
+      return UpdateChatTimestampResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      // Invalidate v2 attempt queries to refetch updated data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key[0] === "v2" && key[1] === "attempts";
+        },
+      });
+      // Also invalidate v1 chat queries for backwards compatibility
+      queryClient.invalidateQueries({
+        queryKey: simulationChatKeys.all,
+      });
     },
   });
 }

@@ -47,7 +47,7 @@ import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
-import { useUpdateSimulationChat } from "@/lib/api/v1/hooks/simulation_chats";
+import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
 import { log } from "@/utils/logger";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
@@ -59,7 +59,7 @@ export default function AttemptChat() {
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
 
-  const { mutate: updateSimulationChat } = useUpdateSimulationChat();
+  const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
@@ -195,10 +195,9 @@ export default function AttemptChat() {
         const now = new Date();
 
         try {
-          await updateSimulationChat({
-            id: chat.id,
+          await updateChatCreatedAt({
+            chatId: chat.id,
             createdAt: now.toISOString(),
-            updatedAt: chat.updatedAt, // Explicitly preserve the original updatedAt
           });
         } catch (error) {
           log.error("chat.timestamp.reset.failed", {
@@ -220,7 +219,7 @@ export default function AttemptChat() {
     simulationContext?.currentChat,
     isAttemptOwner,
     simulationContext?.attemptId,
-    updateSimulationChat,
+    updateChatCreatedAt,
   ]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed

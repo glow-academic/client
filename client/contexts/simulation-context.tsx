@@ -15,13 +15,15 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
-import { useUpdateSimulationChat } from "@/lib/api/v1/hooks/simulation_chats";
 import {
   simulationAttemptKeys,
   simulationChatKeysByAttemptId,
   simulationMessageKeysByChatId,
 } from "@/lib/api/v1/keys";
-import { useAttemptFull } from "@/lib/api/v2/hooks/attempts";
+import {
+  useAttemptFull,
+  useUpdateChatCompletedAt,
+} from "@/lib/api/v2/hooks/attempts";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -216,7 +218,7 @@ export function SimulationProvider({
   const [isGrading, setIsGrading] = useState(false);
 
   const queryClient = useQueryClient();
-  const updateSimulationChatMutation = useUpdateSimulationChat();
+  const { mutateAsync: updateChatCompletedAt } = useUpdateChatCompletedAt();
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
@@ -577,8 +579,8 @@ export function SimulationProvider({
 
         // Also update the database immediately for persistence
         try {
-          await updateSimulationChatMutation.mutateAsync({
-            id: targetChatId,
+          await updateChatCompletedAt({
+            chatId: targetChatId,
             completedAt: completionTime,
           });
         } catch (dbError) {
@@ -616,7 +618,7 @@ export function SimulationProvider({
       attemptId,
       readOnly,
       queryClient,
-      updateSimulationChatMutation,
+      updateChatCompletedAt,
     ]
   );
 
@@ -651,8 +653,8 @@ export function SimulationProvider({
         // Update each chat individually since there's no bulk update function
         await Promise.all(
           incompleteChats.map((chat) =>
-            updateSimulationChatMutation.mutateAsync({
-              id: chat.id,
+            updateChatCompletedAt({
+              chatId: chat.id,
               completedAt: completionTime,
             })
           )
@@ -695,7 +697,7 @@ export function SimulationProvider({
     readOnly,
     queryClient,
     chats,
-    updateSimulationChatMutation,
+    updateChatCompletedAt,
   ]);
 
   // Listen for WebSocket loading state changes
