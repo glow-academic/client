@@ -15,6 +15,8 @@ import {
   CreateModelResponseSchema,
   CreateProviderRequest,
   CreateProviderResponseSchema,
+  DecryptProviderKeyRequest,
+  DecryptProviderKeyResponseSchema,
   DeleteModelRequest,
   DeleteModelResponseSchema,
   DeleteProviderRequest,
@@ -151,6 +153,18 @@ export function useDeleteProvider() {
           return typeof key === "string" && key.startsWith("providers:v2:list");
         },
       });
+    },
+  });
+}
+
+export function useDecryptProviderKey() {
+  return useMutation({
+    mutationFn: async (request: DecryptProviderKeyRequest) => {
+      const res = await api<unknown>("/api/v2/providers/decrypt-key", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return DecryptProviderKeyResponseSchema.parse(res);
     },
   });
 }

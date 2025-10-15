@@ -1,9 +1,12 @@
-// utils/client-model.ts
-// Client-side utility functions for models
-// @AshokSaravanan222 & @siladiea
-// 06/18/2025
+/**
+ * Model utility functions
+ * Simple client-side utilities for model/provider display
+ */
 
-// Utility function to mask API key for display
+/**
+ * Mask API key for display purposes
+ * Shows first 4 and last 4 characters, masks the middle
+ */
 export const maskApiKey = (apiKey: string): string => {
   if (!apiKey || apiKey.length < 8) {
     return "••••••••";

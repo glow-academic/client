@@ -6,14 +6,18 @@ from app.db import get_session
 from app.repositories.provider_repository import get_provider_repository
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
-                                   CreateProviderResponse, DeleteModelRequest,
-                                   DeleteModelResponse, DeleteProviderRequest,
+                                   CreateProviderResponse,
+                                   DecryptProviderKeyRequest,
+                                   DecryptProviderKeyResponse,
+                                   DeleteModelRequest, DeleteModelResponse,
+                                   DeleteProviderRequest,
                                    DeleteProviderResponse, ModelDetailRequest,
                                    ModelDetailResponse, ProviderDetailRequest,
                                    ProviderDetailResponse, ProvidersFilters,
                                    ProvidersListResponse, UpdateModelRequest,
                                    UpdateModelResponse, UpdateProviderRequest,
                                    UpdateProviderResponse)
+from app.utils.auth import decrypt_api_key
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -94,6 +98,32 @@ async def delete_provider(
         return repo.delete_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/decrypt-key", response_model=DecryptProviderKeyResponse)
+async def decrypt_provider_key(
+    request: DecryptProviderKeyRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> DecryptProviderKeyResponse:
+    """Decrypt provider API key for authorized users."""
+    try:
+        repo = get_provider_repository(db)
+        
+        # Get provider detail to verify access and get encrypted key
+        provider_detail_request = ProviderDetailRequest(
+            providerId=request.providerId,
+            profileId=request.profileId
+        )
+        provider_detail = repo.get_provider_detail(provider_detail_request)
+        
+        # Decrypt the API key
+        decrypted_key = decrypt_api_key(provider_detail.api_key)
+        
+        return DecryptProviderKeyResponse(api_key=decrypted_key)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

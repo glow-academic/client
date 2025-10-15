@@ -230,3 +230,24 @@ export const DeleteModelResponseSchema = z.object({
 });
 
 export type DeleteModelResponse = z.infer<typeof DeleteModelResponseSchema>;
+
+// ============================================================================
+// DECRYPT API KEY SCHEMAS
+// ============================================================================
+
+export const DecryptProviderKeyRequestSchema = z.object({
+  providerId: z.string(),
+  profileId: z.string(),
+});
+
+export type DecryptProviderKeyRequest = z.infer<
+  typeof DecryptProviderKeyRequestSchema
+>;
+
+export const DecryptProviderKeyResponseSchema = z.object({
+  api_key: z.string(),
+});
+
+export type DecryptProviderKeyResponse = z.infer<
+  typeof DecryptProviderKeyResponseSchema
+>;

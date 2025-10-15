@@ -220,3 +220,21 @@ class DeleteModelResponse(BaseModel):
     success: bool
     message: str
 
+
+# ============================================================================
+# DECRYPT API KEY SCHEMAS
+# ============================================================================
+
+
+class DecryptProviderKeyRequest(BaseModel):
+    """Request to decrypt provider API key."""
+
+    providerId: str
+    profileId: str
+
+
+class DecryptProviderKeyResponse(BaseModel):
+    """Response with decrypted API key."""
+
+    api_key: str
+

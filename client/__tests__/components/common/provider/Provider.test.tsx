@@ -1,5 +1,4 @@
-import { render } from "@/test/custom-render";
-import { screen, waitFor } from "@/test/custom-render";
+import { render, screen, waitFor } from "@/test/custom-render";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -28,17 +27,8 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/test-path",
 }));
 
-// Mock the encryption utilities
-vi.mock("@/utils/model/server-model", () => ({
-  decryptProviderKey: vi.fn(() => Promise.resolve("decrypted-key")),
-}));
-
-vi.mock("@/utils/model/update-provider-with-encryption", () => ({
-  updateProviderWithEncryption: vi.fn(() => Promise.resolve(true)),
-}));
-
-// Mock the client model utilities
-vi.mock("@/utils/model/client-model", () => ({
+// Mock the model utilities
+vi.mock("@/utils/model-utils", () => ({
   maskApiKey: vi.fn((key: string) => (key ? "***" + key.slice(-4) : "")),
 }));
 
@@ -144,7 +134,7 @@ describe("Provider", () => {
       // The button doesn't have an accessible name, so we look for it by its position
       const buttons = screen.getAllByRole("button");
       const eyeButton = buttons.find((button) =>
-        button.querySelector('svg[class*="lucide-eye"]'),
+        button.querySelector('svg[class*="lucide-eye"]')
       );
       expect(eyeButton).toBeInTheDocument();
     });

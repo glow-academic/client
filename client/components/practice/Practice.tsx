@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 "use client";
-import { log } from "@/utils/logger";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export default function Practice() {
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
-
+  const { info, error } = useLogger();
   // Practice customize dialog state
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [isStartingAttempt, setIsStartingAttempt] = useState(false);
@@ -149,7 +149,7 @@ export default function Practice() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      log.info("simulation.navigate.attempt", {
+      info("simulation.navigate.attempt", {
         message: "Navigating to simulation attempt",
         subject: { entityType: "attempt", entityId: attemptId },
         context: { component: "Practice", function: "handleSimulationStarted" },
@@ -185,7 +185,7 @@ export default function Practice() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId]);
+  }, [router, loadingToastId, info, error]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -206,7 +206,7 @@ export default function Practice() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          log.error("simulation.start.precheck.failed", {
+          error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
             subject: { entityType: "simulation", entityId: simulationId },
             ...(effectiveProfile?.id
@@ -229,7 +229,7 @@ export default function Practice() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        log.info("simulation.start", {
+        info("simulation.start", {
           message: "Starting simulation via global WebSocket",
           subject: { entityType: "simulation", entityId: simulationId },
           ...(effectiveProfile?.id
@@ -258,7 +258,7 @@ export default function Practice() {
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          log.error("simulation.start.timeout", {
+          error("simulation.start.timeout", {
             message: "Simulation start timeout - no response from server",
             subject: { entityType: "simulation", entityId: simulationId },
             ...(effectiveProfile?.id
@@ -273,15 +273,15 @@ export default function Practice() {
           toast.error("Simulation start timed out. Please try again.");
           setLoadingToastId(null);
         }, 30000);
-      } catch (error) {
-        log.error("simulation.start.failed", {
+      } catch (e) {
+        error("simulation.start.failed", {
           message: "Error starting simulation",
           subject: { entityType: "simulation", entityId: simulationId },
           ...(effectiveProfile?.id
             ? { actor: { profileId: effectiveProfile.id } }
             : {}),
           context: { component: "Practice", function: "handleStartSimulation" },
-          error,
+          error: e,
         });
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
@@ -296,6 +296,8 @@ export default function Practice() {
       activeProfile,
       effectiveDepartmentIds,
       simulations,
+      info,
+      error,
     ]
   );
 
@@ -584,15 +586,15 @@ export default function Practice() {
                 // } else {
                 //   throw new Error(result.message || "Failed to create practice scenario");
                 // }
-              } catch (error) {
-                log.error("practice.session.error", {
+              } catch (e) {
+                error("practice.session.error", {
                   message: "Error starting practice session",
-                  error,
+                  error: e,
                   context: { function: "onStartAttempt" },
                 });
                 toast.error(
-                  error instanceof Error
-                    ? error.message
+                  e instanceof Error
+                    ? e.message
                     : "Failed to start practice session",
                   {
                     id: "start-attempt",

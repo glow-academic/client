@@ -28,6 +28,35 @@ def derive_key(password: str, salt: bytes) -> bytes:
     return kdf.derive(password.encode("utf-8"))
 
 
+def encrypt_api_key(api_key: str) -> str:
+    """Encrypt API key using AES-256-CBC with PBKDF2 key derivation (matching TypeScript implementation)"""
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        raise ValueError("SECRET_KEY environment variable is not set")
+
+    # Generate random salt and IV
+    salt = os.urandom(SALT_LENGTH)
+    iv = os.urandom(IV_LENGTH)
+
+    # Derive the key using PBKDF2
+    key = derive_key(secret_key, salt)
+
+    # Add PKCS7 padding
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    padded_data = padder.update(api_key.encode("utf-8")) + padder.finalize()
+
+    # Create cipher and encrypt
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+
+    # Combine salt + iv + encrypted data
+    combined = salt + iv + encrypted_data
+
+    # Return base64 encoded string
+    return base64.b64encode(combined).decode("utf-8")
+
+
 def decrypt_api_key(encrypted_key: str) -> str:
     """Decrypt API key using the same method as the TypeScript encryptProviderKey/decryptProviderKey functions"""
     secret_key = os.getenv("SECRET_KEY")

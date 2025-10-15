@@ -10,9 +10,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { maskApiKey } from "@/utils/model/client-model";
-import { decryptProviderKey } from "@/utils/model/server-model";
-
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +20,12 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateProvider,
+  useDecryptProviderKey,
   useProviderDetail,
   useUpdateProvider,
 } from "@/lib/api/v2/hooks/providers";
 import { log } from "@/utils/logger";
+import { maskApiKey } from "@/utils/model-utils";
 
 export interface ProviderProps {
   providerId?: string;
@@ -88,6 +87,7 @@ export default function Provider({ providerId }: ProviderProps) {
   // Mutation hooks
   const { mutate: createProvider } = useCreateProvider();
   const { mutate: updateProvider } = useUpdateProvider();
+  const { mutateAsync: decryptProviderKey } = useDecryptProviderKey();
 
   // Initialize form when provider data loads or in create mode
   useEffect(() => {
@@ -224,13 +224,16 @@ export default function Provider({ providerId }: ProviderProps) {
   };
 
   const handleToggleApiKey = async () => {
-    if (!providerDetail) return;
+    if (!providerDetail || !effectiveProfile) return;
 
     if (!showApiKey) {
       setIsDecrypting(true);
       try {
-        const decrypted = await decryptProviderKey(providerDetail.api_key);
-        setDecryptedApiKey(decrypted);
+        const result = await decryptProviderKey({
+          providerId: providerId || "",
+          profileId: effectiveProfile.id,
+        });
+        setDecryptedApiKey(result.api_key);
         setShowApiKey(true);
       } catch (error) {
         log.error("provider.api_key.decrypt.failed", {

@@ -16,6 +16,7 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    UpdateModelRequest, UpdateModelResponse,
                                    UpdateProviderRequest,
                                    UpdateProviderResponse)
+from app.utils.auth import encrypt_api_key
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -194,14 +195,16 @@ class ProviderService:
     ) -> CreateProviderResponse:
         """Create a new provider with encrypted API key."""
 
-        # Note: API key encryption should be handled by caller before passing to this method
+        # Encrypt API key before storing
+        encrypted_api_key = encrypt_api_key(request.api_key)
+
         query, _ = self.queries.create_provider()
         result = self.db.execute(
             text(query),
             {
                 "name": request.name,
                 "description": request.description,
-                "api_key": request.api_key,  # Should be encrypted by caller
+                "api_key": encrypted_api_key,
                 "base_url": request.base_url,
                 "department_id": request.department_id,
             },
@@ -243,14 +246,15 @@ class ProviderService:
             },
         )
 
-        # Update API key if provided
+        # Update API key if provided (encrypt before storing)
         if request.api_key is not None:
+            encrypted_api_key = encrypt_api_key(request.api_key)
             query, _ = self.queries.update_provider_api_key()
             self.db.execute(
                 text(query),
                 {
                     "provider_id": request.providerId,
-                    "api_key": request.api_key,  # Should be encrypted by caller
+                    "api_key": encrypted_api_key,
                 },
             )
 
