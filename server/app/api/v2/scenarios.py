@@ -10,6 +10,10 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    DeleteScenarioResponse,
                                    DuplicateScenarioRequest,
                                    DuplicateScenarioResponse,
+                                   GenerateScenarioAIRequest,
+                                   GenerateScenarioAIResponse,
+                                   RandomizeScenarioRequest,
+                                   RandomizeScenarioResponse,
                                    ScenarioDetailDefaultRequest,
                                    ScenarioDetailRequest,
                                    ScenarioDetailResponse, ScenariosFilters,
@@ -119,6 +123,40 @@ async def delete_scenario(
     try:
         repo = get_scenario_repository(db)
         return repo.delete_scenario(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# AI GENERATION AND RANDOMIZATION
+# ============================================================================
+
+@router.post("/generate-ai", response_model=GenerateScenarioAIResponse)
+async def generate_scenario_ai(
+    request: GenerateScenarioAIRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> GenerateScenarioAIResponse:
+    """Generate AI scenario content (title, description, objectives)."""
+    try:
+        repo = get_scenario_repository(db)
+        return await repo.generate_scenario_ai(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/randomize", response_model=RandomizeScenarioResponse)
+async def randomize_scenario(
+    request: RandomizeScenarioRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> RandomizeScenarioResponse:
+    """Suggest randomized scenario sections."""
+    try:
+        repo = get_scenario_repository(db)
+        return repo.randomize_scenario_sections(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

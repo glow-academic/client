@@ -50,12 +50,12 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateScenario,
+  useGenerateScenarioAI,
+  useRandomizeScenario,
   useScenarioDetail,
   useScenarioDetailDefault,
   useUpdateScenario,
 } from "@/lib/api/v2/hooks/scenarios";
-import { newScenario } from "@/utils/api/scenarios/new-scenario";
-import { randomizeScenario } from "@/utils/api/scenarios/randomize";
 import { log } from "@/utils/logger";
 import {
   getAllValidParameterItemIds,
@@ -108,6 +108,8 @@ export default function Scenario({
   // V2 Mutation hooks
   const { mutate: createScenario } = useCreateScenario();
   const { mutate: updateScenario } = useUpdateScenario();
+  const generateAIMutation = useGenerateScenarioAI();
+  const randomizeMutation = useRandomizeScenario();
 
   // Form data state
   const initialFormData = useMemo(
@@ -349,9 +351,9 @@ export default function Scenario({
   const handleRandomizeParameters = async () => {
     try {
       setIsRandomizingParameters(true);
-      const resp = await randomizeScenario({
+      const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId,
+        personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["parameters"],
@@ -392,9 +394,9 @@ export default function Scenario({
   const handleRandomizePersona = async () => {
     try {
       setIsRandomizingPersona(true);
-      const resp = await randomizeScenario({
+      const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId,
+        personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["persona"],
@@ -436,9 +438,9 @@ export default function Scenario({
         toast("No documents selected by choice");
         return;
       }
-      const resp = await randomizeScenario({
+      const resp = await randomizeMutation.mutateAsync({
         name: formData.name || "",
-        personaId: selectedPersonaId,
+        personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
         targets: ["documents"],
@@ -493,11 +495,18 @@ export default function Scenario({
     setIsGeneratingScenario(true);
 
     try {
-      const result = await newScenario({
-        personaId: selectedPersonaId,
+      // Get department ID from first valid department
+      const departmentId = effectiveDepartmentIds?.[0] || "";
+      if (!departmentId) {
+        throw new Error("No valid department found");
+      }
+
+      const result = await generateAIMutation.mutateAsync({
+        departmentId,
+        personaId: selectedPersonaId || undefined,
         documentIds: currentDocumentIds,
         parameterItemIds: currentParameterItemIds,
-        profileId: effectiveProfile?.id || null,
+        profileId: effectiveProfile?.id || undefined,
       });
 
       if (!result.success) {
@@ -511,7 +520,6 @@ export default function Scenario({
           problemStatement: result.description || prev.problemStatement || "",
         }));
         // Update objectives if returned
-        // Note: objectives may not be in response type anymore
         if (result.objectives) {
           setCurrentObjectives(result.objectives);
         }

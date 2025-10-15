@@ -228,3 +228,56 @@ export const DeleteScenarioResponseSchema = z.object({
 export type DeleteScenarioResponse = z.infer<
   typeof DeleteScenarioResponseSchema
 >;
+
+// ============================================================================
+// AI GENERATION AND RANDOMIZATION
+// ============================================================================
+
+export const GenerateScenarioAIRequestSchema = z.object({
+  departmentId: z.string(),
+  personaId: z.string().optional(),
+  documentIds: z.array(z.string()).optional(),
+  parameterItemIds: z.array(z.string()).optional(),
+  profileId: z.string().optional(),
+});
+
+export type GenerateScenarioAIRequest = z.infer<
+  typeof GenerateScenarioAIRequestSchema
+>;
+
+export const GenerateScenarioAIResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  title: z.string(),
+  description: z.string(),
+  objectives: z.array(z.string()),
+});
+
+export type GenerateScenarioAIResponse = z.infer<
+  typeof GenerateScenarioAIResponseSchema
+>;
+
+export const RandomizeScenarioRequestSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  personaId: z.string().optional(),
+  documentIds: z.array(z.string()).optional(),
+  parameterItemIds: z.array(z.string()).optional(),
+  targets: z.array(z.string()),
+});
+
+export type RandomizeScenarioRequest = z.infer<
+  typeof RandomizeScenarioRequestSchema
+>;
+
+export const RandomizeScenarioResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  personaId: z.string().optional(),
+  documentIds: z.array(z.string()),
+  parameterItemIds: z.array(z.string()),
+});
+
+export type RandomizeScenarioResponse = z.infer<
+  typeof RandomizeScenarioResponseSchema
+>;

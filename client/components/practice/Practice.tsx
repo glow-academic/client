@@ -23,7 +23,8 @@ import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useAnalyticsPracticeOverview } from "@/lib/api/v2/hooks/analytics";
-import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
+// Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
+// This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
 import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
@@ -551,24 +552,38 @@ export default function Practice() {
               ) as unknown as string;
 
               try {
-                const result = await createPracticeScenario({
-                  personaId: params.personaId!,
-                  parameterItemIds: params.parameterItemIds || [],
-                  profileId: effectiveProfile?.id || "",
-                });
-
-                if (result.success && result.scenario) {
-                  toast.success("Practice scenario created!", {
+                // TODO: Re-implement practice scenario creation
+                // The old endpoint is deprecated (returns 410)
+                // For now, show an error message
+                // TODO: Re-implement practice scenario creation
+                // The old endpoint is deprecated (returns 410)
+                // For now, show an error message
+                toast.error(
+                  "Practice scenario creation is currently unavailable",
+                  {
                     id: startToastId,
+                    description:
+                      "This feature is being updated. Please use existing scenarios.",
                     dismissible: true,
-                  });
-                  // Navigate to practice page to start the scenario
-                  router.push("/practice");
-                } else {
-                  throw new Error(
-                    result.message || "Failed to create practice scenario"
-                  );
-                }
+                  }
+                );
+
+                // Commenting out old code until re-implemented:
+                // const result = await createPracticeScenario({
+                //   personaId: params.personaId!,
+                //   parameterItemIds: params.parameterItemIds || [],
+                //   profileId: effectiveProfile?.id || "",
+                // });
+                //
+                // if (result.success && result.scenario) {
+                //   toast.success("Practice scenario created!", {
+                //     id: startToastId,
+                //     dismissible: true,
+                //   });
+                //   router.push("/practice");
+                // } else {
+                //   throw new Error(result.message || "Failed to create practice scenario");
+                // }
               } catch (error) {
                 log.error("practice.session.error", {
                   message: "Error starting practice session",

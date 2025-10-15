@@ -170,10 +170,7 @@ export function DocumentUploadButton({
             if (result.success) {
               const isZipFile = file.name.toLowerCase().endsWith(".zip");
               const classificationSuccess =
-                result.classification_result &&
-                "success" in result.classification_result
-                  ? result.classification_result.success
-                  : false;
+                result.classification_result ?? false;
               const description = isZipFile
                 ? `Extracted ${result.extracted_count || 0} documents${classificationSuccess ? " and auto-classified" : ""}`
                 : "File uploaded and processed successfully";

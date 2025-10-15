@@ -1,6 +1,6 @@
 """Scenarios V2 API schemas."""
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -182,4 +182,50 @@ class DeleteScenarioResponse(BaseModel):
 
     success: bool
     message: str
+
+
+# ============================================================================
+# AI GENERATION AND RANDOMIZATION
+# ============================================================================
+
+
+class GenerateScenarioAIRequest(BaseModel):
+    """Request to generate AI scenario content."""
+
+    departmentId: str
+    personaId: Optional[str] = None
+    documentIds: Optional[List[str]] = None
+    parameterItemIds: Optional[List[str]] = None
+    profileId: Optional[str] = None
+
+
+class GenerateScenarioAIResponse(BaseModel):
+    """Response from AI scenario generation."""
+
+    success: bool
+    message: str
+    title: str
+    description: str
+    objectives: List[str]
+
+
+class RandomizeScenarioRequest(BaseModel):
+    """Request to randomize scenario sections."""
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    personaId: Optional[str] = None
+    documentIds: Optional[List[str]] = None
+    parameterItemIds: Optional[List[str]] = None
+    targets: List[str] = []  # ["persona", "documents", "parameters"]
+
+
+class RandomizeScenarioResponse(BaseModel):
+    """Response from scenario randomization."""
+
+    success: bool
+    message: str
+    personaId: Optional[str] = None
+    documentIds: List[str] = []
+    parameterItemIds: List[str] = []
 

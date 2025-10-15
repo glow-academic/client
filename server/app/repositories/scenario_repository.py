@@ -12,6 +12,10 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    DeleteScenarioResponse,
                                    DuplicateScenarioRequest,
                                    DuplicateScenarioResponse,
+                                   GenerateScenarioAIRequest,
+                                   GenerateScenarioAIResponse,
+                                   RandomizeScenarioRequest,
+                                   RandomizeScenarioResponse,
                                    ScenarioDetailDefaultRequest,
                                    ScenarioDetailRequest,
                                    ScenarioDetailResponse, ScenariosFilters,
@@ -75,6 +79,18 @@ class ScenarioRepository:
     ) -> DeleteScenarioResponse:
         """Delete scenario."""
         return self.service.delete_scenario(request)
+
+    async def generate_scenario_ai(
+        self, request: GenerateScenarioAIRequest
+    ) -> GenerateScenarioAIResponse:
+        """Generate AI scenario content."""
+        return await self.service.generate_scenario_ai(request)
+
+    def randomize_scenario_sections(
+        self, request: RandomizeScenarioRequest
+    ) -> RandomizeScenarioResponse:
+        """Randomize scenario sections."""
+        return self.service.randomize_scenario_sections(request)
 
 
 def get_scenario_repository(db: Optional[Session] = None) -> ScenarioRepository:

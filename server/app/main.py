@@ -14,7 +14,6 @@ from urllib.parse import parse_qs
 
 import socketio  # type: ignore
 from app.db import init_db
-from app.routes.scenarios import router as scenarios_router
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -581,8 +580,7 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-fastapi_app.include_router(scenarios_router, prefix="/scenarios")
+# Include routers (legacy routes removed, all in v2)
 
 # Include API v2 router (analytics)
 from app.api.v2.router import router as api_v2_router  # noqa: E402

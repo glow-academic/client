@@ -17,6 +17,10 @@ import {
   DeleteScenarioResponseSchema,
   DuplicateScenarioRequest,
   DuplicateScenarioResponseSchema,
+  GenerateScenarioAIRequest,
+  GenerateScenarioAIResponseSchema,
+  RandomizeScenarioRequest,
+  RandomizeScenarioResponseSchema,
   ScenarioDetailResponseSchema,
   ScenariosFilters,
   ScenariosListResponseSchema,
@@ -187,6 +191,30 @@ export function useDeleteScenario() {
           return typeof key === "string" && key.startsWith("scenarios:v2:list");
         },
       });
+    },
+  });
+}
+
+export function useGenerateScenarioAI() {
+  return useMutation({
+    mutationFn: async (request: GenerateScenarioAIRequest) => {
+      const res = await api<unknown>("/api/v2/scenarios/generate-ai", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return GenerateScenarioAIResponseSchema.parse(res);
+    },
+  });
+}
+
+export function useRandomizeScenario() {
+  return useMutation({
+    mutationFn: async (request: RandomizeScenarioRequest) => {
+      const res = await api<unknown>("/api/v2/scenarios/randomize", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return RandomizeScenarioResponseSchema.parse(res);
     },
   });
 }

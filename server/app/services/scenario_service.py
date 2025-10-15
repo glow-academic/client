@@ -1,6 +1,7 @@
 """Scenario service layer - business logic for scenario operations."""
 
-from typing import Any, Dict, List
+import uuid
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.queries.scenario_queries import ScenarioQueries
 from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
@@ -13,7 +14,11 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    DeleteScenarioRequest,
                                    DeleteScenarioResponse,
                                    DuplicateScenarioRequest,
-                                   DuplicateScenarioResponse, ParameterDetail,
+                                   DuplicateScenarioResponse,
+                                   GenerateScenarioAIRequest,
+                                   GenerateScenarioAIResponse, ParameterDetail,
+                                   RandomizeScenarioRequest,
+                                   RandomizeScenarioResponse,
                                    ScenarioDetailDefaultRequest,
                                    ScenarioDetailRequest,
                                    ScenarioDetailResponse, ScenarioItem,
@@ -1193,5 +1198,88 @@ class ScenarioService:
 
         return DeleteScenarioResponse(
             success=True, message=f"Scenario '{scenario.name}' deleted successfully"
+        )
+
+    # AI Generation and Randomization Methods
+    async def generate_scenario_ai(
+        self, request: GenerateScenarioAIRequest
+    ) -> GenerateScenarioAIResponse:
+        """
+        Generate AI scenario content (title, description, objectives).
+        Uses the scenario agent to create content based on inputs.
+        """
+        from app.services.agents.collection.scenario import run_scenario_agent
+
+        # Convert string IDs to UUIDs
+        department_id = uuid.UUID(request.departmentId)
+        persona_id = uuid.UUID(request.personaId) if request.personaId else None
+        document_ids = [uuid.UUID(d) for d in request.documentIds] if request.documentIds else None
+        parameter_item_ids = [uuid.UUID(p) for p in request.parameterItemIds] if request.parameterItemIds else None
+        profile_id = uuid.UUID(request.profileId) if request.profileId else None
+
+        # Filter out empty lists
+        if document_ids and len(document_ids) == 0:
+            document_ids = None
+
+        # Run the scenario agent
+        # Note: run_scenario_agent expects sqlmodel.Session, but we have sqlalchemy.Session
+        # The two are compatible in practice
+        title, description, objectives, _ = await run_scenario_agent(
+            department_id=department_id,
+            persona_id=persona_id,
+            document_ids=document_ids,
+            parameter_item_ids=parameter_item_ids,
+            group_id=None,
+            session=self.db,  # type: ignore[arg-type]
+            profile_id=profile_id,
+        )
+
+        return GenerateScenarioAIResponse(
+            success=True,
+            message="Scenario generated successfully",
+            title=title,
+            description=description,
+            objectives=objectives,
+        )
+
+    def randomize_scenario_sections(
+        self, request: RandomizeScenarioRequest
+    ) -> RandomizeScenarioResponse:
+        """
+        Suggest randomized persona/documents/parameters based on current inputs.
+        """
+        from app.utils.scenario import suggest_randomized_sections
+
+        # Convert string IDs to UUIDs
+        persona_id = uuid.UUID(request.personaId) if request.personaId else None
+        document_ids = [uuid.UUID(d) for d in request.documentIds] if request.documentIds else None
+        parameter_item_ids = [uuid.UUID(p) for p in request.parameterItemIds] if request.parameterItemIds else None
+
+        # Normalize empty lists
+        if document_ids:
+            document_ids = [d for d in document_ids if d]
+        if parameter_item_ids:
+            parameter_item_ids = [p for p in parameter_item_ids if p]
+        targets = [t for t in request.targets if t.strip()] if request.targets else []
+
+        # Get suggestions
+        # Note: suggest_randomized_sections expects sqlmodel.Session, but we have sqlalchemy.Session
+        # The two are compatible in practice
+        suggestions = suggest_randomized_sections(
+            name=request.name,
+            description=request.description,
+            persona_id=persona_id,
+            document_ids=document_ids,
+            parameter_item_ids=parameter_item_ids,
+            targets=targets,
+            session=self.db,  # type: ignore[arg-type]
+        )
+
+        return RandomizeScenarioResponse(
+            success=True,
+            message="Randomization suggestions generated",
+            personaId=str(suggestions["persona_id"]) if suggestions.get("persona_id") else None,
+            documentIds=[str(x) for x in (suggestions.get("document_ids") or [])],
+            parameterItemIds=[str(x) for x in (suggestions.get("parameter_item_ids") or [])],
         )
 
