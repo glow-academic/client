@@ -1,12 +1,19 @@
 // auth.ts
-import { profileRepo } from "@/lib/repos/profileRepo";
-import { userProfileRepo } from "@/lib/repos/userProfileRepo";
+import {
+  createUserProfile,
+  fetchProfileByAlias,
+  fetchProfileSimple,
+  fetchUserProfilesByProfile,
+  fetchUserProfilesByUser,
+  updateProfileSimple,
+} from "@/lib/api/v2/server/profile";
+import { db } from "@/utils/drizzle/db";
+import { profiles } from "@/utils/drizzle/schema";
 import { log } from "@/utils/server-logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
-import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";
 import { db_url } from "./utils/drizzle/db";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
@@ -45,16 +52,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return;
         }
         const alias = user.email.split("@")[0];
-        const existingProfile = await getProfileByAlias(alias || "");
+        const existingProfile = await fetchProfileByAlias(alias || "");
 
         if (existingProfile) {
           // Check if profile is already linked to a user
-          const existingUserProfiles = await userProfileRepo.listByProfile(
+          const existingUserProfiles = await fetchUserProfilesByProfile(
             existingProfile.id
           );
           if (existingUserProfiles.length === 0) {
             // Link existing profile to new user
-            await userProfileRepo.create({
+            await createUserProfile({
               userId: parseInt(user.id!),
               profileId: existingProfile.id,
               isPrimary: true,
@@ -62,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
 
             // Update profile lastLogin
-            await profileRepo.update(existingProfile.id, {
+            await updateProfileSimple(existingProfile.id, {
               lastLogin: new Date().toISOString(),
             });
 
@@ -81,21 +88,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          // Create new profile
-          const newProfile = await profileRepo.create({
-            firstName,
-            lastName,
-            alias: alias || "",
-            viewedIntro: false,
-            role: "guest",
-          });
+          // Create new profile (using direct DB access for auth operations)
+          const [newProfile] = await db
+            .insert(profiles)
+            .values({
+              firstName,
+              lastName,
+              alias: alias || "",
+              viewedIntro: false,
+              role: "guest",
+            })
+            .returning();
 
           if (!newProfile) {
             throw new Error("Failed to create profile");
           }
 
           // Link profile to user
-          await userProfileRepo.create({
+          await createUserProfile({
             userId: parseInt(user.id!),
             profileId: newProfile.id,
             isPrimary: true,
@@ -148,14 +158,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             message: "Updating existing user profile",
           });
 
-          const userProfileLinks = await userProfileRepo.listByUser(
+          const userProfileLinks = await fetchUserProfilesByUser(
             parseInt(user.id!)
           );
           const primaryUserProfile = userProfileLinks.find(
             (up) => up.isPrimary
           );
           if (primaryUserProfile) {
-            await profileRepo.update(primaryUserProfile.profileId, {
+            await updateProfileSimple(primaryUserProfile.profileId, {
               firstName,
               lastName,
               lastLogin: new Date().toISOString(),
@@ -190,18 +200,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // On initial sign in, attach canonical profileId/role
       if (user?.id) {
         // your DB lookup to map user.id -> default profile via user_profiles junction
-        const userProfileLinks = await userProfileRepo.listByUser(
+        const userProfileLinks = await fetchUserProfilesByUser(
           parseInt(user.id)
         );
         const primaryLink = userProfileLinks.find((up) => up.isPrimary);
         if (primaryLink) {
           // Get the actual profile to get role
-          const primary = await profileRepo.find(primaryLink.profileId);
-          token["profileId"] = primary.id;
-          token["role"] = primary.role;
-          // initialize effectiveProfileId to self
-          token["effectiveProfileId"] =
-            token["effectiveProfileId"] ?? primary.id;
+          const primary = await fetchProfileSimple(primaryLink.profileId);
+          if (primary.profile) {
+            token["profileId"] = primary.profile.id;
+            token["role"] = primary.profile.role;
+            // initialize effectiveProfileId to self
+            token["effectiveProfileId"] =
+              token["effectiveProfileId"] ?? primary.profile.id;
+          }
         }
       }
 

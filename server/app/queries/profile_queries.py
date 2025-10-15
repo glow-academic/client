@@ -160,3 +160,88 @@ class ProfileQueries:
         params = {"profile_id": profile_id}
         return (query, params)
 
+    def get_profile_by_alias(self, alias: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to get profile by alias."""
+        query = """
+        SELECT 
+            id,
+            first_name,
+            last_name,
+            alias,
+            role,
+            active,
+            viewed_intro,
+            viewed_chat,
+            default_profile,
+            req_per_day,
+            last_login,
+            last_active,
+            created_at,
+            updated_at
+        FROM profiles
+        WHERE alias = :alias
+        """
+        params = {"alias": alias}
+        return (query, params)
+
+    def list_user_profiles_by_user(
+        self, user_id: int
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Build query to list user_profiles by user_id."""
+        query = """
+        SELECT 
+            user_id,
+            profile_id,
+            is_primary,
+            active,
+            created_at,
+            updated_at
+        FROM user_profiles
+        WHERE user_id = :user_id
+        ORDER BY is_primary DESC, created_at ASC
+        """
+        params = {"user_id": user_id}
+        return (query, params)
+
+    def list_user_profiles_by_profile(
+        self, profile_id: str
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Build query to list user_profiles by profile_id."""
+        query = """
+        SELECT 
+            user_id,
+            profile_id,
+            is_primary,
+            active,
+            created_at,
+            updated_at
+        FROM user_profiles
+        WHERE profile_id = :profile_id
+        ORDER BY is_primary DESC, created_at ASC
+        """
+        params = {"profile_id": profile_id}
+        return (query, params)
+
+    def create_user_profile(
+        self, user_id: int, profile_id: str, is_primary: bool, active: bool
+    ) -> Tuple[str, Dict[str, Any]]:
+        """Build query to create a user_profile link."""
+        query = """
+        INSERT INTO user_profiles (user_id, profile_id, is_primary, active)
+        VALUES (:user_id, :profile_id, :is_primary, :active)
+        RETURNING 
+            user_id,
+            profile_id,
+            is_primary,
+            active,
+            created_at,
+            updated_at
+        """
+        params = {
+            "user_id": user_id,
+            "profile_id": profile_id,
+            "is_primary": is_primary,
+            "active": active,
+        }
+        return (query, params)
+

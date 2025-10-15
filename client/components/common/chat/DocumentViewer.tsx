@@ -57,7 +57,7 @@ export default function DocumentViewer({
           response = await fetch(document.filePath);
         } else {
           response = await fetch(
-            `${appPrefix}/api/download/document/${document.id}`,
+            `${appPrefix}/api/v2/documents/download/${document.id}`,
             {
               method: "GET",
               credentials: "include",

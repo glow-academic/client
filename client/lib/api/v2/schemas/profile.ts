@@ -291,6 +291,74 @@ export type UpdateProfileSimpleResponse = z.infer<
 >;
 
 // ============================================================================
+// PROFILE BY ALIAS OPERATIONS
+// ============================================================================
+
+export const ProfileByAliasRequestSchema = z.object({
+  alias: z.string(),
+});
+
+export type ProfileByAliasRequest = z.infer<typeof ProfileByAliasRequestSchema>;
+
+// ============================================================================
+// USER PROFILES OPERATIONS (Junction Table)
+// ============================================================================
+
+export const UserProfileItemSchema = z.object({
+  userId: z.number(),
+  profileId: z.string(),
+  isPrimary: z.boolean(),
+  active: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type UserProfileItem = z.infer<typeof UserProfileItemSchema>;
+
+export const ListUserProfilesByUserRequestSchema = z.object({
+  userId: z.number(),
+});
+
+export type ListUserProfilesByUserRequest = z.infer<
+  typeof ListUserProfilesByUserRequestSchema
+>;
+
+export const ListUserProfilesByProfileRequestSchema = z.object({
+  profileId: z.string(),
+});
+
+export type ListUserProfilesByProfileRequest = z.infer<
+  typeof ListUserProfilesByProfileRequestSchema
+>;
+
+export const UserProfilesListResponseSchema = z.object({
+  userProfiles: z.array(UserProfileItemSchema),
+});
+
+export type UserProfilesListResponse = z.infer<
+  typeof UserProfilesListResponseSchema
+>;
+
+export const CreateUserProfileRequestSchema = z.object({
+  userId: z.number(),
+  profileId: z.string(),
+  isPrimary: z.boolean(),
+  active: z.boolean(),
+});
+
+export type CreateUserProfileRequest = z.infer<
+  typeof CreateUserProfileRequestSchema
+>;
+
+export const CreateUserProfileResponseSchema = z.object({
+  userProfile: UserProfileItemSchema,
+});
+
+export type CreateUserProfileResponse = z.infer<
+  typeof CreateUserProfileResponseSchema
+>;
+
+// ============================================================================
 // EMULATION OPERATIONS (from auth)
 // ============================================================================
 

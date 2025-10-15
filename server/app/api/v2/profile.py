@@ -7,12 +7,17 @@ from app.repositories.profile_repository import ProfileRepository
 from app.repositories.staff_repository import get_staff_repository
 from app.schemas.profile import (AuthorizeEmulationRequest,
                                  AuthorizeEmulationResponse,
+                                 CreateUserProfileRequest,
+                                 CreateUserProfileResponse,
+                                 ListUserProfilesByProfileRequest,
+                                 ListUserProfilesByUserRequest,
                                  MarkChatCompleteRequest,
                                  MarkIntroCompleteRequest,
-                                 MarkTourStepResponse, ProfileContextRequest,
-                                 ProfileContextResponse, ProfileDetailRequest,
-                                 ProfileDetailResponse, UpdateProfileRequest,
-                                 UpdateProfileResponse)
+                                 MarkTourStepResponse, ProfileByAliasRequest,
+                                 ProfileContextRequest, ProfileContextResponse,
+                                 ProfileDetailRequest, ProfileDetailResponse,
+                                 UpdateProfileRequest, UpdateProfileResponse,
+                                 UserProfilesListResponse)
 from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
@@ -321,6 +326,85 @@ async def mark_chat_complete(
         )
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# PROFILE BY ALIAS OPERATIONS
+# ============================================================================
+
+
+@router.post("/by-alias", response_model=ProfileDetailResponse)
+async def get_profile_by_alias(
+    request: ProfileByAliasRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> ProfileDetailResponse:
+    """Get profile by alias (for auth operations)."""
+    try:
+        repo = ProfileRepository(db)
+        profile = repo.get_profile_by_alias(request.alias)
+
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        return ProfileDetailResponse(profile=profile)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# USER PROFILES OPERATIONS (Junction Table)
+# ============================================================================
+
+
+@router.post("/user-profiles/list-by-user", response_model=UserProfilesListResponse)
+async def list_user_profiles_by_user(
+    request: ListUserProfilesByUserRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> UserProfilesListResponse:
+    """List user_profiles by user ID."""
+    try:
+        repo = ProfileRepository(db)
+        user_profiles = repo.list_user_profiles_by_user(request.userId)
+
+        return UserProfilesListResponse(userProfiles=user_profiles)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/user-profiles/list-by-profile", response_model=UserProfilesListResponse
+)
+async def list_user_profiles_by_profile(
+    request: ListUserProfilesByProfileRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> UserProfilesListResponse:
+    """List user_profiles by profile ID."""
+    try:
+        repo = ProfileRepository(db)
+        user_profiles = repo.list_user_profiles_by_profile(request.profileId)
+
+        return UserProfilesListResponse(userProfiles=user_profiles)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/user-profiles/create", response_model=CreateUserProfileResponse)
+async def create_user_profile(
+    request: CreateUserProfileRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> CreateUserProfileResponse:
+    """Create a user_profile link."""
+    try:
+        repo = ProfileRepository(db)
+        user_profile = repo.create_user_profile(
+            request.userId, request.profileId, request.isPrimary, request.active
+        )
+
+        return CreateUserProfileResponse(userProfile=user_profile)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

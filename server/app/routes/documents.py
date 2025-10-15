@@ -1,4 +1,14 @@
 # app/routes/document.py
+#
+# DEPRECATED: This router contains legacy endpoints.
+# TUS upload/download endpoints have been moved to /api/v2/documents/*
+# 
+# Remaining endpoints:
+# - /health - Health check
+# - /upload - Legacy multipart upload (non-TUS)
+# - /certificate - Certificate generation
+# - /id/{document_id} DELETE - Legacy delete endpoint
+
 import json
 import logging
 import mimetypes
@@ -26,10 +36,6 @@ load_dotenv()
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Directory for storing tus uploads in progress
-TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")
-os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

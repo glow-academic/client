@@ -7,8 +7,11 @@
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
 import {
+  CreateUserProfileRequest,
+  CreateUserProfileResponseSchema,
   ProfileDetailResponseSchema,
   ProfileSimpleDetailResponseSchema,
+  UserProfilesListResponseSchema,
 } from "../schemas/profile";
 
 /**
@@ -55,12 +58,122 @@ export const fetchProfileSimple = cache(async (profileId: string) => {
 
 /**
  * Fetch profile by alias from FastAPI server (memoized)
- * Used in auth.ts for profile lookup by alias
- * Note: This requires a server endpoint that supports alias lookup
- * For now, using client-side profileRepo until server endpoint is available
+ * Used in auth.ts for profile lookup by alias during sign-in
  */
-export const fetchProfileByAlias = async (alias: string) => {
-  // This will be implemented when we add a server endpoint for alias lookup
-  // For now, we'll keep using the client-side profileRepo in auth.ts
-  throw new Error("fetchProfileByAlias not yet implemented - use profileRepo");
+export const fetchProfileByAlias = cache(async (alias: string) => {
+  const res = await fetch(`${getApiBase()}/api/v2/profile/by-alias`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ alias }),
+  });
+
+  if (!res.ok) {
+    return null; // Return null if not found (404 or error)
+  }
+
+  const data = await res.json();
+  const parsed = ProfileSimpleDetailResponseSchema.parse(data);
+  return parsed.profile;
+});
+
+/**
+ * Fetch user_profiles by user ID from FastAPI server (memoized)
+ * Used in auth.ts to find profile links for a user
+ */
+export const fetchUserProfilesByUser = cache(async (userId: number) => {
+  const res = await fetch(
+    `${getApiBase()}/api/v2/profile/user-profiles/list-by-user`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ userId }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch user profiles by user");
+  }
+
+  const data = await res.json();
+  return UserProfilesListResponseSchema.parse(data).userProfiles;
+});
+
+/**
+ * Fetch user_profiles by profile ID from FastAPI server (memoized)
+ * Used in auth.ts to check if profile is already linked to a user
+ */
+export const fetchUserProfilesByProfile = cache(async (profileId: string) => {
+  const res = await fetch(
+    `${getApiBase()}/api/v2/profile/user-profiles/list-by-profile`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ profileId }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch user profiles by profile");
+  }
+
+  const data = await res.json();
+  return UserProfilesListResponseSchema.parse(data).userProfiles;
+});
+
+/**
+ * Create a user_profile link (not memoized - this is a mutation)
+ * Used in auth.ts to link a user to a profile
+ */
+export const createUserProfile = async (data: CreateUserProfileRequest) => {
+  const res = await fetch(
+    `${getApiBase()}/api/v2/profile/user-profiles/create`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to create user profile link");
+  }
+
+  const result = await res.json();
+  return CreateUserProfileResponseSchema.parse(result).userProfile;
+};
+
+/**
+ * Update profile simple (not memoized - this is a mutation)
+ * Used in auth.ts to update profile fields like lastLogin, firstName, lastName
+ */
+export const updateProfileSimple = async (
+  profileId: string,
+  updates: {
+    firstName?: string;
+    lastName?: string;
+    lastLogin?: string;
+    viewedIntro?: boolean;
+    viewedChat?: boolean;
+    reqPerDay?: number | null;
+    active?: boolean;
+  }
+) => {
+  const res = await fetch(`${getApiBase()}/api/v2/profile/update-simple`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ profileId, ...updates }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update profile");
+  }
+
+  const data = await res.json();
+  const parsed = ProfileSimpleDetailResponseSchema.parse(data);
+  return parsed.profile;
 };

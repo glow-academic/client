@@ -1,5 +1,4 @@
-import { render } from "@/test/custom-render";
-import { act, waitFor } from "@/test/custom-render";
+import { act, render, waitFor } from "@/test/custom-render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
@@ -122,11 +121,11 @@ describe("DocumentViewer", () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          "/api/download/document/doc-1",
+          "/api/v2/documents/download/doc-1",
           expect.objectContaining({
             method: "GET",
             credentials: "include",
-          }),
+          })
         );
       });
     });

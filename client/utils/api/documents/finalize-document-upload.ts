@@ -5,7 +5,6 @@
  * 06/24/2025
  */
 "use server";
-import { getApiBase } from "@/lib/api-base";
 import { log } from "@/utils/logger";
 
 export interface FinalizeDocumentUploadParams {
@@ -61,7 +60,7 @@ export async function finalizeDocumentUpload(
   autoClassify?: boolean,
   profileId?: string,
   csv?: boolean,
-  test?: boolean,
+  test?: boolean
 ): Promise<FinalizeDocumentUploadResponse> {
   try {
     const payload: FinalizeDocumentUploadParams = {
@@ -73,8 +72,8 @@ export async function finalizeDocumentUpload(
       ...(test !== undefined && { test }),
     };
 
-    const apiBase = getApiBase();
-    const finalizeUrl = `${apiBase}/documents/tus/finalize`;
+    const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+    const finalizeUrl = `${appPrefix}/api/v2/documents/upload/finalize`;
 
     log.info("documents.finalize.start", {
       message: "Starting document finalization",

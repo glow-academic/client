@@ -1,6 +1,6 @@
 """Documents V2 API schemas."""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -130,4 +130,32 @@ class DeleteDocumentResponse(BaseModel):
 
     success: bool
     message: str
+
+
+# Upload/Download Schemas
+class FinalizeUploadRequest(BaseModel):
+    """Request to finalize a TUS upload."""
+
+    fileId: str
+    zip: Optional[bool] = False
+    autoClassify: Optional[bool] = False
+    csv: Optional[bool] = False
+    test: Optional[bool] = False
+    profile_id: Optional[str] = None
+    department_id: Optional[str] = None
+
+
+class FinalizeUploadResponse(BaseModel):
+    """Response from finalizing an upload."""
+
+    success: bool
+    message: str
+    status: str
+    document_id: Optional[str] = None
+    documents: Optional[List[Dict[str, Any]]] = None
+    users_created: Optional[int] = None
+    users_skipped: Optional[int] = None
+    errors: Optional[List[str]] = None
+    created_users: Optional[List[Dict[str, Any]]] = None
+    skipped_users: Optional[List[Dict[str, Any]]] = None
 

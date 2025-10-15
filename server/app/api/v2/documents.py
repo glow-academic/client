@@ -1,5 +1,8 @@
 """Documents API endpoints."""
 
+import base64
+import os
+import urllib.parse
 from typing import Annotated
 
 from app.db import get_session
@@ -13,9 +16,13 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    DocumentDetailRequest,
                                    DocumentDetailResponse, DocumentsFilters,
                                    DocumentsListResponse,
+                                   FinalizeUploadRequest,
+                                   FinalizeUploadResponse,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
-from fastapi import APIRouter, Depends, HTTPException
+from app.services.document_service import DocumentService
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -122,4 +129,240 @@ async def bulk_delete_documents(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# TUS UPLOAD ENDPOINTS
+# ============================================================================
+
+@router.options("/upload")
+async def tus_options(request: Request) -> Response:
+    """Handle OPTIONS request for tus protocol discovery."""
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Tus-Version": "1.0.0",
+            "Tus-Extension": "creation,termination,creation-with-upload",
+            "Tus-Max-Size": "1073741824",  # 1GB max file size
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, HEAD, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Tus-Resumable, Upload-Length, Upload-Metadata, Upload-Offset, Content-Type",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
+
+
+@router.post("/upload")
+async def tus_creation(
+    request: Request,
+    db: Annotated[Session, Depends(get_session)],
+) -> Response:
+    """Handle POST request for tus protocol - create upload."""
+    # Check tus version
+    if request.headers.get("Tus-Resumable") != "1.0.0":
+        return Response(status_code=412, headers={"Tus-Version": "1.0.0"})
+
+    # Get upload length
+    upload_length = request.headers.get("Upload-Length")
+    if not upload_length:
+        return Response(status_code=400, content="Missing Upload-Length header")
+
+    # Parse metadata
+    metadata = {}
+    if "Upload-Metadata" in request.headers:
+        for kv in request.headers["Upload-Metadata"].split(","):
+            if " " in kv:
+                k, v = kv.strip().split(" ", 1)
+                metadata[k] = base64.b64decode(v).decode("utf-8")
+
+    # Get app prefix from environment
+    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+
+    # Create upload using service
+    service = DocumentService(db)
+    upload_id, location, offset = service.create_tus_upload(
+        upload_length, metadata, app_prefix
+    )
+
+    # Handle creation-with-upload if Content-Length > 0
+    if request.headers.get("Content-Length", "0") != "0":
+        chunk = await request.body()
+        success, new_offset, error = service.append_tus_chunk(
+            upload_id, chunk, str(offset)
+        )
+
+        if not success:
+            return Response(status_code=500, content=error or "Failed to write chunk")
+
+        return Response(
+            status_code=201,
+            headers={
+                "Location": location,
+                "Tus-Resumable": "1.0.0",
+                "Upload-Offset": str(new_offset),
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            },
+        )
+
+    return Response(
+        status_code=201,
+        headers={
+            "Location": location,
+            "Tus-Resumable": "1.0.0",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+        },
+    )
+
+
+@router.head("/upload/{upload_id}")
+async def tus_head(
+    upload_id: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_session)],
+) -> Response:
+    """Handle HEAD request for tus protocol - get upload info."""
+    service = DocumentService(db)
+    info = service.get_tus_upload_info(upload_id)
+
+    if not info:
+        return Response(status_code=404)
+
+    headers = {
+        "Tus-Resumable": "1.0.0",
+        "Upload-Offset": info.get("offset", "0"),
+        "Upload-Length": info.get("length", "0"),
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+    }
+
+    return Response(headers=headers)
+
+
+@router.patch("/upload/{upload_id}")
+async def tus_patch(
+    upload_id: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_session)],
+) -> Response:
+    """Handle PATCH request for tus protocol - upload chunk."""
+    # Check tus version
+    if request.headers.get("Tus-Resumable") != "1.0.0":
+        return Response(status_code=412, headers={"Tus-Version": "1.0.0"})
+
+    # Check content type
+    if request.headers.get("Content-Type") != "application/offset+octet-stream":
+        return Response(status_code=415)
+
+    # Get expected offset
+    expected_offset = request.headers.get("Upload-Offset")
+    if not expected_offset:
+        return Response(status_code=400, content="Missing Upload-Offset header")
+
+    # Read chunk
+    chunk = await request.body()
+
+    # Append chunk using service
+    service = DocumentService(db)
+    success, new_offset, error = service.append_tus_chunk(
+        upload_id, chunk, expected_offset
+    )
+
+    if not success:
+        if error == "Upload not found":
+            return Response(status_code=404)
+        elif error == "Offset mismatch":
+            return Response(status_code=409)
+        else:
+            return Response(status_code=500, content=error or "Failed to write chunk")
+
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Upload-Offset": str(new_offset),
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+        }
+    )
+
+
+@router.options("/upload/{upload_id}")
+async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
+    """Handle OPTIONS request for specific upload."""
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Tus-Version": "1.0.0",
+            "Tus-Extension": "creation,termination,creation-with-upload",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "HEAD, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Tus-Resumable, Upload-Length, Upload-Metadata, Upload-Offset, Content-Type",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
+
+
+@router.post("/upload/finalize", response_model=FinalizeUploadResponse)
+async def finalize_upload(
+    request: FinalizeUploadRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> FinalizeUploadResponse:
+    """Finalize an upload and process the file."""
+    service = DocumentService(db)
+    return service.finalize_tus_upload(request)
+
+
+# ============================================================================
+# DOWNLOAD ENDPOINTS
+# ============================================================================
+
+@router.get("/download/{document_id}")
+async def download_document(
+    document_id: str,
+    db: Annotated[Session, Depends(get_session)],
+) -> FileResponse:
+    """Download a document by ID."""
+    service = DocumentService(db)
+    result = service.get_document_file(document_id)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    file_path, filename, content_type = result
+
+    # Properly encode filename for HTTP headers
+    encoded_filename = urllib.parse.quote(filename, safe='')
+    content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
+
+    return FileResponse(
+        path=file_path,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": content_disposition,
+            "Cache-Control": "private, max-age=0, must-revalidate",
+        }
+    )
+
+
+@router.get("/csv/{token}")
+async def download_csv(
+    token: str,
+    db: Annotated[Session, Depends(get_session)],
+) -> FileResponse:
+    """Download a CSV file by token."""
+    service = DocumentService(db)
+    file_path = service.get_csv_file(token)
+
+    if not file_path:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+
+    return FileResponse(
+        path=file_path,
+        filename=f"{token}.csv",
+        media_type="text/csv",
+    )
 

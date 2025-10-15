@@ -7,7 +7,8 @@ from app.queries.profile_queries import ProfileQueries
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
                                  ProfileContextResponse, ProfileItem,
-                                 SimulationContextItem, SimulationsData)
+                                 SimulationContextItem, SimulationsData,
+                                 UserProfileItem)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -586,4 +587,99 @@ class ProfileService:
         }
 
         return segment_titles.get(segment, segment.capitalize())
+
+    # ============================================================================
+    # PROFILE BY ALIAS OPERATIONS
+    # ============================================================================
+
+    def get_profile_by_alias(self, alias: str) -> Optional[ProfileItem]:
+        """Get profile by alias.
+
+        Args:
+            alias: Profile alias (e.g., 'jdoe')
+
+        Returns:
+            ProfileItem if found, None otherwise
+        """
+        query, params = self.queries.get_profile_by_alias(alias)
+        result = self.db.execute(text(query), params).fetchone()
+
+        if not result:
+            return None
+
+        return self._row_to_profile_item(result)
+
+    # ============================================================================
+    # USER PROFILES OPERATIONS (Junction Table)
+    # ============================================================================
+
+    def list_user_profiles_by_user(self, user_id: int) -> List[UserProfileItem]:
+        """List user_profiles by user ID.
+
+        Args:
+            user_id: Integer user ID
+
+        Returns:
+            List of UserProfileItem
+        """
+        query, params = self.queries.list_user_profiles_by_user(user_id)
+        result = self.db.execute(text(query), params).fetchall()
+
+        return [self._row_to_user_profile_item(row) for row in result]
+
+    def list_user_profiles_by_profile(
+        self, profile_id: str
+    ) -> List[UserProfileItem]:
+        """List user_profiles by profile ID.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            List of UserProfileItem
+        """
+        query, params = self.queries.list_user_profiles_by_profile(profile_id)
+        result = self.db.execute(text(query), params).fetchall()
+
+        return [self._row_to_user_profile_item(row) for row in result]
+
+    def create_user_profile(
+        self, user_id: int, profile_id: str, is_primary: bool, active: bool
+    ) -> UserProfileItem:
+        """Create a user_profile link.
+
+        Args:
+            user_id: Integer user ID
+            profile_id: UUID of the profile
+            is_primary: Whether this is the primary profile for the user
+            active: Whether the link is active
+
+        Returns:
+            Created UserProfileItem
+        """
+        query, params = self.queries.create_user_profile(
+            user_id, profile_id, is_primary, active
+        )
+        result = self.db.execute(text(query), params).fetchone()
+        self.db.commit()
+
+        return self._row_to_user_profile_item(result)
+
+    def _row_to_user_profile_item(self, row: Any) -> UserProfileItem:
+        """Convert database row to UserProfileItem schema.
+
+        Args:
+            row: Database row result
+
+        Returns:
+            UserProfileItem schema
+        """
+        return UserProfileItem(
+            userId=row.user_id,
+            profileId=str(row.profile_id),
+            isPrimary=row.is_primary,
+            active=row.active,
+            createdAt=row.created_at.isoformat() if row.created_at else "",
+            updatedAt=row.updated_at.isoformat() if row.updated_at else "",
+        )
 

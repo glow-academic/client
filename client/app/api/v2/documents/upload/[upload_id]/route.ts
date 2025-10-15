@@ -1,8 +1,8 @@
 /**
- * app/api/upload/[upload_id]/route.ts
+ * app/api/v2/documents/upload/[upload_id]/route.ts
  *
  * Handles TUS requests with specific upload IDs
- * Proxies to FastAPI backend at /documents/tus/{upload_id}
+ * Proxies to FastAPI backend at /api/v2/documents/upload/{upload_id}
  */
 
 import { getApiBase } from "@/lib/api-base";
@@ -16,19 +16,19 @@ async function handleProxyRequest(
     params,
   }: {
     params: Promise<{ upload_id: string }>;
-  },
+  }
 ) {
   try {
     const { upload_id } = await params;
     const url = new URL(req.url);
-    const targetUrl = `${getApiBase()}/documents/tus/${upload_id}${url.search}`;
+    const targetUrl = `${getApiBase()}/api/v2/documents/upload/${upload_id}${url.search}`;
 
     await log.info("upload.tus.proxy", {
       message: `${req.method} ${url.pathname} -> ${targetUrl}`,
       subject: { entityType: "upload", entityId: upload_id },
       context: {
         function: "handleProxyRequest",
-        file: "app/api/upload/[upload_id]/route.ts",
+        file: "app/api/v2/documents/upload/[upload_id]/route.ts",
       },
     });
 
@@ -65,7 +65,7 @@ async function handleProxyRequest(
       subject: { entityType: "upload" },
       context: {
         function: "handleProxyRequest",
-        file: "app/api/upload/[upload_id]/route.ts",
+        file: "app/api/v2/documents/upload/[upload_id]/route.ts",
       },
       error,
     });
@@ -75,28 +75,28 @@ async function handleProxyRequest(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> },
+  { params }: { params: Promise<{ upload_id: string }> }
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> },
+  { params }: { params: Promise<{ upload_id: string }> }
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function HEAD(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> },
+  { params }: { params: Promise<{ upload_id: string }> }
 ) {
   return handleProxyRequest(req, { params });
 }
 
 export async function OPTIONS(
   req: NextRequest,
-  { params }: { params: Promise<{ upload_id: string }> },
+  { params }: { params: Promise<{ upload_id: string }> }
 ) {
   return handleProxyRequest(req, { params });
 }

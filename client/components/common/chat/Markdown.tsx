@@ -34,7 +34,7 @@ const MarkdownLink = ({
   children,
   ...props
 }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
-  const isCsvLink = href && href.startsWith("/api/download/csv/token/");
+  const isCsvLink = href && href.startsWith("/api/v2/documents/csv/");
   // if a csv link, we should prepend Download to the Link Name
   if (isCsvLink) {
     return (
@@ -88,10 +88,10 @@ export default function Markdown({ children }: MarkdownProps) {
   let processedText = children.replace(/\r?\n/g, "\n");
 
   // have logic to make it a link here?
-  // turn csv://token into /api/download/csv/token/token
+  // turn csv://token into /api/v2/documents/csv/token
   processedText = processedText.replace(
     /\]\(csv:\/\/([\w-]+)\)/gi,
-    "](/api/download/csv/token/$1)",
+    "](/api/v2/documents/csv/$1)"
   );
 
   return (

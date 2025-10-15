@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.schemas.profile import (ProfileContextRequest, ProfileContextResponse,
-                                 ProfileItem)
+                                 ProfileItem, UserProfileItem)
 from app.services.profile_service import ProfileService
 from sqlalchemy.orm import Session
 
@@ -108,3 +108,56 @@ class ProfileRepository:
             True if successful, False otherwise
         """
         return self.service.mark_chat_complete(profile_id)
+
+    def get_profile_by_alias(self, alias: str) -> Optional[ProfileItem]:
+        """Get profile by alias.
+
+        Args:
+            alias: Profile alias (e.g., 'jdoe')
+
+        Returns:
+            ProfileItem if found, None otherwise
+        """
+        return self.service.get_profile_by_alias(alias)
+
+    def list_user_profiles_by_user(self, user_id: int) -> List[UserProfileItem]:
+        """List user_profiles by user ID.
+
+        Args:
+            user_id: Integer user ID
+
+        Returns:
+            List of UserProfileItem
+        """
+        return self.service.list_user_profiles_by_user(user_id)
+
+    def list_user_profiles_by_profile(
+        self, profile_id: str
+    ) -> List[UserProfileItem]:
+        """List user_profiles by profile ID.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            List of UserProfileItem
+        """
+        return self.service.list_user_profiles_by_profile(profile_id)
+
+    def create_user_profile(
+        self, user_id: int, profile_id: str, is_primary: bool, active: bool
+    ) -> UserProfileItem:
+        """Create a user_profile link.
+
+        Args:
+            user_id: Integer user ID
+            profile_id: UUID of the profile
+            is_primary: Whether this is the primary profile for the user
+            active: Whether the link is active
+
+        Returns:
+            Created UserProfileItem
+        """
+        return self.service.create_user_profile(
+            user_id, profile_id, is_primary, active
+        )

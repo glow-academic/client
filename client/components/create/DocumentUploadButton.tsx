@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-
 interface DocumentUploadButtonProps {
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];
@@ -62,9 +61,7 @@ export function DocumentUploadButton({
     }
   };
 
-  const uploadFile = async (
-    file: File,
-  ) => {
+  const uploadFile = async (file: File) => {
     // Create a unique file ID for this upload
     const fileId = uuidv4();
 
@@ -88,7 +85,7 @@ export function DocumentUploadButton({
       // Create TUS upload
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
       const upload = new tus.Upload(file, {
-        endpoint: `${appPrefix}/api/upload`,
+        endpoint: `${appPrefix}/api/v2/documents/upload`,
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,

@@ -1,9 +1,8 @@
 /**
- * app/api/upload/route.ts
+ * app/api/v2/documents/upload/route.ts
  *
  * Streams every TUS request (POST / PATCH / HEAD / OPTIONS)
- * to the internal FastAPI service running at ws://fastapi:8000/documents/tus
- * without exposing that host to the public internet.
+ * to the internal FastAPI service at /api/v2/documents/upload
  */
 
 import { getApiBase } from "@/lib/api-base";
@@ -14,7 +13,7 @@ import type { NextRequest } from "next/server";
 async function handleProxyRequest(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const targetUrl = `${getApiBase()}/documents/tus${url.pathname.replace("/api/upload", "")}${url.search}`;
+    const targetUrl = `${getApiBase()}/api/v2/documents/upload${url.search}`;
 
     // Prepare fetch options
     const fetchOptions: RequestInit = {
