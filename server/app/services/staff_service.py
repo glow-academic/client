@@ -1,13 +1,16 @@
 """Staff service layer - business logic for staff operations."""
 
 import os
-from typing import Any, Dict
+import uuid
+from typing import Any, Dict, List
 
 from app.queries.staff_queries import StaffQueries
 from app.schemas.base import (CohortMapping, CohortMappingItem,
                               DepartmentMappingItem)
-from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
+from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
+                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
+                               CreateStaffRequest, CreateStaffResponse,
                                DeleteStaffRequest, DeleteStaffResponse,
                                StaffDetailBulkRequest, StaffDetailBulkResponse,
                                StaffDetailRequest, StaffDetailResponse,
@@ -222,6 +225,115 @@ class StaffService:
             valid_department_ids=valid_department_ids,
             role_options=role_options,
             department_mapping=department_mapping,
+        )
+
+    def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
+        """Create a new staff member."""
+
+        # Check if alias already exists
+        query, params = self.queries.check_alias_exists(request.alias)
+        existing = self.db.execute(text(query), params).fetchone()
+
+        if existing:
+            raise ValueError(f"Alias '{request.alias}' already exists")
+
+        # Generate new profile ID
+        profile_id = str(uuid.uuid4())
+
+        # Insert profile
+        query, _ = self.queries.create_profile()
+        self.db.execute(
+            text(query),
+            {
+                "id": profile_id,
+                "first_name": request.firstName,
+                "last_name": request.lastName,
+                "alias": request.alias,
+                "role": request.role,
+                "active": True,
+                "default_profile": False,
+                "viewed_intro": False,
+                "viewed_chat": False,
+                "req_per_day": None,
+            },
+        )
+
+        # If department_id is provided, insert profile_departments relationship
+        if request.department_id:
+            query, _ = self.queries.insert_profile_department()
+            self.db.execute(
+                text(query),
+                {
+                    "profile_id": profile_id,
+                    "department_id": request.department_id,
+                },
+            )
+
+        self.db.commit()
+
+        return CreateStaffResponse(
+            success=True,
+            profileId=profile_id,
+            message=f"Staff '{request.firstName} {request.lastName}' created successfully",
+        )
+
+    def bulk_create_staff(
+        self, request: BulkCreateStaffRequest
+    ) -> BulkCreateStaffResponse:
+        """Bulk create staff members."""
+
+        # Check for duplicate aliases
+        aliases = [p.alias for p in request.profiles]
+        query, params = self.queries.check_aliases_exist(aliases)
+        existing = self.db.execute(text(query), params).fetchall()
+
+        if existing:
+            existing_aliases = [row.alias for row in existing]
+            raise ValueError(
+                f"Aliases already exist: {', '.join(existing_aliases)}"
+            )
+
+        # Create all profiles
+        profile_ids: List[str] = []
+        for profile_req in request.profiles:
+            profile_id = str(uuid.uuid4())
+            profile_ids.append(profile_id)
+
+            # Insert profile
+            query, _ = self.queries.create_profile()
+            self.db.execute(
+                text(query),
+                {
+                    "id": profile_id,
+                    "first_name": profile_req.firstName,
+                    "last_name": profile_req.lastName,
+                    "alias": profile_req.alias,
+                    "role": profile_req.role,
+                    "active": True,
+                    "default_profile": False,
+                    "viewed_intro": False,
+                    "viewed_chat": False,
+                    "req_per_day": None,
+                },
+            )
+
+            # If department_id is provided, insert profile_departments relationship
+            if profile_req.department_id:
+                query, _ = self.queries.insert_profile_department()
+                self.db.execute(
+                    text(query),
+                    {
+                        "profile_id": profile_id,
+                        "department_id": profile_req.department_id,
+                    },
+                )
+
+        self.db.commit()
+
+        return BulkCreateStaffResponse(
+            success=True,
+            profileIds=profile_ids,
+            message=f"{len(profile_ids)} staff members created successfully",
         )
 
     def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:

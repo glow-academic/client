@@ -5,15 +5,19 @@ from typing import Any, Dict, List
 from app.queries.cohort_queries import CohortQueries
 from app.schemas.base import (DepartmentMappingItem, ProfileMappingItem,
                               SimulationMappingItem)
-from app.schemas.cohorts import (CohortDetailDefaultRequest,
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
                                  CohortItem, CohortsFilters,
                                  CohortsListResponse, CreateCohortRequest,
                                  CreateCohortResponse, DeleteCohortRequest,
                                  DeleteCohortResponse, DuplicateCohortRequest,
                                  DuplicateCohortResponse, LeaveCohortRequest,
-                                 LeaveCohortResponse, UpdateCohortRequest,
-                                 UpdateCohortResponse)
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -400,5 +404,58 @@ class CohortService:
 
         return LeaveCohortResponse(
             success=True, message=f"Left cohort '{cohort.title}' successfully"
+        )
+
+    def add_profiles_to_cohort(
+        self, request: AddProfilesToCohortRequest
+    ) -> AddProfilesToCohortResponse:
+        """Add profiles to cohort."""
+
+        # Check if cohort exists
+        query, params = self.queries.get_cohort_title(request.cohortId)
+        cohort = self.db.execute(text(query), params).fetchone()
+
+        if not cohort:
+            raise ValueError(f"Cohort not found: {request.cohortId}")
+
+        # Add profiles to cohort
+        query, _ = self.queries.insert_cohort_profile()
+        for profile_id in request.profileIds:
+            self.db.execute(
+                text(query),
+                {"cohort_id": request.cohortId, "profile_id": profile_id},
+            )
+
+        self.db.commit()
+
+        return AddProfilesToCohortResponse(
+            success=True,
+            message=f"Added {len(request.profileIds)} profile(s) to cohort '{cohort.title}' successfully",
+        )
+
+    def remove_profiles_from_cohort(
+        self, request: RemoveProfilesFromCohortRequest
+    ) -> RemoveProfilesFromCohortResponse:
+        """Remove profiles from cohort."""
+
+        # Check if cohort exists
+        query, params = self.queries.get_cohort_title(request.cohortId)
+        cohort = self.db.execute(text(query), params).fetchone()
+
+        if not cohort:
+            raise ValueError(f"Cohort not found: {request.cohortId}")
+
+        # Remove profiles from cohort by setting active = false
+        query, _ = self.queries.remove_cohort_profiles()
+        self.db.execute(
+            text(query),
+            {"cohort_id": request.cohortId, "profile_ids": request.profileIds},
+        )
+
+        self.db.commit()
+
+        return RemoveProfilesFromCohortResponse(
+            success=True,
+            message=f"Removed {len(request.profileIds)} profile(s) from cohort '{cohort.title}' successfully",
         )
 

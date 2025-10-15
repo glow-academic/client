@@ -14,10 +14,14 @@ import {
   AuthorizeEmulationRequest,
   AuthorizeEmulationResponse,
   AuthorizeEmulationResponseSchema,
+  BulkCreateProfileRequest,
+  BulkCreateProfileResponseSchema,
   BulkDeleteProfileRequest,
   BulkDeleteProfileResponseSchema,
   BulkUpdateProfileRequest,
   BulkUpdateProfileResponseSchema,
+  CreateProfileRequest,
+  CreateProfileResponseSchema,
   DeleteProfileRequest,
   DeleteProfileResponseSchema,
   MarkChatCompleteRequest,
@@ -114,6 +118,54 @@ export function useProfileDetailBulk(
     },
     enabled:
       queryOptions.enabled && profileIds.length > 0 && !!currentProfileId,
+  });
+}
+
+// ============================================================================
+// PROFILE CREATE HOOKS
+// ============================================================================
+
+export function useCreateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: CreateProfileRequest) => {
+      const res = await api<unknown>("/api/v2/profile/create", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return CreateProfileResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("profile:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useBulkCreateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: BulkCreateProfileRequest) => {
+      const res = await api<unknown>("/api/v2/profile/bulk-create", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return BulkCreateProfileResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === "string" && key.startsWith("profile:v2:list");
+        },
+      });
+    },
   });
 }
 

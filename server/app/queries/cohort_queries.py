@@ -293,6 +293,16 @@ class CohortQueries:
         params = {"cohort_id": cohort_id}
         return (query, params)
 
+    def remove_cohort_profiles(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to remove profiles from cohort (set active = false)."""
+        query = """
+        UPDATE cohort_profiles 
+        SET active = false, updated_at = NOW()
+        WHERE cohort_id = :cohort_id AND profile_id = ANY(:profile_ids)
+        """
+        params: Dict[str, Any] = {}
+        return (query, params)
+
     def get_cohort_for_duplicate(
         self, cohort_id: str
     ) -> Tuple[str, Dict[str, Any]]:

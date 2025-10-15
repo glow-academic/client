@@ -113,6 +113,38 @@ class StaffDetailBulkResponse(BaseModel):
 # ============================================================================
 
 
+class CreateStaffRequest(BaseModel):
+    """Request to create a single staff member."""
+
+    firstName: str
+    lastName: str
+    alias: str
+    role: str
+    department_id: Optional[str] = None
+
+
+class BulkCreateStaffRequest(BaseModel):
+    """Request to bulk create staff members."""
+
+    profiles: List[CreateStaffRequest]
+
+
+class CreateStaffResponse(BaseModel):
+    """Response from create staff."""
+
+    success: bool
+    profileId: str
+    message: str
+
+
+class BulkCreateStaffResponse(BaseModel):
+    """Response from bulk create staff."""
+
+    success: bool
+    profileIds: List[str]
+    message: str
+
+
 class UpdateStaffRequest(BaseModel):
     """Request to update staff."""
 

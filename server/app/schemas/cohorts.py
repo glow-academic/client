@@ -174,3 +174,31 @@ class LeaveCohortResponse(BaseModel):
     success: bool
     message: str
 
+
+class AddProfilesToCohortRequest(BaseModel):
+    """Request to add profiles to cohort."""
+
+    cohortId: str
+    profileIds: List[str]
+
+
+class AddProfilesToCohortResponse(BaseModel):
+    """Response from add profiles to cohort."""
+
+    success: bool
+    message: str
+
+
+class RemoveProfilesFromCohortRequest(BaseModel):
+    """Request to remove profiles from cohort."""
+
+    cohortId: str
+    profileIds: List[str]
+
+
+class RemoveProfilesFromCohortResponse(BaseModel):
+    """Response from remove profiles from cohort."""
+
+    success: bool
+    message: str
+

@@ -186,3 +186,41 @@ export const LeaveCohortResponseSchema = z.object({
 });
 
 export type LeaveCohortResponse = z.infer<typeof LeaveCohortResponseSchema>;
+
+// Add profiles to cohort request
+export const AddProfilesToCohortRequestSchema = z.object({
+  cohortId: z.string(),
+  profileIds: z.array(z.string()),
+});
+
+export type AddProfilesToCohortRequest = z.infer<
+  typeof AddProfilesToCohortRequestSchema
+>;
+
+export const AddProfilesToCohortResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type AddProfilesToCohortResponse = z.infer<
+  typeof AddProfilesToCohortResponseSchema
+>;
+
+// Remove profiles from cohort request
+export const RemoveProfilesFromCohortRequestSchema = z.object({
+  cohortId: z.string(),
+  profileIds: z.array(z.string()),
+});
+
+export type RemoveProfilesFromCohortRequest = z.infer<
+  typeof RemoveProfilesFromCohortRequestSchema
+>;
+
+export const RemoveProfilesFromCohortResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
+export type RemoveProfilesFromCohortResponse = z.infer<
+  typeof RemoveProfilesFromCohortResponseSchema
+>;

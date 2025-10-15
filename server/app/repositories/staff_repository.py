@@ -1,7 +1,9 @@
 """Staff repository - thin wrapper around staff service."""
 
-from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
+from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
+                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
+                               CreateStaffRequest, CreateStaffResponse,
                                DeleteStaffRequest, DeleteStaffResponse,
                                StaffDetailBulkRequest, StaffDetailBulkResponse,
                                StaffDetailRequest, StaffDetailResponse,
@@ -31,6 +33,16 @@ class StaffRepository:
     ) -> StaffDetailBulkResponse:
         """Get staff detail bulk."""
         return self.service.get_staff_detail_bulk(request)
+
+    def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
+        """Create staff."""
+        return self.service.create_staff(request)
+
+    def bulk_create_staff(
+        self, request: BulkCreateStaffRequest
+    ) -> BulkCreateStaffResponse:
+        """Bulk create staff."""
+        return self.service.bulk_create_staff(request)
 
     def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:
         """Update staff."""

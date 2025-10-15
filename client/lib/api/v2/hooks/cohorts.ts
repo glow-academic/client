@@ -11,6 +11,8 @@ import {
   cohortsListKeys,
 } from "@/lib/api/v2/keys";
 import {
+  AddProfilesToCohortRequest,
+  AddProfilesToCohortResponseSchema,
   CohortDetailResponseSchema,
   CohortsFilters,
   CohortsListResponseSchema,
@@ -22,6 +24,8 @@ import {
   DuplicateCohortResponseSchema,
   LeaveCohortRequest,
   LeaveCohortResponseSchema,
+  RemoveProfilesFromCohortRequest,
+  RemoveProfilesFromCohortResponseSchema,
   UpdateCohortRequest,
   UpdateCohortResponseSchema,
 } from "@/lib/api/v2/schemas/cohorts";
@@ -209,6 +213,58 @@ export function useLeaveCohort() {
         predicate: (query) => {
           const key = query.queryKey[0];
           return typeof key === "string" && key.startsWith("cohorts:v2:list");
+        },
+      });
+    },
+  });
+}
+
+export function useAddProfilesToCohort() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: AddProfilesToCohortRequest) => {
+      const res = await api<unknown>("/api/v2/cohorts/add-profiles", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return AddProfilesToCohortResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("cohorts:v2:list")) ||
+            (typeof key === "string" && key.startsWith("cohorts:v2:detail")) ||
+            (typeof key === "string" && key.startsWith("profile:v2:list"))
+          );
+        },
+      });
+    },
+  });
+}
+
+export function useRemoveProfilesFromCohort() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (request: RemoveProfilesFromCohortRequest) => {
+      const res = await api<unknown>("/api/v2/cohorts/remove-profiles", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return RemoveProfilesFromCohortResponseSchema.parse(res);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return (
+            (typeof key === "string" && key.startsWith("cohorts:v2:list")) ||
+            (typeof key === "string" && key.startsWith("cohorts:v2:detail")) ||
+            (typeof key === "string" && key.startsWith("profile:v2:list"))
+          );
         },
       });
     },

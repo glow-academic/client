@@ -4,15 +4,19 @@ from typing import Annotated
 
 from app.db import get_session
 from app.repositories.cohort_repository import get_cohort_repository
-from app.schemas.cohorts import (CohortDetailDefaultRequest,
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
                                  CohortsFilters, CohortsListResponse,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
                                  DuplicateCohortRequest,
                                  DuplicateCohortResponse, LeaveCohortRequest,
-                                 LeaveCohortResponse, UpdateCohortRequest,
-                                 UpdateCohortResponse)
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -131,6 +135,36 @@ async def leave_cohort(
     try:
         repo = get_cohort_repository(db)
         return repo.leave_cohort(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/add-profiles", response_model=AddProfilesToCohortResponse)
+async def add_profiles_to_cohort(
+    request: AddProfilesToCohortRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> AddProfilesToCohortResponse:
+    """Add profiles to a cohort."""
+    try:
+        repo = get_cohort_repository(db)
+        return repo.add_profiles_to_cohort(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/remove-profiles", response_model=RemoveProfilesFromCohortResponse)
+async def remove_profiles_from_cohort(
+    request: RemoveProfilesFromCohortRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> RemoveProfilesFromCohortResponse:
+    """Remove profiles from a cohort."""
+    try:
+        repo = get_cohort_repository(db)
+        return repo.remove_profiles_from_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

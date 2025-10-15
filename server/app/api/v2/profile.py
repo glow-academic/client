@@ -13,8 +13,10 @@ from app.schemas.profile import (AuthorizeEmulationRequest,
                                  ProfileContextResponse, ProfileDetailRequest,
                                  ProfileDetailResponse, UpdateProfileRequest,
                                  UpdateProfileResponse)
-from app.schemas.staff import (BulkDeleteStaffRequest, BulkDeleteStaffResponse,
+from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
+                               BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
+                               CreateStaffRequest, CreateStaffResponse,
                                DeleteStaffRequest, DeleteStaffResponse,
                                StaffDetailBulkRequest, StaffDetailBulkResponse,
                                StaffDetailRequest, StaffDetailResponse,
@@ -70,6 +72,41 @@ async def get_profile_detail_bulk(
         return repo.get_staff_detail_bulk(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# PROFILE CREATE OPERATIONS
+# ============================================================================
+
+
+@router.post("/create", response_model=CreateStaffResponse)
+async def create_profile(
+    request: CreateStaffRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> CreateStaffResponse:
+    """Create a new profile."""
+    try:
+        repo = get_staff_repository(db)
+        return repo.create_staff(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bulk-create", response_model=BulkCreateStaffResponse)
+async def bulk_create_profile(
+    request: BulkCreateStaffRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> BulkCreateStaffResponse:
+    """Bulk create profiles."""
+    try:
+        repo = get_staff_repository(db)
+        return repo.bulk_create_staff(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

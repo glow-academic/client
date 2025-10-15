@@ -1,14 +1,18 @@
 """Cohort repository - thin wrapper around cohort service."""
 
-from app.schemas.cohorts import (CohortDetailDefaultRequest,
+from app.schemas.cohorts import (AddProfilesToCohortRequest,
+                                 AddProfilesToCohortResponse,
+                                 CohortDetailDefaultRequest,
                                  CohortDetailRequest, CohortDetailResponse,
                                  CohortsFilters, CohortsListResponse,
                                  CreateCohortRequest, CreateCohortResponse,
                                  DeleteCohortRequest, DeleteCohortResponse,
                                  DuplicateCohortRequest,
                                  DuplicateCohortResponse, LeaveCohortRequest,
-                                 LeaveCohortResponse, UpdateCohortRequest,
-                                 UpdateCohortResponse)
+                                 LeaveCohortResponse,
+                                 RemoveProfilesFromCohortRequest,
+                                 RemoveProfilesFromCohortResponse,
+                                 UpdateCohortRequest, UpdateCohortResponse)
 from app.services.cohort_service import CohortService
 from sqlalchemy.orm import Session
 
@@ -57,6 +61,18 @@ class CohortRepository:
     def leave_cohort(self, request: LeaveCohortRequest) -> LeaveCohortResponse:
         """Leave cohort."""
         return self.service.leave_cohort(request)
+
+    def add_profiles_to_cohort(
+        self, request: AddProfilesToCohortRequest
+    ) -> AddProfilesToCohortResponse:
+        """Add profiles to cohort."""
+        return self.service.add_profiles_to_cohort(request)
+
+    def remove_profiles_from_cohort(
+        self, request: RemoveProfilesFromCohortRequest
+    ) -> RemoveProfilesFromCohortResponse:
+        """Remove profiles from cohort."""
+        return self.service.remove_profiles_from_cohort(request)
 
 
 def get_cohort_repository(db: Session) -> CohortRepository:

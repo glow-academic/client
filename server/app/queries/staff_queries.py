@@ -264,3 +264,39 @@ class StaffQueries:
         params = {"profile_ids": profile_ids}
         return (query, params)
 
+    def check_alias_exists(self, alias: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to check if alias exists."""
+        query = "SELECT id, alias FROM profiles WHERE alias = :alias"
+        params = {"alias": alias}
+        return (query, params)
+
+    def check_aliases_exist(self, aliases: List[str]) -> Tuple[str, Dict[str, Any]]:
+        """Build query to check if aliases exist."""
+        query = "SELECT id, alias FROM profiles WHERE alias = ANY(:aliases)"
+        params = {"aliases": aliases}
+        return (query, params)
+
+    def create_profile(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to create a profile."""
+        query = """
+        INSERT INTO profiles (
+            id, first_name, last_name, alias, role, active, 
+            default_profile, viewed_intro, viewed_chat, req_per_day
+        ) VALUES (
+            :id, :first_name, :last_name, :alias, :role, :active,
+            :default_profile, :viewed_intro, :viewed_chat, :req_per_day
+        )
+        """
+        params: Dict[str, Any] = {}
+        return (query, params)
+
+    def insert_profile_department(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to insert profile-department relationship."""
+        query = """
+        INSERT INTO profile_departments (profile_id, department_id)
+        VALUES (:profile_id, :department_id)
+        ON CONFLICT (profile_id, department_id) DO NOTHING
+        """
+        params: Dict[str, Any] = {}
+        return (query, params)
+

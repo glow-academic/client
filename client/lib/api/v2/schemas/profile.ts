@@ -207,6 +207,47 @@ export type BulkDeleteProfileResponse = z.infer<
 >;
 
 // ============================================================================
+// PROFILE CREATE (from staff)
+// ============================================================================
+
+export const CreateProfileRequestSchema = z.object({
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.enum(["superadmin", "admin", "instructional", "ta", "guest"]),
+  department_id: z.string().optional(),
+});
+
+export type CreateProfileRequest = z.infer<typeof CreateProfileRequestSchema>;
+
+export const CreateProfileResponseSchema = z.object({
+  success: z.boolean(),
+  profileId: z.string(),
+  message: z.string(),
+});
+
+export type CreateProfileResponse = z.infer<typeof CreateProfileResponseSchema>;
+
+// Bulk create request
+export const BulkCreateProfileRequestSchema = z.object({
+  profiles: z.array(CreateProfileRequestSchema),
+});
+
+export type BulkCreateProfileRequest = z.infer<
+  typeof BulkCreateProfileRequestSchema
+>;
+
+export const BulkCreateProfileResponseSchema = z.object({
+  success: z.boolean(),
+  profileIds: z.array(z.string()),
+  message: z.string(),
+});
+
+export type BulkCreateProfileResponse = z.infer<
+  typeof BulkCreateProfileResponseSchema
+>;
+
+// ============================================================================
 // SIMPLE PROFILE OPERATIONS (from auth)
 // ============================================================================
 
