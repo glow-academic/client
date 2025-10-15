@@ -8,8 +8,6 @@
 "use client";
 
 import { ProfileRole } from "@/types";
-import { getEarliestAttemptDate } from "@/utils/attempt/get-earliest-attempt-date";
-import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
 import React, {
@@ -47,7 +45,7 @@ export interface AnalyticsContextType {
 }
 
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
-  undefined,
+  undefined
 );
 
 interface AnalyticsProviderProps {
@@ -56,20 +54,14 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, earliestAttemptDate } = useProfile();
   const pathname = usePathname();
 
-  // Fetch earliest attempt date
-  const { data: earliestAttemptDate } = useQuery({
-    queryKey: ["earliest-attempt-date"],
-    queryFn: () => getEarliestAttemptDate(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
   // Calculate the earliest date to use as default start date
   const earliestDate = useMemo(() => {
     if (earliestAttemptDate) {
-      return earliestAttemptDate;
+      // Parse ISO string to Date object
+      return new Date(earliestAttemptDate);
     }
     // Fallback to 30 days ago if no attempts available
     // Use a stable reference to prevent infinite loops
@@ -104,12 +96,12 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Route-aware flags
   const isPracticePage = useMemo(
     () => pathname?.startsWith("/practice") === true,
-    [pathname],
+    [pathname]
   );
   const isHomePage = useMemo(() => pathname === "/home", [pathname]);
   const isTALeaderboardPage = useMemo(
     () => pathname?.startsWith("/cohorts/c/") === true,
-    [pathname],
+    [pathname]
   );
 
   // Resolve effective roles: force TA-only for TA users
@@ -168,7 +160,7 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       setSimulationFilters,
       clearFilters,
       hasActiveFilters,
-    ],
+    ]
   );
 
   return (

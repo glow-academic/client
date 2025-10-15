@@ -241,4 +241,5 @@ class ProfileContextResponse(BaseModel):
     simulationIds: List[str]
     breadcrumbs: List[BreadcrumbItem]
     simulatableProfiles: List[ProfileItem]
+    earliestAttemptDate: Optional[str]  # ISO datetime of earliest simulation attempt
 

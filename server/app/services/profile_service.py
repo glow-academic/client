@@ -272,6 +272,9 @@ class ProfileService:
             actual_profile_id, department_ids
         )
 
+        # Get earliest attempt date (global across all attempts)
+        earliest_attempt_date = self._get_earliest_attempt_date()
+
         return ProfileContextResponse(
             actualProfile=actual_profile,
             effectiveProfile=effective_profile,
@@ -283,6 +286,7 @@ class ProfileService:
             simulationIds=simulation_ids,
             breadcrumbs=breadcrumbs,
             simulatableProfiles=simulatable_profiles,
+            earliestAttemptDate=earliest_attempt_date,
         )
 
     def _get_profile_id_from_user_id(self, user_id: str) -> Optional[str]:
@@ -587,6 +591,26 @@ class ProfileService:
         }
 
         return segment_titles.get(segment, segment.capitalize())
+
+    def _get_earliest_attempt_date(self) -> Optional[str]:
+        """Get the earliest simulation attempt date across all attempts.
+
+        Returns:
+            ISO datetime string of earliest attempt, or None if no attempts exist
+        """
+        query = text(
+            """
+            SELECT MIN(created_at) as earliest_date
+            FROM simulation_attempts
+            """
+        )
+        result = self.db.execute(query).fetchone()
+
+        if not result or not result.earliest_date:
+            return None
+
+        earliest_date = result.earliest_date
+        return str(earliest_date.isoformat()) if hasattr(earliest_date, 'isoformat') else str(earliest_date)
 
     # ============================================================================
     # PROFILE BY ALIAS OPERATIONS
