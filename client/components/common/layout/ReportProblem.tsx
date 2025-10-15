@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateAppFeedback } from "@/lib/api/v1/hooks/app_feedback";
-import type { AppFeedback } from "@/lib/repos/appFeedbackRepo";
+import { useCreateFeedbackV2 } from "@/lib/api/v2/hooks/feedback";
+import type { CreateFeedbackResponse } from "@/lib/api/v2/schemas/feedback";
 import { log } from "@/utils/logger";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -56,7 +56,7 @@ export default function ReportProblem({
 }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const createAppFeedbackMutation = useCreateAppFeedback();
+  const createAppFeedbackMutation = useCreateFeedbackV2();
 
   const { activeProfile } = useProfile();
 
@@ -88,12 +88,12 @@ export default function ReportProblem({
   }, [isOpen, initialMessage]);
 
   // Handle successful feedback creation
-  const handleSuccess = async (data: AppFeedback) => {
+  const handleSuccess = async (data: CreateFeedbackResponse) => {
     await log.info("feedback.create.success", {
       message: "Feedback submitted successfully",
       subject: {
         entityType: "app_feedback",
-        entityId: String(data?.id ?? ""),
+        entityId: String(data?.feedback_id ?? ""),
       },
       context: {
         component: "ReportProblem",
@@ -164,7 +164,7 @@ export default function ReportProblem({
     const feedbackData = {
       type: formData.type as "feature" | "bug" | "question" | "other",
       message: formData.message,
-      profileId: activeProfile?.id || null,
+      profileId: activeProfile?.id || "",
     };
 
     await log.info("feedback.create.start", {

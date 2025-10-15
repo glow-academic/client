@@ -1,4 +1,4 @@
-"""Feedback V2 API schemas (read-only)."""
+"""Feedback V2 API schemas."""
 
 from typing import List
 
@@ -13,6 +13,14 @@ class FeedbackListRequest(BaseModel):
     """Request for feedback list."""
 
     profileId: str
+
+
+class CreateFeedbackRequest(BaseModel):
+    """Request for creating app feedback."""
+
+    type: str  # 'feature', 'bug', 'question', 'other'
+    message: str
+    profileId: str  # Author profile ID
 
 
 # ============================================================================
@@ -36,4 +44,12 @@ class FeedbackListResponse(BaseModel):
     """Response for feedback list."""
 
     feedback: List[FeedbackItem]
+
+
+class CreateFeedbackResponse(BaseModel):
+    """Response for creating app feedback."""
+
+    feedback_id: int
+    success: bool
+    message: str
 

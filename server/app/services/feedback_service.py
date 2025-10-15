@@ -3,8 +3,9 @@
 from typing import List
 
 from app.queries.feedback_queries import FeedbackQueries
-from app.schemas.feedback import (FeedbackItem, FeedbackListRequest,
-                                  FeedbackListResponse)
+from app.schemas.feedback import (CreateFeedbackRequest,
+                                  CreateFeedbackResponse, FeedbackItem,
+                                  FeedbackListRequest, FeedbackListResponse)
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,4 +52,48 @@ class FeedbackService:
             )
 
         return FeedbackListResponse(feedback=feedback_items)
+
+    async def create_feedback(
+        self, request: CreateFeedbackRequest, session: AsyncSession
+    ) -> CreateFeedbackResponse:
+        """
+        Create new feedback entry.
+
+        Args:
+            request: Create request with type, message, and profileId
+            session: Database session
+
+        Returns:
+            CreateFeedbackResponse
+        """
+        # Validate feedback type
+        valid_types = ["feature", "bug", "question", "other"]
+        if request.type not in valid_types:
+            raise ValueError(f"Invalid feedback type: {request.type}")
+
+        # Validate message
+        if not request.message or not request.message.strip():
+            raise ValueError("Message is required")
+
+        if len(request.message) > 1000:
+            raise ValueError("Message must be less than 1000 characters")
+
+        # Execute insert query
+        query, params = self.queries.create_feedback(
+            request.type, request.message, request.profileId
+        )
+
+        result = await session.execute(text(query), params)
+        await session.commit()
+
+        row = result.fetchone()
+
+        if not row:
+            raise ValueError("Failed to create feedback")
+
+        return CreateFeedbackResponse(
+            feedback_id=row.feedback_id,
+            success=True,
+            message="Feedback created successfully",
+        )
 

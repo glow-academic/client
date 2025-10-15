@@ -37,3 +37,41 @@ class FeedbackQueries:
 
         return query, params
 
+    def create_feedback(
+        self, feedback_type: str, message: str, profile_id: str
+    ) -> tuple[str, Dict[str, Any]]:
+        """
+        Create new feedback entry and associate with author profile.
+
+        Steps:
+        1. INSERT into app_feedback table
+        2. INSERT into app_feedback_profiles junction table (role='author')
+
+        Args:
+            feedback_type: Type of feedback ('feature', 'bug', 'question', 'other')
+            message: Feedback message
+            profile_id: Author profile ID (UUID as string)
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH new_feedback AS (
+            INSERT INTO app_feedback (type, message, created_at)
+            VALUES (:type, :message, NOW())
+            RETURNING id
+        )
+        INSERT INTO app_feedback_profiles (app_feedback_id, profile_id, role)
+        SELECT nf.id, :profile_id::uuid, 'author'
+        FROM new_feedback nf
+        RETURNING (SELECT id FROM new_feedback) as feedback_id
+        """
+
+        params = {
+            "type": feedback_type,
+            "message": message,
+            "profile_id": profile_id,
+        }
+
+        return query, params
+

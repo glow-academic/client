@@ -1,6 +1,8 @@
 """Feedback repository - thin wrapper around service."""
 
-from app.schemas.feedback import FeedbackListRequest, FeedbackListResponse
+from app.schemas.feedback import (CreateFeedbackRequest,
+                                  CreateFeedbackResponse, FeedbackListRequest,
+                                  FeedbackListResponse)
 from app.services.feedback_service import FeedbackService
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,4 +19,10 @@ class FeedbackRepository:
     ) -> FeedbackListResponse:
         """Get list of feedback."""
         return await self.service.get_feedback_list(request, session)
+
+    async def create_feedback(
+        self, request: CreateFeedbackRequest, session: AsyncSession
+    ) -> CreateFeedbackResponse:
+        """Create new feedback entry."""
+        return await self.service.create_feedback(request, session)
 
