@@ -11,6 +11,7 @@ import {
   analyticsAverageScoreKeys,
   analyticsCohortPerformanceKeys,
   analyticsCompletionPercentageKeys,
+  analyticsDashboardBundleKeys,
   analyticsFirstAttemptPassRateKeys,
   analyticsGrowthDataKeys,
   analyticsHighestScoreKeys,
@@ -42,6 +43,7 @@ import {
   AttemptHistoryResponseSchema,
   AttemptImprovementResponseSchema,
   CohortPerformanceResponseSchema,
+  DashboardBundleResponseSchema,
   GrowthDataResponseSchema,
   HomeOverviewResponseSchema,
   LeaderboardBundleResponseSchema,
@@ -813,6 +815,32 @@ export function useRefreshAnalytics() {
     gcTime: 0,
     meta: {
       errorMessage: "Failed to refresh analytics data",
+    },
+  });
+}
+
+// ============================================================================
+// DASHBOARD BUNDLE HOOK
+// ============================================================================
+
+export function useDashboardBundle(
+  filters: AnalyticsFilters,
+  options: AnalyticsHookOptions | boolean = true
+) {
+  const queryOptions =
+    typeof options === "boolean"
+      ? { enabled: options }
+      : { enabled: true, ...options };
+
+  return useQuery({
+    queryKey: analyticsDashboardBundleKeys.list(filters),
+    ...queryOptions,
+    queryFn: async () => {
+      const res = await api<unknown>("/api/v2/analytics/dashboard", {
+        method: "POST",
+        body: JSON.stringify(filters),
+      });
+      return DashboardBundleResponseSchema.parse(res);
     },
   });
 }

@@ -15,29 +15,15 @@ import {
 } from "@/types";
 import { log } from "@/utils/logger";
 
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
 import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
-import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
-import { useScenarioDocumentsByScenarioId } from "@/lib/api/v1/hooks/scenario_documents";
-import { useScenario } from "@/lib/api/v1/hooks/scenarios";
-import { useSimulationAttempt } from "@/lib/api/v1/hooks/simulation_attempts";
-import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/v1/hooks/simulation_chat_feedbacks";
-import { useSimulationChatGradesBySimulationChatIdBatch } from "@/lib/api/v1/hooks/simulation_chat_grades";
-import {
-  useSimulationChatsByAttemptId,
-  useUpdateSimulationChat,
-} from "@/lib/api/v1/hooks/simulation_chats";
-import { useSimulation as useSimulationHook } from "@/lib/api/v1/hooks/simulations";
-import { useStandardGroupsByRubricIdBatch } from "@/lib/api/v1/hooks/standard_groups";
-import { useStandardsByStandardGroupIdBatch } from "@/lib/api/v1/hooks/standards";
+import { useUpdateSimulationChat } from "@/lib/api/v1/hooks/simulation_chats";
 import {
   profileKeys,
   simulationAttemptKeys,
-  simulationChatFeedbackKeys,
-  simulationChatGradeKeys,
   simulationChatKeysByAttemptId,
   simulationMessageKeysByChatId,
 } from "@/lib/api/v1/keys";
+import { useAttemptFull } from "@/lib/api/v2/hooks/attempts";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -49,7 +35,6 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useDepartments } from "./departments-context";
 import { useProfile } from "./profile-context";
 import { useWebSocket } from "./websocket-context";
 
@@ -168,11 +153,6 @@ export function SimulationProvider({
     Set<string>
   >(new Set());
   const [showResults, setShowResults] = useState(false);
-  const [isActive, setIsActive] = useState(true);
-
-  // Timer state
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
 
   // Grading progress state
   const [gradingProgress, setGradingProgress] = useState<{
@@ -200,8 +180,6 @@ export function SimulationProvider({
     emitStopSimulation,
     emitContinueSimulation,
   } = useWebSocket();
-
-  const { effectiveDepartmentIds } = useDepartments();
 
   // Use the profile context to access the effective profile
   const { effectiveProfile } = useProfile();
@@ -257,430 +235,103 @@ export function SimulationProvider({
     updateProfileMutation,
   ]);
 
-  const { data: attempt } = useSimulationAttempt(attemptId);
-  const { data: chats = [], isLoading: isLoadingChats } =
-    useSimulationChatsByAttemptId(attemptId);
-  const { data: simulation } = useSimulationHook(
-    attempt?.simulationId || "",
-    attempt !== undefined && attempt !== null
-  );
-  const { data: rubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: standardGroups = [] } = useStandardGroupsByRubricIdBatch(
-    rubrics.map((rubric) => rubric.id)
-  );
-  const { data: standards = [] } = useStandardsByStandardGroupIdBatch(
-    standardGroups.map((group) => group.id)
-  );
-  const { data: grades = [] } = useSimulationChatGradesBySimulationChatIdBatch(
-    chats.map((chat) => chat.id)
-  );
-  const { data: feedbacks = [] } =
-    useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
-      grades.map((grade) => grade.id)
-    );
+  // V2: Single hook to fetch all attempt data with server-side computations
+  const { data: attemptData, isLoading: isLoadingChats } =
+    useAttemptFull(attemptId);
 
-  // Determine current chat based on actual chats for this attempt
+  // Extract data from v2 response
+  const chats = useMemo(
+    () => attemptData?.chats.map((c) => c.chat) || [],
+    [attemptData]
+  );
+  const attempt = attemptData?.attempt || null;
+  const simulation = attemptData?.simulation || null;
+
+  // Current chat based on index (client-controlled, defaults to server's suggestion)
   const currentChat = useMemo(() => {
-    if (!chats || !chats.length) return null;
+    if (!attemptData?.chats || attemptData.chats.length === 0) return null;
+    const chatData = attemptData.chats[currentChatIndex];
+    return chatData?.chat || attemptData.chats[0]?.chat || null;
+  }, [attemptData, currentChatIndex]);
 
-    // Sort chats by creation date to ensure consistent ordering
-    const sortedChats = [...chats].sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  // Get scenario, documents from v2 data
+  const scenario = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return null;
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
     );
+    return chatData?.scenario || null;
+  }, [attemptData, currentChat]);
 
-    // Return the chat at the current index, or the first chat if index is out of bounds
-    return sortedChats[currentChatIndex] || sortedChats[0];
-  }, [chats, currentChatIndex]);
+  const scenarioDocuments = attemptData?.scenarioDocuments || [];
+  const documents = attemptData?.departmentDocuments || [];
 
-  const { data: scenario } = useScenario(
-    currentChat?.scenarioId || "",
-    currentChat !== null
-  );
-  const { data: documents = [] } = useDocumentsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
+  // Get computed data from v2 response (server-side computations)
+  const currentDynamicRubric = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return null;
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.dynamicRubric || null;
+  }, [attemptData, currentChat]);
 
-  // Load scenario documents from junction table
-  const { data: scenarioDocLinks = [] } = useScenarioDocumentsByScenarioId(
-    currentChat?.scenarioId || ""
-  );
-
-  // Filter documents for the current scenario using junction table
-  const scenarioDocuments = useMemo(() => {
-    if (!documents || scenarioDocLinks.length === 0) return [];
-    const docIds = scenarioDocLinks.map((link) => link.documentId);
-    return documents.filter((doc: Document) => docIds.includes(doc.id));
-  }, [documents, scenarioDocLinks]);
-
-  // Helper function to calculate actual time taken from database timestamps
-  const calculateActualTimeTaken = useCallback(
-    (chat: SimulationChat): number => {
-      return (
-        grades?.find((grade) => grade.simulationChatId === chat.id)
-          ?.timeTaken || 0
-      );
-    },
-    [grades]
+  const allDynamicRubrics = useMemo(
+    () =>
+      attemptData?.chats
+        .map((c) => c.dynamicRubric)
+        .filter((r): r is DynamicRubric => r !== null) || [],
+    [attemptData]
   );
 
-  // Helper function to check if a chat has ended (either completed or has completedAt timestamp)
-  const isChatEnded = useCallback((chat: SimulationChat): boolean => {
-    return chat.completed || !!chat.completedAt;
-  }, []);
+  const aggregatedResults = attemptData?.aggregatedResults || null;
 
-  // Create dynamic rubric for current chat based on grades/feedback
-  const currentDynamicRubric = useMemo((): DynamicRubric | null => {
-    if (
-      !currentChat?.id ||
-      !grades ||
-      !feedbacks ||
-      !standards ||
-      !standardGroups
-    )
-      return null;
+  // Metadata from v2
+  const expectedChatCount = attemptData?.expectedChatCount || 1;
+  const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
+  const isLastAttempt = attemptData?.isLastAttempt ?? true;
 
-    const chatGrade = grades.find(
-      (grade) => grade.simulationChatId === currentChat.id
-    );
-    if (!chatGrade) return null;
-
-    const chatFeedbacks = feedbacks.filter(
-      (feedback) => feedback.simulationChatGradeId === chatGrade.id
-    );
-
-    // Calculate skill scores and feedbacks
-    const skillScores: Record<string, number> = {};
-    const skillFeedbacks: Record<string, string> = {};
-    let totalPossiblePoints = 0;
-
-    standardGroups.forEach((group) => {
-      const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group.id
-      );
-      const groupFeedbacks = chatFeedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId)
-      );
-
-      if (groupFeedbacks.length > 0) {
-        const groupMaxPoints = group.points;
-        const maxStandardPoints = Math.max(
-          ...groupStandards.map((s) => s.points)
-        );
-        const avgScore =
-          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-          groupFeedbacks.length;
-        const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5);
-
-        skillScores[group.name] = normalizedScore;
-        skillFeedbacks[group.shortName] = groupFeedbacks
-          .map((f) => f.feedback)
-          .join("; ");
-        totalPossiblePoints += groupMaxPoints;
-      }
-    });
-
-    const passed = chatGrade.passed;
-
-    return {
-      chatId: currentChat.id,
-      score: chatGrade.score,
-      passed,
-      timeTaken: chatGrade.timeTaken,
-      skillScores,
-      skillFeedbacks,
-      totalPossiblePoints,
-    };
-  }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
-
-  // Create dynamic rubrics for all completed chats
-  const allDynamicRubrics = useMemo((): DynamicRubric[] => {
-    if (!chats || !grades || !feedbacks || !standards || !standardGroups)
-      return [];
-
-    const completedChats = chats.filter(
-      (chat: SimulationChat) => chat.completed
-    );
-
-    return completedChats
-      .map((chat) => {
-        const chatGrade = grades.find(
-          (grade) => grade.simulationChatId === chat.id
-        );
-        if (!chatGrade) return null;
-
-        const chatFeedbacks = feedbacks.filter(
-          (feedback) => feedback.simulationChatGradeId === chatGrade.id
-        );
-
-        const skillScores: Record<string, number> = {};
-        const skillFeedbacks: Record<string, string> = {};
-        let totalPossiblePoints = 0;
-
-        standardGroups.forEach((group) => {
-          const groupStandards = standards.filter(
-            (s) => s.standardGroupId === group.id
-          );
-          const groupFeedbacks = chatFeedbacks.filter((f) =>
-            groupStandards.some((s) => s.id === f.standardId)
-          );
-
-          if (groupFeedbacks.length > 0) {
-            const groupMaxPoints = group.points;
-            const maxStandardPoints = Math.max(
-              ...groupStandards.map((s) => s.points)
-            );
-            const avgScore =
-              groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-              groupFeedbacks.length;
-            const normalizedScore = Math.round(
-              (avgScore / maxStandardPoints) * 5
-            );
-
-            skillScores[group.name] = normalizedScore;
-            skillFeedbacks[group.name] = groupFeedbacks
-              .map((f) => f.feedback)
-              .join("; ");
-            totalPossiblePoints += groupMaxPoints;
-          }
-        });
-
-        const passed = chatGrade.passed;
-
-        return {
-          chatId: chat.id,
-          score: chatGrade.score,
-          passed,
-          timeTaken: chatGrade.timeTaken,
-          skillScores,
-          skillFeedbacks,
-          totalPossiblePoints,
-        };
-      })
-      .filter(Boolean) as DynamicRubric[];
-  }, [chats, grades, feedbacks, standards, standardGroups]);
-
-  // Calculate aggregated results for final display
-  const aggregatedResults = useMemo((): AggregatedResults | null => {
-    if (allDynamicRubrics.length === 0) return null;
-
-    const totalScore = allDynamicRubrics.reduce(
-      (sum: number, rubric: DynamicRubric) => sum + rubric.score,
-      0
-    );
-    const averageScore = totalScore / allDynamicRubrics.length;
-    const passedChats = allDynamicRubrics.filter(
-      (rubric: DynamicRubric) => rubric.passed
-    ).length;
-
-    // Calculate total time using actual database timestamps
-    const totalTime = chats
-      ? chats
-          .filter((chat: SimulationChat) => chat.completed)
-          .reduce(
-            (sum: number, chat: SimulationChat) =>
-              sum + calculateActualTimeTaken(chat),
-            0
-          )
-      : 0;
-
-    return {
-      totalChats: allDynamicRubrics.length,
-      passedChats,
-      averageScore: Math.round(averageScore * 10) / 10,
-      totalTime: totalTime,
-      overallPassed: passedChats === allDynamicRubrics.length,
-    };
-  }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
-
-  // Determine if this is a single chat attempt and calculate expected chat count
-  // Note: scenarioIds now in junction table. Use chat count as proxy.
-  // TODO: Store expectedChatCount in attempt record or load from simulation_scenarios
-  const expectedChatCount = chats?.length || 1;
-  const isSingleChatAttempt = expectedChatCount === 1;
-  const isLastAttempt = currentChatIndex === expectedChatCount - 1;
-
-  // Timer calculation
-  const timer = useMemo((): TimerState => {
-    return {
-      elapsed: elapsedTime,
-      remaining: timeRemaining,
-      // Keep expired false for normal mode; for infinite mode we handle expiry by flipping to results immediately
-      expired: false,
-    };
-  }, [elapsedTime, timeRemaining]);
+  // Timer from v2 (server computed)
+  const timer = useMemo(
+    (): TimerState =>
+      attemptData?.timer || { elapsed: 0, remaining: null, expired: false },
+    [attemptData]
+  );
 
   // Update simulation ref when simulation changes
   useEffect(() => {
-    simulationRef.current = simulation || null;
+    simulationRef.current = (simulation as any) || null;
   }, [simulation]);
 
-  // Timer logic - Update timer values every second based on actual attempt creation timestamp
+  // Timer logic - Simple 1-second interval to refetch v2 data
   useEffect(() => {
     // Update the ref to the latest callback
     onSimulationFinishedRef.current = onSimulationFinished;
 
-    const currentSimulation = simulationRef.current;
-    if (!attempt?.createdAt || !currentSimulation || showResults) return;
-
-    // Check if current chat has ended (completed or has completedAt timestamp)
-    const currentChatEnded = currentChat ? isChatEnded(currentChat) : false;
-
-    const calculateTimerValues = () => {
-      const attemptStartTime = new Date(attempt.createdAt);
-      const currentTime = new Date();
-
-      // Calculate total elapsed time across all chats
-      let totalElapsedSeconds = 0;
-
-      if (chats && chats.length > 0) {
-        // Sort chats by creation time to ensure proper order
-        const sortedChats = [...chats].sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-
-        for (let i = 0; i < sortedChats.length; i++) {
-          const chat = sortedChats[i];
-          if (!chat) continue;
-
-          const chatStartTime = new Date(chat.createdAt);
-
-          if (isChatEnded(chat) && chat.completedAt) {
-            // Chat has ended, use its completion time
-            const chatEndTime = new Date(chat.completedAt);
-            const chatDuration = Math.floor(
-              (chatEndTime.getTime() - chatStartTime.getTime()) / 1000
-            );
-            totalElapsedSeconds += chatDuration;
-          } else if (i === currentChatIndex) {
-            // Current active chat - calculate time from start to now
-            const chatDuration = Math.floor(
-              (currentTime.getTime() - chatStartTime.getTime()) / 1000
-            );
-            totalElapsedSeconds += chatDuration;
-          }
-          // Skip future chats that haven't started yet
-        }
-      } else {
-        // Fallback to simple calculation if no chats available
-        totalElapsedSeconds = Math.floor(
-          (currentTime.getTime() - attemptStartTime.getTime()) / 1000
-        );
-      }
-
-      // If current chat has ended, freeze the timer at the completion time
-      if (currentChatEnded && currentChat?.completedAt) {
-        // Timer is already frozen at the total elapsed time calculated above
-        const frozenElapsedSeconds = totalElapsedSeconds;
-
-        // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
-        if (attempt.infiniteMode) {
-          if (attempt.infiniteModeTimeLimit) {
-            const totalTimeSeconds = attempt.infiniteModeTimeLimit * 60;
-            const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
-            return {
-              elapsedTime: frozenElapsedSeconds,
-              timeRemaining: Math.max(remainingSeconds, 0),
-            };
-          }
-          // No limit: count up only
-          return { elapsedTime: frozenElapsedSeconds, timeRemaining: null };
-        }
-
-        // Normal mode uses simulation.timeLimit (can go negative for display)
-        if (currentSimulation.timeLimit) {
-          const totalTimeSeconds = currentSimulation.timeLimit * 60;
-          const remainingSeconds = totalTimeSeconds - frozenElapsedSeconds;
-          return {
-            elapsedTime: frozenElapsedSeconds,
-            timeRemaining: remainingSeconds,
-          };
-        }
-        return { elapsedTime: frozenElapsedSeconds, timeRemaining: null };
-      }
-
-      // Infinite mode uses attempt.infiniteMode and optional attempt.infiniteModeTimeLimit
-      if (attempt.infiniteMode) {
-        if (attempt.infiniteModeTimeLimit) {
-          const totalTimeSeconds = attempt.infiniteModeTimeLimit * 60;
-          const remainingSeconds = totalTimeSeconds - totalElapsedSeconds;
-          // Clamp to zero for display; we'll trigger results on expiry below
-          return {
-            elapsedTime: totalElapsedSeconds,
-            timeRemaining: Math.max(remainingSeconds, 0),
-          };
-        }
-        // No limit: count up only
-        return { elapsedTime: totalElapsedSeconds, timeRemaining: null };
-      }
-
-      // Normal mode uses simulation.timeLimit (can go negative for display)
-      if (currentSimulation.timeLimit) {
-        const totalTimeSeconds = currentSimulation.timeLimit * 60;
-        const remainingSeconds = totalTimeSeconds - totalElapsedSeconds;
-        return {
-          elapsedTime: totalElapsedSeconds,
-          timeRemaining: remainingSeconds,
-        };
-      }
-      return { elapsedTime: totalElapsedSeconds, timeRemaining: null };
-    };
-
-    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
-      calculateTimerValues();
-    setElapsedTime(initialElapsed);
-    setTimeRemaining(initialRemaining);
-
-    // For infinite mode with a time limit, end immediately at expiry and show results
-    if (
-      attempt.infiniteMode &&
-      attempt.infiniteModeTimeLimit &&
-      initialRemaining !== null &&
-      initialRemaining <= 0
-    ) {
-      setShowResults(true);
-      setIsActive(false);
-      onSimulationFinishedRef.current?.();
-      return; // No interval needed; we've finished
-    }
-
-    const timerInterval = setInterval(() => {
-      const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
-        calculateTimerValues();
-      setElapsedTime(newElapsed);
-      setTimeRemaining(newRemaining);
-
-      // Infinite mode: when a time limit is set and hits zero, finish immediately
-      if (
-        attempt.infiniteMode &&
-        attempt.infiniteModeTimeLimit &&
-        newRemaining !== null &&
-        newRemaining <= 0
-      ) {
-        clearInterval(timerInterval);
+    // Don't poll if showing results or not active
+    if (!attemptData?.isActive || showResults) {
+      // Check if timer expired and finish
+      if (attemptData?.timer.expired && !showResults) {
         setShowResults(true);
-        setIsActive(false);
         onSimulationFinishedRef.current?.();
       }
+      return;
+    }
+
+    // Refetch v2 data every second to get updated timer
+    const timerInterval = setInterval(() => {
+      queryClient.invalidateQueries({
+        queryKey: ["v2", "attempts", attemptId, "full"],
+      });
     }, 1000);
 
     return () => clearInterval(timerInterval);
   }, [
-    attempt?.createdAt,
+    attemptId,
+    attemptData?.isActive,
+    attemptData?.timer.expired,
     showResults,
-    isActive,
-    isSingleChatAttempt,
     onSimulationFinished,
-    simulation?.id, // Only depend on simulation ID to trigger re-run when simulation changes
-    attempt?.infiniteMode,
-    attempt?.infiniteModeTimeLimit,
-    currentChat,
-    isChatEnded,
-    chats,
-    currentChatIndex,
+    queryClient,
   ]);
 
   // Initialize to first incomplete chat when data loads
@@ -727,7 +378,6 @@ export function SimulationProvider({
           }, 2000);
         } else {
           setShowResults(true);
-          setIsActive(false);
           onSimulationFinished?.();
           handleSimulationCompletion();
         }
@@ -760,51 +410,11 @@ export function SimulationProvider({
 
       if (completedChats === totalExpectedChats) {
         setShowResults(true);
-        setIsActive(false);
         onSimulationFinished?.();
         handleSimulationCompletion();
       }
     }
   }, [chats, showResults, onSimulationFinished, handleSimulationCompletion]);
-
-  // Handle case where grading data becomes available after chats are loaded as completed
-  useEffect(() => {
-    if (
-      chats &&
-      chats.length > 0 &&
-      !showResults &&
-      grades &&
-      grades.length > 0
-    ) {
-      const totalExpectedChats = chats.length;
-      const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed
-      ).length;
-
-      if (completedChats === totalExpectedChats) {
-        const completedChatIds = chats
-          .filter((chat: SimulationChat) => chat.completed)
-          .map((chat) => chat.id);
-        const hasGradingForAllCompleted = completedChatIds.every((chatId) =>
-          grades.some((grade) => grade.simulationChatId === chatId)
-        );
-
-        if (hasGradingForAllCompleted) {
-          setShowResults(true);
-          setIsActive(false);
-          onSimulationFinished?.();
-          handleSimulationCompletion();
-        }
-      }
-    }
-  }, [
-    grades,
-    feedbacks,
-    chats,
-    showResults,
-    onSimulationFinished,
-    handleSimulationCompletion,
-  ]);
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
@@ -1159,19 +769,17 @@ export function SimulationProvider({
         );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
-        // Invalidate queries. This will refetch the list of chats, which now
-        // includes the new chat, and will mark the old one as "completed".
+        // V2: Invalidate the full attempt data query to refetch everything
+        queryClient.invalidateQueries({
+          queryKey: ["v2", "attempts", attemptId, "full"],
+        });
+
+        // Also invalidate v1 queries for backwards compatibility with message caches
         queryClient.invalidateQueries({
           queryKey: simulationChatKeysByAttemptId.one(attemptId),
         });
         queryClient.invalidateQueries({
           queryKey: simulationAttemptKeys.detail(attemptId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatGradeKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatFeedbackKeys.all,
         });
 
         // Turn off the loading indicator for the "End Chat" button
@@ -1204,23 +812,21 @@ export function SimulationProvider({
 
     const handleEndAllCompleted = (event: CustomEvent) => {
       if (event.detail.attemptId === attemptId) {
-        // Invalidate queries to refresh the UI
+        // V2: Invalidate the full attempt data query to refetch everything
+        queryClient.invalidateQueries({
+          queryKey: ["v2", "attempts", attemptId, "full"],
+        });
+
+        // Also invalidate v1 queries for backwards compatibility
         queryClient.invalidateQueries({
           queryKey: simulationChatKeysByAttemptId.one(attemptId),
         });
         queryClient.invalidateQueries({
           queryKey: simulationAttemptKeys.detail(attemptId),
         });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatGradeKeys.all,
-        });
-        queryClient.invalidateQueries({
-          queryKey: simulationChatFeedbackKeys.all,
-        });
 
         // Show results since all chats are now completed
         setShowResults(true);
-        setIsActive(false);
         onSimulationFinished?.();
         setEndChatLoading(false);
 
@@ -1381,34 +987,34 @@ export function SimulationProvider({
   }, [chats]);
 
   const value: SimulationContextType = {
-    // Data
+    // Data (from v2)
     attemptId,
-    attempt: attempt || null,
-    simulation: simulation || null,
-    scenario: scenario || null,
-    documents,
-    scenarioDocuments,
+    attempt: attempt as any,
+    simulation: simulation as any,
+    scenario: scenario as any,
+    documents: documents as any,
+    scenarioDocuments: scenarioDocuments as any,
 
     // Current chat management
     currentChatIndex,
     setCurrentChatIndex,
-    currentChat: currentChat || null,
+    currentChat,
     chats,
     isLoadingChats,
 
-    // Results and grading
+    // Results and grading (from v2 server-side computations)
     currentDynamicRubric,
     allDynamicRubrics,
     aggregatedResults,
     gradingProgress,
     isGrading,
 
-    // Timer state
+    // Timer state (from v2 server-side computation)
     timer,
-    isActive,
+    isActive: attemptData?.isActive ?? true,
 
-    // UI state
-    showResults,
+    // UI state (from v2 metadata)
+    showResults: showResults || (attemptData?.showResults ?? false),
     isSingleChatAttempt,
     isLastAttempt,
     expectedChatCount,
@@ -1418,7 +1024,7 @@ export function SimulationProvider({
     // Connection
     isConnected,
 
-    // WebSocket operations
+    // WebSocket operations (unchanged)
     sendMessage,
     stopMessage,
     endChat,

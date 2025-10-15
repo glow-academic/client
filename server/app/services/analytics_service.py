@@ -13,7 +13,12 @@ from app.queries.analytics.secondary_queries import SecondaryQueries
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    AttemptHistoryRow,
                                    AttemptImprovementResponse,
-                                   CohortPerformanceResponse, DebugInfoItem,
+                                   CohortPerformanceResponse,
+                                   DashboardBundleResponse,
+                                   DashboardFooterMetrics,
+                                   DashboardHeaderMetrics, DashboardInsights,
+                                   DashboardPrimaryMetrics,
+                                   DashboardSecondaryMetrics, DebugInfoItem,
                                    GrowthDataResponse, HomeOverviewResponse,
                                    LeaderboardBundleResponse, Method,
                                    MetricResponse, ModelMappingWithPricing,
@@ -27,6 +32,11 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    SimulationCompositionResponse,
                                    SimulationPerformanceResponse,
                                    SkillPerformanceResponse)
+from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              SimulationMapping, SimulationMappingItem)
+from app.services import analytics_insights
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -595,6 +605,225 @@ class AnalyticsService:
         return self._execute_metric_query(query, params)
 
     # Utility
+    def get_dashboard_bundle(
+        self, filters: AnalyticsFilters
+    ) -> DashboardBundleResponse:
+        """
+        Get complete dashboard bundle with all metrics, history, insights, and mappings.
+        
+        This consolidates 21+ individual API calls into a single response.
+        """
+        # Fetch all header metrics (10 metrics)
+        header = DashboardHeaderMetrics(
+            average_score=self.get_average_score(filters),
+            completion_percentage=self.get_completion_percentage(filters),
+            first_attempt_pass_rate=self.get_first_attempt_pass_rate(filters),
+            highest_score=self.get_highest_score(filters),
+            messages_per_session=self.get_messages_per_session(filters),
+            persona_response_times=self.get_persona_response_times(filters),
+            session_efficiency=self.get_session_efficiency(filters),
+            stagnation_rate=self.get_stagnation_rate(filters),
+            time_spent=self.get_time_spent(filters),
+            total_attempts=self.get_total_attempts(filters),
+        )
+
+        # Fetch all primary metrics (3 metrics)
+        growth_data = self.get_growth_data(filters)
+        persona_performance = self.get_persona_performance(filters)
+        rubric_heatmap = self.get_rubric_heatmap(filters)
+
+        primary = DashboardPrimaryMetrics(
+            growth_data=growth_data,
+            persona_performance=persona_performance,
+            rubric_heatmap=rubric_heatmap,
+        )
+
+        # Fetch all secondary metrics (3 metrics)
+        attempt_improvement = self.get_attempt_improvement(filters)
+        cohort_performance = self.get_cohort_performance(filters)
+        skill_performance = self.get_skill_performance(filters)
+
+        secondary = DashboardSecondaryMetrics(
+            attempt_improvement=attempt_improvement,
+            cohort_performance=cohort_performance,
+            skill_performance=skill_performance,
+        )
+
+        # Fetch all footer metrics (4 metrics)
+        scenario_performance = self.get_scenario_performance(filters)
+        scenario_stats = self.get_scenario_stats(filters)
+        simulation_performance = self.get_simulation_performance(filters)
+        simulation_composition = self.get_simulation_composition(filters)
+
+        footer = DashboardFooterMetrics(
+            scenario_performance=scenario_performance,
+            scenario_stats=scenario_stats,
+            simulation_performance=simulation_performance,
+            simulation_composition=simulation_composition,
+        )
+
+        # Fetch history data
+        history = self.get_attempt_history(filters)
+
+        # Build entity mappings
+        simulation_mapping = self._build_simulation_mapping(filters)
+        rubric_mapping = self._build_rubric_mapping(filters)
+        parameter_mapping = self._build_parameter_mapping(filters)
+        parameter_item_mapping = self._build_parameter_item_mapping(filters)
+
+        # Compute all actionable insights using the insights service
+        insights = DashboardInsights(
+            growth=analytics_insights.compute_growth_actionable_insight(
+                growth_data.windowAverages
+            ),
+            persona={
+                persona_data.name: analytics_insights.compute_persona_multiple_actionable_insights(
+                    persona_data.trendData,
+                    persona_data.name,
+                    persona_data.score,
+                ).get("insight")
+                for persona_data in persona_performance.chartData
+            },
+            rubric_heatmap=analytics_insights.compute_rubric_heatmap_actionable_insight(
+                rubric_heatmap.matrices
+            ),
+            attempt_improvement=analytics_insights.compute_attempt_improvement_actionable_insight(
+                attempt_improvement.chartData
+            ),
+            cohort={
+                cohort_id: insights_dict.get("insight")
+                for cohort_id, insights_dict in analytics_insights.compute_cohort_multiple_actionable_insights(
+                    cohort_performance.cohortData
+                ).items()
+            },
+            skill_performance=analytics_insights.compute_skill_performance_actionable_insight(
+                skill_performance.packages[0].radarData
+                if skill_performance.packages
+                else []
+            ),
+            scenario_performance=analytics_insights.compute_scenario_performance_actionable_insight(
+                scenario_performance.attributeAttemptFacts
+            ),
+            scenario_stats=analytics_insights.compute_scenario_stats_actionable_insight(
+                scenario_stats.numericAttemptFacts
+            ),
+            simulation_performance=analytics_insights.compute_simulation_performance_actionable_insight(
+                simulation_performance.scenarioFacts
+            ),
+            simulation_composition=analytics_insights.compute_simulation_composition_actionable_insight(
+                simulation_composition.simulationFacts
+            ),
+        )
+
+        return DashboardBundleResponse(
+            header=header,
+            primary=primary,
+            secondary=secondary,
+            footer=footer,
+            history=history,
+            insights=insights,
+            simulation_mapping=simulation_mapping,
+            rubric_mapping=rubric_mapping,
+            parameter_mapping=parameter_mapping,
+            parameter_item_mapping=parameter_item_mapping,
+        )
+
+    def _build_simulation_mapping(
+        self, filters: AnalyticsFilters
+    ) -> SimulationMapping:
+        """Build simulation mapping from database."""
+        # Get all unique simulation IDs from the dashboard data
+        query = text("""
+            SELECT DISTINCT s.id, s.title, s.description
+            FROM simulations s
+            WHERE (:department_ids::uuid[] IS NULL OR s.department_id = ANY(:department_ids::uuid[]))
+            AND s.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): SimulationMappingItem(
+                name=row.title,
+                description=row.description or "",
+            )
+            for row in results
+        }
+
+    def _build_rubric_mapping(self, filters: AnalyticsFilters) -> RubricMapping:
+        """Build rubric mapping from database."""
+        query = text("""
+            SELECT DISTINCT r.id, r.name, r.description
+            FROM rubrics r
+            WHERE (:department_ids::uuid[] IS NULL OR r.department_id = ANY(:department_ids::uuid[]))
+            AND r.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): RubricMappingItem(
+                name=row.name,
+                description=row.description or "",
+            )
+            for row in results
+        }
+
+    def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
+        """Build parameter mapping from database."""
+        query = text("""
+            SELECT DISTINCT p.id, p.name, p.description
+            FROM parameters p
+            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            AND p.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): ParameterMappingItem(
+                name=row.name,
+                description=row.description or "",
+            )
+            for row in results
+        }
+
+    def _build_parameter_item_mapping(
+        self, filters: AnalyticsFilters
+    ) -> ParameterItemMapping:
+        """Build parameter item mapping from database."""
+        query = text("""
+            SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON pi.parameter_id = p.id
+            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            AND p.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): ParameterItemMappingItem(
+                name=row.name,
+                description=row.description or "",
+                parameter_id=str(row.parameter_id),
+                parameter_name=row.parameter_name,
+            )
+            for row in results
+        }
+
     def refresh_materialized_view(self) -> None:
         """Refresh the analytics materialized view."""
         query = text("REFRESH MATERIALIZED VIEW CONCURRENTLY analytics")

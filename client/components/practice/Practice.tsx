@@ -27,8 +27,10 @@ import {
   useAnalyticsPracticeOverview,
 } from "@/lib/api/v1/hooks/analytics";
 import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
+import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
+import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
 import PracticeZone from "./PracticeZone";
 
 export default function Practice() {
@@ -49,6 +51,19 @@ export default function Practice() {
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const { effectiveProfile, activeProfile } = useProfile();
+
+  // Practice customize dialog state
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [isStartingAttempt, setIsStartingAttempt] = useState(false);
+
+  // Listen for customize button click from layout
+  useEffect(() => {
+    const handleOpenCustomize = () => setCustomizeOpen(true);
+    window.addEventListener("openPracticeCustomize", handleOpenCustomize);
+    return () =>
+      window.removeEventListener("openPracticeCustomize", handleOpenCustomize);
+  }, []);
+
   const {
     startDate,
     endDate,
@@ -468,6 +483,98 @@ export default function Practice() {
           </div>
         )}
       </div>
+
+      {/* Practice Customize Dialog */}
+      {customizeOpen && (
+        <PracticeCustomizeDialog
+          open={customizeOpen}
+          onClose={() => setCustomizeOpen(false)}
+          onStartAttempt={async (params) => {
+            if (params.timeLimit) {
+              // Infinite mode - use WebSocket
+              if (!isConnected) {
+                toast.error(
+                  "WebSocket not connected. Please refresh the page."
+                );
+                return;
+              }
+              const departmentId = simulations?.find(
+                (simulation) => simulation.id === params.simulationId
+              )?.departmentId;
+              if (!departmentId) {
+                toast.error("No department found. Please contact support.");
+                return;
+              }
+              const profileIdForEmit =
+                effectiveProfile?.role === "guest"
+                  ? ""
+                  : String(effectiveProfile?.id || "");
+              toast.loading("Starting simulation...", {
+                dismissible: true,
+              });
+              emitStartSimulation({
+                simulation_id: params.simulationId,
+                profile_id: profileIdForEmit,
+                infinite: true,
+                infinite_time_limit: params.timeLimit,
+                department_id: departmentId,
+              });
+              setCustomizeOpen(false);
+            } else {
+              // Custom one-off scenario
+              setIsStartingAttempt(true);
+              const startToastId = toast.loading(
+                "Creating practice scenario...",
+                {
+                  dismissible: true,
+                }
+              ) as unknown as string;
+
+              try {
+                const result = await createPracticeScenario({
+                  personaId: params.personaId!,
+                  parameterItemIds: params.parameterItemIds || [],
+                  profileId: effectiveProfile?.id || "",
+                });
+
+                if (result.success && result.scenario) {
+                  toast.success("Practice scenario created!", {
+                    id: startToastId,
+                    dismissible: true,
+                  });
+                  // Navigate to practice page to start the scenario
+                  router.push("/practice");
+                } else {
+                  throw new Error(
+                    result.message || "Failed to create practice scenario"
+                  );
+                }
+              } catch (error) {
+                log.error("practice.session.error", {
+                  message: "Error starting practice session",
+                  error,
+                  context: { function: "onStartAttempt" },
+                });
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to start practice session",
+                  {
+                    id: "start-attempt",
+                    dismissible: true,
+                  }
+                );
+              } finally {
+                setIsStartingAttempt(false);
+                setCustomizeOpen(false);
+              }
+            }
+          }}
+          isStartingAttempt={isStartingAttempt}
+          effectiveProfile={effectiveProfile!}
+          activeProfile={activeProfile!}
+        />
+      )}
     </TooltipProvider>
   );
 }

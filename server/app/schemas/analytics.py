@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel
 
-from .base import StandardGroupsMapping, StandardsMapping
+from .base import (ParameterItemMapping, ParameterMapping, RubricMapping,
+                   SimulationMapping, StandardGroupsMapping, StandardsMapping)
 
 
 # Enums
@@ -800,4 +801,81 @@ class PricingAnalyticsResponse(BaseModel):
     profile_mapping: dict[str, str]
     agent_mapping: dict[str, str]
     persona_mapping: dict[str, str]
+
+
+# ============================================================================
+# DASHBOARD BUNDLE SCHEMAS
+# ============================================================================
+
+
+class DashboardHeaderMetrics(BaseModel):
+    """Header metrics (10 total)."""
+
+    average_score: MetricResponse
+    completion_percentage: MetricResponse
+    first_attempt_pass_rate: MetricResponse
+    highest_score: MetricResponse
+    messages_per_session: MetricResponse
+    persona_response_times: MetricResponse
+    session_efficiency: MetricResponse
+    stagnation_rate: MetricResponse
+    time_spent: MetricResponse
+    total_attempts: MetricResponse
+
+
+class DashboardPrimaryMetrics(BaseModel):
+    """Primary metrics (3 total)."""
+
+    growth_data: GrowthDataResponse
+    persona_performance: PersonaPerformanceResponse
+    rubric_heatmap: RubricHeatmapResponse
+
+
+class DashboardSecondaryMetrics(BaseModel):
+    """Secondary metrics (3 total)."""
+
+    attempt_improvement: AttemptImprovementResponse
+    cohort_performance: CohortPerformanceResponse
+    skill_performance: SkillPerformanceResponse
+
+
+class DashboardFooterMetrics(BaseModel):
+    """Footer metrics (4 total)."""
+
+    scenario_performance: ScenarioPerformanceResponse
+    scenario_stats: ScenarioStatsResponse
+    simulation_performance: SimulationPerformanceResponse
+    simulation_composition: SimulationCompositionResponse
+
+
+class DashboardInsights(BaseModel):
+    """Actionable insights (computed server-side)."""
+
+    growth: Optional[str] = None
+    persona: dict[str, Optional[str]]  # persona_name -> insight
+    rubric_heatmap: Optional[str] = None
+    attempt_improvement: Optional[str] = None
+    cohort: dict[str, Optional[str]]  # cohort_id -> insight
+    skill_performance: Optional[str] = None
+    scenario_performance: Optional[str] = None
+    scenario_stats: Optional[str] = None
+    simulation_performance: Optional[str] = None
+    simulation_composition: Optional[str] = None
+
+
+class DashboardBundleResponse(BaseModel):
+    """Complete dashboard bundle with all metrics, history, insights, and mappings."""
+
+    header: DashboardHeaderMetrics
+    primary: DashboardPrimaryMetrics
+    secondary: DashboardSecondaryMetrics
+    footer: DashboardFooterMetrics
+    history: AttemptHistoryResponse
+    insights: DashboardInsights
+
+    # Normalized entity mappings (from base.py)
+    simulation_mapping: SimulationMapping
+    rubric_mapping: RubricMapping
+    parameter_mapping: ParameterMapping
+    parameter_item_mapping: ParameterItemMapping
 

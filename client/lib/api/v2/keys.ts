@@ -194,6 +194,14 @@ export const analyticsPricingKeys = {
     [...analyticsPricingKeys.all, { filters }] as const,
 };
 
+// Dashboard Bundle Keys
+export const analyticsDashboardBundleKeys = {
+  all: ["analytics:v2:dashboard"] as const,
+  lists: () => [...analyticsDashboardBundleKeys.all, "list"] as const,
+  list: (filters: AnalyticsFilters) =>
+    [...analyticsDashboardBundleKeys.lists(), filters] as const,
+};
+
 // Personas Keys
 export const personasListKeys = {
   all: ["personas:v2:list"] as const,

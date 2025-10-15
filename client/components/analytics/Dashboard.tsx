@@ -1,62 +1,19 @@
 /**
  * Dashboard.tsx
  * Used to display the main dashboard for the analytics page.
- * Now fully dynamic using database components and dashboards.
+ * Refactored to use single v2 bundle endpoint for optimal performance.
  * @AshokSaravanan222 & @siladiea
- * 06/07/2025
+ * 10/15/2025
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  AttemptHistoryRow,
-  computeAttemptImprovementActionableInsight,
-  computeCohortMultipleActionableInsights,
-  computeCurrent,
-  computeGrowthActionableInsight,
-  computePersonaMultipleActionableInsights,
-  computePersonaPerformanceStatus,
-  computeRubricHeatmapActionableInsight,
-  computeScenarioPerformanceActionableInsight,
-  computeScenarioStatsActionableInsight,
-  computeSimulationCompositionActionableInsight,
-  computeSimulationPerformanceActionableInsight,
-  computeSkillPerformanceActionableInsight,
-  computeTrendAnalysis,
-  KeyField,
-  MetricResponse,
-  TrendData,
-} from "@/lib/analytics";
-import {
-  useAnalyticsAttemptHistory,
-  useAnalyticsAttemptImprovement,
-  useAnalyticsAverageScore,
-  useAnalyticsCohortPerformance,
-  useAnalyticsCompletionPercentage,
-  useAnalyticsFirstAttemptPassRate,
-  useAnalyticsGrowthData,
-  useAnalyticsHighestScore,
-  useAnalyticsMessagesPerSession,
-  useAnalyticsPersonaPerformance,
-  useAnalyticsPersonaResponseTimes,
-  useAnalyticsRubricHeatmap,
-  useAnalyticsScenarioPerformance,
-  useAnalyticsScenarioStats,
-  useAnalyticsSessionEfficiency,
-  useAnalyticsSimulationComposition,
-  useAnalyticsSimulationPerformance,
-  useAnalyticsSkillPerformance,
-  useAnalyticsStagnationRate,
-  useAnalyticsTimeSpent,
-  useAnalyticsTotalAttempts,
-} from "@/lib/api/v1/hooks/analytics";
-import { useParameterItems } from "@/lib/api/v1/hooks/parameter_items";
-import { useParametersByDepartmentIdBatch } from "@/lib/api/v1/hooks/parameters";
-import { useRubricsByDepartmentIdBatch } from "@/lib/api/v1/hooks/rubrics";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
+import { computeTrendAnalysis } from "@/lib/analytics";
+import { useDashboardBundle } from "@/lib/api/v2/hooks/analytics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -98,11 +55,14 @@ export default function Dashboard({ profileId }: DashboardProps) {
   } = useAnalytics();
 
   // Threshold data
-  const thresholds = {
-    danger: 60,
-    warning: 75,
-    success: 85,
-  };
+  const thresholds = useMemo(
+    () => ({
+      danger: 60,
+      warning: 75,
+      success: 85,
+    }),
+    []
+  );
 
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
@@ -118,6 +78,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
   const [isLeftFooterHovered, setIsLeftFooterHovered] = useState(false);
   const [isRightFooterHovered, setIsRightFooterHovered] = useState(false);
 
+  // Build filters for bundle request
   const filters = useMemo(
     () => ({
       startDate: startDate.toISOString(),
@@ -139,7 +100,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     ]
   );
 
-  // Stable React Query options to prevent unnecessary refetches
+  // Stable React Query options
   const rqOpts = useMemo(
     () => ({
       enabled: true,
@@ -148,1109 +109,510 @@ export default function Dashboard({ profileId }: DashboardProps) {
     []
   );
 
-  // Fetch data and process it inline
+  // Fetch complete dashboard bundle with single API call
   const {
-    data: averageScoreData,
-    isLoading: averageScoreLoading,
-    isError: averageScoreError,
-  } = useAnalyticsAverageScore(filters, rqOpts);
-  const {
-    data: completionData,
-    isLoading: completionLoading,
-    isError: completionError,
-  } = useAnalyticsCompletionPercentage(filters, rqOpts);
-  const {
-    data: passRateData,
-    isLoading: passRateLoading,
-    isError: passRateError,
-  } = useAnalyticsFirstAttemptPassRate(filters, rqOpts);
-  const {
-    data: highestScoreData,
-    isLoading: highestScoreLoading,
-    isError: highestScoreError,
-  } = useAnalyticsHighestScore(filters, rqOpts);
-  const {
-    data: messagesData,
-    isLoading: messagesLoading,
-    isError: messagesError,
-  } = useAnalyticsMessagesPerSession(filters, rqOpts);
-  const {
-    data: responseTimeData,
-    isLoading: responseTimeLoading,
-    isError: responseTimeError,
-  } = useAnalyticsPersonaResponseTimes(filters, rqOpts);
-  const {
-    data: sessionEfficiencyData,
-    isLoading: sessionEfficiencyLoading,
-    isError: sessionEfficiencyError,
-  } = useAnalyticsSessionEfficiency(filters, rqOpts);
-  const {
-    data: stagnationRateData,
-    isLoading: stagnationRateLoading,
-    isError: stagnationRateError,
-  } = useAnalyticsStagnationRate(filters, rqOpts);
-  const {
-    data: timeSpentData,
-    isLoading: timeSpentLoading,
-    isError: timeSpentError,
-  } = useAnalyticsTimeSpent(filters, rqOpts);
-  const {
-    data: totalAttemptsData,
-    isLoading: totalAttemptsLoading,
-    isError: totalAttemptsError,
-  } = useAnalyticsTotalAttempts(filters, rqOpts);
-  const {
-    data: growthData,
-    isLoading: growthLoading,
-    isError: growthError,
-  } = useAnalyticsGrowthData(filters, rqOpts);
-  const {
-    data: personaData,
-    isLoading: personaLoading,
-    isError: personaError,
-  } = useAnalyticsPersonaPerformance(filters, rqOpts);
+    data: bundle,
+    isLoading,
+    isError,
+  } = useDashboardBundle(filters, rqOpts);
 
-  // Fetch all simulations and rubrics
-  const { data: allSimulations = [] } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: allRubrics = [] } = useRubricsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: allParameters = [] } = useParametersByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-  const { data: allParameterItems = [] } = useParameterItems();
+  // Helper to compute current value from MetricResponse
+  const computeCurrent = (metric: any) => {
+    if (!metric?.dataPoints?.length) return 0;
+    const values = metric.dataPoints.map((p: any) => p.value ?? 0);
 
-  // Fetch rubric heatmap data
-  const {
-    data: rubricHeatmapData,
-    isLoading: rubricHeatmapLoading,
-    isError: rubricHeatmapError,
-  } = useAnalyticsRubricHeatmap(filters, rqOpts);
+    switch (metric.method) {
+      case "avg":
+      case "rate":
+        return (
+          values.reduce((a: number, b: number) => a + b, 0) / values.length
+        );
+      case "max":
+        return Math.max(...values);
+      case "sum":
+        return values.reduce((a: number, b: number) => a + b, 0);
+      default:
+        return 0;
+    }
+  };
 
-  // Fetch secondary analytics data
-  const {
-    data: attemptImprovementData,
-    isLoading: attemptImprovementLoading,
-    isError: attemptImprovementError,
-  } = useAnalyticsAttemptImprovement(filters, rqOpts);
-
-  const {
-    data: cohortPerformanceData,
-    isLoading: cohortPerformanceLoading,
-    isError: cohortPerformanceError,
-  } = useAnalyticsCohortPerformance(filters, rqOpts);
-
-  const {
-    data: skillPerformanceData,
-    isLoading: skillPerformanceLoading,
-    isError: skillPerformanceError,
-  } = useAnalyticsSkillPerformance(filters, rqOpts);
-
-  // Footer Analytics Data Fetching
-  const {
-    data: scenarioPerformanceData,
-    isLoading: scenarioPerformanceLoading,
-    isError: scenarioPerformanceError,
-  } = useAnalyticsScenarioPerformance(filters, rqOpts);
-
-  const {
-    data: scenarioStatsData,
-    isLoading: scenarioStatsLoading,
-    isError: scenarioStatsError,
-  } = useAnalyticsScenarioStats(filters, rqOpts);
-
-  const {
-    data: simulationPerformanceData,
-    isLoading: simulationPerformanceLoading,
-    isError: simulationPerformanceError,
-  } = useAnalyticsSimulationPerformance(filters, rqOpts);
-
-  const {
-    data: simulationCompositionData,
-    isLoading: simulationCompositionLoading,
-    isError: simulationCompositionError,
-  } = useAnalyticsSimulationComposition(filters, rqOpts);
-
-  // Fetch history data for the dashboard
-  const historyFilters = useMemo(
-    () => ({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
-        | "general"
-        | "practice"
-        | "archived"
-      )[],
-      // For dashboard, show all users' history (no profileId filter)
-      // unless it's a specific profile view
-      ...(profileId && { profileId }),
-      departmentIds: effectiveDepartmentIds,
-    }),
-    [
-      startDate,
-      endDate,
-      selectedCohortIds,
-      selectedRoles,
-      simulationFilters,
-      profileId,
-      effectiveDepartmentIds,
-    ]
-  );
-
-  const { data: historyData, isLoading: isHistoryLoading } =
-    useAnalyticsAttemptHistory(historyFilters, rqOpts);
-
-  // Process the data inline
-  const averageScoreProcessed = (() => {
-    const resp = averageScoreData as MetricResponse | undefined;
-    if (!resp) {
+  // Compute trend analysis for header metrics (client-side only as needed for sparklines)
+  const trendAnalysis = useMemo(() => {
+    if (!bundle) {
       return {
-        averageScore: 0,
-        scoreTrend: [] as TrendData[],
-        hasDataAvailable: false,
+        averageScore: null as string | null,
+        completion: null as string | null,
+        passRate: null as string | null,
+        highestScore: null as string | null,
+        messages: null as string | null,
+        responseTime: null as string | null,
+        sessionEfficiency: null as string | null,
+        stagnationRate: null as string | null,
+        timeSpent: null as string | null,
+        totalAttempts: null as string | null,
       };
     }
 
-    // Use all data points for aggregate view
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as
-        | "attemptId"
-        | "simulationId"
-        | "profileId"
-        | "date"
-        | undefined
-    );
-
     return {
-      averageScore: Number.isFinite(current) ? current : 0,
-      scoreTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
+      averageScore:
+        computeTrendAnalysis(
+          bundle.header.average_score.trendData,
+          "Average score"
+        ) ?? null,
+      completion:
+        computeTrendAnalysis(
+          bundle.header.completion_percentage.trendData,
+          "Completion percentage"
+        ) ?? null,
+      passRate:
+        computeTrendAnalysis(
+          bundle.header.first_attempt_pass_rate.trendData,
+          "First attempt pass rate"
+        ) ?? null,
+      highestScore:
+        computeTrendAnalysis(
+          bundle.header.highest_score.trendData,
+          "Highest score"
+        ) ?? null,
+      messages:
+        computeTrendAnalysis(
+          bundle.header.messages_per_session.trendData,
+          "Messages per session"
+        ) ?? null,
+      responseTime:
+        computeTrendAnalysis(
+          bundle.header.persona_response_times.trendData,
+          "Response time"
+        ) ?? null,
+      sessionEfficiency:
+        computeTrendAnalysis(
+          bundle.header.session_efficiency.trendData,
+          "Session efficiency"
+        ) ?? null,
+      stagnationRate:
+        computeTrendAnalysis(
+          bundle.header.stagnation_rate.trendData,
+          "Stagnation rate"
+        ) ?? null,
+      timeSpent:
+        computeTrendAnalysis(
+          bundle.header.time_spent.trendData,
+          "Time spent"
+        ) ?? null,
+      totalAttempts:
+        computeTrendAnalysis(
+          bundle.header.total_attempts.trendData,
+          "Total attempts"
+        ) ?? null,
     };
-  })();
-
-  // Process completion percentage data
-  const completionProcessed = (() => {
-    const resp = completionData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        completionPercentage: 0,
-        completionTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      completionPercentage: Number.isFinite(current) ? current : 0,
-      completionTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process first attempt pass rate data
-  const passRateProcessed = (() => {
-    const resp = passRateData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        firstAttemptPassRate: 0,
-        passRateTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as
-        | "attemptId"
-        | "simulationId"
-        | "profileId"
-        | "date"
-        | undefined
-    );
-
-    return {
-      firstAttemptPassRate: Number.isFinite(current) ? current : 0,
-      passRateTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process highest score data
-  const highestScoreProcessed = (() => {
-    const resp = highestScoreData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        highestScore: 0,
-        scoreTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as
-        | "attemptId"
-        | "simulationId"
-        | "profileId"
-        | "date"
-        | undefined
-    );
-
-    return {
-      highestScore: Number.isFinite(current) ? current : 0,
-      scoreTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process messages per session data
-  const messagesProcessed = (() => {
-    const resp = messagesData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        averageMessagesPerSession: 0,
-        messagesTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as
-        | "attemptId"
-        | "simulationId"
-        | "profileId"
-        | "date"
-        | undefined
-    );
-
-    return {
-      averageMessagesPerSession: Number.isFinite(current)
-        ? Math.round(current)
-        : 0,
-      messagesTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process persona response times data
-  const responseTimeProcessed = (() => {
-    const resp = responseTimeData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        averageResponseTime: 0,
-        responseTimeTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      averageResponseTime: Number.isFinite(current) ? Math.round(current) : 0,
-      responseTimeTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process session efficiency data
-  const sessionEfficiencyProcessed = (() => {
-    const resp = sessionEfficiencyData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        sessionEfficiency: 0,
-        efficiencyTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      sessionEfficiency: Number.isFinite(current) ? current : 0,
-      efficiencyTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process stagnation rate data
-  const stagnationRateProcessed = (() => {
-    const resp = stagnationRateData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        stagnationRate: 0,
-        stagnationTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      stagnationRate: Number.isFinite(current) ? current : 0,
-      stagnationTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process time spent data
-  const timeSpentProcessed = (() => {
-    const resp = timeSpentData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        totalTimeSpent: 0,
-        timeSpentTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      totalTimeSpent: Number.isFinite(current) ? Math.round(current * 60) : 0, // Convert minutes to seconds
-      timeSpentTrend: (resp.trendData ?? []).map((trend) => ({
-        ...trend,
-        value: Math.round(trend.value * 60), // Convert trend data from minutes to seconds
-      })),
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Process total attempts data
-  const totalAttemptsProcessed = (() => {
-    const resp = totalAttemptsData as MetricResponse | undefined;
-    if (!resp) {
-      return {
-        totalAttempts: 0,
-        attemptsTrend: [] as TrendData[],
-        hasDataAvailable: false,
-      };
-    }
-
-    const points = resp.dataPoints;
-    const current = computeCurrent(
-      resp.method,
-      points,
-      "value",
-      resp.keyField as KeyField
-    );
-
-    return {
-      totalAttempts: Number.isFinite(current) ? Math.round(current) : 0,
-      attemptsTrend: resp.trendData ?? [],
-      hasDataAvailable: !!resp.hasData && points.length > 0,
-    };
-  })();
-
-  // Trend analysis using utility function
-  const averageScoreTrendAnalysis = computeTrendAnalysis(
-    averageScoreProcessed.scoreTrend,
-    "Average score"
-  );
-  const completionTrendAnalysis = computeTrendAnalysis(
-    completionProcessed.completionTrend,
-    "Completion percentage"
-  );
-  const passRateTrendAnalysis = computeTrendAnalysis(
-    passRateProcessed.passRateTrend,
-    "First attempt pass rate"
-  );
-  const highestScoreTrendAnalysis = computeTrendAnalysis(
-    highestScoreProcessed.scoreTrend,
-    "Highest score"
-  );
-  const messagesTrendAnalysis = computeTrendAnalysis(
-    messagesProcessed.messagesTrend,
-    "Messages per session"
-  );
-  const responseTimeTrendAnalysis = computeTrendAnalysis(
-    responseTimeProcessed.responseTimeTrend,
-    "Response time"
-  );
-  const sessionEfficiencyTrendAnalysis = computeTrendAnalysis(
-    sessionEfficiencyProcessed.efficiencyTrend,
-    "Session efficiency"
-  );
-  const stagnationRateTrendAnalysis = computeTrendAnalysis(
-    stagnationRateProcessed.stagnationTrend,
-    "Stagnation rate"
-  );
-  const timeSpentTrendAnalysis = computeTrendAnalysis(
-    timeSpentProcessed.timeSpentTrend,
-    "Time spent"
-  );
-  const totalAttemptsTrendAnalysis = computeTrendAnalysis(
-    totalAttemptsProcessed.attemptsTrend,
-    "Total attempts"
-  );
-
-  // Process growth data
-  const growthProcessed = (() => {
-    if (!growthData) {
-      return {
-        chartData: [],
-        availableMetrics: [],
-        windowAverages: { averageScore: { n: 7, last: null, prev: null } },
-        hasDataAvailable: false,
-        actionableInsight: null,
-      };
-    }
-
-    const windowAverages = growthData.windowAverages || {
-      averageScore: { n: 7, last: null, prev: null },
-    };
-
-    return {
-      chartData: growthData.chartData || [],
-      availableMetrics: growthData.availableMetrics || [],
-      windowAverages,
-      hasDataAvailable: growthData.chartData && growthData.chartData.length > 0,
-      actionableInsight: computeGrowthActionableInsight(windowAverages),
-    };
-  })();
-
-  // Process persona performance data
-  const personaProcessed = (() => {
-    if (!personaData) {
-      return {
-        chartData: [],
-        availableSimulations: [],
-        validSimulationIds: [],
-        personaColors: {},
-        hasDataAvailable: false,
-        performanceStatus: "neutral" as const,
-        actionableInsights: {},
-      };
-    }
-
-    const chartData = personaData.chartData || [];
-    const performanceStatus = computePersonaPerformanceStatus(
-      chartData,
-      thresholds
-    );
-
-    // Compute multiple actionable insights for each persona
-    const actionableInsights: Record<string, string | null> = {};
-    chartData.forEach((persona) => {
-      const multipleInsights = computePersonaMultipleActionableInsights(
-        persona.trendData,
-        persona.name,
-        persona.score
-      );
-
-      // Use the single focused insight
-      actionableInsights[persona.name] = multipleInsights["insight"] || null;
-    });
-
-    // Filter simulations by validSimulationIds
-    const validSimulationIds = personaData.validSimulationIds || [];
-    const validSimulationIdsSet = new Set(validSimulationIds);
-    const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
-    );
-
-    return {
-      chartData,
-      availableSimulations,
-      personaColors: personaData.personaColors || {},
-      hasDataAvailable: chartData.length > 0,
-      performanceStatus,
-      actionableInsights,
-    };
-  })();
-
-  // Process rubric heatmap data
-  const rubricHeatmapProcessed = (() => {
-    if (!rubricHeatmapData) {
-      return {
-        matrices: [],
-        availableRubrics: [],
-        hasDataAvailable: false,
-      };
-    }
-
-    // Filter rubrics by validRubricIds
-    const validRubricIds = rubricHeatmapData.validRubricIds || [];
-    const validRubricIdsSet = new Set(validRubricIds);
-    const availableRubrics = allRubrics.filter((rubric) =>
-      validRubricIdsSet.has(rubric.id)
-    );
-
-    const matrices = rubricHeatmapData.matrices || [];
-    const actionableInsight = computeRubricHeatmapActionableInsight(matrices);
-
-    return {
-      matrices,
-      availableRubrics,
-      hasDataAvailable: matrices.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  // Process attempt improvement data
-  const attemptImprovementProcessed = (() => {
-    if (!attemptImprovementData) {
-      return {
-        chartData: [],
-        facts: [],
-        validSimulationIds: [],
-        hasDataAvailable: false,
-        performanceStatus: "neutral" as const,
-        actionableInsight: null,
-      };
-    }
-
-    const chartData = attemptImprovementData.chartData || [];
-
-    // Filter simulations by validSimulationIds
-    const validSimulationIds = attemptImprovementData.validSimulationIds || [];
-    const validSimulationIdsSet = new Set(validSimulationIds);
-    const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
-    );
-
-    const actionableInsight =
-      computeAttemptImprovementActionableInsight(chartData);
-
-    return {
-      chartData,
-      facts: attemptImprovementData.facts || [],
-      availableSimulations,
-      hasDataAvailable: chartData.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  // Process cohort performance data
-  const cohortPerformanceProcessed = (() => {
-    if (!cohortPerformanceData) {
-      return {
-        cohortData: [],
-        dailyData: [],
-        cohortFacts: [],
-        dailyFacts: [],
-        validSimulationIds: [],
-        hasDataAvailable: false,
-        performanceStatus: "neutral" as const,
-        actionableInsights: {},
-      };
-    }
-
-    const cohortData = cohortPerformanceData.cohortData || [];
-
-    // Filter simulations by validSimulationIds
-    const validSimulationIds = cohortPerformanceData.validSimulationIds || [];
-    const validSimulationIdsSet = new Set(validSimulationIds);
-    const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
-    );
-
-    // Compute multiple actionable insights for each cohort
-    const multipleCohortInsights =
-      computeCohortMultipleActionableInsights(cohortData);
-
-    // Convert to the format expected by the component
-    const actionableInsights: Record<string, string | null> = {};
-    Object.entries(multipleCohortInsights).forEach(([cohortId, insights]) => {
-      // Use the single focused insight
-      actionableInsights[cohortId] = insights["insight"] || null;
-    });
-
-    return {
-      cohortData,
-      dailyData: cohortPerformanceData.dailyData || [],
-      cohortFacts: cohortPerformanceData.cohortFacts || [],
-      dailyFacts: cohortPerformanceData.dailyFacts || [],
-      availableSimulations,
-      hasDataAvailable: cohortData.length > 0,
-      actionableInsights,
-    };
-  })();
-
-  // Process skill performance data
-  const skillPerformanceProcessed = (() => {
-    if (!skillPerformanceData) {
-      return {
-        packages: [],
-        validRubricIds: [],
-        hasDataAvailable: false,
-        performanceStatus: "neutral" as const,
-        actionableInsight: null,
-      };
-    }
-
-    const packages = skillPerformanceData.packages || [];
-
-    // Filter rubrics by validRubricIds
-    const validRubricIds = skillPerformanceData.validRubricIds || [];
-    const validRubricIdsSet = new Set(validRubricIds);
-    const availableRubrics = allRubrics.filter((rubric) =>
-      validRubricIdsSet.has(rubric.id)
-    );
-
-    const activePackage = packages[0]; // Use first package for insight calculation
-    const radarData = activePackage?.radarData || [];
-    const actionableInsight =
-      computeSkillPerformanceActionableInsight(radarData);
-
-    return {
-      packages,
-      availableRubrics,
-      hasDataAvailable: packages.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  // Process footer analytics data
-  const scenarioPerformanceProcessed = (() => {
-    if (!scenarioPerformanceData) {
-      return {
-        attributeAttemptFacts: [],
-        attributeScenarioFacts: [],
-        availableParameters: [],
-        availableParameterItems: [],
-        hasDataAvailable: false,
-        actionableInsight: null,
-      };
-    }
-
-    const validParameterIds = scenarioPerformanceData.validParameterIds || [];
-    const attributeAttemptFacts =
-      scenarioPerformanceData.attributeAttemptFacts || [];
-    const attributeScenarioFacts =
-      scenarioPerformanceData.attributeScenarioFacts || [];
-
-    // Filter parameters and parameter items by valid IDs
-    const validParameterIdsSet = new Set(validParameterIds);
-    const availableParameters = allParameters.filter((param) =>
-      validParameterIdsSet.has(param.id)
-    );
-
-    // Filter parameter items that belong to valid parameters
-    const availableParameterItems = allParameterItems.filter((item) =>
-      validParameterIdsSet.has(item.parameterId)
-    );
-
-    const actionableInsight = computeScenarioPerformanceActionableInsight(
-      attributeAttemptFacts
-    );
-
-    return {
-      attributeAttemptFacts,
-      attributeScenarioFacts,
-      availableParameters,
-      availableParameterItems,
-      hasDataAvailable: attributeAttemptFacts.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  const scenarioStatsProcessed = (() => {
-    if (!scenarioStatsData) {
-      return {
-        numericAttemptFacts: [],
-        numericScenarioFacts: [],
-        availableParameters: [],
-        hasDataAvailable: false,
-        actionableInsight: null,
-      };
-    }
-
-    const validNumericParameterIds =
-      scenarioStatsData.validNumericParameterIds || [];
-    const numericAttemptFacts = scenarioStatsData.numericAttemptFacts || [];
-    const numericScenarioFacts = scenarioStatsData.numericScenarioFacts || [];
-
-    // Filter parameters by valid numeric parameter IDs
-    const validNumericParameterIdsSet = new Set(validNumericParameterIds);
-    const availableParameters = allParameters.filter((param) =>
-      validNumericParameterIdsSet.has(param.id)
-    );
-
-    const actionableInsight =
-      computeScenarioStatsActionableInsight(numericAttemptFacts);
-
-    return {
-      numericAttemptFacts,
-      numericScenarioFacts,
-      availableParameters,
-      hasDataAvailable: numericAttemptFacts.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  const simulationPerformanceProcessed = (() => {
-    if (!simulationPerformanceData) {
-      return {
-        validSimulationIds: [],
-        scenarioFacts: [],
-        hasDataAvailable: false,
-        actionableInsight: null,
-      };
-    }
-
-    const validSimulationIds =
-      simulationPerformanceData.validSimulationIds || [];
-    const scenarioFacts = simulationPerformanceData.scenarioFacts || [];
-
-    const actionableInsight =
-      computeSimulationPerformanceActionableInsight(scenarioFacts);
-
-    return {
-      validSimulationIds,
-      scenarioFacts,
-      hasDataAvailable: scenarioFacts.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  const simulationCompositionProcessed = (() => {
-    if (!simulationCompositionData) {
-      return {
-        simulationFacts: [],
-        simulationParameterFactsCategorical: [],
-        simulationParameterFactsNumeric: [],
-        availableSimulations: [],
-        availableParameters: [],
-        availableParameterItems: [],
-        hasDataAvailable: false,
-        actionableInsight: null,
-      };
-    }
-
-    const validSimulationIds =
-      simulationCompositionData.validSimulationIds || [];
-    const simulationFacts = simulationCompositionData.simulationFacts || [];
-    const simulationParameterFactsCategorical =
-      simulationCompositionData.simulationParameterFactsCategorical || [];
-    const simulationParameterFactsNumeric =
-      simulationCompositionData.simulationParameterFactsNumeric || [];
-
-    // Filter simulations by valid IDs
-    const validSimulationIdsSet = new Set(validSimulationIds);
-    const availableSimulations = allSimulations.filter((sim) =>
-      validSimulationIdsSet.has(sim.id)
-    );
-
-    // Get all parameter IDs that appear in the facts
-    const parameterIds = new Set<string>();
-    simulationParameterFactsCategorical.forEach((fact) =>
-      parameterIds.add(fact.parameterId)
-    );
-    simulationParameterFactsNumeric.forEach((fact) =>
-      parameterIds.add(fact.parameterId)
-    );
-
-    // Filter parameters and parameter items by the IDs that appear in facts
-    const availableParameters = allParameters.filter((param) =>
-      parameterIds.has(param.id)
-    );
-    const availableParameterItems = allParameterItems.filter((item) =>
-      parameterIds.has(item.parameterId)
-    );
-
-    const actionableInsight =
-      computeSimulationCompositionActionableInsight(simulationFacts);
-
-    return {
-      simulationFacts,
-      simulationParameterFactsCategorical,
-      simulationParameterFactsNumeric,
-      availableSimulations,
-      availableParameters,
-      availableParameterItems,
-      hasDataAvailable: simulationFacts.length > 0,
-      actionableInsight,
-    };
-  })();
-
-  const headerComponents = [
-    <AverageScore
-      key="average-score"
-      averageScore={averageScoreProcessed.averageScore}
-      scoreTrend={averageScoreProcessed.scoreTrend}
-      hasDataAvailable={averageScoreProcessed.hasDataAvailable}
-      isLoading={averageScoreLoading}
-      isError={averageScoreError}
-      trendAnalysis={averageScoreTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <CompletionPercentage
-      key="completion-percentage"
-      completionPercentage={completionProcessed.completionPercentage}
-      completionTrend={completionProcessed.completionTrend}
-      hasDataAvailable={completionProcessed.hasDataAvailable}
-      isLoading={completionLoading}
-      isError={completionError}
-      trendAnalysis={completionTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <FirstAttemptPassRate
-      key="first-attempt-pass-rate"
-      firstAttemptPassRate={passRateProcessed.firstAttemptPassRate}
-      passRateTrend={passRateProcessed.passRateTrend}
-      hasDataAvailable={passRateProcessed.hasDataAvailable}
-      isLoading={passRateLoading}
-      isError={passRateError}
-      trendAnalysis={passRateTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <HighestScore
-      key="highest-score"
-      highestScore={highestScoreProcessed.highestScore}
-      scoreTrend={highestScoreProcessed.scoreTrend}
-      hasDataAvailable={highestScoreProcessed.hasDataAvailable}
-      isLoading={highestScoreLoading}
-      isError={highestScoreError}
-      trendAnalysis={highestScoreTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <MessagesPerSession
-      key="messages-per-session"
-      averageMessagesPerSession={messagesProcessed.averageMessagesPerSession}
-      messagesTrend={messagesProcessed.messagesTrend}
-      hasDataAvailable={messagesProcessed.hasDataAvailable}
-      isLoading={messagesLoading}
-      isError={messagesError}
-      trendAnalysis={messagesTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <PersonaResponseTimes
-      key="persona-response-times"
-      averageResponseTime={responseTimeProcessed.averageResponseTime}
-      responseTimeTrend={responseTimeProcessed.responseTimeTrend}
-      hasDataAvailable={responseTimeProcessed.hasDataAvailable}
-      isLoading={responseTimeLoading}
-      isError={responseTimeError}
-      trendAnalysis={responseTimeTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <SessionEfficiency
-      key="session-efficiency"
-      sessionEfficiency={sessionEfficiencyProcessed.sessionEfficiency}
-      efficiencyTrend={sessionEfficiencyProcessed.efficiencyTrend}
-      hasDataAvailable={sessionEfficiencyProcessed.hasDataAvailable}
-      isLoading={sessionEfficiencyLoading}
-      isError={sessionEfficiencyError}
-      trendAnalysis={sessionEfficiencyTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <StagnationRate
-      key="stagnation-rate"
-      stagnationRate={stagnationRateProcessed.stagnationRate}
-      stagnationTrend={stagnationRateProcessed.stagnationTrend}
-      hasDataAvailable={stagnationRateProcessed.hasDataAvailable}
-      isLoading={stagnationRateLoading}
-      isError={stagnationRateError}
-      trendAnalysis={stagnationRateTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <TimeSpent
-      key="time-spent"
-      totalTimeSpent={timeSpentProcessed.totalTimeSpent}
-      timeSpentTrend={timeSpentProcessed.timeSpentTrend}
-      hasDataAvailable={timeSpentProcessed.hasDataAvailable}
-      isLoading={timeSpentLoading}
-      isError={timeSpentError}
-      trendAnalysis={timeSpentTrendAnalysis}
-      thresholds={thresholds}
-    />,
-    <TotalAttempts
-      key="total-attempts"
-      totalAttempts={totalAttemptsProcessed.totalAttempts}
-      attemptsTrend={totalAttemptsProcessed.attemptsTrend}
-      hasDataAvailable={totalAttemptsProcessed.hasDataAvailable}
-      isLoading={totalAttemptsLoading}
-      isError={totalAttemptsError}
-      trendAnalysis={totalAttemptsTrendAnalysis}
-      thresholds={thresholds}
-    />,
-  ];
-
-  const primaryComponents = [
-    <Growth
-      key="growth"
-      chartData={growthProcessed.chartData}
-      availableMetrics={growthProcessed.availableMetrics}
-      windowAverages={growthProcessed.windowAverages}
-      hasDataAvailable={growthProcessed.hasDataAvailable}
-      isLoading={growthLoading}
-      isError={growthError}
-      actionableInsight={growthProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-    <PersonaPerformance
-      key="persona-performance"
-      chartData={personaProcessed.chartData}
-      availableSimulations={personaProcessed.availableSimulations}
-      personaColors={personaProcessed.personaColors}
-      hasDataAvailable={personaProcessed.hasDataAvailable}
-      isLoading={personaLoading}
-      isError={personaError}
-      performanceStatus={personaProcessed.performanceStatus}
-      actionableInsights={personaProcessed.actionableInsights}
-      thresholds={thresholds}
-    />,
-    <RubricHeatmap
-      key="rubric-heatmap"
-      matrices={rubricHeatmapProcessed.matrices}
-      availableRubrics={rubricHeatmapProcessed.availableRubrics}
-      hasDataAvailable={rubricHeatmapProcessed.hasDataAvailable}
-      isLoading={rubricHeatmapLoading}
-      isError={rubricHeatmapError}
-      actionableInsight={rubricHeatmapProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-  ];
-
-  const secondaryComponents = [
-    <CohortPerformance
-      key="cohort-performance"
-      cohortData={cohortPerformanceProcessed.cohortData}
-      dailyData={cohortPerformanceProcessed.dailyData}
-      cohortFacts={cohortPerformanceProcessed.cohortFacts}
-      dailyFacts={cohortPerformanceProcessed.dailyFacts}
-      allSimulations={(
-        cohortPerformanceProcessed.availableSimulations || []
-      ).map((sim) => ({
-        ...sim,
-        timeLimit: sim.timeLimit ?? undefined,
-      }))}
-      isLoading={cohortPerformanceLoading}
-      isError={cohortPerformanceError}
-      profileId={profileId}
-      actionableInsights={cohortPerformanceProcessed.actionableInsights || {}}
-      thresholds={thresholds}
-    />,
-    <AttemptImprovement
-      key="attempt-improvement"
-      chartData={attemptImprovementProcessed.chartData}
-      facts={attemptImprovementProcessed.facts}
-      allSimulations={(
-        attemptImprovementProcessed.availableSimulations || []
-      ).map((sim) => ({
-        ...sim,
-        timeLimit: sim.timeLimit ?? undefined,
-      }))}
-      isLoading={attemptImprovementLoading}
-      isError={attemptImprovementError}
-      actionableInsight={attemptImprovementProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-    <SkillPerformance
-      key="skill-performance"
-      packages={skillPerformanceProcessed.packages}
-      allRubrics={skillPerformanceProcessed.availableRubrics || []}
-      isLoading={skillPerformanceLoading}
-      isError={skillPerformanceError}
-      actionableInsight={skillPerformanceProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-  ];
-
-  const leftFooterComponents = [
-    <ScenarioPerformance
-      key="scenario-performance"
-      attributeAttemptFacts={scenarioPerformanceProcessed.attributeAttemptFacts}
-      attributeScenarioFacts={
-        scenarioPerformanceProcessed.attributeScenarioFacts
-      }
-      allParameters={scenarioPerformanceProcessed.availableParameters}
-      allParameterItems={scenarioPerformanceProcessed.availableParameterItems}
-      isLoading={scenarioPerformanceLoading}
-      isError={scenarioPerformanceError}
-      actionableInsight={scenarioPerformanceProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-    <ScenarioStats
-      key="scenario-stats"
-      numericAttemptFacts={scenarioStatsProcessed.numericAttemptFacts}
-      numericScenarioFacts={scenarioStatsProcessed.numericScenarioFacts}
-      allParameters={scenarioStatsProcessed.availableParameters}
-      isLoading={scenarioStatsLoading}
-      isError={scenarioStatsError}
-      actionableInsight={scenarioStatsProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-  ];
-
-  const rightFooterComponents = [
-    <SimulationPerformance
-      key="simulation-performance"
-      validSimulationIds={simulationPerformanceProcessed.validSimulationIds}
-      scenarioFacts={simulationPerformanceProcessed.scenarioFacts}
-      allSimulations={allSimulations}
-      isLoading={simulationPerformanceLoading}
-      isError={simulationPerformanceError}
-      actionableInsight={simulationPerformanceProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-    <SimulationComposition
-      key="simulation-composition"
-      simulationFacts={simulationCompositionProcessed.simulationFacts}
-      simulationParameterFactsCategorical={
-        simulationCompositionProcessed.simulationParameterFactsCategorical
-      }
-      simulationParameterFactsNumeric={
-        simulationCompositionProcessed.simulationParameterFactsNumeric
-      }
-      allSimulations={simulationCompositionProcessed.availableSimulations}
-      allParameters={simulationCompositionProcessed.availableParameters}
-      allParameterItems={simulationCompositionProcessed.availableParameterItems}
-      isLoading={simulationCompositionLoading}
-      isError={simulationCompositionError}
-      actionableInsight={simulationCompositionProcessed.actionableInsight}
-      thresholds={thresholds}
-    />,
-  ];
+  }, [bundle]);
+
+  // Build header components from bundle data
+  const headerComponents = useMemo(() => {
+    if (!bundle) return [];
+
+    return [
+      <AverageScore
+        key="average-score"
+        averageScore={computeCurrent(bundle.header.average_score)}
+        scoreTrend={bundle.header.average_score.trendData}
+        hasDataAvailable={bundle.header.average_score.hasData}
+        trendAnalysis={trendAnalysis.averageScore}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <CompletionPercentage
+        key="completion-percentage"
+        completionPercentage={computeCurrent(
+          bundle.header.completion_percentage
+        )}
+        completionTrend={bundle.header.completion_percentage.trendData}
+        hasDataAvailable={bundle.header.completion_percentage.hasData}
+        trendAnalysis={trendAnalysis.completion}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <FirstAttemptPassRate
+        key="first-attempt-pass-rate"
+        firstAttemptPassRate={computeCurrent(
+          bundle.header.first_attempt_pass_rate
+        )}
+        passRateTrend={bundle.header.first_attempt_pass_rate.trendData}
+        hasDataAvailable={bundle.header.first_attempt_pass_rate.hasData}
+        trendAnalysis={trendAnalysis.passRate}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <HighestScore
+        key="highest-score"
+        highestScore={computeCurrent(bundle.header.highest_score)}
+        scoreTrend={bundle.header.highest_score.trendData}
+        hasDataAvailable={bundle.header.highest_score.hasData}
+        trendAnalysis={trendAnalysis.highestScore}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <MessagesPerSession
+        key="messages-per-session"
+        averageMessagesPerSession={Math.round(
+          computeCurrent(bundle.header.messages_per_session)
+        )}
+        messagesTrend={bundle.header.messages_per_session.trendData}
+        hasDataAvailable={bundle.header.messages_per_session.hasData}
+        trendAnalysis={trendAnalysis.messages}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <PersonaResponseTimes
+        key="persona-response-times"
+        averageResponseTime={Math.round(
+          computeCurrent(bundle.header.persona_response_times)
+        )}
+        responseTimeTrend={bundle.header.persona_response_times.trendData}
+        hasDataAvailable={bundle.header.persona_response_times.hasData}
+        trendAnalysis={trendAnalysis.responseTime}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <SessionEfficiency
+        key="session-efficiency"
+        sessionEfficiency={computeCurrent(bundle.header.session_efficiency)}
+        efficiencyTrend={bundle.header.session_efficiency.trendData}
+        hasDataAvailable={bundle.header.session_efficiency.hasData}
+        trendAnalysis={trendAnalysis.sessionEfficiency}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <StagnationRate
+        key="stagnation-rate"
+        stagnationRate={computeCurrent(bundle.header.stagnation_rate)}
+        stagnationTrend={bundle.header.stagnation_rate.trendData}
+        hasDataAvailable={bundle.header.stagnation_rate.hasData}
+        trendAnalysis={trendAnalysis.stagnationRate}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <TimeSpent
+        key="time-spent"
+        totalTimeSpent={Math.round(
+          computeCurrent(bundle.header.time_spent) * 60
+        )}
+        timeSpentTrend={bundle.header.time_spent.trendData.map((t) => ({
+          ...t,
+          value: Math.round(t.value * 60),
+        }))}
+        hasDataAvailable={bundle.header.time_spent.hasData}
+        trendAnalysis={trendAnalysis.timeSpent}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <TotalAttempts
+        key="total-attempts"
+        totalAttempts={Math.round(computeCurrent(bundle.header.total_attempts))}
+        attemptsTrend={bundle.header.total_attempts.trendData}
+        hasDataAvailable={bundle.header.total_attempts.hasData}
+        trendAnalysis={trendAnalysis.totalAttempts}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+    ];
+  }, [bundle, trendAnalysis, isLoading, isError, thresholds]);
+
+  // Build primary components from bundle data
+  const primaryComponents = useMemo(() => {
+    if (!bundle) return [];
+
+    return [
+      <Growth
+        key="growth"
+        {...bundle.primary.growth_data}
+        hasDataAvailable={bundle.primary.growth_data.chartData.length > 0}
+        actionableInsight={bundle.insights.growth}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <PersonaPerformance
+        key="persona-performance"
+        chartData={bundle.primary.persona_performance.chartData}
+        availableSimulations={
+          Object.entries(bundle.simulation_mapping)
+            .filter(([id]) =>
+              bundle.primary.persona_performance.validSimulationIds.includes(id)
+            )
+            .map(([id, sim]) => ({
+              id,
+              name: sim.name,
+              title: sim.name,
+              timeLimit: null,
+            })) as any
+        }
+        personaColors={bundle.primary.persona_performance.personaColors}
+        hasDataAvailable={
+          bundle.primary.persona_performance.chartData.length > 0
+        }
+        actionableInsights={bundle.insights.persona}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+        performanceStatus="neutral" // Computed on client if needed
+      />,
+      <RubricHeatmap
+        key="rubric-heatmap"
+        matrices={bundle.primary.rubric_heatmap.matrices}
+        availableRubrics={
+          Object.entries(bundle.rubric_mapping)
+            .filter(([id]) =>
+              bundle.primary.rubric_heatmap.validRubricIds.includes(id)
+            )
+            .map(([id, rubric]) => ({
+              id,
+              name: rubric.name,
+              description: rubric.description,
+              points: 100,
+              active: true,
+            })) as any
+        }
+        hasDataAvailable={bundle.primary.rubric_heatmap.matrices.length > 0}
+        actionableInsight={bundle.insights.rubric_heatmap}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+    ];
+  }, [bundle, isLoading, isError, thresholds]);
+
+  // Build secondary components from bundle data
+  const secondaryComponents = useMemo(() => {
+    if (!bundle) return [];
+
+    return [
+      <CohortPerformance
+        key="cohort-performance"
+        cohortData={bundle.secondary.cohort_performance.cohortData}
+        dailyData={bundle.secondary.cohort_performance.dailyData}
+        cohortFacts={bundle.secondary.cohort_performance.cohortFacts}
+        dailyFacts={bundle.secondary.cohort_performance.dailyFacts}
+        allSimulations={
+          Object.entries(bundle.simulation_mapping)
+            .filter(([id]) =>
+              bundle.secondary.cohort_performance.validSimulationIds.includes(
+                id
+              )
+            )
+            .map(([id, sim]) => ({
+              id,
+              name: sim.name,
+              title: sim.name,
+              timeLimit: undefined,
+            })) as any
+        }
+        profileId={profileId}
+        actionableInsights={bundle.insights.cohort}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <AttemptImprovement
+        key="attempt-improvement"
+        chartData={bundle.secondary.attempt_improvement.chartData}
+        facts={bundle.secondary.attempt_improvement.facts}
+        allSimulations={
+          Object.entries(bundle.simulation_mapping)
+            .filter(([id]) =>
+              bundle.secondary.attempt_improvement.validSimulationIds.includes(
+                id
+              )
+            )
+            .map(([id, sim]) => ({
+              id,
+              name: sim.name,
+              title: sim.name,
+              timeLimit: undefined,
+            })) as any
+        }
+        actionableInsight={bundle.insights.attempt_improvement}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <SkillPerformance
+        key="skill-performance"
+        packages={bundle.secondary.skill_performance.packages}
+        allRubrics={
+          Object.entries(bundle.rubric_mapping)
+            .filter(([id]) =>
+              bundle.secondary.skill_performance.validRubricIds.includes(id)
+            )
+            .map(([id, rubric]) => ({
+              id,
+              name: rubric.name,
+              description: rubric.description,
+              points: 100,
+              active: true,
+            })) as any
+        }
+        actionableInsight={bundle.insights.skill_performance}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+    ];
+  }, [bundle, profileId, isLoading, isError, thresholds]);
+
+  // Build footer components from bundle data
+  const leftFooterComponents = useMemo(() => {
+    if (!bundle) return [];
+
+    return [
+      <ScenarioPerformance
+        key="scenario-performance"
+        attributeAttemptFacts={
+          bundle.footer.scenario_performance.attributeAttemptFacts
+        }
+        attributeScenarioFacts={
+          bundle.footer.scenario_performance.attributeScenarioFacts
+        }
+        allParameters={
+          Object.entries(bundle.parameter_mapping)
+            .filter(([id]) =>
+              bundle.footer.scenario_performance.validParameterIds.includes(id)
+            )
+            .map(([id, param]) => ({
+              id,
+              name: param.name,
+              description: param.description,
+              type: "categorical",
+              active: true,
+              departmentId: "",
+            })) as any
+        }
+        allParameterItems={
+          Object.entries(bundle.parameter_item_mapping)
+            .filter(([, item]) =>
+              bundle.footer.scenario_performance.validParameterIds.includes(
+                item.parameter_id
+              )
+            )
+            .map(([id, item]) => ({
+              id,
+              name: item.name,
+              description: item.description,
+              parameterId: item.parameter_id,
+            })) as any
+        }
+        actionableInsight={bundle.insights.scenario_performance}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <ScenarioStats
+        key="scenario-stats"
+        numericAttemptFacts={bundle.footer.scenario_stats.numericAttemptFacts}
+        numericScenarioFacts={bundle.footer.scenario_stats.numericScenarioFacts}
+        allParameters={
+          Object.entries(bundle.parameter_mapping)
+            .filter(([id]) =>
+              bundle.footer.scenario_stats.validNumericParameterIds.includes(id)
+            )
+            .map(([id, param]) => ({
+              id,
+              name: param.name,
+              description: param.description,
+              type: "numeric",
+              active: true,
+              departmentId: "",
+            })) as any
+        }
+        actionableInsight={bundle.insights.scenario_stats}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+    ];
+  }, [bundle, isLoading, isError, thresholds]);
+
+  const rightFooterComponents = useMemo(() => {
+    if (!bundle) return [];
+
+    return [
+      <SimulationPerformance
+        key="simulation-performance"
+        validSimulationIds={
+          bundle.footer.simulation_performance.validSimulationIds
+        }
+        scenarioFacts={bundle.footer.simulation_performance.scenarioFacts}
+        allSimulations={
+          Object.entries(bundle.simulation_mapping).map(([id, sim]) => ({
+            id,
+            name: sim.name,
+            title: sim.name,
+            timeLimit: null,
+          })) as any
+        }
+        actionableInsight={bundle.insights.simulation_performance}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+      <SimulationComposition
+        key="simulation-composition"
+        simulationFacts={bundle.footer.simulation_composition.simulationFacts}
+        simulationParameterFactsCategorical={
+          bundle.footer.simulation_composition
+            .simulationParameterFactsCategorical
+        }
+        simulationParameterFactsNumeric={
+          bundle.footer.simulation_composition.simulationParameterFactsNumeric
+        }
+        allSimulations={
+          Object.entries(bundle.simulation_mapping)
+            .filter(([id]) =>
+              bundle.footer.simulation_composition.validSimulationIds.includes(
+                id
+              )
+            )
+            .map(([id, sim]) => ({
+              id,
+              name: sim.name,
+              title: sim.name,
+            })) as any
+        }
+        allParameters={
+          Object.entries(bundle.parameter_mapping).map(([id, param]) => ({
+            id,
+            name: param.name,
+            description: param.description,
+            type: "categorical",
+            active: true,
+            departmentId: "",
+          })) as any
+        }
+        allParameterItems={
+          Object.entries(bundle.parameter_item_mapping).map(([id, item]) => ({
+            id,
+            name: item.name,
+            description: item.description,
+            parameterId: item.parameter_id,
+          })) as any
+        }
+        actionableInsight={bundle.insights.simulation_composition}
+        thresholds={thresholds}
+        isLoading={isLoading}
+        isError={isError}
+      />,
+    ];
+  }, [bundle, isLoading, isError, thresholds]);
 
   // Header pagination logic
   const HEADER_CARDS_PER_PAGE = 5;
@@ -1325,7 +687,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
   };
 
-  // Determine if user can archive (instructional, admin, superadmin)
+  // Determine if user can archive
   const canArchive =
     effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
@@ -1413,12 +775,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
             <div className="flex flex-col space-y-4">
               <div
                 className="relative group min-h-[500px] max-h-[500px]"
-                onMouseEnter={() => {
-                  setIsPrimaryHovered(true);
-                }}
-                onMouseLeave={() => {
-                  setIsPrimaryHovered(false);
-                }}
+                onMouseEnter={() => setIsPrimaryHovered(true)}
+                onMouseLeave={() => setIsPrimaryHovered(false)}
               >
                 <div className="transition-all duration-300 ease-in-out h-full">
                   <div className="h-full">
@@ -1677,37 +1035,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
       <SimulationHistory
         data={
-          historyData
-            ? historyData.map((item) => ({
-                attemptId: item.attemptId,
-                date: new Date(item.date),
-                profileId: item.profileId,
-                profileName: item.profileName,
-                simulationName: item.simulationName,
-                numScenarios: item.numScenarios,
-                numScenariosCompleted: item.numScenariosCompleted,
-                infiniteMode: item.infiniteMode,
-                infiniteModeTimeLimit: (item as AttemptHistoryRow)
-                  .infiniteModeTimeLimit,
-                personaNames: item.personaNames,
-                personaColors: item.personaColors,
-                scenario_titles: item.scenario_titles,
-                score: item.score,
-                simulation_id: item.simulation_id,
-                department_id: item.department_id,
-                scenario_ids: item.scenario_ids,
-                isArchived: item.isArchived,
-                showView: item.showView,
-                showContinue: item.showContinue,
-                practiceSimulation: item.practiceSimulation,
-                passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
-              }))
-            : []
+          bundle?.history.map((item) => ({
+            ...item,
+            date: new Date(item.date),
+            passPct: item.passPct || 70,
+          })) as any
         }
         showExport={false}
         showArchive={canArchive}
         singleProfile={false}
-        isLoading={isHistoryLoading}
+        isLoading={isLoading}
       />
     </div>
   );

@@ -6,6 +6,12 @@
  */
 
 import { z } from "zod";
+import {
+  ParameterItemMappingSchema,
+  ParameterMappingSchema,
+  RubricMappingSchema,
+  SimulationMappingSchema,
+} from "./base";
 
 // ============================================================================
 // REQUEST SCHEMAS
@@ -630,4 +636,83 @@ export const PricingAnalyticsResponseSchema = z.object({
 
 export type PricingAnalyticsResponse = z.infer<
   typeof PricingAnalyticsResponseSchema
+>;
+
+// ============================================================================
+// DASHBOARD BUNDLE SCHEMAS
+// ============================================================================
+
+export const DashboardHeaderMetricsSchema = z.object({
+  average_score: MetricResponseSchema,
+  completion_percentage: MetricResponseSchema,
+  first_attempt_pass_rate: MetricResponseSchema,
+  highest_score: MetricResponseSchema,
+  messages_per_session: MetricResponseSchema,
+  persona_response_times: MetricResponseSchema,
+  session_efficiency: MetricResponseSchema,
+  stagnation_rate: MetricResponseSchema,
+  time_spent: MetricResponseSchema,
+  total_attempts: MetricResponseSchema,
+});
+
+export const DashboardPrimaryMetricsSchema = z.object({
+  growth_data: GrowthDataResponseSchema,
+  persona_performance: PersonaPerformanceResponseSchema,
+  rubric_heatmap: RubricHeatmapResponseSchema,
+});
+
+export const DashboardSecondaryMetricsSchema = z.object({
+  attempt_improvement: AttemptImprovementResponseSchema,
+  cohort_performance: CohortPerformanceResponseSchema,
+  skill_performance: SkillPerformanceResponseSchema,
+});
+
+export const DashboardFooterMetricsSchema = z.object({
+  scenario_performance: ScenarioPerformanceResponseSchema,
+  scenario_stats: ScenarioStatsResponseSchema,
+  simulation_performance: SimulationPerformanceResponseSchema,
+  simulation_composition: SimulationCompositionResponseSchema,
+});
+
+export const DashboardInsightsSchema = z.object({
+  growth: z.string().nullable(),
+  persona: z.record(z.string(), z.string().nullable()),
+  rubric_heatmap: z.string().nullable(),
+  attempt_improvement: z.string().nullable(),
+  cohort: z.record(z.string(), z.string().nullable()),
+  skill_performance: z.string().nullable(),
+  scenario_performance: z.string().nullable(),
+  scenario_stats: z.string().nullable(),
+  simulation_performance: z.string().nullable(),
+  simulation_composition: z.string().nullable(),
+});
+
+export const DashboardBundleResponseSchema = z.object({
+  header: DashboardHeaderMetricsSchema,
+  primary: DashboardPrimaryMetricsSchema,
+  secondary: DashboardSecondaryMetricsSchema,
+  footer: DashboardFooterMetricsSchema,
+  history: AttemptHistoryResponseSchema,
+  insights: DashboardInsightsSchema,
+  simulation_mapping: SimulationMappingSchema,
+  rubric_mapping: RubricMappingSchema,
+  parameter_mapping: ParameterMappingSchema,
+  parameter_item_mapping: ParameterItemMappingSchema,
+});
+
+export type DashboardHeaderMetrics = z.infer<
+  typeof DashboardHeaderMetricsSchema
+>;
+export type DashboardPrimaryMetrics = z.infer<
+  typeof DashboardPrimaryMetricsSchema
+>;
+export type DashboardSecondaryMetrics = z.infer<
+  typeof DashboardSecondaryMetricsSchema
+>;
+export type DashboardFooterMetrics = z.infer<
+  typeof DashboardFooterMetricsSchema
+>;
+export type DashboardInsights = z.infer<typeof DashboardInsightsSchema>;
+export type DashboardBundleResponse = z.infer<
+  typeof DashboardBundleResponseSchema
 >;

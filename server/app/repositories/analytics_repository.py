@@ -10,7 +10,8 @@ from app.db import get_session
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    AttemptImprovementResponse,
                                    CohortPerformanceResponse,
-                                   GrowthDataResponse, HomeOverviewResponse,
+                                   DashboardBundleResponse, GrowthDataResponse,
+                                   HomeOverviewResponse,
                                    LeaderboardBundleResponse, MetricResponse,
                                    PersonaPerformanceResponse,
                                    PracticeOverviewResponse,
@@ -191,6 +192,13 @@ class AnalyticsRepository:
     ) -> PricingAnalyticsResponse:
         """Get pricing analytics for model runs."""
         return self.service.get_pricing_analytics(filters)
+
+    # Dashboard Bundle
+    def get_dashboard_bundle(
+        self, filters: AnalyticsFilters
+    ) -> DashboardBundleResponse:
+        """Get complete dashboard bundle with all metrics, history, insights, and mappings."""
+        return self.service.get_dashboard_bundle(filters)
 
     # Utility
     def refresh_materialized_view(self) -> None:
