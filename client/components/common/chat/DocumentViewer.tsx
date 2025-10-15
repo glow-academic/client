@@ -1,32 +1,19 @@
 "use client";
 import Markdown from "@/components/common/chat/Markdown";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Document } from "@/types";
-// Removed downloadDocument import - now calling API directly
 import CodeViewer from "@/components/common/viewers/CodeViewer";
 import HtmlViewer from "@/components/common/viewers/HtmlViewer";
-import { useDepartments } from "@/contexts/departments-context";
-import { useDocumentsByDepartmentIdBatch } from "@/lib/api/v1/hooks/documents";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Document } from "@/types";
 import { isCodeByName } from "@/utils/mime-map";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface DocumentViewerProps {
-  document?: Document;
+  document: Document;
   bare?: boolean;
-  classId?: string;
   isFormDocument?: boolean;
   compact?: boolean;
 }
@@ -45,62 +32,32 @@ const getDocumentTypeInfo = (type: string) => {
 
 export default function DocumentViewer({
   document,
-  classId,
   bare = true,
   isFormDocument = false,
   compact = false,
 }: DocumentViewerProps) {
-  const [docId, setDocId] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { effectiveDepartmentIds } = useDepartments();
-  const {
-    data: docs = [],
-    isLoading,
-    error: queryError,
-  } = useDocumentsByDepartmentIdBatch(effectiveDepartmentIds);
-
-  // Memoize documentsToUse to prevent unnecessary re-renders
-  const documentsToUse = useMemo(() => {
-    return document ? [document] : docs;
-  }, [document, docs]);
-
-  const showSelector = documentsToUse.length > 1;
-
-  // Set default document
+  // Load document
   useEffect(() => {
-    if (document) {
-      setDocId(document.id);
-    } else if (documentsToUse.length && !docId && documentsToUse[0]) {
-      setDocId(documentsToUse[0].id);
-    }
-  }, [documentsToUse, docId, document]);
-
-  // Load selected document
-  useEffect(() => {
-    if (!docId) return;
-
     const loadDocument = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Get current document for name-based MIME inference
-        const currentDoc = documentsToUse.find((d) => d.id === docId);
-
         const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
         // Call the API route directly or use blob URL for form documents
         let response;
-        if (isFormDocument && document?.filePath?.startsWith("blob:")) {
+        if (isFormDocument && document.filePath?.startsWith("blob:")) {
           // For form documents with blob URLs, fetch the blob directly
           response = await fetch(document.filePath);
         } else {
           response = await fetch(
-            `${appPrefix}/api/download/document/${docId}`,
+            `${appPrefix}/api/download/document/${document.id}`,
             {
               method: "GET",
               credentials: "include",
@@ -126,7 +83,7 @@ export default function DocumentViewer({
         setType(contentType);
 
         const shouldTreatAsText =
-          contentType.startsWith("text/") || isCodeByName(currentDoc?.name);
+          contentType.startsWith("text/") || isCodeByName(document.name);
 
         // Read once
         if (shouldTreatAsText) {
@@ -143,23 +100,9 @@ export default function DocumentViewer({
     };
 
     loadDocument();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docId, isFormDocument, document?.filePath]);
+  }, [document.id, document.filePath, document.name, isFormDocument]);
 
-  // Loading state
-  if (isLoading && !document) {
-    return <Skeleton className="h-full w-full rounded-lg" />;
-  }
-
-  // Error or no documents
-  if ((queryError || !documentsToUse.length) && !document) {
-    return null;
-  }
-
-  const current = documentsToUse.find((d) => d.id === docId);
-  if (!current) return null;
-
-  const typeInfo = getDocumentTypeInfo(current.type || "homework");
+  const typeInfo = getDocumentTypeInfo(document.type || "homework");
 
   // Simplified content rendering
   const renderContent = () => {
@@ -188,7 +131,7 @@ export default function DocumentViewer({
         <div className="w-full h-full min-h-[400px]">
           <iframe
             src={`${content}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
-            title={current.name ?? ""}
+            title={document.name ?? ""}
             className="w-full h-full border-0 rounded-md"
             style={{
               minHeight: "500px",
@@ -206,7 +149,7 @@ export default function DocumentViewer({
         <div className="w-full h-full">
           <Image
             src={content ?? ""}
-            alt={current.name ?? ""}
+            alt={document.name ?? ""}
             className="w-full h-full object-cover"
             width={0}
             height={0}
@@ -221,13 +164,13 @@ export default function DocumentViewer({
     if (
       compact &&
       (type?.startsWith("text/") ||
-        isCodeByName(current?.name) ||
-        current.name?.endsWith(".html") ||
-        current.name?.endsWith(".md"))
+        isCodeByName(document.name) ||
+        document.name?.endsWith(".html") ||
+        document.name?.endsWith(".md"))
     ) {
       return (
         <div className="w-full h-full p-1 flex flex-col">
-          {current.name?.endsWith(".md") ? (
+          {document.name?.endsWith(".md") ? (
             <div className="prose prose-xs max-w-none dark:prose-invert flex-1 min-h-0 overflow-y-auto leading-tight">
               <Markdown>{content ?? ""}</Markdown>
             </div>
@@ -251,29 +194,29 @@ export default function DocumentViewer({
       type === "text/css" ||
       type === "application/json" ||
       type === "application/sql" ||
-      isCodeByName(current?.name)
+      isCodeByName(document.name)
     ) {
       return (
         <div className="w-full h-full flex flex-col">
-          <CodeViewer name={current?.name} value={content ?? ""} />
+          <CodeViewer name={document.name} value={content ?? ""} />
         </div>
       );
     }
 
     // HTML viewer with tabs for rendered and source (non-compact only)
-    if (type?.includes("text/html") || current.name?.endsWith(".html")) {
+    if (type?.includes("text/html") || document.name?.endsWith(".html")) {
       return (
         <div className="w-full h-full flex flex-col">
-          <HtmlViewer name={current?.name} content={content ?? ""} />
+          <HtmlViewer name={document.name} content={content ?? ""} />
         </div>
       );
     }
 
     // Text/Markdown viewer (non-compact only)
-    if (type?.includes("text/") || current.name?.endsWith(".md")) {
+    if (type?.includes("text/") || document.name?.endsWith(".md")) {
       return (
         <div className="w-full h-full flex flex-col">
-          <CodeViewer name={current?.name} value={content ?? ""} />
+          <CodeViewer name={document.name} value={content ?? ""} />
         </div>
       );
     }
@@ -287,76 +230,34 @@ export default function DocumentViewer({
     );
   };
 
-  // Single document view (no selector)
-  if (document && !classId) {
-    if (bare) {
-      return (
-        <div className="w-full h-full flex flex-col overflow-hidden">
-          {renderContent()}
-        </div>
-      );
-    }
+  // Render document view
+  if (bare) {
     return (
       <div className="w-full h-full flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-3 border-b bg-muted/30 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <Badge
-              variant="outline"
-              className={`${typeInfo.color} text-white border-none shrink-0`}
-            >
-              {typeInfo.icon}
-            </Badge>
-            <span className="text-sm font-medium truncate">
-              {document.name}
-            </span>
-          </div>
-          <Button size="sm" variant="ghost" asChild className="shrink-0">
-            <a href={content ?? ""} download={document.name ?? ""}>
-              <Download className="h-4 w-4" />
-            </a>
-          </Button>
-        </div>
-        <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
+        {renderContent()}
       </div>
     );
   }
 
-  // Multi-document view with selector
   return (
-    <Card className="w-full h-full flex flex-col overflow-hidden">
-      {showSelector && (
-        <CardHeader className="p-3 border-b shrink-0">
-          <div className="flex items-center gap-2">
-            <Select value={docId ?? ""} onValueChange={setDocId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select document" />
-              </SelectTrigger>
-              <SelectContent>
-                {documentsToUse.map((d) => {
-                  const docTypeInfo = getDocumentTypeInfo(d.type || "homework");
-                  return (
-                    <SelectItem key={d.id} value={d.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{docTypeInfo.icon}</span>
-                        <span className="truncate">{d.name ?? ""}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            <Button size="sm" variant="ghost" asChild className="shrink-0">
-              <a href={content ?? ""} download={current.name ?? ""}>
-                <Download className="h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        </CardHeader>
-      )}
-
-      <CardContent className="flex-1 min-h-0 p-0">
-        <ScrollArea className="h-full">{renderContent()}</ScrollArea>
-      </CardContent>
-    </Card>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b bg-muted/30 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge
+            variant="outline"
+            className={`${typeInfo.color} text-white border-none shrink-0`}
+          >
+            {typeInfo.icon}
+          </Badge>
+          <span className="text-sm font-medium truncate">{document.name}</span>
+        </div>
+        <Button size="sm" variant="ghost" asChild className="shrink-0">
+          <a href={content ?? ""} download={document.name ?? ""}>
+            <Download className="h-4 w-4" />
+          </a>
+        </Button>
+      </div>
+      <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
+    </div>
   );
 }
