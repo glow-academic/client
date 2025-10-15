@@ -8,10 +8,8 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-
-import { useProfile } from "@/lib/api/v1/hooks/profiles";
-
 import Dashboard from "../Dashboard";
+import { useProfileV2 } from "@/lib/api/v2/hooks/auth";
 
 // Helper function to get initials
 const getInitials = (firstName: string, lastName: string): string => {
@@ -52,7 +50,7 @@ export interface ReportProps {
 
 export default function Report({ profileId }: ReportProps) {
   // Fetch profile data
-  const { data: profile, isLoading: isLoadingProfile } = useProfile(profileId);
+  const { data: profile, isLoading: isLoadingProfile } = useProfileV2(profileId)
 
   // Loading state
   if (isLoadingProfile || !profile) {
@@ -79,19 +77,19 @@ export default function Report({ profileId }: ReportProps) {
               style={{ outlineWidth: "1px", outlineStyle: "solid" }}
             >
               <AvatarFallback>
-                {getInitials(profile.firstName, profile.lastName)}
+                {getInitials(profile.profile.firstName, profile.profile.lastName)}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">
-                {profile.firstName} {profile.lastName}
+                {profile.profile.firstName} {profile.profile.lastName}
               </h1>
               <p className="text-muted-foreground">
-                {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                {profile.profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
               </p>
             </div>
-            <Badge variant={getRoleBadgeVariant(profile.role)}>
-              {getRoleDisplayName(profile.role)}
+            <Badge variant={getRoleBadgeVariant(profile.profile.role)}>
+              {getRoleDisplayName(profile.profile.role)}
             </Badge>
           </div>
         </div>

@@ -10,7 +10,10 @@ import {
   ParameterItemMappingSchema,
   ParameterMappingSchema,
   RubricMappingSchema,
+  ScenarioMappingSchema,
   SimulationMappingSchema,
+  StandardGroupsMappingSchema,
+  StandardsMappingSchema,
 } from "./base";
 
 // ============================================================================
@@ -439,6 +442,10 @@ export const HomeOverviewResponseSchema = z.object({
   mode: z.enum(["ta", "instructional", "empty"]),
   hasData: z.boolean(),
   items: z.array(HomeSimulationItemSchema),
+  history: AttemptHistoryResponseSchema,
+  standard_groups_mapping: StandardGroupsMappingSchema,
+  standards_mapping: StandardsMappingSchema,
+  simulation_mapping: SimulationMappingSchema,
 });
 
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
@@ -508,6 +515,10 @@ export const PracticeOverviewResponseSchema = z.object({
   mode: z.enum(["practice"]),
   hasData: z.boolean(),
   items: z.array(PracticeSimulationItemSchema),
+  history: AttemptHistoryResponseSchema,
+  standard_groups_mapping: StandardGroupsMappingSchema,
+  standards_mapping: StandardsMappingSchema,
+  simulation_mapping: SimulationMappingSchema,
 });
 
 export type PracticeOverviewResponse = z.infer<
@@ -537,10 +548,22 @@ export const ProfileDataSchema = z.object({
   metrics: ProfileMetricsSchema,
 });
 
-export const ReportsBundleResponseSchema = z.object({
-  data: z.array(ProfileDataSchema),
+export const ProfileDataEnhancedSchema = z.object({
+  profileId: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  alias: z.string(),
+  role: z.string(),
+  metrics: ProfileMetricsSchema,
 });
 
+export const ReportsBundleResponseSchema = z.object({
+  data: z.array(ProfileDataEnhancedSchema),
+  scenario_mapping: ScenarioMappingSchema,
+  simulation_mapping: SimulationMappingSchema,
+});
+
+export type ProfileDataEnhanced = z.infer<typeof ProfileDataEnhancedSchema>;
 export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 
 // Leaderboard Bundle

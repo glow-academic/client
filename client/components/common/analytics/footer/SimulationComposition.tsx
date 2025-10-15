@@ -35,7 +35,7 @@ import type {
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
 } from "@/lib/analytics";
-import { Parameter, ParameterItem, Simulation } from "@/types";
+import { Parameter, ParameterItem } from "@/types";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
@@ -55,9 +55,22 @@ export interface SimulationCompositionProps {
   simulationFacts: SimulationFact[];
   simulationParameterFactsCategorical: SimulationParameterFactCategorical[];
   simulationParameterFactsNumeric: SimulationParameterFactNumeric[];
-  allSimulations: Simulation[];
-  allParameters: Parameter[];
-  allParameterItems: ParameterItem[];
+  /** Simulation mapping object */
+  simulationMapping: Record<string, { name: string; description: string }>;
+  /** Parameter mapping object */
+  parameterMapping: Record<string, { name: string; description: string }>;
+  /** Parameter item mapping object */
+  parameterItemMapping: Record<
+    string,
+    {
+      name: string;
+      description: string;
+      parameter_id: string;
+      parameter_name: string;
+    }
+  >;
+  /** Valid simulation IDs */
+  validSimulationIds: string[];
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -72,14 +85,47 @@ export default function SimulationComposition({
   simulationFacts,
   simulationParameterFactsCategorical,
   simulationParameterFactsNumeric,
-  allSimulations: _allSimulations,
-  allParameters,
-  allParameterItems,
+  simulationMapping: _simulationMapping,
+  parameterMapping,
+  parameterItemMapping,
+  validSimulationIds: _validSimulationIds,
   isLoading,
   isError,
   actionableInsight,
   thresholds,
 }: SimulationCompositionProps) {
+  // Build entities from mappings
+  const allParameters = useMemo(
+    () =>
+      Object.entries(parameterMapping).map(([id, param]) => ({
+        id,
+        name: param.name,
+        description: param.description || "",
+        numerical: false,
+        active: true,
+        departmentId: "",
+        createdAt: "",
+        updatedAt: "",
+        defaultParameter: false,
+      })),
+    [parameterMapping]
+  );
+
+  const allParameterItems = useMemo(
+    () =>
+      Object.entries(parameterItemMapping).map(([id, item]) => ({
+        id,
+        name: item.name,
+        description: item.description || "",
+        parameterId: item.parameter_id,
+        createdAt: "",
+        updatedAt: "",
+        value: item.name,
+        defaultItem: false,
+      })),
+    [parameterItemMapping]
+  );
+
   const [config, setConfig] = useState<SimulationCompositionConfig>({
     method: "percentile",
     topPercentage: 25,
@@ -105,7 +151,7 @@ export default function SimulationComposition({
 
       if (!colorMap.has(key)) {
         const isNumeric = simulationParameterFactsNumeric.some(
-          (nf) => nf.parameterId === fact.parameterId,
+          (nf) => nf.parameterId === fact.parameterId
         );
         colorMap.set(key, getParameterColor(key, isNumeric));
       }
@@ -132,7 +178,7 @@ export default function SimulationComposition({
 
     // Sort simulations by average score
     const sortedSims = [...simulationFacts].sort(
-      (a, b) => b.avgScore - a.avgScore,
+      (a, b) => b.avgScore - a.avgScore
     );
 
     let topCount: number;
@@ -142,11 +188,11 @@ export default function SimulationComposition({
       case "percentile":
         topCount = Math.max(
           1,
-          Math.floor((config.topPercentage / 100) * sortedSims.length),
+          Math.floor((config.topPercentage / 100) * sortedSims.length)
         );
         bottomCount = Math.max(
           1,
-          Math.floor((config.bottomPercentage / 100) * sortedSims.length),
+          Math.floor((config.bottomPercentage / 100) * sortedSims.length)
         );
         break;
       case "quartile":
@@ -160,14 +206,14 @@ export default function SimulationComposition({
         const variance =
           sortedSims.reduce(
             (sum, sim) => sum + Math.pow(sim.avgScore - avgScore, 2),
-            0,
+            0
           ) / sortedSims.length;
         const stdDev = Math.sqrt(variance);
         topCount = sortedSims.filter(
-          (sim) => sim.avgScore >= avgScore + stdDev,
+          (sim) => sim.avgScore >= avgScore + stdDev
         ).length;
         bottomCount = sortedSims.filter(
-          (sim) => sim.avgScore <= avgScore - stdDev,
+          (sim) => sim.avgScore <= avgScore - stdDev
         ).length;
         break;
       default:
@@ -185,7 +231,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap,
+      parameterItemColorMap
     );
 
     // Build parameter composition for low performers
@@ -195,7 +241,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap,
+      parameterItemColorMap
     );
 
     // Build detailed simulation information
@@ -211,7 +257,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems,
+        allParameterItems
       ),
     }));
 
@@ -227,7 +273,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems,
+        allParameterItems
       ),
     }));
 
@@ -688,7 +734,7 @@ function buildParameterComposition(
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: Parameter[],
   allParameterItems: ParameterItem[],
-  parameterItemColorMap: Map<string, string>,
+  parameterItemColorMap: Map<string, string>
 ): HighLowPerforming[] {
   const parameterCounts = new Map<
     string,
@@ -707,7 +753,7 @@ function buildParameterComposition(
     if (simulations.some((sim) => sim.simulationId === fact.simulationId)) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId,
+        (pi) => pi.id === fact.parameterItemId
       );
 
       if (parameter && parameterItem) {
@@ -782,7 +828,7 @@ function buildParameterBreakdown(
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: Parameter[],
-  allParameterItems: ParameterItem[],
+  allParameterItems: ParameterItem[]
 ): { parameterName: string; parameterValue: string; isNumerical: boolean }[] {
   const breakdown: {
     parameterName: string;
@@ -795,7 +841,7 @@ function buildParameterBreakdown(
     if (fact.simulationId === simulationId) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId,
+        (pi) => pi.id === fact.parameterItemId
       );
 
       if (parameter && parameterItem) {

@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useProfileV2 } from "@/lib/api/v2/hooks/auth";
+import { ProfileItem, useProfileV2 } from "@/lib/api/v2/hooks/auth";
 import { profiles } from "@/utils/drizzle/schema";
 import {
   getFirstAvailableSectionForRole,
@@ -38,7 +38,7 @@ const GUEST_PROFILE: Profile = {
 };
 
 interface ProfileContextType {
-  activeProfile: Profile | null;
+  activeProfile: ProfileItem | null;
   simulatedProfile: Profile | null;
   effectiveProfile: Profile | null;
   isSimulating: boolean;
@@ -59,7 +59,7 @@ export const useProfile = () => {
 
 interface ProfileProviderProps {
   children: React.ReactNode;
-  activeProfile: Profile | null;
+  activeProfile: ProfileItem | null;
   isProfileLoading?: boolean;
 }
 

@@ -629,6 +629,11 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     # 8. Get rubric structure (standard groups and standards)
     standard_groups: Dict[str, Dict[str, Any]] = {}
     standards_by_group: Dict[str, List[Dict[str, Any]]] = {}
+    # For TableRubric component
+    rubric_structure_groups: Dict[str, List[str]] = {}
+    rubric_structure_groups_mapping: Dict[str, Dict[str, Any]] = {}
+    rubric_structure_standards_mapping: Dict[str, Dict[str, Any]] = {}
+    
     if simulation["rubricId"]:
         # Get standard groups
         groups_query = text("""
@@ -637,6 +642,8 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 name,
                 short_name,
                 points,
+                pass_points,
+                description,
                 rubric_id
             FROM standard_groups
             WHERE rubric_id = :rubric_id
@@ -654,6 +661,13 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 "points": row.points,
                 "rubricId": str(row.rubric_id),
             }
+            # Build mapping for TableRubric
+            rubric_structure_groups_mapping[group_id] = {
+                "name": row.name,
+                "description": row.description or "",
+                "points": row.points,
+                "passPoints": row.pass_points,
+            }
         
         # Get standards
         if group_ids:
@@ -661,6 +675,7 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 SELECT 
                     id,
                     name,
+                    description,
                     points,
                     standard_group_id
                 FROM standards
@@ -670,14 +685,28 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             standards_result = db.execute(standards_query, {"group_ids": group_ids}).fetchall()
             for row in standards_result:
                 group_id = str(row.standard_group_id)
+                standard_id = str(row.id)
+                
                 if group_id not in standards_by_group:
                     standards_by_group[group_id] = []
                 standards_by_group[group_id].append({
-                    "id": str(row.id),
+                    "id": standard_id,
                     "name": row.name,
                     "points": row.points,
                     "standardGroupId": group_id,
                 })
+                
+                # Build structure for TableRubric
+                if group_id not in rubric_structure_groups:
+                    rubric_structure_groups[group_id] = []
+                rubric_structure_groups[group_id].append(standard_id)
+                
+                # Build standards mapping for TableRubric
+                rubric_structure_standards_mapping[standard_id] = {
+                    "name": row.name,
+                    "description": row.description or "",
+                    "points": row.points,
+                }
     
     # 9. Get documents
     # Get unique department IDs from scenarios
@@ -827,6 +856,43 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                     "hints": hints_by_message[msg["id"]],
                 })
         
+        # Compute grading state for TableRubric (which standards achieved/passed)
+        grading_state = None
+        if grade and feedbacks and standard_groups:
+            achieved_standards = {}
+            passed_standards = {}
+            
+            for group_id, group in standard_groups.items():
+                group_standards = standards_by_group.get(group_id, [])
+                if not group_standards:
+                    continue
+                
+                # Get feedbacks for this group
+                group_feedbacks = [
+                    f for f in feedbacks
+                    if any(std["id"] == f["standardId"] for std in group_standards)  # type: ignore
+                ]
+                
+                if group_feedbacks:
+                    # Find highest score in group
+                    max_score = max(f["total"] for f in group_feedbacks)  # type: ignore
+                    # Get pass points from the group mapping
+                    group_mapping = rubric_structure_groups_mapping.get(group_id, {})
+                    pass_points = group_mapping.get("passPoints", 0) if group_mapping else 0
+                    
+                    for feedback in group_feedbacks:
+                        standard_id = feedback["standardId"]  # type: ignore
+                        # Standard is achieved if it has the max score in its group
+                        achieved_standards[standard_id] = feedback["total"] == max_score  # type: ignore
+                        # Standard is passed if it meets pass points
+                        passed_standards[standard_id] = feedback["total"] >= pass_points  # type: ignore
+            
+            grading_state = {
+                "achievedStandards": achieved_standards,
+                "passedStandards": passed_standards,
+                "gradeDescription": grade.get("description", ""),  # type: ignore
+            }
+        
         chats.append({
             "chat": {
                 "id": chat_id,
@@ -845,6 +911,7 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             "grade": grade,
             "feedbacks": feedbacks,
             "dynamicRubric": dynamic_rubric,
+            "gradingState": grading_state,
         })
     
     # 12. Compute aggregated results
@@ -915,6 +982,15 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     show_results = all(c["chat"]["completed"] for c in chats) if chats else False
     is_active = not (expired or show_results)
     
+    # Build rubric structure for TableRubric component
+    rubric_structure = None
+    if rubric_structure_groups:
+        rubric_structure = {
+            "standardGroups": rubric_structure_groups,
+            "standardGroupsMapping": rubric_structure_groups_mapping,
+            "standardsMapping": rubric_structure_standards_mapping,
+        }
+    
     return {
         "attempt": attempt,
         "simulation": simulation,
@@ -930,5 +1006,6 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
         "isLastAttempt": is_last_attempt,
         "showResults": show_results,
         "isActive": is_active,
+        "rubricStructure": rubric_structure,
     }
 

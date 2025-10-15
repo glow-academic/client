@@ -21,7 +21,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useAssistantChat } from "@/lib/api/v1/hooks/assistant_chats";
 import { Edit, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
@@ -39,14 +38,10 @@ export default function ChatWidget({ up }: { up: boolean }) {
     isLoadingChats,
     selectChat,
     setCurrentChatId,
+    chat,
   } = useAssistant();
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
-
-  const { data: chat } = useAssistantChat(
-    currentChatId!,
-    currentChatId !== undefined
-  );
 
   if (uiState !== "widget") {
     return null;

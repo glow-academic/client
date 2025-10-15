@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  RubricPicker,
-  type Rubric,
-} from "@/components/common/rubric/RubricPicker";
+import { RubricPicker } from "@/components/common/rubric/RubricPicker";
 import {
   Card,
   CardContent,
@@ -46,8 +43,10 @@ type Package = {
 
 export interface SkillPerformanceProps {
   packages: Package[];
-  /** All rubrics from client cache/store */
-  allRubrics: Rubric[];
+  /** Rubric mapping object */
+  rubricMapping: Record<string, { name: string; description: string }>;
+  /** Valid rubric IDs */
+  validRubricIds: string[];
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -60,25 +59,24 @@ export interface SkillPerformanceProps {
 
 export default function SkillPerformance({
   packages,
-  allRubrics,
+  rubricMapping,
+  validRubricIds,
   isLoading,
   isError,
   actionableInsight,
   thresholds,
 }: SkillPerformanceProps) {
-  const [selectedRubrics, setSelectedRubrics] = useState<Rubric[]>([]);
-
-  const pickerRubrics = useMemo(() => allRubrics, [allRubrics]);
+  const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
 
   // Default to first valid rubric if none selected
   const activeRubricId = useMemo(() => {
-    if (selectedRubrics.length > 0) return selectedRubrics[0]!.id;
-    return pickerRubrics[0]?.id;
-  }, [selectedRubrics, pickerRubrics]);
+    if (selectedRubrics.length > 0) return selectedRubrics[0];
+    return validRubricIds[0];
+  }, [selectedRubrics, validRubricIds]);
 
   const activePackage = useMemo(
     () => packages.find((p) => p.rubricId === activeRubricId),
-    [packages, activeRubricId],
+    [packages, activeRubricId]
   );
 
   // Calculate threshold status based on skill performance data
@@ -149,22 +147,13 @@ export default function SkillPerformance({
               Performance across key teaching competencies
             </CardDescription>
           </div>
-          {pickerRubrics.length > 0 && (
+          {validRubricIds.length > 0 && (
             <RubricPicker
-              rubrics={pickerRubrics.map((r) => ({
-                id: r.id,
-                name: r.name,
-                description: "", // hide description in the UI
-                points: r.points ?? 0,
-                active: r.active ?? true,
-              }))}
-              placeholder="Filter by rubric..."
+              mapping={rubricMapping}
+              validIds={validRubricIds}
+              selectedIds={selectedRubrics}
               onSelect={setSelectedRubrics}
-              selectedRubrics={
-                selectedRubrics.length
-                  ? selectedRubrics
-                  : pickerRubrics.slice(0, 1)
-              }
+              placeholder="Filter by rubric..."
               buttonClassName="w-48"
             />
           )}
@@ -182,7 +171,7 @@ export default function SkillPerformance({
                 tick={({ payload, x, y }) => {
                   const dataIndex =
                     activePackage?.radarData?.findIndex(
-                      (item) => item.metric === payload.value,
+                      (item) => item.metric === payload.value
                     ) ?? 0;
                   const totalItems = activePackage?.radarData?.length ?? 1;
                   const angle = (dataIndex * 360) / totalItems;
@@ -245,7 +234,7 @@ export default function SkillPerformance({
                 formatter={(
                   value: number,
                   name: string,
-                  props: { payload?: { score?: number; points?: number } },
+                  props: { payload?: { score?: number; points?: number } }
                 ) => {
                   if (name === "value") {
                     const score = props?.payload?.score;

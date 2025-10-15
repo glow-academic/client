@@ -6,10 +6,7 @@
  */
 "use client";
 
-import {
-  SimulationPicker,
-  type Simulation as SimulationPickerType,
-} from "@/components/common/cohort/SimulationPicker";
+import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
   CardContent,
@@ -26,8 +23,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { type PersonaPerformanceData } from "@/lib/analytics";
+import { type SimulationMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Simulation } from "@/types";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -45,7 +42,8 @@ import {
 
 export interface PersonaPerformanceProps {
   chartData: PersonaPerformanceData[];
-  availableSimulations: Simulation[];
+  simulationMapping: SimulationMapping;
+  validSimulationIds: string[];
   personaColors: Record<string, string>;
   hasDataAvailable: boolean;
   isLoading: boolean;
@@ -61,7 +59,8 @@ export interface PersonaPerformanceProps {
 
 export default function PersonaPerformance({
   chartData,
-  availableSimulations,
+  simulationMapping,
+  validSimulationIds,
   personaColors,
   hasDataAvailable,
   isLoading,
@@ -70,19 +69,7 @@ export default function PersonaPerformance({
   actionableInsights,
   thresholds,
 }: PersonaPerformanceProps) {
-  const [selectedSimulations, setSelectedSimulations] = useState<
-    SimulationPickerType[]
-  >([]);
-
-  // Transform availableSimulations to SimulationPickerType format
-  const simulationPickerOptions = useMemo<SimulationPickerType[]>(
-    () =>
-      availableSimulations.map((s) => ({
-        ...s,
-        timeLimit: s.timeLimit ?? 0,
-      })),
-    [availableSimulations],
-  );
+  const [selectedSimulations, setSelectedSimulations] = useState<string[]>([]);
 
   // Filter chart data based on selected simulations
   const filteredChartData = useMemo(() => {
@@ -100,9 +87,9 @@ export default function PersonaPerformance({
   const getFilteredTrendData = (persona: PersonaPerformanceData) => {
     if (selectedSimulations.length === 0) return persona.trendData;
 
-    const selectedIds = new Set(selectedSimulations.map((s) => s.id));
+    const selectedIds = new Set(selectedSimulations);
     return persona.trendData.filter(
-      (d) => !d.simulationId || selectedIds.has(d.simulationId),
+      (d) => !d.simulationId || selectedIds.has(d.simulationId)
     );
   };
 
@@ -187,13 +174,13 @@ export default function PersonaPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={simulationPickerOptions}
+            simulationMapping={simulationMapping}
+            validSimulationIds={validSimulationIds}
             placeholder="Filter by simulation..."
             onSelect={setSelectedSimulations}
-            selectedSimulations={selectedSimulations}
+            selectedSimulationIds={selectedSimulations}
             hideSelectedChips={true}
             showLabel={false}
-            showPracticeSimulations={true}
             buttonClassName="w-48"
           />
         </div>
@@ -263,7 +250,7 @@ export default function PersonaPerformance({
                   <div
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score),
+                      getBackgroundColor(persona.score)
                     )}
                   >
                     <div className="flex items-center gap-3">

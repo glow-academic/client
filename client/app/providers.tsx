@@ -4,7 +4,7 @@
 import { DepartmentsProvider } from "@/contexts/departments-context";
 import { ProfileProvider } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
-import { useProfilesByUserId } from "@/lib/api/v1/hooks/profiles";
+import { useProfileV2 } from "@/lib/api/v2/hooks/auth";
 import { getQueryClient } from "@/utils/react-query/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider, useSession } from "next-auth/react";
@@ -20,21 +20,21 @@ const RoleAndWebSocketProviderWrapper = ({
   children: React.ReactNode;
 }) => {
   const { data: session, status: sessionStatus } = useSession();
-  const userId = session?.user?.id;
-  const { data: profiles, isLoading: profileQueryLoading } =
-    useProfilesByUserId(userId);
-  const profile = profiles?.[0];
+  const { data: profile, isLoading: profileQueryLoading } = useProfileV2(
+    session?.effectiveProfileId ?? ""
+  );
 
   // ✅ "Really loading" = (session still loading) OR (profile still loading when we have a userId)
   const profileLoading =
-    sessionStatus === "loading" || Boolean(userId && profileQueryLoading);
+    sessionStatus === "loading" ||
+    Boolean(session?.effectiveProfileId && profileQueryLoading);
 
   // For guest mode (no session), profileId should be null, not undefined
-  const profileId = profileLoading ? undefined : profile?.id || null;
+  const profileId = profileLoading ? undefined : profile?.profile.id || null;
 
   return (
     <ProfileProvider
-      activeProfile={profile ?? null}
+      activeProfile={profile?.profile ?? null}
       isProfileLoading={profileLoading}
     >
       <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>

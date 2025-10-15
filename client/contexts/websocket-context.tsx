@@ -8,10 +8,6 @@
 import { getApiBase } from "@/lib/api-base";
 import {
   agentKeys,
-  assistantChatKeys,
-  assistantChatKeysByProfileId,
-  assistantMessageKeysByChatId,
-  assistantToolCallKeysByChatId,
   cohortKeys,
   parameterItemKeys,
   parameterKeys,
@@ -28,7 +24,7 @@ import {
   standardGroupKeys,
   standardKeys,
 } from "@/lib/api/v1/keys";
-import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
+import { SimulationMessage } from "@/types";
 import { log, type LogEntry } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -170,34 +166,10 @@ export function WebSocketProvider({
             },
           });
 
-          queryClient.setQueryData(
-            assistantMessageKeysByChatId.one(data.chat_id),
-            (old: AssistantMessage[] = []) => {
-              const exists = old.find((msg) => msg.id === data.message_id);
-              if (exists) return old;
-
-              const newMessage = {
-                id: data.message_id,
-                chatId: data.chat_id,
-                role: data.role,
-                content: data.content,
-                completed: data.completed,
-                createdAt: data.created_at,
-                updatedAt: data.created_at,
-                completedAt: data.created_at,
-              };
-
-              return [...old, newMessage].sort(
-                (a, b) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
-              );
-            }
-          );
-
+          // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "assistant", "chats"],
             });
           }, 0);
         }
@@ -291,20 +263,10 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            assistantMessageKeysByChatId.one(data.chat_id),
-            (old: AssistantMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.accumulated_content }
-                  : msg
-              );
-            }
-          );
-
+          // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "assistant", "chats"],
             });
           }, 0);
         }
@@ -360,17 +322,6 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            assistantMessageKeysByChatId.one(data.chat_id),
-            (old: AssistantMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
-              );
-            }
-          );
-
           // Reset loading states
           setIsSendingAssistantMessage(false);
 
@@ -385,9 +336,10 @@ export function WebSocketProvider({
             })
           );
 
+          // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "assistant", "chats"],
             });
           }, 0);
         }
@@ -405,17 +357,6 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          queryClient.setQueryData(
-            assistantMessageKeysByChatId.one(data.chat_id),
-            (old: AssistantMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
-              );
-            }
-          );
-
           // Reset loading states
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
@@ -431,9 +372,10 @@ export function WebSocketProvider({
             })
           );
 
+          // Invalidate v2 assistant chat query (will refetch all data)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "assistant", "chats"],
             });
           }, 0);
         }
@@ -613,31 +555,13 @@ export function WebSocketProvider({
             context: { messageId: data.message_id, chatId: data.chat_id },
           });
 
-          // Update both caches
-          queryClient.setQueryData(
-            assistantMessageKeysByChatId.one(data.chat_id),
-            (old: AssistantMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id ? { ...msg, completed: true } : msg
-              );
-            }
-          );
-
-          queryClient.setQueryData(
-            simulationMessageKeysByChatId.one(data.chat_id),
-            (old: SimulationMessage[] = []) => {
-              return old.map((msg) =>
-                msg.id === data.message_id ? { ...msg, completed: true } : msg
-              );
-            }
-          );
-
+          // Invalidate v2 queries (for both assistant and simulation)
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: assistantMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "assistant", "chats"],
             });
             queryClient.invalidateQueries({
-              queryKey: simulationMessageKeysByChatId.one(data.chat_id),
+              queryKey: ["v2", "attempts"],
             });
           }, 0);
         }
@@ -648,27 +572,10 @@ export function WebSocketProvider({
           context: { chatId: data.chat_id, title: data.title },
         });
 
-        queryClient.setQueryData(
-          assistantChatKeys.detail(data.chat_id),
-          (old: AssistantChat) => {
-            if (old) {
-              return { ...old, title: data.title };
-            }
-            return old;
-          }
-        );
-
-        // Only update profile-scoped chat list if we actually have a profile
-        if (profileId) {
-          queryClient.setQueryData(
-            assistantChatKeysByProfileId.one(profileId),
-            (old: AssistantChat[] = []) => {
-              return old.map((chat) =>
-                chat.id === data.chat_id ? { ...chat, title: data.title } : chat
-              );
-            }
-          );
-        }
+        // Invalidate v2 assistant chat query (will refetch all data with updated title)
+        queryClient.invalidateQueries({
+          queryKey: ["v2", "assistant", "chats"],
+        });
       });
 
       socket.on(
@@ -688,8 +595,9 @@ export function WebSocketProvider({
           log.debug("ws.tool_call.created", {
             context: { tool: data.tool_name, chatId: data.chat_id },
           });
+          // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: assistantToolCallKeysByChatId.one(data.chat_id),
+            queryKey: ["v2", "assistant", "chats"],
           });
         }
       );
@@ -700,8 +608,9 @@ export function WebSocketProvider({
           log.debug("ws.tool_call.completed", {
             context: { tool: data.tool_name, chatId: data.chat_id },
           });
+          // Invalidate v2 assistant chat query (will refetch all data)
           queryClient.invalidateQueries({
-            queryKey: assistantToolCallKeysByChatId.one(data.chat_id),
+            queryKey: ["v2", "assistant", "chats"],
           });
         }
       );

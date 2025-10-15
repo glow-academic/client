@@ -16,14 +16,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import {
-  useAnalyticsAttemptHistory,
-  useAnalyticsHomeOverview,
-} from "@/lib/api/v1/hooks/analytics";
+import { useAnalyticsHomeOverview } from "@/lib/api/v2/hooks/analytics";
 import { log } from "@/utils/logger";
 
 import { useDepartments } from "@/contexts/departments-context";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -37,9 +33,6 @@ import SimulationCard from "../common/simulation/SimulationCard";
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
   const {
     startDate,
     endDate,
@@ -48,8 +41,8 @@ export default function Home() {
     simulationFilters,
   } = useAnalytics();
 
-  // New optimized home overview analytics
-  const { data: homeOverview, isLoading: isHomeOverviewLoading } =
+  // Single optimized bundle call with items, history, and mappings
+  const { data: bundle, isLoading: isHomeOverviewLoading } =
     useAnalyticsHomeOverview({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -68,22 +61,21 @@ export default function Home() {
       departmentIds: effectiveDepartmentIds,
     });
 
-  // Fetch history data for the current user
-  const { data: historyData, isLoading: isHistoryLoading } =
-    useAnalyticsAttemptHistory({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
-        | "general"
-        | "practice"
-        | "archived"
-      )[],
-      // Only show current user's history
-      profileId: effectiveProfile?.id,
-      departmentIds: effectiveDepartmentIds,
-    });
+  // Extract data from bundle
+  const homeOverview = bundle;
+  const historyData = bundle?.history;
+  const isHistoryLoading = isHomeOverviewLoading;
+
+  // Build simulations array from mapping
+  const simulations = useMemo(
+    () =>
+      Object.entries(bundle?.simulation_mapping || {}).map(([id, sim]) => ({
+        id,
+        title: sim.name,
+        description: sim.description,
+      })),
+    [bundle?.simulation_mapping]
+  );
 
   // Extract rubric mappings from home overview data
   const standardGroupsMapping = useMemo(

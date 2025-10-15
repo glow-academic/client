@@ -32,8 +32,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { RubricMatrixPackage } from "@/lib/analytics";
+import { type RubricMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { Rubric } from "@/types";
 import { Info, Loader2, TrendingUp } from "lucide-react";
 import {
   useCallback,
@@ -45,7 +45,8 @@ import {
 
 export interface RubricHeatmapProps {
   matrices: RubricMatrixPackage[];
-  availableRubrics: Rubric[];
+  rubricMapping: RubricMapping;
+  validRubricIds: string[];
   hasDataAvailable: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -59,7 +60,8 @@ export interface RubricHeatmapProps {
 
 export default function RubricHeatmap({
   matrices,
-  availableRubrics,
+  rubricMapping,
+  validRubricIds,
   hasDataAvailable,
   isLoading,
   isError,
@@ -75,6 +77,19 @@ export default function RubricHeatmap({
     row: number | null;
     col: number | null;
   }>({ row: null, col: null });
+
+  // Build available rubrics from mapping
+  const availableRubrics = useMemo(
+    () =>
+      validRubricIds.map((id) => ({
+        id,
+        name: rubricMapping[id]?.name || "Unknown",
+        description: rubricMapping[id]?.description || "",
+        points: 100,
+        active: true,
+      })),
+    [rubricMapping, validRubricIds]
+  );
 
   // Transform availableRubrics to RubricPickerType format
   const rubricPickerOptions = useMemo<RubricPickerType[]>(

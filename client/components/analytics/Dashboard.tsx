@@ -345,17 +345,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <PersonaPerformance
         key="persona-performance"
         chartData={bundle.primary.persona_performance.chartData}
-        availableSimulations={
-          Object.entries(bundle.simulation_mapping)
-            .filter(([id]) =>
-              bundle.primary.persona_performance.validSimulationIds.includes(id)
-            )
-            .map(([id, sim]) => ({
-              id,
-              name: sim.name,
-              title: sim.name,
-              timeLimit: null,
-            })) as any
+        simulationMapping={bundle.simulation_mapping}
+        validSimulationIds={
+          bundle.primary.persona_performance.validSimulationIds
         }
         personaColors={bundle.primary.persona_performance.personaColors}
         hasDataAvailable={
@@ -365,24 +357,13 @@ export default function Dashboard({ profileId }: DashboardProps) {
         thresholds={thresholds}
         isLoading={isLoading}
         isError={isError}
-        performanceStatus="neutral" // Computed on client if needed
+        performanceStatus="neutral"
       />,
       <RubricHeatmap
         key="rubric-heatmap"
         matrices={bundle.primary.rubric_heatmap.matrices}
-        availableRubrics={
-          Object.entries(bundle.rubric_mapping)
-            .filter(([id]) =>
-              bundle.primary.rubric_heatmap.validRubricIds.includes(id)
-            )
-            .map(([id, rubric]) => ({
-              id,
-              name: rubric.name,
-              description: rubric.description,
-              points: 100,
-              active: true,
-            })) as any
-        }
+        rubricMapping={bundle.rubric_mapping}
+        validRubricIds={bundle.primary.rubric_heatmap.validRubricIds}
         hasDataAvailable={bundle.primary.rubric_heatmap.matrices.length > 0}
         actionableInsight={bundle.insights.rubric_heatmap}
         thresholds={thresholds}
@@ -403,19 +384,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
         dailyData={bundle.secondary.cohort_performance.dailyData}
         cohortFacts={bundle.secondary.cohort_performance.cohortFacts}
         dailyFacts={bundle.secondary.cohort_performance.dailyFacts}
-        allSimulations={
-          Object.entries(bundle.simulation_mapping)
-            .filter(([id]) =>
-              bundle.secondary.cohort_performance.validSimulationIds.includes(
-                id
-              )
-            )
-            .map(([id, sim]) => ({
-              id,
-              name: sim.name,
-              title: sim.name,
-              timeLimit: undefined,
-            })) as any
+        simulationMapping={bundle.simulation_mapping}
+        validSimulationIds={
+          bundle.secondary.cohort_performance.validSimulationIds
         }
         profileId={profileId}
         actionableInsights={bundle.insights.cohort}
@@ -427,19 +398,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
         key="attempt-improvement"
         chartData={bundle.secondary.attempt_improvement.chartData}
         facts={bundle.secondary.attempt_improvement.facts}
-        allSimulations={
-          Object.entries(bundle.simulation_mapping)
-            .filter(([id]) =>
-              bundle.secondary.attempt_improvement.validSimulationIds.includes(
-                id
-              )
-            )
-            .map(([id, sim]) => ({
-              id,
-              name: sim.name,
-              title: sim.name,
-              timeLimit: undefined,
-            })) as any
+        simulationMapping={bundle.simulation_mapping}
+        validSimulationIds={
+          bundle.secondary.attempt_improvement.validSimulationIds
         }
         actionableInsight={bundle.insights.attempt_improvement}
         thresholds={thresholds}
@@ -449,19 +410,8 @@ export default function Dashboard({ profileId }: DashboardProps) {
       <SkillPerformance
         key="skill-performance"
         packages={bundle.secondary.skill_performance.packages}
-        allRubrics={
-          Object.entries(bundle.rubric_mapping)
-            .filter(([id]) =>
-              bundle.secondary.skill_performance.validRubricIds.includes(id)
-            )
-            .map(([id, rubric]) => ({
-              id,
-              name: rubric.name,
-              description: rubric.description,
-              points: 100,
-              active: true,
-            })) as any
-        }
+        rubricMapping={bundle.rubric_mapping}
+        validRubricIds={bundle.secondary.skill_performance.validRubricIds}
         actionableInsight={bundle.insights.skill_performance}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -483,34 +433,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
         attributeScenarioFacts={
           bundle.footer.scenario_performance.attributeScenarioFacts
         }
-        allParameters={
-          Object.entries(bundle.parameter_mapping)
-            .filter(([id]) =>
-              bundle.footer.scenario_performance.validParameterIds.includes(id)
-            )
-            .map(([id, param]) => ({
-              id,
-              name: param.name,
-              description: param.description,
-              type: "categorical",
-              active: true,
-              departmentId: "",
-            })) as any
-        }
-        allParameterItems={
-          Object.entries(bundle.parameter_item_mapping)
-            .filter(([, item]) =>
-              bundle.footer.scenario_performance.validParameterIds.includes(
-                item.parameter_id
-              )
-            )
-            .map(([id, item]) => ({
-              id,
-              name: item.name,
-              description: item.description,
-              parameterId: item.parameter_id,
-            })) as any
-        }
+        parameterMapping={bundle.parameter_mapping}
+        parameterItemMapping={bundle.parameter_item_mapping}
+        validParameterIds={bundle.footer.scenario_performance.validParameterIds}
         actionableInsight={bundle.insights.scenario_performance}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -520,19 +445,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
         key="scenario-stats"
         numericAttemptFacts={bundle.footer.scenario_stats.numericAttemptFacts}
         numericScenarioFacts={bundle.footer.scenario_stats.numericScenarioFacts}
-        allParameters={
-          Object.entries(bundle.parameter_mapping)
-            .filter(([id]) =>
-              bundle.footer.scenario_stats.validNumericParameterIds.includes(id)
-            )
-            .map(([id, param]) => ({
-              id,
-              name: param.name,
-              description: param.description,
-              type: "numeric",
-              active: true,
-              departmentId: "",
-            })) as any
+        parameterMapping={bundle.parameter_mapping}
+        validNumericParameterIds={
+          bundle.footer.scenario_stats.validNumericParameterIds
         }
         actionableInsight={bundle.insights.scenario_stats}
         thresholds={thresholds}
@@ -552,14 +467,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
           bundle.footer.simulation_performance.validSimulationIds
         }
         scenarioFacts={bundle.footer.simulation_performance.scenarioFacts}
-        allSimulations={
-          Object.entries(bundle.simulation_mapping).map(([id, sim]) => ({
-            id,
-            name: sim.name,
-            title: sim.name,
-            timeLimit: null,
-          })) as any
-        }
+        simulationMapping={bundle.simulation_mapping}
         actionableInsight={bundle.insights.simulation_performance}
         thresholds={thresholds}
         isLoading={isLoading}
@@ -575,36 +483,11 @@ export default function Dashboard({ profileId }: DashboardProps) {
         simulationParameterFactsNumeric={
           bundle.footer.simulation_composition.simulationParameterFactsNumeric
         }
-        allSimulations={
-          Object.entries(bundle.simulation_mapping)
-            .filter(([id]) =>
-              bundle.footer.simulation_composition.validSimulationIds.includes(
-                id
-              )
-            )
-            .map(([id, sim]) => ({
-              id,
-              name: sim.name,
-              title: sim.name,
-            })) as any
-        }
-        allParameters={
-          Object.entries(bundle.parameter_mapping).map(([id, param]) => ({
-            id,
-            name: param.name,
-            description: param.description,
-            type: "categorical",
-            active: true,
-            departmentId: "",
-          })) as any
-        }
-        allParameterItems={
-          Object.entries(bundle.parameter_item_mapping).map(([id, item]) => ({
-            id,
-            name: item.name,
-            description: item.description,
-            parameterId: item.parameter_id,
-          })) as any
+        simulationMapping={bundle.simulation_mapping}
+        parameterMapping={bundle.parameter_mapping}
+        parameterItemMapping={bundle.parameter_item_mapping}
+        validSimulationIds={
+          bundle.footer.simulation_composition.validSimulationIds
         }
         actionableInsight={bundle.insights.simulation_composition}
         thresholds={thresholds}

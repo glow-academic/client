@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel
 
 from .base import (ParameterItemMapping, ParameterMapping, RubricMapping,
-                   SimulationMapping, StandardGroupsMapping, StandardsMapping)
+                   ScenarioMapping, SimulationMapping, StandardGroupsMapping,
+                   StandardsMapping)
 
 
 # Enums
@@ -465,13 +466,15 @@ class HomeSimulationItem(BaseModel):
 
 
 class HomeOverviewResponse(BaseModel):
-    """Home overview response."""
+    """Home overview response with mappings and history."""
 
     mode: Literal["ta", "instructional", "empty"]
     hasData: bool
     items: List[HomeSimulationItem]
+    history: AttemptHistoryResponse
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
+    simulation_mapping: SimulationMapping
 
 
 class PracticeSimulationItem(BaseModel):
@@ -503,13 +506,15 @@ class PracticeSimulationItem(BaseModel):
 
 
 class PracticeOverviewResponse(BaseModel):
-    """Practice overview response."""
+    """Practice overview response with mappings and history."""
 
     mode: Literal["practice"]
     hasData: bool
     items: List[PracticeSimulationItem]
+    history: AttemptHistoryResponse
     standard_groups_mapping: StandardGroupsMapping
     standards_mapping: StandardsMapping
+    simulation_mapping: SimulationMapping
 
 
 class AttemptHistoryRow(BaseModel):
@@ -702,10 +707,23 @@ class ProfileData(BaseModel):
     metrics: ProfileMetrics
 
 
-class ReportsBundleResponse(BaseModel):
-    """Reports bundle response."""
+class ProfileDataEnhanced(BaseModel):
+    """Enhanced profile data with embedded profile info."""
 
-    data: List[ProfileData]
+    profileId: str
+    firstName: str
+    lastName: str
+    alias: str
+    role: str
+    metrics: ProfileMetrics
+
+
+class ReportsBundleResponse(BaseModel):
+    """Reports bundle response with entity mappings."""
+
+    data: List[ProfileDataEnhanced]
+    scenario_mapping: ScenarioMapping
+    simulation_mapping: SimulationMapping
 
 
 # Leaderboard Bundle Schemas

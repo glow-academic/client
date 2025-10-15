@@ -31,7 +31,6 @@ import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
 import { SimulationMessage } from "@/types";
 
 export interface AttemptMessagesProps {
@@ -58,8 +57,9 @@ export default function AttemptMessages({
   // State to track if report dialog is open
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
-  const { data: messages = [], isLoading: messagesLoading } =
-    useSimulationMessagesByChatId(targetChatId!);
+  // Get messages from context (v2 single source of truth)
+  const messages = simulationContext?.currentMessages || [];
+  const messagesLoading = simulationContext?.isLoadingChats || false;
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {

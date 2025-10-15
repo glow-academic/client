@@ -35,6 +35,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
 from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
                               RubricMapping, RubricMappingItem,
+                              ScenarioMapping, ScenarioMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
 from sqlalchemy import text
@@ -366,7 +367,8 @@ class AnalyticsService:
 
     # Page-specific Analytics
     def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
-        """Get home overview data."""
+        """Get home overview data with history and simulation mapping."""
+        # Get overview items
         query, params = self.page_queries.home_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -377,7 +379,23 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = self.db.execute(text(query), params).scalar()
-        return HomeOverviewResponse.model_validate(result or {})
+        overview_data = result or {}
+        
+        # Fetch history data
+        history = self.get_attempt_history(filters)
+        
+        # Build simulation mapping
+        simulation_mapping = self._build_simulation_mapping(filters)
+        
+        return HomeOverviewResponse(
+            mode=overview_data.get("mode", "empty"),
+            hasData=overview_data.get("hasData", False),
+            items=overview_data.get("items", []),
+            history=history,
+            standard_groups_mapping=overview_data.get("standard_groups_mapping", {}),
+            standards_mapping=overview_data.get("standards_mapping", {}),
+            simulation_mapping=simulation_mapping,
+        )
 
     def get_attempt_history(self, filters: AnalyticsFilters) -> AttemptHistoryResponse:
         """Get attempt history data."""
@@ -396,7 +414,8 @@ class AnalyticsService:
         return [AttemptHistoryRow.model_validate(row) for row in result]
 
     def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:
-        """Get practice overview data."""
+        """Get practice overview data with history and simulation mapping."""
+        # Get overview items
         query, params = self.page_queries.practice_overview(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -407,11 +426,28 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = self.db.execute(text(query), params).scalar()
-        return PracticeOverviewResponse.model_validate(result or {})
+        overview_data = result or {}
+        
+        # Fetch history data
+        history = self.get_attempt_history(filters)
+        
+        # Build simulation mapping
+        simulation_mapping = self._build_simulation_mapping(filters)
+        
+        return PracticeOverviewResponse(
+            mode=overview_data.get("mode", "practice"),
+            hasData=overview_data.get("hasData", False),
+            items=overview_data.get("items", []),
+            history=history,
+            standard_groups_mapping=overview_data.get("standard_groups_mapping", {}),
+            standards_mapping=overview_data.get("standards_mapping", {}),
+            simulation_mapping=simulation_mapping,
+        )
 
     # Bundle Analytics
     def get_reports_bundle(self, filters: AnalyticsFilters) -> ReportsBundleResponse:
-        """Get reports bundle data."""
+        """Get reports bundle data with entity mappings."""
+        # Get profile metrics data
         query, params = self.bundle_queries.reports_bundle(
             start_date=filters.startDate,
             end_date=filters.endDate,
@@ -422,7 +458,17 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = self.db.execute(text(query), params).scalar()
-        return ReportsBundleResponse.model_validate(result or {})
+        bundle_data = result.get("data", []) if result else []
+        
+        # Build entity mappings (reuse methods from dashboard bundle)
+        scenario_mapping = self._build_scenario_mapping(filters)
+        simulation_mapping = self._build_simulation_mapping(filters)
+        
+        return ReportsBundleResponse(
+            data=bundle_data,
+            scenario_mapping=scenario_mapping,
+            simulation_mapping=simulation_mapping,
+        )
 
     def get_leaderboard_bundle(self, filters: AnalyticsFilters) -> LeaderboardBundleResponse:
         """Get leaderboard bundle data."""
@@ -727,6 +773,33 @@ class AnalyticsService:
             parameter_mapping=parameter_mapping,
             parameter_item_mapping=parameter_item_mapping,
         )
+
+    def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
+        """Build scenario mapping from database."""
+        query = text("""
+            SELECT DISTINCT s.id, s.title, s.problem_statement
+            FROM scenarios s
+            WHERE (:department_ids::uuid[] IS NULL OR s.department_id = ANY(:department_ids::uuid[]))
+            AND s.active = true
+        """)
+        params = {
+            "department_ids": filters.departmentIds,
+        }
+        
+        results = self.db.execute(query, params).fetchall()
+        
+        return {
+            str(row.id): ScenarioMappingItem(
+                name=row.title,
+                description=row.problem_statement or "",
+                persona_id=None,
+                persona_mapping={},
+                document_mapping={},
+                parameter_item_mapping={},
+                parameter_item_ids=[],
+            )
+            for row in results
+        }
 
     def _build_simulation_mapping(
         self, filters: AnalyticsFilters

@@ -35,11 +35,10 @@ import HintDisplay from "@/components/practice/HintDisplay";
 import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useSimulationHintsBySimulationMessageId } from "@/lib/api/v1/hooks/simulation_hints";
-import { useSimulationMessagesByChatId } from "@/lib/api/v1/hooks/simulation_messages";
 import { simulationHintKeysBySimulationMessageId } from "@/lib/api/v1/keys";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -58,22 +57,29 @@ export default function AttemptInput({
   const [newMessage, setNewMessage] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  // Fetch simulation messages for the current chat using the proper hook
-  const { data: messages = [] } = useSimulationMessagesByChatId(
-    simulationContext?.currentChat?.id ?? ""
-  );
+  // Get messages from context (v2 single source of truth)
+  const messages = simulationContext?.currentMessages || [];
 
   // Get the most recent assistant message
-  const latestAssistantMessage = messages
-    .filter((msg) => msg.type === "response")
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
+  const latestAssistantMessage = useMemo(() => {
+    return messages
+      .filter((msg) => msg.type === "response")
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+  }, [messages]);
 
-  // Fetch hints for the latest assistant message
-  const { data: hintsData = [], isLoading: hintsHookLoading } =
-    useSimulationHintsBySimulationMessageId(latestAssistantMessage?.id ?? "");
+  // Get hints from context (v2 single source of truth)
+  const currentChatHints = simulationContext?.currentChatHints || [];
+  const hintsData = useMemo(() => {
+    if (!latestAssistantMessage?.id) return [];
+    const hintsForMessage = currentChatHints.find(
+      (h) => h.messageId === latestAssistantMessage.id
+    );
+    return hintsForMessage?.hints || [];
+  }, [currentChatHints, latestAssistantMessage?.id]);
+  const hintsHookLoading = simulationContext?.isLoadingChats || false;
 
   // Listen for hint generation progress via WebSocket events
   useEffect(() => {

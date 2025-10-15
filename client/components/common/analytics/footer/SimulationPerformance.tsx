@@ -144,12 +144,11 @@ function WrappedTick({
   );
 }
 
-type SimulationLite = { id: string; title: string; scenarioIds?: string[] };
-
 export interface SimulationPerformanceProps {
   validSimulationIds: string[];
   scenarioFacts: ScenarioFact[];
-  allSimulations: SimulationLite[]; // from client cache
+  /** Simulation mapping object */
+  simulationMapping: Record<string, { name: string; description: string }>;
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -163,7 +162,7 @@ export interface SimulationPerformanceProps {
 export default function SimulationPerformance({
   validSimulationIds,
   scenarioFacts,
-  allSimulations,
+  simulationMapping,
   isLoading,
   isError,
   actionableInsight,
@@ -171,9 +170,14 @@ export default function SimulationPerformance({
 }: SimulationPerformanceProps) {
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
 
+  // Build picker options from mapping
   const pickerOptions = useMemo(
-    () => allSimulations.filter((s) => validSimulationIds.includes(s.id)),
-    [allSimulations, validSimulationIds],
+    () =>
+      validSimulationIds.map((id) => ({
+        id,
+        title: simulationMapping[id]?.name || "Unknown",
+      })),
+    [simulationMapping, validSimulationIds]
   );
 
   useEffect(() => {
@@ -192,7 +196,7 @@ export default function SimulationPerformance({
       scenarioFacts
         .filter((f) => f.simulationId === selectedSimulationId)
         .sort((a, b) => a.scenarioName.localeCompare(b.scenarioName)),
-    [scenarioFacts, selectedSimulationId],
+    [scenarioFacts, selectedSimulationId]
   );
 
   const status = useMemo(() => {
@@ -208,7 +212,7 @@ export default function SimulationPerformance({
   // Create lookup for custom tooltip
   const dataByName = useMemo(
     () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),
-    [data],
+    [data]
   );
 
   // Data-driven insight
@@ -221,7 +225,7 @@ export default function SimulationPerformance({
     const totalAttempts = data.reduce((s, d) => s + d.totalAttempts, 0);
 
     const topPerformer = data.reduce((best, current) =>
-      current.avgScore > best.avgScore ? current : best,
+      current.avgScore > best.avgScore ? current : best
     );
 
     const underperformers = data.filter((d) => d.avgScore < avgScore * 0.8);
@@ -331,7 +335,7 @@ export default function SimulationPerformance({
                   if (!payload) return null;
                   // Only show the two series we care about (order stable)
                   const items = payload.filter((p) =>
-                    ["Average Score", "Success Rate"].includes(String(p.value)),
+                    ["Average Score", "Success Rate"].includes(String(p.value))
                   );
                   return (
                     <div className="flex flex-col gap-1 p-2 rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm">
@@ -434,7 +438,7 @@ function SimPicker({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4 shrink-0",
-                    value === s.id ? "opacity-100" : "opacity-0",
+                    value === s.id ? "opacity-100" : "opacity-0"
                   )}
                 />
                 <div className="flex-1 min-w-0">

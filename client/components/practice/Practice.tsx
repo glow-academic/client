@@ -22,11 +22,7 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import {
-  useAnalyticsAttemptHistory,
-  useAnalyticsPracticeOverview,
-} from "@/lib/api/v1/hooks/analytics";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
+import { useAnalyticsPracticeOverview } from "@/lib/api/v2/hooks/analytics";
 import { createPracticeScenario } from "@/utils/api/scenarios/create-practice-scenario";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { Skeleton } from "../ui/skeleton";
@@ -36,9 +32,6 @@ import PracticeZone from "./PracticeZone";
 export default function Practice() {
   const router = useRouter();
   const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -72,8 +65,8 @@ export default function Practice() {
     simulationFilters,
   } = useAnalytics();
 
-  // New optimized practice overview analytics
-  const { data: practiceOverview, isLoading: isPracticeOverviewLoading } =
+  // Single optimized bundle call with items, history, and mappings
+  const { data: bundle, isLoading: isPracticeOverviewLoading } =
     useAnalyticsPracticeOverview({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -89,22 +82,21 @@ export default function Practice() {
       departmentIds: effectiveDepartmentIds,
     });
 
-  // Fetch history data for the current user
-  const { data: historyData, isLoading: isHistoryLoading } =
-    useAnalyticsAttemptHistory({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
-      roles: selectedRoles,
-      simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
-        | "general"
-        | "practice"
-        | "archived"
-      )[],
-      // Only show current user's history
-      profileId: effectiveProfile?.id,
-      departmentIds: effectiveDepartmentIds,
-    });
+  // Extract data from bundle
+  const practiceOverview = bundle;
+  const historyData = bundle?.history;
+  const isHistoryLoading = isPracticeOverviewLoading;
+
+  // Build simulations array from mapping
+  const simulations = useMemo(
+    () =>
+      Object.entries(bundle?.simulation_mapping || {}).map(([id, sim]) => ({
+        id,
+        title: sim.name,
+        description: sim.description,
+      })),
+    [bundle?.simulation_mapping]
+  );
 
   // Use data directly from the hook
   const simulationItems = useMemo(() => {

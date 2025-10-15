@@ -111,7 +111,10 @@ type Parameter = {
 export interface ScenarioStatsProps {
   numericAttemptFacts: NumericAttemptFact[];
   numericScenarioFacts: NumericScenarioFact[];
-  allParameters: Parameter[]; // from client cache
+  /** Parameter mapping object */
+  parameterMapping: Record<string, { name: string; description: string }>;
+  /** Valid numeric parameter IDs */
+  validNumericParameterIds: string[];
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -125,13 +128,27 @@ export interface ScenarioStatsProps {
 export default function ScenarioStats({
   numericAttemptFacts,
   numericScenarioFacts,
-  allParameters,
+  parameterMapping,
+  validNumericParameterIds,
   isLoading,
   isError,
   actionableInsight,
   thresholds,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+
+  // Build all parameters from mapping
+  const allParameters = useMemo(
+    () =>
+      validNumericParameterIds.map((id) => ({
+        id,
+        name: parameterMapping[id]?.name || "Unknown",
+        description: parameterMapping[id]?.description || "",
+        numerical: true,
+        active: true,
+      })),
+    [parameterMapping, validNumericParameterIds]
+  );
 
   const metricOptions = useMemo(
     () =>

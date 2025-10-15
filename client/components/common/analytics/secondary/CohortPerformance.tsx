@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  SimulationPicker,
-  type Simulation as SimulationPickerType,
-} from "@/components/common/cohort/SimulationPicker";
+import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
   CardContent,
@@ -62,8 +59,10 @@ export interface CohortPerformanceProps {
   dailyData: DailyRow[];
   cohortFacts: CohortFact[];
   dailyFacts: DailyFact[];
-  /** All simulations from client cache/store */
-  allSimulations: SimulationPickerType[];
+  /** Simulation mapping object */
+  simulationMapping: Record<string, { name: string; description: string }>;
+  /** Valid simulation IDs */
+  validSimulationIds: string[];
   isLoading: boolean;
   isError: boolean;
   /** If rendering for a single learner detail view */
@@ -80,22 +79,22 @@ export default function CohortPerformance({
   cohortData,
   dailyData,
   cohortFacts,
-  allSimulations,
+  dailyFacts: _dailyFacts,
+  simulationMapping,
+  validSimulationIds,
   isLoading,
   isError,
   profileId,
   actionableInsights,
   thresholds,
 }: CohortPerformanceProps) {
-  const [selected, setSelected] = useState<SimulationPickerType[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const isSingleProfileMode = !!profileId;
-
-  const pickerOptions = useMemo(() => allSimulations, [allSimulations]);
 
   // Recompute cohort metrics from selected sims using cohortFacts (attempt-weighted)
   const displayCohorts = useMemo<CohortRow[]>(() => {
     if (!selected.length) return cohortData;
-    const sel = new Set(selected.map((s) => s.id));
+    const sel = new Set(selected);
     const byCohort = new Map<
       string,
       {
@@ -124,7 +123,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      }),
+      })
     );
 
     cohortFacts.forEach((f) => {
@@ -219,13 +218,13 @@ export default function CohortPerformance({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={pickerOptions}
-            placeholder="Filter by simulation..."
+            simulationMapping={simulationMapping}
+            validSimulationIds={validSimulationIds}
+            selectedSimulationIds={selected}
             onSelect={setSelected}
-            selectedSimulations={selected}
+            placeholder="Filter by simulation..."
             hideSelectedChips
             showLabel={false}
-            showPracticeSimulations
           />
         </div>
       </CardHeader>
@@ -317,7 +316,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id,
+                        (d: DailyRow) => d.cohortId === cohort.id
                       );
                       if (cohortDailyData.length === 0) return null;
 

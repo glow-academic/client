@@ -42,13 +42,11 @@ import {
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
-import { useAttemptProfilesByAttemptId } from "@/lib/api/v1/hooks/attempt_profiles";
 import { SimulationChat } from "@/types";
 import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
-import { useScenario } from "@/lib/api/v1/hooks/scenarios";
 import { useUpdateSimulationChat } from "@/lib/api/v1/hooks/simulation_chats";
 import { log } from "@/utils/logger";
 import { useRouter } from "next/navigation";
@@ -77,13 +75,8 @@ export default function AttemptChat() {
   // Track which chats have had their timestamps reset to prevent infinite loops
   const resetChatTimestampsRef = useRef<Set<string>>(new Set());
 
-  // Get attempt profile from junction table
-  const { data: attemptProfileLinks = [] } = useAttemptProfilesByAttemptId(
-    simulationContext?.attempt?.id || ""
-  );
-  const attemptProfileId = attemptProfileLinks.find(
-    (ap) => ap.active
-  )?.profileId;
+  // Get attempt profile ID from context (v2 single source of truth)
+  const attemptProfileId = simulationContext?.attemptProfileId;
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
@@ -110,10 +103,20 @@ export default function AttemptChat() {
     );
   }, [selectedChatId, simulationContext?.chats]);
 
-  const { data: selectedScenario } = useScenario(
-    selectedChat?.scenarioId || "",
-    selectedChat !== null
-  );
+  // Get selected scenario from context (v2 single source of truth)
+  const selectedScenario = useMemo(() => {
+    if (!selectedChat?.id || !simulationContext?.scenariosByChatId) {
+      return simulationContext?.scenario;
+    }
+    return (
+      simulationContext.scenariosByChatId[selectedChat.id] ||
+      simulationContext.scenario
+    );
+  }, [
+    selectedChat?.id,
+    simulationContext?.scenariosByChatId,
+    simulationContext?.scenario,
+  ]);
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback(
@@ -598,11 +601,26 @@ export default function AttemptChat() {
                       {/* Show rubric when toggle is on */}
                       {showGrades &&
                       selectedChat &&
-                      simulationContext?.simulation?.rubricId ? (
+                      simulationContext?.rubricStructure ? (
                         <div className="space-y-4 py-4">
                           <TableRubric
-                            rubricId={simulationContext?.simulation?.rubricId}
-                            simulationChatId={selectedChatId || ""}
+                            standardGroups={
+                              simulationContext.rubricStructure.standardGroups
+                            }
+                            standardGroupsMapping={
+                              simulationContext.rubricStructure
+                                .standardGroupsMapping
+                            }
+                            standardsMapping={
+                              simulationContext.rubricStructure.standardsMapping
+                            }
+                            gradingState={
+                              selectedChat?.id
+                                ? (simulationContext.gradingStatesByChatId[
+                                    selectedChat.id
+                                  ] ?? null)
+                                : null
+                            }
                           />
                         </div>
                       ) : selectedChat ? (

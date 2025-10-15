@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  SimulationPicker,
-  type Simulation as SimulationPickerType,
-} from "@/components/common/cohort/SimulationPicker";
+import { SimulationPicker } from "@/components/common/cohort/SimulationPicker";
 import {
   Card,
   CardContent,
@@ -42,8 +39,10 @@ type AttemptFact = {
 export interface AttemptImprovementProps {
   chartData: AttemptRow[];
   facts: AttemptFact[];
-  /** All simulations from client cache/store */
-  allSimulations: SimulationPickerType[];
+  /** Simulation mapping object */
+  simulationMapping: Record<string, { name: string; description: string }>;
+  /** Valid simulation IDs */
+  validSimulationIds: string[];
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -57,21 +56,20 @@ export interface AttemptImprovementProps {
 export default function AttemptImprovement({
   chartData,
   facts,
-  allSimulations,
+  simulationMapping,
+  validSimulationIds,
   isLoading,
   isError,
   actionableInsight,
   thresholds,
 }: AttemptImprovementProps) {
-  const [selected, setSelected] = useState<SimulationPickerType[]>([]);
-
-  const pickerOptions = useMemo(() => allSimulations, [allSimulations]);
+  const [selected, setSelected] = useState<string[]>([]);
 
   // If sims selected, recompute chart from facts; else use server aggregate
   const displayData = useMemo<AttemptRow[]>(() => {
     if (!selected.length) return chartData;
 
-    const sel = new Set(selected.map((s) => s.id));
+    const sel = new Set(selected);
     const byAttempt = new Map<
       number,
       { gradeSum: number; minSum: number; passSum: number; n: number }
@@ -179,13 +177,13 @@ export default function AttemptImprovement({
             </CardDescription>
           </div>
           <SimulationPicker
-            simulations={pickerOptions}
-            placeholder="Filter by simulation..."
+            simulationMapping={simulationMapping}
+            validSimulationIds={validSimulationIds}
+            selectedSimulationIds={selected}
             onSelect={setSelected}
-            selectedSimulations={selected}
+            placeholder="Filter by simulation..."
             hideSelectedChips
             showLabel={false}
-            showPracticeSimulations
             buttonClassName="w-48"
           />
         </div>

@@ -151,8 +151,15 @@ type AttributeElement = {
 export interface ScenarioPerformanceProps {
   attributeAttemptFacts: ScenarioAttributeAttemptFact[];
   attributeScenarioFacts: ScenarioAttributeScenarioFact[];
-  allParameters: Parameter[]; // from client cache
-  allParameterItems: ParameterItem[]; // from client cache
+  /** Parameter mapping object */
+  parameterMapping: Record<string, { name: string; description: string }>;
+  /** Parameter item mapping object */
+  parameterItemMapping: Record<
+    string,
+    { name: string; description: string; parameter_id: string; parameter_name: string }
+  >;
+  /** Valid parameter IDs */
+  validParameterIds: string[];
   isLoading: boolean;
   isError: boolean;
   actionableInsight?: string | null;
@@ -166,14 +173,43 @@ export interface ScenarioPerformanceProps {
 export default function ScenarioPerformance({
   attributeAttemptFacts,
   attributeScenarioFacts,
-  allParameters,
-  allParameterItems,
+  parameterMapping,
+  parameterItemMapping,
+  validParameterIds,
   isLoading,
   isError,
   actionableInsight,
   thresholds,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+
+  // Build parameters from mapping
+  const allParameters = useMemo(
+    () =>
+      validParameterIds.map((id) => ({
+        id,
+        name: parameterMapping[id]?.name || "Unknown",
+        description: parameterMapping[id]?.description || "",
+        numerical: false,
+        active: true,
+        departmentId: "",
+      })),
+    [parameterMapping, validParameterIds]
+  );
+
+  // Build parameter items from mapping
+  const allParameterItems = useMemo(
+    () =>
+      Object.entries(parameterItemMapping)
+        .filter(([, item]) => validParameterIds.includes(item.parameter_id))
+        .map(([id, item]) => ({
+          id,
+          name: item.name,
+          description: item.description || "",
+          parameterId: item.parameter_id,
+        })),
+    [parameterItemMapping, validParameterIds]
+  );
 
   const parameterOptions = useMemo(() => {
     return allParameters

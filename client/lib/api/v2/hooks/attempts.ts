@@ -106,6 +106,11 @@ export interface AttemptFullResponse {
       skillFeedbacks: Record<string, string>;
       totalPossiblePoints: number;
     } | null;
+    gradingState: {
+      achievedStandards: Record<string, boolean>;
+      passedStandards: Record<string, boolean>;
+      gradeDescription?: string;
+    } | null;
   }>;
   scenarioDocuments: Array<{
     id: string;
@@ -171,6 +176,26 @@ export interface AttemptFullResponse {
   isLastAttempt: boolean;
   showResults: boolean;
   isActive: boolean;
+  rubricStructure: {
+    standardGroups: Record<string, string[]>;
+    standardGroupsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }
+    >;
+    standardsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+      }
+    >;
+  } | null;
 }
 
 export function useAttemptFull(attemptId: string) {

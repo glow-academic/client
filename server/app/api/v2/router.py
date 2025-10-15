@@ -2,6 +2,7 @@
 
 from app.api.v2.agents import router as agents_router
 from app.api.v2.analytics.router import router as analytics_router
+from app.api.v2.assistant import router as assistant_router
 from app.api.v2.attempts import router as attempts_router
 from app.api.v2.auth import router as auth_router
 from app.api.v2.cohorts import router as cohorts_router
@@ -68,4 +69,7 @@ router.include_router(logs_router, prefix="/logs", tags=["logs"])
 
 # Include attempts router
 router.include_router(attempts_router)
+
+# Include assistant router
+router.include_router(assistant_router)
 

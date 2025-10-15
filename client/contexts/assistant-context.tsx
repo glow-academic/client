@@ -5,11 +5,9 @@
 "use client";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  useAssistantChatsByProfileId,
-  useCreateAssistantChat,
-} from "@/lib/api/v1/hooks/assistant_chats";
-import { AssistantChat } from "@/types";
+import { useCreateAssistantChat } from "@/lib/api/v1/hooks/assistant_chats";
+import { useAssistantChatFull } from "@/lib/api/v2/hooks/assistant";
+import { AssistantChat, AssistantMessage, AssistantToolCall } from "@/types";
 import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -17,6 +15,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -41,6 +40,11 @@ export interface AssistantContextType {
   isLoadingChats: boolean;
   selectChat: (chatId: string) => void;
   startBlankChat: () => void;
+
+  // Chat Data (from v2 hook)
+  chat: AssistantChat | null;
+  messages: AssistantMessage[];
+  toolCalls: AssistantToolCall[];
 
   // Connection State
   isConnected: boolean;
@@ -90,10 +94,31 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
 
   const { activeProfile } = useProfile();
 
-  const { data: chats = [], isLoading: isLoadingChats } =
-    useAssistantChatsByProfileId(
-      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || ""
+  // V2: Single hook to fetch all assistant chat data
+  const { data: assistantData, isLoading: isLoadingChats } =
+    useAssistantChatFull(
+      currentChatId,
+      activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "",
+      activeProfile?.id !== "guest-profile-id" && !!activeProfile?.id
     );
+
+  // Extract data from v2 response
+  const chats = useMemo(
+    () => (assistantData?.allChats || []) as AssistantChat[],
+    [assistantData]
+  );
+  const chat = useMemo(
+    () => (assistantData?.chat || null) as AssistantChat | null,
+    [assistantData]
+  );
+  const messages = useMemo(
+    () => (assistantData?.messages || []) as AssistantMessage[],
+    [assistantData]
+  );
+  const toolCalls = useMemo(
+    () => (assistantData?.toolCalls || []) as AssistantToolCall[],
+    [assistantData]
+  );
 
   // Create new chat mutation
   const createChatMutation = useCreateAssistantChat();
@@ -159,7 +184,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
-  }, [isConnected, currentChatId, queryClient]);
+  }, [isConnected, queryClient]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
@@ -439,11 +464,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     close,
     currentChatId,
     setCurrentChatId,
-    chats,
-    pastChats: chats, // Use the same chats array for pastChats
+    chats: chats as AssistantChat[],
+    pastChats: chats as AssistantChat[], // Use the same chats array for pastChats
     isLoadingChats,
     selectChat,
     startBlankChat,
+    chat: chat as AssistantChat | null,
+    messages: messages as AssistantMessage[],
+    toolCalls: toolCalls as AssistantToolCall[],
     isConnected,
     createNewChat,
     sendMessage,

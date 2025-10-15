@@ -11,8 +11,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
-import { useAssistantMessagesByChatId } from "@/lib/api/v1/hooks/assistant_messages";
-import { useAssistantToolCallsByChatId } from "@/lib/api/v1/hooks/assistant_tool_calls";
 import { AssistantMessage, AssistantToolCall } from "@/types";
 import { log } from "@/utils/logger";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
@@ -231,7 +229,8 @@ export default function ChatMessages({
   showPrompts,
   variant = "expanded",
 }: ChatMessagesProps = {}) {
-  const { currentChatId, isConnected } = useAssistant();
+  const { currentChatId, isConnected, messages, toolCalls, isLoadingChats } =
+    useAssistant();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
@@ -240,24 +239,18 @@ export default function ChatMessages({
   // Track if there are new messages after user scrolled up
   const [showScrollDown, setShowScrollDown] = useState(false);
 
-  const { data: messages = [], isLoading: isLoadingMessages } =
-    useAssistantMessagesByChatId(currentChatId!);
-
-  const { data: toolCalls = [], isLoading: isLoadingToolCalls } =
-    useAssistantToolCallsByChatId(currentChatId!);
-
   useEffect(() => {
     log.debug("chat.messages.debug", {
       message: "ChatMessages state",
       context: {
         component: "ChatMessages",
         currentChatId: currentChatId ?? undefined,
-        messagesCount: messages?.length ?? 0,
-        toolCallsCount: toolCalls?.length ?? 0,
+        messagesCount: messages.length,
+        toolCallsCount: toolCalls.length,
         isConnected,
       },
     });
-  }, [currentChatId, messages, toolCalls, isConnected]);
+  }, [currentChatId, messages.length, toolCalls.length, isConnected]);
 
   const createTimeline = useCallback((): TimelineItem[] => {
     const timeline: TimelineItem[] = [];
@@ -348,7 +341,7 @@ export default function ChatMessages({
     setIsAtBottom(true);
   };
 
-  if ((isLoadingMessages || isLoadingToolCalls) && currentChatId) {
+  if (isLoadingChats && currentChatId) {
     return (
       <div className="p-4 space-y-4" data-testid="skeleton">
         <div className="flex justify-between items-center">

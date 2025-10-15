@@ -9,7 +9,11 @@ import { useRouter } from "next/navigation";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Scenario, Simulation } from "@/types";
+import {
+  type ScenarioMapping,
+  type SimulationMapping,
+} from "@/lib/api/v2/schemas/base";
+import { useMemo } from "react";
 import { ReportsDataTable } from "./ReportsDataTable";
 
 // Complete reports data type - follows fast/dumb UI principle with inline hover data and thresholds
@@ -141,16 +145,16 @@ interface ReportsInterface {
   data: ReportsDataItem[];
   isLoading: boolean;
   isError: boolean;
-  allScenarios: Scenario[];
-  allSimulations: Simulation[];
+  scenarioMapping: ScenarioMapping;
+  simulationMapping: SimulationMapping;
 }
 
 export default function Reports({
   data,
   isLoading,
   isError,
-  allScenarios,
-  allSimulations,
+  scenarioMapping,
+  simulationMapping,
 }: ReportsInterface) {
   const router = useRouter();
 
@@ -158,16 +162,35 @@ export default function Reports({
     router.push(`/analytics/reports/p/${profileId}`);
   };
 
-  // Create scenario and simulation options from the data
-  const scenarioOptions = allScenarios.map((scenario) => ({
-    value: scenario.id,
-    label: scenario.name,
-  }));
+  // Build scenario options from mapping
+  const scenarioOptions = useMemo(
+    () =>
+      Object.entries(scenarioMapping).map(([id, scenario]) => ({
+        value: id,
+        label: scenario.name,
+      })),
+    [scenarioMapping]
+  );
 
-  const simulationOptions = allSimulations.map((simulation) => ({
-    value: simulation.id,
-    label: simulation.title,
-  }));
+  // Build simulation options from mapping
+  const simulationOptions = useMemo(
+    () =>
+      Object.entries(simulationMapping).map(([id, simulation]) => ({
+        value: id,
+        label: simulation.name,
+      })),
+    [simulationMapping]
+  );
+
+  // Build simulations array for ReportsDataTable
+  const simulations = useMemo(
+    () =>
+      Object.entries(simulationMapping).map(([id, simulation]) => ({
+        id,
+        title: simulation.name,
+      })),
+    [simulationMapping]
+  );
 
   if (isLoading) {
     return (
@@ -567,7 +590,7 @@ export default function Reports({
         data={data}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
-        simulations={allSimulations}
+        simulations={simulations}
         showExport={true}
         onViewReport={handleViewReport}
       />

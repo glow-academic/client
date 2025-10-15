@@ -74,12 +74,69 @@ export interface SimulationContextType {
   documents: Document[];
   scenarioDocuments: Document[];
 
+  // Attempt profiles for ownership checks
+  attemptProfiles: Array<{
+    profileId: string;
+    attemptId: string;
+    active: boolean;
+  }>;
+  attemptProfileId: string | null;
+
+  // Scenarios map (chatId -> scenario) for all chats
+  scenariosByChatId: Record<string, Scenario | null>;
+
+  // Rubric structure (from v2) for TableRubric component
+  rubricStructure: {
+    standardGroups: Record<string, string[]>;
+    standardGroupsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }
+    >;
+    standardsMapping: Record<
+      string,
+      {
+        name: string;
+        description: string;
+        points: number;
+      }
+    >;
+  } | null;
+
+  // Grading states by chat ID (which standards achieved/passed)
+  gradingStatesByChatId: Record<
+    string,
+    {
+      achievedStandards: Record<string, boolean>;
+      passedStandards: Record<string, boolean>;
+      gradeDescription?: string;
+    }
+  >;
+
   // Current chat management
   currentChatIndex: number;
   setCurrentChatIndex: (index: number) => void;
   currentChat: SimulationChat | null;
   chats: SimulationChat[];
   isLoadingChats: boolean;
+
+  // Messages (from v2 - all messages for current chat)
+  currentMessages: SimulationMessage[];
+
+  // Hints (from v2 - hints for current chat)
+  currentChatHints: Array<{
+    messageId: string;
+    hints: Array<{
+      id: string;
+      simulationMessageId: string;
+      hint: string;
+      createdAt: string;
+    }>;
+  }>;
 
   // Results and grading
   currentDynamicRubric: DynamicRubric | null;
@@ -266,6 +323,65 @@ export function SimulationProvider({
   const scenarioDocuments = attemptData?.scenarioDocuments || [];
   const documents = attemptData?.departmentDocuments || [];
 
+  // Attempt profiles from v2
+  const attemptProfiles = useMemo(
+    () => attemptData?.attemptProfiles || [],
+    [attemptData?.attemptProfiles]
+  );
+  const attemptProfileId = useMemo(() => {
+    const activeProfile = attemptProfiles.find((ap) => ap.active);
+    return activeProfile?.profileId || null;
+  }, [attemptProfiles]);
+
+  // Scenarios map from v2 - map chatId -> scenario for all chats
+  const scenariosByChatId = useMemo(() => {
+    if (!attemptData?.chats) return {};
+    const map: Record<string, Scenario | null> = {};
+    attemptData.chats.forEach((chatData) => {
+      map[chatData.chat.id] = chatData.scenario;
+    });
+    return map;
+  }, [attemptData]);
+
+  // Rubric structure from v2
+  const rubricStructure = attemptData?.rubricStructure || null;
+
+  // Grading states map from v2 - map chatId -> grading state
+  const gradingStatesByChatId = useMemo(() => {
+    if (!attemptData?.chats) return {};
+    const map: Record<
+      string,
+      {
+        achievedStandards: Record<string, boolean>;
+        passedStandards: Record<string, boolean>;
+      }
+    > = {};
+    attemptData.chats.forEach((chatData) => {
+      if (chatData.gradingState) {
+        map[chatData.chat.id] = chatData.gradingState;
+      }
+    });
+    return map;
+  }, [attemptData]);
+
+  // Messages from v2 - get messages for current chat
+  const currentMessages = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.messages || [];
+  }, [attemptData, currentChat]);
+
+  // Hints from v2 - get hints for current chat
+  const currentChatHints = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.hints || [];
+  }, [attemptData, currentChat]);
+
   // Get computed data from v2 response (server-side computations)
   const currentDynamicRubric = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return null;
@@ -302,37 +418,17 @@ export function SimulationProvider({
     simulationRef.current = (simulation as any) || null;
   }, [simulation]);
 
-  // Timer logic - Simple 1-second interval to refetch v2 data
+  // Check if timer expired and finish simulation
   useEffect(() => {
     // Update the ref to the latest callback
     onSimulationFinishedRef.current = onSimulationFinished;
 
-    // Don't poll if showing results or not active
-    if (!attemptData?.isActive || showResults) {
-      // Check if timer expired and finish
-      if (attemptData?.timer.expired && !showResults) {
-        setShowResults(true);
-        onSimulationFinishedRef.current?.();
-      }
-      return;
+    // Check if timer expired and finish
+    if (attemptData?.timer.expired && !showResults) {
+      setShowResults(true);
+      onSimulationFinishedRef.current?.();
     }
-
-    // Refetch v2 data every second to get updated timer
-    const timerInterval = setInterval(() => {
-      queryClient.invalidateQueries({
-        queryKey: ["v2", "attempts", attemptId, "full"],
-      });
-    }, 1000);
-
-    return () => clearInterval(timerInterval);
-  }, [
-    attemptId,
-    attemptData?.isActive,
-    attemptData?.timer.expired,
-    showResults,
-    onSimulationFinished,
-    queryClient,
-  ]);
+  }, [attemptData?.timer.expired, showResults, onSimulationFinished]);
 
   // Initialize to first incomplete chat when data loads
   useEffect(() => {
@@ -995,12 +1091,29 @@ export function SimulationProvider({
     documents: documents as any,
     scenarioDocuments: scenarioDocuments as any,
 
+    // Attempt profiles (from v2)
+    attemptProfiles,
+    attemptProfileId,
+
+    // Scenarios map (from v2)
+    scenariosByChatId: scenariosByChatId as any,
+
+    // Rubric structure (from v2)
+    rubricStructure: rubricStructure as any,
+
+    // Grading states (from v2)
+    gradingStatesByChatId: gradingStatesByChatId as any,
+
     // Current chat management
     currentChatIndex,
     setCurrentChatIndex,
     currentChat,
     chats,
     isLoadingChats,
+
+    // Messages and hints (from v2)
+    currentMessages: currentMessages as any,
+    currentChatHints,
 
     // Results and grading (from v2 server-side computations)
     currentDynamicRubric,

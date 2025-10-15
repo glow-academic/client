@@ -38,19 +38,28 @@ class BundleQueries:
             ),
             profile_metrics AS (
                 SELECT
-                    profile_id,
-                    AVG(grade_percent) AS avg_score,
-                    MAX(grade_percent) AS highest_score,
+                    f.profile_id,
+                    p.first_name,
+                    p.last_name,
+                    p.alias,
+                    p.role,
+                    AVG(f.grade_percent) AS avg_score,
+                    MAX(f.grade_percent) AS highest_score,
                     COUNT(*)::int AS total_attempts,
-                    AVG(num_messages_total) AS avg_messages,
-                    AVG(chat_time_taken_seconds / 60.0) AS avg_time_minutes
-                FROM filt
-                WHERE grade_percent IS NOT NULL
-                GROUP BY profile_id
+                    AVG(f.num_messages_total) AS avg_messages,
+                    AVG(f.chat_time_taken_seconds / 60.0) AS avg_time_minutes
+                FROM filt f
+                JOIN profiles p ON f.profile_id = p.id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY f.profile_id, p.first_name, p.last_name, p.alias, p.role
             )
             SELECT json_build_object(
                 'data', COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id::text,
+                    'firstName', first_name,
+                    'lastName', last_name,
+                    'alias', alias,
+                    'role', role,
                     'metrics', json_build_object(
                         'averageScore', json_build_object(
                             'hasData', true,

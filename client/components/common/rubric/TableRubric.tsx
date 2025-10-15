@@ -21,12 +21,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useSimulationChatFeedbacksBySimulationChatGradeIdBatch } from "@/lib/api/v1/hooks/simulation_chat_feedbacks";
-import { useSimulationChatGradesBySimulationChatId } from "@/lib/api/v1/hooks/simulation_chat_grades";
-import type {
-  StandardGroupMappingItem,
-  StandardMappingItem,
-} from "@/lib/api/v2/schemas/rubrics";
+
+type StandardGroupMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+  passPoints: number;
+};
+
+type StandardMappingItem = {
+  name: string;
+  description: string;
+  points: number;
+};
 
 export interface TableRubricProps {
   // Core rubric structure (from V2 API)
@@ -34,86 +41,47 @@ export interface TableRubricProps {
   standardGroupsMapping: Record<string, StandardGroupMappingItem>;
   standardsMapping: Record<string, StandardMappingItem>;
 
-  // Optional: for grading view (AttemptChat, future use)
-  simulationChatId?: string;
+  // Optional: grading state for visualization (from v2 server-side)
+  gradingState?: {
+    achievedStandards: Record<string, boolean>;
+    passedStandards: Record<string, boolean>;
+    gradeDescription?: string; // Overall rubric summary/description
+  } | null;
 }
 
 export default function TableRubric({
   standardGroups,
   standardGroupsMapping,
   standardsMapping,
-  simulationChatId,
+  gradingState,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>()
   );
 
-  // Only fetch grading data if simulationChatId is provided
-  const { data: simulationGrades, isLoading: loadingSimulationGrades } =
-    useSimulationChatGradesBySimulationChatId(simulationChatId || "");
-
-  const { data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks } =
-    useSimulationChatFeedbacksBySimulationChatGradeIdBatch(
-      simulationGrades?.map((grade) => grade.id) || []
-    );
-
-  // Get the appropriate grade and feedback data
-  const grades = simulationGrades;
-  const feedbacks = simulationFeedbacks;
-  const chatGrade = grades?.[0]; // Assuming one grade per chat
-
-  // Helper function to get feedback for a specific standard
-  const getFeedbackForStandard = (standardId: string) => {
-    if (!feedbacks || !chatGrade) return null;
-    return feedbacks.find((feedback) => {
-      if (feedback.standardId !== standardId) return false;
-      return (
-        "simulationChatGradeId" in feedback &&
-        feedback.simulationChatGradeId === chatGrade.id
-      );
-    });
+  // Helper function to determine if a standard was achieved (from server-computed state)
+  const isStandardAchieved = (standardId: string) => {
+    if (!gradingState) return false;
+    return gradingState.achievedStandards[standardId] || false;
   };
 
-  // Helper function to determine if a standard was achieved
-  const isStandardAchieved = (
-    standardId: string,
-    groupStandardIds: string[]
-  ) => {
-    const feedback = getFeedbackForStandard(standardId);
-    if (!feedback) return false;
-
-    // Find the highest achieved standard in this group
-    const groupFeedbacks = groupStandardIds
-      .map((id) => getFeedbackForStandard(id))
-      .filter(Boolean);
-
-    if (groupFeedbacks.length === 0) return false;
-
-    const maxScore = Math.max(...groupFeedbacks.map((f) => f!.total));
-    return feedback.total === maxScore;
-  };
-
-  // Helper function to determine if a standard has been passed based on pass points
-  const isStandardPassed = (standardId: string, groupPassPoints: number) => {
-    const feedback = getFeedbackForStandard(standardId);
-    if (!feedback) return false;
-
-    // Check if the feedback total meets or exceeds the pass points for this group
-    return feedback.total >= groupPassPoints;
+  // Helper function to determine if a standard has been passed (from server-computed state)
+  const isStandardPassed = (standardId: string) => {
+    if (!gradingState) return false;
+    return gradingState.passedStandards[standardId] || false;
   };
 
   // Helper function to determine if a standard should be highlighted (achieved or below achieved)
   const shouldHighlight = (
-    standardId: string,
+    _standardId: string,
     standardPoints: number,
     groupStandardIds: string[]
   ) => {
-    const feedback = getFeedbackForStandard(standardId);
-    if (!feedback) return false;
+    if (!gradingState) return false;
 
     // Find the achieved standard in this group
     const achievedStandardId = groupStandardIds.find((id) =>
-      isStandardAchieved(id, groupStandardIds)
+      isStandardAchieved(id)
     );
     if (!achievedStandardId) return false;
 
@@ -123,17 +91,6 @@ export default function TableRubric({
     // Highlight if this standard's points are <= achieved standard's points
     return standardPoints <= achievedStandard.points;
   };
-
-  if (loadingSimulationGrades || loadingSimulationFeedbacks) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center space-y-2">
-          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-sm text-muted-foreground">Loading rubric...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Group standards by standard group using props data
   const groupedStandards = Object.entries(standardGroups).map(
@@ -221,10 +178,8 @@ export default function TableRubric({
                               {standardIds.map((standardId) => {
                                 const standardInfo =
                                   standardsMapping[standardId];
-                                const isAchievedForS = isStandardAchieved(
-                                  standardId,
-                                  standardIds
-                                );
+                                const isAchievedForS =
+                                  isStandardAchieved(standardId);
                                 return (
                                   <div
                                     key={standardId}
@@ -270,15 +225,8 @@ export default function TableRubric({
                       );
                     }
 
-                    const feedback = getFeedbackForStandard(standardId);
-                    const isAchieved = isStandardAchieved(
-                      standardId,
-                      standardIds
-                    );
-                    const isPassed = isStandardPassed(
-                      standardId,
-                      groupInfo?.passPoints || 0
-                    );
+                    const isAchieved = isStandardAchieved(standardId);
+                    const isPassed = isStandardPassed(standardId);
                     const shouldHighlightCell = shouldHighlight(
                       standardId,
                       standardInfo.points,
@@ -345,7 +293,7 @@ export default function TableRubric({
 
                           const frontContent = (
                             <div className="text-xs leading-tight">
-                              {feedback?.feedback || standardInfo.description}
+                              {standardInfo.description}
                             </div>
                           );
                           const backContent = (
@@ -378,12 +326,12 @@ export default function TableRubric({
         </Table>
       </div>
 
-      {/* Rubric summary (description from simulation_chat_grade) */}
-      {simulationChatId && chatGrade?.description && (
+      {/* Rubric summary (description from grading state) */}
+      {gradingState?.gradeDescription && (
         <div className="border rounded-md p-4 bg-card">
           <div className="text-sm font-semibold mb-2">Rubric summary</div>
           <div className="text-sm whitespace-pre-wrap">
-            {chatGrade.description}
+            {gradingState.gradeDescription}
           </div>
         </div>
       )}
