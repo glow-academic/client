@@ -18,6 +18,7 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    DocumentsListResponse,
                                    FinalizeUploadRequest,
                                    FinalizeUploadResponse,
+                                   GenerateCertificateRequest,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
 from app.services.document_service import DocumentService
@@ -365,4 +366,30 @@ async def download_csv(
         filename=f"{token}.csv",
         media_type="text/csv",
     )
+
+
+# ============================================================================
+# CERTIFICATE GENERATION
+# ============================================================================
+
+@router.post("/certificate")
+async def generate_certificate(
+    request: GenerateCertificateRequest,
+    db: Annotated[Session, Depends(get_session)],
+) -> Response:
+    """Generate a certificate PDF/text for a profile."""
+    try:
+        service = DocumentService(db)
+        file_content, content_type, headers = service.generate_certificate(request)
+
+        return Response(
+            content=file_content,
+            media_type=content_type,
+            headers=headers,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate certificate: {str(e)}"
+        )
 

@@ -1,6 +1,6 @@
 // Isomorphic structured logger that works in both client and server environments.
-// - Client: POSTs to /api/log (sendBeacon when available)
-// - Server: Writes directly to Postgres
+// - Client: POSTs to /api/v2/logs/create (sendBeacon when available)
+// - Server: Proxies to FastAPI backend for database insertion
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -66,14 +66,14 @@ function generateCorrelationId(): string {
 
 // Legacy normalizer removed along with shim functions
 
-// Note: We intentionally avoid any server-only imports (like "postgres") here to keep
+// Note: We intentionally avoid any server-only imports here to keep
 // this module safe to import from client bundles. All logs are sent to the server
-// via the /api/log route; the route writes to Postgres.
+// via the /api/v2/logs/create route; the route proxies to FastAPI backend.
 
 // --- Client transport ---
 async function sendClientLog(entry: LogEntry): Promise<void> {
   const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-  const logUrl = `${appPrefix}/api/log`;
+  const logUrl = `${appPrefix}/api/v2/logs/create`;
 
   try {
     const body = safeStringify(entry);
@@ -83,7 +83,7 @@ async function sendClientLog(entry: LogEntry): Promise<void> {
     ) {
       const ok = navigator.sendBeacon(
         logUrl,
-        new Blob([body], { type: "application/json" }),
+        new Blob([body], { type: "application/json" })
       );
       if (ok) return;
     }
@@ -127,7 +127,7 @@ export const log = {
       // eslint-disable-next-line no-console
       (console as any)[entry.level === "error" ? "error" : entry.level](
         label,
-        entry,
+        entry
       );
     }
     const withCorr = {
@@ -159,7 +159,7 @@ export const log = {
 
 // Optional helper for timings
 export async function withDuration<T>(
-  fn: () => Promise<T>,
+  fn: () => Promise<T>
 ): Promise<[T, number]> {
   const start =
     typeof performance !== "undefined" ? performance.now() : Date.now();

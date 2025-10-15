@@ -159,3 +159,12 @@ class FinalizeUploadResponse(BaseModel):
     created_users: Optional[List[Dict[str, Any]]] = None
     skipped_users: Optional[List[Dict[str, Any]]] = None
 
+
+# Certificate Schemas
+class GenerateCertificateRequest(BaseModel):
+    """Request to generate a certificate."""
+
+    profileId: str
+    profileName: str
+    cohortData: List[Dict[str, Any]] = []
+

@@ -72,7 +72,7 @@ export function SingleProfileCertificateButton<TData>({
       });
 
       // Call the certificate generation API
-      const response = await fetch("/api/certificate", {
+      const response = await fetch("/api/v2/documents/certificate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

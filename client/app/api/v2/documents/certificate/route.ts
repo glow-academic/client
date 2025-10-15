@@ -1,5 +1,5 @@
 /**
- * app/api/certificate/route.ts
+ * app/api/v2/documents/certificate/route.ts
  * Backend for Frontend (BFF) route for certificate generation
  * Proxies requests to FastAPI backend while preserving server context
  */
@@ -18,25 +18,31 @@ export async function POST(req: NextRequest) {
         ? { actor: { profileId: String(body.profileId) } }
         : {}),
       subject: { entityType: "certificate" },
-      context: { function: "POST", file: "app/api/certificate/route.ts" },
+      context: {
+        function: "POST",
+        file: "app/api/v2/documents/certificate/route.ts",
+      },
     });
 
     // Forward the request to FastAPI backend
-    const response = await fetch(`${getApiBase()}/documents/certificate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Forward relevant headers from the original request
-        ...Object.fromEntries(
-          [...req.headers.entries()].filter(([key]) =>
-            ["authorization", "cookie", "user-agent"].includes(
-              key.toLowerCase(),
-            ),
+    const response = await fetch(
+      `${getApiBase()}/api/v2/documents/certificate`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Forward relevant headers from the original request
+          ...Object.fromEntries(
+            [...req.headers.entries()].filter(([key]) =>
+              ["authorization", "cookie", "user-agent"].includes(
+                key.toLowerCase()
+              )
+            )
           ),
-        ),
-      },
-      body: JSON.stringify(body),
-    });
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
       const errorMessage = `Failed to generate certificate: ${response.status} ${response.statusText}`;
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
         subject: { entityType: "certificate" },
         context: {
           function: "POST",
-          file: "app/api/certificate/route.ts",
+          file: "app/api/v2/documents/certificate/route.ts",
           status: response.status,
         },
       });
@@ -64,7 +70,7 @@ export async function POST(req: NextRequest) {
           headers: {
             "Content-Type": "application/json",
           },
-        },
+        }
       );
     }
 
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
       subject: { entityType: "certificate" },
       context: {
         function: "POST",
-        file: "app/api/certificate/route.ts",
+        file: "app/api/v2/documents/certificate/route.ts",
         contentType,
         contentDisposition,
       },
@@ -108,7 +114,10 @@ export async function POST(req: NextRequest) {
     await log.error("certificate.generate.error", {
       message: errorMessage,
       subject: { entityType: "certificate" },
-      context: { function: "POST", file: "app/api/certificate/route.ts" },
+      context: {
+        function: "POST",
+        file: "app/api/v2/documents/certificate/route.ts",
+      },
       error,
     });
 
@@ -123,7 +132,11 @@ export async function POST(req: NextRequest) {
         headers: {
           "Content-Type": "application/json",
         },
-      },
+      }
     );
   }
 }
+
+/* App-router specific tweaks */
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";

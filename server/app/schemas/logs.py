@@ -1,6 +1,6 @@
-"""Logs V2 API schemas (read-only)."""
+"""Logs V2 API schemas."""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -88,4 +88,40 @@ class LogsListResponse(BaseModel):
     """Response for logs list."""
 
     logs: List[LogItem]
+
+
+# ============================================================================
+# CREATE LOG SCHEMAS
+# ============================================================================
+
+
+class CorrelationData(BaseModel):
+    """Correlation data for log creation."""
+
+    correlationId: Optional[str] = None
+    requestId: Optional[str] = None
+    sessionId: Optional[str] = None
+    attemptId: Optional[str] = None
+    chatId: Optional[str] = None
+
+
+class CreateLogRequest(BaseModel):
+    """Request to create a log entry."""
+
+    event: Optional[str] = "legacy.message"
+    level: Optional[str] = "info"
+    message: Optional[str] = None
+    correlation: Optional[CorrelationData] = None
+    actor: Optional[Dict[str, Any]] = None
+    subject: Optional[Dict[str, Any]] = None
+    metrics: Optional[Dict[str, Any]] = None
+    context: Optional[Dict[str, Any]] = None
+    error: Optional[Dict[str, Any]] = None
+
+
+class CreateLogResponse(BaseModel):
+    """Response from creating a log entry."""
+
+    success: bool
+    log_id: Optional[int] = None
 
