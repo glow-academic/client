@@ -18,7 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useCreateRubric, useUpdateRubric } from "@/lib/api/v1/hooks/rubrics";
+import { useCreateRubric } from "@/lib/api/v2/hooks/rubrics";
+import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/useRubricUnifiedUpdate";
 import { Rubric as RubricType } from "@/types";
 import { log } from "@/utils/logger";
 import { Edit } from "lucide-react";
@@ -31,6 +32,7 @@ export interface RubricDetailsProps {
   validDepartmentIds: string[];
   isCreateMode?: boolean;
   isReadonly?: boolean;
+  profileId?: string; // Required for v2 unified update
 }
 
 export default function RubricDetails({
@@ -40,15 +42,16 @@ export default function RubricDetails({
   validDepartmentIds,
   isCreateMode = false,
   isReadonly = false,
+  profileId,
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
 
-  // Mutation hooks
+  // V2 mutation hooks
   const createRubricMutation = useCreateRubric();
-  const updateRubricMutation = useUpdateRubric();
+  const { updateRubric, isPending: isUpdating } = useRubricUnifiedUpdate();
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
@@ -80,28 +83,49 @@ export default function RubricDetails({
 
     try {
       if (isCreateMode) {
-        // For creation, start with 0 points (will be calculated when standard groups are added)
+        // V2 create with empty standard_groups (will be added later)
         const data = await createRubricMutation.mutateAsync({
-          ...formData,
-          points: 0,
+          name: formData.name,
+          description: formData.description,
+          department_id: formData.departmentId,
+          active: formData.active,
+          default_rubric: false,
+          points: 0, // Will be calculated when standard groups are added
           passPoints: 0,
+          standard_groups: [], // Start with no standard groups
         });
-        if (data && "id" in data) {
+        
+        if (data && data.rubricId) {
+          toast.success("Rubric created successfully");
           // Redirect to the newly created rubric for editing
-          router.push(`/management/rubrics/r/${data.id}`);
+          router.push(`/management/rubrics/r/${data.rubricId}`);
         }
       } else {
-        // For updates, only update metadata - points are managed by standard groups
-        await updateRubricMutation.mutateAsync({
-          id: rubricId,
-          ...formData,
+        // V2 unified update - only update metadata, preserve standard groups
+        if (!profileId) {
+          toast.error("Profile ID is required for updates");
+          return;
+        }
+
+        const result = await updateRubric({
+          rubricId,
+          profileId,
+          name: formData.name,
+          description: formData.description,
+          departmentId: formData.departmentId,
+          active: formData.active,
+          defaultRubric: rubric.defaultRubric ?? false,
+          standardGroupUpdates: [], // No changes to standard groups, just metadata
         });
-        toast.success("Rubric updated successfully");
+
+        toast.success(
+          `Rubric updated successfully. Total points: ${result.points}`
+        );
         setIsEditing(false);
       }
     } catch (error) {
-      log.error("rubric.update.failed", {
-        message: "Error updating rubric",
+      log.error("rubric.save.failed", {
+        message: isCreateMode ? "Error creating rubric" : "Error updating rubric",
         error,
         context: { component: "RubricDetails", rubricId },
       });
@@ -139,7 +163,7 @@ export default function RubricDetails({
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="text-2xl font-bold"
                   placeholder="Rubric Name"
-                  disabled={updateRubricMutation.isPending || isReadonly}
+                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
                 />
               </div>
               <div className="space-y-2">
@@ -151,7 +175,7 @@ export default function RubricDetails({
                     handleInputChange("description", e.target.value)
                   }
                   placeholder="Rubric Description"
-                  disabled={updateRubricMutation.isPending || isReadonly}
+                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
                 />
               </div>
 
@@ -167,7 +191,7 @@ export default function RubricDetails({
                     }
                     onSelect={(ids) => handleDepartmentChange(ids[0] || null)}
                     placeholder="Select department"
-                    disabled={updateRubricMutation.isPending || isReadonly}
+                    disabled={createRubricMutation.isPending || isUpdating || isReadonly}
                     multiSelect={false}
                   />
                 </div>
@@ -179,7 +203,7 @@ export default function RubricDetails({
                   onCheckedChange={(checked) =>
                     handleInputChange("active", checked)
                   }
-                  disabled={updateRubricMutation.isPending || isReadonly}
+                  disabled={createRubricMutation.isPending || isUpdating || isReadonly}
                 />
                 <Label htmlFor="active">Active</Label>
               </div>
@@ -232,15 +256,17 @@ export default function RubricDetails({
                 <Button
                   variant="outline"
                   onClick={handleCancel}
-                  disabled={updateRubricMutation.isPending}
+                  disabled={createRubricMutation.isPending || isUpdating}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={updateRubricMutation.isPending || isReadonly}
+                  disabled={
+                    createRubricMutation.isPending || isUpdating || isReadonly
+                  }
                 >
-                  {updateRubricMutation.isPending
+                  {createRubricMutation.isPending || isUpdating
                     ? isCreateMode
                       ? "Creating..."
                       : "Updating..."

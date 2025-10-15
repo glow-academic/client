@@ -217,6 +217,7 @@ export default function Rubric({ rubricId }: RubricProps) {
         validDepartmentIds={rubricData?.valid_department_ids || []}
         isCreateMode={!isEditMode}
         isReadonly={isReadonly}
+        profileId={effectiveProfile?.id || ""}
       />
 
       {/* Standard Groups - Only show in edit mode */}
