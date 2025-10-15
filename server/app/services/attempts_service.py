@@ -28,7 +28,7 @@ class AttemptsService:
             WHERE id = ANY(:attempt_ids::uuid[])
         """)
 
-        result = self.db.execute(
+        self.db.execute(
             update_query,
             {
                 "archived": request.archived,
@@ -39,7 +39,7 @@ class AttemptsService:
         self.db.commit()
 
         action = "archived" if request.archived else "unarchived"
-        count = result.rowcount
+        count = len(request.attemptIds)
 
         return BulkArchiveAttemptsResponse(
             success=True,

@@ -53,8 +53,6 @@ export default function RubricDetails({
     name: rubric.name || "",
     description: rubric.description || "",
     active: rubric.active ?? true,
-    points: rubric.points || 0,
-    passPoints: rubric.passPoints || 0,
     departmentId:
       rubric.departmentId ||
       (effectiveProfile?.role === "superadmin"
@@ -82,12 +80,18 @@ export default function RubricDetails({
 
     try {
       if (isCreateMode) {
-        const data = await createRubricMutation.mutateAsync(formData);
+        // For creation, start with 0 points (will be calculated when standard groups are added)
+        const data = await createRubricMutation.mutateAsync({
+          ...formData,
+          points: 0,
+          passPoints: 0,
+        });
         if (data && "id" in data) {
           // Redirect to the newly created rubric for editing
           router.push(`/management/rubrics/r/${data.id}`);
         }
       } else {
+        // For updates, only update metadata - points are managed by standard groups
         await updateRubricMutation.mutateAsync({
           id: rubricId,
           ...formData,
@@ -113,8 +117,6 @@ export default function RubricDetails({
       name: rubric.name,
       description: rubric.description,
       active: rubric.active ?? true,
-      points: rubric.points,
-      passPoints: rubric.passPoints,
       departmentId:
         rubric.departmentId ||
         (effectiveProfile?.role === "superadmin"

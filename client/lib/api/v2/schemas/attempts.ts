@@ -21,4 +21,3 @@ export type BulkArchiveAttemptsRequest = z.infer<
 export type BulkArchiveAttemptsResponse = z.infer<
   typeof BulkArchiveAttemptsResponseSchema
 >;
-

@@ -141,6 +141,17 @@ export const StandardCreateSchema = z.object({
 
 export type StandardCreate = z.infer<typeof StandardCreateSchema>;
 
+// Standard update schema for incremental updates
+export const StandardUpdateSchema = z.object({
+  id: z.string().optional(), // Present for updates, absent for creates
+  name: z.string(),
+  description: z.string(),
+  points: z.number(),
+  deleted: z.boolean().default(false), // Mark for deletion
+});
+
+export type StandardUpdate = z.infer<typeof StandardUpdateSchema>;
+
 // Nested standard group schema for create/update
 export const StandardGroupCreateSchema = z.object({
   name: z.string(),
@@ -152,6 +163,20 @@ export const StandardGroupCreateSchema = z.object({
 });
 
 export type StandardGroupCreate = z.infer<typeof StandardGroupCreateSchema>;
+
+// Standard group update schema for incremental updates
+export const StandardGroupUpdateSchema = z.object({
+  id: z.string().optional(), // Present for updates, absent for creates
+  name: z.string(),
+  short_name: z.string(),
+  description: z.string(),
+  points: z.number(),
+  passPoints: z.number(),
+  standards: z.array(StandardUpdateSchema),
+  deleted: z.boolean().default(false), // Mark for deletion
+});
+
+export type StandardGroupUpdate = z.infer<typeof StandardGroupUpdateSchema>;
 
 // Create request
 export const CreateRubricRequestSchema = z.object({
@@ -175,7 +200,7 @@ export const CreateRubricResponseSchema = z.object({
 
 export type CreateRubricResponse = z.infer<typeof CreateRubricResponseSchema>;
 
-// Update request
+// Update request - uses StandardGroupUpdate for incremental updates
 export const UpdateRubricRequestSchema = z.object({
   rubricId: z.string(),
   name: z.string(),
@@ -183,9 +208,8 @@ export const UpdateRubricRequestSchema = z.object({
   department_id: z.string(),
   active: z.boolean(),
   default_rubric: z.boolean(),
-  points: z.number(),
-  passPoints: z.number(),
-  standard_groups: z.array(StandardGroupCreateSchema),
+  standard_groups: z.array(StandardGroupUpdateSchema),
+  // points and passPoints are auto-calculated by server
 });
 
 export type UpdateRubricRequest = z.infer<typeof UpdateRubricRequestSchema>;
@@ -193,6 +217,8 @@ export type UpdateRubricRequest = z.infer<typeof UpdateRubricRequestSchema>;
 export const UpdateRubricResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  points: z.number(), // Auto-calculated from standard groups
+  passPoints: z.number(), // Auto-calculated from standard groups
 });
 
 export type UpdateRubricResponse = z.infer<typeof UpdateRubricResponseSchema>;

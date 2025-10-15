@@ -296,7 +296,7 @@ class RubricService:
         )
 
     def update_rubric(self, request: UpdateRubricRequest) -> UpdateRubricResponse:
-        """Update an existing rubric (replace entire hierarchy)."""
+        """Update an existing rubric with incremental updates to standard groups and standards."""
 
         # Check if rubric exists
         query, params = self.queries.get_rubric_name(request.rubricId)
@@ -305,7 +305,74 @@ class RubricService:
         if not existing:
             raise ValueError(f"Rubric not found: {request.rubricId}")
 
-        # Update rubric
+        # Process standard groups incrementally
+        create_group_query, _ = self.queries.create_standard_group()
+        update_group_query, _ = self.queries.update_standard_group()
+        create_standard_query, _ = self.queries.create_standard()
+        update_standard_query, _ = self.queries.update_standard()
+
+        for group in request.standard_groups:
+            if group.deleted and group.id:
+                # Delete marked standard group (cascade deletes standards)
+                query, params = self.queries.delete_standard_group_by_id(group.id)
+                self.db.execute(text(query), params)
+            elif group.id:
+                # Update existing standard group
+                self.db.execute(
+                    text(update_group_query),
+                    {
+                        "id": group.id,
+                        "name": group.name,
+                        "short_name": group.short_name,
+                        "description": group.description,
+                        "points": group.points,
+                        "pass_points": group.passPoints,
+                    },
+                )
+
+                # Process standards for this group
+                self._process_standards(
+                    group.id,
+                    group.standards,
+                    create_standard_query,
+                    update_standard_query,
+                )
+            else:
+                # Create new standard group
+                group_result = self.db.execute(
+                    text(create_group_query),
+                    {
+                        "rubric_id": request.rubricId,
+                        "name": group.name,
+                        "short_name": group.short_name,
+                        "description": group.description,
+                        "points": group.points,
+                        "pass_points": group.passPoints,
+                    },
+                ).fetchone()
+
+                if not group_result:
+                    raise ValueError("Failed to create standard group")
+
+                group_id = str(group_result.id)
+
+                # Create standards for new group
+                for standard in group.standards:
+                    if not standard.deleted:
+                        self.db.execute(
+                            text(create_standard_query),
+                            {
+                                "standard_group_id": group_id,
+                                "name": standard.name,
+                                "description": standard.description,
+                                "points": standard.points,
+                            },
+                        )
+
+        # Calculate and update rubric points from standard groups
+        calculated_points = self._calculate_rubric_points(request.rubricId)
+
+        # Update rubric with basic info and calculated points
         query, _ = self.queries.update_rubric()
         self.db.execute(
             text(query),
@@ -316,40 +383,48 @@ class RubricService:
                 "department_id": request.department_id,
                 "active": request.active,
                 "default_rubric": request.default_rubric,
-                "points": request.points,
-                "pass_points": request.passPoints,
+                "points": calculated_points["points"],
+                "pass_points": calculated_points["passPoints"],
             },
         )
 
-        # Delete existing standard groups (cascade deletes standards)
-        query, params = self.queries.delete_standard_groups(request.rubricId)
-        self.db.execute(text(query), params)
+        self.db.commit()
 
-        # Recreate standard groups and standards
-        group_query, _ = self.queries.create_standard_group()
-        standard_query, _ = self.queries.create_standard()
+        return UpdateRubricResponse(
+            success=True,
+            message=f"Rubric '{request.name}' updated successfully",
+            points=calculated_points["points"],
+            passPoints=calculated_points["passPoints"],
+        )
 
-        for group in request.standard_groups:
-            group_result = self.db.execute(
-                text(group_query),
-                {
-                    "rubric_id": request.rubricId,
-                    "name": group.name,
-                    "short_name": group.short_name,
-                    "description": group.description,
-                    "points": group.points,
-                    "pass_points": group.passPoints,
-                },
-            ).fetchone()
-
-            if not group_result:
-                raise ValueError("Failed to create standard group")
-
-            group_id = str(group_result.id)
-
-            for standard in group.standards:
+    def _process_standards(
+        self,
+        group_id: str,
+        standards: List[Any],
+        create_query: str,
+        update_query: str,
+    ) -> None:
+        """Process standards for a standard group (create, update, or delete)."""
+        for standard in standards:
+            if standard.deleted and standard.id:
+                # Delete marked standard
+                query, params = self.queries.delete_standard_by_id(standard.id)
+                self.db.execute(text(query), params)
+            elif standard.id:
+                # Update existing standard
                 self.db.execute(
-                    text(standard_query),
+                    text(update_query),
+                    {
+                        "id": standard.id,
+                        "name": standard.name,
+                        "description": standard.description,
+                        "points": standard.points,
+                    },
+                )
+            else:
+                # Create new standard
+                self.db.execute(
+                    text(create_query),
                     {
                         "standard_group_id": group_id,
                         "name": standard.name,
@@ -358,11 +433,18 @@ class RubricService:
                     },
                 )
 
-        self.db.commit()
+    def _calculate_rubric_points(self, rubric_id: str) -> Dict[str, int]:
+        """Calculate rubric points from all standard groups."""
+        query, params = self.queries.calculate_rubric_points(rubric_id)
+        result = self.db.execute(text(query), params).fetchone()
 
-        return UpdateRubricResponse(
-            success=True, message=f"Rubric '{request.name}' updated successfully"
-        )
+        if not result:
+            return {"points": 0, "passPoints": 0}
+
+        return {
+            "points": int(result.total_points),
+            "passPoints": int(result.total_pass_points),
+        }
 
     def duplicate_rubric(
         self, request: DuplicateRubricRequest

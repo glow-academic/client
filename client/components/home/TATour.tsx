@@ -13,13 +13,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useTour } from "@/contexts/tour-context";
 import { useWebSocket } from "@/contexts/websocket-context";
-import { useCohortsByDepartmentIdBatch } from "@/lib/api/v1/hooks/cohorts";
 import { useUpdateProfile } from "@/lib/api/v1/hooks/profiles";
-import { useSimulationsByDepartmentIdBatch } from "@/lib/api/v1/hooks/simulations";
 import {
   profileKeys,
   simulationAttemptKeys,
@@ -93,11 +90,12 @@ function GuideButton() {
 export default function TATour() {
   const router = useRouter();
   const pathname = usePathname();
-  const { effectiveProfile, activeProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-  const { data: simulations } = useSimulationsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
+  const {
+    effectiveProfile,
+    activeProfile,
+    simulations,
+    cohorts: taCohorts,
+  } = useProfile();
   const { isConnected, emitStartSimulation, startingSimulationId } =
     useWebSocket();
   const queryClient = useQueryClient();
@@ -128,18 +126,6 @@ export default function TATour() {
   useEffect(() => {
     tourStateRef.current = tourState;
   }, [tourState]);
-
-  const { data: cohorts = [] } = useCohortsByDepartmentIdBatch(
-    effectiveDepartmentIds
-  );
-
-  // Get TA's assigned cohorts
-  const taCohorts = useMemo(() => {
-    if (!effectiveProfile || !cohorts) return [];
-    return cohorts.filter((cohort) =>
-      cohort.profileIds?.includes(effectiveProfile.id)
-    );
-  }, [effectiveProfile, cohorts]);
 
   // Reflect assigned cohort availability into tour context for UI gating/tooltips
   useEffect(() => {

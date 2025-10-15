@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from app.queries.auth_queries import AuthQueries
 from app.schemas.auth import (BreadcrumbItem, CohortItem, CohortsData,
                               DepartmentItem, ProfileContextRequest,
-                              ProfileContextResponse, ProfileItem)
+                              ProfileContextResponse, ProfileItem,
+                              SimulationContextItem, SimulationsData)
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -231,6 +232,12 @@ class AuthService:
         # Get cohort IDs
         cohort_ids = [cohort.id for cohort in cohorts.items]
 
+        # Fetch simulations based on EFFECTIVE profile
+        simulations = self._get_user_simulations(effective_profile_id, department_ids)
+
+        # Get simulation IDs
+        simulation_ids = [sim.id for sim in simulations.items]
+
         # Resolve breadcrumbs
         breadcrumbs = self._resolve_breadcrumbs(pathname)
 
@@ -241,6 +248,8 @@ class AuthService:
             departmentIds=department_ids,
             cohorts=cohorts,
             cohortIds=cohort_ids,
+            simulations=simulations,
+            simulationIds=simulation_ids,
             breadcrumbs=breadcrumbs,
         )
 
@@ -381,6 +390,45 @@ class AuthService:
             }
 
         return CohortsData(items=cohorts, memberCounts=member_counts)
+
+    def _get_user_simulations(
+        self, profile_id: str, department_ids: List[str]
+    ) -> SimulationsData:
+        """Fetch simulations for user's departments."""
+        if not department_ids:
+            return SimulationsData(items=[])
+
+        # Fetch simulations for user's departments
+        placeholders = ", ".join([f":dept_id_{i}" for i in range(len(department_ids))])
+        query = text(
+            f"""
+            SELECT 
+                s.id, s.title as name, s.description, s.department_id,
+                s.time_limit, s.active, s.practice_simulation, s.default_simulation
+            FROM simulations s
+            WHERE s.department_id IN ({placeholders})
+            AND s.active = true
+            ORDER BY s.practice_simulation DESC, s.default_simulation DESC, s.title
+            """
+        )
+        params = {f"dept_id_{i}": dept_id for i, dept_id in enumerate(department_ids)}
+        results = self.db.execute(query, params).fetchall()
+
+        simulations = [
+            SimulationContextItem(
+                id=str(row.id),
+                name=row.name,
+                description=row.description or "",
+                departmentId=str(row.department_id),
+                timeLimit=row.time_limit,
+                active=row.active,
+                practiceSimulation=row.practice_simulation,
+                defaultSimulation=row.default_simulation,
+            )
+            for row in results
+        ]
+
+        return SimulationsData(items=simulations)
 
     def _resolve_breadcrumbs(self, pathname: str) -> List[BreadcrumbItem]:
         """Resolve breadcrumbs from pathname."""

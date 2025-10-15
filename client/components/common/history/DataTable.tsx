@@ -37,8 +37,7 @@ import {
 } from "@/components/ui/table";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { useRefreshAnalytics } from "@/lib/api/v1/hooks/analytics";
-import { useUpdateSimulationAttempts } from "@/lib/api/v1/hooks/simulation_attempts";
+import { useBulkArchiveAttempts } from "@/lib/api/v2/hooks/attempts";
 import { log } from "@/utils/logger";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
@@ -102,8 +101,7 @@ export function DataTable<TData, TValue>({
     null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
-  const updateSimulationAttemptsMutation = useUpdateSimulationAttempts();
-  const { mutate: refreshAnalytics } = useRefreshAnalytics();
+  const bulkArchiveMutation = useBulkArchiveAttempts();
 
   // Helper functions to normalize id and archived fields
   const getRowId = (item: unknown) => {
@@ -239,14 +237,15 @@ export function DataTable<TData, TValue>({
         const isArchived = getArchived(item);
         return archiveAction ? !isArchived : isArchived;
       })
-      .map((item) => ({ id: getRowId(item), archived: archiveAction }));
+      .map((item) => getRowId(item));
 
     if (attemptsToUpdate.length === 0) return;
 
     setIsArchiving(true);
     try {
-      await updateSimulationAttemptsMutation.mutateAsync({
-        updates: attemptsToUpdate,
+      await bulkArchiveMutation.mutateAsync({
+        attemptIds: attemptsToUpdate,
+        archived: archiveAction,
       });
 
       // Log success for bulk operation (single log entry instead of individual ones)
@@ -264,22 +263,6 @@ export function DataTable<TData, TValue>({
       toast.success(
         `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
       );
-
-      // Refresh analytics data after archive status change
-      refreshAnalytics(undefined, {
-        onError: (error) => {
-          log.error("analytics.refresh.after_archive.failed", {
-            message: "Failed to refresh analytics after archive status change",
-            error,
-            context: {
-              component: "DataTable",
-              function: "executeBulkArchive",
-              action: archiveAction ? "archive" : "unarchive",
-              count: attemptsToUpdate.length,
-            },
-          });
-        },
-      });
 
       // Clear selection after success
       table.resetRowSelection();
@@ -301,12 +284,7 @@ export function DataTable<TData, TValue>({
     } finally {
       setIsArchiving(false);
     }
-  }, [
-    archiveAction,
-    table,
-    updateSimulationAttemptsMutation,
-    refreshAnalytics,
-  ]);
+  }, [archiveAction, table, bulkArchiveMutation]);
 
   return (
     <div className="space-y-4">

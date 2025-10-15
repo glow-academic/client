@@ -33,18 +33,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateRubric } from "@/lib/api/v1/hooks/rubrics";
-import {
-  useCreateStandardGroup,
-  useDeleteStandardGroup,
-  useStandardGroupsByRubricId,
-  useUpdateStandardGroup,
-} from "@/lib/api/v1/hooks/standard_groups";
-import {
-  useCreateStandard,
-  useDeleteStandards,
-  useUpdateStandard,
-} from "@/lib/api/v1/hooks/standards";
+import { useRubricUnifiedUpdate } from "@/lib/api/v2/hooks/useRubricUnifiedUpdate";
+import type {
+  StandardGroupUpdate,
+  StandardUpdate,
+} from "@/lib/api/v2/schemas/rubrics";
 import { Standard, StandardGroup } from "@/types";
 import { log } from "@/utils/logger";
 import {
@@ -233,6 +226,13 @@ export interface RubricStandardGroupProps {
   isOpen: boolean;
   onToggle: (index: number) => void;
   mode?: "edit" | "create";
+  // Required for unified update
+  rubricName: string;
+  rubricDescription: string;
+  rubricDepartmentId: string;
+  rubricActive: boolean;
+  rubricDefaultRubric: boolean;
+  profileId: string;
 }
 
 interface StandardFormData {
@@ -259,18 +259,17 @@ export default function RubricStandardGroup({
   isOpen,
   onToggle,
   mode = "edit",
+  rubricName,
+  rubricDescription,
+  rubricDepartmentId,
+  rubricActive,
+  rubricDefaultRubric,
+  profileId,
 }: RubricStandardGroupProps) {
   const [isEditing, setIsEditing] = useState(mode === "create");
 
-  // Mutation hooks
-  const createStandardGroupMutation = useCreateStandardGroup();
-  const updateStandardGroupMutation = useUpdateStandardGroup();
-  const deleteStandardGroupMutation = useDeleteStandardGroup();
-  const createStandardMutation = useCreateStandard();
-  const updateStandardMutation = useUpdateStandard();
-  const deleteStandardsMutation = useDeleteStandards();
-  const updateRubricMutation = useUpdateRubric();
-  const { data: standardGroups } = useStandardGroupsByRubricId(rubricId);
+  // Use unified update hook
+  const { updateRubric, isPending } = useRubricUnifiedUpdate();
 
   // Form state for standard group
   const [groupFormData, setGroupFormData] = useState<StandardGroupFormData>({
@@ -440,110 +439,44 @@ export default function RubricStandardGroup({
     }
 
     try {
-      if (mode === "create") {
-        // Create new standard group
-        const newGroup = await createStandardGroupMutation.mutateAsync({
-          ...groupFormData,
-          points: parseInt(groupFormData.points),
-          passPoints: parseInt(groupFormData.passPoints),
-          rubricId,
-          shortName: groupFormData.name.substring(0, 10).toUpperCase(),
-        });
+      // Build the standard group update for this group
+      const standards: StandardUpdate[] = standardsFormData.map((standard) => ({
+        id: standard.id,
+        name: standard.name,
+        description: standard.description,
+        points: parseInt(standard.points),
+        deleted: standard.isDeleted || false,
+      }));
 
-        // Create standards for the new group
-        if (newGroup?.id) {
-          const promises: Promise<unknown>[] = [];
-          standardsFormData.forEach((standard) => {
-            if (!standard.isDeleted) {
-              promises.push(
-                createStandardMutation.mutateAsync({
-                  name: standard.name,
-                  description: standard.description,
-                  points: parseInt(standard.points),
-                  standardGroupId: newGroup.id,
-                })
-              );
-            }
-          });
+      const groupUpdate: StandardGroupUpdate = {
+        id: mode === "create" ? undefined : group?.id,
+        name: groupFormData.name,
+        short_name: groupFormData.name.substring(0, 10).toUpperCase(),
+        description: groupFormData.description,
+        points: parseInt(groupFormData.points),
+        passPoints: parseInt(groupFormData.passPoints),
+        standards,
+        deleted: false,
+      };
 
-          await Promise.all(promises);
-        }
+      // Call unified update with this group's changes
+      const result = await updateRubric({
+        rubricId,
+        profileId,
+        name: rubricName,
+        description: rubricDescription,
+        departmentId: rubricDepartmentId,
+        active: rubricActive,
+        defaultRubric: rubricDefaultRubric,
+        standardGroupUpdates: [groupUpdate],
+      });
 
-        toast.success("Standard group and standards created successfully");
-      } else {
-        // Update existing standard group
-        await updateStandardGroupMutation.mutateAsync({
-          id: group!.id,
-          ...groupFormData,
-          points: parseInt(groupFormData.points),
-          passPoints: parseInt(groupFormData.passPoints),
-        });
-
-        // Handle standards with bulk operations
-        const promises: Promise<unknown>[] = [];
-
-        // Collect standards to delete for bulk operation
-        const standardsToDelete = standardsFormData
-          .filter((standard) => standard.isDeleted && standard.id)
-          .map((standard) => standard.id!);
-
-        // Collect standards to create
-        const standardsToCreate = standardsFormData
-          .filter((standard) => standard.isNew && !standard.isDeleted)
-          .map((standard) => ({
-            name: standard.name,
-            description: standard.description,
-            points: parseInt(standard.points),
-            standardGroupId: group!.id,
-          }));
-
-        // Collect standards to update
-        const standardsToUpdate = standardsFormData
-          .filter(
-            (standard) => !standard.isNew && !standard.isDeleted && standard.id
-          )
-          .map((standard) => ({
-            id: standard.id,
-            name: standard.name,
-            description: standard.description,
-            points: parseInt(standard.points),
-          }));
-
-        // Execute bulk operations
-        if (standardsToDelete.length > 0) {
-          promises.push(
-            deleteStandardsMutation.mutateAsync({ ids: standardsToDelete })
-          );
-        }
-
-        if (standardsToCreate.length > 0) {
-          promises.push(
-            ...standardsToCreate.map((standard) =>
-              createStandardMutation.mutateAsync(standard)
-            )
-          );
-        }
-
-        if (standardsToUpdate.length > 0) {
-          promises.push(
-            ...standardsToUpdate.map((standard) =>
-              updateStandardMutation.mutateAsync({
-                id: standard.id!,
-                name: standard.name,
-                description: standard.description,
-                points: standard.points,
-              })
-            )
-          );
-        }
-
-        await Promise.all(promises);
-        setIsEditing(false);
-        toast.success("All changes saved successfully");
-      }
-
-      // Update rubric points after successful save
-      await updateRubricPoints();
+      setIsEditing(false);
+      toast.success(
+        mode === "create"
+          ? `Standard group created successfully. Total points: ${result.points}`
+          : `Changes saved successfully. Total points: ${result.points}`
+      );
     } catch (error) {
       log.error("rubric.standard_group.save.failed", {
         message: "Error saving standard group changes",
@@ -595,61 +528,51 @@ export default function RubricStandardGroup({
 
   const handleDeleteGroup = async () => {
     if (
-      confirm(
+      !confirm(
         "Are you sure you want to delete this standard group? This will also delete all associated standards."
       )
     ) {
-      try {
-        await deleteStandardGroupMutation.mutateAsync(group!.id);
-        toast.success("Standard group deleted successfully");
-        await updateRubricPoints();
-      } catch (error) {
-        log.error("rubric.standard_group.delete.failed", {
-          message: "Error deleting standard group",
-          error,
-          context: {
-            component: "RubricStandardGroup",
-            rubricId,
-            groupId: group!.id,
-          },
-        });
-        toast.error("Failed to delete standard group");
-      }
-    }
-  };
-
-  // Function to update rubric points based on all standard groups
-  const updateRubricPoints = async () => {
-    // Skip updating rubric points in creation mode
-    if (rubricId === "new") {
       return;
     }
 
     try {
-      // Use the data from the hook instead of fetching manually
-      if (standardGroups) {
-        const totalPoints = standardGroups.reduce(
-          (sum, group) => sum + group.points,
-          0
-        );
-        const totalPassPoints = standardGroups.reduce(
-          (sum, group) => sum + group.passPoints,
-          0
-        );
+      // Mark this group as deleted and update via unified endpoint
+      const groupUpdate: StandardGroupUpdate = {
+        id: group!.id,
+        name: groupFormData.name,
+        short_name: groupFormData.name.substring(0, 10).toUpperCase(),
+        description: groupFormData.description,
+        points: parseInt(groupFormData.points),
+        passPoints: parseInt(groupFormData.passPoints),
+        standards: [],
+        deleted: true, // Mark for deletion
+      };
 
-        // Update the rubric with new totals
-        await updateRubricMutation.mutateAsync({
-          id: rubricId,
-          points: totalPoints,
-          passPoints: totalPassPoints,
-        });
-      }
-    } catch (error) {
-      log.error("rubric.points.update.failed", {
-        message: "Error updating rubric points",
-        error,
-        context: { component: "RubricStandardGroup", rubricId },
+      const result = await updateRubric({
+        rubricId,
+        profileId,
+        name: rubricName,
+        description: rubricDescription,
+        departmentId: rubricDepartmentId,
+        active: rubricActive,
+        defaultRubric: rubricDefaultRubric,
+        standardGroupUpdates: [groupUpdate],
       });
+
+      toast.success(
+        `Standard group deleted successfully. Total points: ${result.points}`
+      );
+    } catch (error) {
+      log.error("rubric.standard_group.delete.failed", {
+        message: "Error deleting standard group",
+        error,
+        context: {
+          component: "RubricStandardGroup",
+          rubricId,
+          groupId: group!.id,
+        },
+      });
+      toast.error("Failed to delete standard group");
     }
   };
 
@@ -913,11 +836,19 @@ export default function RubricStandardGroup({
             {/* Save/Cancel buttons - Only show when editing */}
             {isEditing && (
               <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                <Button variant="outline" onClick={handleCancel}>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isPending}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSave}>
-                  {mode === "create" ? "Create" : "Update"}
+                <Button onClick={handleSave} disabled={isPending}>
+                  {isPending
+                    ? "Saving..."
+                    : mode === "create"
+                      ? "Create"
+                      : "Update"}
                 </Button>
               </div>
             )}

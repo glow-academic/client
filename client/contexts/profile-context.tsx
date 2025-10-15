@@ -74,6 +74,21 @@ const CohortsDataSchema = z.object({
   memberCounts: z.record(z.string(), z.number()),
 });
 
+const SimulationContextItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  departmentId: z.string(),
+  timeLimit: z.number().nullable(),
+  active: z.boolean(),
+  practiceSimulation: z.boolean(),
+  defaultSimulation: z.boolean(),
+});
+
+const SimulationsDataSchema = z.object({
+  items: z.array(SimulationContextItemSchema),
+});
+
 const LayoutContextResponseSchema = z.object({
   actualProfile: ProfileItemSchema,
   effectiveProfile: ProfileItemSchema,
@@ -81,6 +96,8 @@ const LayoutContextResponseSchema = z.object({
   departmentIds: z.array(z.string()),
   cohorts: CohortsDataSchema,
   cohortIds: z.array(z.string()),
+  simulations: SimulationsDataSchema,
+  simulationIds: z.array(z.string()),
   breadcrumbs: z.array(BreadcrumbItemSchema),
 });
 
@@ -88,6 +105,7 @@ export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 export type DepartmentItem = z.infer<typeof DepartmentItemSchema>;
 export type CohortItem = z.infer<typeof CohortItemSchema>;
+export type SimulationContextItem = z.infer<typeof SimulationContextItemSchema>;
 
 // A generic, fallback guest profile for when no user is logged in or during loading states.
 const GUEST_PROFILE: Profile = {
@@ -124,6 +142,8 @@ interface ProfileContextType {
   departmentIds: string[];
   cohorts: CohortItem[];
   cohortIds: string[];
+  simulations: SimulationContextItem[];
+  simulationIds: string[];
   cohortMemberCounts: Record<string, number>;
   breadcrumbs: BreadcrumbItem[];
 }
@@ -259,6 +279,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     departmentIds: layoutData?.departmentIds ?? [],
     cohorts: layoutData?.cohorts.items ?? [],
     cohortIds: layoutData?.cohortIds ?? [],
+    simulations: layoutData?.simulations.items ?? [],
+    simulationIds: layoutData?.simulationIds ?? [],
     cohortMemberCounts: layoutData?.cohorts.memberCounts ?? {},
     breadcrumbs: layoutData?.breadcrumbs ?? [],
   };

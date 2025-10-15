@@ -193,7 +193,7 @@ export default function Rubric({ rubricId }: RubricProps) {
   }
 
   // Error state for edit mode when rubric not found
-  if (isEditMode && !isLoading && !rubric) {
+  if (isEditMode && !isLoading && !rubricData) {
     return (
       <div className="space-y-6">
         <div>
@@ -233,6 +233,12 @@ export default function Rubric({ rubricId }: RubricProps) {
               isOpen={openCards[index] ?? false}
               onToggle={toggleCard}
               mode="edit"
+              rubricName={currentRubric.name}
+              rubricDescription={currentRubric.description}
+              rubricDepartmentId={currentRubric.departmentId}
+              rubricActive={currentRubric.active}
+              rubricDefaultRubric={currentRubric.defaultRubric}
+              profileId={effectiveProfile?.id || ""}
             />
           ))}
 
@@ -244,6 +250,12 @@ export default function Rubric({ rubricId }: RubricProps) {
             onToggle={() => {}} // No toggle needed for create mode
             mode="create"
             standards={[]} // Pass empty array for create mode
+            rubricName={currentRubric.name}
+            rubricDescription={currentRubric.description}
+            rubricDepartmentId={currentRubric.departmentId}
+            rubricActive={currentRubric.active}
+            rubricDefaultRubric={currentRubric.defaultRubric}
+            profileId={effectiveProfile?.id || ""}
           />
         </div>
       )}

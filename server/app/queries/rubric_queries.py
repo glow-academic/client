@@ -366,3 +366,67 @@ class RubricQueries:
         params = {"rubric_id": rubric_id}
         return (query, params)
 
+    def update_standard_group(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to update existing standard group."""
+        query = """
+        UPDATE standard_groups SET
+            name = :name,
+            short_name = :short_name,
+            description = :description,
+            points = :points,
+            pass_points = :pass_points,
+            updated_at = NOW()
+        WHERE id = :id
+        """
+        params: Dict[str, Any] = {}  # Will be filled at execution time
+        return (query, params)
+
+    def update_standard(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to update existing standard."""
+        query = """
+        UPDATE standards SET
+            name = :name,
+            description = :description,
+            points = :points,
+            updated_at = NOW()
+        WHERE id = :id
+        """
+        params: Dict[str, Any] = {}  # Will be filled at execution time
+        return (query, params)
+
+    def delete_standard_group_by_id(self, group_id: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to delete single standard group (cascade deletes standards)."""
+        query = "DELETE FROM standard_groups WHERE id = :group_id"
+        params = {"group_id": group_id}
+        return (query, params)
+
+    def delete_standard_by_id(self, standard_id: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to delete single standard."""
+        query = "DELETE FROM standards WHERE id = :standard_id"
+        params = {"standard_id": standard_id}
+        return (query, params)
+
+    def calculate_rubric_points(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+        """Build query to calculate rubric points from standard groups."""
+        query = """
+        SELECT 
+            COALESCE(SUM(points), 0) as total_points,
+            COALESCE(SUM(pass_points), 0) as total_pass_points
+        FROM standard_groups
+        WHERE rubric_id = :rubric_id
+        """
+        params = {"rubric_id": rubric_id}
+        return (query, params)
+
+    def update_rubric_points(self) -> Tuple[str, Dict[str, Any]]:
+        """Build query to update rubric points."""
+        query = """
+        UPDATE rubrics SET
+            points = :points,
+            pass_points = :pass_points,
+            updated_at = NOW()
+        WHERE id = :rubric_id
+        """
+        params: Dict[str, Any] = {}  # Will be filled at execution time
+        return (query, params)
+

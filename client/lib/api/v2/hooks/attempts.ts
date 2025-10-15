@@ -6,11 +6,11 @@
 import { api } from "@/lib/api/fetcher";
 import { simulationAttemptKeys } from "@/lib/api/v1/keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRefreshAnalytics } from "./analytics";
 import {
   BulkArchiveAttemptsRequest,
   BulkArchiveAttemptsResponse,
 } from "../schemas/attempts";
+import { useRefreshAnalytics } from "./analytics";
 
 export interface AttemptFullResponse {
   attempt: {
@@ -212,5 +212,24 @@ export function useAttemptFull(attemptId: string) {
     enabled: Boolean(attemptId),
     staleTime: 1000, // 1 second - allow WebSocket updates to trigger refetch
     refetchOnWindowFocus: false, // Don't refetch on window focus since we have active polling
+  });
+}
+
+export function useBulkArchiveAttempts() {
+  const qc = useQueryClient();
+  const { mutate: refreshAnalytics } = useRefreshAnalytics();
+
+  return useMutation({
+    mutationFn: (request: BulkArchiveAttemptsRequest) =>
+      api<BulkArchiveAttemptsResponse>("/api/v2/attempts/bulk-archive", {
+        method: "POST",
+        body: JSON.stringify(request),
+      }),
+    onSuccess: () => {
+      // Invalidate all simulation attempt queries
+      qc.invalidateQueries({ queryKey: simulationAttemptKeys.all });
+      // Refresh analytics MV
+      refreshAnalytics();
+    },
   });
 }

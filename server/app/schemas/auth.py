@@ -143,6 +143,25 @@ class CohortsData(BaseModel):
     memberCounts: Dict[str, int]
 
 
+class SimulationContextItem(BaseModel):
+    """Simplified simulation item for profile context."""
+
+    id: str
+    name: str
+    description: str
+    departmentId: str
+    timeLimit: Optional[int]
+    active: bool
+    practiceSimulation: bool
+    defaultSimulation: bool
+
+
+class SimulationsData(BaseModel):
+    """Simulations data."""
+
+    items: List[SimulationContextItem]
+
+
 class ProfileContextResponse(BaseModel):
     """Response with consolidated profile context data."""
 
@@ -152,5 +171,7 @@ class ProfileContextResponse(BaseModel):
     departmentIds: List[str]
     cohorts: CohortsData
     cohortIds: List[str]
+    simulations: SimulationsData
+    simulationIds: List[str]
     breadcrumbs: List[BreadcrumbItem]
 
