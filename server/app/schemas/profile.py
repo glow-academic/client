@@ -242,4 +242,6 @@ class ProfileContextResponse(BaseModel):
     breadcrumbs: List[BreadcrumbItem]
     simulatableProfiles: List[ProfileItem]
     earliestAttemptDate: Optional[str]  # ISO datetime of earliest simulation attempt
+    availableSections: List[str]  # Sections available to the effective profile's role
+    redirectPath: str  # Default redirect path for the effective profile's role
 

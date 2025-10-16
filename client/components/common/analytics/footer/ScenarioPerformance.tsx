@@ -38,7 +38,7 @@ import {
 import type {
   ScenarioAttributeAttemptFact,
   ScenarioAttributeScenarioFact,
-} from "@/lib/analytics";
+} from "@/lib/api/v2/schemas/analytics";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -156,7 +156,12 @@ export interface ScenarioPerformanceProps {
   /** Parameter item mapping object */
   parameterItemMapping: Record<
     string,
-    { name: string; description: string; parameter_id: string; parameter_name: string }
+    {
+      name: string;
+      description: string;
+      parameter_id: string;
+      parameter_name: string;
+    }
   >;
   /** Valid parameter IDs */
   validParameterIds: string[];
@@ -231,16 +236,16 @@ export default function ScenarioPerformance({
       allParameterItems.filter(
         (it) =>
           it.parameterId === activeParameterId &&
-          attributeScenarioFacts.some((f) => f.parameterItemId === it.id),
+          attributeScenarioFacts.some((f) => f.parameterItemId === it.id)
       ),
-    [allParameterItems, attributeScenarioFacts, activeParameterId],
+    [allParameterItems, attributeScenarioFacts, activeParameterId]
   );
 
   const totalScenariosForParam = useMemo(() => {
     const set = new Set(
       attributeScenarioFacts
         .filter((f) => f.parameterId === activeParameterId)
-        .map((f) => f.scenarioId),
+        .map((f) => f.scenarioId)
     );
     return set.size || 1; // avoid /0
   }, [attributeScenarioFacts, activeParameterId]);
@@ -248,12 +253,12 @@ export default function ScenarioPerformance({
   const elements: AttributeElement[] = useMemo(() => {
     return itemsForParameter.map((it, idx) => {
       const scen = attributeScenarioFacts.filter(
-        (f) => f.parameterItemId === it.id,
+        (f) => f.parameterItemId === it.id
       );
       const scenCount = new Set(scen.map((s) => s.scenarioId)).size;
 
       const attempts = attributeAttemptFacts.filter(
-        (f) => f.parameterItemId === it.id,
+        (f) => f.parameterItemId === it.id
       );
       const totalAttempts = attempts.reduce((s, a) => s + a.attempts, 0);
       const passed = attempts.reduce((s, a) => s + a.passedAttempts, 0);
@@ -261,7 +266,7 @@ export default function ScenarioPerformance({
         totalAttempts > 0
           ? Math.round(
               attempts.reduce((s, a) => s + a.avgScore * a.attempts, 0) /
-                totalAttempts,
+                totalAttempts
             )
           : 0;
       const completionRate =
@@ -319,7 +324,7 @@ export default function ScenarioPerformance({
   // Create lookup for custom tooltip
   const elementsByName = useMemo(
     () => Object.fromEntries(elements.map((e) => [e.name, e] as const)),
-    [elements],
+    [elements]
   );
 
   // Compact legend renderer for single-line layout
@@ -581,7 +586,7 @@ function ParamPicker({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    value === p.id ? "opacity-100" : "opacity-0",
+                    value === p.id ? "opacity-100" : "opacity-0"
                   )}
                 />
                 <div>

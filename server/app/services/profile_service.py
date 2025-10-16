@@ -275,6 +275,22 @@ class ProfileService:
         # Get earliest attempt date (global across all attempts)
         earliest_attempt_date = self._get_earliest_attempt_date()
 
+        # Get permissions data based on effective profile's role
+        from typing import cast
+
+        from app.schemas.permissions import ProfileRole
+        from app.services.permissions_service import permissions_service
+
+        # Cast role to ProfileRole for type safety
+        profile_role = cast(ProfileRole, effective_profile.role)
+        
+        available_sections = permissions_service.get_available_sections_for_role(
+            profile_role
+        )
+        redirect_path = permissions_service.get_redirect_path_for_role(
+            profile_role
+        )
+
         return ProfileContextResponse(
             actualProfile=actual_profile,
             effectiveProfile=effective_profile,
@@ -287,6 +303,8 @@ class ProfileService:
             breadcrumbs=breadcrumbs,
             simulatableProfiles=simulatable_profiles,
             earliestAttemptDate=earliest_attempt_date,
+            availableSections=available_sections,
+            redirectPath=redirect_path,
         )
 
     def _get_profile_id_from_user_id(self, user_id: str) -> Optional[str]:

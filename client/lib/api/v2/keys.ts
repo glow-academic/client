@@ -3,7 +3,7 @@
  * These keys are used by React Query for caching and invalidation
  */
 
-import { AnalyticsFilters } from "@/lib/analytics";
+import { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
 
 // Analytics Query Keys - v2 (server-side)
 

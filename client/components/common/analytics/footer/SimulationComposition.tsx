@@ -34,7 +34,7 @@ import type {
   SimulationFact,
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
-} from "@/lib/analytics";
+} from "@/lib/api/v2/schemas/analytics";
 import { ParameterItem } from "@/lib/api/v2/schemas/parameters";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";

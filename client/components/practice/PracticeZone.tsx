@@ -1,4 +1,4 @@
-import { PracticeSimulationItem } from "@/lib/analytics";
+import { PracticeSimulationItem } from "@/lib/api/v2/schemas/analytics";
 import type {
   StandardGroupsMapping,
   StandardsMapping,

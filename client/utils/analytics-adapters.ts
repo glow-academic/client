@@ -2,7 +2,7 @@
 // This file provides TypeScript adapters for analytics data that includes formatter functions
 // Since SQL can't emit JS functions, we return formatterId strings and map them on the client
 
-import type { GrowthMetric } from "@/lib/analytics";
+import type { GrowthMetric } from "@/lib/api/v2/schemas/analytics";
 
 type ServerMetric = Omit<GrowthMetric, "formatter"> & {
   formatterId: "percent" | "int" | "sec" | "min" | "hours" | "minutes";

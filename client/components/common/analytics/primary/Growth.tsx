@@ -15,7 +15,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { GrowthDataResponse, GrowthMetric } from "@/lib/analytics";
+import type {
+  GrowthDataResponse,
+  GrowthMetric,
+} from "@/lib/api/v2/schemas/analytics";
 import { attachFormatters } from "@/utils/analytics-adapters";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

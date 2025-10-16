@@ -102,6 +102,8 @@ const LayoutContextResponseSchema = z.object({
   breadcrumbs: z.array(BreadcrumbItemSchema),
   simulatableProfiles: z.array(ProfileItemSchema),
   earliestAttemptDate: z.string().nullable(),
+  availableSections: z.array(z.string()),
+  redirectPath: z.string(),
 });
 
 export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
@@ -151,6 +153,10 @@ interface ProfileContextType {
   breadcrumbs: BreadcrumbItem[];
   simulatableProfiles: ProfileItem[];
   earliestAttemptDate: string | null;
+
+  // Permissions data (from server)
+  availableSections: string[];
+  redirectPath: string;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -294,6 +300,10 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     breadcrumbs: layoutData?.breadcrumbs ?? [],
     simulatableProfiles: layoutData?.simulatableProfiles ?? [],
     earliestAttemptDate: layoutData?.earliestAttemptDate ?? null,
+
+    // Permissions data (from server)
+    availableSections: layoutData?.availableSections ?? [],
+    redirectPath: layoutData?.redirectPath ?? "/home",
   };
 
   return (

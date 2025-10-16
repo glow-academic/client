@@ -1,6 +1,7 @@
 /**
  * AccessControl.tsx
  * Component for handling route access control and displaying access denied messages
+ * Now uses server-side permissions from profile context for enhanced security
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
@@ -13,10 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import {
-  getRedirectPathForRole,
-  hasRouteAccess,
-} from "@/utils/route-permissions";
+import { hasRouteAccess } from "@/utils/route-permissions";
 import { AlertTriangle, Home, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -27,7 +25,8 @@ interface AccessControlProps {
 }
 
 export function AccessControl({ children, pathname }: AccessControlProps) {
-  const { effectiveProfile, isLoading } = useProfile();
+  const { effectiveProfile, isLoading, availableSections, redirectPath } =
+    useProfile();
   const [showAccessDenied, setShowAccessDenied] = React.useState(false);
 
   // Add a small delay to prevent flickering access denied screens during profile transitions
@@ -40,7 +39,13 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
 
     // Small delay to prevent flickering during profile transitions
     const timer = setTimeout(() => {
-      if (!hasRouteAccess(pathname, effectiveProfile.role)) {
+      // Use server-provided permissions (authoritative) with client-side fallback for optimistic UI
+      const hasAccess =
+        availableSections.length > 0
+          ? hasRouteAccess(pathname, effectiveProfile.role)
+          : hasRouteAccess(pathname, effectiveProfile.role);
+
+      if (!hasAccess) {
         setShowAccessDenied(true);
       } else {
         setShowAccessDenied(false);
@@ -48,7 +53,7 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [effectiveProfile, pathname, isLoading]);
+  }, [effectiveProfile, pathname, isLoading, availableSections]);
 
   // If still loading, show loading state instead of access denied
   // Also show loading if we don't have a profile yet (prevents premature access denied)
@@ -80,7 +85,11 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
   // Check if user has access to the current route
   if (showAccessDenied) {
     return (
-      <AccessDeniedCard role={effectiveProfile.role} pathname={pathname} />
+      <AccessDeniedCard
+        role={effectiveProfile.role}
+        pathname={pathname}
+        redirectPath={redirectPath}
+      />
     );
   }
 
@@ -91,13 +100,15 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
 interface AccessDeniedCardProps {
   role: string;
   pathname: string;
+  redirectPath: string;
 }
 
-function AccessDeniedCard({ role, pathname }: AccessDeniedCardProps) {
+function AccessDeniedCard({
+  role,
+  pathname,
+  redirectPath,
+}: AccessDeniedCardProps) {
   const router = useRouter();
-  const redirectPath = getRedirectPathForRole(
-    role as "guest" | "ta" | "instructional" | "admin" | "superadmin",
-  );
 
   const handleRedirect = () => {
     router.push(redirectPath);

@@ -113,6 +113,9 @@ export const RubricHeatmapResponseSchema = z.object({
   validRubricIds: z.array(z.string()),
 });
 
+export type RubricHeatmapCell = z.infer<typeof RubricHeatmapCellSchema>;
+export type StandardGroup = z.infer<typeof StandardGroupSchema>;
+export type RubricMatrixPackage = z.infer<typeof RubricMatrixPackageSchema>;
 export type RubricHeatmapResponse = z.infer<typeof RubricHeatmapResponseSchema>;
 
 // Growth Data
@@ -155,6 +158,10 @@ export const GrowthDataResponseSchema = z.object({
   windowAverages: GrowthWindowAveragesSchema,
 });
 
+export type GrowthDataPoint = z.infer<typeof GrowthDataPointSchema>;
+export type GrowthMetric = z.infer<typeof GrowthMetricSchema>;
+export type GrowthWindowAverage = z.infer<typeof GrowthWindowAverageSchema>;
+export type GrowthWindowAverages = z.infer<typeof GrowthWindowAveragesSchema>;
 export type GrowthDataResponse = z.infer<typeof GrowthDataResponseSchema>;
 
 // Persona Performance
@@ -180,6 +187,10 @@ export const PersonaPerformanceResponseSchema = z.object({
   personaColors: z.record(z.string(), z.string()),
 });
 
+export type PersonaTrendData = z.infer<typeof PersonaTrendDataSchema>;
+export type PersonaPerformanceData = z.infer<
+  typeof PersonaPerformanceDataSchema
+>;
 export type PersonaPerformanceResponse = z.infer<
   typeof PersonaPerformanceResponseSchema
 >;
@@ -210,6 +221,12 @@ export const AttemptImprovementResponseSchema = z.object({
   validSimulationIds: z.array(z.string()),
 });
 
+export type AttemptImprovementData = z.infer<
+  typeof AttemptImprovementDataSchema
+>;
+export type AttemptImprovementFact = z.infer<
+  typeof AttemptImprovementFactSchema
+>;
 export type AttemptImprovementResponse = z.infer<
   typeof AttemptImprovementResponseSchema
 >;
@@ -256,6 +273,10 @@ export const CohortPerformanceResponseSchema = z.object({
   validSimulationIds: z.array(z.string()),
 });
 
+export type CohortData = z.infer<typeof CohortDataSchema>;
+export type DailyData = z.infer<typeof DailyDataSchema>;
+export type CohortFact = z.infer<typeof CohortFactSchema>;
+export type CohortDailyFact = z.infer<typeof CohortDailyFactSchema>;
 export type CohortPerformanceResponse = z.infer<
   typeof CohortPerformanceResponseSchema
 >;
@@ -289,6 +310,9 @@ export const SkillPerformanceResponseSchema = z.object({
   validRubricIds: z.array(z.string()),
 });
 
+export type SkillRadarData = z.infer<typeof SkillRadarDataSchema>;
+export type SkillStandardFact = z.infer<typeof SkillStandardFactSchema>;
+export type SkillPackage = z.infer<typeof SkillPackageSchema>;
 export type SkillPerformanceResponse = z.infer<
   typeof SkillPerformanceResponseSchema
 >;
@@ -320,6 +344,12 @@ export const ScenarioPerformanceResponseSchema = z.object({
   attributeScenarioFacts: z.array(ScenarioAttributeScenarioFactSchema),
 });
 
+export type ScenarioAttributeAttemptFact = z.infer<
+  typeof ScenarioAttributeAttemptFactSchema
+>;
+export type ScenarioAttributeScenarioFact = z.infer<
+  typeof ScenarioAttributeScenarioFactSchema
+>;
 export type ScenarioPerformanceResponse = z.infer<
   typeof ScenarioPerformanceResponseSchema
 >;
@@ -346,6 +376,8 @@ export const ScenarioStatsResponseSchema = z.object({
   numericScenarioFacts: z.array(NumericScenarioFactSchema),
 });
 
+export type NumericAttemptFact = z.infer<typeof NumericAttemptFactSchema>;
+export type NumericScenarioFact = z.infer<typeof NumericScenarioFactSchema>;
 export type ScenarioStatsResponse = z.infer<typeof ScenarioStatsResponseSchema>;
 
 // Simulation Composition
@@ -385,6 +417,13 @@ export const SimulationCompositionResponseSchema = z.object({
   hasData: z.boolean(),
 });
 
+export type SimulationFact = z.infer<typeof SimulationFactSchema>;
+export type SimulationParameterFactCategorical = z.infer<
+  typeof SimulationParameterFactCategoricalSchema
+>;
+export type SimulationParameterFactNumeric = z.infer<
+  typeof SimulationParameterFactNumericSchema
+>;
 export type SimulationCompositionResponse = z.infer<
   typeof SimulationCompositionResponseSchema
 >;
@@ -405,6 +444,7 @@ export const SimulationPerformanceResponseSchema = z.object({
   scenarioFacts: z.array(ScenarioFactSchema),
 });
 
+export type ScenarioFact = z.infer<typeof ScenarioFactSchema>;
 export type SimulationPerformanceResponse = z.infer<
   typeof SimulationPerformanceResponseSchema
 >;
@@ -467,6 +507,7 @@ export const AttemptHistoryRowSchema = z.object({
 
 export const AttemptHistoryResponseSchema = z.array(AttemptHistoryRowSchema);
 
+export type AttemptHistoryRow = z.infer<typeof AttemptHistoryRowSchema>;
 export type AttemptHistoryResponse = z.infer<
   typeof AttemptHistoryResponseSchema
 >;
@@ -482,6 +523,7 @@ export const HomeOverviewResponseSchema = z.object({
   simulation_mapping: SimulationMappingSchema,
 });
 
+export type HomeSimulationItem = z.infer<typeof HomeSimulationItemSchema>;
 export type HomeOverviewResponse = z.infer<typeof HomeOverviewResponseSchema>;
 
 // Practice Overview
@@ -529,6 +571,9 @@ export const PracticeOverviewResponseSchema = z.object({
   parameter_item_mapping: ParameterItemMappingSchema,
 });
 
+export type PracticeSimulationItem = z.infer<
+  typeof PracticeSimulationItemSchema
+>;
 export type PracticeOverviewResponse = z.infer<
   typeof PracticeOverviewResponseSchema
 >;
@@ -572,6 +617,8 @@ export const ReportsBundleResponseSchema = z.object({
 });
 
 export type ProfileDataEnhanced = z.infer<typeof ProfileDataEnhancedSchema>;
+export type ProfileMetrics = z.infer<typeof ProfileMetricsSchema>;
+export type ProfileData = z.infer<typeof ProfileDataSchema>;
 export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 
 // Leaderboard Bundle
@@ -604,9 +651,21 @@ export const LeaderboardBundleResponseSchema = z.object({
   data: z.array(LeaderboardRowSchema),
 });
 
+export type LeaderboardMetric = z.infer<typeof LeaderboardMetricSchema>;
+export type LeaderboardRow = z.infer<typeof LeaderboardRowSchema>;
 export type LeaderboardBundleResponse = z.infer<
   typeof LeaderboardBundleResponseSchema
 >;
+
+// Leaderboard-specific metric response type aliases
+// These reuse generic LeaderboardMetricSchema but are aliased for clarity
+export type HighestScoreAvgMetricResponse = LeaderboardMetric;
+export type PerfectScoreCountMetricResponse = LeaderboardMetric;
+export type ImprovementRatePerDayMetricResponse = LeaderboardMetric;
+export type QuickestPassMinutesMetricResponse = LeaderboardMetric;
+export type TotalAttemptsMetricResponse = LeaderboardMetric;
+export type PersonaResponseSecondsMetricResponse = LeaderboardMetric;
+export type TimeSpentMinutesMetricResponse = LeaderboardMetric;
 
 // ============================================================================
 // UTILITY SCHEMAS

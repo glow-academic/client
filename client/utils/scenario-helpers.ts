@@ -5,6 +5,17 @@
 
 import type { ParameterDetail } from "@/lib/api/v2/schemas/scenarios";
 
+// Type definitions (merged from scenario.ts)
+export type ModelType = "Personas" | "Documents" | "Classes" | "Seniority";
+
+export interface Model {
+  id: string;
+  name: string;
+  description: string;
+  type: ModelType;
+  strengths?: string;
+}
+
 /**
  * Extract flat parameter item IDs from v2 parameters structure
  * The v2 API returns parameters grouped by parameter_id with nested item IDs

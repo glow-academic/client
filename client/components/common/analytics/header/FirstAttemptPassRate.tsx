@@ -25,7 +25,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { TrendData } from "@/lib/analytics";
+import type { TrendData } from "@/lib/api/v2/schemas/analytics";
 
 export interface FirstAttemptPassRateProps {
   firstAttemptPassRate: number;

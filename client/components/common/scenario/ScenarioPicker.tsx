@@ -35,7 +35,7 @@ import {
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import type { MappingItem } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { ModelType } from "@/utils/scenario";
+import { ModelType } from "@/utils/scenario-helpers";
 
 // Extended mapping item for scenarios/models with type grouping
 export interface ScenarioModelMappingItem extends MappingItem {

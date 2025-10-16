@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { type PersonaPerformanceData } from "@/lib/analytics";
+import { type PersonaPerformanceData } from "@/lib/api/v2/schemas/analytics";
 import { type SimulationMapping } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
 import { Users } from "lucide-react";
