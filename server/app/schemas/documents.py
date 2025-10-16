@@ -38,6 +38,7 @@ class DocumentsListResponse(BaseModel):
     documents: List[DocumentItem]
     scenario_mapping: ScenarioMapping
     parameter_item_mapping: ParameterItemMapping
+    department_mapping: DepartmentMapping
 
 
 class DocumentDetailRequest(BaseModel):

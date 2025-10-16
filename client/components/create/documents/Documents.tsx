@@ -7,7 +7,7 @@
 
 "use client";
 import { type ColumnDef } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -63,6 +63,7 @@ import {
 } from "@/lib/api/v2/hooks/documents";
 import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { DocumentsDataTable } from "./DocumentsDataTable";
+import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 export default function Documents() {
   const { effectiveProfile } = useProfile();
@@ -80,6 +81,7 @@ export default function Documents() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<DocumentItem | null>(
     null
   );
@@ -97,6 +99,14 @@ export default function Documents() {
   );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
   const { effectiveDepartmentIds } = useDepartments();
+
+  // Listen for upload button click from layout
+  useEffect(() => {
+    const handleOpenUpload = () => setUploadDialogOpen(true);
+    window.addEventListener("openDocumentUpload", handleOpenUpload);
+    return () =>
+      window.removeEventListener("openDocumentUpload", handleOpenUpload);
+  }, []);
 
   // V2 API: Build filters
   const filters = useMemo(
@@ -122,6 +132,16 @@ export default function Documents() {
   const parameterItemMapping = useMemo(
     () => documentsData?.parameter_item_mapping || {},
     [documentsData]
+  );
+  const departmentMapping = useMemo(
+    () => documentsData?.department_mapping || {},
+    [documentsData]
+  );
+
+  // Compute valid department IDs for upload dialog
+  const validDepartmentIds = useMemo(
+    () => effectiveDepartmentIds || [],
+    [effectiveDepartmentIds]
   );
 
   // V2 API: Fetch single document detail for editing
@@ -968,6 +988,16 @@ export default function Documents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Upload Document Dialog */}
+      {uploadDialogOpen && (
+        <DocumentUploadDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          departmentMapping={departmentMapping}
+          validDepartmentIds={validDepartmentIds}
+        />
+      )}
     </div>
   );
 }

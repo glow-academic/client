@@ -41,6 +41,7 @@ export const DocumentsListResponseSchema = z.object({
   documents: z.array(DocumentItemSchema),
   scenario_mapping: ScenarioMappingSchema,
   parameter_item_mapping: ParameterItemMappingSchema,
+  department_mapping: DepartmentMappingSchema,
 });
 
 export type DocumentsListResponse = z.infer<typeof DocumentsListResponseSchema>;

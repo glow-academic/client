@@ -9,7 +9,7 @@ type ServerMetric = Omit<GrowthMetric, "formatter"> & {
 };
 
 export function attachFormatters(
-  payload: { availableMetrics: ServerMetric[] } & Record<string, unknown>,
+  payload: { availableMetrics: ServerMetric[] } & Record<string, unknown>
 ): Record<string, unknown> {
   const fmt = {
     percent: (v: number) => `${Math.round(v)}%`,

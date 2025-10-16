@@ -129,9 +129,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     if (pathname === "/create/documents") {
-      return (
-        <DocumentUploadButton departmentMapping={} validDepartmentIds={} />
-      );
+      return <DocumentUploadButton />;
     }
 
     if (pathname === "/management/rubrics") {

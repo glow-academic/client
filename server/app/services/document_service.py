@@ -127,10 +127,32 @@ class DocumentService:
             for row in param_results
         }
 
+        # Build department_mapping
+        dept_query = text("""
+            SELECT 
+                id,
+                title as name,
+                COALESCE(description, '') as description
+            FROM departments
+            WHERE id = ANY(:dept_ids) AND active = true
+        """)
+        dept_results = self.db.execute(
+            dept_query, {"dept_ids": filters.departmentIds}
+        ).fetchall()
+
+        department_mapping: DepartmentMapping = {
+            str(row.id): DepartmentMappingItem(
+                name=row.name,
+                description=row.description or ''
+            )
+            for row in dept_results
+        }
+
         return DocumentsListResponse(
             documents=documents,
             scenario_mapping=scenario_mapping,
             parameter_item_mapping=parameter_item_mapping,
+            department_mapping=department_mapping,
         )
 
     def get_document_detail(
