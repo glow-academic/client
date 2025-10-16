@@ -140,7 +140,7 @@ class TestQuery_Data:
         mock_conn.fetch.return_value = [mock_record]
 
         result = await query_data(
-            "SELECT p.first_name || ' ' || p.last_name as profile_name, s.title as simulation_title FROM profiles p JOIN simulation_attempts sa ON p.id = sa.profile_id JOIN simulations s ON sa.simulation_id = s.id"
+            "SELECT p.first_name || ' ' || p.last_name as profile_name, s.title as simulation_title FROM profiles p JOIN attempt_profiles ap ON p.id = ap.profile_id JOIN simulation_attempts sa ON ap.attempt_id = sa.id JOIN simulations s ON sa.simulation_id = s.id"
         )
 
         assert "John Doe" in result
