@@ -4,14 +4,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, List
 
+import asyncpg  # type: ignore
 from agents import (Runner, ToolsToFinalOutputResult, TResponseInputItem,
                     function_tool, trace)
-from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers, Rubrics,
-                        Scenarios, SimulationAttempts, SimulationChatFeedbacks,
-                        SimulationChatGrades, SimulationChats,
-                        SimulationMessages, Simulations, StandardGroups,
-                        Standards)
+from app.db import get_db
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
@@ -22,7 +18,6 @@ from app.utils.limit import check_rate_limit
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
 from pydantic import Field
-from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -67,31 +62,31 @@ async def _emit_grading_progress(event_data: dict[str, Any]) -> None:
 
 
 def create_grading_function(
-    standard_group: StandardGroups, 
-    standards: List[Standards],
+    standard_group: Any, 
+    standards: List[Any],
     chat_id: uuid.UUID
 ) -> Any:
     """Create a function tool for grading a specific standard group."""
-    safe_name = create_safe_field_name(standard_group.short_name)
+    safe_name = create_safe_field_name(standard_group['short_name'])
     
     # Get standards for this group and build rating scale
-    group_standards = [s for s in standards if s.standard_group_id == standard_group.id]
-    group_standards.sort(key=lambda x: x.points, reverse=True)
+    group_standards = [s for s in standards if s['standard_group_id'] == standard_group['id']]
+    group_standards.sort(key=lambda x: x['points'], reverse=True)
     
     rating_scale = "\n".join([
-        f"  {std.points} - {std.name}: {std.description}" 
+        f"  {std['points']} - {std['name']}: {std.get('description', '')}" 
         for std in group_standards
     ])
     
-    full_description = f"{standard_group.description}\n\nRating Scale:\n{rating_scale}"
-    score_description = f"Score for {standard_group.name} (1-5)"
-    feedback_description = f"Feedback explaining the score for {standard_group.name}"
+    full_description = f"{standard_group.get('description', '')}\n\nRating Scale:\n{rating_scale}"
+    score_description = f"Score for {standard_group['name']} (1-5)"
+    feedback_description = f"Feedback explaining the score for {standard_group['name']}"
     
     async def grade_standard_group(
         score: int = Field(ge=1, le=5, description=score_description),
         feedback: str = Field(default="", description=feedback_description),
     ) -> str:
-        f"""Grade the conversation on: {standard_group.name}
+        f"""Grade the conversation on: {standard_group['name']}
         
         {full_description}
         
@@ -109,16 +104,16 @@ def create_grading_function(
         await _emit_grading_progress({
             "type": "standard_graded",
             "chat_id": str(chat_id),
-            "standard_group_name": standard_group.name,
-            "standard_group_short_name": standard_group.short_name,
+            "standard_group_name": standard_group['name'],
+            "standard_group_short_name": standard_group['short_name'],
             "score": score,
             "feedback_preview": feedback[:100] + "..." if len(feedback) > 100 else feedback,
             "completed_count": sum(1 for v in grading_progress.values() if v),
             "total_count": len(grading_progress),
         })
         
-        logger.info(f"✓ Graded {standard_group.name}: {score}/5 - {feedback[:50]}...")
-        return f"Graded {standard_group.name} with score {score}"
+        logger.info(f"✓ Graded {standard_group['name']}: {score}/5 - {feedback[:50]}...")
+        return f"Graded {standard_group['name']} with score {score}"
     
     grade_standard_group.__name__ = f"grade_{safe_name}"
     return function_tool(grade_standard_group)
@@ -159,8 +154,8 @@ def create_summary_function(chat_id: uuid.UUID) -> Any:
 
 
 def create_grading_tools(
-    standard_groups: List[StandardGroups], 
-    standards: List[Standards],
+    standard_groups: List[Any], 
+    standards: List[Any],
     chat_id: uuid.UUID
 ) -> list[Any]:
     """Create all grading function tools for the standard groups."""
@@ -182,7 +177,7 @@ def create_grading_tools(
 async def run_grade_agent(
     simulation_chat_id: uuid.UUID, 
     department_id: uuid.UUID,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
     sio_instance: Any = None
 ) -> str:
     """
@@ -191,7 +186,7 @@ async def run_grade_agent(
 
     Args:
         simulation_chat_id: The ID of the simulation chat
-        session: Database session
+        conn: Database connection
         sio_instance: Optional Socket.IO instance for progress events
 
     Returns:
@@ -204,73 +199,97 @@ async def run_grade_agent(
         grading_progress.clear()
         _grading_sio_instance = sio_instance
         _grading_chat_id = simulation_chat_id
+        
         # Get the grade agent configured for this department (via junction table)
         from app.utils.agents import get_department_agent
-        agent = get_department_agent(session, department_id, 'grade')
+        agent = await get_department_agent(conn, department_id, 'grade')
 
         # get the chat from the simulation_chat_id
-        chat = session.exec(
-            select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
-        ).one()
+        chat = await conn.fetchrow(
+            "SELECT id, scenario_id, attempt_id, title, trace_id FROM simulation_chats WHERE id = $1",
+            simulation_chat_id
+        )
+        if not chat:
+            raise ValueError(f"Chat {simulation_chat_id} not found")
 
         # get the scenario from the chat
-        scenario = session.exec(
-            select(Scenarios).where(Scenarios.id == chat.scenario_id)
-        ).one()
+        scenario = await conn.fetchrow(
+            "SELECT id FROM scenarios WHERE id = $1",
+            chat['scenario_id']
+        )
+        if not scenario:
+            raise ValueError(f"Scenario {chat['scenario_id']} not found")
 
         # get all the messages for the chat_id, order by created_at
-        messages = session.exec(
-            select(SimulationMessages).where(
-                SimulationMessages.chat_id == simulation_chat_id
-            )
-        ).all()
+        messages = await conn.fetch("""
+            SELECT id, chat_id, role, content, created_at, model_run_id, audio_url, completed
+            FROM simulation_messages
+            WHERE chat_id = $1
+            ORDER BY created_at
+        """, simulation_chat_id)
 
-        messages = list(messages)
-        messages = sorted(messages, key=lambda x: x.created_at)
+        messages = [dict(m) for m in messages]
 
         input_items: list[TResponseInputItem] = []
 
         # prepare conversation history from chat_id
         conversation_history = get_simulation_conversation_history(messages)
 
-        chat_scenario = get_chat_scenario(chat, session)
+        chat_scenario = await get_chat_scenario(conn, chat['scenario_id'])
 
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
 
         # Get the simulation attempt to find the simulation
-        attempt = session.exec(
-            select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-        ).one()
+        attempt = await conn.fetchrow(
+            "SELECT id, simulation_id FROM simulation_attempts WHERE id = $1",
+            chat['attempt_id']
+        )
+        if not attempt:
+            raise ValueError(f"Attempt {chat['attempt_id']} not found")
 
         # Get the simulation to find the rubric
-        simulation = session.exec(
-            select(Simulations).where(Simulations.id == attempt.simulation_id)
-        ).one()
+        simulation = await conn.fetchrow(
+            "SELECT id, rubric_id FROM simulations WHERE id = $1",
+            attempt['simulation_id']
+        )
+        if not simulation:
+            raise ValueError(f"Simulation {attempt['simulation_id']} not found")
 
-        if not simulation.rubric_id:
+        if not simulation['rubric_id']:
             raise ValueError(
-                f"Simulation {simulation.id} does not have a rubric assigned"
+                f"Simulation {simulation['id']} does not have a rubric assigned"
             )
 
-        rubric_id = simulation.rubric_id
+        rubric_id = simulation['rubric_id']
 
         # get rubric from rubric_id
-        rubric = session.exec(select(Rubrics).where(Rubrics.id == rubric_id)).one()
+        rubric = await conn.fetchrow(
+            "SELECT id, name, description, points, pass_points FROM rubrics WHERE id = $1",
+            rubric_id
+        )
+        if not rubric:
+            raise ValueError(f"Rubric {rubric_id} not found")
 
         # get standard groups from rubric
-        standard_groups = session.exec(
-            select(StandardGroups).where(StandardGroups.rubric_id == rubric_id)
-        ).all()
+        standard_groups = await conn.fetch("""
+            SELECT id, name, short_name, description, points, pass_points, rubric_id
+            FROM standard_groups
+            WHERE rubric_id = $1
+        """, rubric_id)
+        standard_groups = [dict(sg) for sg in standard_groups]
 
         # get standards from standard_groups
-        standard_group_ids = [group.id for group in standard_groups]
-        standards = session.exec(
-            select(Standards).where(Standards.standard_group_id.in_(standard_group_ids))
-        ).all()
+        standard_group_ids = [group['id'] for group in standard_groups]
+        standards = await conn.fetch("""
+            SELECT id, name, description, points, standard_group_id
+            FROM standards
+            WHERE standard_group_id = ANY($1::uuid[])
+        """, standard_group_ids)
+        standards = [dict(s) for s in standards]
 
         logger.info(
-            f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric.name}"
+            f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric['name']}"
         )
         logger.info(
             f"Found {len(standard_groups)} standard groups and {len(standards)} standards"
@@ -284,7 +303,7 @@ async def run_grade_agent(
                     "type": "start",
                     "chat_id": str(simulation_chat_id),
                     "message": "Starting grading process",
-                    "rubric_name": rubric.name,
+                    "rubric_name": rubric['name'],
                     "standards_count": len(standard_groups),
                 },
                 room=f"simulation_{simulation_chat_id}",
@@ -293,24 +312,31 @@ async def run_grade_agent(
 
         # Build dynamic rubric using utility function
         rubric_input = get_dynamic_rubric(
-            rubric, list(standard_groups), list(standards)
+            rubric, standard_groups, standards
         )
 
         # get the time limit from the simulation
-        time_limit = simulation.time_limit or -1
+        time_limit = simulation['time_limit'] or -1
         
         # Calculate adjusted time limit for multi-simulation attempts
         # Get all chats for this attempt to determine if it's multi-simulation
-        attempt_chats = session.exec(
-            select(SimulationChats).where(SimulationChats.attempt_id == attempt.id)
-        ).all()
+        attempt_chats = await conn.fetch(
+            "SELECT id FROM simulation_chats WHERE attempt_id = $1",
+            attempt['id']
+        )
         
         total_chats = len(attempt_chats)
         adjusted_time_limit = (time_limit * 60) if time_limit and total_chats == 1 else ((time_limit * 60) // total_chats) if time_limit else 0
         
+        # Get chat timestamps for time calculation
+        chat_times = await conn.fetchrow(
+            "SELECT created_at, completed_at FROM simulation_chats WHERE id = $1",
+            simulation_chat_id
+        )
+        
         # Calculate actual time taken for this specific chat using completed_at
-        chat_created_at = chat.created_at
-        chat_completed_at = chat.completed_at
+        chat_created_at = chat_times['created_at']
+        chat_completed_at = chat_times['completed_at']
 
         # Convert timestamps to UTC if they have timezone info
         if chat_created_at.tzinfo is not None:
@@ -380,101 +406,96 @@ async def run_grade_agent(
             return ToolsToFinalOutputResult(is_final_output=completed_required)
 
         # getting the model from the agent's model_id
-        model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+        model = await conn.fetchrow(
+            "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+            agent['model_id']
+        )
         if not model:
-            raise ValueError(f"Model with ID {agent.model_id} not found")
+            raise ValueError(f"Model with ID {agent['model_id']} not found")
 
         # getting the provider from the model's provider_id
-        provider = session.exec(
-            select(Providers).where(Providers.id == model.provider_id)
-        ).one()
+        provider = await conn.fetchrow(
+            "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+            model['provider_id']
+        )
         if not provider:
-            raise ValueError(f"Provider with ID {model.provider_id} not found")
+            raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
         grading_agent = GenericAgent(
-            agent_name=agent.name,
-            system_prompt=agent.system_prompt,
-            temperature=agent.temperature,
-            model_name=model.name,
-            model_provider=provider.name,
-            base_url=provider.base_url,
-            api_key=provider.api_key,
-            reasoning=agent.reasoning,
+            agent_name=agent['name'],
+            system_prompt=agent['system_prompt'],
+            temperature=agent['temperature'],
+            model_name=model['name'],
+            model_provider=provider['name'],
+            base_url=provider['base_url'],
+            api_key=provider['api_key'],
+            reasoning=agent['reasoning'],
             tools=grading_tools,
             parallel_tool_calls=False,
             tool_use_behavior=tool_use_behavior,
-            custom_model=model.custom_model,
+            custom_model=model['custom_model'],
         )
 
         agent_instance = grading_agent.agent()
 
         # Get profile from attempt_profiles junction
-        from app.models import AttemptProfiles
-        attempt_profile_link = session.exec(
-            select(AttemptProfiles).where(
-                AttemptProfiles.attempt_id == attempt.id,
-                AttemptProfiles.active == True
-            )
-        ).first()
+        attempt_profile_link = await conn.fetchrow("""
+            SELECT profile_id
+            FROM attempt_profiles
+            WHERE attempt_id = $1 AND active = true
+            LIMIT 1
+        """, attempt['id'])
         
-        attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
-        default_guest_profile = find_default_guest_profile(session)
+        attempt_profile_id = attempt_profile_link['profile_id'] if attempt_profile_link else None
+        default_guest_profile = await find_default_guest_profile(conn)
 
-        final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile.id if default_guest_profile else None))
+        final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile['id'] if default_guest_profile else None))
 
-        success, error_message = check_rate_limit(final_profile_id, session)
+        success, error_message = await check_rate_limit(conn, final_profile_id)
         if not success:
             raise ValueError(error_message)
 
         # create model run
-        model_run = ModelRuns(
-            input_tokens=0,
-            output_tokens=0,
-            department_id=simulation.department_id,
-        )
-        session.add(model_run)
-        session.commit()
-        session.refresh(model_run)
+        model_run = await conn.fetchrow("""
+            INSERT INTO model_runs (input_tokens, output_tokens, department_id, created_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        """, 0, 0, simulation['department_id'], datetime.now(timezone.utc))
+
+        model_run_id = model_run['id']
 
         # Create model_run junction records
-        from app.models import ModelRunAgents, ModelRunModels, ModelRunProfiles
+        if model['id']:
+            await conn.execute("""
+                INSERT INTO model_run_models (model_run_id, model_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, model['id'], True)
         
-        if model.id:
-            model_run_model = ModelRunModels(
-                model_run_id=model_run.id,
-                model_id=model.id,
-                active=True,
-            )
-            session.add(model_run_model)
-        
-        if agent.id:
-            model_run_agent = ModelRunAgents(
-                model_run_id=model_run.id,
-                agent_id=agent.id,
-                active=True,
-            )
-            session.add(model_run_agent)
+        if agent['id']:
+            await conn.execute("""
+                INSERT INTO model_run_agents (model_run_id, agent_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, agent['id'], True)
         
         if final_profile_id:
-            model_run_profile = ModelRunProfiles(
-                model_run_id=model_run.id,
-                profile_id=final_profile_id,
-                active=True,
-            )
-            session.add(model_run_profile)
-        
-        session.commit()
+            await conn.execute("""
+                INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, final_profile_id, True)
 
         # Run the grading
         logger.info("Running grading agent...")
-        with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
-            result = await Runner.run(agent_instance, input=input_items, context=DebugContext(session=session, model_run_id=model_run.id))
+        with trace(chat['title'], trace_id=chat['trace_id'], group_id=str(attempt['id'])):
+            result = await Runner.run(agent_instance, input=input_items, context=DebugContext(conn=conn, model_run_id=model_run_id))
 
         usage = result.context_wrapper.usage
 
-        model_run.input_tokens = usage.input_tokens
-        model_run.output_tokens = usage.output_tokens
-        session.commit()
+        # Update model run with token usage
+        await conn.execute("""
+            UPDATE model_runs 
+            SET input_tokens = $1, output_tokens = $2 
+            WHERE id = $3
+        """, usage.input_tokens, usage.output_tokens, model_run_id)
 
         # Extract results from the global storage
         grading_result = grading_results
@@ -494,38 +515,35 @@ async def run_grade_agent(
         # Calculate overall score from tool call results
         overall_score = 0
         for group in standard_groups:
-            safe_name = create_safe_field_name(group.short_name)
+            safe_name = create_safe_field_name(group['short_name'])
             group_data = grading_result.get(safe_name, {})
             score = group_data.get("score", 0)
             try:
                 overall_score += int(score)
             except (TypeError, ValueError):
                 logger.warning(
-                    f"Non-integer value for {group.short_name} ('{score}'); treating as 0"
+                    f"Non-integer value for {group['short_name']} ('{score}'); treating as 0"
                 )
 
-        passed = overall_score >= rubric.pass_points
+        passed = overall_score >= rubric['pass_points']
 
         # Get summary from tool call results
         summary = grading_result.get("summary", "")
 
         # Create the simulation chat grade record
-        simulation_chat_grade = SimulationChatGrades(
-            passed=passed,
-            score=overall_score,
-            description=summary,
-            time_taken=actual_time_taken,
-            rubric_id=rubric_id,
-            simulation_chat_id=simulation_chat_id,
-        )
+        simulation_chat_grade = await conn.fetchrow("""
+            INSERT INTO simulation_chat_grades 
+            (passed, score, description, time_taken, rubric_id, simulation_chat_id, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+        """, passed, overall_score, summary, actual_time_taken, rubric_id, simulation_chat_id, datetime.now(timezone.utc))
 
-        session.add(simulation_chat_grade)
-        session.flush()  # Get the ID without committing
+        grade_id = simulation_chat_grade['id']
 
         # Create feedback records for each standard group
         feedback_count = 0
         for group in standard_groups:
-            safe_name = create_safe_field_name(group.short_name)
+            safe_name = create_safe_field_name(group['short_name'])
 
             try:
                 # Get the score and feedback from tool call results
@@ -534,45 +552,46 @@ async def run_grade_agent(
                 group_feedback = group_data.get("feedback", "")
 
                 logger.info(
-                    f"Group {group.short_name}: score={group_score}, feedback_length={len(group_feedback)}"
+                    f"Group {group['short_name']}: score={group_score}, feedback_length={len(group_feedback)}"
                 )
 
                 # Find the corresponding standard for this score
                 group_standards = [
-                    s for s in standards if s.standard_group_id == group.id
+                    s for s in standards if s['standard_group_id'] == group['id']
                 ]
                 matching_standard = None
                 for standard in group_standards:
-                    if standard.points == group_score:
+                    if standard['points'] == group_score:
                         matching_standard = standard
                         break
 
                 if matching_standard:
                     # Create feedback record
-                    simulation_chat_feedback = SimulationChatFeedbacks(
-                        standard_id=matching_standard.id,
-                        simulation_chat_grade_id=simulation_chat_grade.id,
-                        total=group_score,
-                        feedback=group_feedback,
-                    )
-                    session.add(simulation_chat_feedback)
+                    await conn.execute("""
+                        INSERT INTO simulation_chat_feedbacks 
+                        (standard_id, simulation_chat_grade_id, total, feedback, created_at)
+                        VALUES ($1, $2, $3, $4, $5)
+                    """, matching_standard['id'], grade_id, group_score, group_feedback, datetime.now(timezone.utc))
                     feedback_count += 1
                 else:
                     logger.warning(
-                        f"No matching standard found for group {group.short_name} with score {group_score}"
+                        f"No matching standard found for group {group['short_name']} with score {group_score}"
                     )
 
             except Exception as e:
                 logger.error(
-                    f"Failed to get grading data for group {group.short_name}: {e}"
+                    f"Failed to get grading data for group {group['short_name']}: {e}"
                 )
                 continue
 
         logger.info(f"Created {feedback_count} feedback records")
 
         # Mark chat as completed
-        chat.completed = True
-        session.add(chat)
+        await conn.execute(
+            "UPDATE simulation_chats SET completed = $1 WHERE id = $2",
+            True,
+            simulation_chat_id
+        )
 
         # Emit grading completion event
         if sio_instance:
@@ -582,7 +601,7 @@ async def run_grade_agent(
                     "type": "complete",
                     "chat_id": str(simulation_chat_id),
                     "message": "Grading completed successfully",
-                    "grade_id": str(simulation_chat_grade.id),
+                    "grade_id": str(grade_id),
                     "total_score": overall_score,
                     "passed": passed,
                     "standards_graded": feedback_count,
@@ -593,19 +612,15 @@ async def run_grade_agent(
             )
             logger.info(f"Emitted grading completion event for chat {simulation_chat_id}")
 
-        # Commit all changes
-        session.commit()
-        session.refresh(simulation_chat_grade)
-
         logger.info(
-            f"Grading completed successfully with grade ID: {simulation_chat_grade.id}"
+            f"Grading completed successfully with grade ID: {grade_id}"
         )
         
         # Clean up socket context
         _grading_sio_instance = None
         _grading_chat_id = None
         
-        return str(simulation_chat_grade.id)
+        return str(grade_id)
 
     except Exception as e:
         logger.error(f"Error in run_grade_agent: {str(e)}", exc_info=True)
@@ -630,5 +645,4 @@ async def run_grade_agent(
         _grading_sio_instance = None
         _grading_chat_id = None
         
-        session.rollback()
         raise

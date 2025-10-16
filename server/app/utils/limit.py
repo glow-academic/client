@@ -1,14 +1,11 @@
 import uuid
 from datetime import datetime, timedelta, timezone, tzinfo
-from typing import Tuple
+from typing import Optional, Tuple
 
-from app.db import get_session
-from app.models import ModelRuns, Profiles
-from fastapi import Depends
-from sqlmodel import Session, select
+import asyncpg  # type: ignore
 
 
-def check_rate_limit(profile_id: uuid.UUID | None, session: Session = Depends(get_session)) -> Tuple[bool, str | None]:
+async def check_rate_limit(conn: asyncpg.Connection, profile_id: uuid.UUID | None) -> Tuple[bool, str | None]:
     """
     Checks if the profile has exceeded their daily request limit.
     Returns (True, None) if under the limit, or (False, error_message) if exceeded.
@@ -17,11 +14,14 @@ def check_rate_limit(profile_id: uuid.UUID | None, session: Session = Depends(ge
     if not profile_id:
         return False, "Profile not found. Please contact support."
 
-    profile = session.exec(select(Profiles).where(Profiles.id == profile_id)).one_or_none()
+    profile = await conn.fetchrow(
+        "SELECT req_per_day FROM profiles WHERE id = $1",
+        profile_id
+    )
     if not profile:
         return False, "Profile not found."
 
-    req_per_day = getattr(profile, "req_per_day", None)
+    req_per_day = profile['req_per_day']
     if req_per_day is None:
         # Unlimited requests allowed
         return True, None
@@ -31,31 +31,20 @@ def check_rate_limit(profile_id: uuid.UUID | None, session: Session = Depends(ge
     start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Count model runs for this profile since the start of the day via model_run_profiles junction
-    from app.models import ModelRunProfiles
-    profile_run_links = session.exec(
-        select(ModelRunProfiles).where(
-            ModelRunProfiles.profile_id == profile_id,
-            ModelRunProfiles.active == True
-        )
-    ).all()
-    
-    run_ids = [link.model_run_id for link in profile_run_links]
-    if run_ids:
-        model_runs_today = session.exec(
-            select(ModelRuns)
-            .where(
-                (ModelRuns.id.in_(run_ids)) &
-                (ModelRuns.created_at >= start_of_day_utc)
-            )
-        ).all()
-    else:
-        model_runs_today = []
+    model_runs_today = await conn.fetch("""
+        SELECT mr.id, mr.created_at
+        FROM model_runs mr
+        JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+        WHERE mrp.profile_id = $1
+          AND mrp.active = true
+          AND mr.created_at >= $2
+    """, profile_id, start_of_day_utc)
 
     if len(model_runs_today) >= req_per_day:
         # Find the earliest run today to determine when the next request is allowed
-        earliest_run = min(model_runs_today, key=lambda run: run.created_at)
+        earliest_run = min(model_runs_today, key=lambda run: run['created_at'])
         # Next available time is 24h after the earliest run today
-        next_allowed_utc = earliest_run.created_at + timedelta(days=1)
+        next_allowed_utc = earliest_run['created_at'] + timedelta(days=1)
         # Convert to US/Eastern for user-friendly display using zoneinfo (Python 3.9+)
         eastern_tz: tzinfo
         try:

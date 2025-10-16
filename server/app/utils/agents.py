@@ -3,50 +3,52 @@ Utility functions for agent management
 Handles department agent access via junction table
 """
 import uuid
+from typing import Any, Dict
 
-from app.models import Agents, DepartmentAgents
-from sqlmodel import Session, select
+import asyncpg  # type: ignore
 
 
-def get_department_agent(
-    session: Session, 
+async def get_department_agent(
+    conn: asyncpg.Connection, 
     department_id: uuid.UUID, 
     role: str
-) -> Agents:
+) -> Dict[str, Any]:
     """
     Get agent for a department role via department_agents junction table.
     
     Args:
-        session: Database session
+        conn: Database connection
         department_id: UUID of the department
         role: Agent role (title, scenario, classify, assistant, grade, 
               input_guardrail, output_guardrail, hint)
     
     Returns:
-        Agent model instance
+        Agent dict
         
     Raises:
         ValueError: If no agent found for the given department and role
     """
-    link = session.exec(
-        select(DepartmentAgents)
-        .where(DepartmentAgents.department_id == department_id)
-        .where(DepartmentAgents.role == role)
-    ).one_or_none()
+    link = await conn.fetchrow("""
+        SELECT agent_id 
+        FROM department_agents 
+        WHERE department_id = $1 AND role = $2
+    """, department_id, role)
     
     if not link:
         raise ValueError(
             f"No {role} agent configured for department {department_id}"
         )
     
-    agent = session.exec(
-        select(Agents).where(Agents.id == link.agent_id)
-    ).one_or_none()
+    agent = await conn.fetchrow("""
+        SELECT id, name, system_prompt, temperature, reasoning, model_id
+        FROM agents 
+        WHERE id = $1
+    """, link['agent_id'])
     
     if not agent:
         raise ValueError(
-            f"Agent {link.agent_id} not found for {role} role in department {department_id}"
+            f"Agent {link['agent_id']} not found for {role} role in department {department_id}"
         )
     
-    return agent
+    return dict(agent)
 

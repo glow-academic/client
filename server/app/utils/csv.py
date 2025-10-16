@@ -4,11 +4,10 @@ import io
 import uuid
 from typing import Any, Dict
 
-from app.models import Profiles
-from sqlmodel import Session, select
+import asyncpg  # type: ignore
 
 
-def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
+async def process_csv_file(file_path: str, conn: asyncpg.Connection) -> Dict[str, Any]:
     """
     Process a CSV file containing user data and insert users into the database.
 
@@ -19,7 +18,7 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
 
     Args:
         file_path: Path to the CSV file
-        session: Database session
+        conn: Database connection
 
     Returns:
         Dictionary with processing results
@@ -52,49 +51,46 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                     "users_skipped": 0,
                 }
 
-            # Process each row
-            for row_num, row in enumerate(
-                csv_reader, start=2
-            ):  # Start at 2 because row 1 is headers
-                try:
-                    # Extract and validate data
-                    name = row.get("name", "").strip()
-                    username = row.get("username", "").strip()
+            # Start a transaction
+            async with conn.transaction():
+                # Process each row
+                for row_num, row in enumerate(
+                    csv_reader, start=2
+                ):  # Start at 2 because row 1 is headers
+                    try:
+                        # Extract and validate data
+                        name = row.get("name", "").strip()
+                        username = row.get("username", "").strip()
 
-                    if not name or not username:
-                        errors.append(
-                            f"Row {row_num}: Missing required fields (name, username)"
+                        if not name or not username:
+                            errors.append(
+                                f"Row {row_num}: Missing required fields (name, username)"
+                            )
+                            continue
+
+                        # Check if user already exists
+                        existing_user = await conn.fetchrow(
+                            "SELECT id FROM profiles WHERE alias = $1",
+                            username
                         )
+                        if existing_user:
+                            users_skipped.append(
+                                {"username": username, "reason": "User already exists"}
+                            )
+                            continue
+
+                        # Create new user
+                        user_id = uuid.uuid4()
+                        await conn.execute("""
+                            INSERT INTO profiles (id, first_name, alias, role, viewed_intro)
+                            VALUES ($1, $2, $3, $4, $5)
+                        """, user_id, name, username, "ta", False)
+
+                        users_created.append({"name": name, "username": username})
+
+                    except Exception as e:
+                        errors.append(f"Row {row_num}: {str(e)}")
                         continue
-
-                    # Check if user already exists
-                    existing_user = session.exec(
-                        select(Profiles).where(Profiles.alias == username)
-                    ).first()
-                    if existing_user:
-                        users_skipped.append(
-                            {"username": username, "reason": "User already exists"}
-                        )
-                        continue
-
-                    # Create new user
-                    new_user = Profiles(
-                        id=uuid.uuid4(),
-                        first_name=name,
-                        alias=username,
-                        role="ta",
-                        viewed_intro=False,
-                    )
-
-                    session.add(new_user)
-                    users_created.append({"name": name, "username": username})
-
-                except Exception as e:
-                    errors.append(f"Row {row_num}: {str(e)}")
-                    continue
-
-            # Commit all changes
-            session.commit()
 
             return {
                 "success": True,
@@ -106,7 +102,6 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
             }
 
     except Exception as e:
-        session.rollback()
         return {
             "success": False,
             "error": f"Failed to process CSV file: {str(e)}",

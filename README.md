@@ -4,40 +4,39 @@ AI student profiles to help graduate teaching assistants learn.
 
 ## 🚀 Quick Start
 
-**Just run one command and everything works:**
+Start all services with one command:
 
 ```bash
-bash run.sh
+make run
 ```
 
-That's it! This automatically:
-- ✅ **Installs all dependencies** (PostgreSQL, coturn, Node.js packages, Python packages)
-- ✅ **Starts TURN/STUN server** (for WebRTC audio streaming)
-- ✅ **Starts the database** (from your latest backup)
-- ✅ **Starts the web app** (client + server)
-- ✅ **Shows you when ready** (with URLs to visit)
+This starts database, client, and server with color-coded logs. Press Ctrl+C to stop.
 
-### Options
+### Common Commands
 
 ```bash
-bash run.sh --clean    # Start fresh (creates backup first)
-bash run.sh --test     # Run all tests after startup
-bash run.sh --detach   # Run in background (for automation)
-bash run.sh --no-turn  # Skip TURN server (use external/Docker)
-bash run.sh --help     # Show all options
+make run         # Start all services
+make stop        # Stop all services  
+make test        # Run server tests
+make test-client # Run client tests
+make help        # Show all commands
 ```
 
-## 🔧 What Gets Installed Automatically
+## 🔧 Setup
 
-The `run.sh` script will automatically install:
+**Install dependencies:**
+```bash
+make setup           # Create Python virtual environment
+make install         # Install Python dependencies (from pyproject.toml)
+make install-client  # Install client dependencies (yarn)
+```
 
-- **PostgreSQL** (via brew on macOS, apt on Ubuntu, yum on CentOS)
-- **coturn** (TURN/STUN server for WebRTC, via brew/apt/yum or Docker)
-- **Client dependencies** (Node.js packages via yarn)
-- **Server dependencies** (Python packages via uv/pip)
-- **Database tools** (Drizzle, Cypress, etc.)
-
-**No manual setup required!** Just run `bash run.sh` and start coding.
+**Database setup:**
+```bash
+make start-db    # Start database
+make migrate-db  # Run migrations
+make fresh-db    # Fresh start (with backup)
+```
 
 ## 🧪 Testing
 
@@ -60,45 +59,49 @@ cd server && make test-cov      # Backend with coverage
 
 ## 🐳 Docker
 
-If you prefer Docker over local development:
 ```bash
-docker compose --profile test build         # runs Vitest & PyTest
-docker compose build client server          # fast – cache is hot
-docker compose build database               # you can prune cache
-docker compose up -d
+docker compose up --build -d                       # Run all services
+docker compose --profile test run --rm client-unit # Client unit tests
+docker compose --profile test run --rm server-unit # Server unit tests
 ```
 
 ## 📚 Advanced Usage
 
-For detailed development guidelines, database migrations, and advanced configuration, see [`AGENTS.md`](./AGENTS.md).
+See [`AGENTS.md`](./AGENTS.md) for detailed documentation.
 
-**Manual service control** (if needed):
+**Quick reference:**
 ```bash
-cd database && yarn start        # Database only
-cd client && yarn dev            # Frontend only  
-cd server && make run            # Backend only
+make help        # Show all available commands
+make format      # Format code (Ruff)
+make lint        # Run linters
+make typecheck   # Type check server (MyPy)
 ```
 
 ## Tech Stack
 
 ### Frontend
-- **Hooks:** [React](https://react.dev/)
-- **Caching:** [React Query](https://tanstack.com/query/latest)
-- **Routing:** [Next.js](https://nextjs.org/)
-- **UI Library:** [Shadcn](https://ui.shadcn.com/)
+- **Framework:** [Next.js 15](https://nextjs.org/) with App Router
+- **UI:** [React 19](https://react.dev/) + [Shadcn](https://ui.shadcn.com/)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/)
-- **Database Connection:** [Drizzle ORM](https://orm.drizzle.team/docs/overview)
+- **State:** [TanStack Query](https://tanstack.com/query/latest)
+- **Testing:** [Vitest](https://vitest.dev/)
 - **Linter:** [ESLint](https://eslint.org/)
-- **Unit Tests:** [Vitest](https://vitest.dev/)
 
 ### Backend
 - **Server:** [FastAPI](https://fastapi.tiangolo.com/)
-- **Database Connection:** [SQLModel](https://sqlmodel.tiangolo.com/)
+- **Database:** [asyncpg](https://github.com/MagicStack/asyncpg) (raw SQL)
 - **LLM:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
-- **Unit Tests:** [pytest](https://docs.pytest.org/en/stable/)
-- **Typechecker:** [MyPy](https://mypy-lang.org/)
-- **Linter:** [ruff](https://docs.astral.sh/ruff/)
+- **Testing:** [pytest](https://docs.pytest.org/en/stable/)
+- **Linter:** [Ruff](https://docs.astral.sh/ruff/)
+- **Config:** [pyproject.toml](https://packaging.python.org/en/latest/specifications/pyproject-toml/)
 
 ### Database
 - **SQL:** [PostgreSQL](https://www.postgresql.org/)
-- **Migrations:** [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview)
+- **Migrations:** [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) (database folder only)
+
+### Architecture
+- **Client**: Fast/dumb UI - presentation only
+- **Server**: All business logic in service layer
+- **Database**: asyncpg (no ORM), BCNF normalization, no nulls
+- **Testing**: Unit tests only (80% target), no integration/E2E yet
+- **WebSocket**: Socket.IO with Redis for real-time features

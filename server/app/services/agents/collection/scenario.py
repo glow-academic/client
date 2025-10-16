@@ -1,12 +1,13 @@
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Any, List, Tuple
 
+import asyncpg  # type: ignore
 from agents import (Runner, ToolsToFinalOutputResult, function_tool,
                     gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.db import get_session
-from app.models import Agents, ModelRuns, Models, Personas, Providers
+from app.db import get_db
 from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -17,7 +18,6 @@ from app.utils.personas import get_persona_info
 from app.utils.scenario import get_parameter_item_info
 from fastapi import Depends
 from pydantic import Field
-from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ async def run_scenario_agent(
     document_ids: List[uuid.UUID] | None = None,
     parameter_item_ids: List[uuid.UUID] | None = None,
     group_id: uuid.UUID | None = None,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
     profile_id: uuid.UUID | None = None,
     sio_instance: Any = None,
 ) -> Tuple[str, str, List[str], str]:
@@ -134,7 +134,7 @@ async def run_scenario_agent(
         document_ids: The IDs of the documents
         parameter_item_ids: The IDs of the parameter items
         group_id: The ID of the group
-        session: The database session
+        conn: The database connection (asyncpg.Connection)
         profile_id: The ID of the profile (optional)
         sio_instance: Optional Socket.IO instance for progress events
     Returns:
@@ -151,12 +151,13 @@ async def run_scenario_agent(
             persona_info = None
             show_images = False
         else:
-            persona = session.exec(
-                select(Personas).where(Personas.id == persona_id)
-            ).one_or_none()
+            persona = await conn.fetchrow(
+                "SELECT id FROM personas WHERE id = $1",
+                persona_id
+            )
             if not persona:
                 raise ValueError(f"Persona with ID {persona_id} not found")
-            persona_info = get_persona_info(persona.id, session)
+            persona_info = await get_persona_info(conn, persona['id'])
             # Note: image_input_active moved to simulation level
             # For scenario generation, default to False
             show_images = False
@@ -164,30 +165,32 @@ async def run_scenario_agent(
         if document_ids is None or len(document_ids) == 0:
             document_info = None
         else:
-            document_info = get_document_info(document_ids, show_images, session)
+            document_info = await get_document_info(conn, document_ids, show_images)
 
         if parameter_item_ids is None or len(parameter_item_ids) == 0:
             parameter_item_info = None
         else:
-            parameter_item_info = get_parameter_item_info(parameter_item_ids, session)
+            parameter_item_info = await get_parameter_item_info(conn, parameter_item_ids)
 
         # Get the scenario agent configured for this department (via junction table)
         from app.utils.agents import get_department_agent
-        scenario_agent = get_department_agent(session, department_id, 'scenario')
+        scenario_agent = await get_department_agent(conn, department_id, 'scenario')
 
         # getting the model from the agent's model_id
-        model = session.exec(
-            select(Models).where(Models.id == scenario_agent.model_id)
-        ).one()
+        model = await conn.fetchrow(
+            "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+            scenario_agent['model_id']
+        )
         if not model:
-            raise ValueError(f"Model with ID {scenario_agent.model_id} not found")
+            raise ValueError(f"Model with ID {scenario_agent['model_id']} not found")
 
         # getting the provider from the model's provider_id
-        provider = session.exec(
-            select(Providers).where(Providers.id == model.provider_id)
-        ).one()
+        provider = await conn.fetchrow(
+            "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+            model['provider_id']
+        )
         if not provider:
-            raise ValueError(f"Provider with ID {model.provider_id} not found")
+            raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
         # Create scenario generation tools
         scenario_tools = create_scenario_tools(group_id)
@@ -213,18 +216,18 @@ async def run_scenario_agent(
             return ToolsToFinalOutputResult(is_final_output=completed_required)
 
         scenario_agent_generic = GenericAgent(
-            agent_name=scenario_agent.name,
-            system_prompt=scenario_agent.system_prompt,
-            temperature=scenario_agent.temperature,
-            model_name=model.name,
-            model_provider=provider.name,
-            base_url=provider.base_url,
-            api_key=provider.api_key,
-            reasoning=scenario_agent.reasoning,
+            agent_name=scenario_agent['name'],
+            system_prompt=scenario_agent['system_prompt'],
+            temperature=scenario_agent['temperature'],
+            model_name=model['name'],
+            model_provider=provider['name'],
+            base_url=provider['base_url'],
+            api_key=provider['api_key'],
+            reasoning=scenario_agent['reasoning'],
             tools=scenario_tools,
             parallel_tool_calls=False,
             tool_use_behavior=tool_use_behavior,
-            custom_model=model.custom_model,
+            custom_model=model['custom_model'],
         )
 
         agent_instance = scenario_agent_generic.agent()
@@ -240,55 +243,44 @@ async def run_scenario_agent(
         # generate a trace id for the scenario
         trace_id = gen_trace_id()
 
-        default_guest_profile = find_default_guest_profile(session)
+        default_guest_profile = await find_default_guest_profile(conn)
 
-        final_profile_id = (profile_id if profile_id else (default_guest_profile.id if default_guest_profile else None))
+        final_profile_id = (profile_id if profile_id else (default_guest_profile['id'] if default_guest_profile else None))
 
-        success, error_message = check_rate_limit(final_profile_id, session)
+        success, error_message = await check_rate_limit(conn, final_profile_id)
         if not success:
             raise ValueError(error_message)
 
         # create model run
-        model_run = ModelRuns(
-            input_tokens=0,
-            output_tokens=0,
-            department_id=department_id,
-        )
-        session.add(model_run)
-        session.commit()
-        session.refresh(model_run)
+        model_run = await conn.fetchrow("""
+            INSERT INTO model_runs (input_tokens, output_tokens, department_id, created_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        """, 0, 0, department_id, datetime.now(timezone.utc))
+
+        model_run_id = model_run['id']
 
         # Create model_run junction records
-        from app.models import ModelRunModels, ModelRunAgents, ModelRunProfiles
+        if model['id']:
+            await conn.execute("""
+                INSERT INTO model_run_models (model_run_id, model_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, model['id'], True)
         
-        if model.id:
-            model_run_model = ModelRunModels(
-                model_run_id=model_run.id,
-                model_id=model.id,
-                active=True,
-            )
-            session.add(model_run_model)
-        
-        if scenario_agent.id:
-            model_run_agent = ModelRunAgents(
-                model_run_id=model_run.id,
-                agent_id=scenario_agent.id,
-                active=True,
-            )
-            session.add(model_run_agent)
+        if scenario_agent['id']:
+            await conn.execute("""
+                INSERT INTO model_run_agents (model_run_id, agent_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, scenario_agent['id'], True)
         
         if final_profile_id:
-            model_run_profile = ModelRunProfiles(
-                model_run_id=model_run.id,
-                profile_id=final_profile_id,
-                active=True,
-            )
-            session.add(model_run_profile)
-        
-        session.commit()
+            await conn.execute("""
+                INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, final_profile_id, True)
 
         with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id):
-            result = await Runner.run(agent_instance, input=clean_input_items, context=DebugContext(session=session, model_run_id=model_run.id))
+            result = await Runner.run(agent_instance, input=clean_input_items, context=DebugContext(conn=conn, model_run_id=model_run_id))
 
         # Extract results from the global storage
         scenario_result = scenario_results
@@ -303,9 +295,12 @@ async def run_scenario_agent(
 
         usage = result.context_wrapper.usage
 
-        model_run.input_tokens = usage.input_tokens
-        model_run.output_tokens = usage.output_tokens
-        session.commit()
+        # Update model run with token usage
+        await conn.execute("""
+            UPDATE model_runs 
+            SET input_tokens = $1, output_tokens = $2 
+            WHERE id = $3
+        """, usage.input_tokens, usage.output_tokens, model_run_id)
 
         # Get result values
         title = scenario_result.get("title", "")

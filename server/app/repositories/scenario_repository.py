@@ -3,6 +3,7 @@
 This repository delegates to the scenario service layer.
 """
 
+import asyncpg  # type: ignore
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -20,7 +21,6 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
 from app.services.scenario_service import ScenarioService
-import asyncpg  # type: ignore
 
 
 class ScenarioRepository:
@@ -83,11 +83,11 @@ class ScenarioRepository:
         """Generate AI scenario content."""
         return await self.service.generate_scenario_ai(request)
 
-    def randomize_scenario_sections(
+    async def randomize_scenario_sections(
         self, request: RandomizeScenarioRequest
     ) -> RandomizeScenarioResponse:
         """Randomize scenario sections."""
-        return self.service.randomize_scenario_sections(request)
+        return await self.service.randomize_scenario_sections(request)
 
 
 def get_scenario_repository(conn: asyncpg.Connection) -> ScenarioRepository:

@@ -982,7 +982,7 @@ class ScenarioService:
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
             group_id=None,
-            session=self.conn,  # type: ignore[arg-type]
+            conn=self.conn,
             profile_id=profile_id,
         )
 
@@ -994,7 +994,7 @@ class ScenarioService:
             objectives=objectives,
         )
 
-    def randomize_scenario_sections(
+    async def randomize_scenario_sections(
         self, request: RandomizeScenarioRequest
     ) -> RandomizeScenarioResponse:
         """
@@ -1015,16 +1015,14 @@ class ScenarioService:
         targets = [t for t in request.targets if t.strip()] if request.targets else []
 
         # Get suggestions
-        # Note: suggest_randomized_sections needs to be migrated to use asyncpg conn
-        # For now, passing conn and util will handle conversion internally
-        suggestions = suggest_randomized_sections(
+        suggestions = await suggest_randomized_sections(
             name=request.name,
             description=request.description,
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
             targets=targets,
-            session=self.conn,  # type: ignore[arg-type]
+            conn=self.conn,
         )
 
         return RandomizeScenarioResponse(

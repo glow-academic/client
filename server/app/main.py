@@ -306,23 +306,19 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
 
         # Update database to mark profile as active
         try:
-            from app.db import get_session
-            from app.models import Profiles
+            from app.db import get_pool
 
-            db_session = next(get_session())
-            try:
-                profile = db_session.exec(
-                    select(Profiles).where(Profiles.id == profile_id)
-                ).one_or_none()
-
-                if profile:
-                    profile.active = True
-                    profile.last_active = datetime.now(timezone.utc)
-                    db_session.add(profile)
-                    db_session.commit()
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as conn:
+                    await conn.execute(
+                        """UPDATE profiles 
+                           SET active = true, last_active = $1 
+                           WHERE id = $2""",
+                        datetime.now(timezone.utc),
+                        profile_id
+                    )
                     logger.info(f"Updated profile {profile_id} to active in database")
-            finally:
-                db_session.close()
         except Exception as e:
             logger.error(f"Error updating profile {profile_id} in database: {e}")
     else:
@@ -336,24 +332,21 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 # Increment guest connection counter
                 await increment_guest_count()
 
-                from app.db import get_session
-                from app.utils.guest import find_default_guest_profile
+                from app.db import get_pool
 
-                db_session = next(get_session())
-                try:
-                    default_guest_profile = find_default_guest_profile(db_session)
-                    if default_guest_profile:
-                        default_guest_profile.active = True
-                        default_guest_profile.last_active = datetime.now(timezone.utc)
-                        db_session.add(default_guest_profile)
-                        db_session.commit()
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        # Find and update default guest profile
+                        await conn.execute(
+                            """UPDATE profiles 
+                               SET active = true, last_active = $1 
+                               WHERE role = 'guest' AND default_profile = true""",
+                            datetime.now(timezone.utc)
+                        )
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
                         )
-                    else:
-                        logger.warning("No default guest profile found to update activity")
-                finally:
-                    db_session.close()
             except Exception as e:
                 logger.error(f"Error updating default guest profile activity on connect: {e}")
         else:
@@ -395,26 +388,22 @@ async def disconnect(sid: str) -> None:
             # Decrement guest count and get remaining count
             remaining_guests = await decrement_guest_count()
 
-            from app.db import get_session
-            from app.utils.guest import find_default_guest_profile
+            from app.db import get_pool
 
-            db_session = next(get_session())
-            try:
-                default_guest_profile = find_default_guest_profile(db_session)
-                if default_guest_profile:
-                    # Always refresh last_active; set active False only when all guests are gone
-                    default_guest_profile.last_active = datetime.now(timezone.utc)
-                    if remaining_guests == 0:
-                        default_guest_profile.active = False
-                    db_session.add(default_guest_profile)
-                    db_session.commit()
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as conn:
+                    # Update default guest profile: refresh last_active, set active False only when all guests are gone
+                    await conn.execute(
+                        """UPDATE profiles 
+                           SET last_active = $1, active = $2
+                           WHERE role = 'guest' AND default_profile = true""",
+                        datetime.now(timezone.utc),
+                        remaining_guests > 0
+                    )
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )
-                else:
-                    logger.warning("No default guest profile found to update on disconnect")
-            finally:
-                db_session.close()
         except Exception as e:
             logger.error(f"Error updating default guest profile activity on disconnect: {e}")
 

@@ -1,148 +1,58 @@
 # Contributor Guide
 
-## Dev Environment Tips
+## Quick Start
 
-This is a monorepo with a client, database, and server. The easiest way to start everything is:
-
-```bash
-bash run.sh
-```
-
-This will automatically:
-1. **Check and install dependencies** (PostgreSQL, coturn, Node.js packages, Python packages)
-2. **Start the TURN/STUN server** (coturn) for WebRTC connectivity
-3. **Start the database** (from latest backup)
-4. **Start the client and server** in parallel  
-5. **Show you when everything is ready**
-
-**Zero-setup experience**: Just run `bash run.sh` and everything will be installed and configured automatically.
-
-### Quick Start Options
+The easiest way to start all services:
 
 ```bash
-bash run.sh                # Start all services (interactive mode)
-bash run.sh --clean        # Start with fresh database (creates backup first)
-bash run.sh --test         # Run all test suites after startup
-bash run.sh --detach       # Start services in background, script exits
-bash run.sh --no-turn      # Skip TURN/STUN server startup
-bash run.sh --clean --test # Clean start + run tests
-bash run.sh --help         # Show help message
+make run
 ```
 
-**For AI agents/automation**, use `--detach` to avoid blocking the terminal:
-```bash
-bash run.sh --detach       # Services run in background, terminal is freed
-```
+This starts:
+- Database (from latest backup)
+- Client (Next.js dev server)
+- Server (FastAPI with uvicorn)
+- Redis (for WebSocket scaling)
 
-## Manual Setup (Advanced)
+All services run in foreground with color-coded logs. Press Ctrl+C to stop all.
 
-If you need to start services individually or install dependencies manually:
-
-### Prerequisites (Auto-installed by `run.sh`)
-- **PostgreSQL** (auto-installed via brew/apt/yum)
-- **coturn** (TURN/STUN server for WebRTC, auto-installed via brew/apt/yum or Docker)
-- **Node.js and Yarn** for the client (dependencies auto-installed)
-- **Python and uv** for the server (dependencies auto-installed)
-
-### Manual Dependency Installation
-```bash
-# Client dependencies
-cd client && yarn install
-
-# Server dependencies  
-cd server && make sync
-# or: uv pip install -r requirements.txt
-# or: pip install -r requirements.txt
-
-# Database dependencies
-cd database && yarn install
-```
-
-### Manual Service Startup
-```bash
-# Database
-cd database && yarn start          # Start with latest backup
-cd database && yarn start --clean  # Clean start (backup first)
-
-# Client
-cd client && yarn dev
-
-# Server
-cd server && make run
-```
-
-## WebRTC & TURN Server
-
-The application includes WebRTC functionality for real-time audio streaming. A TURN/STUN server (coturn) is automatically started for reliable connectivity.
-
-### TURN Server Management
-
-**Automatic Setup** (recommended):
-```bash
-bash run.sh                    # Starts TURN server automatically
-bash run.sh --no-turn          # Skip TURN server startup
-```
-
-**Manual TURN Server Setup**:
-```bash
-bash realtime/setup.sh          # Setup and start TURN server
-bash realtime/setup.sh status   # Check TURN server status
-bash realtime/setup.sh stop     # Stop TURN server
-bash realtime/setup.sh test     # Test TURN server connectivity
-```
-
-**Docker TURN Server** (alternative):
-```bash
-docker compose up realtime -d      # Start TURN server in Docker
-docker compose logs realtime       # Check TURN server logs
-```
-
-### Environment Variables
-
-The TURN server requires these environment variables (auto-configured):
+### Available Commands
 
 ```bash
-export TURN_PUBLIC_IP="your.public.ip"    # Auto-detected
-export TURN_REALM="example.com"           # Default realm
-export TURN_USERNAME="webrtc"             # Default username
-export TURN_PASS="generated_password"     # Auto-generated
+make run         # Start all services (foreground, combined logs)
+make stop        # Stop all services
+make test        # Run server unit tests (pytest)
+make test-client # Run client unit tests (vitest)
+make test-cov    # Server tests with coverage
+make test-client-cov # Client tests with coverage
 ```
 
-### WebRTC Testing
+For more commands, run `make help`.
 
-**Test TURN Server Connectivity**:
+## Setup
+
+### Prerequisites
+- **PostgreSQL** (brew/apt/yum install postgresql)
+- **Python 3.11** with virtual environment
+- **Node.js and Yarn** for the client
+- **Redis** (for WebSocket scaling)
+
+### Installation
+
 ```bash
-cd client && node scripts/test-webrtc-turn.js
+make setup           # Create Python virtual environment
+make install         # Install Python dependencies (from pyproject.toml)
+make install-client  # Install client dependencies (yarn)
 ```
 
-**Test WebRTC in Browser**:
-1. Start services: `bash run.sh`
-2. Open http://localhost:3000
-3. Navigate to a simulation with audio features
-4. Test microphone functionality
+### Database Setup
 
-### Troubleshooting WebRTC
-
-**Common Issues:**
-- **Slow audio startup**: Ensure TURN server is running and accessible
-- **Connection failures**: Check firewall allows UDP traffic on ports 3478 and 49160-49200
-- **No audio detected**: Verify microphone permissions in browser
-
-**Debug Commands:**
 ```bash
-# Check TURN server status
-bash realtime/setup.sh status
-
-# Test connectivity
-cd client && node scripts/test-webrtc-turn.js
-
-# Check server logs for WebRTC errors
-cd server && tail -f logs/server.log | grep -i webrtc
+make start-db    # Start database (latest backup)
+make fresh-db    # Fresh database (backup first, then init.sql)
+make migrate-db  # Apply pending migrations
+make connect-db  # Connect to database shell
 ```
-
-**Network Requirements:**
-- Port 3478 (UDP/TCP): STUN/TURN server
-- Ports 49160-49200 (UDP): TURN relay ports
 
 ## Testing Instructions
 
@@ -182,80 +92,103 @@ make test server/tests/test_specific.py   # Run specific file
 
 ## Database Migrations
 
-Database behavior follows the same logic as `yarn start` in the database folder:
-
-- **Default**: Restores from latest backup (no automatic migrations)
-- **Clean mode**: Creates backup first, then starts fresh from `init.sql`
-
-### Manual Migration Commands
+### Migration Commands
 
 ```bash
-cd database && yarn generate    # Generate migrations from schema changes
-cd database && yarn migrate     # Apply pending migrations  
-cd database && yarn studio      # Open Drizzle Studio
-cd database && yarn start       # Start with latest backup
-cd database && yarn start --clean  # Clean start (backup first)
+make migrate-db  # Apply pending migrations
+cd database && yarn drizzle:generate  # Generate new migration
+cd database && yarn drizzle:studio    # Visual schema explorer
 ```
 
 ### Migration Workflow
-1. Modify `client/drizzle/schema.ts` (source of truth)
-2. Generate migrations: `cd database && yarn generate`
-3. Review generated migration files in `database/drizzle/`
-4. Apply migrations: `cd database && yarn migrate`
-5. Restart services to use updated schema
+1. Make schema changes in `database/drizzle/` SQL files
+2. Generate migration: `cd database && yarn drizzle:generate`
+3. Review generated migration in `database/drizzle/`
+4. Apply migration: `make migrate-db`
+5. Restart services: `make stop && make run`
 
-## Typechecking
+**Note**: Drizzle is used exclusively in `database/` folder for migrations. Server uses asyncpg for all database operations.
+
+## Code Quality
+
+**Formatting & Linting:**
+```bash
+make format      # Format code with Ruff
+make lint        # Run linter checks
+make typecheck   # Run MyPy type checking (server)
+```
 
 **Client:**
 ```bash
 cd client && npx tsc --noEmit
 ```
 
-**Server:**
-```bash
-cd server && make typecheck
-```
-
 ## Key Files & Folders
 
+### Root
+- `Makefile` - All commands for development workflow
+- `pyproject.toml` - Project configuration, dependencies, tooling (Ruff, MyPy, pytest)
+- `requirements.txt` - Server dependencies (generated from pyproject.toml)
+
 ### Client
-- `client/package.json` - Dependencies and scripts
-- `client/drizzle/schema.ts` - **Source of truth** for database schema
+- `client/package.json` - Client dependencies and scripts
+- `client/app/api/` - BFF (Backend for Frontend) API routes
+- `client/components/` - React components (fast/dumb UI)
 
 ### Database  
-- `database/migrations/` - All migration files (auto-generated)
-- `database/init/` - Initial database setup modules
+- `database/drizzle/` - Migration files (Drizzle for migrations only)
+- `database/seed/` - Seed data scripts
 
 ### Server
-- `server/Makefile` - Server commands and setup
-- `server/models.py` - Server-side models (generated from schema)
+- `server/app/queries/` - Raw SQL queries (asyncpg)
+- `server/app/services/` - Business logic layer
+- `server/app/repositories/` - Data access layer
+- `server/app/api/` - FastAPI routes
 
-## Architecture Notes
+## Architecture Principles
 
-- **Database First**: The database starts first, then client/server in parallel
-- **Backup-Based**: Database restores from latest backup by default (no auto-migrations)
-- **Manual Migrations**: Schema changes require manual migration generation and application
-- **Clean Start**: `--clean` flag creates backup first, then starts fresh from `init.sql`
-- **Detached Mode**: `--detach` flag runs services in background for automation/AI agents
+### Client: Fast & Dumb UI
+- **Presentation only**: Components focus on rendering and user interactions
+- **No business logic**: All validation, processing on server
+- **State management**: TanStack Query for server state, minimal local state
+- **Testing**: Unit tests with Vitest (80% coverage target)
+
+### Server: All Business Logic
+- **Service layer**: All complex logic in `app/services/`
+- **Repository pattern**: Data access abstracted in `app/repositories/`
+- **No ORM**: Raw SQL with asyncpg in `app/queries/`
+- **Testing**: Unit tests with pytest (80% coverage target)
+
+### Database: BCNF & No Nulls
+- **Chris Date principles**: Minimize nulls, eliminate redundancy
+- **BCNF normalization**: Third normal form with no transitive dependencies
+- **Referential integrity**: All foreign keys with proper constraints
+- **Drizzle for migrations only**: Used exclusively in `database/` folder
+
+### Testing Strategy
+- **Unit tests first**: 80% coverage target before integration/E2E
+- **No E2E yet**: Focus on comprehensive unit testing foundation
+- **Test pyramid**: Strong unit test base, then integration, then E2E
+
+### Workflow
+- **Make-based**: All commands via `make` from root directory
+- **Database first**: Database starts first, then client/server in parallel
+- **Backup-based**: Database restores from latest backup by default
 
 ## Docker Deployment
 
-**Development Environment:**
+**Run all services:**
 ```bash
-docker compose --profile dev up --build -d
+docker compose up --build -d
 ```
 
-**Production Environment:**
+**Run unit tests:**
 ```bash
-docker compose --profile prod up --build -d
+docker compose --profile test run --rm client-unit   # Client unit tests (Vitest)
+docker compose --profile test run --rm server-unit   # Server unit tests (pytest)
 ```
 
-**Individual Test Services:**
-```bash
-docker compose --profile test run --rm client-test      # Client unit tests
-docker compose --profile test run --rm server-test      # Server unit tests  
-docker compose --profile test run --rm database-test    # Database E2E tests
-```
+**Note**: Only 'test' profile exists. Default compose includes all runtime services (database, client, server, nginx, redis).
 
 ## Folder Structure
 

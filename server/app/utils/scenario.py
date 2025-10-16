@@ -8,13 +8,11 @@ import unicodedata
 import uuid
 from typing import Any, Dict, List, Optional
 
+import asyncpg  # type: ignore
 import pypdf  # type: ignore
 from agents.items import TResponseInputItem
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Documents, ParameterItems, Parameters, Personas,
-                        Scenarios)
 from rapidfuzz import fuzz  # type: ignore
-from sqlmodel import Session, select
 
 
 def _read_document_content_for_similarity(file_path: str) -> str:
@@ -50,18 +48,23 @@ def _read_document_content_for_similarity(file_path: str) -> str:
 
 logger = logging.getLogger(__name__)
 
-def get_parameter_item_info(
-    parameter_item_ids: List[uuid.UUID], session: Session
+async def get_parameter_item_info(
+    conn: asyncpg.Connection, parameter_item_ids: List[uuid.UUID]
 ) -> TResponseInputItem:
     """
     Get the parameter item information for a given parameter item ids, including their value.
     """
     # Join ParameterItems with Parameters to get parameter name and description
-    parameter_items_with_params = session.exec(
-        select(ParameterItems, Parameters)
-        .join(Parameters, ParameterItems.parameter_id == Parameters.id)
-        .where(ParameterItems.id.in_(parameter_item_ids))
-    ).all()
+    parameter_items_with_params = await conn.fetch("""
+        SELECT 
+            pi.name as item_name,
+            pi.description as item_description,
+            p.name as param_name,
+            p.description as param_description
+        FROM parameter_items pi
+        JOIN parameters p ON pi.parameter_id = p.id
+        WHERE pi.id = ANY($1::uuid[])
+    """, parameter_item_ids)
 
     if not parameter_items_with_params:
         return {
@@ -69,12 +72,12 @@ def get_parameter_item_info(
             "content": "No parameter items found.",
         }
 
-    # Format each parameter item using the template, including .value
+    # Format each parameter item using the template
     formatted_items = []
-    for param_item, param in parameter_items_with_params:
+    for row in parameter_items_with_params:
         formatted_item = (
-            f"This is the {param.name} ({param.description}) for this chat: {param_item.name}. "
-            f"Description: {param_item.description}."
+            f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
+            f"Description: {row.get('item_description', '')}."
         )
         formatted_items.append(formatted_item)
 
@@ -89,69 +92,66 @@ def get_parameter_item_info(
 
 
 async def randomly_fill_scenario_attributes(
-    scenario: Scenarios, session: Session, department_id: uuid.UUID
-) -> Scenarios:
+    scenario: Dict[str, Any], conn: asyncpg.Connection, department_id: uuid.UUID
+) -> Dict[str, Any]:
     """
     Randomly fill null attributes of a scenario with available options from the database.
 
     Args:
-        scenario: The scenario object with potentially null attributes
-        session: Database session
+        scenario: The scenario dict with potentially null attributes
+        conn: Database connection
         department_id: The department ID to use when creating a new scenario
 
     Returns:
-        Updated scenario object with randomly selected values for null attributes
+        Updated scenario dict with randomly selected values for null attributes
     """
-
-
+    scenario_id = scenario['id']
 
     # Get persona from scenario_personas junction, or randomly select if none
-    from app.models import ScenarioPersonas
-    existing_persona_link = session.exec(
-        select(ScenarioPersonas).where(
-            ScenarioPersonas.scenario_id == scenario.id,
-            ScenarioPersonas.active == True
-        )
-    ).first()
+    existing_persona_link = await conn.fetchrow("""
+        SELECT persona_id
+        FROM scenario_personas
+        WHERE scenario_id = $1 AND active = true
+        LIMIT 1
+    """, scenario_id)
     
-    scenario_persona_id = existing_persona_link.persona_id if existing_persona_link else None
+    scenario_persona_id = existing_persona_link['persona_id'] if existing_persona_link else None
     
     # Random persona selection if none exists
     if scenario_persona_id is None:
         # Only select from active personas
-        active_personas = session.exec(select(Personas).where(Personas.active)).all()
+        active_personas = await conn.fetch("SELECT id FROM personas WHERE active = true")
         if active_personas:
-            scenario_persona_id = random.choice(active_personas).id
+            scenario_persona_id = random.choice(active_personas)['id']
             logger.info(f"Randomly selected persona_id: {scenario_persona_id}")
             
             # Create the junction record
-            scenario_persona_link = ScenarioPersonas(
-                scenario_id=scenario.id,
-                persona_id=scenario_persona_id,
-                active=True,
-            )
-            session.add(scenario_persona_link)
-            session.commit()
+            await conn.execute("""
+                INSERT INTO scenario_personas (scenario_id, persona_id, active)
+                VALUES ($1, $2, $3)
+            """, scenario_id, scenario_persona_id, True)
         else:
             scenario_persona_id = None
             logger.info("No active personas found")
 
     # Load existing documents and parameters from junction tables
-    from app.models import ScenarioDocuments, ScenarioParameterItems
+    doc_links = await conn.fetch(
+        "SELECT document_id FROM scenario_documents WHERE scenario_id = $1",
+        scenario_id
+    )
+    existing_doc_ids = [link['document_id'] for link in doc_links]
     
-    doc_links = session.exec(
-        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
-    ).all()
-    existing_doc_ids = [link.document_id for link in doc_links]
-    
-    param_links = session.exec(
-        select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
-    ).all()
-    existing_param_ids = [link.parameter_item_id for link in param_links]
+    param_links = await conn.fetch(
+        "SELECT parameter_item_id FROM scenario_parameter_items WHERE scenario_id = $1",
+        scenario_id
+    )
+    existing_param_ids = [link['parameter_item_id'] for link in param_links]
     
     if not existing_doc_ids:
         # Only select from active documents
-        active_documents = session.exec(select(Documents).where(Documents.active)).all()
+        active_documents = await conn.fetch(
+            "SELECT id, name, type, file_path FROM documents WHERE active = true"
+        )
 
         def _norm(s: str) -> str:
             s_norm = unicodedata.normalize("NFKD", s or "")
@@ -163,7 +163,7 @@ async def randomly_fill_scenario_attributes(
 
         if active_documents:
             # Build scenario signal text from name/problem_statement
-            scenario_text = f"{scenario.name or ''} {scenario.problem_statement or ''}"
+            scenario_text = f"{scenario.get('name') or ''} {scenario.get('problem_statement') or ''}"
             scenario_tokens = set(_tokens(scenario_text))
 
             known_types = [
@@ -177,13 +177,13 @@ async def randomly_fill_scenario_attributes(
             ]
             scenario_has_type = {t: (t in scenario_tokens) or (t in _norm(scenario_text)) for t in known_types}
 
-            def _score(doc: Documents) -> float:
+            def _score(doc: Dict[str, Any]) -> float:
                 score = 0.0
                 # Note: doc.tags removed in BCNF migration
                 # Tags now managed via simulation_tags junction
-                name_tokens = set(_tokens(doc.name or ""))
+                name_tokens = set(_tokens(doc.get('name') or ""))
                 score += 2.0 * len(scenario_tokens.intersection(name_tokens))
-                doc_type = (doc.type or "").lower()
+                doc_type = (doc.get('type') or "").lower()
                 if doc_type and (scenario_has_type.get(doc_type, False)):
                     score += 10.0
                 if doc_type and doc_type in _norm(scenario_text):
@@ -193,7 +193,7 @@ async def randomly_fill_scenario_attributes(
                 return score
 
             # Build clusters per tag and choose one tag to ensure all selected share the same tag
-            tag_to_docs: dict[str, list[Documents]] = {}
+            tag_to_docs: dict[str, list[Dict[str, Any]]] = {}
             for d in active_documents:
                 # Note: doc.tags removed in BCNF migration - defaulting to untagged
                 tags = ["__untagged__"]  # d.tags removed
@@ -223,10 +223,10 @@ async def randomly_fill_scenario_attributes(
             k = min(1, len(top_n))
             selected_docs = [d for d, _ in random.sample(top_n, k)] if k > 0 else []
             logger.info(
-                f"Selected document with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d.id for d in selected_docs]}"
+                f"Selected document with shared tag '{chosen_tag}' (count={len(selected_docs)}): {[d['id'] for d in selected_docs]}"
             )
 
-            scenario_documents = [doc.id for doc in selected_docs]
+            scenario_documents = [doc['id'] for doc in selected_docs]
         else:
             scenario_documents = []
             logger.info("No active documents found")
@@ -236,27 +236,26 @@ async def randomly_fill_scenario_attributes(
     # Random parameter item selection if no parameters linked via junction
     if not existing_param_ids:
         # Get all active parameters
-        active_parameters = session.exec(
-            select(Parameters).where(Parameters.active)
-        ).all()
+        active_parameters = await conn.fetch(
+            "SELECT id, name FROM parameters WHERE active = true"
+        )
 
         if active_parameters:
             # For each active parameter, randomly select one parameter item
             scenario_parameter_item_ids = []
             for param in active_parameters:
                 # Get all parameter items for this parameter
-                param_items = session.exec(
-                    select(ParameterItems).where(
-                        ParameterItems.parameter_id == param.id
-                    )
-                ).all()
+                param_items = await conn.fetch(
+                    "SELECT id, name FROM parameter_items WHERE parameter_id = $1",
+                    param['id']
+                )
 
                 if param_items:
                     # Randomly select one parameter item from this parameter
                     selected_item = random.choice(param_items)
-                    scenario_parameter_item_ids.append(selected_item.id)
+                    scenario_parameter_item_ids.append(selected_item['id'])
                     logger.info(
-                        f"Selected parameter item for {param.name}: {selected_item.name}"
+                        f"Selected parameter item for {param['name']}: {selected_item['name']}"
                     )
 
             logger.info(
@@ -268,24 +267,23 @@ async def randomly_fill_scenario_attributes(
     else:
         # If parameter_item_ids are provided, ensure we have one per active parameter
         # Get all active parameters
-        active_parameters = session.exec(
-            select(Parameters).where(Parameters.active)
-        ).all()
-        active_param_ids = {param.id for param in active_parameters}
+        active_parameters = await conn.fetch(
+            "SELECT id FROM parameters WHERE active = true"
+        )
+        active_param_ids = {param['id'] for param in active_parameters}
 
         # Get all parameter items for the existing IDs from junction
-        existing_param_items = session.exec(
-            select(ParameterItems).where(
-                ParameterItems.id.in_(existing_param_ids)
-            )
-        ).all()
+        existing_param_items = await conn.fetch(
+            "SELECT id, parameter_id FROM parameter_items WHERE id = ANY($1::uuid[])",
+            existing_param_ids
+        )
 
         # Group existing parameter items by their parameter_id
-        existing_items_by_param: dict[uuid.UUID, list[ParameterItems]] = {}
+        existing_items_by_param: dict[uuid.UUID, list[Dict[str, Any]]] = {}
         for item in existing_param_items:
-            if item.parameter_id not in existing_items_by_param:
-                existing_items_by_param[item.parameter_id] = []
-            existing_items_by_param[item.parameter_id].append(item)
+            if item['parameter_id'] not in existing_items_by_param:
+                existing_items_by_param[item['parameter_id']] = []
+            existing_items_by_param[item['parameter_id']].append(dict(item))
 
         # For each active parameter, ensure we have exactly one parameter item
         scenario_parameter_item_ids = []
@@ -295,45 +293,44 @@ async def randomly_fill_scenario_attributes(
                 if len(items) > 1:
                     # Multiple items for this parameter, randomly select one
                     selected_item = random.choice(items)
-                    scenario_parameter_item_ids.append(selected_item.id)
+                    scenario_parameter_item_ids.append(selected_item['id'])
                 else:
                     # Only one item for this parameter
-                    scenario_parameter_item_ids.append(items[0].id)
+                    scenario_parameter_item_ids.append(items[0]['id'])
             else:
                 # No items for this parameter, randomly select one
-                param_items = session.exec(
-                    select(ParameterItems).where(
-                        ParameterItems.parameter_id == param_id
-                    )
-                ).all()
+                param_items = await conn.fetch(
+                    "SELECT id, name FROM parameter_items WHERE parameter_id = $1",
+                    param_id
+                )
                 if param_items:
                     selected_item = random.choice(param_items)
-                    scenario_parameter_item_ids.append(selected_item.id)
-                    logger.info(f"Filled missing parameter item for parameter {param_id}: {selected_item.name}")
+                    scenario_parameter_item_ids.append(selected_item['id'])
+                    logger.info(f"Filled missing parameter item for parameter {param_id}: {selected_item['name']}")
                 else:
                     logger.warning(f"No parameter items found for parameter {param_id}")
 
     # Load current linked docs/params from junction tables for comparison
-    from app.models import ScenarioDocuments, ScenarioParameterItems, ScenarioTree
+    current_doc_links = await conn.fetch(
+        "SELECT document_id FROM scenario_documents WHERE scenario_id = $1",
+        scenario_id
+    )
+    current_doc_ids = sorted([link['document_id'] for link in current_doc_links])
     
-    current_doc_links = session.exec(
-        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
-    ).all()
-    current_doc_ids = sorted([link.document_id for link in current_doc_links])
-    
-    current_param_links = session.exec(
-        select(ScenarioParameterItems).where(ScenarioParameterItems.scenario_id == scenario.id)
-    ).all()
-    current_param_ids = sorted([link.parameter_item_id for link in current_param_links])
+    current_param_links = await conn.fetch(
+        "SELECT parameter_item_id FROM scenario_parameter_items WHERE scenario_id = $1",
+        scenario_id
+    )
+    current_param_ids = sorted([link['parameter_item_id'] for link in current_param_links])
     
     # Get current persona from junction
-    current_persona_link = session.exec(
-        select(ScenarioPersonas).where(
-            ScenarioPersonas.scenario_id == scenario.id,
-            ScenarioPersonas.active == True
-        )
-    ).first()
-    current_persona_id = current_persona_link.persona_id if current_persona_link else None
+    current_persona_link = await conn.fetchrow("""
+        SELECT persona_id
+        FROM scenario_personas
+        WHERE scenario_id = $1 AND active = true
+        LIMIT 1
+    """, scenario_id)
+    current_persona_id = current_persona_link['persona_id'] if current_persona_link else None
     
     # Compare with new values
     new_docs = sorted(scenario_documents or [])
@@ -345,54 +342,44 @@ async def randomly_fill_scenario_attributes(
         return scenario
     
     # Create a new scenario variant with changes (persona will be set via junction below)
-    new_scenario = Scenarios(
-        name=scenario.name,
-        problem_statement=scenario.problem_statement,
-        department_id=department_id,
-        generated=True,
-    )
-    session.add(new_scenario)
-    session.flush()  # Get the new scenario ID
+    new_scenario_row = await conn.fetchrow("""
+        INSERT INTO scenarios (name, problem_statement, department_id, generated, active, default_scenario)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+    """, scenario.get('name'), scenario.get('problem_statement'), department_id, True, 
+         scenario.get('active', True), scenario.get('default_scenario', False))
+    
+    new_scenario_id = new_scenario_row['id']
+    new_scenario = dict(new_scenario_row)
     
     # Create scenario_tree edge (parent -> child)
-    from app.models import ScenarioTree
-    tree_link = ScenarioTree(
-        parent_id=scenario.id,
-        child_id=new_scenario.id,
-        active=True,
-    )
-    session.add(tree_link)
+    await conn.execute("""
+        INSERT INTO scenario_tree (parent_scenario_id, child_scenario_id, active)
+        VALUES ($1, $2, $3)
+    """, scenario_id, new_scenario_id, True)
     
     # Create junction record for persona
     if scenario_persona_id:
-        persona_link = ScenarioPersonas(
-            scenario_id=new_scenario.id,
-            persona_id=scenario_persona_id,
-            active=True,
-        )
-        session.add(persona_link)
+        await conn.execute("""
+            INSERT INTO scenario_personas (scenario_id, persona_id, active)
+            VALUES ($1, $2, $3)
+        """, new_scenario_id, scenario_persona_id, True)
     
     # Create junction records for documents
     if scenario_documents:
         for doc_id in scenario_documents:
-            doc_link = ScenarioDocuments(
-                scenario_id=new_scenario.id,
-                document_id=doc_id,
-                active=True,
-            )
-            session.add(doc_link)
+            await conn.execute("""
+                INSERT INTO scenario_documents (scenario_id, document_id, active)
+                VALUES ($1, $2, $3)
+            """, new_scenario_id, doc_id, True)
     
     # Create junction records for parameter items
     if scenario_parameter_item_ids:
         for param_id in scenario_parameter_item_ids:
-            param_link = ScenarioParameterItems(
-                scenario_id=new_scenario.id,
-                parameter_item_id=param_id,
-                active=True,
-            )
-            session.add(param_link)
-    
-    session.commit()
+            await conn.execute("""
+                INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
+                VALUES ($1, $2, $3)
+            """, new_scenario_id, param_id, True)
     
     return new_scenario
 
@@ -455,7 +442,7 @@ def _weighted_sample_without_replacement(items: list[Any], scores: list[float], 
     return selected
 
 
-def suggest_randomized_sections(
+async def suggest_randomized_sections(
     *,
     name: Optional[str],
     description: Optional[str],
@@ -463,7 +450,7 @@ def suggest_randomized_sections(
     document_ids: Optional[List[uuid.UUID]],
     parameter_item_ids: Optional[List[uuid.UUID]],
     targets: List[str],
-    session: Session,
+    conn: asyncpg.Connection,
 ) -> Dict[str, Any]:
     """Suggest persona/documents/parameters based on current inputs and text.
 
@@ -479,31 +466,37 @@ def suggest_randomized_sections(
     context_text = _norm(base_text)
 
     # Load current persona/documents if provided to enrich context
-    current_persona: Personas | None = None
+    current_persona: Optional[Dict[str, Any]] = None
     if persona_id:
-        current_persona = session.exec(select(Personas).where(Personas.id == persona_id)).one_or_none()
-        if current_persona:
-            context_tokens.update(_tokens(current_persona.name))
-            context_tokens.update(_tokens(current_persona.description))
-            context_text = f"{context_text} {_norm(current_persona.name)} {_norm(current_persona.description)}"
-
-    current_documents: list[Documents] = []
-    if document_ids:
-        current_documents = list(
-            session.exec(
-                select(Documents).where(Documents.id.in_(document_ids))
-            ).all()
+        current_persona = await conn.fetchrow(
+            "SELECT id, name, description FROM personas WHERE id = $1",
+            persona_id
         )
+        if current_persona:
+            context_tokens.update(_tokens(current_persona['name']))
+            context_tokens.update(_tokens(current_persona.get('description')))
+            context_text = f"{context_text} {_norm(current_persona['name'])} {_norm(current_persona.get('description'))}"
+
+    current_documents: list[Dict[str, Any]] = []
+    if document_ids:
+        current_documents = await conn.fetch(
+            "SELECT id, name, type, file_path FROM documents WHERE id = ANY($1::uuid[])",
+            document_ids
+        )
+        current_documents = [dict(d) for d in current_documents]
+        
         for d in current_documents:
-            context_tokens.update(_tokens(d.name))
+            context_tokens.update(_tokens(d.get('name')))
             # Note: doc.tags removed in BCNF migration
-            context_tokens.add(_norm(d.type))
+            context_tokens.add(_norm(d.get('type')))
             # Include current document content to help parameter/persona choice
             try:
-                doc_text = _read_document_content_for_similarity(d.file_path)
-                # Limit size for performance
-                doc_text = doc_text[:5000]
-                context_text = f"{context_text} {_norm(doc_text)}"
+                file_path = d.get('file_path')
+                if file_path:
+                    doc_text = _read_document_content_for_similarity(file_path)
+                    # Limit size for performance
+                    doc_text = doc_text[:5000]
+                    context_text = f"{context_text} {_norm(doc_text)}"
             except Exception:
                 pass
 
@@ -511,9 +504,9 @@ def suggest_randomized_sections(
     suggested_persona_id = persona_id
     if "persona" in targets_set:
         # Make persona selection fully random among active personas to reduce determinism
-        active_personas = session.exec(select(Personas).where(Personas.active)).all()
+        active_personas = await conn.fetch("SELECT id FROM personas WHERE active = true")
         if active_personas:
-            suggested_persona_id = random.choice(active_personas).id
+            suggested_persona_id = random.choice(active_personas)['id']
 
     # Suggest documents ---------------------------------------------------
     # If documents explicitly provided as empty list, respect "no documents"
@@ -530,7 +523,11 @@ def suggest_randomized_sections(
                 "document_ids": suggested_document_ids,
                 "parameter_item_ids": list(parameter_item_ids or []),
             }
-        active_documents = session.exec(select(Documents).where(Documents.active)).all()
+        active_documents = await conn.fetch(
+            "SELECT id, name, type, file_path FROM documents WHERE active = true"
+        )
+        active_documents = [dict(d) for d in active_documents]
+        
         known_types = [
             "homework",
             "project",
@@ -543,29 +540,31 @@ def suggest_randomized_sections(
         scenario_text_norm = _norm(base_text)
         has_type = {t: (t in context_tokens) or (t in scenario_text_norm) for t in known_types}
 
-        def score_doc(doc: Documents) -> float:
+        def score_doc(doc: Dict[str, Any]) -> float:
             score = 0.0
             # Note: doc.tags removed in BCNF migration
-            name_overlap = context_tokens.intersection(set(_tokens(doc.name or "")))
+            name_overlap = context_tokens.intersection(set(_tokens(doc.get('name') or "")))
             score += 2.0 * len(name_overlap)
-            d_type = (doc.type or "").lower()
+            d_type = (doc.get('type') or "").lower()
             if d_type and has_type.get(d_type, False):
                 score += 10.0
             if d_type and d_type in scenario_text_norm:
                 score += 3.0
             # Content similarity (token set ratio over truncated content)
             try:
-                doc_text = _read_document_content_for_similarity(doc.file_path)
-                doc_text = doc_text[:5000]
-                sim = fuzz.token_set_ratio(context_text, _norm(doc_text))  # 0..100
-                score += sim * 0.15  # weight content moderately
+                file_path = doc.get('file_path')
+                if file_path:
+                    doc_text = _read_document_content_for_similarity(file_path)
+                    doc_text = doc_text[:5000]
+                    sim = fuzz.token_set_ratio(context_text, _norm(doc_text))  # 0..100
+                    score += sim * 0.15  # weight content moderately
             except Exception:
                 pass
             return score
 
         if active_documents:
             # Ensure all selected share the same tag
-            tag_to_docs: dict[str, list[Documents]] = {}
+            tag_to_docs: dict[str, list[Dict[str, Any]]] = {}
             for d in active_documents:
                 # Note: doc.tags removed in BCNF migration
                 tags = ["__untagged__"]  # d.tags removed
@@ -590,35 +589,41 @@ def suggest_randomized_sections(
             cand_docs = candidates
             cand_scores = [score_doc(d) for d in cand_docs]
             selected = _weighted_sample_without_replacement(cand_docs, cand_scores, 1)
-            suggested_document_ids = [d.id for d in selected]
+            suggested_document_ids = [d['id'] for d in selected]
 
     # Suggest parameters --------------------------------------------------
     suggested_parameter_item_ids = list(parameter_item_ids or [])
     if "parameters" in targets_set:
-        active_parameters = session.exec(select(Parameters).where(Parameters.active)).all()
+        active_parameters = await conn.fetch(
+            "SELECT id, name, description, default_parameter FROM parameters WHERE active = true"
+        )
         if active_parameters:
             chosen: list[uuid.UUID] = []
             for param in active_parameters:
-                items = session.exec(select(ParameterItems).where(ParameterItems.parameter_id == param.id)).all()
+                items = await conn.fetch(
+                    "SELECT id, name, description, value FROM parameter_items WHERE parameter_id = $1",
+                    param['id']
+                )
+                items = [dict(item) for item in items]
                 if not items:
                     continue
                 # If parameter.default_parameter is True => completely random item
-                param_is_default = getattr(param, "default_parameter", False)
+                param_is_default = param.get('default_parameter', False)
                 if param_is_default:
-                    chosen.append(random.choice(items).id)
+                    chosen.append(random.choice(items)['id'])
                 else:
                     # non-default: similarity-based with randomness
-                    def score_item(it: ParameterItems) -> float:
+                    def score_item(it: Dict[str, Any]) -> float:
                         score = 0.0
-                        name_norm = _norm(it.name)
-                        desc_norm = _norm(it.description)
-                        value_norm = _norm(it.value)
+                        name_norm = _norm(it.get('name'))
+                        desc_norm = _norm(it.get('description'))
+                        value_norm = _norm(it.get('value'))
 
                         # Token overlaps
                         name_tokens = set(_tokens(name_norm))
                         desc_tokens = set(_tokens(desc_norm))
                         value_tokens = set(_tokens(value_norm))
-                        p_tokens = set(_tokens(param.name)) | set(_tokens(param.description))
+                        p_tokens = set(_tokens(param.get('name'))) | set(_tokens(param.get('description')))
 
                         # Item tokens overlap with context (value gets higher weight)
                         score += 2.0 * len(name_tokens & context_tokens)
@@ -635,7 +640,7 @@ def suggest_randomized_sections(
                         # Fuzzy similarity with heavier emphasis on value
                         sim_all: float = float(
                             fuzz.token_set_ratio(
-                                context_text, _norm(f"{it.name} {it.description} {it.value}")
+                                context_text, _norm(f"{it.get('name')} {it.get('description')} {it.get('value')}")
                             )
                         )
                         sim_value: float = float(fuzz.token_set_ratio(context_text, value_norm))
@@ -650,7 +655,7 @@ def suggest_randomized_sections(
                     top_pool = ranked_items[: min(5, len(ranked_items))]
                     if top_pool:
                         chosen_item = random.choice(top_pool)
-                        chosen.append(chosen_item.id)
+                        chosen.append(chosen_item['id'])
             suggested_parameter_item_ids = chosen
 
     return {

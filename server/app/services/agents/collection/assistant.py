@@ -4,15 +4,14 @@ import os
 import uuid
 from typing import AsyncGenerator
 
+import asyncpg  # type: ignore
 from agents import Runner, trace
 from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.db import get_session
-from app.models import (Agents, AssistantChats, AssistantMessages,
-                        AssistantToolCalls, ModelRuns, Models, Profiles,
-                        Providers)
+from app.db import get_db
 from app.services.agents.generic import GenericAgent
+from app.utils.agents import get_department_agent
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.limit import check_rate_limit
@@ -20,7 +19,6 @@ from dotenv import load_dotenv
 from fastapi import Depends
 from openai.types.responses import (ResponseFunctionToolCall,
                                     ResponseTextDeltaEvent)
-from sqlmodel import Session, select, update
 
 load_dotenv()
 
@@ -30,7 +28,7 @@ logger = logging.getLogger(__name__)
 async def run_assistant_agent(
     chat_id: uuid.UUID,
     department_id: uuid.UUID,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
 ) -> AsyncGenerator[str, None]:
     """
     This function is used to run the generic agent using the OpenAI Agents SDK.
@@ -48,9 +46,10 @@ async def run_assistant_agent(
     """
 
     # Try to get assistant chat first
-    assistant_chat = session.exec(
-        select(AssistantChats).where(AssistantChats.id == chat_id)
-    ).one_or_none()
+    assistant_chat = await conn.fetchrow(
+        "SELECT id, title, trace_id, profile_id FROM assistant_chats WHERE id = $1",
+        chat_id
+    )
 
     if assistant_chat:
         # Use internal server URL for MCP server connection
@@ -66,7 +65,7 @@ async def run_assistant_agent(
         ) as domain_server:
             mcp_servers = [domain_server]
             async for token in _handle_assistant_chat(
-                assistant_chat, mcp_servers, department_id, session
+                assistant_chat, mcp_servers, department_id, conn
             ):
                 yield token
     else:
@@ -89,25 +88,25 @@ async def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_assistant_chat(
-    chat: AssistantChats, mcp_servers: list[MCPServer], department_id: uuid.UUID, session: Session
+    chat: asyncpg.Record, mcp_servers: list[MCPServer], department_id: uuid.UUID, conn: asyncpg.Connection
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
     # Get the assistant agent configured for this department (via junction table)
-    from app.utils.agents import get_department_agent
-    agent = get_department_agent(session, department_id, 'assistant')
+    agent = await get_department_agent(conn, department_id, 'assistant')
 
     input_items: list[TResponseInputItem] = []
 
     # get the user profile from the chat
-    user_profile = session.exec(
-        select(Profiles).where(Profiles.id == chat.profile_id)
-    ).one()
+    user_profile = await conn.fetchrow(
+        "SELECT id, role, first_name, last_name FROM profiles WHERE id = $1",
+        chat['profile_id']
+    )
     if not user_profile:
-        raise ValueError(f"User profile not found with ID: {chat.profile_id}")
+        raise ValueError(f"User profile not found with ID: {chat['profile_id']}")
 
     # get the user's role
-    user_role = user_profile.role
+    user_role = user_profile['role']
     if user_role == "superadmin":
         user_role = "Super Administrator"
     elif user_role == "admin":
@@ -118,115 +117,100 @@ async def _handle_assistant_chat(
         user_role = "GTA"
 
     # get the user's name
-    user_name = f"{user_profile.first_name} {user_profile.last_name}"
+    user_name = f"{user_profile['first_name']} {user_profile['last_name']}"
 
     # add the user profile to the input items
     input_items.append(
         {
             "role": "user",
-            "content": f"The user's profile ID: {chat.profile_id}. The user's name is {user_name}. The user's role is {user_role}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well.",
+            "content": f"The user's profile ID: {chat['profile_id']}. The user's name is {user_name}. The user's role is {user_role}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well.",
         }
     )
 
     # Get all the messages for the chat_id, including the new one, order by created_at
-    messages = session.exec(
-        select(AssistantMessages).where(AssistantMessages.chat_id == chat.id)
-    ).all()
-
-    # sort messages by created_at
-    messages = list(messages)
-    messages = sorted(messages, key=lambda x: x.created_at)
+    messages = await conn.fetch(
+        "SELECT * FROM assistant_messages WHERE chat_id = $1 ORDER BY created_at",
+        chat['id']
+    )
 
     # get all the tool calls for the chat_id
-    tool_calls = session.exec(
-        select(AssistantToolCalls).where(AssistantToolCalls.chat_id == chat.id)
-    ).all()
-
-    # sort tool calls by created_at
-    tool_calls = list(tool_calls)
-    tool_calls = sorted(tool_calls, key=lambda x: x.created_at)
+    tool_calls = await conn.fetch(
+        "SELECT * FROM assistant_tool_calls WHERE chat_id = $1 ORDER BY created_at",
+        chat['id']
+    )
 
     # Prepare conversation history from chat_id
     conversation_history = get_assistant_conversation_history(messages, tool_calls)
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = await conn.fetchrow(
+        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+        agent['model_id']
+    )
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {agent['model_id']} not found")
 
     # getting the provider from the model's provider_id
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
+    provider = await conn.fetchrow(
+        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+        model['provider_id']
+    )
     if not provider:
-        raise ValueError(f"Provider with ID {model.provider_id} not found")
+        raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
     agent_instance = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
-        model_name=model.name,
-        model_provider=provider.name,
-        base_url=provider.base_url,
-        api_key=provider.api_key,
-        reasoning=agent.reasoning,
+        agent_name=agent['name'],
+        system_prompt=agent['system_prompt'],
+        temperature=agent['temperature'],
+        model_name=model['name'],
+        model_provider=provider['name'],
+        base_url=provider['base_url'],
+        api_key=provider['api_key'],
+        reasoning=agent['reasoning'],
         mcp_servers=mcp_servers,
-        custom_model=model.custom_model,
+        custom_model=model['custom_model'],
     )
 
-    final_profile_id = chat.profile_id
+    final_profile_id = chat['profile_id']
 
-    success, error_message = check_rate_limit(final_profile_id, session)
+    success, error_message = await check_rate_limit(conn, final_profile_id)
     if not success:
         raise ValueError(error_message)
 
     # create a model run
-    model_run = ModelRuns(
-        input_tokens=0,
-        output_tokens=0,
-        department_id=department_id,
-    )
-    session.add(model_run)
-    session.commit()
-    session.refresh(model_run)
+    model_run_id = await conn.fetchval("""
+        INSERT INTO model_runs (input_tokens, output_tokens, department_id)
+        VALUES ($1, $2, $3)
+        RETURNING id
+    """, 0, 0, department_id)
 
     # Create model_run junction records
-    from app.models import ModelRunModels, ModelRunAgents, ModelRunProfiles
+    if model['id']:
+        await conn.execute("""
+            INSERT INTO model_run_models (model_run_id, model_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, model['id'], True)
     
-    if model.id:
-        model_run_model = ModelRunModels(
-            model_run_id=model_run.id,
-            model_id=model.id,
-            active=True,
-        )
-        session.add(model_run_model)
-    
-    if agent.id:
-        model_run_agent = ModelRunAgents(
-            model_run_id=model_run.id,
-            agent_id=agent.id,
-            active=True,
-        )
-        session.add(model_run_agent)
+    if agent['id']:
+        await conn.execute("""
+            INSERT INTO model_run_agents (model_run_id, agent_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, agent['id'], True)
     
     if final_profile_id:
-        model_run_profile = ModelRunProfiles(
-            model_run_id=model_run.id,
-            profile_id=final_profile_id,
-            active=True,
-        )
-        session.add(model_run_profile)
-    
-    session.commit()
+        await conn.execute("""
+            INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, final_profile_id, True)
 
-    with trace(chat.title, trace_id=chat.trace_id):
-        result = Runner.run_streamed(agent_instance.agent(), input=input_items, context=DebugContext(session=session, model_run_id=model_run.id))
+    with trace(chat['title'], trace_id=chat['trace_id']):
+        result = Runner.run_streamed(agent_instance.agent(), input=input_items, context=DebugContext(conn=conn, model_run_id=model_run_id))
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run
 
-    chat_id_str = str(chat.id)
+    chat_id_str = str(chat['id'])
     await store_active_run(chat_id_str, result)
 
     # Track active tool calls to match with their results
@@ -302,9 +286,11 @@ async def _handle_assistant_chat(
         usage = result.context_wrapper.usage
 
         # update model run
-        model_run.input_tokens = usage.input_tokens
-        model_run.output_tokens = usage.output_tokens
-        session.commit()
+        await conn.execute("""
+            UPDATE model_runs 
+            SET input_tokens = $1, output_tokens = $2
+            WHERE id = $3
+        """, usage.input_tokens, usage.output_tokens, model_run_id)
 
     except Exception as e:
         # Handle cancellation or other errors

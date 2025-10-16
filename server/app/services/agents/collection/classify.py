@@ -2,17 +2,17 @@ import logging
 import uuid
 from typing import Any
 
+import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
-from app.db import get_session
-from app.models import Agents, Documents, ModelRuns, Models, Providers
+from app.db import get_db
 from app.services.agents.generic import GenericAgent
+from app.utils.agents import get_department_agent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
 from fastapi import Depends
 from pydantic import Field
-from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ async def run_classify_agent(
     document_ids: list[uuid.UUID],
     department_id: uuid.UUID,
     test: bool = False,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
     profile_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     """
@@ -107,14 +107,13 @@ async def run_classify_agent(
         classification_results[category] = []
 
     # Get the classify agent configured for this department (via junction table)
-    from app.utils.agents import get_department_agent
-    agent = get_department_agent(session, department_id, 'classify')
+    agent = await get_department_agent(conn, department_id, 'classify')
 
     # get all the documents for the class that haven't been classified yet
-    # Note: Since there's no 'classified' field in the model, we'll classify all documents
-    documents = session.exec(
-        select(Documents).where(Documents.id.in_(document_ids))
-    ).all()
+    documents = await conn.fetch(
+        "SELECT id, name, type FROM documents WHERE id = ANY($1)",
+        document_ids
+    )
 
     if not documents:
         logger.info(f"No documents found for document_ids {document_ids}")
@@ -129,8 +128,8 @@ async def run_classify_agent(
     document_list = []
     document_mapping = {}
     for i, doc in enumerate(documents, 1):
-        document_list.append(f"{i}: {doc.name}")
-        document_mapping[str(i)] = doc
+        document_list.append(f"{i}: {doc['name']}")
+        document_mapping[str(i)] = dict(doc)
 
     formatted_documents = "\n".join(document_list)
 
@@ -139,16 +138,20 @@ async def run_classify_agent(
     )
 
     # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    model = await conn.fetchrow(
+        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+        agent['model_id']
+    )
     if not model:
-        raise ValueError(f"Model with ID {agent.model_id} not found")
+        raise ValueError(f"Model with ID {agent['model_id']} not found")
 
     # getting the provider from the model's provider_id
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
+    provider = await conn.fetchrow(
+        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+        model['provider_id']
+    )
     if not provider:
-        raise ValueError(f"Provider with ID {model.provider_id} not found")
+        raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
     # Create classification tools
     classification_tools = create_classification_tools()
@@ -167,18 +170,18 @@ async def run_classify_agent(
         return ToolsToFinalOutputResult(is_final_output=False)
 
     classify_agent = GenericAgent(
-        agent_name=agent.name,
-        system_prompt=agent.system_prompt,
-        temperature=agent.temperature,
-        model_name=model.name,
-        model_provider=provider.name,
-        base_url=provider.base_url,
-        api_key=provider.api_key,
-        reasoning=agent.reasoning,
+        agent_name=agent['name'],
+        system_prompt=agent['system_prompt'],
+        temperature=agent['temperature'],
+        model_name=model['name'],
+        model_provider=provider['name'],
+        base_url=provider['base_url'],
+        api_key=provider['api_key'],
+        reasoning=agent['reasoning'],
         tools=classification_tools,
         parallel_tool_calls=True,
         tool_use_behavior=tool_use_behavior,
-        custom_model=model.custom_model,
+        custom_model=model['custom_model'],
     )
 
     try:
@@ -196,64 +199,51 @@ async def run_classify_agent(
                 }
             else:
 
-                default_guest_profile = find_default_guest_profile(session)
+                default_guest_profile = await find_default_guest_profile(conn)
 
-                final_profile_id = (profile_id if profile_id else (default_guest_profile.id if default_guest_profile else None))
+                final_profile_id = (profile_id if profile_id else (default_guest_profile['id'] if default_guest_profile else None))
 
-                success, error_message = check_rate_limit(final_profile_id, session)
+                success, error_message = await check_rate_limit(conn, final_profile_id)
                 if not success:
                     raise ValueError(error_message)
                 
                 # create model run
-                model_run = ModelRuns(
-                    input_tokens=0,
-                    output_tokens=0,
-                    department_id=department_id,
-                )
-                session.add(model_run)
-                session.commit()
-                session.refresh(model_run)
+                model_run_id = await conn.fetchval("""
+                    INSERT INTO model_runs (input_tokens, output_tokens, department_id)
+                    VALUES ($1, $2, $3)
+                    RETURNING id
+                """, 0, 0, department_id)
 
                 # Create model_run junction records
-                from app.models import (ModelRunAgents, ModelRunModels,
-                                        ModelRunProfiles)
+                if model['id']:
+                    await conn.execute("""
+                        INSERT INTO model_run_models (model_run_id, model_id, active)
+                        VALUES ($1, $2, $3)
+                    """, model_run_id, model['id'], True)
                 
-                if model.id:
-                    model_run_model = ModelRunModels(
-                        model_run_id=model_run.id,
-                        model_id=model.id,
-                        active=True,
-                    )
-                    session.add(model_run_model)
-                
-                if agent.id:
-                    model_run_agent = ModelRunAgents(
-                        model_run_id=model_run.id,
-                        agent_id=agent.id,
-                        active=True,
-                    )
-                    session.add(model_run_agent)
+                if agent['id']:
+                    await conn.execute("""
+                        INSERT INTO model_run_agents (model_run_id, agent_id, active)
+                        VALUES ($1, $2, $3)
+                    """, model_run_id, agent['id'], True)
                 
                 if final_profile_id:
-                    model_run_profile = ModelRunProfiles(
-                        model_run_id=model_run.id,
-                        profile_id=final_profile_id,
-                        active=True,
-                    )
-                    session.add(model_run_profile)
-                
-                session.commit()
-
+                    await conn.execute("""
+                        INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+                        VALUES ($1, $2, $3)
+                    """, model_run_id, final_profile_id, True)
 
                 result = await Runner.run(
-                    classify_agent.agent(), input=formatted_documents, context=DebugContext(session=session, model_run_id=model_run.id)
+                    classify_agent.agent(), input=formatted_documents, context=DebugContext(conn=conn, model_run_id=model_run_id)
                 )
 
                 usage = result.context_wrapper.usage
 
-                model_run.input_tokens = usage.input_tokens
-                model_run.output_tokens = usage.output_tokens
-                session.commit()
+                await conn.execute("""
+                    UPDATE model_runs 
+                    SET input_tokens = $1, output_tokens = $2
+                    WHERE id = $3
+                """, usage.input_tokens, usage.output_tokens, model_run_id)
 
                 # Extract results from the global storage
                 # Categories not called by agent remain as empty lists (lazy default)
@@ -290,12 +280,14 @@ async def run_classify_agent(
                     if doc_num in document_mapping:
                         document = document_mapping[doc_num]
                         new_type = type_mapping.get(category, "homework")
-                        if document.type != new_type:
-                            document.type = new_type
-                            session.add(document)
+                        if document['type'] != new_type:
+                            await conn.execute(
+                                "UPDATE documents SET type = $1 WHERE id = $2",
+                                new_type, document['id']
+                            )
                             classified_count += 1
                             logger.info(
-                                f"Updated document '{document.name}' to type '{new_type}'"
+                                f"Updated document '{document['name']}' to type '{new_type}'"
                             )
 
         # Lazy behavior: Any documents not classified by any tool default to "homework"
@@ -313,16 +305,16 @@ async def run_classify_agent(
             for doc_num in unclassified_doc_nums:
                 if doc_num in document_mapping:
                     document = document_mapping[doc_num]
-                    if document.type != "homework":
-                        document.type = "homework"
-                        session.add(document)
+                    if document['type'] != "homework":
+                        await conn.execute(
+                            "UPDATE documents SET type = $1 WHERE id = $2",
+                            "homework", document['id']
+                        )
                         classified_count += 1
-                        logger.info(f"Defaulted document '{document.name}' to type 'homework'")
+                        logger.info(f"Defaulted document '{document['name']}' to type 'homework'")
             
             # Add to classification results for completeness
             classification_dict.setdefault("homeworks", []).extend(list(unclassified_doc_nums))
-
-        session.commit()
 
         logger.info(
             f"Successfully classified {classified_count} documents for document_ids {document_ids}"
@@ -338,7 +330,6 @@ async def run_classify_agent(
 
     except Exception as e:
         logger.error(f"Error during classification: {str(e)}")
-        session.rollback()
         return {
             "success": False,
             "message": f"Classification failed: {str(e)}",

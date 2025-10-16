@@ -99,7 +99,7 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
             # Update the title with the title agent
             chat_title = await run_title_agent(
-                chat.id, initial_message, department_id, db_session
+                chat['id'], initial_message, department_id, conn  # type: ignore[arg-type]
             )
             logger.info(f"Chat title: {chat_title}")
 
@@ -122,8 +122,6 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             )
 
             logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")
-        finally:
-            db_session.close()
 
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
@@ -142,12 +140,18 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
             await emit_assistant_error(sid, "Missing chat_id")
             return
 
-        # Create a new session for this operation
-        db_session = next(get_session())
+        # Get connection from pool
+        pool = get_pool()
+        if not pool:
+            await emit_assistant_error(sid, "Database not available")
+            return
 
-        try:
+        async with pool.acquire() as conn:
             # Verify the chat exists
-            chat = db_session.get(AssistantChats, uuid.UUID(chat_id))
+            chat = await conn.fetchrow(
+                "SELECT id FROM assistant_chats WHERE id = $1",
+                uuid.UUID(chat_id)
+            )
             if not chat:
                 await emit_assistant_error(sid, "Chat not found")
                 return
@@ -183,9 +187,6 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
                     room=f"assistant_{chat_id}",
                 )
 
-        finally:
-            db_session.close()
-
     except Exception as e:
         logger.error(f"Error stopping assistant for {sid}: {str(e)}")
         await emit_assistant_error(sid, f"Failed to stop assistant: {str(e)}")
@@ -201,296 +202,312 @@ async def process_assistant_message_websocket(
     Supports both text and audio messages (audio support to be implemented)
     """
 
-    # Create a new session for this async operation
-    from app.db import get_session
+    # Get connection from pool
+    pool = get_pool()
+    if not pool:
+        logger.error("Database pool not available")
+        return
 
-    db_session = next(get_session())
     sio_instance = get_sio_instance()
     current_message = None
     accumulated_content = ""
     active_tool_calls = {}  # Track tool calls by ID
 
-    try:
-        # --- FIX: Add this block to verify the chat exists ---
-        chat = db_session.exec(
-            select(AssistantChats).where(AssistantChats.id == chat_id)
-        ).one_or_none()
-        if not chat:
-            raise ValueError(f"Chat {chat_id} not found")
-        # --- END FIX ---
+    async with pool.acquire() as conn:
+        try:
+            # Verify the chat exists
+            chat = await conn.fetchrow(
+                "SELECT id FROM assistant_chats WHERE id = $1",
+                chat_id
+            )
+            if not chat:
+                raise ValueError(f"Chat {chat_id} not found")
 
-        # 1. Add the user message to the chat
-        user_message = AssistantMessages(
-            chat_id=chat_id, role="user", content=message, completed=True
-        )
-        db_session.add(user_message)
-        db_session.commit()
-        db_session.refresh(user_message)
-
-        # 2. Emit user message to connected clients
-        await sio_instance.emit(
-            "assistant_new_message",
-            {
-                "message_id": str(user_message.id),
-                "chat_id": str(chat_id),
-                "role": "user",
-                "content": message,
-                "completed": True,
-                "created_at": user_message.created_at.isoformat(),
-            },
-            room=f"assistant_{chat_id}",
-        )
-
-        logger.info(f"Processing assistant message for chat {chat_id}")
-
-        # 3. Stream the assistant response
-        async for token in run_assistant_agent(chat_id, department_id, db_session):
-            logger.info(
-                f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})"
+            # 1. Add the user message to the chat
+            from datetime import datetime, timezone
+            
+            user_message = await conn.fetchrow(
+                """INSERT INTO assistant_messages (chat_id, role, content, completed, created_at)
+                   VALUES ($1, $2, $3, $4, $5)
+                   RETURNING id, created_at""",
+                chat_id,
+                "user",
+                message,
+                True,
+                datetime.now(timezone.utc)
             )
 
-            # Check if this is a tool call token
-            if token.startswith("<tool_call_start>") and token.endswith(
-                "</tool_call_start>"
-            ):
-                logger.info(f"Received tool call start token: {token}")
-
-                # If we have accumulated content, complete the current message and create a new one
-                if accumulated_content.strip() and current_message:
-                    # Complete current message
-                    current_message.content = accumulated_content
-                    current_message.completed = True
-                    db_session.add(current_message)
-                    db_session.commit()
-
-                    # Emit completion for current message
-                    await sio_instance.emit(
-                        "message_complete",
-                        {
-                            "message_id": str(current_message.id),
-                            "chat_id": str(chat_id),
-                            "final_content": accumulated_content,
-                        },
-                        room=f"assistant_{chat_id}",
-                    )
-
-                    # Reset accumulated content
-                    accumulated_content = ""
-                    current_message = None
-
-                # Extract tool call data
-                tool_call_json = token.replace("<tool_call_start>", "").replace(
-                    "</tool_call_start>", ""
-                )
-                try:
-                    tool_call_data = json.loads(tool_call_json)
-
-                    # Determine tool type based on tool name
-                    tool_name = tool_call_data.get("name", "unknown")
-                    tool_type = "read"  # Default to read
-
-                    # Map tool names to types based on their operation
-                    if any(
-                        keyword in tool_name.lower()
-                        for keyword in ["create", "add", "insert", "new"]
-                    ):
-                        tool_type = "create"
-                    elif any(
-                        keyword in tool_name.lower()
-                        for keyword in ["update", "edit", "modify", "change"]
-                    ):
-                        tool_type = "update"
-                    elif any(
-                        keyword in tool_name.lower()
-                        for keyword in ["delete", "remove", "drop"]
-                    ):
-                        tool_type = "delete"
-                    # Otherwise defaults to 'read' for find, get, list, etc.
-
-                    # Save tool call to database (without associating to a message)
-                    tool_call = AssistantToolCalls(
-                        chat_id=chat_id,
-                        tool_name=tool_name,
-                        tool_type=tool_type,
-                        tool_arguments=tool_call_data.get("arguments", {}),
-                        tool_result={},  # Will be updated when result comes in
-                        completed=False,  # Mark as incomplete initially
-                    )
-
-                    db_session.add(tool_call)
-                    db_session.commit()
-                    db_session.refresh(tool_call)
-                    logger.info(
-                        f"Successfully created tool call record: {tool_call.id}"
-                    )
-
-                    # Store the tool call for later result matching
-                    tool_call_id = tool_call_data.get("id")
-                    if tool_call_id:
-                        active_tool_calls[tool_call_id] = tool_call
-
-                    # Emit tool call created event (frontend will refetch tool calls)
-                    await sio_instance.emit(
-                        "tool_call_created",
-                        {
-                            "tool_call_id": str(tool_call.id),
-                            "chat_id": str(chat_id),
-                            "tool_name": tool_name,
-                            "tool_type": tool_type,
-                        },
-                        room=f"assistant_{chat_id}",
-                    )
-
-                except json.JSONDecodeError:
-                    logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
-
-            elif token.startswith("<tool_call_result>") and token.endswith(
-                "</tool_call_result>"
-            ):
-                logger.info(f"Received tool call result token: {token}")
-                # Extract tool call result data
-                tool_result_json = token.replace("<tool_call_result>", "").replace(
-                    "</tool_call_result>", ""
-                )
-                try:
-                    tool_result_data = json.loads(tool_result_json)
-                    tool_call_id = tool_result_data.get("id")
-
-                    # Update the corresponding tool call record with the result
-                    tool_call_record = None
-                    if tool_call_id and tool_call_id in active_tool_calls:
-                        tool_call_record = active_tool_calls[tool_call_id]
-                        tool_call_record.tool_result = tool_result_data.get(
-                            "result", {}
-                        )
-                        tool_call_record.completed = True
-
-                        db_session.add(tool_call_record)
-                        db_session.commit()
-                        logger.info(
-                            f"Successfully updated tool call record {tool_call_record.id} with result"
-                        )
-
-                        # Remove from active tracking
-                        del active_tool_calls[tool_call_id]
-
-                    # Emit tool call completed event (frontend will refetch tool calls)
-                    await sio_instance.emit(
-                        "tool_call_completed",
-                        {
-                            "tool_call_id": str(tool_call_record.id)
-                            if tool_call_record
-                            else None,
-                            "chat_id": str(chat_id),
-                            "tool_name": tool_result_data.get("name"),
-                        },
-                        room=f"assistant_{chat_id}",
-                    )
-
-                except json.JSONDecodeError:
-                    logger.error(
-                        f"Failed to parse tool result JSON: {tool_result_json}"
-                    )
-
-            else:
-                # Regular content token
-                accumulated_content += token
-
-                # Create assistant message if we don't have one yet
-                if not current_message:
-                    current_message = AssistantMessages(
-                        chat_id=chat_id,
-                        role="assistant",
-                        content="",
-                        completed=False,
-                    )
-                    db_session.add(current_message)
-                    db_session.commit()
-                    db_session.refresh(current_message)
-
-                    # Emit new placeholder message
-                    await sio_instance.emit(
-                        "assistant_new_message",
-                        {
-                            "message_id": str(current_message.id),
-                            "chat_id": str(chat_id),
-                            "role": "assistant",
-                            "content": "",
-                            "completed": False,
-                            "created_at": current_message.created_at.isoformat(),
-                        },
-                        room=f"assistant_{chat_id}",
-                    )
-
-                # Update the database with accumulated content
-                current_message.content = accumulated_content
-                db_session.add(current_message)
-                db_session.commit()
-
-                # Emit token update to connected clients
-                await sio_instance.emit(
-                    "assistant_message_token",
-                    {
-                        "message_id": str(current_message.id),
-                        "chat_id": str(chat_id),
-                        "token": token,
-                        "accumulated_content": accumulated_content,
-                    },
-                    room=f"assistant_{chat_id}",
-                )
-
-        # 4. Mark current message as completed (if we have one)
-        if current_message:
-            current_message.completed = True
-            db_session.add(current_message)
-            db_session.commit()
-
-            # 5. Emit completion signal
+            # 2. Emit user message to connected clients
             await sio_instance.emit(
-                "assistant_message_complete",
+                "assistant_new_message",
                 {
-                    "message_id": str(current_message.id),
+                    "message_id": str(user_message['id']),
                     "chat_id": str(chat_id),
-                    "final_content": accumulated_content,
+                    "role": "user",
+                    "content": message,
+                    "completed": True,
+                    "created_at": user_message['created_at'].isoformat(),
                 },
                 room=f"assistant_{chat_id}",
             )
 
-    except Exception as e:
-        # Handle cancellation gracefully
-        if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
-            logger.info(f"Assistant run for chat {chat_id} was cancelled")
+            logger.info(f"Processing assistant message for chat {chat_id}")
 
-            # Finalize the message with the content received so far
+            # 3. Stream the assistant response
+            async for token in run_assistant_agent(chat_id, department_id, conn):  # type: ignore[arg-type]
+                logger.info(
+                    f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})"
+                )
+
+                # Check if this is a tool call token
+                if token.startswith("<tool_call_start>") and token.endswith(
+                    "</tool_call_start>"
+                ):
+                    logger.info(f"Received tool call start token: {token}")
+
+                    # If we have accumulated content, complete the current message and create a new one
+                    if accumulated_content.strip() and current_message:
+                        # Complete current message
+                        await conn.execute(
+                            "UPDATE assistant_messages SET content = $1, completed = $2 WHERE id = $3",
+                            accumulated_content,
+                            True,
+                            current_message['id']
+                        )
+
+                        # Emit completion for current message
+                        await sio_instance.emit(
+                            "message_complete",
+                            {
+                                "message_id": str(current_message['id']),
+                                "chat_id": str(chat_id),
+                                "final_content": accumulated_content,
+                            },
+                            room=f"assistant_{chat_id}",
+                        )
+
+                        # Reset accumulated content
+                        accumulated_content = ""
+                        current_message = None
+
+                    # Extract tool call data
+                    tool_call_json = token.replace("<tool_call_start>", "").replace(
+                        "</tool_call_start>", ""
+                    )
+                    try:
+                        tool_call_data = json.loads(tool_call_json)
+
+                        # Determine tool type based on tool name
+                        tool_name = tool_call_data.get("name", "unknown")
+                        tool_type = "read"  # Default to read
+
+                        # Map tool names to types based on their operation
+                        if any(
+                            keyword in tool_name.lower()
+                            for keyword in ["create", "add", "insert", "new"]
+                        ):
+                            tool_type = "create"
+                        elif any(
+                            keyword in tool_name.lower()
+                            for keyword in ["update", "edit", "modify", "change"]
+                        ):
+                            tool_type = "update"
+                        elif any(
+                            keyword in tool_name.lower()
+                            for keyword in ["delete", "remove", "drop"]
+                        ):
+                            tool_type = "delete"
+                        # Otherwise defaults to 'read' for find, get, list, etc.
+
+                        # Save tool call to database (without associating to a message)
+                        tool_call = await conn.fetchrow(
+                            """INSERT INTO assistant_tool_calls 
+                            (chat_id, tool_name, tool_type, tool_arguments, tool_result, completed, created_at)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7)
+                            RETURNING id""",
+                            chat_id,
+                            tool_name,
+                            tool_type,
+                            json.dumps(tool_call_data.get("arguments", {})),
+                            json.dumps({}),  # Will be updated when result comes in
+                            False,  # Mark as incomplete initially
+                            datetime.now(timezone.utc)
+                        )
+                        logger.info(
+                            f"Successfully created tool call record: {tool_call['id']}"
+                        )
+
+                        # Store the tool call for later result matching
+                        tool_call_id = tool_call_data.get("id")
+                        if tool_call_id:
+                            active_tool_calls[tool_call_id] = tool_call
+
+                        # Emit tool call created event (frontend will refetch tool calls)
+                        await sio_instance.emit(
+                            "tool_call_created",
+                            {
+                                "tool_call_id": str(tool_call['id']),
+                                "chat_id": str(chat_id),
+                                "tool_name": tool_name,
+                                "tool_type": tool_type,
+                            },
+                            room=f"assistant_{chat_id}",
+                        )
+
+                    except json.JSONDecodeError:
+                        logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
+
+                elif token.startswith("<tool_call_result>") and token.endswith(
+                    "</tool_call_result>"
+                ):
+                    logger.info(f"Received tool call result token: {token}")
+                    # Extract tool call result data
+                    tool_result_json = token.replace("<tool_call_result>", "").replace(
+                        "</tool_call_result>", ""
+                    )
+                    try:
+                        tool_result_data = json.loads(tool_result_json)
+                        tool_call_id = tool_result_data.get("id")
+
+                        # Update the corresponding tool call record with the result
+                        tool_call_record = None
+                        if tool_call_id and tool_call_id in active_tool_calls:
+                            tool_call_record = active_tool_calls[tool_call_id]
+                            await conn.execute(
+                                "UPDATE assistant_tool_calls SET tool_result = $1, completed = $2 WHERE id = $3",
+                                json.dumps(tool_result_data.get("result", {})),
+                                True,
+                                tool_call_record['id']
+                            )
+                            logger.info(
+                                f"Successfully updated tool call record {tool_call_record['id']} with result"
+                            )
+
+                            # Remove from active tracking
+                            del active_tool_calls[tool_call_id]
+
+                        # Emit tool call completed event (frontend will refetch tool calls)
+                        await sio_instance.emit(
+                            "tool_call_completed",
+                            {
+                                "tool_call_id": str(tool_call_record['id'])
+                                if tool_call_record
+                                else None,
+                                "chat_id": str(chat_id),
+                                "tool_name": tool_result_data.get("name"),
+                            },
+                            room=f"assistant_{chat_id}",
+                        )
+
+                    except json.JSONDecodeError:
+                        logger.error(
+                            f"Failed to parse tool result JSON: {tool_result_json}"
+                        )
+
+                else:
+                    # Regular content token
+                    accumulated_content += token
+
+                    # Create assistant message if we don't have one yet
+                    if not current_message:
+                        current_message = await conn.fetchrow(
+                            """INSERT INTO assistant_messages (chat_id, role, content, completed, created_at)
+                               VALUES ($1, $2, $3, $4, $5)
+                               RETURNING id, created_at""",
+                            chat_id,
+                            "assistant",
+                            "",
+                            False,
+                            datetime.now(timezone.utc)
+                        )
+
+                        # Emit new placeholder message
+                        await sio_instance.emit(
+                            "assistant_new_message",
+                            {
+                                "message_id": str(current_message['id']),
+                                "chat_id": str(chat_id),
+                                "role": "assistant",
+                                "content": "",
+                                "completed": False,
+                                "created_at": current_message['created_at'].isoformat(),
+                            },
+                            room=f"assistant_{chat_id}",
+                        )
+
+                    # Update the database with accumulated content
+                    await conn.execute(
+                        "UPDATE assistant_messages SET content = $1 WHERE id = $2",
+                        accumulated_content,
+                        current_message['id']
+                    )
+
+                    # Emit token update to connected clients
+                    await sio_instance.emit(
+                        "assistant_message_token",
+                        {
+                            "message_id": str(current_message['id']),
+                            "chat_id": str(chat_id),
+                            "token": token,
+                            "accumulated_content": accumulated_content,
+                        },
+                        room=f"assistant_{chat_id}",
+                    )
+
+            # 4. Mark current message as completed (if we have one)
             if current_message:
-                current_message.content = accumulated_content
-                current_message.completed = True
-                db_session.add(current_message)
-                db_session.commit()
+                await conn.execute(
+                    "UPDATE assistant_messages SET completed = $1 WHERE id = $2",
+                    True,
+                    current_message['id']
+                )
 
-                # Emit a cancellation event
+                # 5. Emit completion signal
                 await sio_instance.emit(
-                    "assistant_message_cancelled",
+                    "assistant_message_complete",
                     {
-                        "message_id": str(current_message.id),
+                        "message_id": str(current_message['id']),
                         "chat_id": str(chat_id),
                         "final_content": accumulated_content,
                     },
                     room=f"assistant_{chat_id}",
                 )
-        else:
-            # Handle all other errors
-            logger.error(
-                f"Error in process_assistant_message_websocket for chat {chat_id}: {e}",
-                exc_info=True,
-            )
-            await sio_instance.emit(
-                "assistant_error",
-                {"chat_id": str(chat_id), "error": str(e)},
-                room=f"assistant_{chat_id}",
-            )
-    finally:
-        db_session.close()
+
+        except Exception as e:
+            # Handle cancellation gracefully
+            if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                logger.info(f"Assistant run for chat {chat_id} was cancelled")
+
+                # Finalize the message with the content received so far
+                if current_message:
+                    await conn.execute(
+                        "UPDATE assistant_messages SET content = $1, completed = $2 WHERE id = $3",
+                        accumulated_content,
+                        True,
+                        current_message['id']
+                    )
+
+                    # Emit a cancellation event
+                    await sio_instance.emit(
+                        "assistant_message_cancelled",
+                        {
+                            "message_id": str(current_message['id']),
+                            "chat_id": str(chat_id),
+                            "final_content": accumulated_content,
+                        },
+                        room=f"assistant_{chat_id}",
+                    )
+            else:
+                # Handle all other errors
+                logger.error(
+                    f"Error in process_assistant_message_websocket for chat {chat_id}: {e}",
+                    exc_info=True,
+                )
+                await sio_instance.emit(
+                    "assistant_error",
+                    {"chat_id": str(chat_id), "error": str(e)},
+                    room=f"assistant_{chat_id}",
+                )
 
 
 async def emit_assistant_error(sid: str, message: str) -> None:

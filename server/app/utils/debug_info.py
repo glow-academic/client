@@ -1,14 +1,14 @@
+import asyncio
 import uuid
 from dataclasses import dataclass
 
+import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
-from app.models import DebugInfo
-from sqlmodel import Session
 
 
 @dataclass
 class DebugContext:
-    session: Session
+    conn: asyncpg.Connection
     model_run_id: uuid.UUID
 
 
@@ -32,15 +32,21 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
     confirmation string.
     """
     model_run_id = ctx.context.model_run_id
-    session = ctx.context.session
+    conn = ctx.context.conn
 
     try:
-        session.add(DebugInfo(
-            model_run_id=model_run_id,
-            content=content
-        ))
-        session.commit()
+        # Run async insert in sync context (agents framework may not be async-aware)
+        asyncio.create_task(_insert_debug_info(conn, model_run_id, content))
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"
     return "Saved debug info"
+
+
+async def _insert_debug_info(conn: asyncpg.Connection, model_run_id: uuid.UUID, content: str) -> None:
+    """Helper to insert debug info asynchronously."""
+    await conn.execute(
+        "INSERT INTO debug_info (model_run_id, content) VALUES ($1, $2)",
+        model_run_id,
+        content
+    )

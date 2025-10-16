@@ -1,13 +1,12 @@
 import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Any, List
 
+import asyncpg  # type: ignore
 from agents import Runner, Tool, ToolsToFinalOutputResult, function_tool, trace
 from agents.items import TResponseInputItem
-from app.db import get_session
-from app.models import (Agents, ModelRuns, Models, Providers, Scenarios,
-                        SimulationAttempts, SimulationChats, SimulationHints,
-                        SimulationMessages)
+from app.db import get_db
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
@@ -17,7 +16,6 @@ from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
 from fastapi import Depends
 from pydantic import Field
-from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -96,22 +94,26 @@ def create_hint_tools() -> list[Tool]:
     return tools
 
 
-def _build_hint_agent(session: Session, department_id: uuid.UUID) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
+async def _build_hint_agent(conn: asyncpg.Connection, department_id: uuid.UUID) -> tuple[GenericAgent, uuid.UUID, uuid.UUID]:
     """Create the hint generation agent from the department's configured hint agent."""
     
     # Get the hint agent configured for this department (via junction table)
     from app.utils.agents import get_department_agent
-    agent_row = get_department_agent(session, department_id, 'hint')
+    agent_row = await get_department_agent(conn, department_id, 'hint')
 
-    model = session.exec(select(Models).where(Models.id == agent_row.model_id)).one()
+    model = await conn.fetchrow(
+        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+        agent_row['model_id']
+    )
     if not model:
-        raise ValueError(f"Model with ID {agent_row.model_id} not found")
+        raise ValueError(f"Model with ID {agent_row['model_id']} not found")
 
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
+    provider = await conn.fetchrow(
+        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+        model['provider_id']
+    )
     if not provider:
-        raise ValueError(f"Provider with ID {model.provider_id} not found")
+        raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
     # Create hint tools
     hint_tools = create_hint_tools()
@@ -138,26 +140,26 @@ def _build_hint_agent(session: Session, department_id: uuid.UUID) -> tuple[Gener
         return ToolsToFinalOutputResult(is_final_output=all_hints_complete)
 
     return GenericAgent(
-        agent_name=agent_row.name,
-        system_prompt=agent_row.system_prompt,
-        temperature=agent_row.temperature,
-        model_name=model.name,
-        model_provider=provider.name,
-        base_url=provider.base_url,
-        api_key=provider.api_key,
-        reasoning=agent_row.reasoning,
-        custom_model=model.custom_model,
+        agent_name=agent_row['name'],
+        system_prompt=agent_row['system_prompt'],
+        temperature=agent_row['temperature'],
+        model_name=model['name'],
+        model_provider=provider['name'],
+        base_url=provider['base_url'],
+        api_key=provider['api_key'],
+        reasoning=agent_row['reasoning'],
+        custom_model=model['custom_model'],
         tools=hint_tools,
         parallel_tool_calls=True,  # Enable parallel execution
         tool_use_behavior=tool_use_behavior,
-    ), agent_row.id, model.id
+    ), agent_row['id'], model['id']
 
 
 async def run_hint_agent(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
     department_id: uuid.UUID,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
     sio_instance: Any = None,
 ) -> List[uuid.UUID]:
     """
@@ -166,7 +168,9 @@ async def run_hint_agent(
     Args:
         chat_id: The ID of the simulation chat
         message_id: The ID of the specific message to generate hints for
-        session: Database session
+        department_id: Department ID to get the hint agent from
+        conn: Database connection
+        sio_instance: Socket.IO instance for progress events
         
     Returns:
         List of SimulationHints IDs (up to 3)
@@ -178,26 +182,37 @@ async def run_hint_agent(
         hint_progress.clear()
         _hint_sio_instance = sio_instance
         _hint_chat_id = chat_id
-        
         # Get the simulation message
-        message = session.exec(
-            select(SimulationMessages).where(SimulationMessages.id == message_id)
-        ).one()
+        message = await conn.fetchrow(
+            "SELECT id, role, content FROM simulation_messages WHERE id = $1",
+            message_id
+        )
+        if not message:
+            raise ValueError(f"Message {message_id} not found")
         
         # Get the chat
-        chat = session.exec(
-            select(SimulationChats).where(SimulationChats.id == chat_id)
-        ).one()
+        chat = await conn.fetchrow(
+            "SELECT id, attempt_id, scenario_id, trace_id FROM simulation_chats WHERE id = $1",
+            chat_id
+        )
+        if not chat:
+            raise ValueError(f"Chat {chat_id} not found")
         
         # Get the attempt
-        attempt = session.exec(
-            select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-        ).one()
+        attempt = await conn.fetchrow(
+            "SELECT id, simulation_id FROM simulation_attempts WHERE id = $1",
+            chat['attempt_id']
+        )
+        if not attempt:
+            raise ValueError(f"Attempt {chat['attempt_id']} not found")
         
         # Get the scenario
-        scenario = session.exec(
-            select(Scenarios).where(Scenarios.id == chat.scenario_id)
-        ).one()
+        scenario = await conn.fetchrow(
+            "SELECT id FROM scenarios WHERE id = $1",
+            chat['scenario_id']
+        )
+        if not scenario:
+            raise ValueError(f"Scenario {chat['scenario_id']} not found")
         
         logger.info(
             f"Starting hint generation for chat {chat_id}, message {message_id}"
@@ -216,113 +231,102 @@ async def run_hint_agent(
         
         # Add document info if available (no images needed for hints)
         # Load document IDs from junction table
-        from app.models import ScenarioDocuments
-        
-        doc_links = session.exec(
-            select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
-        ).all()
-        doc_ids = [link.document_id for link in doc_links]
+        doc_links = await conn.fetch(
+            "SELECT document_id FROM scenario_documents WHERE scenario_id = $1 AND active = true",
+            scenario['id']
+        )
+        doc_ids = [link['document_id'] for link in doc_links]
         
         if doc_ids:
-            document_info = get_document_info(doc_ids, False, session)
+            document_info = await get_document_info(conn, doc_ids, False)
             input_items.append(document_info)
         
         # Get all messages up to and including the target message
-        messages = session.exec(
-            select(SimulationMessages)
-            .where(SimulationMessages.chat_id == chat_id)
-            .where(SimulationMessages.created_at <= message.created_at)
-        ).all()
+        messages = await conn.fetch("""
+            SELECT id, chat_id, role, content, created_at, model_run_id, audio_url, completed
+            FROM simulation_messages
+            WHERE chat_id = $1 AND created_at <= $2
+            ORDER BY created_at
+        """, chat_id, message['created_at'])
         
-        # Sort by created_at
-        messages = sorted(messages, key=lambda x: x.created_at)
+        messages = [dict(m) for m in messages]
         
         # Build conversation history
-        conversation_history = get_simulation_conversation_history(list(messages))
+        conversation_history = get_simulation_conversation_history(messages)
         
         # Add scenario context at the beginning
-        chat_scenario = get_chat_scenario(chat, session)
+        chat_scenario = await get_chat_scenario(conn, chat['scenario_id'])
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
         
         # Get profile for rate limiting from attempt_profiles junction
-        from app.models import AttemptProfiles
-        attempt_profile_link = session.exec(
-            select(AttemptProfiles).where(
-                AttemptProfiles.attempt_id == attempt.id,
-                AttemptProfiles.active == True
-            )
-        ).first()
+        attempt_profile_link = await conn.fetchrow("""
+            SELECT profile_id
+            FROM attempt_profiles
+            WHERE attempt_id = $1 AND active = true
+            LIMIT 1
+        """, attempt['id'])
         
-        attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
-        default_guest_profile = find_default_guest_profile(session)
+        attempt_profile_id = attempt_profile_link['profile_id'] if attempt_profile_link else None
+        default_guest_profile = await find_default_guest_profile(conn)
         final_profile_id = (
             attempt_profile_id 
             if attempt_profile_id 
-            else (default_guest_profile.id if default_guest_profile else None)
+            else (default_guest_profile['id'] if default_guest_profile else None)
         )
         
         # Check rate limit
-        success, error_message = check_rate_limit(final_profile_id, session)
+        success, error_message = await check_rate_limit(conn, final_profile_id)
         if not success:
             raise ValueError(error_message)
         
         # Build hint agent
-        hint_agent, agent_id, model_id = _build_hint_agent(session, department_id)
+        hint_agent, agent_id, model_id = await _build_hint_agent(conn, department_id)
         
         # Create model run
-        model_run = ModelRuns(
-            input_tokens=0,
-            output_tokens=0,
-            department_id=department_id,
-        )
-        session.add(model_run)
-        session.commit()
-        session.refresh(model_run)
+        model_run = await conn.fetchrow("""
+            INSERT INTO model_runs (input_tokens, output_tokens, department_id, created_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        """, 0, 0, department_id, datetime.now(timezone.utc))
+
+        model_run_id = model_run['id']
 
         # Create model_run junction records
-        from app.models import ModelRunAgents, ModelRunModels, ModelRunProfiles
-        
         if model_id:
-            model_run_model = ModelRunModels(
-                model_run_id=model_run.id,
-                model_id=model_id,
-                active=True,
-            )
-            session.add(model_run_model)
+            await conn.execute("""
+                INSERT INTO model_run_models (model_run_id, model_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, model_id, True)
         
         if agent_id:
-            model_run_agent = ModelRunAgents(
-                model_run_id=model_run.id,
-                agent_id=agent_id,
-                active=True,
-            )
-            session.add(model_run_agent)
+            await conn.execute("""
+                INSERT INTO model_run_agents (model_run_id, agent_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, agent_id, True)
         
         if final_profile_id:
-            model_run_profile = ModelRunProfiles(
-                model_run_id=model_run.id,
-                profile_id=final_profile_id,
-                active=True,
-            )
-            session.add(model_run_profile)
-        
-        session.commit()
+            await conn.execute("""
+                INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+                VALUES ($1, $2, $3)
+            """, model_run_id, final_profile_id, True)
         
         # Run the hint agent
         logger.info("Running hint agent with parallel tool calls...")
-        with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
+        with trace(chat['title'], trace_id=chat['trace_id'], group_id=str(attempt['id'])):
             result = await Runner.run(
                 hint_agent.agent(),
                 input=input_items,
-                context=DebugContext(session=session, model_run_id=model_run.id)
+                context=DebugContext(conn=conn, model_run_id=model_run_id)
             )
         
         # Update token usage
         usage = result.context_wrapper.usage
-        model_run.input_tokens = usage.input_tokens
-        model_run.output_tokens = usage.output_tokens
-        session.commit()
+        await conn.execute("""
+            UPDATE model_runs 
+            SET input_tokens = $1, output_tokens = $2 
+            WHERE id = $3
+        """, usage.input_tokens, usage.output_tokens, model_run_id)
         
         logger.info("Hint agent completed successfully")
         
@@ -345,16 +349,13 @@ async def run_hint_agent(
         hint_ids = []
         for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
             if hint_text:  # Only save non-empty hints
-                hint_record = SimulationHints(
-                    hint=hint_text,
-                    simulation_message_id=message_id,
-                )
-                session.add(hint_record)
-                session.flush()
-                hint_ids.append(hint_record.id)
+                hint_record = await conn.fetchrow("""
+                    INSERT INTO simulation_hints (hint, simulation_message_id, created_at)
+                    VALUES ($1, $2, $3)
+                    RETURNING id
+                """, hint_text, message_id, datetime.now(timezone.utc))
+                hint_ids.append(hint_record['id'])
                 logger.info(f"Created hint {i}: {hint_text[:80]}...")
-        
-        session.commit()
         
         logger.info(
             f"Successfully generated {len(hint_ids)} hints for message {message_id} "
@@ -401,6 +402,5 @@ async def run_hint_agent(
         _hint_sio_instance = None
         _hint_chat_id = None
         
-        session.rollback()
         raise
 

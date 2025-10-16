@@ -1,16 +1,15 @@
 import asyncio
 import os
 import uuid
-from typing import AsyncGenerator
+from datetime import datetime, timezone
+from typing import Any, AsyncGenerator
 
+import asyncpg  # type: ignore
 import pypdf
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from app.db import get_session
+from app.db import get_db
 from app.extensions import UPLOAD_FOLDER
-from app.models import (DebugInfo, Documents, ModelRuns, Models, Personas,
-                        Providers, Scenarios, SimulationAttempts,
-                        SimulationChats, SimulationMessages, Simulations)
 from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
@@ -19,15 +18,15 @@ from app.utils.debug_info import DebugContext
 from app.utils.document import get_document_info
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
+from app.utils.personas import get_persona_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
-from sqlmodel import Session, select
 
 
 async def run_simulation_agent(
     chat_id: uuid.UUID,
     department_id: uuid.UUID,
-    session: Session = Depends(get_session),
+    conn: asyncpg.Connection = Depends(get_db),
 ) -> AsyncGenerator[str, None]:
     """
     This function is used to run the generic agent using the OpenAI Agents SDK.
@@ -46,13 +45,14 @@ async def run_simulation_agent(
     """
 
     # Try to get simulation chat first
-    simulation_chat = session.exec(
-        select(SimulationChats).where(SimulationChats.id == chat_id)
-    ).one_or_none()
+    simulation_chat = await conn.fetchrow(
+        "SELECT id, scenario_id, attempt_id, title, trace_id FROM simulation_chats WHERE id = $1",
+        chat_id
+    )
 
     if simulation_chat:
         # Handle simulation chat
-        async for token in _handle_simulation_chat(simulation_chat, department_id, session):
+        async for token in _handle_simulation_chat(dict(simulation_chat), department_id, conn):
             yield token
     else:
         raise ValueError(f"Chat not found with ID: {chat_id}")
@@ -74,172 +74,178 @@ async def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_simulation_chat(
-    chat: SimulationChats, department_id: uuid.UUID, session: Session
+    chat: Any, department_id: uuid.UUID, conn: asyncpg.Connection
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
     # Find attempt from chat
-    attempt = session.exec(
-        select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
-    ).one()
+    attempt = await conn.fetchrow(
+        "SELECT id, simulation_id FROM simulation_attempts WHERE id = $1",
+        chat['attempt_id']
+    )
     if not attempt:
-        raise ValueError(f"Attempt not found for chat {chat.id}")
+        raise ValueError(f"Attempt not found for chat {chat['id']}")
 
     # Get the agent through the scenario relationship
-    scenario = session.exec(
-        select(Scenarios).where(Scenarios.id == chat.scenario_id)
-    ).one()
+    scenario = await conn.fetchrow(
+        "SELECT id, department_id FROM scenarios WHERE id = $1",
+        chat['scenario_id']
+    )
     if not scenario:
-        raise ValueError(f"Scenario not found for chat {chat.id}")
+        raise ValueError(f"Scenario not found for chat {chat['id']}")
 
     # Get persona from scenario_personas junction
-    from app.models import ScenarioPersonas
-    persona_link = session.exec(
-        select(ScenarioPersonas).where(
-            ScenarioPersonas.scenario_id == scenario.id,
-            ScenarioPersonas.active == True
-        )
-    ).first()
+    persona_link = await conn.fetchrow("""
+        SELECT persona_id
+        FROM scenario_personas
+        WHERE scenario_id = $1 AND active = true
+        LIMIT 1""",
+        scenario['id']
+    )
     
     if not persona_link:
-        raise ValueError(f"Scenario {scenario.id} has no active persona")
+        raise ValueError(f"Scenario {scenario['id']} has no active persona")
 
-    persona = session.exec(
-        select(Personas).where(Personas.id == persona_link.persona_id)
-    ).one()
+    persona = await conn.fetchrow(
+        "SELECT id FROM personas WHERE id = $1",
+        persona_link['persona_id']
+    )
     if not persona:
-        raise ValueError(f"Persona not found for scenario {scenario.id}")
+        raise ValueError(f"Persona not found for scenario {scenario['id']}")
 
     # Get simulation to check image_input_active setting
-    simulation = session.get(Simulations, attempt.simulation_id)
-    show_images = simulation.image_input_active if simulation else False
+    simulation = await conn.fetchrow(
+        "SELECT id, image_input_active FROM simulations WHERE id = $1",
+        attempt['simulation_id']
+    )
+    show_images = simulation['image_input_active'] if simulation else False
 
     input_items: list[TResponseInputItem] = []
     # Load document IDs from junction table
-    from app.models import ScenarioDocuments
-    
-    doc_links = session.exec(
-        select(ScenarioDocuments).where(ScenarioDocuments.scenario_id == scenario.id)
-    ).all()
-    doc_ids = [link.document_id for link in doc_links]
+    doc_links = await conn.fetch(
+        "SELECT document_id FROM scenario_documents WHERE scenario_id = $1 AND active = true",
+        scenario['id']
+    )
+    doc_ids = [link['document_id'] for link in doc_links]
     
     if doc_ids:
-        document_info = get_document_info(doc_ids, show_images, session)
+        document_info = await get_document_info(conn, doc_ids, show_images)
         input_items.append(document_info)
 
     # Get all the messages for the chat_id, order by created_at
-    messages = session.exec(
-        select(SimulationMessages).where(SimulationMessages.chat_id == chat.id)
-    ).all()
+    messages = await conn.fetch("""
+        SELECT id, chat_id, role, content, created_at, model_run_id, audio_url, completed
+        FROM simulation_messages
+        WHERE chat_id = $1
+        ORDER BY created_at
+    """, chat['id'])
 
-    # sort messages by created_at
-    messages = list(messages)
-    messages = sorted(messages, key=lambda x: x.created_at)
+    messages = [dict(m) for m in messages]
 
     # Prepare conversation history from chat_id
     conversation_history = get_simulation_conversation_history(messages)
-    chat_scenario = get_chat_scenario(chat, session)
+    chat_scenario = await get_chat_scenario(conn, chat['scenario_id'])
 
     input_items.insert(0, chat_scenario)
     input_items.extend(conversation_history)
 
-    # getting the model from the agent's model_id
-    model = session.exec(select(Models).where(Models.id == persona.model_id)).one()
+    # getting the model from the persona's model_id
+    persona_full = await conn.fetchrow(
+        "SELECT id, name, system_prompt, temperature, reasoning, model_id FROM personas WHERE id = $1",
+        persona['id']
+    )
+    
+    model = await conn.fetchrow(
+        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+        persona_full['model_id']
+    )
     if not model:
-        raise ValueError(f"Model with ID {persona.model_id} not found")
+        raise ValueError(f"Model with ID {persona_full['model_id']} not found")
 
     # getting the provider from the model's provider_id
-    provider = session.exec(
-        select(Providers).where(Providers.id == model.provider_id)
-    ).one()
+    provider = await conn.fetchrow(
+        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+        model['provider_id']
+    )
     if not provider:
-        raise ValueError(f"Provider with ID {model.provider_id} not found")
+        raise ValueError(f"Provider with ID {model['provider_id']} not found")
 
     # Get simulation to check guardrail settings
-    simulation = session.get(Simulations, attempt.simulation_id)
+    simulation = await conn.fetchrow(
+        "SELECT id, image_input_active, output_guardrail_active FROM simulations WHERE id = $1",
+        attempt['simulation_id']
+    )
     
     output_guards = (
-        get_output_guardrails(chat.id, department_id, conversation_history, session)
-        if simulation and simulation.output_guardrail_active
+        get_output_guardrails(chat['id'], department_id, conversation_history, conn)
+        if simulation and simulation['output_guardrail_active']
         else None
     )
 
     agent_instance = GenericAgent(
-        agent_name=persona.name,
-        system_prompt=persona.system_prompt,
-        temperature=persona.temperature,
-        model_name=model.name,
-        model_provider=provider.name,
-        base_url=provider.base_url,
-        reasoning=persona.reasoning,
-        api_key=provider.api_key,
+        agent_name=persona_full['name'],
+        system_prompt=persona_full['system_prompt'],
+        temperature=persona_full['temperature'],
+        model_name=model['name'],
+        model_provider=provider['name'],
+        base_url=provider['base_url'],
+        reasoning=persona_full['reasoning'],
+        api_key=provider['api_key'],
         output_guardrails=output_guards,
-        custom_model=model.custom_model,
+        custom_model=model['custom_model'],
     )
 
     # Get profile from attempt_profiles junction
-    from app.models import AttemptProfiles
-    attempt_profile_link = session.exec(
-        select(AttemptProfiles).where(
-            AttemptProfiles.attempt_id == attempt.id,
-            AttemptProfiles.active == True
-        )
-    ).first()
+    attempt_profile_link = await conn.fetchrow("""
+        SELECT profile_id
+        FROM attempt_profiles
+        WHERE attempt_id = $1 AND active = true
+        LIMIT 1
+    """, attempt['id'])
     
-    attempt_profile_id = attempt_profile_link.profile_id if attempt_profile_link else None
+    attempt_profile_id = attempt_profile_link['profile_id'] if attempt_profile_link else None
 
-    default_guest_profile = find_default_guest_profile(session)
+    default_guest_profile = await find_default_guest_profile(conn)
 
-    final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile.id if default_guest_profile else None))
+    final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile['id'] if default_guest_profile else None))
 
-    success, error_message = check_rate_limit(final_profile_id, session)
+    success, error_message = await check_rate_limit(conn, final_profile_id)
     if not success:
         raise ValueError(error_message)
 
     # create model run
-    model_run = ModelRuns(
-        input_tokens=0,
-        output_tokens=0,
-        department_id=scenario.department_id,
-    )
-    session.add(model_run)
-    session.commit()
-    session.refresh(model_run)
+    model_run = await conn.fetchrow("""
+        INSERT INTO model_runs (input_tokens, output_tokens, department_id, created_at)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+    """, 0, 0, scenario['department_id'], datetime.now(timezone.utc))
+
+    model_run_id = model_run['id']
 
     # Create model_run junction records
-    from app.models import ModelRunModels, ModelRunPersonas, ModelRunProfiles
+    if model['id']:
+        await conn.execute("""
+            INSERT INTO model_run_models (model_run_id, model_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, model['id'], True)
     
-    if model.id:
-        model_run_model = ModelRunModels(
-            model_run_id=model_run.id,
-            model_id=model.id,
-            active=True,
-        )
-        session.add(model_run_model)
-    
-    if persona.id:
-        model_run_persona = ModelRunPersonas(
-            model_run_id=model_run.id,
-            persona_id=persona.id,
-            active=True,
-        )
-        session.add(model_run_persona)
+    if persona['id']:
+        await conn.execute("""
+            INSERT INTO model_run_personas (model_run_id, persona_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, persona['id'], True)
     
     if final_profile_id:
-        model_run_profile = ModelRunProfiles(
-            model_run_id=model_run.id,
-            profile_id=final_profile_id,
-            active=True,
-        )
-        session.add(model_run_profile)
-    
-    session.commit()
+        await conn.execute("""
+            INSERT INTO model_run_profiles (model_run_id, profile_id, active)
+            VALUES ($1, $2, $3)
+        """, model_run_id, final_profile_id, True)
 
-    with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
+    with trace(chat['title'], trace_id=chat['trace_id'], group_id=str(attempt['id'])):
         result = Runner.run_streamed(
             agent_instance.agent(),
             input=input_items,
-            context=DebugContext(session=session, model_run_id=model_run.id)
+            context=DebugContext(conn=conn, model_run_id=model_run_id)
         )
 
     # Store the result in active runs for potential cancellation using unified tracking
@@ -273,9 +279,11 @@ async def _handle_simulation_chat(
                     yield chunk
 
         usage = result.context_wrapper.usage
-        model_run.input_tokens = usage.input_tokens
-        model_run.output_tokens = usage.output_tokens
-        session.commit()
+        await conn.execute("""
+            UPDATE model_runs 
+            SET input_tokens = $1, output_tokens = $2 
+            WHERE id = $3
+        """, usage.input_tokens, usage.output_tokens, model_run_id)
     except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
         # Treat explicit cancellation/closure as expected
         pass

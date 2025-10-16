@@ -1,40 +1,39 @@
 import uuid
-from typing import List
+from typing import Any, Dict, List
 
 from agents.items import TResponseInputItem
-from app.models import Rubrics, StandardGroups, Standards
 
 
 def get_dynamic_rubric(
-    rubric_obj: Rubrics,
-    standard_groups: List[StandardGroups],
-    standards: List[Standards],
+    rubric_obj: Dict[str, Any],
+    standard_groups: List[Dict[str, Any]],
+    standards: List[Dict[str, Any]],
 ) -> TResponseInputItem:
     """
-    Build a dynamic rubric from database objects.
+    Build a dynamic rubric from database records.
 
     Args:
-        rubric_obj: The rubric object from database
-        standard_groups: List of standard groups for this rubric
-        standards: List of standards for all standard groups
+        rubric_obj: The rubric dict from database
+        standard_groups: List of standard group dicts for this rubric
+        standards: List of standard dicts for all standard groups
 
     Returns:
         Dynamic rubric formatted for agent consumption
     """
     rubric_lines = [
-        f"RUBRIC: {rubric_obj.name}",
-        f"Description: {rubric_obj.description}",
-        f"Total Points: {rubric_obj.points}",
-        f"Pass Points: {rubric_obj.pass_points}",
+        f"RUBRIC: {rubric_obj['name']}",
+        f"Description: {rubric_obj.get('description', '')}",
+        f"Total Points: {rubric_obj['points']}",
+        f"Pass Points: {rubric_obj['pass_points']}",
         "",
         "EVALUATION CRITERIA:",
         "",
     ]
 
     # Group standards by standard_group_id
-    standards_by_group: dict[uuid.UUID, list[Standards]] = {}
+    standards_by_group: dict[Any, list[Dict[str, Any]]] = {}
     for standard in standards:
-        group_id = standard.standard_group_id
+        group_id = standard['standard_group_id']
         if group_id not in standards_by_group:
             standards_by_group[group_id] = []
         standards_by_group[group_id].append(standard)
@@ -43,20 +42,20 @@ def get_dynamic_rubric(
     for group in standard_groups:
         rubric_lines.extend(
             [
-                f"CRITERION: {group.name} ({group.short_name})",
-                f"Description: {group.description}",
-                f"Points: {group.points} (Pass: {group.pass_points})",
+                f"CRITERION: {group['name']} ({group['short_name']})",
+                f"Description: {group.get('description', '')}",
+                f"Points: {group['points']} (Pass: {group['pass_points']})",
                 "Rating Scale:",
             ]
         )
 
         # Sort standards by points (descending - 5 to 1)
-        group_standards = standards_by_group.get(group.id, [])
-        group_standards.sort(key=lambda x: x.points, reverse=True)
+        group_standards = standards_by_group.get(group['id'], [])
+        group_standards.sort(key=lambda x: x['points'], reverse=True)
 
         for standard in group_standards:
             rubric_lines.append(
-                f"  {standard.points} - {standard.name}: {standard.description}"
+                f"  {standard['points']} - {standard['name']}: {standard.get('description', '')}"
             )
 
         rubric_lines.append("")  # Empty line between criteria

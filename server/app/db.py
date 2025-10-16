@@ -60,7 +60,7 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
 
 
 @asynccontextmanager
-async def transaction(conn: asyncpg.Connection):
+async def transaction(conn: asyncpg.Connection) -> AsyncGenerator[asyncpg.Connection, None]:
     """Simple transaction context manager.
     
     Usage:

@@ -1,12 +1,12 @@
 import base64
 import os
 import uuid
-from typing import Any, List
+from typing import Any, Dict, List
 
+import asyncpg  # type: ignore
 import pypdf  # type: ignore
 from agents.items import TResponseInputItem
 from app.extensions import UPLOAD_FOLDER
-from app.models import Documents
 from openai.types.responses.response_input_image_param import \
     ResponseInputImageParam
 from openai.types.responses.response_input_item_param import Message
@@ -14,7 +14,6 @@ from openai.types.responses.response_input_message_content_list_param import \
     ResponseInputMessageContentListParam
 from openai.types.responses.response_input_text_param import \
     ResponseInputTextParam
-from sqlmodel import Session, select
 
 
 def _read_pdf_text_pages(full_path: str) -> list[str]:
@@ -71,27 +70,23 @@ def _pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
     return image_urls
 
 
-def get_document_info(
-    document_ids: List[uuid.UUID], show_images: bool | Session, session: Session | None = None
+async def get_document_info(
+    conn: asyncpg.Connection, document_ids: List[uuid.UUID], show_images: bool = False
 ) -> TResponseInputItem:
     """Build a structured list of per-document, per-page text and optional images.
 
     Order per document: docN-image-pageM, then docN-text-pageM. If images are
     unavailable or disabled, only include docN-text-pageM.
     """
-    # Back-compat: allow old signature get_document_info(document_ids, session)
-    if not isinstance(show_images, bool):
-        session = show_images  # type: ignore[assignment]
-        show_images = False
-
-    assert session is not None, "Session is required"
-
     # Fetch all requested documents, then preserve input order
-    documents = session.exec(select(Documents).where(Documents.id.in_(document_ids))).all()
+    documents = await conn.fetch(
+        "SELECT id, name, file_path, mime_type FROM documents WHERE id = ANY($1::uuid[])",
+        document_ids
+    )
     if not documents:
         raise ValueError(f"Documents not found for document ids {document_ids}")
 
-    by_id = {doc.id: doc for doc in documents}
+    by_id = {doc['id']: doc for doc in documents}
 
     content_items: ResponseInputMessageContentListParam = []
 
@@ -101,15 +96,15 @@ def get_document_info(
             # Skip missing docs quietly to keep order for others
             continue
 
-        full_path = os.path.join(UPLOAD_FOLDER, document.file_path)
+        full_path = os.path.join(UPLOAD_FOLDER, document['file_path'])
         # Note: document.tags removed in BCNF migration (now via simulation_tags)
         tags_display = ""  # document.tags removed
-        mime_lower = (document.mime_type or "").lower()
+        mime_lower = (document.get('mime_type') or "").lower()
 
-        is_pdf = document.file_path.lower().endswith(".pdf") or "pdf" in mime_lower
+        is_pdf = document['file_path'].lower().endswith(".pdf") or "pdf" in mime_lower
         is_image = (
             mime_lower.startswith("image/")
-            or document.file_path.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
+            or document['file_path'].lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
         )
 
         if is_pdf:
@@ -133,8 +128,8 @@ def get_document_info(
                 page_text = text_pages[page_num] if page_num < len(text_pages) else ""
                 header = (
                     f"--- doc{doc_index}-text-page{page_num + 1} ---\n"
-                    f"Name: {document.name}\n"
-                    f"File Type: {document.mime_type}\n"
+                    f"Name: {document['name']}\n"
+                    f"File Type: {document.get('mime_type', 'unknown')}\n"
                     f"Tags: {tags_display if tags_display else 'None'}\n"
                     f"Content:\n"
                 )
@@ -151,15 +146,16 @@ def get_document_info(
                         img_bytes = img_file.read()
                     b64 = base64.b64encode(img_bytes).decode("ascii")
                     # Prefer MIME from record; fallback based on extension
-                    mime = document.mime_type if (document.mime_type and document.mime_type.startswith("image/")) else None
+                    mime_type = document.get('mime_type')
+                    mime = mime_type if (mime_type and mime_type.startswith("image/")) else None
                     if not mime:
-                        if document.file_path.lower().endswith(".png"):
+                        if document['file_path'].lower().endswith(".png"):
                             mime = "image/png"
-                        elif document.file_path.lower().endswith((".jpg", ".jpeg")):
+                        elif document['file_path'].lower().endswith((".jpg", ".jpeg")):
                             mime = "image/jpeg"
-                        elif document.file_path.lower().endswith(".webp"):
+                        elif document['file_path'].lower().endswith(".webp"):
                             mime = "image/webp"
-                        elif document.file_path.lower().endswith(".gif"):
+                        elif document['file_path'].lower().endswith(".gif"):
                             mime = "image/gif"
                         else:
                             mime = "image/png"
@@ -178,8 +174,8 @@ def get_document_info(
             content = _read_text_file(full_path)
             header = (
                 f"--- doc{doc_index}-text-page1 ---\n"
-                f"Name: {document.name}\n"
-                f"File Type: {document.mime_type}\n"
+                f"Name: {document['name']}\n"
+                f"File Type: {document.get('mime_type', 'unknown')}\n"
                 f"Tags: {tags_display if tags_display else 'None'}\n"
                 f"Content:\n"
             )
