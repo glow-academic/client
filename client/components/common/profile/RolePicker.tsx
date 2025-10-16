@@ -24,10 +24,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { PROFILE_ROLES, ProfileRole } from "@/lib/api/v2/schemas/base";
 import { cn } from "@/lib/utils";
-import { profileRole } from "@/utils/drizzle/schema";
-
-type ProfileRole = (typeof profileRole.enumValues)[number];
 
 export interface RolePickerProps {
   roles?: ProfileRole[];
@@ -47,7 +45,7 @@ const ROLE_LABEL: Record<ProfileRole, string> = {
 };
 
 export function RolePicker({
-  roles = profileRole.enumValues as ProfileRole[],
+  roles = PROFILE_ROLES,
   selectedRoles = [],
   onChange,
   placeholder = "Select roles...",
@@ -141,7 +139,7 @@ export function RolePicker({
                         <Check
                           className={cn(
                             "ml-auto",
-                            isSelected ? "opacity-100" : "opacity-0",
+                            isSelected ? "opacity-100" : "opacity-0"
                           )}
                         />
                       </div>

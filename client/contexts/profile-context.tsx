@@ -9,7 +9,8 @@
 
 import { api } from "@/lib/api/fetcher";
 import { layoutContextKeys } from "@/lib/api/v2/keys";
-import { profiles } from "@/utils/drizzle/schema";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
@@ -21,29 +22,9 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useMemo } from "react";
 import { z } from "zod";
 
-type Profile = typeof profiles.$inferSelect;
-type ProfileRole = Profile["role"];
-
 // ============================================================================
 // INTERNAL TYPES (for consolidated API)
 // ============================================================================
-
-const ProfileItemSchema = z.object({
-  id: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
-  alias: z.string(),
-  role: z.enum(["superadmin", "admin", "instructional", "ta", "guest"]),
-  active: z.boolean(),
-  viewedIntro: z.boolean(),
-  viewedChat: z.boolean(),
-  defaultProfile: z.boolean(),
-  reqPerDay: z.number().nullable(),
-  lastLogin: z.string(),
-  lastActive: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
 
 const DepartmentItemSchema = z.object({
   id: z.string(),
@@ -90,6 +71,9 @@ const SimulationsDataSchema = z.object({
   items: z.array(SimulationContextItemSchema),
 });
 
+// Import ProfileItemSchema from centralized location
+import { ProfileItemSchema } from "@/lib/api/v2/schemas/profile";
+
 const LayoutContextResponseSchema = z.object({
   actualProfile: ProfileItemSchema,
   effectiveProfile: ProfileItemSchema,
@@ -107,13 +91,12 @@ const LayoutContextResponseSchema = z.object({
 });
 
 export type BreadcrumbItem = z.infer<typeof BreadcrumbItemSchema>;
-export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 export type DepartmentItem = z.infer<typeof DepartmentItemSchema>;
 export type CohortItem = z.infer<typeof CohortItemSchema>;
 export type SimulationContextItem = z.infer<typeof SimulationContextItemSchema>;
 
 // A generic, fallback guest profile for when no user is logged in or during loading states.
-const GUEST_PROFILE: Profile = {
+const GUEST_PROFILE: ProfileItem = {
   id: "guest-profile-id",
   firstName: "Guest",
   lastName: "User",
@@ -133,8 +116,8 @@ const GUEST_PROFILE: Profile = {
 interface ProfileContextType {
   // Profile data
   activeProfile: ProfileItem | null;
-  simulatedProfile: Profile | null;
-  effectiveProfile: Profile | null;
+  simulatedProfile: ProfileItem | null;
+  effectiveProfile: ProfileItem | null;
   isSimulating: boolean;
   isLoading: boolean;
 
@@ -222,7 +205,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     session?.fullEmulation,
   ]);
 
-  const resolvedActiveProfile = useMemo<Profile | null>(() => {
+  const resolvedActiveProfile = useMemo<ProfileItem | null>(() => {
     // When authenticated but no effective fetched yet, show null/loading
     if (status === "loading" || layoutLoading) return null;
     // If not authenticated at all, fallback to guest
@@ -245,7 +228,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     isFullEmulation,
   ]);
 
-  const simulatedProfile = useMemo<Profile | null>(() => {
+  const simulatedProfile = useMemo<ProfileItem | null>(() => {
     if (!effectiveProfile || !bootstrapProfile) return null;
     // If effective profile differs from bootstrapProfile, we are simulating
     // simulatedProfile represents the profile we're emulating (effectiveProfile)

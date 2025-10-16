@@ -6,7 +6,10 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
+import { ProfileRole } from "../schemas/base";
 import {
+  CreateProfileRequestSchema,
+  CreateProfileResponseSchema,
   CreateUserProfileRequest,
   CreateUserProfileResponseSchema,
   ProfileDetailResponseSchema,
@@ -176,4 +179,37 @@ export const updateProfileSimple = async (
   const data = await res.json();
   const parsed = ProfileSimpleDetailResponseSchema.parse(data);
   return parsed.profile;
+};
+
+/**
+ * Create a new profile (not memoized - this is a mutation)
+ * Used in auth.ts during user creation flow
+ */
+export const createProfile = async (data: {
+  firstName: string;
+  lastName: string;
+  alias: string;
+  role: ProfileRole;
+  department_id?: string;
+}) => {
+  const validated = CreateProfileRequestSchema.parse(data);
+
+  const res = await fetch(`${getApiBase()}/api/v2/profile/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(validated),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to create profile: ${res.status} ${errorText}`);
+  }
+
+  const result = await res.json();
+  const parsed = CreateProfileResponseSchema.parse(result);
+
+  // Fetch the created profile to return full profile data
+  const profile = await fetchProfileSimple(parsed.profileId);
+  return profile.profile;
 };

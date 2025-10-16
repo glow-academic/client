@@ -1,12 +1,10 @@
-import { profileRole } from "@/utils/drizzle/schema";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import {
   getAvailableSectionsForRole,
   getFirstAvailableSectionForRole,
   isSectionAvailableForRole,
 } from "@/utils/route-permissions";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-
-type ProfileRole = (typeof profileRole.enumValues)[number];
 
 // Re-export the functions from route-permissions for backward compatibility
 export {

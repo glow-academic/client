@@ -1,6 +1,7 @@
 // auth.ts
 import { log } from "@/lib/api/v2/server/logs";
 import {
+  createProfile,
   createUserProfile,
   fetchProfileByAlias,
   fetchProfileSimple,
@@ -8,13 +9,17 @@ import {
   fetchUserProfilesByUser,
   updateProfileSimple,
 } from "@/lib/api/v2/server/profile";
-import { db } from "@/utils/drizzle/db";
-import { profiles } from "@/utils/drizzle/schema";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
-import { db_url } from "./utils/drizzle/db";
+
+const db_user = process.env["DB_USER"];
+const db_password = process.env["DB_PASSWORD"];
+const db_name = process.env["DB_NAME"];
+const db_port = process.env["DB_PORT"];
+const db_host = process.env["DB_HOST"];
+const db_url = `postgresql://${db_user}:${db_password}@${db_host}:${db_port}/${db_name}`;
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
@@ -88,21 +93,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
-          // Create new profile (using direct DB access for auth operations)
-          const [newProfile] = await db
-            .insert(profiles)
-            .values({
-              firstName,
-              lastName,
-              alias: alias || "",
-              viewedIntro: false,
-              role: "guest",
-            })
-            .returning();
-
-          if (!newProfile) {
-            throw new Error("Failed to create profile");
-          }
+          // Create new profile via server API
+          const newProfile = await createProfile({
+            firstName,
+            lastName,
+            alias: alias || "",
+            role: "guest",
+          });
 
           // Link profile to user
           await createUserProfile({

@@ -68,6 +68,62 @@ export type ReasoningEffort = z.infer<typeof ReasoningEffortSchema>;
 
 /**
  * ============================================================================
+ * ENUM VALUE CONSTANTS
+ * Exported constants for components that need to iterate over enum values
+ * ============================================================================
+ */
+
+export const PROFILE_ROLES: ProfileRole[] = [
+  "superadmin",
+  "admin",
+  "instructional",
+  "ta",
+  "guest",
+];
+
+export const DOCUMENT_TYPES: DocumentType[] = [
+  "homework",
+  "project",
+  "quiz",
+  "midterm",
+  "lab",
+  "lecture",
+  "syllabus",
+];
+
+export const FEEDBACK_TYPES: FeedbackType[] = [
+  "feature",
+  "bug",
+  "question",
+  "other",
+];
+
+export const REASONING_EFFORTS: ReasoningEffort[] = [
+  "minimal",
+  "low",
+  "medium",
+  "high",
+];
+
+export const ASSISTANT_MESSAGE_TYPES: AssistantMessageType[] = [
+  "user",
+  "assistant",
+];
+
+export const ASSISTANT_TOOL_TYPES: AssistantToolType[] = [
+  "create",
+  "read",
+  "update",
+  "delete",
+];
+
+export const SIMULATION_MESSAGE_TYPES: SimulationMessageType[] = [
+  "query",
+  "response",
+];
+
+/**
+ * ============================================================================
  * MAPPING SCHEMAS
  * ============================================================================
  */

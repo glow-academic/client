@@ -4,9 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { profileRole } from "@/utils/drizzle/schema";
-
-type ProfileRole = (typeof profileRole.enumValues)[number];
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
 
 export interface RoutePermission {
   path: string;
