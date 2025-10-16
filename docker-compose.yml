@@ -197,35 +197,6 @@ services:
     command: ["true"]
 
   # --------------------
-  # E2E Testing Service
-  # --------------------
-  testing:
-    build: ./testing
-    env_file:
-      - .env
-    environment:
-      - CYPRESS_baseUrl=http://client:3000
-      - CYPRESS_apiUrl=http://server:8000
-      - DB_PORT=5432
-      - DB_HOST=database
-      - INTERNAL_API_BASE=http://server:8000
-      - REDIS_URL=redis://redis:6379
-      - CI=1
-    depends_on:
-      database:
-        condition: service_healthy
-      client:
-        condition: service_healthy
-      server:
-        condition: service_healthy
-    networks:
-      - internal
-    volumes:
-      - cypress:/e2e/cypress/screenshots
-    profiles:
-      - test
-
-  # --------------------
   # Nginx Service
   # --------------------
   nginx:
