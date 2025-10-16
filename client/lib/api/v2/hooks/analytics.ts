@@ -60,7 +60,6 @@ import {
   SimulationPerformanceResponseSchema,
   SkillPerformanceResponseSchema,
 } from "@/lib/api/v2/schemas/analytics";
-import { log } from "@/utils/logger";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Type for analytics hook options

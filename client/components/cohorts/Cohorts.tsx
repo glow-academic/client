@@ -5,7 +5,6 @@
  * 06/18/2025
  */
 "use client";
-import { log } from "@/utils/logger";
 import {
   Copy,
   Edit,

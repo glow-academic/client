@@ -1,6 +1,5 @@
 import { ParameterDetailDefaultRequestSchema } from "@/lib/api/v2/schemas/parameters";
 import { fetchParameterDetailDefault } from "@/lib/api/v2/server/parameters";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

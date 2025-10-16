@@ -5,7 +5,6 @@
  * 06/07/2025
  */
 "use client";
-import { log } from "@/utils/logger";
 import {
   ChevronDown,
   ChevronRight,

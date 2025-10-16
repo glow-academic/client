@@ -29,7 +29,6 @@ import {
   useDepartmentDetailDefault,
   useUpdateDepartment,
 } from "@/lib/api/v2/hooks/departments";
-import { log } from "@/utils/logger";
 
 export interface DepartmentProps {
   departmentId?: string;

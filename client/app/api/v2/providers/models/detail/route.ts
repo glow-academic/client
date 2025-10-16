@@ -1,6 +1,5 @@
 import { ModelDetailRequestSchema } from "@/lib/api/v2/schemas/providers";
 import { fetchModelDetail } from "@/lib/api/v2/server/models";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

@@ -25,7 +25,7 @@ import {
 } from "@/lib/analytics";
 import { useAnalyticsLeaderboardBundle } from "@/lib/api/v2/hooks/analytics";
 import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
-import type { Profile } from "@/types";
+import type { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -779,7 +779,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
                                 id: accolade.holder.profileId,
                                 firstName: accolade.holder.firstName ?? "",
                                 lastName: accolade.holder.lastName ?? "",
-                                role: "guest" as Profile["role"],
+                                role: "guest" as ProfileRole,
                                 alias: "",
                                 active: true,
                                 createdAt: new Date().toISOString(),

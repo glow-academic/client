@@ -3,7 +3,7 @@
 
 import { ProfileProvider, useProfile } from "@/contexts/profile-context";
 import { WebSocketProvider } from "@/contexts/websocket-context";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { useState } from "react";

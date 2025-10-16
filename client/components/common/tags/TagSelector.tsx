@@ -19,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { searchTags } from "@/utils/tags/search-tags";
+import { searchTags } from "@/utils/search-tags";
 
 export interface TagSelectorProps {
   value: string[];

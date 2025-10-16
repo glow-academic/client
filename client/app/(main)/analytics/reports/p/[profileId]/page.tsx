@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import Report from "@/components/analytics/report/Report";
 import { profileDetailKeys } from "@/lib/api/v2/keys";
 import { fetchProfileDetail } from "@/lib/api/v2/server/profile";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

@@ -22,7 +22,6 @@ import {
   useModelDetail,
   useUpdateModel,
 } from "@/lib/api/v2/hooks/providers";
-import { Model as ModelType } from "@/types";
 import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;

@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { log } from "@/utils/logger";
 import { toast } from "sonner";
 
 // TAPerformanceData interface for Reports page
@@ -118,7 +117,7 @@ export function BrightspaceExportButton<TData>({
 
       // Get the metric option
       const metricOption = metricOptions.find(
-        (m) => m.value === selectedMetric,
+        (m) => m.value === selectedMetric
       );
       if (!metricOption) {
         toast?.error("Invalid metric selected");
@@ -130,7 +129,7 @@ export function BrightspaceExportButton<TData>({
         "Username",
         ...availableSimulations.map(
           (sim: { id: string; title: string }) =>
-            `${sim.title} Points Grade <Numeric MaxPoints:100>`,
+            `${sim.title} Points Grade <Numeric MaxPoints:100>`
         ),
         "End-of-Line Indicator",
       ].join(",");
@@ -182,7 +181,7 @@ export function BrightspaceExportButton<TData>({
             }
 
             return String(metricValue);
-          },
+          }
         );
 
         return [alias, ...simulationValues, "#"].join(",");

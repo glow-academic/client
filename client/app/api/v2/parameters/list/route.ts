@@ -1,6 +1,5 @@
 import { getApiBase } from "@/lib/api-base";
 import { ParametersFiltersSchema } from "@/lib/api/v2/schemas/parameters";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

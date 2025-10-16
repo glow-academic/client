@@ -42,13 +42,12 @@ import {
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
-import { SimulationChat } from "@/types";
+import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
 import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
-import { log } from "@/utils/logger";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
@@ -99,7 +98,8 @@ export default function AttemptChat() {
   const selectedChat = useMemo(() => {
     if (!selectedChatId || !simulationContext?.chats) return null;
     return simulationContext?.chats.find(
-      (chat: SimulationChat) => chat.id === selectedChatId
+      (chat: AttemptFullResponse["chats"][number]["chat"]) =>
+        chat.id === selectedChatId
     );
   }, [selectedChatId, simulationContext?.chats]);
 
@@ -134,7 +134,7 @@ export default function AttemptChat() {
 
   // Helper function to calculate adjusted time limit for multi-simulation attempts
   const calculateAdjustedTimeLimit = useCallback(
-    (_chat: SimulationChat | null): number => {
+    (_chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
       if (
         !simulationContext?.simulation?.timeLimit ||
         !simulationContext?.chats
@@ -237,7 +237,7 @@ export default function AttemptChat() {
 
       // If all chats are completed, default to showing rubric
       const completedChats = simulationContext?.chats.filter(
-        (chat: SimulationChat) => chat.completed
+        (chat: AttemptFullResponse["chats"][number]["chat"]) => chat.completed
       );
       if (completedChats.length === simulationContext?.chats.length) {
         setShowGrades(true);
@@ -549,7 +549,9 @@ export default function AttemptChat() {
                         </SelectTrigger>
                         <SelectContent>
                           {simulationContext?.chats?.map(
-                            (chat: SimulationChat) => {
+                            (
+                              chat: AttemptFullResponse["chats"][number]["chat"]
+                            ) => {
                               // Find rubric result for this chat
                               const rubricResult =
                                 simulationContext?.allDynamicRubrics.find(
@@ -726,7 +728,9 @@ export default function AttemptChat() {
                               simulationContext?.currentChat?.completed &&
                               simulationContext?.expectedChatCount ===
                                 simulationContext?.chats.filter(
-                                  (chat: SimulationChat) => chat.completed
+                                  (
+                                    chat: AttemptFullResponse["chats"][number]["chat"]
+                                  ) => chat.completed
                                 ).length && (
                                 <Badge variant="default">Completed</Badge>
                               )}
@@ -769,7 +773,9 @@ export default function AttemptChat() {
                                     simulationContext?.currentDynamicRubric &&
                                     simulationContext?.expectedChatCount ===
                                       simulationContext?.chats.filter(
-                                        (chat: SimulationChat) => chat.completed
+                                        (
+                                          chat: AttemptFullResponse["chats"][number]["chat"]
+                                        ) => chat.completed
                                       ).length
                                       ? simulationContext?.currentDynamicRubric
                                           .passed
@@ -830,7 +836,9 @@ export default function AttemptChat() {
                                 simulationContext?.currentDynamicRubric &&
                                 simulationContext?.expectedChatCount ===
                                   simulationContext?.chats.filter(
-                                    (chat: SimulationChat) => chat.completed
+                                    (
+                                      chat: AttemptFullResponse["chats"][number]["chat"]
+                                    ) => chat.completed
                                   ).length && (
                                   <TooltipContent>
                                     <p>
@@ -867,7 +875,9 @@ export default function AttemptChat() {
                           <Progress
                             value={
                               (simulationContext?.chats.filter(
-                                (chat: SimulationChat) => chat.completed
+                                (
+                                  chat: AttemptFullResponse["chats"][number]["chat"]
+                                ) => chat.completed
                               ).length /
                                 simulationContext?.expectedChatCount) *
                               100

@@ -22,13 +22,12 @@ import {
   useCreateRubric,
   useRubricUnifiedUpdate,
 } from "@/lib/api/v2/hooks/rubrics";
-import { Rubric as RubricType } from "@/types";
-import { log } from "@/utils/logger";
+import { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import { Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export interface RubricDetailsProps {
-  rubric: RubricType;
+  rubric: RubricItem;
   rubricId: string;
   departmentMapping: Record<string, { name: string; description: string }>;
   validDepartmentIds: string[];

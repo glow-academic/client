@@ -21,7 +21,6 @@ import type {
   ScenarioMapping,
   SimulationMapping,
 } from "@/lib/api/v2/schemas/base";
-import type { Profile } from "@/types";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 

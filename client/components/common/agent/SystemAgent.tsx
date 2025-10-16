@@ -35,7 +35,6 @@ import {
   useCreateAgent as useCreateAgentV2,
   useUpdateAgent as useUpdateAgentV2,
 } from "@/lib/api/v2/hooks/agents";
-import { log } from "@/utils/logger";
 import { Bug, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";

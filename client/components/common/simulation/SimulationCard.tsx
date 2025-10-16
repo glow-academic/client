@@ -29,7 +29,6 @@ import type {
   StandardGroupsMapping,
   StandardsMapping,
 } from "@/lib/api/v2/schemas/rubrics";
-import { Profile } from "@/types";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
 import TableRubric from "../rubric/TableRubric";

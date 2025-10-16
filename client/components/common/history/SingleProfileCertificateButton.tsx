@@ -6,7 +6,6 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
-import { log } from "@/utils/logger";
 import { toast } from "sonner";
 
 interface CohortData {

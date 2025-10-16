@@ -10,7 +10,7 @@ import ModelEdit from "@/components/system/providers/ModelEdit";
 import { modelsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchModelDetail } from "@/lib/api/v2/server/models";
 import { modelRepo } from "@/lib/repos/modelRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

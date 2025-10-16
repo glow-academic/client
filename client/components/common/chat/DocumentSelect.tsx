@@ -24,10 +24,10 @@ import {
 // Icons
 import { Check, ChevronsUpDown } from "lucide-react";
 
-import { Document } from "@/types";
+import { DocumentItem } from "@/lib/api/v2/schemas/documents";
 
 export interface DocumentSelectProps {
-  documents: Document[];
+  documents: DocumentItem[];
   selectedDocumentId: string | null;
   onDocumentSelect: (documentId: string) => void;
   placeholder?: string;
@@ -42,7 +42,7 @@ export default function DocumentSelect({
   const [open, setOpen] = useState(false);
 
   const selectedDocument = documents.find(
-    (doc) => doc.id === selectedDocumentId,
+    (doc) => doc.document_id === selectedDocumentId
   );
 
   return (
@@ -81,17 +81,17 @@ export default function DocumentSelect({
             <CommandGroup>
               {documents.map((doc) => (
                 <CommandItem
-                  key={doc.id}
+                  key={doc.document_id}
                   value={doc.name}
                   onSelect={() => {
-                    onDocumentSelect(doc.id);
+                    onDocumentSelect(doc.document_id);
                     setOpen(false);
                   }}
                   className="truncate"
                 >
                   <Check
                     className={`mr-2 h-4 w-4 ${
-                      selectedDocumentId === doc.id
+                      selectedDocumentId === doc.document_id
                         ? "opacity-100"
                         : "opacity-0"
                     }`}

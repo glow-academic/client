@@ -1102,7 +1102,7 @@ function generateApiRoutes(tables) {
     const indexRoute = `import { handle } from "@/lib/api/route-factory";
 import { ${singularName}Repo, ${typeName}CreateSchema } from "@/lib/repos/${singularName}Repo";
 import type { ${typeName}Create } from "@/lib/repos/${singularName}Repo";
-import { log } from "@/utils/logger";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export async function GET() {
   return handle(
@@ -1153,7 +1153,7 @@ export async function POST(req: Request) {
         ? `import { handle } from "@/lib/api/route-factory";
 import { ${singularName}Repo, ${typeName}UpdateSchema } from "@/lib/repos/${singularName}Repo";
 import type { ${typeName}Update } from "@/lib/repos/${singularName}Repo";
-import { log } from "@/utils/logger";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -1263,7 +1263,7 @@ function generateFkApiRoutes(tables) {
       fs.mkdirSync(singleDir, { recursive: true });
       const singleRoute = `import { handle } from "@/lib/api/route-factory";
 import { ${singularName}Repo } from "@/lib/repos/${singularName}Repo";
-import { log } from "@/utils/logger";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -1302,7 +1302,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       const batchRoute = `import { handle } from "@/lib/api/route-factory";
 import { ${singularName}Repo } from "@/lib/repos/${singularName}Repo";
 import { z } from "zod";
-import { log } from "@/utils/logger";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 const Body = z.object({ ids: z.array(${
         paramTs === "number" ? "z.number()" : "z.string()"

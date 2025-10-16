@@ -44,7 +44,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
-import { log } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import {

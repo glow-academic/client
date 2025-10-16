@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { rubricsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchRubricDetail } from "@/lib/api/v2/server/rubrics";
 import { rubricRepo } from "@/lib/repos/rubricRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

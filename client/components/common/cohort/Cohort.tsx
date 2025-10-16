@@ -36,7 +36,8 @@ import {
   useCreateCohort,
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
-import { Cohort as CohortType, Profile, ProfileRole } from "@/types";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
+import { CohortItem } from "@/lib/api/v2/schemas/cohorts";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
@@ -76,7 +77,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const isEditMode = !!cohortId;
 
-  const initialFormData: Partial<CohortType> = {
+  const initialFormData: Partial<CohortItem> = {
     title: "",
     description: "",
     active: true,
@@ -85,9 +86,9 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const [formData, setFormData] =
-    useState<Partial<CohortType>>(initialFormData);
+    useState<Partial<CohortItem>>(initialFormData);
   const [originalFormData, setOriginalFormData] =
-    useState<Partial<CohortType>>(initialFormData);
+    useState<Partial<CohortItem>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Staff management state
@@ -284,7 +285,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   ]);
 
   const handleInputChange = (
-    field: keyof Partial<CohortType>,
+    field: keyof Partial<CohortItem>,
     value: string | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

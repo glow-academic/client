@@ -3,7 +3,6 @@ import type {
   StandardGroupsMapping,
   StandardsMapping,
 } from "@/lib/api/v2/schemas/rubrics";
-import { Profile } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 import SimulationCard from "../common/simulation/SimulationCard";

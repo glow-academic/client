@@ -5,14 +5,14 @@ import HtmlViewer from "@/components/common/viewers/HtmlViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Document } from "@/types";
+import { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { isCodeByName } from "@/utils/mime-map";
 import { Download, FileText } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export interface DocumentViewerProps {
-  document: Document;
+  document: DocumentItem;
   bare?: boolean;
   isFormDocument?: boolean;
   compact?: boolean;

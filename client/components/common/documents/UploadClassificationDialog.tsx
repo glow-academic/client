@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/contexts/profile-context";
-import { DocumentType } from "@/types";
+import { DocumentType } from "@/lib/api/v2/schemas/base";
 import { inferMimeFromName } from "@/utils/mime-map";
 
 export type FileClassification = {

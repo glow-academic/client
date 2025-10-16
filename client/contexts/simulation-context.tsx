@@ -5,15 +5,9 @@
  * 06/27/2025
  */
 "use client";
-import {
-  Document,
-  Scenario,
-  Simulation,
-  SimulationAttempt,
-  SimulationChat,
-  SimulationMessage,
-} from "@/types";
-import { log } from "@/utils/logger";
+import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
+import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
+import type { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 
 import {
   useAttemptFull,
@@ -63,11 +57,11 @@ interface TimerState {
 export interface SimulationContextType {
   // Attempt and simulation data
   attemptId: string;
-  attempt: SimulationAttempt | null;
-  simulation: Simulation | null;
-  scenario: Scenario | null;
-  documents: Document[];
-  scenarioDocuments: Document[];
+  attempt: AttemptFullResponse["attempt"] | null;
+  simulation: AttemptFullResponse["simulation"] | null;
+  scenario: ScenarioItem | null;
+  documents: DocumentItem[];
+  scenarioDocuments: DocumentItem[];
 
   // Attempt profiles for ownership checks
   attemptProfiles: Array<{
@@ -78,7 +72,7 @@ export interface SimulationContextType {
   attemptProfileId: string | null;
 
   // Scenarios map (chatId -> scenario) for all chats
-  scenariosByChatId: Record<string, Scenario | null>;
+  scenariosByChatId: Record<string, ScenarioItem | null>;
 
   // Rubric structure (from v2) for TableRubric component
   rubricStructure: {
@@ -115,12 +109,12 @@ export interface SimulationContextType {
   // Current chat management
   currentChatIndex: number;
   setCurrentChatIndex: (index: number) => void;
-  currentChat: SimulationChat | null;
-  chats: SimulationChat[];
+  currentChat: AttemptFullResponse["chats"][number]["chat"] | null;
+  chats: AttemptFullResponse["chats"][number]["chat"][];
   isLoadingChats: boolean;
 
   // Messages (from v2 - all messages for current chat)
-  currentMessages: SimulationMessage[];
+  currentMessages: AttemptFullResponse["chats"][number]["messages"];
 
   // Hints (from v2 - hints for current chat)
   currentChatHints: Array<{
@@ -385,7 +379,7 @@ export function SimulationProvider({
       );
 
       const firstIncompleteIndex = sortedChats.findIndex(
-        (chat: SimulationChat) => !chat.completed
+        (chat: AttemptFullResponse["chats"][number]["chat"]) => !chat.completed
       );
 
       if (
@@ -447,7 +441,7 @@ export function SimulationProvider({
     if (chats && chats.length > 0 && !showResults) {
       const totalExpectedChats = chats.length;
       const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed
+        (chat: AttemptFullResponse["chats"][number]["chat"]) => chat.completed
       ).length;
 
       if (completedChats === totalExpectedChats) {

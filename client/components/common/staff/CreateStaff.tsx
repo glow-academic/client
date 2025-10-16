@@ -34,7 +34,6 @@ import {
   useProfileList,
 } from "@/lib/api/v2/hooks/profile";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
-import { log } from "@/utils/logger";
 import { Download, Shield, Upload, User, UserPlus, X } from "lucide-react";
 
 // Helper to extract alias from email

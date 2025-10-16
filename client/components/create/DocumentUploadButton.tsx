@@ -10,7 +10,6 @@ import UploadClassificationDialog from "@/components/common/documents/UploadClas
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { useFinalizeDocumentUpload } from "@/lib/api/v2/hooks/documents";
-import { log } from "@/utils/logger";
 import { inferMimeFromName } from "@/utils/mime-map";
 import { Upload } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";

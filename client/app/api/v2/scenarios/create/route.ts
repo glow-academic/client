@@ -1,6 +1,5 @@
 import { getApiBase } from "@/lib/api-base";
 import { CreateScenarioRequestSchema } from "@/lib/api/v2/schemas/scenarios";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

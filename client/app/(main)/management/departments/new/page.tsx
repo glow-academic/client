@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import Department from "@/components/common/department/Department";
 import { departmentsDetailDefaultKeys } from "@/lib/api/v2/keys";
 import { fetchDepartmentDetailDefault } from "@/lib/api/v2/server/departments";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

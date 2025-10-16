@@ -1,6 +1,5 @@
 import { PersonaDetailRequestSchema } from "@/lib/api/v2/schemas/personas";
 import { fetchPersonaDetail } from "@/lib/api/v2/server/personas";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

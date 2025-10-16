@@ -10,7 +10,7 @@ import ProviderEdit from "@/components/system/providers/ProviderEdit";
 import { providersDetailKeys } from "@/lib/api/v2/keys";
 import { fetchProviderDetail } from "@/lib/api/v2/server/providers";
 import { providerRepo } from "@/lib/repos/providerRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

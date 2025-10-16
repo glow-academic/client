@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { agentsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchAgentDetail } from "@/lib/api/v2/server/agents";
 import { agentRepo } from "@/lib/repos/agentRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

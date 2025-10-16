@@ -45,7 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DocumentType } from "@/types";
+import { DocumentType } from "@/lib/api/v2/schemas/base";
 import { UploadCloud } from "lucide-react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -62,7 +62,6 @@ import {
   useUpdateDocument,
 } from "@/lib/api/v2/hooks/documents";
 import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
-import { log } from "@/utils/logger";
 import { DocumentsDataTable } from "./DocumentsDataTable";
 
 export default function Documents() {

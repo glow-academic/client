@@ -35,7 +35,7 @@ import type {
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
 } from "@/lib/analytics";
-import { Parameter, ParameterItem } from "@/types";
+import { ParameterItem } from "@/lib/api/v2/schemas/parameters";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {

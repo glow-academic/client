@@ -6,7 +6,6 @@
  */
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Profile } from "@/types";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import { ReactNode, useRef, useState } from "react";
@@ -61,7 +60,7 @@ export default function AccoladeCard({
         className={clsx(
           "relative group rounded-2xl p-4 h-full bg-card",
           asButton && "cursor-pointer",
-          "transition-shadow will-change-transform shadow-sm flex flex-col",
+          "transition-shadow will-change-transform shadow-sm flex flex-col"
         )}
         style={{
           transform: hovering

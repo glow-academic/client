@@ -17,7 +17,6 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useAnalyticsHomeOverview } from "@/lib/api/v2/hooks/analytics";
-import { log } from "@/utils/logger";
 
 import { useDepartments } from "@/contexts/departments-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";

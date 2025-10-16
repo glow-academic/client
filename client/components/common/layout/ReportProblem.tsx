@@ -26,7 +26,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
 import { useCreateFeedbackV2 } from "@/lib/api/v2/hooks/feedback";
 import type { CreateFeedbackResponse } from "@/lib/api/v2/schemas/feedback";
-import { log } from "@/utils/logger";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";

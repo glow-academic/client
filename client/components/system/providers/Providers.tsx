@@ -5,7 +5,6 @@
  * 06/18/2025
  */
 "use client";
-import { log } from "@/utils/logger";
 import {
   Cpu,
   Edit,
@@ -207,9 +206,7 @@ export default function Providers() {
                   variant="default"
                   size="sm"
                   onClick={() =>
-                    router.push(
-                      `/system/providers/p/${provider.provider_id}`
-                    )
+                    router.push(`/system/providers/p/${provider.provider_id}`)
                   }
                 >
                   <Settings className="h-4 w-4" />

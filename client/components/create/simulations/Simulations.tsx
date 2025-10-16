@@ -5,7 +5,6 @@
  * 06/07/2025
  */
 "use client";
-import { log } from "@/utils/logger";
 import { Copy, Edit, Eye, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";

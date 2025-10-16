@@ -10,7 +10,7 @@ import Department from "@/components/common/department/Department";
 import { departmentsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchDepartmentDetail } from "@/lib/api/v2/server/departments";
 import { departmentRepo } from "@/lib/repos/departmentRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

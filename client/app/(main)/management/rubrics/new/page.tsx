@@ -10,7 +10,7 @@ import NewRubric from "@/components/management/rubrics/NewRubric";
 import { auth } from "@/auth";
 import { rubricsDetailDefaultKeys } from "@/lib/api/v2/keys";
 import { fetchRubricDetailDefault } from "@/lib/api/v2/server/rubrics";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

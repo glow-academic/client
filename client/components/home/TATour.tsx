@@ -5,7 +5,6 @@
  * 01/15/2025
  */
 "use client";
-import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { HelpCircle, Play } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";

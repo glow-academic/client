@@ -8,7 +8,6 @@
 
 import { useProfile } from "@/contexts/profile-context";
 import { useFeedbackList } from "@/lib/api/v2/hooks/feedback";
-import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";

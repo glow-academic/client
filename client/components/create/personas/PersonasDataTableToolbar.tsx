@@ -6,10 +6,10 @@ import { X } from "lucide-react";
 import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Persona } from "@/types";
+import { PersonaItem } from "@/lib/api/v2/schemas/personas";
 
 export interface PersonasDataTableToolbarProps {
-  table: Table<Persona>;
+  table: Table<PersonaItem>;
   scenarioOptions: { value: string; label: string }[];
   reasoningOptions: { value: string; label: string }[];
   modelOptions: { value: string; label: string }[];

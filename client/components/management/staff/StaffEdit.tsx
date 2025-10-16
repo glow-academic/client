@@ -35,8 +35,7 @@ import {
   useProfileSimple,
   useUpdateProfileSimple,
 } from "@/lib/api/v2/hooks/profile";
-import { ProfileRole } from "@/types";
-import { log } from "@/utils/logger";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { ArrowLeft, Shield, Trash2, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";

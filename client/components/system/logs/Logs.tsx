@@ -9,7 +9,6 @@
 import { useProfile } from "@/contexts/profile-context";
 import { useLogsList } from "@/lib/api/v2/hooks/logs";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
-import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";

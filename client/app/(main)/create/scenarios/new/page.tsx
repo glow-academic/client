@@ -10,7 +10,7 @@ import NewScenario from "@/components/create/scenarios/NewScenario";
 import { auth } from "@/auth";
 import { scenariosDetailDefaultKeys } from "@/lib/api/v2/keys";
 import { fetchScenarioDetailDefault } from "@/lib/api/v2/server/scenarios";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

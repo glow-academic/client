@@ -24,7 +24,6 @@ import {
   useProviderDetail,
   useUpdateProvider,
 } from "@/lib/api/v2/hooks/providers";
-import { log } from "@/utils/logger";
 import { maskApiKey } from "@/utils/model-utils";
 
 export interface ProviderProps {

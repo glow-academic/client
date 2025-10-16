@@ -1,6 +1,5 @@
 import { getApiBase } from "@/lib/api-base";
 import { UpdateChatCreatedAtRequestSchema } from "@/lib/api/v2/schemas/attempts";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

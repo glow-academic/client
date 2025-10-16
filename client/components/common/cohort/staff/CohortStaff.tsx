@@ -31,8 +31,9 @@ import StaffManager from "@/components/common/staff/StaffManager";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 import { cn } from "@/lib/utils";
-import { Profile, ProfileRole } from "@/types";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -56,7 +57,7 @@ import {
 
 // A new type to represent a profile that is either saved or new
 type EditableProfile =
-  | Profile
+  | ProfileItem
   | {
       isNew: true;
       id: string; // A temporary client-side ID

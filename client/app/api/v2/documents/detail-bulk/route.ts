@@ -1,6 +1,5 @@
 import { DocumentDetailBulkRequestSchema } from "@/lib/api/v2/schemas/documents";
 import { fetchDocumentDetailBulk } from "@/lib/api/v2/server/documents";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

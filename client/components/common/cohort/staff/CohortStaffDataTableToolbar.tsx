@@ -7,10 +7,10 @@ import { DataTableFacetedFilter } from "@/components/common/history/DataTableFac
 import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Profile } from "@/types";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 export interface CohortStaffDataTableToolbarProps {
-  table: Table<Profile>;
+  table: Table<ProfileItem>;
   roleOptions: { value: string; label: string }[];
 }
 

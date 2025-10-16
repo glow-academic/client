@@ -38,7 +38,6 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkArchiveAttempts } from "@/lib/api/v2/hooks/attempts";
-import { log } from "@/utils/logger";
 import { toast } from "sonner";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";

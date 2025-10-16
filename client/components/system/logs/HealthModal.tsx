@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { getApiBase } from "@/lib/api-base";
-import { log } from "@/utils/logger";
 import {
   AlertCircle,
   CheckCircle,

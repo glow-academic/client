@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import NewParameter from "@/components/common/parameter/Parameter";
 import { parametersDetailDefaultKeys } from "@/lib/api/v2/keys";
 import { fetchParameterDetailDefault } from "@/lib/api/v2/server/parameters";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

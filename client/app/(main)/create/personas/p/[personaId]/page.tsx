@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { personasDetailKeys } from "@/lib/api/v2/keys";
 import { fetchPersonaDetail } from "@/lib/api/v2/server/personas";
 import { personaRepo } from "@/lib/repos/personaRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

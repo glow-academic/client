@@ -10,7 +10,7 @@ import EditParameter from "@/components/common/parameter/Parameter";
 import { parametersDetailKeys } from "@/lib/api/v2/keys";
 import { fetchParameterDetail } from "@/lib/api/v2/server/parameters";
 import { parameterRepo } from "@/lib/repos/parameterRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

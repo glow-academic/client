@@ -31,7 +31,7 @@ import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { SimulationMessage } from "@/types";
+import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -69,13 +69,15 @@ export default function AttemptMessages({
     );
 
     const groups: Array<{
-      userMessage: SimulationMessage;
-      responses: SimulationMessage[];
+      userMessage: AttemptFullResponse["chats"][number]["messages"][number];
+      responses: AttemptFullResponse["chats"][number]["messages"];
       groupId: string;
     }> = [];
 
-    let currentUserMessage: SimulationMessage | null = null;
-    let currentResponses: SimulationMessage[] = [];
+    let currentUserMessage:
+      | AttemptFullResponse["chats"][number]["messages"][number]
+      | null = null;
+    let currentResponses: AttemptFullResponse["chats"][number]["messages"] = [];
 
     for (const message of sortedMessages) {
       if (message.type === "query") {

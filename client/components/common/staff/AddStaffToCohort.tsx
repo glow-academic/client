@@ -18,7 +18,6 @@ import {
   useCohortDetailWithProfiles,
 } from "@/lib/api/v2/hooks/cohorts";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
-import { log } from "@/utils/logger";
 import { Check, Download, Search, Upload, UserPlus, X } from "lucide-react";
 
 // Helper function to extract alias from email

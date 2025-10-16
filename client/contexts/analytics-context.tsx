@@ -7,7 +7,7 @@
 
 "use client";
 
-import { ProfileRole } from "@/types";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
 import { subDays } from "date-fns";
 import { usePathname } from "next/navigation";
 import React, {

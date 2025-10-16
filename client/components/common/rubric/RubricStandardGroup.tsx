@@ -38,8 +38,6 @@ import type {
   StandardGroupUpdate,
   StandardUpdate,
 } from "@/lib/api/v2/schemas/rubrics";
-import { Standard, StandardGroup } from "@/types";
-import { log } from "@/utils/logger";
 import {
   Award,
   BookOpen,

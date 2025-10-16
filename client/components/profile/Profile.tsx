@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { ProfileRole } from "@/types";
+import { ProfileRole } from "@/lib/api/v2/schemas/base";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -97,7 +97,7 @@ export function Profile({ className }: ProfileProps) {
             >
               <AvatarFallback className="text-lg">
                 {getInitials(
-                  activeProfile.firstName + " " + activeProfile.lastName,
+                  activeProfile.firstName + " " + activeProfile.lastName
                 )}
               </AvatarFallback>
             </Avatar>

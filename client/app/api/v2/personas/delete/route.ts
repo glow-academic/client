@@ -1,6 +1,5 @@
 import { getApiBase } from "@/lib/api-base";
 import { DeletePersonaRequestSchema } from "@/lib/api/v2/schemas/personas";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

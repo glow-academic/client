@@ -4,9 +4,10 @@
  */
 "use client";
 import { useProfile } from "@/contexts/profile-context";
-import { useAssistantChatFull } from "@/lib/api/v2/hooks/assistant";
-import { AssistantChat, AssistantMessage, AssistantToolCall } from "@/types";
-import { log } from "@/utils/logger";
+import {
+  useAssistantChatFull,
+  type AssistantChatFullResponse,
+} from "@/lib/api/v2/hooks/assistant";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -33,16 +34,16 @@ export interface AssistantContextType {
   // Chat Management
   currentChatId: string | undefined;
   setCurrentChatId: (chatId: string | undefined) => void;
-  chats: AssistantChat[];
-  pastChats: AssistantChat[];
+  chats: NonNullable<AssistantChatFullResponse["chat"]>[];
+  pastChats: NonNullable<AssistantChatFullResponse["chat"]>[];
   isLoadingChats: boolean;
   selectChat: (chatId: string) => void;
   startBlankChat: () => void;
 
   // Chat Data (from v2 hook)
-  chat: AssistantChat | null;
-  messages: AssistantMessage[];
-  toolCalls: AssistantToolCall[];
+  chat: AssistantChatFullResponse["chat"];
+  messages: AssistantChatFullResponse["messages"];
+  toolCalls: AssistantChatFullResponse["toolCalls"];
 
   // Connection State
   isConnected: boolean;

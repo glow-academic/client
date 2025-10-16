@@ -36,7 +36,6 @@ import { useSimulation } from "@/contexts/simulation-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { attemptsFullKeys } from "@/lib/api/v2/keys";
-import { log } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 

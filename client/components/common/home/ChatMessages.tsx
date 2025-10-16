@@ -11,8 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssistant } from "@/contexts/assistant-context";
-import { AssistantMessage, AssistantToolCall } from "@/types";
-import { log } from "@/utils/logger";
+import type { AssistantChatFullResponse } from "@/lib/api/v2/hooks/assistant";
 import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChatStarterPrompts from "./ChatStarterPrompts";
@@ -43,7 +42,7 @@ const ToolCallCard = ({
   toolCall,
   variant,
 }: {
-  toolCall: AssistantToolCall;
+  toolCall: AssistantChatFullResponse["toolCalls"][number];
   variant: "expanded" | "minimized";
 }) => {
   const isMinimized = variant === "minimized";
@@ -215,7 +214,9 @@ type TimelineItem = {
   id: string;
   type: "message" | "tool_call";
   timestamp: Date;
-  data: AssistantMessage | AssistantToolCall;
+  data:
+    | AssistantChatFullResponse["messages"][number]
+    | AssistantChatFullResponse["toolCalls"][number];
 };
 
 export interface ChatMessagesProps {

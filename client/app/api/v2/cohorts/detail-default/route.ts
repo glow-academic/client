@@ -1,6 +1,5 @@
 import { CohortDetailDefaultRequestSchema } from "@/lib/api/v2/schemas/cohorts";
 import { fetchCohortDetailDefault } from "@/lib/api/v2/server/cohorts";
-import { log } from "@/utils/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

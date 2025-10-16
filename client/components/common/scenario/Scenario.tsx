@@ -56,7 +56,6 @@ import {
   useScenarioDetailDefault,
   useUpdateScenario,
 } from "@/lib/api/v2/hooks/scenarios";
-import { log } from "@/utils/logger";
 import {
   getAllValidParameterItemIds,
   getObjectivesFromMapping,

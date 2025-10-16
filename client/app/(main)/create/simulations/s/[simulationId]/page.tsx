@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { simulationsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
 import { simulationRepo } from "@/lib/repos/simulationRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

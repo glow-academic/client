@@ -11,7 +11,7 @@ import { auth } from "@/auth";
 import { scenariosDetailKeys } from "@/lib/api/v2/keys";
 import { fetchScenarioDetail } from "@/lib/api/v2/server/scenarios";
 import { scenarioRepo } from "@/lib/repos/scenarioRepo";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 

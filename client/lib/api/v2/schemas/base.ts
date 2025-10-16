@@ -6,6 +6,73 @@
 import { z } from "zod";
 
 /**
+ * ============================================================================
+ * ENUM SCHEMAS
+ * Source of truth: server responses (Pydantic schemas)
+ * ============================================================================
+ */
+
+export const ProfileRoleSchema = z.enum([
+  "superadmin",
+  "admin",
+  "instructional",
+  "ta",
+  "guest",
+]);
+
+export const DocumentTypeSchema = z.enum([
+  "homework",
+  "project",
+  "quiz",
+  "midterm",
+  "lab",
+  "lecture",
+  "syllabus",
+]);
+
+export const FeedbackTypeSchema = z.enum([
+  "feature",
+  "bug",
+  "question",
+  "other",
+]);
+
+export const AssistantMessageTypeSchema = z.enum(["user", "assistant"]);
+
+export const AssistantToolTypeSchema = z.enum([
+  "create",
+  "read",
+  "update",
+  "delete",
+]);
+
+export const SimulationMessageTypeSchema = z.enum(["query", "response"]);
+
+export const ReasoningEffortSchema = z.enum([
+  "minimal",
+  "low",
+  "medium",
+  "high",
+]);
+
+/**
+ * Inferred enum types
+ */
+export type ProfileRole = z.infer<typeof ProfileRoleSchema>;
+export type DocumentType = z.infer<typeof DocumentTypeSchema>;
+export type FeedbackType = z.infer<typeof FeedbackTypeSchema>;
+export type AssistantMessageType = z.infer<typeof AssistantMessageTypeSchema>;
+export type AssistantToolType = z.infer<typeof AssistantToolTypeSchema>;
+export type SimulationMessageType = z.infer<typeof SimulationMessageTypeSchema>;
+export type ReasoningEffort = z.infer<typeof ReasoningEffortSchema>;
+
+/**
+ * ============================================================================
+ * MAPPING SCHEMAS
+ * ============================================================================
+ */
+
+/**
  * Standard mapping item with name and description
  * Used universally across ALL resources for consistency
  * - For scenarios: description = problem_statement
@@ -29,7 +96,9 @@ export const ParameterItemMappingItemSchema = z.object({
   parameter_name: z.string(),
 });
 
-export type ParameterItemMappingItem = z.infer<typeof ParameterItemMappingItemSchema>;
+export type ParameterItemMappingItem = z.infer<
+  typeof ParameterItemMappingItemSchema
+>;
 
 /**
  * Custom persona mapping item with additional color and icon fields
@@ -84,9 +153,15 @@ export const DocumentMappingSchema = MappingSchema;
 export const StaffMappingSchema = MappingSchema;
 export const AgentMappingSchema = MappingSchema;
 export const ProviderMappingSchema = MappingSchema;
-export const ScenarioMappingSchema = z.record(z.string(), ScenarioMappingItemSchema);
+export const ScenarioMappingSchema = z.record(
+  z.string(),
+  ScenarioMappingItemSchema
+);
 export const ModelMappingSchema = MappingSchema;
-export const ParameterItemMappingSchema = z.record(z.string(), ParameterItemMappingItemSchema);
+export const ParameterItemMappingSchema = z.record(
+  z.string(),
+  ParameterItemMappingItemSchema
+);
 export const ObjectiveMappingSchema = MappingSchema;
 export const ProfileMappingSchema = MappingSchema;
 export const StandardGroupsMappingSchema = MappingSchema;

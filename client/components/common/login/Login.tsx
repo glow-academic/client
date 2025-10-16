@@ -6,7 +6,6 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { log } from "@/utils/logger";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -102,7 +101,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      })),
+      }))
     );
 
     setMovingSparkles(
@@ -112,7 +111,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      })),
+      }))
     );
 
     setFloatingSparkles(
@@ -122,7 +121,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      })),
+      }))
     );
 
     setMounted(true);

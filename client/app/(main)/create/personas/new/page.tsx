@@ -10,7 +10,7 @@ import NewPersona from "@/components/create/personas/NewPersona";
 import { auth } from "@/auth";
 import { personasDetailDefaultKeys } from "@/lib/api/v2/keys";
 import { fetchPersonaDetailDefault } from "@/lib/api/v2/server/personas";
-import { getQueryClient } from "@/utils/react-query/queryClient";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 

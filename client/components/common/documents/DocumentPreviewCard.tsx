@@ -18,8 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
-import { Document } from "@/types";
+import { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import * as React from "react";
 
