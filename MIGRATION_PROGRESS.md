@@ -12,9 +12,14 @@
 - ✅ Configured server and client to connect via pgbouncer
 - ✅ Set up pgbouncer with transaction pooling
 
-### Phase 2: Query Layer Updates (IN PROGRESS)
+### Phase 2: Query Layer Updates (IN PROGRESS - 23% Complete)
 - ✅ Converted `queries/profile_queries.py` to asyncpg positional params ($1, $2, etc.)
-- ⏳ Remaining ~29 query files to convert
+- ✅ Converted `queries/log_queries.py` to asyncpg positional params
+- ✅ Converted `queries/feedback_queries.py` to asyncpg positional params
+- ✅ Converted `queries/agent_queries.py` to asyncpg positional params
+- ✅ Converted `queries/assistant_queries.py` to asyncpg positional params (also made it fully async)
+- ✅ Converted `queries/provider_queries.py` to asyncpg positional params
+- ⏳ Remaining ~24 query files to convert
 
 ### Phase 3: Service Layer (IN PROGRESS)
 - ✅ Converted `services/profile_service.py` to async with asyncpg.Connection

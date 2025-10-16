@@ -1,12 +1,12 @@
 """Log query builders with dynamic SQL."""
 
-from typing import Any, Dict
+from typing import Any, List
 
 
 class LogQueries:
     """Query builders for log operations."""
 
-    def get_logs_list(self) -> tuple[str, Dict[str, Any]]:
+    def get_logs_list(self) -> tuple[str, List[Any]]:
         """
         Get logs list with actor name resolution and all JSONB fields.
 
@@ -48,7 +48,6 @@ class LogQueries:
         ORDER BY al.created_at DESC
         """
 
-        params: Dict[str, Any] = {}
+        params: List[Any] = []
 
         return query, params
-

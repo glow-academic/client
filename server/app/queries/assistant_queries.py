@@ -1,16 +1,16 @@
 """Assistant queries for v2 API endpoints."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 from uuid import UUID
 
-from sqlalchemy import text
+import asyncpg
 
 
-def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:
+async def get_assistant_chat_full_data(conn: asyncpg.Connection, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:
     """Get complete assistant chat data with all related entities.
     
     Args:
-        db: Database session
+        conn: Database connection
         chat_id: Optional chat ID to fetch specific chat data
         profile_id: Profile ID to fetch all chats for dropdown
         
@@ -28,7 +28,7 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
     }
     
     # 1. Get all chats for this profile (for dropdown)
-    all_chats_query = text("""
+    all_chats_query = """
         SELECT 
             id,
             created_at,
@@ -37,19 +37,19 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
             title,
             trace_id
         FROM assistant_chats
-        WHERE profile_id = :profile_id
+        WHERE profile_id = $1
         ORDER BY created_at DESC
-    """)
+    """
     
-    all_chats_result = db.execute(all_chats_query, {"profile_id": profile_id_str}).fetchall()
+    all_chats_result = await conn.fetch(all_chats_query, profile_id_str)
     result["allChats"] = [
         {
-            "id": str(row.id),
-            "createdAt": row.created_at.isoformat(),
-            "updatedAt": row.updated_at.isoformat(),
-            "profileId": str(row.profile_id),
-            "title": row.title,
-            "traceId": row.trace_id,
+            "id": str(row['id']),
+            "createdAt": row['created_at'].isoformat(),
+            "updatedAt": row['updated_at'].isoformat(),
+            "profileId": str(row['profile_id']),
+            "title": row['title'],
+            "traceId": row['trace_id'],
         }
         for row in all_chats_result
     ]
@@ -59,7 +59,7 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
         return result
     
     # 2. Get specific chat details
-    chat_query = text("""
+    chat_query = """
         SELECT 
             id,
             created_at,
@@ -68,24 +68,24 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
             title,
             trace_id
         FROM assistant_chats
-        WHERE id = :chat_id
-    """)
+        WHERE id = $1
+    """
     
-    chat_result = db.execute(chat_query, {"chat_id": chat_id_str}).fetchone()
+    chat_result = await conn.fetchrow(chat_query, chat_id_str)
     if not chat_result:
         raise ValueError(f"Assistant chat {chat_id} not found")
     
     result["chat"] = {
-        "id": str(chat_result.id),
-        "createdAt": chat_result.created_at.isoformat(),
-        "updatedAt": chat_result.updated_at.isoformat(),
-        "profileId": str(chat_result.profile_id),
-        "title": chat_result.title,
-        "traceId": chat_result.trace_id,
+        "id": str(chat_result['id']),
+        "createdAt": chat_result['created_at'].isoformat(),
+        "updatedAt": chat_result['updated_at'].isoformat(),
+        "profileId": str(chat_result['profile_id']),
+        "title": chat_result['title'],
+        "traceId": chat_result['trace_id'],
     }
     
     # 3. Get all messages for this chat
-    messages_query = text("""
+    messages_query = """
         SELECT 
             id,
             created_at,
@@ -96,27 +96,27 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
             content,
             completed
         FROM assistant_messages
-        WHERE chat_id = :chat_id
+        WHERE chat_id = $1
         ORDER BY created_at ASC
-    """)
+    """
     
-    messages_result = db.execute(messages_query, {"chat_id": chat_id_str}).fetchall()
+    messages_result = await conn.fetch(messages_query, chat_id_str)
     result["messages"] = [
         {
-            "id": str(row.id),
-            "createdAt": row.created_at.isoformat(),
-            "updatedAt": row.updated_at.isoformat(),
-            "completedAt": row.completed_at.isoformat() if row.completed_at else None,
-            "chatId": str(row.chat_id),
-            "role": row.role,
-            "content": row.content,
-            "completed": row.completed,
+            "id": str(row['id']),
+            "createdAt": row['created_at'].isoformat(),
+            "updatedAt": row['updated_at'].isoformat(),
+            "completedAt": row['completed_at'].isoformat() if row['completed_at'] else None,
+            "chatId": str(row['chat_id']),
+            "role": row['role'],
+            "content": row['content'],
+            "completed": row['completed'],
         }
         for row in messages_result
     ]
     
     # 4. Get all tool calls for this chat
-    tool_calls_query = text("""
+    tool_calls_query = """
         SELECT 
             id,
             created_at,
@@ -129,26 +129,25 @@ def get_assistant_chat_full_data(db: Any, chat_id: UUID, profile_id: UUID) -> Di
             tool_result,
             completed
         FROM assistant_tool_calls
-        WHERE chat_id = :chat_id
+        WHERE chat_id = $1
         ORDER BY created_at ASC
-    """)
+    """
     
-    tool_calls_result = db.execute(tool_calls_query, {"chat_id": chat_id_str}).fetchall()
+    tool_calls_result = await conn.fetch(tool_calls_query, chat_id_str)
     result["toolCalls"] = [
         {
-            "id": str(row.id),
-            "createdAt": row.created_at.isoformat(),
-            "updatedAt": row.updated_at.isoformat(),
-            "completedAt": row.completed_at.isoformat() if row.completed_at else None,
-            "chatId": str(row.chat_id),
-            "toolName": row.tool_name,
-            "toolType": row.tool_type,
-            "toolArguments": row.tool_arguments,
-            "toolResult": row.tool_result,
-            "completed": row.completed,
+            "id": str(row['id']),
+            "createdAt": row['created_at'].isoformat(),
+            "updatedAt": row['updated_at'].isoformat(),
+            "completedAt": row['completed_at'].isoformat() if row['completed_at'] else None,
+            "chatId": str(row['chat_id']),
+            "toolName": row['tool_name'],
+            "toolType": row['tool_type'],
+            "toolArguments": row['tool_arguments'],
+            "toolResult": row['tool_result'],
+            "completed": row['completed'],
         }
         for row in tool_calls_result
     ]
     
     return result
-

@@ -1,12 +1,12 @@
 """Feedback query builders with dynamic SQL."""
 
-from typing import Any, Dict
+from typing import Any, List
 
 
 class FeedbackQueries:
     """Query builders for feedback operations."""
 
-    def get_feedback_list(self) -> tuple[str, Dict[str, Any]]:
+    def get_feedback_list(self) -> tuple[str, List[Any]]:
         """
         Get feedback list with author information.
 
@@ -33,13 +33,13 @@ class FeedbackQueries:
         ORDER BY af.created_at DESC
         """
 
-        params: Dict[str, Any] = {}
+        params: List[Any] = []
 
         return query, params
 
     def create_feedback(
         self, feedback_type: str, message: str, profile_id: str
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, List[Any]]:
         """
         Create new feedback entry and associate with author profile.
 
@@ -58,20 +58,15 @@ class FeedbackQueries:
         query = """
         WITH new_feedback AS (
             INSERT INTO app_feedback (type, message, created_at)
-            VALUES (:type, :message, NOW())
+            VALUES ($1, $2, NOW())
             RETURNING id
         )
         INSERT INTO app_feedback_profiles (app_feedback_id, profile_id, role)
-        SELECT nf.id, :profile_id::uuid, 'author'
+        SELECT nf.id, $3::uuid, 'author'
         FROM new_feedback nf
         RETURNING (SELECT id FROM new_feedback) as feedback_id
         """
 
-        params = {
-            "type": feedback_type,
-            "message": message,
-            "profile_id": profile_id,
-        }
+        params = [feedback_type, message, profile_id]
 
         return query, params
-

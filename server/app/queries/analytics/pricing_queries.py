@@ -1,6 +1,6 @@
 """Pricing analytics queries - SQL query builders for model run pricing."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 
 class PricingQueries:
@@ -13,7 +13,7 @@ class PricingQueries:
         end_date: str,
         cohort_ids: Optional[List[str]] = None,
         sim_filters: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for model runs with all relationships."""
 
         # Build WHERE clause conditions
@@ -72,7 +72,7 @@ class PricingQueries:
 
     def get_debug_info_for_runs(
         self, model_run_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get debug info for model runs."""
         query = """
         SELECT 
@@ -87,7 +87,7 @@ class PricingQueries:
         params = {"model_run_ids": model_run_ids}
         return (query, params)
 
-    def get_model_mapping(self, model_ids: List[str]) -> Tuple[str, Dict[str, Any]]:
+    def get_model_mapping(self, model_ids: List[str]) -> Tuple[str, List[Any]]:
         """Build query for model mapping with pricing."""
         query = """
         SELECT 
@@ -104,7 +104,7 @@ class PricingQueries:
 
     def get_profile_mapping(
         self, profile_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for profile mapping."""
         query = """
         SELECT id, first_name || ' ' || last_name as name
@@ -114,7 +114,7 @@ class PricingQueries:
         params = {"profile_ids": profile_ids}
         return (query, params)
 
-    def get_agent_mapping(self, agent_ids: List[str]) -> Tuple[str, Dict[str, Any]]:
+    def get_agent_mapping(self, agent_ids: List[str]) -> Tuple[str, List[Any]]:
         """Build query for agent mapping."""
         query = "SELECT id, name FROM agents WHERE id = ANY(:agent_ids)"
         params = {"agent_ids": agent_ids}
@@ -122,7 +122,7 @@ class PricingQueries:
 
     def get_persona_mapping(
         self, persona_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for persona mapping."""
         query = "SELECT id, name FROM personas WHERE id = ANY(:persona_ids)"
         params = {"persona_ids": persona_ids}

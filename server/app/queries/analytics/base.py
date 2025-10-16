@@ -1,9 +1,6 @@
 """Base analytics query builder with common filtering logic."""
 
-from typing import Any, Dict, List, Optional, Tuple
-
-from sqlalchemy import and_, or_, text
-from sqlalchemy.sql import Select
+from typing import Any, List, Optional, Tuple
 
 
 class AnalyticsFilters:
@@ -18,22 +15,25 @@ class AnalyticsFilters:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """
         Build base WHERE clause for analytics queries.
         
         Returns:
-            Tuple of (where_clause, params_dict)
+            Tuple of (where_clause, params_list)
         """
         conditions = []
-        params: Dict[str, Any] = {
-            "start_date": start_date,
-            "end_date": end_date,
-        }
+        params: List[Any] = []
+        param_counter = 1
 
-        # Date filter
-        conditions.append("a.attempt_created_at >= :start_date")
-        conditions.append("a.attempt_created_at < :end_date")
+        # Date filters
+        conditions.append(f"a.attempt_created_at >= ${param_counter}")
+        params.append(start_date)
+        param_counter += 1
+        
+        conditions.append(f"a.attempt_created_at < ${param_counter}")
+        params.append(end_date)
+        param_counter += 1
 
         # Simulation type filters
         sim_filters = sim_filters or ["general"]
@@ -56,25 +56,27 @@ class AnalyticsFilters:
 
         # Profile filter
         if profile_id:
-            params["profile_id"] = profile_id
-            conditions.append("a.profile_id = :profile_id")
+            conditions.append(f"a.profile_id = ${param_counter}")
+            params.append(profile_id)
+            param_counter += 1
 
         # Role filter (only if no profile_id)
         if not profile_id and roles:
-            params["roles"] = roles
-            conditions.append("a.profile_role = ANY(:roles)")
+            conditions.append(f"a.profile_role = ANY(${param_counter})")
+            params.append(roles)
+            param_counter += 1
 
         # Cohort filter
         if cohort_ids:
-            params["cohort_ids"] = cohort_ids
-            conditions.append(
-                "(a.cohort_ids && :cohort_ids OR a.profile_cohort_ids && :cohort_ids)"
-            )
+            conditions.append(f"(a.cohort_ids && ${param_counter} OR a.profile_cohort_ids && ${param_counter})")
+            params.append(cohort_ids)
+            param_counter += 1
 
         # Department filter
         if department_ids:
-            params["department_ids"] = department_ids
-            conditions.append("a.department_id = ANY(:department_ids)")
+            conditions.append(f"a.department_id = ANY(${param_counter})")
+            params.append(department_ids)
+            param_counter += 1
 
         where_clause = " AND ".join(conditions) if conditions else "TRUE"
         return where_clause, params
@@ -219,7 +221,7 @@ class AnalyticsQueryBuilder:
         use_normalization: bool = False,
         value_field: Optional[str] = None,
         key_field: Optional[str] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """
         Build a complete metric query with trend data and data points.
         
@@ -231,7 +233,7 @@ class AnalyticsQueryBuilder:
             value_field: Optional value field for response
             key_field: Optional key field for response
         """
-        where_clause, params = self.filters.build_base_filter(
+        where_clause, params, param_counter = self.filters.build_base_filter(
             start_date,
             end_date,
             cohort_ids,
@@ -336,4 +338,3 @@ class AnalyticsQueryBuilder:
             """
 
         return query, params
-

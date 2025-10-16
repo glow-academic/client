@@ -1,6 +1,6 @@
 """Bundle analytics queries - 2 metrics."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -20,7 +20,7 @@ class BundleQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build reports bundle query - aggregated metrics per profile."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -163,7 +163,7 @@ class BundleQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build leaderboard bundle query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,

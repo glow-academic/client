@@ -1,7 +1,10 @@
 """Agent v2 API endpoints."""
 
-from app.db import get_session
-from app.repositories.agent_repository import AgentRepository
+from typing import Annotated
+
+import asyncpg
+from app.db import get_db
+from app.repositories.agent_repository import get_agent_repository
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentsListRequest, AgentsListResponse,
                                 CreateAgentRequest, CreateAgentResponse,
@@ -9,7 +12,6 @@ from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 DuplicateAgentRequest, DuplicateAgentResponse,
                                 UpdateAgentRequest, UpdateAgentResponse)
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -17,59 +19,58 @@ router = APIRouter()
 @router.post("/list", response_model=AgentsListResponse)
 async def list_agents(
     request: AgentsListRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AgentsListResponse:
     """Get list of agents with permissions."""
-    repo = AgentRepository()
-    return await repo.get_agents_list(request, session)
+    repo = get_agent_repository(conn)
+    return await repo.get_agents_list(request)
 
 
 @router.post("/detail", response_model=AgentDetailResponse)
 async def get_agent_detail(
     request: AgentDetailRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AgentDetailResponse:
     """Get agent detail with debug info and metadata."""
-    repo = AgentRepository()
-    return await repo.get_agent_detail(request, session)
+    repo = get_agent_repository(conn)
+    return await repo.get_agent_detail(request)
 
 
 @router.post("/create", response_model=CreateAgentResponse)
 async def create_agent(
     request: CreateAgentRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateAgentResponse:
     """Create a new agent."""
-    repo = AgentRepository()
-    return await repo.create_agent(request, session)
+    repo = get_agent_repository(conn)
+    return await repo.create_agent(request)
 
 
 @router.post("/update", response_model=UpdateAgentResponse)
 async def update_agent(
     request: UpdateAgentRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateAgentResponse:
     """Update an agent."""
-    repo = AgentRepository()
-    return await repo.update_agent(request, session)
+    repo = get_agent_repository(conn)
+    return await repo.update_agent(request)
 
 
 @router.post("/duplicate", response_model=DuplicateAgentResponse)
 async def duplicate_agent(
     request: DuplicateAgentRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateAgentResponse:
     """Duplicate an agent."""
-    repo = AgentRepository()
-    return await repo.duplicate_agent(request, session)
+    repo = get_agent_repository(conn)
+    return await repo.duplicate_agent(request)
 
 
 @router.post("/delete", response_model=DeleteAgentResponse)
 async def delete_agent(
     request: DeleteAgentRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteAgentResponse:
     """Delete an agent (with usage check)."""
-    repo = AgentRepository()
-    return await repo.delete_agent(request, session)
-
+    repo = get_agent_repository(conn)
+    return await repo.delete_agent(request)

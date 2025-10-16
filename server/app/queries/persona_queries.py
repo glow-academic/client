@@ -1,6 +1,6 @@
 """Persona queries - SQL query builders."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 
 class PersonaQueries:
@@ -8,7 +8,7 @@ class PersonaQueries:
 
     def list_personas(
         self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for personas list with permissions."""
         query = """
         WITH persona_scenarios AS (
@@ -40,10 +40,10 @@ class PersonaQueries:
             FROM personas p
             LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
             LEFT JOIN models m ON m.id = p.model_id
-            WHERE p.department_id = ANY(:department_ids)
+            WHERE p.department_id = ANY($1)
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+            SELECT role FROM profiles WHERE id = $2
         )
         SELECT 
             pd.*,
@@ -63,18 +63,16 @@ class PersonaQueries:
         ORDER BY pd.persona_name
         """
 
-        params = {"department_ids": department_ids, "profile_id": profile_id}
-        return (query, params)
+        return (query, [department_ids, profile_id])
 
     def get_scenario_mapping(
         self, scenario_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for scenario mapping."""
-        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY(:scenario_ids)"
-        params = {"scenario_ids": scenario_ids}
-        return (query, params)
+        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY($1)"
+        return (query, [scenario_ids])
 
-    def get_persona_by_id(self, persona_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_persona_by_id(self, persona_id: str) -> Tuple[str, List[Any]]:
         """Build query to get persona by ID."""
         query = """
         SELECT 
@@ -90,38 +88,35 @@ class PersonaQueries:
             temperature,
             system_prompt
         FROM personas
-        WHERE id = :persona_id
+        WHERE id = $1
         """
-        params = {"persona_id": persona_id}
-        return (query, params)
+        return (query, [persona_id])
 
-    def get_valid_models(self) -> Tuple[str, Dict[str, Any]]:
+    def get_valid_models(self) -> Tuple[str, List[Any]]:
         """Build query for valid models."""
         query = "SELECT id, name, COALESCE(description, '') as description FROM models WHERE active = true ORDER BY name"
-        params: Dict[str, Any] = {}
-        return (query, params)
+        return (query, [])
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
+        WHERE pd.profile_id = $1 AND d.active = true
         ORDER BY d.title
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def get_default_persona(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_default_persona(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query for default persona."""
         query = """
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
-            WHERE pd.profile_id = :profile_id
+            WHERE pd.profile_id = $1
         ),
         user_personas AS (
             SELECT p.*
@@ -146,12 +141,11 @@ class PersonaQueries:
             system_prompt
         FROM user_personas
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def get_persona_for_duplicate(
         self, persona_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get persona data for duplication."""
         query = """
         SELECT 
@@ -165,12 +159,11 @@ class PersonaQueries:
             color,
             icon
         FROM personas
-        WHERE id = :persona_id
+        WHERE id = $1
         """
-        params = {"persona_id": persona_id}
-        return (query, params)
+        return (query, [persona_id])
 
-    def insert_duplicate_persona(self) -> Tuple[str, Dict[str, Any]]:
+    def insert_duplicate_persona(self) -> Tuple[str, List[Any]]:
         """Build query to insert duplicate persona."""
         query = """
         INSERT INTO personas (
@@ -187,46 +180,42 @@ class PersonaQueries:
             default_persona
         )
         VALUES (
-            :name || ' Copy',
-            :description,
-            :system_prompt,
-            :temperature,
-            :reasoning,
-            :model_id,
-            :department_id,
-            :color,
-            :icon,
+            $1 || ' Copy',
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
             false,
             false
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled with data at execution time
-        return (query, params)
+        return (query, [])  # Will be filled with data at execution time
 
-    def check_persona_usage(self, persona_id: str) -> Tuple[str, Dict[str, Any]]:
+    def check_persona_usage(self, persona_id: str) -> Tuple[str, List[Any]]:
         """Build query to check persona usage."""
         query = """
         SELECT COUNT(*) as usage_count
         FROM scenario_personas
-        WHERE persona_id = :persona_id AND active = true
+        WHERE persona_id = $1 AND active = true
         """
-        params = {"persona_id": persona_id}
-        return (query, params)
+        return (query, [persona_id])
 
-    def get_persona_name(self, persona_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_persona_name(self, persona_id: str) -> Tuple[str, List[Any]]:
         """Build query to get persona name."""
-        query = "SELECT name FROM personas WHERE id = :persona_id"
-        params = {"persona_id": persona_id}
-        return (query, params)
+        query = "SELECT name FROM personas WHERE id = $1"
+        return (query, [persona_id])
 
-    def delete_persona(self, persona_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_persona(self, persona_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete persona."""
-        query = "DELETE FROM personas WHERE id = :persona_id"
-        params = {"persona_id": persona_id}
-        return (query, params)
+        query = "DELETE FROM personas WHERE id = $1"
+        return (query, [persona_id])
 
-    def create_persona(self) -> Tuple[str, Dict[str, Any]]:
+    def create_persona(self) -> Tuple[str, List[Any]]:
         """Build query to create persona."""
         query = """
         INSERT INTO personas (
@@ -243,60 +232,55 @@ class PersonaQueries:
             system_prompt
         )
         VALUES (
-            :name,
-            :description,
-            :department_id,
-            :active,
-            :default_persona,
-            :color,
-            :icon,
-            :model_id,
-            :reasoning,
-            :temperature,
-            :system_prompt
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def update_persona(self) -> Tuple[str, Dict[str, Any]]:
+    def update_persona(self) -> Tuple[str, List[Any]]:
         """Build query to update persona."""
         query = """
         UPDATE personas SET
-            name = :name,
-            description = :description,
-            department_id = :department_id,
-            active = :active,
-            default_persona = :default_persona,
-            color = :color,
-            icon = :icon,
-            model_id = :model_id,
-            reasoning = :reasoning,
-            temperature = :temperature,
-            system_prompt = :system_prompt,
+            name = $2,
+            description = $3,
+            department_id = $4,
+            active = $5,
+            default_persona = $6,
+            color = $7,
+            icon = $8,
+            model_id = $9,
+            reasoning = $10,
+            temperature = $11,
+            system_prompt = $12,
             updated_at = NOW()
-        WHERE id = :persona_id
+        WHERE id = $1
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
     def get_departments_mapping(
         self, dept_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for departments mapping."""
         query = """
         SELECT id, title as name, description 
         FROM departments 
-        WHERE id = ANY(:dept_ids)
+        WHERE id = ANY($1)
         ORDER BY title
         """
-        params = {"dept_ids": dept_ids}
-        return (query, params)
+        return (query, [dept_ids])
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query to get profile role."""
-        query = "SELECT role FROM profiles WHERE id = :profile_id"
-        params = {"profile_id": profile_id}
-        return (query, params)
-
+        query = "SELECT role FROM profiles WHERE id = $1"
+        return (query, [profile_id])

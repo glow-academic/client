@@ -2,66 +2,63 @@
 
 from typing import List
 
+import asyncpg
 from app.queries.feedback_queries import FeedbackQueries
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackItem,
                                   FeedbackListRequest, FeedbackListResponse)
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class FeedbackService:
     """Service for feedback operations."""
 
-    def __init__(self) -> None:
-        """Initialize service with query builders."""
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize service with database connection."""
+        self.conn = conn
         self.queries = FeedbackQueries()
 
     async def get_feedback_list(
-        self, request: FeedbackListRequest, session: AsyncSession
+        self, request: FeedbackListRequest
     ) -> FeedbackListResponse:
         """
         Get list of feedback with author information.
 
         Args:
             request: List request
-            session: Database session
 
         Returns:
             FeedbackListResponse
         """
         query, params = self.queries.get_feedback_list()
 
-        result = await session.execute(text(query), params)
-        rows = result.fetchall()
+        rows = await self.conn.fetch(query, *params)
 
         feedback_items: List[FeedbackItem] = []
         for row in rows:
             feedback_items.append(
                 FeedbackItem(
-                    feedback_id=row.feedback_id,
-                    type=row.type,
-                    message=row.message,
-                    created_at=row.created_at.isoformat()
-                    if row.created_at
+                    feedback_id=row['feedback_id'],
+                    type=row['type'],
+                    message=row['message'],
+                    created_at=row['created_at'].isoformat()
+                    if row['created_at']
                     else "",
-                    author_name=row.author_name,
-                    author_alias=row.author_alias,
-                    author_profile_id=row.author_profile_id,
+                    author_name=row['author_name'],
+                    author_alias=row['author_alias'],
+                    author_profile_id=row['author_profile_id'],
                 )
             )
 
         return FeedbackListResponse(feedback=feedback_items)
 
     async def create_feedback(
-        self, request: CreateFeedbackRequest, session: AsyncSession
+        self, request: CreateFeedbackRequest
     ) -> CreateFeedbackResponse:
         """
         Create new feedback entry.
 
         Args:
             request: Create request with type, message, and profileId
-            session: Database session
 
         Returns:
             CreateFeedbackResponse
@@ -83,17 +80,13 @@ class FeedbackService:
             request.type, request.message, request.profileId
         )
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        result = await self.conn.fetchrow(query, *params)
 
-        row = result.fetchone()
-
-        if not row:
+        if not result:
             raise ValueError("Failed to create feedback")
 
         return CreateFeedbackResponse(
-            feedback_id=row.feedback_id,
+            feedback_id=result['feedback_id'],
             success=True,
             message="Feedback created successfully",
         )
-

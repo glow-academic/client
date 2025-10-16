@@ -1,6 +1,6 @@
 """Secondary analytics queries - 3 metrics."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -20,7 +20,7 @@ class SecondaryQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build attempt improvement query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -105,7 +105,7 @@ class SecondaryQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build cohort performance query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -191,7 +191,7 @@ class SecondaryQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build skill performance query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,

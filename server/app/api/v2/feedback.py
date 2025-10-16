@@ -1,12 +1,14 @@
 """Feedback v2 API endpoints."""
 
-from app.db import get_session
-from app.repositories.feedback_repository import FeedbackRepository
+from typing import Annotated
+
+import asyncpg
+from app.db import get_db
+from app.repositories.feedback_repository import get_feedback_repository
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackListRequest,
                                   FeedbackListResponse)
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -14,24 +16,23 @@ router = APIRouter()
 @router.post("/list", response_model=FeedbackListResponse)
 async def list_feedback(
     request: FeedbackListRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FeedbackListResponse:
     """Get list of feedback with author information."""
-    repo = FeedbackRepository()
-    return await repo.get_feedback_list(request, session)
+    repo = get_feedback_repository(conn)
+    return await repo.get_feedback_list(request)
 
 
 @router.post("/create", response_model=CreateFeedbackResponse)
 async def create_feedback(
     request: CreateFeedbackRequest,
-    session: AsyncSession = Depends(get_session),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateFeedbackResponse:
     """Create new app feedback entry."""
     try:
-        repo = FeedbackRepository()
-        return await repo.create_feedback(request, session)
+        repo = get_feedback_repository(conn)
+        return await repo.create_feedback(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

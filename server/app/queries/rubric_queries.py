@@ -1,6 +1,6 @@
 """Rubric queries - SQL query builders for hierarchical structure."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 
 class RubricQueries:
@@ -8,7 +8,7 @@ class RubricQueries:
 
     def list_rubrics(
         self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for rubrics list with permissions and hierarchical structure."""
         query = """
         WITH rubric_usage AS (
@@ -19,7 +19,7 @@ class RubricQueries:
             GROUP BY rubric_id
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+            SELECT role FROM profiles WHERE id = $2
         )
         SELECT 
             r.id as rubric_id,
@@ -40,16 +40,15 @@ class RubricQueries:
         FROM rubrics r
         LEFT JOIN rubric_usage ru ON ru.rubric_id = r.id
         CROSS JOIN user_profile up
-        WHERE r.department_id = ANY(:department_ids)
+        WHERE r.department_id = ANY($1)
         ORDER BY r.name
         """
 
-        params = {"department_ids": department_ids, "profile_id": profile_id}
-        return (query, params)
+        return (query, [department_ids, profile_id])
 
     def get_standard_groups_for_rubrics(
         self, rubric_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standard groups for rubrics."""
         query = """
         SELECT 
@@ -61,15 +60,14 @@ class RubricQueries:
             points,
             pass_points as passPoints
         FROM standard_groups
-        WHERE rubric_id = ANY(:rubric_ids)
+        WHERE rubric_id = ANY($1)
         ORDER BY rubric_id, name
         """
-        params = {"rubric_ids": rubric_ids}
-        return (query, params)
+        return (query, [rubric_ids])
 
     def get_standards_for_groups(
         self, group_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standards for standard groups."""
         query = """
         SELECT 
@@ -79,13 +77,12 @@ class RubricQueries:
             description,
             points
         FROM standards
-        WHERE standard_group_id = ANY(:group_ids)
+        WHERE standard_group_id = ANY($1)
         ORDER BY standard_group_id, name
         """
-        params = {"group_ids": group_ids}
-        return (query, params)
+        return (query, [group_ids])
 
-    def get_rubric_by_id(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_rubric_by_id(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to get rubric by ID."""
         query = """
         SELECT 
@@ -97,14 +94,13 @@ class RubricQueries:
             points,
             pass_points as passPoints
         FROM rubrics
-        WHERE id = :rubric_id
+        WHERE id = $1
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
     def get_standard_groups_for_rubric(
         self, rubric_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standard groups for a rubric."""
         query = """
         SELECT 
@@ -114,15 +110,14 @@ class RubricQueries:
             points,
             pass_points as passPoints
         FROM standard_groups
-        WHERE rubric_id = :rubric_id
+        WHERE rubric_id = $1
         ORDER BY name
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
     def get_standards_for_group(
         self, group_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standards for a group."""
         query = """
         SELECT 
@@ -131,33 +126,31 @@ class RubricQueries:
             description,
             points
         FROM standards
-        WHERE standard_group_id = :group_id
+        WHERE standard_group_id = $1
         ORDER BY name
         """
-        params = {"group_id": group_id}
-        return (query, params)
+        return (query, [group_id])
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
+        WHERE pd.profile_id = $1 AND d.active = true
         ORDER BY d.title
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def get_default_rubric(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_default_rubric(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query for default rubric."""
         query = """
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
-            WHERE pd.profile_id = :profile_id
+            WHERE pd.profile_id = $1
         ),
         user_rubrics AS (
             SELECT r.*
@@ -170,10 +163,9 @@ class RubricQueries:
         SELECT id
         FROM user_rubrics
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def create_rubric(self) -> Tuple[str, Dict[str, Any]]:
+    def create_rubric(self) -> Tuple[str, List[Any]]:
         """Build query to create rubric."""
         query = """
         INSERT INTO rubrics (
@@ -186,20 +178,19 @@ class RubricQueries:
             pass_points
         )
         VALUES (
-            :name,
-            :description,
-            :department_id,
-            :active,
-            :default_rubric,
-            :points,
-            :pass_points
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def create_standard_group(self) -> Tuple[str, Dict[str, Any]]:
+    def create_standard_group(self) -> Tuple[str, List[Any]]:
         """Build query to create standard group."""
         query = """
         INSERT INTO standard_groups (
@@ -211,19 +202,18 @@ class RubricQueries:
             pass_points
         )
         VALUES (
-            :rubric_id,
-            :name,
-            :short_name,
-            :description,
-            :points,
-            :pass_points
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def create_standard(self) -> Tuple[str, Dict[str, Any]]:
+    def create_standard(self) -> Tuple[str, List[Any]]:
         """Build query to create standard."""
         query = """
         INSERT INTO standards (
@@ -233,48 +223,44 @@ class RubricQueries:
             points
         )
         VALUES (
-            :standard_group_id,
-            :name,
-            :description,
-            :points
+            $1,
+            $2,
+            $3,
+            $4
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def get_rubric_name(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_rubric_name(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to get rubric name."""
-        query = "SELECT name FROM rubrics WHERE id = :rubric_id"
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        query = "SELECT name FROM rubrics WHERE id = $1"
+        return (query, [rubric_id])
 
-    def update_rubric(self) -> Tuple[str, Dict[str, Any]]:
+    def update_rubric(self) -> Tuple[str, List[Any]]:
         """Build query to update rubric."""
         query = """
         UPDATE rubrics SET
-            name = :name,
-            description = :description,
-            department_id = :department_id,
-            active = :active,
-            default_rubric = :default_rubric,
-            points = :points,
-            pass_points = :pass_points,
+            name = $2,
+            description = $3,
+            department_id = $4,
+            active = $5,
+            default_rubric = $6,
+            points = $7,
+            pass_points = $8,
             updated_at = NOW()
-        WHERE id = :rubric_id
+        WHERE id = $1
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def delete_standard_groups(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_standard_groups(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete standard groups (cascade deletes standards)."""
-        query = "DELETE FROM standard_groups WHERE rubric_id = :rubric_id"
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        query = "DELETE FROM standard_groups WHERE rubric_id = $1"
+        return (query, [rubric_id])
 
     def get_rubric_for_duplicate(
         self, rubric_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get rubric data for duplication."""
         query = """
         SELECT 
@@ -284,12 +270,11 @@ class RubricQueries:
             points,
             pass_points
         FROM rubrics
-        WHERE id = :rubric_id
+        WHERE id = $1
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
-    def insert_duplicate_rubric(self) -> Tuple[str, Dict[str, Any]]:
+    def insert_duplicate_rubric(self) -> Tuple[str, List[Any]]:
         """Build query to insert duplicate rubric."""
         query = """
         INSERT INTO rubrics (
@@ -302,22 +287,21 @@ class RubricQueries:
             pass_points
         )
         VALUES (
-            :name || ' Copy',
-            :description,
-            :department_id,
+            $1 || ' Copy',
+            $2,
+            $3,
             false,
             false,
-            :points,
-            :pass_points
+            $4,
+            $5
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
     def get_groups_for_duplicate(
         self, rubric_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standard groups for duplication."""
         query = """
         SELECT 
@@ -328,15 +312,14 @@ class RubricQueries:
             points,
             pass_points
         FROM standard_groups
-        WHERE rubric_id = :rubric_id
+        WHERE rubric_id = $1
         ORDER BY name
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
     def get_standards_for_duplicate(
         self, group_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get standards for duplication."""
         query = """
         SELECT 
@@ -344,89 +327,79 @@ class RubricQueries:
             description,
             points
         FROM standards
-        WHERE standard_group_id = :group_id
+        WHERE standard_group_id = $1
         ORDER BY name
         """
-        params = {"group_id": group_id}
-        return (query, params)
+        return (query, [group_id])
 
-    def check_rubric_usage(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def check_rubric_usage(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to check rubric usage."""
         query = """
         SELECT COUNT(*) as usage_count
         FROM simulations
-        WHERE rubric_id = :rubric_id
+        WHERE rubric_id = $1
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
-    def delete_rubric(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_rubric(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete rubric."""
-        query = "DELETE FROM rubrics WHERE id = :rubric_id"
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        query = "DELETE FROM rubrics WHERE id = $1"
+        return (query, [rubric_id])
 
-    def update_standard_group(self) -> Tuple[str, Dict[str, Any]]:
+    def update_standard_group(self) -> Tuple[str, List[Any]]:
         """Build query to update existing standard group."""
         query = """
         UPDATE standard_groups SET
-            name = :name,
-            short_name = :short_name,
-            description = :description,
-            points = :points,
-            pass_points = :pass_points,
+            name = $2,
+            short_name = $3,
+            description = $4,
+            points = $5,
+            pass_points = $6,
             updated_at = NOW()
-        WHERE id = :id
+        WHERE id = $1
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def update_standard(self) -> Tuple[str, Dict[str, Any]]:
+    def update_standard(self) -> Tuple[str, List[Any]]:
         """Build query to update existing standard."""
         query = """
         UPDATE standards SET
-            name = :name,
-            description = :description,
-            points = :points,
+            name = $2,
+            description = $3,
+            points = $4,
             updated_at = NOW()
-        WHERE id = :id
+        WHERE id = $1
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return (query, [])  # Will be filled at execution time
 
-    def delete_standard_group_by_id(self, group_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_standard_group_by_id(self, group_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete single standard group (cascade deletes standards)."""
-        query = "DELETE FROM standard_groups WHERE id = :group_id"
-        params = {"group_id": group_id}
-        return (query, params)
+        query = "DELETE FROM standard_groups WHERE id = $1"
+        return (query, [group_id])
 
-    def delete_standard_by_id(self, standard_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_standard_by_id(self, standard_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete single standard."""
-        query = "DELETE FROM standards WHERE id = :standard_id"
-        params = {"standard_id": standard_id}
-        return (query, params)
+        query = "DELETE FROM standards WHERE id = $1"
+        return (query, [standard_id])
 
-    def calculate_rubric_points(self, rubric_id: str) -> Tuple[str, Dict[str, Any]]:
+    def calculate_rubric_points(self, rubric_id: str) -> Tuple[str, List[Any]]:
         """Build query to calculate rubric points from standard groups."""
         query = """
         SELECT 
             COALESCE(SUM(points), 0) as total_points,
             COALESCE(SUM(pass_points), 0) as total_pass_points
         FROM standard_groups
-        WHERE rubric_id = :rubric_id
+        WHERE rubric_id = $1
         """
-        params = {"rubric_id": rubric_id}
-        return (query, params)
+        return (query, [rubric_id])
 
-    def update_rubric_points(self) -> Tuple[str, Dict[str, Any]]:
+    def update_rubric_points(self) -> Tuple[str, List[Any]]:
         """Build query to update rubric points."""
         query = """
         UPDATE rubrics SET
-            points = :points,
-            pass_points = :pass_points,
+            points = $2,
+            pass_points = $3,
             updated_at = NOW()
-        WHERE id = :rubric_id
+        WHERE id = $1
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
-
+        return (query, [])  # Will be filled at execution time

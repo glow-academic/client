@@ -1,6 +1,6 @@
 """Header analytics queries - 10 metrics."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from app.queries.analytics.base import AnalyticsQueryBuilder
 
@@ -20,7 +20,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build average score query."""
         return self.builder.build_metric_query(
             metric_expression="grade_percent",
@@ -45,7 +45,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build completion percentage query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -130,7 +130,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build first attempt pass rate query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -205,7 +205,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build highest score query."""
         return self.builder.build_metric_query(
             metric_expression="grade_percent",
@@ -230,7 +230,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build messages per session query."""
         return self.builder.build_metric_query(
             metric_expression="num_messages_total",
@@ -254,7 +254,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build persona response times query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -326,7 +326,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build session efficiency query (score / time ratio)."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -400,7 +400,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build stagnation rate query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,
@@ -487,7 +487,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build time spent query (in minutes)."""
         return self.builder.build_metric_query(
             metric_expression="(chat_time_taken_seconds / 60.0)",
@@ -511,7 +511,7 @@ class HeaderQueries:
         sim_filters: Optional[List[str]] = None,
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build total attempts query."""
         where_clause, params = self.builder.filters.build_base_filter(
             start_date,

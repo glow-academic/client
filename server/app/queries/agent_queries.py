@@ -1,12 +1,12 @@
 """Agent query builders with dynamic SQL."""
 
-from typing import Any, Dict
+from typing import Any, List
 
 
 class AgentQueries:
     """Query builders for agent operations."""
 
-    def get_agents_list(self, profile_id: str) -> tuple[str, Dict[str, Any]]:
+    def get_agents_list(self, profile_id: str) -> tuple[str, List[Any]]:
         """
         Get agents list with permissions.
 
@@ -18,7 +18,7 @@ class AgentQueries:
         """
         query = """
         WITH user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+            SELECT role FROM profiles WHERE id = $1
         )
         SELECT 
             a.id::text as agent_id,
@@ -35,11 +35,11 @@ class AgentQueries:
         ORDER BY a.name
         """
 
-        params: Dict[str, Any] = {"profile_id": profile_id}
+        params: List[Any] = [profile_id]
 
         return query, params
 
-    def get_agent_detail(self, agent_id: str) -> tuple[str, Dict[str, Any]]:
+    def get_agent_detail(self, agent_id: str) -> tuple[str, List[Any]]:
         """
         Get basic agent information.
 
@@ -56,16 +56,16 @@ class AgentQueries:
             model_id::text,
             reasoning
         FROM agents
-        WHERE id = :agent_id
+        WHERE id = $1
         """
 
-        params: Dict[str, Any] = {"agent_id": agent_id}
+        params: List[Any] = [agent_id]
 
         return query, params
 
     def get_debug_info_for_agent(
         self, agent_id: str
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, List[Any]]:
         """
         Get debug info for an agent via model_run_agents junction.
 
@@ -81,18 +81,18 @@ class AgentQueries:
         JOIN model_runs mr ON mr.id = mra.model_run_id
         JOIN debug_info di ON di.model_run_id = mr.id
         JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-        WHERE mra.agent_id = :agent_id
+        WHERE mra.agent_id = $1
         AND mra.active = true
         AND mrm.active = true
         ORDER BY di.created_at DESC
         LIMIT 100
         """
 
-        params: Dict[str, Any] = {"agent_id": agent_id}
+        params: List[Any] = [agent_id]
 
         return query, params
 
-    def get_valid_models(self) -> tuple[str, Dict[str, Any]]:
+    def get_valid_models(self) -> tuple[str, List[Any]]:
         """
         Get all active models for selection.
 
@@ -109,11 +109,11 @@ class AgentQueries:
         ORDER BY name
         """
 
-        params: Dict[str, Any] = {}
+        params: List[Any] = []
 
         return query, params
 
-    def get_model_mapping(self, model_ids: list[str]) -> tuple[str, Dict[str, Any]]:
+    def get_model_mapping(self, model_ids: list[str]) -> tuple[str, List[Any]]:
         """
         Get model mapping for given model IDs.
 
@@ -126,10 +126,10 @@ class AgentQueries:
             name,
             COALESCE(description, '') as description
         FROM models
-        WHERE id = ANY(:model_ids)
+        WHERE id = ANY($1)
         """
 
-        params: Dict[str, Any] = {"model_ids": model_ids}
+        params: List[Any] = [model_ids]
 
         return query, params
 
@@ -141,7 +141,7 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, List[Any]]:
         """
         Create a new agent.
 
@@ -150,18 +150,11 @@ class AgentQueries:
         """
         query = """
         INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, created_at, updated_at)
-        VALUES (:name, :description, :system_prompt, :temperature, :model_id, :reasoning, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
         RETURNING id::text as agent_id
         """
 
-        params: Dict[str, Any] = {
-            "name": name,
-            "description": description,
-            "system_prompt": system_prompt,
-            "temperature": temperature,
-            "model_id": model_id,
-            "reasoning": reasoning,
-        }
+        params: List[Any] = [name, description, system_prompt, temperature, model_id, reasoning]
 
         return query, params
 
@@ -174,9 +167,9 @@ class AgentQueries:
         temperature: float,
         model_id: str,
         reasoning: str | None,
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, List[Any]]:
         """
-        Update an agent.
+        Update an existing agent.
 
         Returns:
             Tuple of (query, params)
@@ -184,53 +177,50 @@ class AgentQueries:
         query = """
         UPDATE agents
         SET 
-            name = :name,
-            description = :description,
-            system_prompt = :system_prompt,
-            temperature = :temperature,
-            model_id = :model_id,
-            reasoning = :reasoning,
+            name = $2,
+            description = $3,
+            system_prompt = $4,
+            temperature = $5,
+            model_id = $6,
+            reasoning = $7,
             updated_at = NOW()
-        WHERE id = :agent_id
+        WHERE id = $1
         """
 
-        params: Dict[str, Any] = {
-            "agent_id": agent_id,
-            "name": name,
-            "description": description,
-            "system_prompt": system_prompt,
-            "temperature": temperature,
-            "model_id": model_id,
-            "reasoning": reasoning,
-        }
+        params: List[Any] = [agent_id, name, description, system_prompt, temperature, model_id, reasoning]
 
         return query, params
 
     def duplicate_agent(
-        self, agent_id: str, new_name: str
-    ) -> tuple[str, Dict[str, Any]]:
+        self, agent_id: str
+    ) -> tuple[str, List[Any]]:
         """
-        Duplicate an agent.
+        Duplicate an agent (copy with 'Copy' suffix).
 
         Returns:
             Tuple of (query, params)
         """
         query = """
         INSERT INTO agents (name, description, system_prompt, temperature, model_id, reasoning, created_at, updated_at)
-        SELECT :new_name, description, system_prompt, temperature, model_id, reasoning, NOW(), NOW()
+        SELECT 
+            name || ' Copy',
+            description,
+            system_prompt,
+            temperature,
+            model_id,
+            reasoning,
+            NOW(),
+            NOW()
         FROM agents
-        WHERE id = :agent_id
+        WHERE id = $1
         RETURNING id::text as agent_id
         """
 
-        params: Dict[str, Any] = {
-            "agent_id": agent_id,
-            "new_name": new_name,
-        }
+        params: List[Any] = [agent_id]
 
         return query, params
 
-    def delete_agent(self, agent_id: str) -> tuple[str, Dict[str, Any]]:
+    def delete_agent(self, agent_id: str) -> tuple[str, List[Any]]:
         """
         Delete an agent.
 
@@ -238,32 +228,9 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        DELETE FROM agents
-        WHERE id = :agent_id
+        DELETE FROM agents WHERE id = $1
         """
 
-        params: Dict[str, Any] = {"agent_id": agent_id}
+        params: List[Any] = [agent_id]
 
         return query, params
-
-    def check_agent_usage(self, agent_id: str) -> tuple[str, Dict[str, Any]]:
-        """
-        Check if agent is in use.
-
-        Returns count of:
-        - department_agents (assigned to departments)
-        - model_run_agents (used in model runs)
-
-        Returns:
-            Tuple of (query, params)
-        """
-        query = """
-        SELECT
-            (SELECT COUNT(*) FROM department_agents WHERE agent_id = :agent_id) as department_agent_count,
-            (SELECT COUNT(*) FROM model_run_agents WHERE agent_id = :agent_id) as model_run_agent_count
-        """
-
-        params: Dict[str, Any] = {"agent_id": agent_id}
-
-        return query, params
-
