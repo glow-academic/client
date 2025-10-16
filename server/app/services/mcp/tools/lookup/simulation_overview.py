@@ -6,137 +6,127 @@
 import uuid
 from typing import Any, Dict
 
-from app.db import get_session
-from app.models import (Cohorts, Rubrics, Scenarios, SimulationAttempts,
-                        SimulationChatGrades, SimulationChats, Simulations)
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 
-def simulation_overview(sim_id: str) -> Dict[str, Any]:
-    """
-    🔎 Simulation overview
-    ----------------------
-    Sim meta, rubric, cohorts, scenarios, pass stats.
-
-    Input
-      • sim_id – UUID of the simulation
-
-    Returns
-      { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
-
-    Quick-start
-      ask:  "Give me the Induction Homework sim stats"
-      call: simulation_overview("uuid-here")
-
-    See also 👉 simulation_attempts() for detailed attempt list.
-    """
+async def simulation_overview(conn: asyncpg.Connection, sim_id: str) -> Dict[str, Any]:
+    """Simulation meta, rubric, cohorts, scenarios, and pass stats."""
     try:
         simulation_uuid = uuid.UUID(sim_id)
     except ValueError:
         return {"error": f"Invalid sim_id format: {sim_id}"}
 
-    session = next(get_session())
     try:
         # Get simulation
-        simulation = session.get(Simulations, simulation_uuid)
+        simulation = await conn.fetchrow(
+            """
+            SELECT id, title, active, time_limit, rubric_id, created_at
+            FROM simulations
+            WHERE id = $1
+            """,
+            simulation_uuid,
+        )
         if not simulation:
             return {"error": f"Simulation not found: {sim_id}"}
 
         simulation_data = {
-            "id": str(simulation.id),
-            "title": simulation.title,
-            "active": simulation.active,
-            "time_limit": simulation.time_limit,
-            "created_at": simulation.created_at.isoformat()
-            if simulation.created_at
+            "id": str(simulation["id"]),
+            "title": simulation["title"],
+            "active": simulation["active"],
+            "time_limit": simulation["time_limit"],
+            "created_at": simulation["created_at"].isoformat()
+            if simulation["created_at"]
             else None,
         }
 
         # Get rubric
-        rubric = session.get(Rubrics, simulation.rubric_id)
         rubric_data = {}
-        if rubric:
-            rubric_data = {
-                "id": str(rubric.id),
-                "name": rubric.name,
-                "description": rubric.description,
-                "points": rubric.points,
-                "pass_points": rubric.pass_points,
-            }
+        if simulation["rubric_id"]:
+            rubric = await conn.fetchrow(
+                """
+                SELECT id, name, description, points, pass_points
+                FROM rubrics
+                WHERE id = $1
+                """,
+                simulation["rubric_id"],
+            )
+            if rubric:
+                rubric_data = {
+                    "id": str(rubric["id"]),
+                    "name": rubric["name"],
+                    "description": rubric["description"],
+                    "points": rubric["points"],
+                    "pass_points": rubric["pass_points"],
+                }
 
-        # Get cohorts (using cohort.simulation_ids)
-        cohorts_data = []
-        cohorts_stmt = select(Cohorts)
-        cohorts = session.exec(cohorts_stmt).all()
-        for cohort in cohorts:
-            # Only include cohort if this simulation is in its simulation_ids
-            if hasattr(cohort, "simulation_ids") and cohort.simulation_ids:
-                if simulation.id in cohort.simulation_ids:
-                    cohorts_data.append(
-                        {
-                            "id": str(cohort.id),
-                            "title": cohort.title,
-                            "active": cohort.active,
-                        }
-                    )
+        # Get cohorts via cohort_simulations junction
+        cohorts = await conn.fetch(
+            """
+            SELECT c.id, c.title, c.active
+            FROM cohorts c
+            JOIN cohort_simulations cs ON cs.cohort_id = c.id
+            WHERE cs.simulation_id = $1 AND cs.active = true
+            ORDER BY c.title
+            """,
+            simulation_uuid,
+        )
+
+        cohorts_data = [
+            {
+                "id": str(cohort["id"]),
+                "title": cohort["title"],
+                "active": cohort["active"],
+            }
+            for cohort in cohorts
+        ]
 
         # Load scenarios from junction table (ordered by position)
-        from app.models import SimulationScenarios
-        scenario_links = session.exec(
-            select(SimulationScenarios)
-            .where(SimulationScenarios.simulation_id == simulation.id)
-            .order_by("position")
-        ).all()
-        
-        scenarios_data = []
-        if scenario_links:
-            scenario_ids = [link.scenario_id for link in scenario_links]
-            scenarios_stmt = select(Scenarios).where(
-                Scenarios.id.in_(scenario_ids)
-            )
-            scenarios = session.exec(scenarios_stmt).all()
-            # Maintain order from junction table
-            scenario_by_id = {str(s.id): s for s in scenarios}
-            scenarios_data = [
-                {
-                    "id": str(link.scenario_id),
-                    "name": scenario_by_id[str(link.scenario_id)].name,
-                    "problem_statement": scenario_by_id[str(link.scenario_id)].problem_statement,
-                    "position": link.position,
-                }
-                for link in scenario_links
-                if str(link.scenario_id) in scenario_by_id
-            ]
+        scenarios = await conn.fetch(
+            """
+            SELECT s.id, s.name, s.problem_statement, ss.position
+            FROM scenarios s
+            JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+            WHERE ss.simulation_id = $1
+            ORDER BY ss.position
+            """,
+            simulation_uuid,
+        )
+
+        scenarios_data = [
+            {
+                "id": str(scenario["id"]),
+                "name": scenario["name"],
+                "problem_statement": scenario["problem_statement"],
+                "position": scenario["position"],
+            }
+            for scenario in scenarios
+        ]
 
         # Calculate pass stats
-        attempts_stmt = select(SimulationAttempts).where(
-            SimulationAttempts.simulation_id == simulation_uuid
-        )
-        attempts = session.exec(attempts_stmt).all()
-
-        total_attempts = len(attempts)
-        total_graded = 0
-        total_passed = 0
-
-        for attempt in attempts:
-            chats_stmt = select(SimulationChats).where(
-                SimulationChats.attempt_id == attempt.id
+        stats = await conn.fetchrow(
+            """
+            WITH attempt_stats AS (
+                SELECT 
+                    COUNT(DISTINCT sa.id) as total_attempts,
+                    COUNT(DISTINCT scg.id) as total_graded,
+                    SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END) as total_passed
+                FROM simulation_attempts sa
+                LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+                LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+                WHERE sa.simulation_id = $1
             )
-            chats = session.exec(chats_stmt).all()
-
-            for chat in chats:
-                grade_stmt = select(SimulationChatGrades).where(
-                    SimulationChatGrades.simulation_chat_id == chat.id
-                )
-                grade = session.exec(grade_stmt).first()
-
-                if grade:
-                    total_graded += 1
-                    if grade.passed:
-                        total_passed += 1
-
-        pass_rate = (total_passed / total_graded * 100) if total_graded > 0 else 0
+            SELECT 
+                total_attempts,
+                total_graded,
+                CASE 
+                    WHEN total_graded > 0 
+                    THEN ROUND((total_passed::numeric / total_graded * 100), 2)
+                    ELSE 0
+                END as pass_rate
+            FROM attempt_stats
+            """,
+            simulation_uuid,
+        )
 
         return {
             "simulation": simulation_data,
@@ -144,13 +134,11 @@ def simulation_overview(sim_id: str) -> Dict[str, Any]:
             "cohorts": cohorts_data,
             "scenarios": scenarios_data,
             "stats": {
-                "total_attempts": total_attempts,
-                "total_graded": total_graded,
-                "pass_rate": round(pass_rate, 2),
+                "total_attempts": stats["total_attempts"] if stats else 0,
+                "total_graded": stats["total_graded"] if stats else 0,
+                "pass_rate": float(stats["pass_rate"]) if stats and stats["pass_rate"] else 0,
             },
         }
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return {"error": f"Database error: {str(e)}"}
-    finally:
-        session.close()

@@ -6,90 +6,71 @@
 import uuid
 from typing import Any, Dict
 
-from app.db import get_session
-from app.models import Personas, Scenarios
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 
-def persona_overview(persona_id: str) -> Dict[str, Any]:
-    """
-    Persona overview
-    --------------
-    Show persona details and associated simulations.
-
-    Input
-      • persona_id - UUID of the persona
-
-    Returns
-      { "id": "…", "name": "…", "simulations": […], … }
-
-    Quick-start
-      ask:  "Show me details for persona X"
-      call: persona_overview("uuid-here")
-
-    See also 👉 simulation_overview() for sim details.
-    """
+async def persona_overview(conn: asyncpg.Connection, persona_id: str) -> Dict[str, Any]:
+    """Persona details and associated scenarios."""
     try:
         persona_uuid = uuid.UUID(persona_id)
     except ValueError:
         return {"error": f"Invalid persona_id format: {persona_id}"}
 
-    session = next(get_session())
     try:
         # Get persona details
-        persona = session.get(Personas, persona_uuid)
+        persona = await conn.fetchrow(
+            """
+            SELECT id, name, description, system_prompt, temperature, 
+                    default_persona, created_at, updated_at
+            FROM personas
+            WHERE id = $1
+            """,
+            persona_uuid,
+        )
         if not persona:
             return {"error": f"Persona not found: {persona_id}"}
 
         # Get associated scenarios via scenario_personas junction
-        from app.models import ScenarioPersonas
-        persona_links = session.exec(
-            select(ScenarioPersonas).where(
-                ScenarioPersonas.persona_id == persona_uuid,
-                ScenarioPersonas.active == True
-            )
-        ).all()
-        
-        scenario_ids = [link.scenario_id for link in persona_links]
-        if scenario_ids:
-            scenarios_stmt = select(Scenarios).where(Scenarios.id.in_(scenario_ids))
-            scenarios = session.exec(scenarios_stmt).all()
-        else:
-            scenarios = []
+        scenarios = await conn.fetch(
+            """
+            SELECT s.id, s.name, s.problem_statement, s.default_scenario, s.created_at
+            FROM scenarios s
+            JOIN scenario_personas sp ON sp.scenario_id = s.id
+            WHERE sp.persona_id = $1 AND sp.active = true
+            ORDER BY s.name
+            """,
+            persona_uuid,
+        )
 
-        scenario_list = []
-        for scenario in scenarios:
-            scenario_list.append(
-                {
-                    "id": str(scenario.id),
-                    "name": scenario.name,
-                    "problem_statement": scenario.problem_statement,
-                    "default_scenario": scenario.default_scenario,
-                    "created_at": scenario.created_at.isoformat()
-                    if scenario.created_at
-                    else None,
-                }
-            )
+        scenario_list = [
+            {
+                "id": str(scenario["id"]),
+                "name": scenario["name"],
+                "problem_statement": scenario["problem_statement"],
+                "default_scenario": scenario["default_scenario"],
+                "created_at": scenario["created_at"].isoformat()
+                if scenario["created_at"]
+                else None,
+            }
+            for scenario in scenarios
+        ]
 
         return {
-            "id": str(persona.id),
-            "name": persona.name,
-            "description": persona.description,
-            "system_prompt": persona.system_prompt,
-            "temperature": persona.temperature,
-            "default_persona": persona.default_persona,
-            "created_at": persona.created_at.isoformat()
-            if persona.created_at
+            "id": str(persona["id"]),
+            "name": persona["name"],
+            "description": persona["description"],
+            "system_prompt": persona["system_prompt"],
+            "temperature": float(persona["temperature"]) if persona["temperature"] else None,
+            "default_persona": persona["default_persona"],
+            "created_at": persona["created_at"].isoformat()
+            if persona["created_at"]
             else None,
-            "updated_at": persona.updated_at.isoformat()
-            if persona.updated_at
+            "updated_at": persona["updated_at"].isoformat()
+            if persona["updated_at"]
             else None,
             "scenarios": scenario_list,
             "scenario_count": len(scenario_list),
         }
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return {"error": f"Database error: {str(e)}"}
-    finally:
-        session.close()

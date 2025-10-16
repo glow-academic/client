@@ -11,11 +11,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List
 
-from app.db import get_session
-from app.models import Profiles
-from sqlalchemy import func, literal, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 _WS_RE = re.compile(r"\s+")
 
@@ -90,100 +86,109 @@ def _score_profile(
     return score
 
 
-def find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    🔎 Find profiles by name
-    ------------------------
-    Fuzzy first/last/alias search.
-
-    Input
-      • query - Name or alias to search for
-      • limit - Max results (default: 10)
-
-    Returns
-      [
-        {
-          "id": str,           # Profile UUID
-          "first_name": str | None,
-          "last_name": str | None,
-          "alias": str | None,
-          "role": str | None,
-          "full_name": str,    # "First Last" or alias or "Unknown"
-          "score": int         # Heuristic match score
-        },
-        ...
-      ]
-
-    Quick-start
-      ask:  "Find everyone named Jordan"
-      call: find_profiles("Jordan")
-
-    See also 👉 profile_overview() for detailed profile data.
-    """
+async def find_profiles(conn: asyncpg.Connection, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Find profiles by name using fuzzy first/last/alias search."""
     q_norm = _norm(query)
     toks = _tokens(query)
 
     if not q_norm:
         return []
 
-    session = next(get_session())
     try:
-        # Field handles (lowered once for SQL)
-        f_first = func.lower(Profiles.first_name)
-        f_last = func.lower(Profiles.last_name)
-        f_alias = func.lower(Profiles.alias)
-
+        # Build WHERE clause dynamically for fuzzy matching
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
 
-        # Token ORs (contains)
-        token_ors = []
-        for t in toks:
-            p = f"%{t}%"
-            token_ors.append(or_(f_first.like(p), f_last.like(p), f_alias.like(p)))
+        # Build token patterns for each token
+        token_patterns = [f"%{t}%" for t in toks]
 
-        # Build broad candidate predicate
-        broad_pred = or_(
-            # exact (lower())
-            f_first == q_norm,
-            f_last == q_norm,
-            f_alias == q_norm,
-            # prefix
-            f_first.like(like_prefix),
-            f_last.like(like_prefix),
-            f_alias.like(like_prefix),
-            # contains full query
-            f_first.like(like_full),
-            f_last.like(like_full),
-            f_alias.like(like_full),
-            # token contains (OR-of-ORs)
-            or_(*token_ors) if token_ors else literal(False),
-        )
+        # Build dynamic SQL with OR conditions
+        where_conditions = []
+        params: List[Any] = []
+        param_idx = 1
 
-        stmt = (
-            select(Profiles)
-            .where(broad_pred)
-            .limit(limit * 5)  # fetch a pool; score & trim in Python
-        )
+        # Exact match conditions
+        where_conditions.append(f"LOWER(p.first_name) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
-        profiles = session.exec(stmt).all()
+        where_conditions.append(f"LOWER(p.last_name) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
+        where_conditions.append(f"LOWER(p.alias) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
+
+        # Prefix match conditions
+        where_conditions.append(f"LOWER(p.first_name) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(p.last_name) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(p.alias) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        # Full string contains conditions
+        where_conditions.append(f"LOWER(p.first_name) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(p.last_name) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(p.alias) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        # Token-based conditions
+        for pattern in token_patterns:
+            where_conditions.append(
+                f"(LOWER(p.first_name) LIKE ${param_idx} OR LOWER(p.last_name) LIKE ${param_idx} OR LOWER(p.alias) LIKE ${param_idx})"
+            )
+            params.append(pattern)
+            param_idx += 1
+
+        where_clause = " OR ".join(where_conditions)
+
+        # Query profiles with fuzzy matching
+        sql = f"""
+            SELECT 
+                p.id,
+                p.first_name,
+                p.last_name,
+                p.alias,
+                p.role
+            FROM profiles p
+            WHERE {where_clause}
+            LIMIT ${param_idx}
+        """
+        params.append(limit * 5)  # type: ignore  # Candidate pool
+
+        profiles = await conn.fetch(sql, *params)
+
+        # Score and build results
         results: List[Dict[str, Any]] = []
         for profile in profiles:
-            first = profile.first_name
-            last = profile.last_name
-            alias = profile.alias
+            first = profile["first_name"]
+            last = profile["last_name"]
+            alias = profile["alias"]
             full_name = " ".join(x for x in (first, last) if x) or alias or "Unknown"
 
             score = _score_profile(q_norm, toks, first, last, alias)
 
             results.append(
                 {
-                    "id": str(profile.id),
+                    "id": str(profile["id"]),
                     "first_name": first,
                     "last_name": last,
                     "alias": alias,
-                    "role": profile.role,
+                    "role": profile["role"],
                     "full_name": full_name,
                     "score": score,
                 }
@@ -192,7 +197,5 @@ def find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         results.sort(key=lambda r: (-r["score"], r["full_name"]))
         return results[:limit]
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return [{"error": f"Database error: {str(e)}"}]
-    finally:
-        session.close()

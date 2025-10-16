@@ -3,10 +3,10 @@
 # @AshokSaravanan222 & @siladiea
 # 07/07/2025
 #
-# LIKE-only fuzzy-ish agent search (name).
+# LIKE-only fuzzy-ish persona search (name).
 #
 # Usage:
-#   find_agents("aggressive")
+#   await find_personas("aggressive")
 #
 # Returns:
 #   [
@@ -21,11 +21,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List
 
-from app.db import get_session
-from app.models import Personas
-from sqlalchemy import func, literal, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 # ------------------------------------------------------------------
 # Normalization / tokenization utilities
@@ -89,65 +85,72 @@ def _score_persona(q_norm: str, toks: List[str], name: str | None) -> int:
 # ------------------------------------------------------------------
 
 
-def find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    🔎 Find personas by name
-    ------------------------
-    Performs a case-insensitive, fuzzy search on persona names.
-
-    Input
-        • query - Name of the persona to search for
-        • limit - Max results (default: 10)
-
-    Returns
-        [ { "id": "...", "name": "...", "description": "...", "score": ... }, ... ]
-        or [ { "error": "Database error: ..." } ] on failure
-
-    Quick-start
-        ask:  "Find the aggressive persona"
-        call: find_personas("Aggressive")
-
-    See also 👉 persona_overview() for detailed persona data.
-    """
+async def find_personas(conn: asyncpg.Connection, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Find personas by name using fuzzy search."""
     q_norm = _norm(query)
     if not q_norm:
         return []
     toks = _tokens(query)
 
-    session = next(get_session())
     try:
-        a_name = func.lower(Personas.name)
-
+        # Build WHERE clause dynamically for fuzzy matching
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
 
-        # token OR clauses
-        token_ors = []
-        for t in toks:
-            p = f"%{t}%"
-            token_ors.append(a_name.like(p))
+        # Build token patterns for each token
+        token_patterns = [f"%{t}%" for t in toks]
 
-        pred = or_(
-            a_name == q_norm,  # exact
-            a_name.like(like_prefix),  # prefix
-            a_name.like(like_full),  # contains
-            or_(*token_ors) if token_ors else literal(False),
-        )
+        # Build dynamic SQL with OR conditions
+        where_conditions = []
+        params: List[Any] = []
+        param_idx = 1
 
-        stmt = (
-            select(Personas).where(pred).limit(limit * 5)  # candidate pool
-        )
+        # Exact match condition
+        where_conditions.append(f"LOWER(p.name) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
-        personas = session.exec(stmt).all()
+        # Prefix match condition
+        where_conditions.append(f"LOWER(p.name) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
 
+        # Full string contains condition
+        where_conditions.append(f"LOWER(p.name) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        # Token-based conditions
+        for pattern in token_patterns:
+            where_conditions.append(f"LOWER(p.name) LIKE ${param_idx}")
+            params.append(pattern)
+            param_idx += 1
+
+        where_clause = " OR ".join(where_conditions)
+
+        # Query personas with fuzzy matching
+        sql = f"""
+            SELECT 
+                p.id,
+                p.name,
+                p.description
+            FROM personas p
+            WHERE {where_clause}
+            LIMIT ${param_idx}
+        """
+        params.append(limit * 5)  # type: ignore  # Candidate pool
+
+        personas = await conn.fetch(sql, *params)
+
+        # Score and build results
         results: List[Dict[str, Any]] = []
         for a in personas:
-            score = _score_persona(q_norm, toks, a.name)
+            score = _score_persona(q_norm, toks, a["name"])
             results.append(
                 {
-                    "id": str(a.id),
-                    "name": a.name,
-                    "description": a.description,
+                    "id": str(a["id"]),
+                    "name": a["name"],
+                    "description": a["description"],
                     "score": score,
                 }
             )
@@ -155,7 +158,5 @@ def find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         results.sort(key=lambda r: (-r["score"], r["name"] or ""))
         return results[:limit]
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return [{"error": f"Database error: {str(e)}"}]
-    finally:
-        session.close()

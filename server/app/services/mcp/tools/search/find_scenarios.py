@@ -6,7 +6,7 @@
 # LIKE-only fuzzy-ish scenario search (name + problem_statement).
 #
 # Usage:
-#   find_scenarios("medication error")
+#   await find_scenarios(conn, "medication error")
 #
 # Returns:
 #   [
@@ -29,11 +29,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List
 
-from app.db import get_session
-from app.models import Scenarios
-from sqlalchemy import func, literal, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 # ------------------------------------------------------------------
 # Normalization / tokenization utilities
@@ -111,93 +107,113 @@ def _score_scenario(
 # ------------------------------------------------------------------
 
 
-def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    🔎 Find scenarios by name/problem_statement
-    --------------------------------------------
-    Fuzzy, case-insensitive search on scenario name and problem statement.
-
-    Input
-        • query - Scenario name or problem statement to search for
-        • limit - Max results (default: 10)
-
-    Returns
-        [
-            {
-                "id": str,                       # Scenario UUID
-                "name": str | None,              # Scenario name/title
-                "problem_statement": str | None, # Scenario problem statement
-                "persona_id": str | None,        # Linked persona UUID (if any)
-                "default_scenario": bool,        # Is this the default scenario?
-                "score": int                     # Heuristic match score
-            },
-            ...
-        ]
-
-    Quick-start
-        ask:  "Find scenarios for medication errors"
-        call: find_scenarios("medication error")
-
-    See also 👉 scenario_overview() for detailed scenario data.
-    """
+async def find_scenarios(conn: asyncpg.Connection, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Find scenarios by name/problem_statement using fuzzy search."""
     q_norm = _norm(query)
     if not q_norm:
         return []
     toks = _tokens(query)
 
-    session = next(get_session())
     try:
-        s_name = func.lower(Scenarios.name)
-        s_problem = func.lower(Scenarios.problem_statement)
-
+        # Build WHERE clause dynamically for fuzzy matching
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
 
-        token_ors = []
-        for t in toks:
-            p = f"%{t}%"
-            token_ors.append(or_(s_name.like(p), s_problem.like(p)))
+        # Build token patterns for each token
+        token_patterns = [f"%{t}%" for t in toks]
 
-        pred = or_(
-            s_name == q_norm,
-            s_problem == q_norm,
-            s_name.like(like_prefix),
-            s_problem.like(like_prefix),
-            s_name.like(like_full),
-            s_problem.like(like_full),
-            or_(*token_ors) if token_ors else literal(False),
-        )
+        # Build dynamic SQL with OR conditions
+        where_conditions = []
+        params: List[Any] = []
+        param_idx = 1
 
-        stmt = (
-            select(Scenarios).where(pred).limit(limit * 5)  # candidate pool
-        )
+        # Exact match conditions
+        where_conditions.append(f"LOWER(s.name) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
-        scenarios = session.exec(stmt).all()
+        where_conditions.append(f"LOWER(s.problem_statement) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
+
+        # Prefix match conditions
+        where_conditions.append(f"LOWER(s.name) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(s.problem_statement) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        # Full string contains conditions
+        where_conditions.append(f"LOWER(s.name) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(s.problem_statement) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        # Token-based conditions
+        for pattern in token_patterns:
+            where_conditions.append(
+                f"(LOWER(s.name) LIKE ${param_idx} OR LOWER(s.problem_statement) LIKE ${param_idx})"
+            )
+            params.append(pattern)
+            param_idx += 1
+
+        where_clause = " OR ".join(where_conditions)
+
+        # Query scenarios with fuzzy matching
+        sql = f"""
+            SELECT 
+                s.id,
+                s.name,
+                s.problem_statement,
+                s.default_scenario
+            FROM scenarios s
+            WHERE {where_clause}
+            LIMIT ${param_idx}
+        """
+        params.append(limit * 5)  # Candidate pool
+
+        scenarios = await conn.fetch(sql, *params)
+
+        if not scenarios:
+            return []
 
         # Get persona associations from junction table
-        from app.models import ScenarioPersonas
-        scenario_ids = [sc.id for sc in scenarios]
-        persona_links = session.exec(
-            select(ScenarioPersonas).where(
-                ScenarioPersonas.scenario_id.in_(scenario_ids),
-                ScenarioPersonas.active == True
-            )
-        ).all()
+        scenario_ids = [str(sc["id"]) for sc in scenarios]
         
-        # Map scenario_id -> persona_id
-        scenario_persona_map = {link.scenario_id: link.persona_id for link in persona_links}
+        if scenario_ids:
+            persona_sql = """
+                SELECT scenario_id, persona_id
+                FROM scenario_personas
+                WHERE scenario_id = ANY($1::uuid[])
+                    AND active = true
+            """
+            persona_links = await conn.fetch(persona_sql, scenario_ids)
+            scenario_persona_map = {
+                str(link["scenario_id"]): str(link["persona_id"]) 
+                for link in persona_links
+            }
+        else:
+            scenario_persona_map = {}
 
+        # Score and build results
         results: List[Dict[str, Any]] = []
         for sc in scenarios:
-            score = _score_scenario(q_norm, toks, sc.name, sc.problem_statement)
-            persona_id = scenario_persona_map.get(sc.id)
+            score = _score_scenario(
+                q_norm, toks, sc["name"], sc["problem_statement"]
+            )
+            persona_id = scenario_persona_map.get(str(sc["id"]))
             results.append(
                 {
-                    "id": str(sc.id),
-                    "name": sc.name,
-                    "problem_statement": sc.problem_statement,
-                    "persona_id": str(persona_id) if persona_id else None,
-                    "default_scenario": sc.default_scenario,
+                    "id": str(sc["id"]),
+                    "name": sc["name"],
+                    "problem_statement": sc["problem_statement"],
+                    "persona_id": persona_id if persona_id else None,
+                    "default_scenario": sc["default_scenario"],
                     "score": score,
                 }
             )
@@ -205,7 +221,5 @@ def find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         results.sort(key=lambda r: (-r["score"], r["name"] or ""))
         return results[:limit]
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return [{"error": f"Database error: {str(e)}"}]
-    finally:
-        session.close()

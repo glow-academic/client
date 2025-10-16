@@ -6,7 +6,7 @@
 # LIKE-only fuzzy-ish cohort search (title + description).
 #
 # Usage:
-#   find_cohorts("Fall 2025 freshmen")
+#   await find_cohorts(conn, "Fall 2025 freshmen")
 #
 # Returns:
 #   [
@@ -28,11 +28,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List
 
-from app.db import get_session
-from app.models import Cohorts
-from sqlalchemy import func, literal, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 # ---------------------------
 # Normalization helpers
@@ -110,81 +106,112 @@ def _score_cohort(
 # ---------------------------
 
 
-def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    🔎 Find cohorts by title/description
-    ------------------------------------
-    Fuzzy, case-insensitive search on cohort title and description.
-
-    Input
-        • query - Cohort title or description to search for
-        • limit - Max results (default: 10)
-
-    Returns
-        [
-            {
-                "id": "...",
-                "title": "...",
-                "active": <bool>,
-                "description": "...",
-                "profile_count": <int>,
-                "score": <int>
-            },
-            ...
-        ]
-
-    Quick-start
-        ask:  "Find all Fall 2025 cohorts"
-        call: find_cohorts("Fall 2025")
-
-    See also 👉 cohort_overview() for detailed cohort data.
-    """
+async def find_cohorts(conn: asyncpg.Connection, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Find cohorts by title/description using fuzzy search."""
     q_norm = _norm(query)
     toks = _tokens(query)
 
     if not q_norm:
         return []
 
-    session = next(get_session())
     try:
-        c_title = func.lower(Cohorts.title)
-        c_desc = func.lower(Cohorts.description)
-
+        # Build WHERE clause dynamically for fuzzy matching
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
 
-        # token ORs across both fields
-        token_ors = []
-        for t in toks:
-            p = f"%{t}%"
-            token_ors.append(or_(c_title.like(p), c_desc.like(p)))
+        # Build token patterns for each token
+        token_patterns = [f"%{t}%" for t in toks]
 
-        broad_pred = or_(
-            c_title == q_norm,
-            c_desc == q_norm,
-            c_title.like(like_prefix),
-            c_desc.like(like_prefix),
-            c_title.like(like_full),
-            c_desc.like(like_full),
-            or_(*token_ors) if token_ors else literal(False),
-        )
+        # Build dynamic SQL with OR conditions
+        where_conditions = []
+        params: List[Any] = []
+        param_idx = 1
 
-        stmt = (
-            select(Cohorts).where(broad_pred).limit(limit * 5)  # candidate pool
-        )
+        # Exact match conditions
+        where_conditions.append(f"LOWER(c.title) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
-        cohorts = session.exec(stmt).all()
+        where_conditions.append(f"LOWER(c.description) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
+        # Prefix match conditions
+        where_conditions.append(f"LOWER(c.title) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(c.description) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
+
+        # Full string contains conditions
+        where_conditions.append(f"LOWER(c.title) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        where_conditions.append(f"LOWER(c.description) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        # Token-based conditions
+        for pattern in token_patterns:
+            where_conditions.append(
+                f"(LOWER(c.title) LIKE ${param_idx} OR LOWER(c.description) LIKE ${param_idx})"
+            )
+            params.append(pattern)
+            param_idx += 1
+
+        where_clause = " OR ".join(where_conditions)
+
+        # Query cohorts with fuzzy matching
+        sql = f"""
+            SELECT 
+                c.id,
+                c.title,
+                c.active,
+                c.description
+            FROM cohorts c
+            WHERE {where_clause}
+            LIMIT ${param_idx}
+        """
+        params.append(limit * 5)  # Candidate pool
+
+        cohorts = await conn.fetch(sql, *params)
+
+        if not cohorts:
+            return []
+
+        # Get profile counts from junction table
+        cohort_ids = [str(c["id"]) for c in cohorts]
+        
+        if cohort_ids:
+            count_sql = """
+                SELECT cohort_id, COUNT(*) as profile_count
+                FROM cohort_profiles
+                WHERE cohort_id = ANY($1::uuid[])
+                    AND active = true
+                GROUP BY cohort_id
+            """
+            count_results = await conn.fetch(count_sql, cohort_ids)
+            cohort_profile_counts = {
+                str(row["cohort_id"]): row["profile_count"] 
+                for row in count_results
+            }
+        else:
+            cohort_profile_counts = {}
+
+        # Score and build results
         results: List[Dict[str, Any]] = []
         for c in cohorts:
-            score = _score_cohort(q_norm, toks, c.title, c.description)
+            score = _score_cohort(q_norm, toks, c["title"], c["description"])
             results.append(
                 {
-                    "id": str(c.id),
-                    "title": c.title,
-                    "active": c.active,
-                    "description": c.description,
-                    "profile_count": 0,  # TODO: query cohort_profiles junction for count
+                    "id": str(c["id"]),
+                    "title": c["title"],
+                    "active": c["active"],
+                    "description": c["description"],
+                    "profile_count": cohort_profile_counts.get(str(c["id"]), 0),
                     "score": score,
                 }
             )
@@ -192,7 +219,5 @@ def find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         results.sort(key=lambda r: (-r["score"], r["title"] or ""))
         return results[:limit]
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return [{"error": f"Database error: {str(e)}"}]
-    finally:
-        session.close()

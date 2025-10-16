@@ -7,66 +7,50 @@ import csv
 import io
 import uuid
 
-from app.db import engine
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
-
+import asyncpg  # type: ignore
 from app.extensions import CSV_FOLDER
 
 
-def export_csv(sql: str) -> str:
-    """
-    🔎 Export query results as CSV download
-    ---------------------------------------
-    Same guard-rails as query_data but returns a downloadable CSV link.
-
-    Input
-      • sql – SELECT statement only
-
-    Returns
-      Download link for CSV file
-
-    Quick-start
-      ask:  "Export roster for Cohort C"
-      call: export_csv("SELECT first_name, last_name FROM profiles WHERE ...")
-
-    Security: Only SELECT allowed, 1000-row limit.
-    """
+async def export_csv(conn: asyncpg.Connection, sql: str) -> str:
+    """Export query results as CSV download (SELECT only, 1000-row limit)."""
     lowered = sql.lstrip().lower()
     if not lowered.startswith("select"):
         return "Error: only SELECT queries are allowed for CSV export."
 
     try:
-        with engine.connect() as conn:
-            result = conn.execute(text(sql))
-            header = result.keys()  # More robust: get header from result proxy
-            rows = result.fetchmany(1000)  # Limit to 1000 rows for CSV export
+        # Execute query and fetch up to 1000 rows
+        rows = await conn.fetch(sql)
+        limited_rows = rows[:1000]  # Limit to 1000 rows for CSV export
 
-            if not rows:
-                return "No data to export."
+        if not limited_rows:
+            return "No data to export."
 
-            # Create CSV content
-            output = io.StringIO()
-            writer = csv.writer(output)
+        # Get column names from the first row
+        header = limited_rows[0].keys()
 
-            # Write header
-            writer.writerow(header)
+        # Create CSV content
+        output = io.StringIO()
+        writer = csv.writer(output)
 
-            # Write data rows, converting each row to a tuple
-            writer.writerows(tuple(row) for row in rows)
+        # Write header
+        writer.writerow(header)
 
-            csv_content = output.getvalue()
-            output.close()
+        # Write data rows
+        for row in limited_rows:
+            writer.writerow(tuple(row.values()))
 
-            # Generate download token
-            download_token = str(uuid.uuid4())
-            csv_path = CSV_FOLDER / f"{download_token}.csv"
+        csv_content = output.getvalue()
+        output.close()
 
-            # Write CSV file to CSV_FOLDER/token.csv
-            with open(csv_path, "w", encoding="utf-8") as f:
-                f.write(csv_content)
+        # Generate download token
+        download_token = str(uuid.uuid4())
+        csv_path = CSV_FOLDER / f"{download_token}.csv"
 
-            return f"CSV exported successfully. Download token: {download_token} ({len(rows)} rows)"
+        # Write CSV file to CSV_FOLDER/token.csv
+        with open(csv_path, "w", encoding="utf-8") as f:
+            f.write(csv_content)
 
-    except SQLAlchemyError as e:
+        return f"CSV exported successfully. Download token: {download_token} ({len(limited_rows)} rows)"
+
+    except Exception as e:
         return f"Error: {e}"

@@ -6,70 +6,56 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
-from app.db import get_session
-from app.models import AssistantChats, AssistantMessages, AssistantToolCalls, Profiles
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 
-def assistant_usage(days: int = 7) -> Dict[str, Any]:
-    """
-    📊 Assistant usage statistics
-    -----------------------------
-    Show assistant chat usage over time period.
-
-    Input
-      • days – Analysis window in days (default: 7)
-
-    Returns
-      { "summary": {…}, "daily_stats": […], "top_users": […] }
-
-    Quick-start
-      ask:  "Show assistant usage last 7 days"
-      call: assistant_usage(7)
-
-    See also 👉 recent_app_logs() for system logs.
-    """
-    session = next(get_session())
+async def assistant_usage(conn: asyncpg.Connection, days: int = 7) -> Dict[str, Any]:
+    """Show assistant chat usage over time period."""
     try:
         cutoff_date = datetime.now() - timedelta(days=days)
 
         # Get chats in the time window
-        chats_stmt = select(AssistantChats).where(
-            AssistantChats.created_at >= cutoff_date
-        )
-        chats = session.exec(chats_stmt).all()
+        chats_query = """
+            SELECT id, profile_id, created_at
+            FROM assistant_chats
+            WHERE created_at >= $1
+        """
+        chats_rows = await conn.fetch(chats_query, cutoff_date)
 
         # Get messages in the time window
-        messages_stmt = select(AssistantMessages).where(
-            AssistantMessages.created_at >= cutoff_date
-        )
-        messages = session.exec(messages_stmt).all()
+        messages_query = """
+            SELECT id, chat_id, completed, created_at
+            FROM assistant_messages
+            WHERE created_at >= $1
+        """
+        messages_rows = await conn.fetch(messages_query, cutoff_date)
 
         # Get tool calls in the time window
-        tool_calls_stmt = select(AssistantToolCalls).where(
-            AssistantToolCalls.created_at >= cutoff_date
-        )
-        tool_calls = session.exec(tool_calls_stmt).all()
+        tool_calls_query = """
+            SELECT id, chat_id, tool_name, completed, created_at
+            FROM assistant_tool_calls
+            WHERE created_at >= $1
+        """
+        tool_calls_rows = await conn.fetch(tool_calls_query, cutoff_date)
 
         # Overall summary
-        total_chats = len(chats)
-        total_messages = len(messages)
-        total_tool_calls = len(tool_calls)
+        total_chats = len(chats_rows)
+        total_messages = len(messages_rows)
+        total_tool_calls = len(tool_calls_rows)
 
         # Count unique users
-        unique_users = len(set(chat.profile_id for chat in chats))
+        unique_users = len(set(row["profile_id"] for row in chats_rows))
 
         # Count completed vs incomplete
         completed_chats = len(
             [
-                chat
-                for chat in chats
-                if any(msg.completed for msg in messages if msg.chat_id == chat.id)
+                chat_row
+                for chat_row in chats_rows
+                if any(msg_row["completed"] for msg_row in messages_rows if msg_row["chat_id"] == chat_row["id"])
             ]
         )
 
-        completed_tool_calls = len([tc for tc in tool_calls if tc.completed])
+        completed_tool_calls = len([tc for tc in tool_calls_rows if tc["completed"]])
 
         # Daily breakdown
         daily_stats = []
@@ -77,10 +63,10 @@ def assistant_usage(days: int = 7) -> Dict[str, Any]:
             day_start = cutoff_date + timedelta(days=i)
             day_end = day_start + timedelta(days=1)
 
-            day_chats = [c for c in chats if day_start <= c.created_at < day_end]
-            day_messages = [m for m in messages if day_start <= m.created_at < day_end]
+            day_chats = [c for c in chats_rows if day_start <= c["created_at"] < day_end]
+            day_messages = [m for m in messages_rows if day_start <= m["created_at"] < day_end]
             day_tool_calls = [
-                tc for tc in tool_calls if day_start <= tc.created_at < day_end
+                tc for tc in tool_calls_rows if day_start <= tc["created_at"] < day_end
             ]
 
             daily_stats.append(
@@ -89,16 +75,16 @@ def assistant_usage(days: int = 7) -> Dict[str, Any]:
                     "chats": len(day_chats),
                     "messages": len(day_messages),
                     "tool_calls": len(day_tool_calls),
-                    "unique_users": len(set(c.profile_id for c in day_chats)),
+                    "unique_users": len(set(c["profile_id"] for c in day_chats)),
                 }
             )
 
         # Top users by chat count
         user_chat_counts: Dict[Any, int] = {}
-        for chat in chats:
-            if chat.profile_id:
-                user_chat_counts[chat.profile_id] = (
-                    user_chat_counts.get(chat.profile_id, 0) + 1
+        for chat_row in chats_rows:
+            if chat_row["profile_id"]:
+                user_chat_counts[chat_row["profile_id"]] = (
+                    user_chat_counts.get(chat_row["profile_id"], 0) + 1
                 )
 
         # Get user details for top users
@@ -106,35 +92,40 @@ def assistant_usage(days: int = 7) -> Dict[str, Any]:
         for profile_id, chat_count in sorted(
             user_chat_counts.items(), key=lambda x: x[1], reverse=True
         )[:10]:
-            profile = session.get(Profiles, profile_id)
-            if profile:
+            profile_query = """
+                SELECT id, first_name, last_name, alias, role
+                FROM profiles
+                WHERE id = $1
+            """
+            profile_row = await conn.fetchrow(profile_query, profile_id)
+            if profile_row:
                 user_messages = len(
                     [
                         m
-                        for m in messages
-                        if m.chat_id
-                        in [c.id for c in chats if c.profile_id == profile_id]
+                        for m in messages_rows
+                        if m["chat_id"]
+                        in [c["id"] for c in chats_rows if c["profile_id"] == profile_id]
                     ]
                 )
                 user_tool_calls = len(
                     [
                         tc
-                        for tc in tool_calls
-                        if tc.chat_id
-                        in [c.id for c in chats if c.profile_id == profile_id]
+                        for tc in tool_calls_rows
+                        if tc["chat_id"]
+                        in [c["id"] for c in chats_rows if c["profile_id"] == profile_id]
                     ]
                 )
 
-                name = f"{profile.first_name} {profile.last_name}".strip()
+                name = f"{profile_row['first_name']} {profile_row['last_name']}".strip()
                 if not name:
-                    name = profile.alias
+                    name = profile_row["alias"]
 
                 top_users.append(
                     {
-                        "user_id": str(profile.id),
+                        "user_id": str(profile_row["id"]),
                         "name": name,
-                        "alias": profile.alias,
-                        "role": profile.role,
+                        "alias": profile_row["alias"],
+                        "role": profile_row["role"],
                         "chat_count": chat_count,
                         "message_count": user_messages,
                         "tool_call_count": user_tool_calls,
@@ -143,8 +134,8 @@ def assistant_usage(days: int = 7) -> Dict[str, Any]:
 
         # Tool usage breakdown
         tool_usage: Dict[str, int] = {}
-        for tc in tool_calls:
-            tool_name = tc.tool_name
+        for tc_row in tool_calls_rows:
+            tool_name = tc_row["tool_name"]
             tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
 
         tool_usage_list = [
@@ -179,7 +170,5 @@ def assistant_usage(days: int = 7) -> Dict[str, Any]:
             "tool_usage": tool_usage_list,
         }
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return {"error": f"Database error: {str(e)}"}
-    finally:
-        session.close()

@@ -11,11 +11,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List
 
-from app.db import get_session
-from app.models import Simulations
-from sqlalchemy import func, literal, or_
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 _WS_RE = re.compile(r"\s+")
 
@@ -62,79 +58,78 @@ def _score_simulation(q_norm: str, toks: List[str], title: str | None) -> int:
     return score
 
 
-def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    🔎 Find simulations by title
-    ----------------------------
-    Fuzzy sim title search.
-
-    Input
-      • query - Simulation title to search for
-      • limit - Max results (default: 10)
-
-    Returns
-      [
-        {
-          "id": str,                # Simulation UUID
-          "title": str | None,      # Simulation title
-          "active": bool,           # Is the simulation active?
-          "time_limit": int | None, # Time limit in minutes (if any)
-          "created_at": str | None, # ISO8601 creation timestamp
-          "score": int              # Heuristic match score
-        },
-        ...
-      ]
-
-    Quick-start
-      ask:  "Which sims mention 'cardiac'?"
-      call: find_simulations("cardiac")
-
-    See also 👉 simulation_overview() for detailed sim data.
-    """
+async def find_simulations(conn: asyncpg.Connection, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Find simulations by title using fuzzy search."""
     q_norm = _norm(query)
     toks = _tokens(query)
 
     if not q_norm:
         return []
 
-    session = next(get_session())
     try:
-        s_title = func.lower(Simulations.title)
+        # Build WHERE clause dynamically for fuzzy matching
         like_full = f"%{q_norm}%"
         like_prefix = f"{q_norm}%"
 
-        # token ORs across title
-        token_ors = []
-        for t in toks:
-            p = f"%{t}%"
-            token_ors.append(s_title.like(p))
+        # Build token patterns for each token
+        token_patterns = [f"%{t}%" for t in toks]
 
-        broad_pred = or_(
-            s_title == q_norm,  # exact
-            s_title.like(like_prefix),  # prefix
-            s_title.like(like_full),  # contains whole query
-            or_(*token_ors) if token_ors else literal(False),  # token contains
-        )
+        # Build dynamic SQL with OR conditions
+        where_conditions = []
+        params: List[Any] = []
+        param_idx = 1
 
-        stmt = (
-            select(Simulations)
-            .where(broad_pred)
-            .limit(limit * 5)  # fetch candidate pool; rank in Python
-        )
+        # Exact match condition
+        where_conditions.append(f"LOWER(s.title) = ${param_idx}")
+        params.append(q_norm)
+        param_idx += 1
 
-        sims = session.exec(stmt).all()
+        # Prefix match condition
+        where_conditions.append(f"LOWER(s.title) LIKE ${param_idx}")
+        params.append(like_prefix)
+        param_idx += 1
 
+        # Full string contains condition
+        where_conditions.append(f"LOWER(s.title) LIKE ${param_idx}")
+        params.append(like_full)
+        param_idx += 1
+
+        # Token-based conditions
+        for pattern in token_patterns:
+            where_conditions.append(f"LOWER(s.title) LIKE ${param_idx}")
+            params.append(pattern)
+            param_idx += 1
+
+        where_clause = " OR ".join(where_conditions)
+
+        # Query simulations with fuzzy matching
+        sql = f"""
+            SELECT 
+                s.id,
+                s.title,
+                s.active,
+                s.time_limit,
+                s.created_at
+            FROM simulations s
+            WHERE {where_clause}
+            LIMIT ${param_idx}
+        """
+        params.append(limit * 5)  # type: ignore  # Candidate pool
+
+        sims = await conn.fetch(sql, *params)
+
+        # Score and build results
         results: List[Dict[str, Any]] = []
         for sim in sims:
-            score = _score_simulation(q_norm, toks, sim.title)
+            score = _score_simulation(q_norm, toks, sim["title"])
             results.append(
                 {
-                    "id": str(sim.id),
-                    "title": sim.title,
-                    "active": sim.active,
-                    "time_limit": sim.time_limit,
-                    "created_at": sim.created_at.isoformat()
-                    if sim.created_at
+                    "id": str(sim["id"]),
+                    "title": sim["title"],
+                    "active": sim["active"],
+                    "time_limit": sim["time_limit"],
+                    "created_at": sim["created_at"].isoformat()
+                    if sim["created_at"]
                     else None,
                     "score": score,
                 }
@@ -143,7 +138,5 @@ def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         results.sort(key=lambda r: (-r["score"], r["title"]))
         return results[:limit]
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return [{"error": f"Database error: {str(e)}"}]
-    finally:
-        session.close()

@@ -2,99 +2,80 @@
 import uuid
 from typing import Any, Dict
 
-from app.db import get_session
-from app.models import Cohorts, Profiles, Simulations
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import select
+import asyncpg  # type: ignore
 
 
-def cohort_overview(cohort_id: str) -> Dict[str, Any]:
-    """
-    🔎 Cohort overview
-    ------------------
-    Cohort meta, roster, active sims, pass-rate.
-
-    Input
-      • cohort_id – UUID of the cohort
-
-    Returns
-      { "cohort": { … }, "roster": [ … ], "simulations": [ … ], "stats": { … } }
-
-    Quick-start
-      ask:  "How's Fall 2025 Cohort A doing?"
-      call: cohort_overview("uuid-here")
-
-    See also 👉 cohort_pass_matrix() for detailed pass/fail data.
-    """
+async def cohort_overview(conn: asyncpg.Connection, cohort_id: str) -> Dict[str, Any]:
+    """Cohort meta, roster, active sims, and pass-rate."""
     try:
         cohort_uuid = uuid.UUID(cohort_id)
     except ValueError:
         return {"error": f"Invalid cohort_id format: {cohort_id}"}
 
-    session = next(get_session())
     try:
         # Get cohort
-        cohort = session.get(Cohorts, cohort_uuid)
+        cohort = await conn.fetchrow(
+            """
+            SELECT id, title, description, active, created_at
+            FROM cohorts
+            WHERE id = $1
+            """,
+            cohort_uuid,
+        )
         if not cohort:
             return {"error": f"Cohort not found: {cohort_id}"}
 
         cohort_data = {
-            "id": str(cohort.id),
-            "title": cohort.title,
-            "description": cohort.description,
-            "active": cohort.active,
-            "created_at": cohort.created_at.isoformat() if cohort.created_at else None,
+            "id": str(cohort["id"]),
+            "title": cohort["title"],
+            "description": cohort["description"],
+            "active": cohort["active"],
+            "created_at": cohort["created_at"].isoformat() if cohort["created_at"] else None,
         }
 
         # Load profiles from cohort_profiles junction table
-        from app.models import CohortProfiles
-        
-        profile_links = session.exec(
-            select(CohortProfiles).where(CohortProfiles.cohort_id == cohort_uuid)
-        ).all()
-        
-        profile_ids = [link.profile_id for link in profile_links]
-        
-        roster = []
-        if profile_ids:
-            profiles_stmt = select(Profiles).where(Profiles.id.in_(profile_ids))
-            profiles = session.exec(profiles_stmt).all()
+        profiles = await conn.fetch(
+            """
+            SELECT p.id, p.first_name, p.last_name, p.alias, p.role
+            FROM profiles p
+            JOIN cohort_profiles cp ON cp.profile_id = p.id
+            WHERE cp.cohort_id = $1 AND cp.active = true
+            ORDER BY p.last_name, p.first_name
+            """,
+            cohort_uuid,
+        )
 
-            roster = [
-                {
-                    "id": str(profile.id),
-                    "first_name": profile.first_name,
-                    "last_name": profile.last_name,
-                    "alias": profile.alias,
-                    "role": profile.role,
-                }
-                for profile in profiles
-            ]
+        roster = [
+            {
+                "id": str(profile["id"]),
+                "first_name": profile["first_name"],
+                "last_name": profile["last_name"],
+                "alias": profile["alias"],
+                "role": profile["role"],
+            }
+            for profile in profiles
+        ]
 
         # Load simulations from cohort_simulations junction table
-        from app.models import CohortSimulations
-        
-        simulation_links = session.exec(
-            select(CohortSimulations).where(CohortSimulations.cohort_id == cohort_uuid)
-        ).all()
-        
-        simulation_ids = [link.simulation_id for link in simulation_links]
-        
-        cohort_sims: list[Simulations] = []
-        if simulation_ids:
-            sims_stmt = select(Simulations).where(
-                Simulations.id.in_(simulation_ids), Simulations.active
-            )
-            cohort_sims = list(session.exec(sims_stmt).all())
+        simulations = await conn.fetch(
+            """
+            SELECT s.id, s.title, s.active, s.time_limit
+            FROM simulations s
+            JOIN cohort_simulations cs ON cs.simulation_id = s.id
+            WHERE cs.cohort_id = $1 AND cs.active = true AND s.active = true
+            ORDER BY s.title
+            """,
+            cohort_uuid,
+        )
 
         simulations_data = [
             {
-                "id": str(sim.id),
-                "title": sim.title,
-                "active": sim.active,
-                "time_limit": sim.time_limit,
+                "id": str(sim["id"]),
+                "title": sim["title"],
+                "active": sim["active"],
+                "time_limit": sim["time_limit"],
             }
-            for sim in cohort_sims
+            for sim in simulations
         ]
 
         # Calculate basic stats
@@ -111,7 +92,5 @@ def cohort_overview(cohort_id: str) -> Dict[str, Any]:
             },
         }
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         return {"error": f"Database error: {str(e)}"}
-    finally:
-        session.close()
