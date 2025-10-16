@@ -41,17 +41,22 @@ The `run.sh` script will automatically install:
 
 ## 🧪 Testing
 
-**Run all tests:**
+**Run tests:**
 ```bash
-bash run.sh --test
+make test          # Server unit tests
+make test-client   # Client unit tests
+make test-cov      # Server with coverage
 ```
 
 **Individual tests:**
 ```bash
-cd client && yarn test          # Frontend unit tests
-cd server && make test          # Backend unit tests  
-cd database && yarn test        # Database E2E tests
+cd client && yarn test          # Frontend unit tests (vitest)
+cd server && make test          # Backend unit tests (pytest)
+cd client && yarn test:coverage # Frontend with coverage
+cd server && make test-cov      # Backend with coverage
 ```
+
+**Coverage Target**: 80% for both client and server
 
 ## 🐳 Docker
 
@@ -85,7 +90,6 @@ cd server && make run            # Backend only
 - **Database Connection:** [Drizzle ORM](https://orm.drizzle.team/docs/overview)
 - **Linter:** [ESLint](https://eslint.org/)
 - **Unit Tests:** [Vitest](https://vitest.dev/)
-- **Integration Tests:** [Cypress](https://www.cypress.io/)
 
 ### Backend
 - **Server:** [FastAPI](https://fastapi.tiangolo.com/)

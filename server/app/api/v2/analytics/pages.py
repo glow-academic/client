@@ -2,13 +2,13 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    HomeOverviewResponse,
                                    PracticeOverviewResponse)
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(tags=["analytics-pages"])
 
@@ -20,8 +20,8 @@ async def get_home_overview(
 ) -> HomeOverviewResponse:
     """Get home overview analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_home_overview(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_home_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -33,8 +33,8 @@ async def get_attempt_history(
 ) -> AttemptHistoryResponse:
     """Get attempt history analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_attempt_history(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_attempt_history(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -46,8 +46,8 @@ async def get_practice_overview(
 ) -> PracticeOverviewResponse:
     """Get practice overview analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_practice_overview(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_practice_overview(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

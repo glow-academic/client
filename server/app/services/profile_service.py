@@ -3,7 +3,7 @@
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.queries.profile_queries import ProfileQueries
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
@@ -152,7 +152,7 @@ class ProfileService:
         )
 
         # Check if target is in the list
-        target_ids = {p.profile_id for p in simulatable_profiles}
+        target_ids = {p.id for p in simulatable_profiles}
 
         if target_profile_id in target_ids:
             return (True, None)
@@ -193,21 +193,22 @@ class ProfileService:
 
         departments = [
             DepartmentItem(
-                department_id=str(row['id']),
+                id=str(row['id']),
                 title=row['title'],
                 description=row['description'],
                 active=row['active'],
-                primary_department=row['primary_department']
+                createdAt="",  # Not available in this query
+                updatedAt=""   # Not available in this query
             )
             for row in dept_rows
         ]
 
         # Get cohorts for this profile across all departments
-        cohorts_data = CohortsData(cohorts=[])
-        simulations_data = SimulationsData(simulations=[])
+        cohorts_data = CohortsData(items=[], memberCounts={})
+        simulations_data = SimulationsData(items=[])
 
         if departments:
-            dept_ids = [d.department_id for d in departments]
+            dept_ids = [d.id for d in departments]
             
             # Get cohorts via profile_cohorts junction
             query = """
@@ -232,20 +233,21 @@ class ProfileService:
 
             cohorts = [
                 CohortItem(
-                    cohort_id=str(row['id']),
-                    name=row['name'],
+                    id=str(row['id']),
+                    title=row['name'],
                     description=row['description'],
                     active=row['active'],
-                    department_id=str(row['department_id']),
-                    is_staff=row['is_staff']
+                    departmentId=str(row['department_id']),
+                    createdAt="",  # Not available in this query
+                    updatedAt=""   # Not available in this query
                 )
                 for row in cohort_rows
             ]
-            cohorts_data = CohortsData(cohorts=cohorts)
+            cohorts_data = CohortsData(items=cohorts, memberCounts={})
 
             # Get simulations from cohort memberships
             if cohorts:
-                cohort_ids = [c.cohort_id for c in cohorts]
+                cohort_ids = [c.id for c in cohorts]
                 placeholders = ','.join(f'${i+1}' for i in range(len(cohort_ids)))
                 
                 query = f"""
@@ -253,6 +255,7 @@ class ProfileService:
                     s.id,
                     s.name,
                     s.description,
+                    s.department_id,
                     s.time_limit,
                     s.active,
                     s.default_simulation,
@@ -267,27 +270,54 @@ class ProfileService:
 
                 simulations = [
                     SimulationContextItem(
-                        simulation_id=str(row['id']),
+                        id=str(row['id']),
                         name=row['name'],
                         description=row['description'],
-                        time_limit=row['time_limit'],
+                        departmentId=str(row['department_id']),
+                        timeLimit=row['time_limit'],
                         active=row['active'],
-                        default_simulation=row['default_simulation'],
-                        practice_simulation=row['practice_simulation']
+                        defaultSimulation=row['default_simulation'],
+                        practiceSimulation=row['practice_simulation']
                     )
                     for row in sim_rows
                 ]
-                simulations_data = SimulationsData(simulations=simulations)
+                simulations_data = SimulationsData(items=simulations)
 
         # Parse breadcrumbs from pathname
         breadcrumbs = self._parse_breadcrumbs(request.pathname)
 
+        # Extract IDs from collections
+        dept_ids_list = [d.id for d in departments]
+        cohort_ids_list = [c.id for c in cohorts_data.items]
+        simulation_ids_list = [s.id for s in simulations_data.items]
+        
+        # Get simulatable profiles
+        simulatable_profiles = await self.get_simulatable_profiles(
+            request.effectiveProfileId, dept_ids_list
+        )
+        
+        # Determine available sections based on role
+        available_sections = ["home", "practice", "analytics", "profile"]
+        if profile.role in ("admin", "superadmin", "instructional"):
+            available_sections.extend(["cohorts", "simulations", "scenarios", "personas", "rubrics", "documents", "departments"])
+        
+        # Determine redirect path based on role
+        redirect_path = "/practice" if profile.role == "guest" else "/home"
+
         return ProfileContextResponse(
-            profile=profile,
+            actualProfile=profile,
+            effectiveProfile=profile,  # Same for now, emulation logic would differ
             departments=departments,
+            departmentIds=dept_ids_list,
             cohorts=cohorts_data,
+            cohortIds=cohort_ids_list,
             simulations=simulations_data,
+            simulationIds=simulation_ids_list,
             breadcrumbs=breadcrumbs,
+            simulatableProfiles=simulatable_profiles,
+            earliestAttemptDate=None,  # TODO: Query for earliest attempt
+            availableSections=available_sections,
+            redirectPath=redirect_path,
         )
 
     async def get_profile_by_alias(self, alias: str) -> Optional[ProfileItem]:
@@ -362,31 +392,31 @@ class ProfileService:
     def _row_to_profile_item(self, row: asyncpg.Record) -> ProfileItem:
         """Convert database row to ProfileItem."""
         return ProfileItem(
-            profile_id=str(row['id']),
-            first_name=row['first_name'],
-            last_name=row['last_name'],
+            id=str(row['id']),
+            firstName=row['first_name'],
+            lastName=row['last_name'],
             alias=row['alias'],
             role=row['role'],
             active=row['active'],
-            viewed_intro=row['viewed_intro'],
-            viewed_chat=row['viewed_chat'],
-            default_profile=row['default_profile'],
-            req_per_day=row['req_per_day'],
-            last_login=row['last_login'].isoformat() if row['last_login'] else None,
-            last_active=row['last_active'].isoformat() if row['last_active'] else None,
-            created_at=row['created_at'].isoformat() if row['created_at'] else None,
-            updated_at=row['updated_at'].isoformat() if row['updated_at'] else None,
+            viewedIntro=row['viewed_intro'],
+            viewedChat=row['viewed_chat'],
+            defaultProfile=row['default_profile'],
+            reqPerDay=row['req_per_day'],
+            lastLogin=row['last_login'].isoformat() if row['last_login'] else "",
+            lastActive=row['last_active'].isoformat() if row['last_active'] else "",
+            createdAt=row['created_at'].isoformat() if row['created_at'] else "",
+            updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
         )
 
     def _row_to_user_profile_item(self, row: asyncpg.Record) -> UserProfileItem:
         """Convert database row to UserProfileItem."""
         return UserProfileItem(
-            user_id=row['user_id'],
-            profile_id=str(row['profile_id']),
-            is_primary=row['is_primary'],
+            userId=row['user_id'],
+            profileId=str(row['profile_id']),
+            isPrimary=row['is_primary'],
             active=row['active'],
-            created_at=row['created_at'].isoformat() if row['created_at'] else None,
-            updated_at=row['updated_at'].isoformat() if row['updated_at'] else None,
+            createdAt=row['created_at'].isoformat() if row['created_at'] else "",
+            updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
         )
 
     def _parse_breadcrumbs(self, pathname: str) -> List[BreadcrumbItem]:
@@ -401,7 +431,7 @@ class ProfileService:
         breadcrumbs: List[BreadcrumbItem] = []
 
         # Always add home
-        breadcrumbs.append(BreadcrumbItem(label="Home", href="/"))
+        breadcrumbs.append(BreadcrumbItem(segment="", title="Home", context=None))
 
         # Parse pathname segments
         segments = [s for s in pathname.split('/') if s]
@@ -421,7 +451,7 @@ class ProfileService:
             # Convert segment to label (e.g., 'cohorts' -> 'Cohorts')
             label = segment.replace('-', ' ').title()
 
-            breadcrumbs.append(BreadcrumbItem(label=label, href=current_path))
+            breadcrumbs.append(BreadcrumbItem(segment=segment, title=label, context=None))
 
         return breadcrumbs
 

@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import AnalyticsFilters, MetricResponse
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/header", tags=["analytics-header"])
 
@@ -18,8 +18,8 @@ async def get_average_score(
 ) -> MetricResponse:
     """Get average score metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_average_score(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_average_score(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -31,8 +31,8 @@ async def get_completion_percentage(
 ) -> MetricResponse:
     """Get completion percentage metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_completion_percentage(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_completion_percentage(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,8 +44,8 @@ async def get_first_attempt_pass_rate(
 ) -> MetricResponse:
     """Get first attempt pass rate metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_first_attempt_pass_rate(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_first_attempt_pass_rate(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -57,8 +57,8 @@ async def get_highest_score(
 ) -> MetricResponse:
     """Get highest score metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_highest_score(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_highest_score(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -70,8 +70,8 @@ async def get_messages_per_session(
 ) -> MetricResponse:
     """Get messages per session metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_messages_per_session(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_messages_per_session(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,8 +83,8 @@ async def get_persona_response_times(
 ) -> MetricResponse:
     """Get persona response times metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_persona_response_times(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_persona_response_times(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -96,8 +96,8 @@ async def get_session_efficiency(
 ) -> MetricResponse:
     """Get session efficiency metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_session_efficiency(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_session_efficiency(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -109,8 +109,8 @@ async def get_stagnation_rate(
 ) -> MetricResponse:
     """Get stagnation rate metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_stagnation_rate(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_stagnation_rate(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -122,8 +122,8 @@ async def get_time_spent(
 ) -> MetricResponse:
     """Get time spent metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_time_spent(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_time_spent(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -135,8 +135,8 @@ async def get_total_attempts(
 ) -> MetricResponse:
     """Get total attempts metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_total_attempts(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_total_attempts(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

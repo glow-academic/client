@@ -1,21 +1,45 @@
 ---
-description: 
-globs: server/**
-alwaysApply: false
----
----
-description: Backend (FastAPI + Python) conventions
+description: Back-end (FastAPI + Python) standards  
 globs:
   - "server/**"
 alwaysApply: false
 ---
 
 # Server Folder Rules
-- Use **SQLModel** (built on SQLAlchemy) for models in `server/app/models.py` as the canonical schema; update them whenever the DB schema changes.
-- All business logic belongs in **`server/app/services/`**; keep route handlers in `server/app/routes/` thin.
-- Enforce **100% passing `pytest`** (`make test`) before merge.
-- Run **`make typecheck`** (mypy) and **`make lint`** (ruff) locally; fix or silence any errors with clear justification.
-- Use **`uv`** for dependency management and virtual environment handling.
-- Follow **12-factor config**: secrets via env vars, no hard-coded credentials.
-- Prefer async endpoints when possible; use **SQLModel Session** for DB access.
-- Auto-generate models from DB schema using `make generate-models`.
+
+## Core Principles
+- **Business logic lives here**: All validation, processing, and complex logic
+- Client is just UI; server is the brain
+- Follow clean architecture: routes → services → repositories → database
+
+## Architecture Layers
+- **Routes** (`app/api/`): API endpoints, request validation, response formatting
+- **Services** (`app/services/`): Business logic, orchestration, workflows
+- **Repositories** (`app/repositories/`): Data access, query logic
+- **Queries** (`app/queries/`): Raw SQL queries using asyncpg
+
+## Database Access
+- **Use asyncpg** - no ORM (SQLModel removed from data layer)
+- All queries in `app/queries/` as raw SQL
+- Keep queries readable, well-commented, and parameterized
+- Use repositories to abstract query complexity from services
+
+## Testing
+- **Target**: 80% unit test coverage with pytest
+- Test command: `cd server && make test`
+- Coverage: `cd server && make test-cov`
+- Test all service methods, edge cases, and error handling
+- Mock database calls in service tests
+- Use fixtures for common test data
+
+## Code Quality
+- Run **`make typecheck`** (MyPy) before committing
+- Format with **`make format`** (Ruff)
+- Lint with **`make lint`** (Ruff)
+- Follow FastAPI best practices for async operations
+
+## WebSocket Implementation
+- Socket.IO with Redis for scaling
+- Event handlers in `app/web/` (simulations, assistants)
+- Keep handlers thin - delegate to services
+- Always handle errors gracefully and emit error events to clients

@@ -352,19 +352,16 @@ class SimulationQueries:
         return (query, [simulation_id])
 
 
-def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
+async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""
     from datetime import datetime, timezone
     from typing import Any, Dict, List
-    from uuid import UUID
-
-    from sqlalchemy import text
 
     # Convert attempt_id to string for SQL
     attempt_id_str = str(attempt_id)
     
     # 1. Get attempt and simulation
-    attempt_query = text("""
+    attempt_result = await conn.fetchrow("""
         SELECT 
             sa.id,
             sa.created_at,
@@ -389,59 +386,57 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             s.updated_at as sim_updated_at
         FROM simulation_attempts sa
         JOIN simulations s ON s.id = sa.simulation_id
-        WHERE sa.id = :attempt_id
-    """)
+        WHERE sa.id = $1
+    """, attempt_id_str)
     
-    attempt_result = db.execute(attempt_query, {"attempt_id": attempt_id_str}).fetchone()
     if not attempt_result:
         raise ValueError(f"Attempt {attempt_id} not found")
     
     attempt = {
-        "id": str(attempt_result.id),
-        "createdAt": attempt_result.created_at.isoformat(),
-        "simulationId": str(attempt_result.simulation_id),
-        "infiniteMode": attempt_result.infinite_mode,
-        "infiniteModeTimeLimit": attempt_result.infinite_mode_time_limit,
-        "archived": attempt_result.archived,
+        "id": str(attempt_result['id']),
+        "createdAt": attempt_result['created_at'].isoformat(),
+        "simulationId": str(attempt_result['simulation_id']),
+        "infiniteMode": attempt_result['infinite_mode'],
+        "infiniteModeTimeLimit": attempt_result['infinite_mode_time_limit'],
+        "archived": attempt_result['archived'],
     }
     
     simulation = {
-        "id": str(attempt_result.sim_id),
-        "title": attempt_result.sim_title,
-        "description": attempt_result.sim_description,
-        "departmentId": str(attempt_result.sim_department_id),
-        "active": attempt_result.sim_active,
-        "defaultSimulation": attempt_result.sim_default_simulation,
-        "practiceSimulation": attempt_result.sim_practice_simulation,
-        "hintsEnabled": attempt_result.sim_hints_enabled,
-        "inputGuardrailActive": attempt_result.sim_input_guardrail_active,
-        "outputGuardrailActive": attempt_result.sim_output_guardrail_active,
-        "imageInputActive": attempt_result.sim_image_input_active,
-        "timeLimit": attempt_result.sim_time_limit,
-        "rubricId": str(attempt_result.sim_rubric_id) if attempt_result.sim_rubric_id else None,
-        "createdAt": attempt_result.sim_created_at.isoformat(),
-        "updatedAt": attempt_result.sim_updated_at.isoformat(),
+        "id": str(attempt_result['sim_id']),
+        "title": attempt_result['sim_title'],
+        "description": attempt_result['sim_description'],
+        "departmentId": str(attempt_result['sim_department_id']),
+        "active": attempt_result['sim_active'],
+        "defaultSimulation": attempt_result['sim_default_simulation'],
+        "practiceSimulation": attempt_result['sim_practice_simulation'],
+        "hintsEnabled": attempt_result['sim_hints_enabled'],
+        "inputGuardrailActive": attempt_result['sim_input_guardrail_active'],
+        "outputGuardrailActive": attempt_result['sim_output_guardrail_active'],
+        "imageInputActive": attempt_result['sim_image_input_active'],
+        "timeLimit": attempt_result['sim_time_limit'],
+        "rubricId": str(attempt_result['sim_rubric_id']) if attempt_result['sim_rubric_id'] else None,
+        "createdAt": attempt_result['sim_created_at'].isoformat(),
+        "updatedAt": attempt_result['sim_updated_at'].isoformat(),
     }
     
     # 2. Get attempt profiles
-    attempt_profiles_query = text("""
+    attempt_profiles_result = await conn.fetch("""
         SELECT profile_id, attempt_id, active
         FROM attempt_profiles
-        WHERE attempt_id = :attempt_id
-    """)
+        WHERE attempt_id = $1
+    """, attempt_id_str)
     
-    attempt_profiles_result = db.execute(attempt_profiles_query, {"attempt_id": attempt_id_str}).fetchall()
     attempt_profiles = [
         {
-            "profileId": str(row.profile_id),
-            "attemptId": str(row.attempt_id),
-            "active": row.active,
+            "profileId": str(row['profile_id']),
+            "attemptId": str(row['attempt_id']),
+            "active": row['active'],
         }
         for row in attempt_profiles_result
     ]
     
     # 3. Get all chats for this attempt
-    chats_query = text("""
+    chats_result = await conn.fetch("""
         SELECT 
             sc.id,
             sc.created_at,
@@ -453,18 +448,17 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             sc.completed_at,
             sc.trace_id
         FROM simulation_chats sc
-        WHERE sc.attempt_id = :attempt_id
+        WHERE sc.attempt_id = $1
         ORDER BY sc.created_at
-    """)
+    """, attempt_id_str)
     
-    chats_result = db.execute(chats_query, {"attempt_id": attempt_id_str}).fetchall()
-    chat_ids = [str(row.id) for row in chats_result]
-    scenario_ids = list(set([str(row.scenario_id) for row in chats_result]))
+    chat_ids = [str(row['id']) for row in chats_result]
+    scenario_ids = list(set([str(row['scenario_id']) for row in chats_result]))
     
     # 4. Get all scenarios
     scenarios = {}
     if scenario_ids:
-        scenarios_query = text("""
+        scenarios_result = await conn.fetch("""
             SELECT 
                 id,
                 name,
@@ -477,22 +471,21 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 generated,
                 default_scenario
             FROM scenarios
-            WHERE id = ANY(:scenario_ids)
-        """)
+            WHERE id = ANY($1::uuid[])
+        """, scenario_ids)
         
-        scenarios_result = db.execute(scenarios_query, {"scenario_ids": scenario_ids}).fetchall()
         scenarios = {
-            str(row.id): {
-                "id": str(row.id),
-                "name": row.name,
-                "problemStatement": row.problem_statement,
-                "departmentId": str(row.department_id),
-                "active": row.active,
-                "personaId": str(row.persona_id) if row.persona_id else None,
-                "createdAt": row.created_at.isoformat(),
-                "updatedAt": row.updated_at.isoformat(),
-                "generated": row.generated,
-                "defaultScenario": row.default_scenario,
+            str(row['id']): {
+                "id": str(row['id']),
+                "name": row['name'],
+                "problemStatement": row['problem_statement'],
+                "departmentId": str(row['department_id']),
+                "active": row['active'],
+                "personaId": str(row['persona_id']) if row['persona_id'] else None,
+                "createdAt": row['created_at'].isoformat(),
+                "updatedAt": row['updated_at'].isoformat(),
+                "generated": row['generated'],
+                "defaultScenario": row['default_scenario'],
             }
             for row in scenarios_result
         }
@@ -500,7 +493,7 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     # 5. Get all messages for all chats
     messages_by_chat: Dict[str, List[Dict[str, Any]]] = {}
     if chat_ids:
-        messages_query = text("""
+        messages_result = await conn.fetch("""
             SELECT 
                 id,
                 created_at,
@@ -510,23 +503,22 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 type,
                 completed
             FROM simulation_messages
-            WHERE chat_id = ANY(:chat_ids)
+            WHERE chat_id = ANY($1::uuid[])
             ORDER BY created_at
-        """)
+        """, chat_ids)
         
-        messages_result = db.execute(messages_query, {"chat_ids": chat_ids}).fetchall()
         for row in messages_result:
-            chat_id = str(row.chat_id)
+            chat_id = str(row['chat_id'])
             if chat_id not in messages_by_chat:
                 messages_by_chat[chat_id] = []
             messages_by_chat[chat_id].append({
-                "id": str(row.id),
-                "createdAt": row.created_at.isoformat(),
-                "updatedAt": row.updated_at.isoformat(),
+                "id": str(row['id']),
+                "createdAt": row['created_at'].isoformat(),
+                "updatedAt": row['updated_at'].isoformat(),
                 "chatId": chat_id,
-                "content": row.content,
-                "type": row.type,
-                "completed": row.completed,
+                "content": row['content'],
+                "type": row['type'],
+                "completed": row['completed'],
             })
     
     # 6. Get all hints for practice simulations
@@ -537,34 +529,33 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             all_message_ids.extend([msg["id"] for msg in messages if msg["type"] == "response"])
         
         if all_message_ids:
-            hints_query = text("""
+            hints_result = await conn.fetch("""
                 SELECT 
                     id,
                     simulation_message_id,
                     hint,
                     created_at
                 FROM simulation_hints
-                WHERE simulation_message_id = ANY(:message_ids)
+                WHERE simulation_message_id = ANY($1::uuid[])
                 ORDER BY created_at
-            """)
+            """, all_message_ids)
             
-            hints_result = db.execute(hints_query, {"message_ids": all_message_ids}).fetchall()
             for row in hints_result:
-                message_id = str(row.simulation_message_id)
+                message_id = str(row['simulation_message_id'])
                 if message_id not in hints_by_message:
                     hints_by_message[message_id] = []
                 hints_by_message[message_id].append({
-                    "id": str(row.id),
+                    "id": str(row['id']),
                     "simulationMessageId": message_id,
-                    "hint": row.hint,
-                    "createdAt": row.created_at.isoformat(),
+                    "hint": row['hint'],
+                    "createdAt": row['created_at'].isoformat(),
                 })
     
     # 7. Get grades and feedbacks
     grades_by_chat: Dict[str, Dict[str, Any]] = {}
     feedbacks_by_grade: Dict[str, List[Dict[str, Any]]] = {}
     if chat_ids:
-        grades_query = text("""
+        grades_result = await conn.fetch("""
             SELECT 
                 id,
                 created_at,
@@ -575,29 +566,28 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 score,
                 time_taken
             FROM simulation_chat_grades
-            WHERE simulation_chat_id = ANY(:chat_ids)
-        """)
+            WHERE simulation_chat_id = ANY($1::uuid[])
+        """, chat_ids)
         
-        grades_result = db.execute(grades_query, {"chat_ids": chat_ids}).fetchall()
         grade_ids = []
         for row in grades_result:
-            chat_id = str(row.simulation_chat_id)
-            grade_id = str(row.id)
+            chat_id = str(row['simulation_chat_id'])
+            grade_id = str(row['id'])
             grade_ids.append(grade_id)
             grades_by_chat[chat_id] = {
                 "id": grade_id,
-                "createdAt": row.created_at.isoformat(),
+                "createdAt": row['created_at'].isoformat(),
                 "simulationChatId": chat_id,
-                "rubricId": str(row.rubric_id),
-                "description": row.description,
-                "passed": row.passed,
-                "score": row.score,
-                "timeTaken": row.time_taken,
+                "rubricId": str(row['rubric_id']),
+                "description": row['description'],
+                "passed": row['passed'],
+                "score": row['score'],
+                "timeTaken": row['time_taken'],
             }
         
         # Get feedbacks
         if grade_ids:
-            feedbacks_query = text("""
+            feedbacks_result = await conn.fetch("""
                 SELECT 
                     id,
                     created_at,
@@ -606,21 +596,20 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                     total,
                     feedback
                 FROM simulation_chat_feedbacks
-                WHERE simulation_chat_grade_id = ANY(:grade_ids)
-            """)
+                WHERE simulation_chat_grade_id = ANY($1::uuid[])
+            """, grade_ids)
             
-            feedbacks_result = db.execute(feedbacks_query, {"grade_ids": grade_ids}).fetchall()
             for row in feedbacks_result:
-                grade_id = str(row.simulation_chat_grade_id)
+                grade_id = str(row['simulation_chat_grade_id'])
                 if grade_id not in feedbacks_by_grade:
                     feedbacks_by_grade[grade_id] = []
                 feedbacks_by_grade[grade_id].append({
-                    "id": str(row.id),
-                    "createdAt": row.created_at.isoformat(),
-                    "standardId": str(row.standard_id),
+                    "id": str(row['id']),
+                    "createdAt": row['created_at'].isoformat(),
+                    "standardId": str(row['standard_id']),
                     "simulationChatGradeId": grade_id,
-                    "total": row.total,
-                    "feedback": row.feedback,
+                    "total": row['total'],
+                    "feedback": row['feedback'],
                 })
     
     # 8. Get rubric structure (standard groups and standards)
@@ -633,7 +622,7 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     
     if simulation["rubricId"]:
         # Get standard groups
-        groups_query = text("""
+        groups_result = await conn.fetch("""
             SELECT 
                 id,
                 name,
@@ -643,32 +632,31 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 description,
                 rubric_id
             FROM standard_groups
-            WHERE rubric_id = :rubric_id
-        """)
+            WHERE rubric_id = $1
+        """, simulation["rubricId"])
         
-        groups_result = db.execute(groups_query, {"rubric_id": simulation["rubricId"]}).fetchall()
         group_ids = []
         for row in groups_result:
-            group_id = str(row.id)
+            group_id = str(row['id'])
             group_ids.append(group_id)
             standard_groups[group_id] = {
                 "id": group_id,
-                "name": row.name,
-                "shortName": row.short_name,
-                "points": row.points,
-                "rubricId": str(row.rubric_id),
+                "name": row['name'],
+                "shortName": row['short_name'],
+                "points": row['points'],
+                "rubricId": str(row['rubric_id']),
             }
             # Build mapping for TableRubric
             rubric_structure_groups_mapping[group_id] = {
-                "name": row.name,
-                "description": row.description or "",
-                "points": row.points,
-                "passPoints": row.pass_points,
+                "name": row['name'],
+                "description": row['description'] or "",
+                "points": row['points'],
+                "passPoints": row['pass_points'],
             }
         
         # Get standards
         if group_ids:
-            standards_query = text("""
+            standards_result = await conn.fetch("""
                 SELECT 
                     id,
                     name,
@@ -676,20 +664,19 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                     points,
                     standard_group_id
                 FROM standards
-                WHERE standard_group_id = ANY(:group_ids)
-            """)
+                WHERE standard_group_id = ANY($1::uuid[])
+            """, group_ids)
             
-            standards_result = db.execute(standards_query, {"group_ids": group_ids}).fetchall()
             for row in standards_result:
-                group_id = str(row.standard_group_id)
-                standard_id = str(row.id)
+                group_id = str(row['standard_group_id'])
+                standard_id = str(row['id'])
                 
                 if group_id not in standards_by_group:
                     standards_by_group[group_id] = []
                 standards_by_group[group_id].append({
                     "id": standard_id,
-                    "name": row.name,
-                    "points": row.points,
+                    "name": row['name'],
+                    "points": row['points'],
                     "standardGroupId": group_id,
                 })
                 
@@ -700,9 +687,9 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 
                 # Build standards mapping for TableRubric
                 rubric_structure_standards_mapping[standard_id] = {
-                    "name": row.name,
-                    "description": row.description or "",
-                    "points": row.points,
+                    "name": row['name'],
+                    "description": row['description'] or "",
+                    "points": row['points'],
                 }
     
     # 9. Get documents
@@ -713,7 +700,7 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     scenario_documents = []
     if dept_ids:
         # Get all department documents
-        dept_docs_query = text("""
+        dept_docs_result = await conn.fetch("""
             SELECT 
                 id,
                 name,
@@ -727,33 +714,32 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 created_at,
                 updated_at
             FROM documents
-            WHERE department_id = ANY(:dept_ids) AND active = true
-        """)
+            WHERE department_id = ANY($1::uuid[]) AND active = true
+        """, dept_ids)
         
-        dept_docs_result = db.execute(dept_docs_query, {"dept_ids": dept_ids}).fetchall()
         department_documents = [
             {
-                "id": str(row.id),
-                "name": row.name,
-                "title": row.name,  # Use name as title
+                "id": str(row['id']),
+                "name": row['name'],
+                "title": row['name'],  # Use name as title
                 "description": "",  # Documents don't have description in schema
-                "filePath": row.file_path,
-                "type": row.type,
-                "classified": row.classified,
-                "fileId": str(row.file_id) if row.file_id else None,
-                "mimeType": row.mime_type,
-                "departmentId": str(row.department_id),
+                "filePath": row['file_path'],
+                "type": row['type'],
+                "classified": row['classified'],
+                "fileId": str(row['file_id']) if row['file_id'] else None,
+                "mimeType": row['mime_type'],
+                "departmentId": str(row['department_id']),
                 "fileSize": 0,  # Not in schema, default to 0
-                "active": row.active,
-                "createdAt": row.created_at.isoformat(),
-                "updatedAt": row.updated_at.isoformat(),
+                "active": row['active'],
+                "createdAt": row['created_at'].isoformat(),
+                "updatedAt": row['updated_at'].isoformat(),
             }
             for row in dept_docs_result
         ]
         
         # Get scenario-specific documents
         if scenario_ids:
-            scenario_docs_query = text("""
+            scenario_docs_result = await conn.fetch("""
                 SELECT DISTINCT d.id,
                     d.name,
                     d.file_path,
@@ -767,26 +753,25 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                     d.updated_at
                 FROM documents d
                 JOIN scenario_documents sd ON sd.document_id = d.id
-                WHERE sd.scenario_id = ANY(:scenario_ids) AND d.active = true
-            """)
+                WHERE sd.scenario_id = ANY($1::uuid[]) AND d.active = true
+            """, scenario_ids)
             
-            scenario_docs_result = db.execute(scenario_docs_query, {"scenario_ids": scenario_ids}).fetchall()
             scenario_documents = [
                 {
-                    "id": str(row.id),
-                    "name": row.name,
-                    "title": row.name,  # Use name as title
+                    "id": str(row['id']),
+                    "name": row['name'],
+                    "title": row['name'],  # Use name as title
                     "description": "",  # Documents don't have description in schema
-                    "filePath": row.file_path,
-                    "type": row.type,
-                    "classified": row.classified,
-                    "fileId": str(row.file_id) if row.file_id else None,
-                    "mimeType": row.mime_type,
-                    "departmentId": str(row.department_id),
+                    "filePath": row['file_path'],
+                    "type": row['type'],
+                    "classified": row['classified'],
+                    "fileId": str(row['file_id']) if row['file_id'] else None,
+                    "mimeType": row['mime_type'],
+                    "departmentId": str(row['department_id']),
                     "fileSize": 0,  # Not in schema, default to 0
-                    "active": row.active,
-                    "createdAt": row.created_at.isoformat(),
-                    "updatedAt": row.updated_at.isoformat(),
+                    "active": row['active'],
+                    "createdAt": row['created_at'].isoformat(),
+                    "updatedAt": row['updated_at'].isoformat(),
                 }
                 for row in scenario_docs_result
             ]
@@ -810,24 +795,24 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
             # Filter feedbacks for this group
             group_feedback_list = [
                 f for f in feedbacks
-                if any(std["id"] == f["standardId"] for std in group_standards)  # type: ignore
+                if any(std["id"] == f["standardId"] for std in group_standards)
             ]
             
             if group_feedback_list:
-                group_max_points = group["points"]  # type: ignore
-                max_standard_points = max(std["points"] for std in group_standards)  # type: ignore
-                avg_score = sum(f["total"] for f in group_feedback_list) / len(group_feedback_list)  # type: ignore
+                group_max_points = group["points"]
+                max_standard_points = max(std["points"] for std in group_standards)
+                avg_score = sum(f["total"] for f in group_feedback_list) / len(group_feedback_list)
                 normalized_score = round((avg_score / max_standard_points) * 5)
                 
-                skill_scores[group["name"]] = normalized_score  # type: ignore
-                skill_feedbacks[group["shortName"]] = "; ".join(f["feedback"] or "" for f in group_feedback_list)  # type: ignore
+                skill_scores[group["name"]] = normalized_score
+                skill_feedbacks[group["shortName"]] = "; ".join(f["feedback"] or "" for f in group_feedback_list)
                 total_possible_points += group_max_points
         
         return {
             "chatId": chat_id,
-            "score": grade["score"],  # type: ignore
-            "passed": grade["passed"],  # type: ignore
-            "timeTaken": grade["timeTaken"],  # type: ignore
+            "score": grade["score"],
+            "passed": grade["passed"],
+            "timeTaken": grade["timeTaken"],
             "skillScores": skill_scores,
             "skillFeedbacks": skill_feedbacks,
             "totalPossiblePoints": total_possible_points,
@@ -836,8 +821,8 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     # 11. Build chat objects with all nested data
     chats = []
     for chat_row in chats_result:
-        chat_id = str(chat_row.id)
-        scenario_id = str(chat_row.scenario_id)
+        chat_id = str(chat_row['id'])
+        scenario_id = str(chat_row['scenario_id'])
         
         grade = grades_by_chat.get(chat_id)
         feedbacks = feedbacks_by_grade.get(grade["id"], []) if grade else []
@@ -867,40 +852,40 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
                 # Get feedbacks for this group
                 group_feedbacks = [
                     f for f in feedbacks
-                    if any(std["id"] == f["standardId"] for std in group_standards)  # type: ignore
+                    if any(std["id"] == f["standardId"] for std in group_standards)
                 ]
                 
                 if group_feedbacks:
                     # Find highest score in group
-                    max_score = max(f["total"] for f in group_feedbacks)  # type: ignore
+                    max_score = max(f["total"] for f in group_feedbacks)
                     # Get pass points from the group mapping
                     group_mapping = rubric_structure_groups_mapping.get(group_id, {})
                     pass_points = group_mapping.get("passPoints", 0) if group_mapping else 0
                     
                     for feedback in group_feedbacks:
-                        standard_id = feedback["standardId"]  # type: ignore
+                        standard_id = feedback["standardId"]
                         # Standard is achieved if it has the max score in its group
-                        achieved_standards[standard_id] = feedback["total"] == max_score  # type: ignore
+                        achieved_standards[standard_id] = feedback["total"] == max_score
                         # Standard is passed if it meets pass points
-                        passed_standards[standard_id] = feedback["total"] >= pass_points  # type: ignore
+                        passed_standards[standard_id] = feedback["total"] >= pass_points
             
             grading_state = {
                 "achievedStandards": achieved_standards,
                 "passedStandards": passed_standards,
-                "gradeDescription": grade.get("description", ""),  # type: ignore
+                "gradeDescription": grade.get("description", ""),
             }
         
         chats.append({
             "chat": {
                 "id": chat_id,
-                "createdAt": chat_row.created_at.isoformat(),
-                "updatedAt": chat_row.updated_at.isoformat(),
-                "title": chat_row.title,
+                "createdAt": chat_row['created_at'].isoformat(),
+                "updatedAt": chat_row['updated_at'].isoformat(),
+                "title": chat_row['title'],
                 "scenarioId": scenario_id,
-                "attemptId": str(chat_row.attempt_id),
-                "completed": chat_row.completed,
-                "completedAt": chat_row.completed_at.isoformat() if chat_row.completed_at else None,
-                "traceId": str(chat_row.trace_id) if chat_row.trace_id else None,
+                "attemptId": str(chat_row['attempt_id']),
+                "completed": chat_row['completed'],
+                "completedAt": chat_row['completed_at'].isoformat() if chat_row['completed_at'] else None,
+                "traceId": str(chat_row['trace_id']) if chat_row['trace_id'] else None,
             },
             "scenario": scenarios.get(scenario_id),
             "messages": chat_messages,
@@ -912,13 +897,13 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
         })
     
     # 12. Compute aggregated results
-    completed_rubrics = [c["dynamicRubric"] for c in chats if c["chat"]["completed"] and c["dynamicRubric"]]
+    completed_rubrics = [c["dynamicRubric"] for c in chats if c["chat"]["completed"] and c["dynamicRubric"]]  # type: ignore
     aggregated_results = None
     if completed_rubrics:
-        total_score = sum(r["score"] for r in completed_rubrics)
+        total_score = sum(r["score"] for r in completed_rubrics)  # type: ignore
         average_score = total_score / len(completed_rubrics)
-        passed_chats = sum(1 for r in completed_rubrics if r["passed"])
-        total_time = sum(r["timeTaken"] for r in completed_rubrics)
+        passed_chats = sum(1 for r in completed_rubrics if r["passed"])  # type: ignore
+        total_time = sum(r["timeTaken"] for r in completed_rubrics)  # type: ignore
         
         aggregated_results = {
             "totalChats": len(completed_rubrics),
@@ -930,14 +915,14 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     
     # 13. Compute timer state
     current_time = datetime.now(timezone.utc)
-    attempt_start_time = attempt_result.created_at
+    attempt_start_time = attempt_result['created_at']
     
     # Calculate total elapsed time
     total_elapsed_seconds = 0
     for chat in chats:
-        chat_start = datetime.fromisoformat(chat["chat"]["createdAt"].replace('Z', '+00:00'))
-        if chat["chat"]["completed"] and chat["chat"]["completedAt"]:
-            chat_end = datetime.fromisoformat(chat["chat"]["completedAt"].replace('Z', '+00:00'))
+        chat_start = datetime.fromisoformat(chat["chat"]["createdAt"].replace('Z', '+00:00'))  # type: ignore
+        if chat["chat"]["completed"] and chat["chat"]["completedAt"]:  # type: ignore
+            chat_end = datetime.fromisoformat(chat["chat"]["completedAt"].replace('Z', '+00:00'))  # type: ignore
             chat_duration = int((chat_end - chat_start).total_seconds())
             total_elapsed_seconds += chat_duration
         else:
@@ -969,14 +954,14 @@ def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:
     # 14. Compute metadata
     current_chat_index = 0
     for i, chat in enumerate(chats):
-        if not chat["chat"]["completed"]:
+        if not chat["chat"]["completed"]:  # type: ignore
             current_chat_index = i
             break
     
     expected_chat_count = len(chats)
     is_single_chat_attempt = expected_chat_count == 1
     is_last_attempt = current_chat_index == expected_chat_count - 1
-    show_results = all(c["chat"]["completed"] for c in chats) if chats else False
+    show_results = all(c["chat"]["completed"] for c in chats) if chats else False  # type: ignore
     is_active = not (expired or show_results)
     
     # Build rubric structure for TableRubric component

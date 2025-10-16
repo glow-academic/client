@@ -3,9 +3,6 @@
 This repository delegates to the scenario service layer.
 """
 
-from typing import Optional
-
-from app.db import get_session
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -33,9 +30,9 @@ class ScenarioRepository:
     This repository delegates to the scenario service layer.
     """
 
-    async def __init__(self, conn: asyncpg.Connection):
-        """Initialize repository with database session."""
-        self.db = db
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.conn = conn
         self.service = ScenarioService(conn)
 
     async def get_scenarios_list(
@@ -86,16 +83,14 @@ class ScenarioRepository:
         """Generate AI scenario content."""
         return await self.service.generate_scenario_ai(request)
 
-    async def randomize_scenario_sections(
+    def randomize_scenario_sections(
         self, request: RandomizeScenarioRequest
     ) -> RandomizeScenarioResponse:
         """Randomize scenario sections."""
-        return await self.service.randomize_scenario_sections(request)
+        return self.service.randomize_scenario_sections(request)
 
 
-def get_scenario_repository(db: Optional[Session] = None) -> ScenarioRepository:
+def get_scenario_repository(conn: asyncpg.Connection) -> ScenarioRepository:
     """Get scenario repository instance."""
-    if db is None:
-        db = next(get_session())
     return ScenarioRepository(conn)
 

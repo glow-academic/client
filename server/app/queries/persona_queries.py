@@ -163,9 +163,12 @@ class PersonaQueries:
         """
         return (query, [persona_id])
 
-    def insert_duplicate_persona(self) -> Tuple[str, List[Any]]:
-        """Build query to insert duplicate persona."""
-        query = """
+    def insert_duplicate_persona(self) -> str:
+        """Build query to insert duplicate persona.
+        Params order: name, description, system_prompt, temperature, reasoning,
+        model_id, department_id, color, icon
+        """
+        return """
         INSERT INTO personas (
             name,
             description,
@@ -194,7 +197,6 @@ class PersonaQueries:
         )
         RETURNING id
         """
-        return (query, [])  # Will be filled with data at execution time
 
     def check_persona_usage(self, persona_id: str) -> Tuple[str, List[Any]]:
         """Build query to check persona usage."""
@@ -215,9 +217,12 @@ class PersonaQueries:
         query = "DELETE FROM personas WHERE id = $1"
         return (query, [persona_id])
 
-    def create_persona(self) -> Tuple[str, List[Any]]:
-        """Build query to create persona."""
-        query = """
+    def create_persona(self) -> str:
+        """Build query to create persona.
+        Params order: name, description, department_id, active, default_persona,
+        color, icon, model_id, reasoning, temperature, system_prompt
+        """
+        return """
         INSERT INTO personas (
             name,
             description,
@@ -246,11 +251,13 @@ class PersonaQueries:
         )
         RETURNING id
         """
-        return (query, [])  # Will be filled at execution time
 
-    def update_persona(self) -> Tuple[str, List[Any]]:
-        """Build query to update persona."""
-        query = """
+    def update_persona(self) -> str:
+        """Build query to update persona.
+        Params order: persona_id, name, description, department_id, active, default_persona,
+        color, icon, model_id, reasoning, temperature, system_prompt
+        """
+        return """
         UPDATE personas SET
             name = $2,
             description = $3,
@@ -266,7 +273,6 @@ class PersonaQueries:
             updated_at = NOW()
         WHERE id = $1
         """
-        return (query, [])  # Will be filled at execution time
 
     def get_departments_mapping(
         self, dept_ids: List[str]

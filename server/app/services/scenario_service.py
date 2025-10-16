@@ -58,15 +58,14 @@ class ScenarioService:
         # Get document IDs for each scenario
         scenario_document_map: Dict[str, List[str]] = {}
         if scenario_ids:
-            doc_query = text("""
-            SELECT scenario_id, ARRAY_AGG(document_id) as document_ids
-            FROM scenario_documents
-            WHERE scenario_id = ANY(:scenario_ids) AND active = true
-            GROUP BY scenario_id
-            """)
-            doc_result = self.db.execute(doc_query, {"scenario_ids": scenario_ids}).fetchall()
+            doc_result = await self.conn.fetch("""
+                SELECT scenario_id, ARRAY_AGG(document_id) as document_ids
+                FROM scenario_documents
+                WHERE scenario_id = ANY($1::uuid[]) AND active = true
+                GROUP BY scenario_id
+            """, scenario_ids)
             for row in doc_result:
-                scenario_document_map[str(row['scenario_id'])] = [str(did) for did in (row.document_ids or [])]
+                scenario_document_map[str(row['scenario_id'])] = [str(did) for did in (row['document_ids'] or [])]
 
         all_document_ids = list(set([
             did for doc_ids in scenario_document_map.values() for did in doc_ids
@@ -88,14 +87,11 @@ class ScenarioService:
         # Fetch document mapping
         document_mapping = {}
         if all_document_ids:
-            doc_mapping_query = text("""
-            SELECT id, name, COALESCE(type, '') as description
-            FROM documents
-            WHERE id = ANY(:document_ids)
-            """)
-            doc_mapping_result = self.db.execute(
-                doc_mapping_query, {"document_ids": all_document_ids}
-            ).fetchall()
+            doc_mapping_result = await self.conn.fetch("""
+                SELECT id, name, COALESCE(type, '') as description
+                FROM documents
+                WHERE id = ANY($1::uuid[])
+            """, all_document_ids)
             for row in doc_mapping_result:
                 document_mapping[str(row['id'])] = DocumentMappingItem(
                     name=row['name'],
@@ -277,91 +273,70 @@ class ScenarioService:
         """Get detailed scenario information using dynamic SQL."""
 
         # Get scenario basic info including generated and parent_scenario_id
-        scenario_query = text("""
-        SELECT 
-            s.name,
-            s.problem_statement,
-            s.active,
-            s.default_scenario,
-            s.department_id,
-            COALESCE(s.generated, false) as generated,
-            st.parent_scenario_id
-        FROM scenarios s
-        LEFT JOIN scenario_tree st ON st.child_scenario_id = s.id
-        WHERE s.id = :scenario_id
-        """)
-
-        scenario = self.db.execute(
-            scenario_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
+        scenario = await self.conn.fetchrow("""
+            SELECT 
+                s.name,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                s.department_id,
+                COALESCE(s.generated, false) as generated,
+                st.parent_scenario_id
+            FROM scenarios s
+            LEFT JOIN scenario_tree st ON st.child_scenario_id = s.id
+            WHERE s.id = $1
+        """, request.scenarioId)
 
         if not scenario:
             raise ValueError(f"Scenario not found: {request.scenarioId}")
 
         # Get persona_id
-        persona_query = text("""
-        SELECT persona_id FROM scenario_personas 
-        WHERE scenario_id = :scenario_id AND active = true
-        """)
+        persona_result = await self.conn.fetchrow("""
+            SELECT persona_id FROM scenario_personas 
+            WHERE scenario_id = $1 AND active = true
+        """, request.scenarioId)
 
-        persona_result = self.db.execute(
-            persona_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
-
-        persona_id = str(persona_result.persona_id) if persona_result else None
+        persona_id = str(persona_result['persona_id']) if persona_result else None
 
         # Get document_ids
-        doc_query = text("""
-        SELECT document_id FROM scenario_documents 
-        WHERE scenario_id = :scenario_id AND active = true
-        """)
+        document_result = await self.conn.fetch("""
+            SELECT document_id FROM scenario_documents 
+            WHERE scenario_id = $1 AND active = true
+        """, request.scenarioId)
 
-        document_ids = [
-            str(row.document_id)
-            for row in self.db.execute(
-                doc_query, {"scenario_id": request.scenarioId}
-            ).fetchall()
-        ]
+        document_ids = [str(row['document_id']) for row in document_result]
 
         # Get objective_ids
-        obj_query = text("""
-        SELECT (scenario_id::text || '_' || idx::text) as objective_id, objective
-        FROM scenario_objectives
-        WHERE scenario_id = :scenario_id
-        ORDER BY idx
-        """)
+        obj_result = await self.conn.fetch("""
+            SELECT (scenario_id::text || '_' || idx::text) as objective_id, objective
+            FROM scenario_objectives
+            WHERE scenario_id = $1
+            ORDER BY idx
+        """, request.scenarioId)
 
-        obj_result = self.db.execute(
-            obj_query, {"scenario_id": request.scenarioId}
-        ).fetchall()
-
-        objective_ids = [row.objective_id for row in obj_result]
+        objective_ids = [row['objective_id'] for row in obj_result]
         objective_mapping = {
-            row.objective_id: ObjectiveMappingItem(name=row.objective, description=row.objective)
+            row['objective_id']: ObjectiveMappingItem(name=row['objective'], description=row['objective'])
             for row in obj_result
         }
 
         # Get parameters grouped by parameter_id
-        param_query = text("""
-        SELECT 
-            pi.parameter_id,
-            spi.parameter_item_id
-        FROM scenario_parameter_items spi
-        JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-        WHERE spi.scenario_id = :scenario_id AND spi.active = true
-        """)
-
-        param_result = self.db.execute(
-            param_query, {"scenario_id": request.scenarioId}
-        ).fetchall()
+        param_result = await self.conn.fetch("""
+            SELECT 
+                pi.parameter_id,
+                spi.parameter_item_id
+            FROM scenario_parameter_items spi
+            JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+            WHERE spi.scenario_id = $1 AND spi.active = true
+        """, request.scenarioId)
 
         # Group by parameter_id
         parameters_dict: Dict[str, ParameterDetail] = {}
         selected_param_ids = set()
 
         for row in param_result:
-            param_id = str(row.parameter_id)
-            param_item_id = str(row.parameter_item_id)
+            param_id = str(row['parameter_id'])
+            param_item_id = str(row['parameter_item_id'])
             selected_param_ids.add(param_id)
 
             if param_id not in parameters_dict:
@@ -373,21 +348,17 @@ class ScenarioService:
 
         # Get valid parameter items for each parameter
         if selected_param_ids:
-            valid_params_query = text("""
-            SELECT 
-                pi.parameter_id,
-                pi.id as parameter_item_id
-            FROM parameter_items pi
-            WHERE pi.parameter_id = ANY(:parameter_ids) AND pi.active = true
-            """)
-
-            valid_params_result = self.db.execute(
-                valid_params_query, {"parameter_ids": list(selected_param_ids)}
-            ).fetchall()
+            valid_params_result = await self.conn.fetch("""
+                SELECT 
+                    pi.parameter_id,
+                    pi.id as parameter_item_id
+                FROM parameter_items pi
+                WHERE pi.parameter_id = ANY($1::uuid[]) AND pi.active = true
+            """, list(selected_param_ids))
 
             for row in valid_params_result:
-                param_id = str(row.parameter_id)
-                param_item_id = str(row.parameter_item_id)
+                param_id = str(row['parameter_id'])
+                param_item_id = str(row['parameter_item_id'])
 
                 if param_id in parameters_dict:
                     parameters_dict[param_id].valid_parameter_item_ids.append(
@@ -395,65 +366,47 @@ class ScenarioService:
                     )
 
         # Get active simulation_ids
-        sim_query = text("""
-        SELECT simulation_id FROM simulation_scenarios 
-        WHERE scenario_id = :scenario_id AND active = true
-        """)
+        active_simulation_result = await self.conn.fetch("""
+            SELECT simulation_id FROM simulation_scenarios 
+            WHERE scenario_id = $1 AND active = true
+        """, request.scenarioId)
 
-        active_simulation_ids = [
-            str(row.simulation_id)
-            for row in self.db.execute(
-                sim_query, {"scenario_id": request.scenarioId}
-            ).fetchall()
-        ]
+        active_simulation_ids = [str(row['simulation_id']) for row in active_simulation_result]
 
         # Get user's accessible department IDs
-        user_dept_query = text("""
-        SELECT DISTINCT d.id
-        FROM departments d
-        JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
-        """)
+        dept_results = await self.conn.fetch("""
+            SELECT DISTINCT d.id
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $1 AND d.active = true
+        """, request.profileId)
 
-        dept_ids = [
-            str(row['id'])
-            for row in self.db.execute(
-                user_dept_query, {"profile_id": request.profileId}
-            ).fetchall()
-        ]
+        dept_ids = [str(row['id']) for row in dept_results]
 
         # Get valid personas
-        valid_personas_query = text("""
-        SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas 
-        WHERE department_id = ANY(:dept_ids) AND active = true
-        ORDER BY name
-        """)
-
-        persona_results = self.db.execute(
-            valid_personas_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        persona_results = await self.conn.fetch("""
+            SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas 
+            WHERE department_id = ANY($1::uuid[]) AND active = true
+            ORDER BY name
+        """, dept_ids)
 
         valid_persona_ids = [str(row['id']) for row in persona_results]
         persona_mapping = {
             str(row['id']): PersonaMappingItem(
                 name=row['name'],
                 description=row['description'],
-                color=row.color,
-                icon=row.icon
+                color=row['color'],
+                icon=row['icon']
             )
             for row in persona_results
         }
 
         # Get valid documents
-        valid_docs_query = text("""
-        SELECT id, name, COALESCE(type, '') as description FROM documents 
-        WHERE department_id = ANY(:dept_ids) AND active = true
-        ORDER BY name
-        """)
-
-        doc_results = self.db.execute(
-            valid_docs_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        doc_results = await self.conn.fetch("""
+            SELECT id, name, COALESCE(type, '') as description FROM documents 
+            WHERE department_id = ANY($1::uuid[]) AND active = true
+            ORDER BY name
+        """, dept_ids)
 
         valid_document_ids = [str(row['id']) for row in doc_results]
         document_mapping = {
@@ -464,17 +417,13 @@ class ScenarioService:
         # Get simulation mapping
         simulation_mapping = {}
         if active_simulation_ids:
-            sim_mapping_query = text("""
-            SELECT id, title, COALESCE(description, '') as description FROM simulations WHERE id = ANY(:sim_ids)
-            """)
-
-            sim_mapping_result = self.db.execute(
-                sim_mapping_query, {"sim_ids": active_simulation_ids}
-            ).fetchall()
+            sim_mapping_result = await self.conn.fetch("""
+                SELECT id, title, COALESCE(description, '') as description FROM simulations WHERE id = ANY($1::uuid[])
+            """, active_simulation_ids)
 
             for row in sim_mapping_result:
                 simulation_mapping[str(row['id'])] = SimulationMappingItem(
-                    name=row.title,
+                    name=row['title'],
                     description=row['description']
                 )
 
@@ -492,22 +441,18 @@ class ScenarioService:
         )
 
         if all_param_item_ids:
-            param_mapping_query = text("""
-            SELECT DISTINCT
-                p.id as parameter_id,
-                p.name,
-                p.description
-            FROM parameters p
-            JOIN parameter_items pi ON pi.parameter_id = p.id
-            WHERE pi.id = ANY(:param_item_ids)
-            """)
-
-            param_mapping_result = self.db.execute(
-                param_mapping_query, {"param_item_ids": all_param_item_ids}
-            ).fetchall()
+            param_mapping_result = await self.conn.fetch("""
+                SELECT DISTINCT
+                    p.id as parameter_id,
+                    p.name,
+                    p.description
+                FROM parameters p
+                JOIN parameter_items pi ON pi.parameter_id = p.id
+                WHERE pi.id = ANY($1::uuid[])
+            """, all_param_item_ids)
 
             for row in param_mapping_result:
-                parameter_mapping[str(row.parameter_id)] = ParameterMappingItem(
+                parameter_mapping[str(row['parameter_id'])] = ParameterMappingItem(
                     name=row['name'],
                     description=row['description'] or ''
                 )
@@ -515,59 +460,47 @@ class ScenarioService:
         # Get parameter_item mapping (already built above)
         param_item_full_mapping = {}
         if all_param_item_ids:
-            param_item_mapping_query = text("""
-            SELECT 
-                pi.id,
-                pi.name,
-                pi.description,
-                pi.value,
-                pi.parameter_id,
-                p.name as parameter_name
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id = ANY(:param_item_ids)
-            """)
-
-            param_item_mapping_result = self.db.execute(
-                param_item_mapping_query, {"param_item_ids": all_param_item_ids}
-            ).fetchall()
+            param_item_mapping_result = await self.conn.fetch("""
+                SELECT 
+                    pi.id,
+                    pi.name,
+                    pi.description,
+                    pi.value,
+                    pi.parameter_id,
+                    p.name as parameter_name
+                FROM parameter_items pi
+                JOIN parameters p ON p.id = pi.parameter_id
+                WHERE pi.id = ANY($1::uuid[])
+            """, all_param_item_ids)
 
             for row in param_item_mapping_result:
                 param_item_full_mapping[str(row['id'])] = ParameterItemMappingItem(
                     name=row['name'],
                     description=row['description'] or '',
-                    parameter_id=str(row.parameter_id),
-                    parameter_name=row.parameter_name
+                    parameter_id=str(row['parameter_id']),
+                    parameter_name=row['parameter_name']
                 )
 
         # Compute permissions
         # Check if scenario is in use by active simulations
-        active_sim_check_query = text("""
+        active_sim_count_result = await self.conn.fetchrow("""
             SELECT COUNT(*) as usage_count
             FROM simulation_scenarios ss
             JOIN simulations s ON s.id = ss.simulation_id
-            WHERE ss.scenario_id = :scenario_id 
+            WHERE ss.scenario_id = $1 
             AND ss.active = true 
             AND s.active = true
-        """)
+        """, request.scenarioId)
         
-        active_sim_count_result = self.db.execute(
-            active_sim_check_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
-        
-        in_use_by_active = (active_sim_count_result.usage_count > 0) if active_sim_count_result else False
-        is_generated = scenario.generated
+        in_use_by_active = (active_sim_count_result['usage_count'] > 0) if active_sim_count_result else False
+        is_generated = scenario['generated']
         
         # Get profile role for permissions
-        role_query = text("""
-            SELECT role FROM profiles WHERE id = :profile_id
-        """)
+        role_result = await self.conn.fetchrow("""
+            SELECT role FROM profiles WHERE id = $1
+        """, request.profileId)
         
-        role_result = self.db.execute(
-            role_query, {"profile_id": request.profileId}
-        ).fetchone()
-        
-        is_superadmin = role_result.role == 'superadmin' if role_result else False
+        is_superadmin = role_result['role'] == 'superadmin' if role_result else False
         
         # Compute permission flags
         can_edit = not in_use_by_active and not is_generated
@@ -577,32 +510,28 @@ class ScenarioService:
         # Get department mapping
         department_mapping = {}
         if dept_ids:
-            dept_mapping_query = text("""
+            dept_mapping_result = await self.conn.fetch("""
                 SELECT id, title, COALESCE(description, '') as description 
                 FROM departments 
-                WHERE id = ANY(:dept_ids)
-            """)
-            
-            dept_mapping_result = self.db.execute(
-                dept_mapping_query, {"dept_ids": dept_ids}
-            ).fetchall()
+                WHERE id = ANY($1::uuid[])
+            """, dept_ids)
             
             for row in dept_mapping_result:
                 department_mapping[str(row['id'])] = DepartmentMappingItem(
-                    name=row.title,
+                    name=row['title'],
                     description=row['description']
                 )
 
         return ScenarioDetailResponse(
             # Basic fields
             name=scenario['name'],
-            problem_statement=scenario.problem_statement,
-            active=scenario.active,
-            default_scenario=scenario.default_scenario,
+            problem_statement=scenario['problem_statement'],
+            active=scenario['active'],
+            default_scenario=scenario['default_scenario'],
             generated=is_generated,
-            parent_scenario_id=str(scenario.parent_scenario_id) if scenario.parent_scenario_id else None,
+            parent_scenario_id=str(scenario['parent_scenario_id']) if scenario['parent_scenario_id'] else None,
             # Department
-            department_id=str(scenario.department_id),
+            department_id=str(scenario['department_id']),
             valid_department_ids=dept_ids,
             # IDs
             persona_id=persona_id,
@@ -636,16 +565,12 @@ class ScenarioService:
         """Get default scenario structure for creation mode."""
 
         # Get user's accessible department IDs
-        user_dept_query = text("""
-        SELECT DISTINCT d.id
-        FROM departments d
-        JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
-        """)
-
-        dept_results = self.db.execute(
-            user_dept_query, {"profile_id": request.profileId}
-        ).fetchall()
+        dept_results = await self.conn.fetch("""
+            SELECT DISTINCT d.id
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $1 AND d.active = true
+        """, request.profileId)
         
         dept_ids = [str(row['id']) for row in dept_results]
         
@@ -656,39 +581,31 @@ class ScenarioService:
         default_dept_id = dept_ids[0]
 
         # Get valid personas
-        valid_personas_query = text("""
-        SELECT id, name, COALESCE(description, '') as description, color, icon 
-        FROM personas 
-        WHERE department_id = ANY(:dept_ids) AND active = true
-        ORDER BY name
-        """)
-
-        persona_results = self.db.execute(
-            valid_personas_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        persona_results = await self.conn.fetch("""
+            SELECT id, name, COALESCE(description, '') as description, color, icon 
+            FROM personas 
+            WHERE department_id = ANY($1::uuid[]) AND active = true
+            ORDER BY name
+        """, dept_ids)
 
         valid_persona_ids = [str(row['id']) for row in persona_results]
         persona_mapping = {
             str(row['id']): PersonaMappingItem(
                 name=row['name'],
                 description=row['description'],
-                color=row.color,
-                icon=row.icon
+                color=row['color'],
+                icon=row['icon']
             )
             for row in persona_results
         }
 
         # Get valid documents
-        valid_docs_query = text("""
-        SELECT id, name, COALESCE(type, '') as description 
-        FROM documents 
-        WHERE department_id = ANY(:dept_ids) AND active = true
-        ORDER BY name
-        """)
-
-        doc_results = self.db.execute(
-            valid_docs_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        doc_results = await self.conn.fetch("""
+            SELECT id, name, COALESCE(type, '') as description 
+            FROM documents 
+            WHERE department_id = ANY($1::uuid[]) AND active = true
+            ORDER BY name
+        """, dept_ids)
 
         valid_document_ids = [str(row['id']) for row in doc_results]
         document_mapping = {
@@ -697,16 +614,12 @@ class ScenarioService:
         }
 
         # Get all parameters for valid departments
-        parameters_query = text("""
-        SELECT DISTINCT p.id, p.name, p.description
-        FROM parameters p
-        WHERE p.department_id = ANY(:dept_ids) AND p.active = true
-        ORDER BY p.name
-        """)
-
-        param_results = self.db.execute(
-            parameters_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        param_results = await self.conn.fetch("""
+            SELECT DISTINCT p.id, p.name, p.description
+            FROM parameters p
+            WHERE p.department_id = ANY($1::uuid[]) AND p.active = true
+            ORDER BY p.name
+        """, dept_ids)
 
         parameter_mapping = {
             str(row['id']): ParameterMappingItem(
@@ -717,43 +630,35 @@ class ScenarioService:
         }
 
         # Get all parameter items
-        param_items_query = text("""
-        SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
-        FROM parameter_items pi
-        JOIN parameters p ON p.id = pi.parameter_id
-        WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
-        ORDER BY p.name, pi.name
-        """)
-
-        param_item_results = self.db.execute(
-            param_items_query, {"dept_ids": dept_ids}
-        ).fetchall()
+        param_item_results = await self.conn.fetch("""
+            SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY($1::uuid[]) AND pi.active = true
+            ORDER BY p.name, pi.name
+        """, dept_ids)
 
         parameter_item_mapping = {
             str(row['id']): ParameterItemMappingItem(
                 name=row['name'],
                 description=row['description'] or '',
-                parameter_id=str(row.parameter_id),
-                parameter_name=row.parameter_name
+                parameter_id=str(row['parameter_id']),
+                parameter_name=row['parameter_name']
             )
             for row in param_item_results
         }
 
         # Get department mapping
         department_mapping = {}
-        dept_mapping_query = text("""
+        dept_mapping_results = await self.conn.fetch("""
             SELECT id, title, COALESCE(description, '') as description 
             FROM departments 
-            WHERE id = ANY(:dept_ids)
-        """)
-        
-        dept_mapping_results = self.db.execute(
-            dept_mapping_query, {"dept_ids": dept_ids}
-        ).fetchall()
+            WHERE id = ANY($1::uuid[])
+        """, dept_ids)
         
         for row in dept_mapping_results:
             department_mapping[str(row['id'])] = DepartmentMappingItem(
-                name=row.title,
+                name=row['title'],
                 description=row['description']
             )
 
@@ -1069,15 +974,15 @@ class ScenarioService:
             document_ids = None
 
         # Run the scenario agent
-        # Note: run_scenario_agent expects sqlmodel.Session, but we have sqlalchemy.Session
-        # The two are compatible in practice
+        # Note: run_scenario_agent needs to be migrated to use asyncpg conn
+        # For now, passing conn and agent will handle conversion internally
         title, description, objectives, _ = await run_scenario_agent(
             department_id=department_id,
             persona_id=persona_id,
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
             group_id=None,
-            session=self.db,  # type: ignore[arg-type]
+            session=self.conn,  # type: ignore[arg-type]
             profile_id=profile_id,
         )
 
@@ -1110,8 +1015,8 @@ class ScenarioService:
         targets = [t for t in request.targets if t.strip()] if request.targets else []
 
         # Get suggestions
-        # Note: suggest_randomized_sections expects sqlmodel.Session, but we have sqlalchemy.Session
-        # The two are compatible in practice
+        # Note: suggest_randomized_sections needs to be migrated to use asyncpg conn
+        # For now, passing conn and util will handle conversion internally
         suggestions = suggest_randomized_sections(
             name=request.name,
             description=request.description,
@@ -1119,7 +1024,7 @@ class ScenarioService:
             document_ids=document_ids,
             parameter_item_ids=parameter_item_ids,
             targets=targets,
-            session=self.db,  # type: ignore[arg-type]
+            session=self.conn,  # type: ignore[arg-type]
         )
 
         return RandomizeScenarioResponse(

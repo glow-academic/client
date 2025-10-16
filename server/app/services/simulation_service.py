@@ -148,45 +148,38 @@ class SimulationService:
         scenarios_list: List[ScenarioInSimulation] = []
         if scenario_ids:
             # Get scenarios with their data
-            query = """
-            SELECT 
-                s.id,
-                s.name,
-                s.problem_statement,
-                s.active,
-                s.default_scenario,
-                ss.position
-            FROM scenarios s
-            JOIN simulation_scenarios ss ON ss.scenario_id = s.id
-            WHERE ss.simulation_id = :simulation_id AND s.id = ANY(:scenario_ids)
-            ORDER BY ss.position
-            """
-            scenarios_data = self.db.execute(
-                text(query),
-                {"simulation_id": request.simulationId, "scenario_ids": scenario_ids}
-            ).fetchall()
+            scenarios_data = await self.conn.fetch("""
+                SELECT 
+                    s.id,
+                    s.name,
+                    s.problem_statement,
+                    s.active,
+                    s.default_scenario,
+                    ss.position
+                FROM scenarios s
+                JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+                WHERE ss.simulation_id = $1 AND s.id = ANY($2::uuid[])
+                ORDER BY ss.position
+            """, request.simulationId, scenario_ids)
 
             # Get parameter items for each scenario
             for scenario_data in scenarios_data:
                 # Get parameter item IDs for this scenario
-                query = """
-                SELECT parameter_item_id
-                FROM scenario_parameter_items
-                WHERE scenario_id = :scenario_id
-                """
-                param_items = self.db.execute(
-                    text(query), {"scenario_id": str(scenario_data.id)}
-                ).fetchall()
-                param_item_ids = [str(row.parameter_item_id) for row in param_items]
+                param_items = await self.conn.fetch("""
+                    SELECT parameter_item_id
+                    FROM scenario_parameter_items
+                    WHERE scenario_id = $1
+                """, str(scenario_data['id']))
+                param_item_ids = [str(row['parameter_item_id']) for row in param_items]
 
                 scenarios_list.append(
                     ScenarioInSimulation(
-                        scenario_id=str(scenario_data.id),
-                        title=scenario_data.name,
-                        description=scenario_data.problem_statement or '',
-                        active=scenario_data.active,
-                        default_scenario=scenario_data.default_scenario or False,
-                        position=scenario_data.position,
+                        scenario_id=str(scenario_data['id']),
+                        title=scenario_data['name'],
+                        description=scenario_data['problem_statement'] or '',
+                        active=scenario_data['active'],
+                        default_scenario=scenario_data['default_scenario'] or False,
+                        position=scenario_data['position'],
                         parameter_item_ids=param_item_ids
                     )
                 )
@@ -225,15 +218,12 @@ class SimulationService:
         }
 
         # Get parameters for valid departments
-        query = """
-        SELECT id, name, COALESCE(description, '') as description
-        FROM parameters
-        WHERE department_id = ANY(:department_ids)
-        ORDER BY name
-        """
-        params_result = self.db.execute(
-            text(query), {"department_ids": valid_department_ids}
-        ).fetchall()
+        params_result = await self.conn.fetch("""
+            SELECT id, name, COALESCE(description, '') as description
+            FROM parameters
+            WHERE department_id = ANY($1::uuid[])
+            ORDER BY name
+        """, valid_department_ids)
         
         parameters_list = []
         parameter_mapping: ParameterMapping = {}
@@ -244,16 +234,13 @@ class SimulationService:
             )
 
         # Get parameter items for valid departments
-        query = """
-        SELECT pi.id, pi.parameter_id, pi.name, COALESCE(pi.description, '') as description
-        FROM parameter_items pi
-        JOIN parameters p ON p.id = pi.parameter_id
-        WHERE p.department_id = ANY(:department_ids)
-        ORDER BY p.name, pi.name
-        """
-        param_items_result = self.db.execute(
-            text(query), {"department_ids": valid_department_ids}
-        ).fetchall()
+        param_items_result = await self.conn.fetch("""
+            SELECT pi.id, pi.parameter_id, pi.name, COALESCE(pi.description, '') as description
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY($1::uuid[])
+            ORDER BY p.name, pi.name
+        """, valid_department_ids)
         
         parameter_items_list = []
         parameter_item_mapping: ParameterItemMapping = {}
@@ -263,48 +250,48 @@ class SimulationService:
                     id=str(row['id']),
                     name=row['name'],
                     description=row['description'] if row['description'] else None,
-                    parameter_id=str(row.parameter_id)
+                    parameter_id=str(row['parameter_id'])
                 )
             )
             parameters_list.append(
                 ParameterItem(
                     id=str(row['id']),
-                    parameter_id=str(row.parameter_id),
+                    parameter_id=str(row['parameter_id']),
                     name=row['name'],
                     description=row['description'] if row['description'] else None
                 )
             )
             # Get parameter name for the mapping
             param_name = next(
-                (p.name for p in params_result if str(p.id) == str(row.parameter_id)),
+                (p['name'] for p in params_result if str(p['id']) == str(row['parameter_id'])),
                 "Unknown"
             )
             parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
                 name=row['name'],
                 description=row['description'],
-                parameter_id=str(row.parameter_id),
+                parameter_id=str(row['parameter_id']),
                 parameter_name=param_name
             )
 
         return SimulationDetailResponse(
             # Basic fields
-            name=simulation.title,
-            description=simulation.description,
-            department_id=str(simulation.department_id),
+            name=simulation['title'],
+            description=simulation['description'],
+            department_id=str(simulation['department_id']),
             valid_department_ids=valid_department_ids,
-            time_limit=simulation.time_limit,
-            rubric_id=str(simulation.rubric_id),
+            time_limit=simulation['time_limit'],
+            rubric_id=str(simulation['rubric_id']),
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
             # Boolean parameters
-            active=simulation.active,
-            default_simulation=simulation.default_simulation,
-            practice_simulation=simulation.practice_simulation,
-            hints_enabled=simulation.hints_enabled,
-            input_guardrail_active=simulation.input_guardrail_active,
-            output_guardrail_active=simulation.output_guardrail_active,
-            image_input_active=simulation.image_input_active,
+            active=simulation['active'],
+            default_simulation=simulation['default_simulation'],
+            practice_simulation=simulation['practice_simulation'],
+            hints_enabled=simulation['hints_enabled'],
+            input_guardrail_active=simulation['input_guardrail_active'],
+            output_guardrail_active=simulation['output_guardrail_active'],
+            image_input_active=simulation['image_input_active'],
             # Permission flags
             can_edit=can_edit,
             can_duplicate=can_duplicate,

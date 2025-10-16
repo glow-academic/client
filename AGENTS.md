@@ -146,40 +146,39 @@ cd server && tail -f logs/server.log | grep -i webrtc
 
 ## Testing Instructions
 
-### All Tests (Recommended)
+### All Tests (Unit Tests)
 ```bash
-bash run.sh --test                    # Interactive mode with tests
-bash run.sh --detach --test           # Detached mode with tests (for automation)
+make test          # Server unit tests (pytest)
+make test-client   # Client unit tests (vitest)
+make test-cov      # Server tests with coverage
+cd client && yarn test:coverage  # Client tests with coverage
 ```
+
+**Testing Strategy**: 
+- Focus on comprehensive unit testing (80% coverage target)
+- No E2E tests until unit test coverage is established
+- Test pyramid: strong unit test foundation first
 
 ### Individual Test Suites
 
 **Client Unit Tests** (vitest):
 ```bash
-cd client && yarn test
+cd client && yarn test           # Run all tests
+cd client && yarn test:watch     # Watch mode
+cd client && yarn test:coverage  # With coverage report
 ```
 
 **Server Unit Tests** (pytest):
 ```bash
-cd server && make test
+cd server && make test                    # Run all tests  
+cd server && make test-cov                # With coverage report
+make test server/tests/test_specific.py   # Run specific file
 ```
 
-**Database E2E Tests** (Cypress):
-```bash
-cd database && yarn test
-# Note: All services must be running first
-# Tests database operations end-to-end via API calls
-```
-
-### Docker E2E Testing
-```bash
-# Start all services and run E2E tests in containers
-docker compose --profile test up --build
-
-# Or run tests against already running services
-docker compose --profile dev up -d        # Start dev services
-docker compose --profile test up testing  # Run E2E tests only
-```
+### Coverage Reports
+- **Server**: HTML report in `server/htmlcov/index.html`
+- **Client**: HTML report in `client/coverage/index.html`
+- **Target**: 80% coverage for both client and server
 
 ## Database Migrations
 

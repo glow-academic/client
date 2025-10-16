@@ -101,6 +101,18 @@ test-cov: check-venv
 	@$(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html
 	@echo "✅ Coverage report generated"
 
+# Run client unit tests
+test-client:
+	@echo "Running client unit tests..."
+	@cd client && yarn test
+	@echo "✅ Client tests complete"
+
+# Run client tests with coverage
+test-client-cov:
+	@echo "Running client tests with coverage..."
+	@cd client && yarn test:coverage
+	@echo "✅ Client coverage report generated"
+
 
 # Start all services in foreground with combined logs
 run: check-venv
@@ -219,8 +231,10 @@ help:
 	@echo "  typecheck    - Run MyPy for static type checking"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test         - Run all tests"
-	@echo "  test-cov     - Run tests with coverage"
+	@echo "  test         - Run server unit tests (pytest)"
+	@echo "  test-cov     - Run server tests with coverage"
+	@echo "  test-client  - Run client unit tests (vitest)"
+	@echo "  test-client-cov - Run client tests with coverage"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  cleanup      - Clean up generated files and cache"

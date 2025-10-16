@@ -260,7 +260,7 @@ class DocumentService:
             d.type,
             d.department_id
         FROM documents d
-        WHERE d.id = ANY(:document_ids)
+        WHERE d.id = ANY($1::uuid[])
         """
 
         documents_result = await self.conn.fetch(
@@ -281,7 +281,7 @@ class DocumentService:
         SELECT DISTINCT d.id
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
+        WHERE pd.profile_id = $1 AND d.active = true
         ORDER BY d.name
         """
 
@@ -654,32 +654,18 @@ class DocumentService:
                 from app.utils.csv import process_csv_file
 
                 # Note: process_csv_file needs to be updated to use asyncpg
-                # For now, skipping CSV processing in this method
-                result = {"success": False, "error": "CSV processing not yet migrated to asyncpg"}
-                
+                # For now, return error for CSV uploads
                 # Clean up upload directory
                 try:
                     shutil.rmtree(upload_dir)
                 except Exception as e:
                     logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
-                if result["success"]:
-                    return FinalizeUploadResponse(
-                        success=True,
-                        message=f"CSV processed successfully. Created {result['users_created']} users, skipped {result['users_skipped']} users.",
-                        status="success",
-                        users_created=result["users_created"],
-                        users_skipped=result["users_skipped"],
-                        errors=result.get("errors", []),
-                        created_users=result.get("created_users", []),
-                        skipped_users=result.get("skipped_users", []),
-                    )
-                else:
-                    return FinalizeUploadResponse(
-                        success=False,
-                        message=result["error"],
-                        status="error",
-                    )
+                return FinalizeUploadResponse(
+                    success=False,
+                    message="CSV processing not yet migrated to asyncpg",
+                    status="error",
+                )
 
             # Handle ZIP file uploads
             if request.zip:

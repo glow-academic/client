@@ -18,34 +18,31 @@ class PricingQueries:
 
         # Build WHERE clause conditions
         where_conditions = [
-            "mr.department_id = ANY(:department_ids)",
-            "mr.created_at >= :start_date::timestamp",
-            "mr.created_at <= :end_date::timestamp",
+            "mr.department_id = ANY($1)",
+            "mr.created_at >= $2::timestamp",
+            "mr.created_at <= $3::timestamp",
         ]
 
-        params: Dict[str, Any] = {
-            "department_ids": department_ids,
-            "start_date": start_date,
-            "end_date": end_date,
-        }
+        params: List[Any] = [department_ids, start_date, end_date]
 
         # Cohort filter via cohort_profiles
         if cohort_ids is not None and len(cohort_ids) > 0:
+            param_idx = len(params) + 1
             where_conditions.append(
-                """mrp.profile_id IN (
+                f"""mrp.profile_id IN (
                     SELECT profile_id FROM cohort_profiles 
-                    WHERE cohort_id = ANY(:cohort_ids) AND active = true
+                    WHERE cohort_id = ANY(${param_idx}) AND active = true
                 )"""
             )
-            params["cohort_ids"] = cohort_ids
+            params.append(cohort_ids)
 
         # Simulation filters (general, practice, archived) - not implemented yet
         # Would need to join to simulations/attempts if we want to filter by simulation type
         # For now, this is a placeholder to match other analytics endpoints
         if sim_filters is not None and len(sim_filters) > 0:
-            params["sim_filters"] = sim_filters
             # Note: This would require additional joins to filter by simulation type
             # Leaving as-is for now to match analytics pattern
+            pass
 
         where_clause = " AND ".join(where_conditions)
 
@@ -81,11 +78,10 @@ class PricingQueries:
             created_at,
             content
         FROM debug_info
-        WHERE model_run_id = ANY(:model_run_ids)
+        WHERE model_run_id = ANY($1::uuid[])
         ORDER BY model_run_id, created_at
         """
-        params = {"model_run_ids": model_run_ids}
-        return (query, params)
+        return (query, [model_run_ids])
 
     def get_model_mapping(self, model_ids: List[str]) -> Tuple[str, List[Any]]:
         """Build query for model mapping with pricing."""
@@ -97,10 +93,9 @@ class PricingQueries:
             input_ppm,
             output_ppm
         FROM models
-        WHERE id = ANY(:model_ids)
+        WHERE id = ANY($1::uuid[])
         """
-        params = {"model_ids": model_ids}
-        return (query, params)
+        return (query, [model_ids])
 
     def get_profile_mapping(
         self, profile_ids: List[str]
@@ -109,22 +104,19 @@ class PricingQueries:
         query = """
         SELECT id, first_name || ' ' || last_name as name
         FROM profiles
-        WHERE id = ANY(:profile_ids)
+        WHERE id = ANY($1::uuid[])
         """
-        params = {"profile_ids": profile_ids}
-        return (query, params)
+        return (query, [profile_ids])
 
     def get_agent_mapping(self, agent_ids: List[str]) -> Tuple[str, List[Any]]:
         """Build query for agent mapping."""
-        query = "SELECT id, name FROM agents WHERE id = ANY(:agent_ids)"
-        params = {"agent_ids": agent_ids}
-        return (query, params)
+        query = "SELECT id, name FROM agents WHERE id = ANY($1::uuid[])"
+        return (query, [agent_ids])
 
     def get_persona_mapping(
         self, persona_ids: List[str]
     ) -> Tuple[str, List[Any]]:
         """Build query for persona mapping."""
-        query = "SELECT id, name FROM personas WHERE id = ANY(:persona_ids)"
-        params = {"persona_ids": persona_ids}
-        return (query, params)
+        query = "SELECT id, name FROM personas WHERE id = ANY($1::uuid[])"
+        return (query, [persona_ids])
 

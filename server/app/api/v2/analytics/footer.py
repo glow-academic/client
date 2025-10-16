@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import (AnalyticsFilters,
@@ -10,7 +11,6 @@ from app.schemas.analytics import (AnalyticsFilters,
                                    SimulationCompositionResponse,
                                    SimulationPerformanceResponse)
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/footer", tags=["analytics-footer"])
 
@@ -22,8 +22,8 @@ async def get_scenario_performance(
 ) -> ScenarioPerformanceResponse:
     """Get scenario performance analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_scenario_performance(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_scenario_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -35,8 +35,8 @@ async def get_scenario_stats(
 ) -> ScenarioStatsResponse:
     """Get scenario stats analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_scenario_stats(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_scenario_stats(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -48,8 +48,8 @@ async def get_simulation_composition(
 ) -> SimulationCompositionResponse:
     """Get simulation composition analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_simulation_composition(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_simulation_composition(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -61,8 +61,8 @@ async def get_simulation_performance(
 ) -> SimulationPerformanceResponse:
     """Get simulation performance analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_simulation_performance(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_simulation_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -17,8 +17,8 @@ async def refresh_analytics_view(
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
     try:
-        repo = get_analytics_repository(db)
-        repo.refresh_materialized_view()
+        repo = get_analytics_repository(conn)
+        await repo.refresh_materialized_view()
         return RefreshResponse(
             success=True,
             message="Analytics data refreshed successfully",

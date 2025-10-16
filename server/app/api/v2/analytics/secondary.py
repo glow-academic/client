@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import (AnalyticsFilters,
@@ -9,7 +10,6 @@ from app.schemas.analytics import (AnalyticsFilters,
                                    CohortPerformanceResponse,
                                    SkillPerformanceResponse)
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/secondary", tags=["analytics-secondary"])
 
@@ -21,8 +21,8 @@ async def get_attempt_improvement(
 ) -> AttemptImprovementResponse:
     """Get attempt improvement analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_attempt_improvement(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_attempt_improvement(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -34,8 +34,8 @@ async def get_cohort_performance(
 ) -> CohortPerformanceResponse:
     """Get cohort performance analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_cohort_performance(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_cohort_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -47,8 +47,8 @@ async def get_skill_performance(
 ) -> SkillPerformanceResponse:
     """Get skill performance analytics."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_skill_performance(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_skill_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

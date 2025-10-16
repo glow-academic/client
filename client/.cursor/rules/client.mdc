@@ -1,22 +1,38 @@
 ---
-description: 
-globs: client/**
-alwaysApply: false
----
----
 description: Front-end (Next.js + TypeScript) standards
 globs:
-  - "client/**"          # Auto-attach whenever files under client/ are referenced
+  - "client/**"
 alwaysApply: false
 ---
 
 # Client Folder Rules
-- Use **React functional components**, TypeScript strict mode, and hooks over class components.
-- Styling: Follow **shadcn/ui** component patterns; extend with Radix-based primitives when custom UI is needed.
-- All new components live in **`client/components/`** with colocated `*.test.tsx` files using **Vitest**.
-- Run **`npx tsc --noEmit`** locally before committing; CI will block on type errors.
-- Use **TanStack Query** (`@tanstack/react-query`) for server state management with optimistic updates when feasible.
-- Database schema managed via **Drizzle ORM** in `client/drizzle/schema.ts`; auto-generate types with `yarn generate:types`.
-- Auto-generate queries/mutations with `yarn generate:queries` after schema changes.
-- Keep client state minimal; prefer server state via TanStack Query cache.
-- Use **Next.js 15** App Router patterns; colocate page components with their routes.
+
+## Core Principles
+- **Fast & Dumb UI**: Components are presentation-focused, no business logic
+- All business logic lives on the server; client only handles UI state and rendering
+- Use **React functional components**, TypeScript strict mode, and hooks
+
+## Development Standards
+- Styling: Follow **shadcn/ui** component patterns; extend with Radix-based primitives
+- All new components in **`client/components/`** with colocated `*.test.tsx` files using **Vitest**
+- Run **`npx tsc --noEmit`** before committing; CI blocks on type errors
+- Use **TanStack Query** for server state management with optimistic updates when feasible
+- Keep client state minimal; prefer server state via TanStack Query cache
+- Use **Next.js 15** App Router patterns; colocate page components with routes
+
+## Database & API
+- **No Drizzle in client code** - database operations via API routes only
+- Use `asyncpg` on server; client consumes REST/WebSocket APIs
+- API routes in `client/app/api/` serve as BFF layer (thin proxy to server)
+
+## Testing
+- **Target**: 80% unit test coverage with Vitest
+- Test command: `cd client && yarn test`
+- Coverage: `cd client && yarn test:coverage`
+- Focus on component behavior, user interactions, and edge cases
+- Mock server responses and WebSocket events in tests
+
+## WebSocket
+- Use centralized `WebSocketContext` for Socket.IO connections
+- Client only emits events and listens for responses
+- All WebSocket business logic handled server-side

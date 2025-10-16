@@ -3,9 +3,6 @@
 This repository delegates to the persona service layer.
 """
 
-from typing import Optional
-
-from app.db import get_session
 from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   DeletePersonaRequest, DeletePersonaResponse,
                                   DuplicatePersonaRequest,
@@ -25,9 +22,9 @@ class PersonaRepository:
     This repository delegates to the persona service layer.
     """
 
-    async def __init__(self, conn: asyncpg.Connection):
-        """Initialize repository with database session."""
-        self.db = db
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.conn = conn
         self.service = PersonaService(conn)
 
     async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
@@ -71,9 +68,7 @@ class PersonaRepository:
         return await self.service.update_persona(request)
 
 
-def get_persona_repository(db: Optional[Session] = None) -> PersonaRepository:
+def get_persona_repository(conn: asyncpg.Connection) -> PersonaRepository:
     """Get persona repository instance."""
-    if db is None:
-        db = next(get_session())
     return PersonaRepository(conn)
 

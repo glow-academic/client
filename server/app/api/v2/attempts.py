@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import Annotated, Any, Dict
 from uuid import UUID
 
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.models import SimulationChats
 from app.queries.simulation_queries import get_attempt_full_data
 from app.repositories.attempts_repository import get_attempts_repository
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
@@ -14,7 +14,6 @@ from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   UpdateChatCreatedAtRequest,
                                   UpdateChatTimestampResponse)
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
@@ -26,7 +25,7 @@ async def get_attempt_full(
 ) -> Dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""
     try:
-        return get_attempt_full_data(db, attempt_id)
+        return await get_attempt_full_data(conn, str(attempt_id))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -55,18 +54,18 @@ async def update_chat_created_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat createdAt timestamp."""
     try:
-        # Find the chat
-        chat = db.exec(
-            select(SimulationChats).where(SimulationChats.id == request.chatId)
-        ).one_or_none()
+        # Parse ISO string to datetime
+        created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
+        
+        # Update the createdAt timestamp
+        result = await conn.execute(
+            "UPDATE simulation_chats SET created_at = $1 WHERE id = $2",
+            created_at,
+            request.chatId
+        )
 
-        if not chat:
+        if result == "UPDATE 0":
             raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
-
-        # Update the createdAt timestamp - parse ISO string to datetime
-        chat.created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
-        db.add(chat)
-        db.commit()
 
         return UpdateChatTimestampResponse(
             success=True,
@@ -85,18 +84,18 @@ async def update_chat_completed_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat completedAt timestamp."""
     try:
-        # Find the chat
-        chat = db.exec(
-            select(SimulationChats).where(SimulationChats.id == request.chatId)
-        ).one_or_none()
+        # Parse ISO string to datetime
+        completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
+        
+        # Update the completedAt timestamp
+        result = await conn.execute(
+            "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2",
+            completed_at,
+            request.chatId
+        )
 
-        if not chat:
+        if result == "UPDATE 0":
             raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
-
-        # Update the completedAt timestamp - parse ISO string to datetime
-        chat.completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
-        db.add(chat)
-        db.commit()
 
         return UpdateChatTimestampResponse(
             success=True,

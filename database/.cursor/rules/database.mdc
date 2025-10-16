@@ -1,22 +1,43 @@
 ---
-description: 
-globs: database/**
-alwaysApply: false
----
----
-description: Postgres & migration guidelines
+description: Database design and migration standards
 globs:
   - "database/**"
 alwaysApply: false
 ---
 
 # Database Folder Rules
-- **`database/init/`** holds the single source of truth for initial schema and seed data; any structural change must be reflected here first.
-- Use **Drizzle ORM migrations** managed from the client; schema defined in `client/drizzle/schema.ts`.
-- Before pushing DB changes:
-  1. Run `cd database && bash run.sh --clean` locally to recreate a fresh instance.
-  2. Execute all unit and integration tests across client/server.
-- Keep table and column names **snake_case**; include `created_at` & `updated_at` timestamps by default.
-- Indices: Add an index for every foreign key and any column used in WHERE clauses of hot paths.
-- Use **PostgreSQL** with proper enum types and UUID primary keys.
-- Database runs on Docker; connection managed via environment variables.
+
+## Design Principles (Chris Date)
+- **Minimize nulls**: Use NOT NULL wherever possible
+- **BCNF normalization**: Eliminate redundancy and anomalies
+- **Referential integrity**: All foreign keys with proper constraints
+- **Meaningful constraints**: CHECK constraints for business rules
+- **Clear naming**: Descriptive table and column names
+
+## Schema Management
+- **Drizzle for migrations only** - used exclusively in `database/` folder
+- Schema defined in SQL migration files
+- **No Drizzle in client or server code** - only for generating migrations
+- Migration commands:
+  - `cd database && yarn drizzle:generate` - Generate migration from schema changes
+  - `cd database && yarn drizzle:migrate` - Apply pending migrations
+  - `cd database && yarn drizzle:studio` - Visual schema explorer
+
+## Migration Workflow
+1. Make schema changes in SQL files or Drizzle schema (database folder only)
+2. Generate migration: `cd database && yarn drizzle:generate`
+3. Review generated migration in `database/drizzle/`
+4. Apply migration: `cd database && yarn drizzle:migrate`
+5. Restart services to pick up schema changes
+
+## Database Operations
+- Server uses **asyncpg** for all database operations
+- Client accesses data only via API routes
+- Keep queries in `server/app/queries/` organized by domain
+- Use connection pooling for performance
+
+## Testing
+- No Cypress E2E tests
+- Database integrity tested via server unit tests
+- Use transactions in tests for isolation
+- Seed data scripts in `database/seed/` for development

@@ -35,3 +35,8 @@ class AttemptsService:
             message=f"{count} simulation attempt(s) {action} successfully",
             count=count,
         )
+
+
+def get_attempts_service(conn: asyncpg.Connection) -> AttemptsService:
+    """Get attempts service instance."""
+    return AttemptsService(conn)

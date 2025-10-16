@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import AnalyticsFilters, MetricResponse
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/leaderboard", tags=["analytics-leaderboard"])
 
@@ -18,8 +18,8 @@ async def get_improvement_per_day(
 ) -> MetricResponse:
     """Get improvement per day metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_improvement_per_day(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_improvement_per_day(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -31,8 +31,8 @@ async def get_perfect_scores(
 ) -> MetricResponse:
     """Get perfect scores metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_perfect_scores(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_perfect_scores(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,8 +44,8 @@ async def get_quickest_pass(
 ) -> MetricResponse:
     """Get quickest pass metric."""
     try:
-        repo = get_analytics_repository(db)
-        return repo.get_quickest_pass(filters)
+        repo = get_analytics_repository(conn)
+        return await repo.get_quickest_pass(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

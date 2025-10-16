@@ -1,6 +1,6 @@
 """Persona service layer - business logic for persona operations."""
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
 from app.db import transaction
@@ -17,7 +17,9 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonaItem, PersonasFilters,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
-from app.services.scenario_service import ScenarioService
+
+if TYPE_CHECKING:
+    from app.services.scenario_service import ScenarioService
 
 
 class PersonaService:
@@ -27,7 +29,7 @@ class PersonaService:
         """Initialize service with database session."""
         self.conn = conn
         self.queries = PersonaQueries()
-        self.scenario_service = None  # Lazy init to avoid circular import
+        self.scenario_service: Optional['ScenarioService'] = None  # Lazy init to avoid circular import
 
     async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list with permissions and scenario details using dynamic SQL."""
@@ -77,7 +79,10 @@ class PersonaService:
         if scenario_ids_to_fetch := list(
             set([sid for p in personas for sid in p.scenario_ids])
         ):
-            scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(
+            if self.scenario_service is None:
+                from app.services.scenario_service import ScenarioService
+                self.scenario_service = ScenarioService(self.conn)
+            scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
             )
 
@@ -194,19 +199,19 @@ class PersonaService:
 
         # Get persona usage in scenarios
         usage_query, usage_params = self.queries.check_persona_usage(request.personaId)
-        usage_result = self.db.execute(text(usage_query), usage_params).fetchone()
-        scenario_count = int(usage_result.usage_count) if usage_result else 0
+        usage_result = await self.conn.fetchrow(usage_query, *usage_params)
+        scenario_count = int(usage_result['usage_count']) if usage_result else 0
         in_use = scenario_count > 0
 
         # Get profile role for permissions
         role_query, role_params = self.queries.get_profile_role(request.profileId)
-        role_result = self.db.execute(text(role_query), role_params).fetchone()
-        user_role = role_result.role if role_result else "student"
+        role_result = await self.conn.fetchrow(role_query, *role_params)
+        user_role = role_result['role'] if role_result else "student"
 
         # Calculate permissions
         is_superadmin = user_role == "superadmin"
         is_admin = user_role in ("admin", "superadmin")
-        is_default = persona.default_persona
+        is_default = persona['default_persona']
 
         # Edit permission: superadmin can edit everything, non-default can be edited by admins
         can_edit = is_superadmin or (is_admin and not is_default)
@@ -292,16 +297,16 @@ class PersonaService:
         return PersonaDetailResponse(
             # Basic fields
             name=persona['name'],
-            description=persona.description,
-            department_id=str(persona.department_id),
-            active=persona.active,
-            default_persona=persona.default_persona,
-            color=persona.color,
-            icon=persona.icon,
-            model_id=str(persona.model_id),
-            reasoning=persona.reasoning,
-            temperature=float(persona.temperature),
-            system_prompt=persona.system_prompt,
+            description=persona['description'],
+            department_id=str(persona['department_id']),
+            active=persona['active'],
+            default_persona=persona['default_persona'],
+            color=persona['color'],
+            icon=persona['icon'],
+            model_id=str(persona['model_id']),
+            reasoning=persona['reasoning'],
+            temperature=float(persona['temperature']),
+            system_prompt=persona['system_prompt'],
             # Usage and permissions
             in_use=in_use,
             scenario_count=scenario_count,
@@ -341,7 +346,7 @@ class PersonaService:
             personaId=str(persona['id']), profileId=request.profileId
         )
 
-        return self.get_persona_detail(detail_request)
+        return await self.get_persona_detail(detail_request)
 
     async def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""

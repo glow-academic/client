@@ -181,8 +181,8 @@ async def tus_creation(
     app_prefix = os.getenv("APP_PREFIX", "").strip("/")
 
     # Create upload using service
-    service = DocumentService(db)
-    upload_id, location, offset = service.create_tus_upload(
+    service = DocumentService(conn)
+    upload_id, location, offset = await service.create_tus_upload(
         upload_length, metadata, app_prefix
     )
 
@@ -225,8 +225,8 @@ async def tus_head(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Handle HEAD request for tus protocol - get upload info."""
-    service = DocumentService(db)
-    info = service.get_tus_upload_info(upload_id)
+    service = DocumentService(conn)
+    info = await service.get_tus_upload_info(upload_id)
 
     if not info:
         return Response(status_code=404)
@@ -267,7 +267,7 @@ async def tus_patch(
     chunk = await request.body()
 
     # Append chunk using service
-    service = DocumentService(db)
+    service = DocumentService(conn)
     success, new_offset, error = service.append_tus_chunk(
         upload_id, chunk, expected_offset
     )
@@ -313,8 +313,8 @@ async def finalize_upload(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FinalizeUploadResponse:
     """Finalize an upload and process the file."""
-    service = DocumentService(db)
-    return service.finalize_tus_upload(request)
+    service = DocumentService(conn)
+    return await service.finalize_tus_upload(request)
 
 
 # ============================================================================
@@ -327,8 +327,8 @@ async def download_document(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse:
     """Download a document by ID."""
-    service = DocumentService(db)
-    result = service.get_document_file(document_id)
+    service = DocumentService(conn)
+    result = await service.get_document_file(document_id)
 
     if not result:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -355,8 +355,8 @@ async def download_csv(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse:
     """Download a CSV file by token."""
-    service = DocumentService(db)
-    file_path = service.get_csv_file(token)
+    service = DocumentService(conn)
+    file_path = await service.get_csv_file(token)
 
     if not file_path:
         raise HTTPException(status_code=404, detail="CSV file not found")
@@ -379,7 +379,7 @@ async def generate_certificate(
 ) -> Response:
     """Generate a certificate PDF/text for a profile."""
     try:
-        service = DocumentService(db)
+        service = DocumentService(conn)
         file_content, content_type, headers = service.generate_certificate(request)
 
         return Response(
