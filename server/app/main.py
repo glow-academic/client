@@ -287,6 +287,29 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
     )
 
+    # Resolve "guest-profile-id" to actual default guest profile
+    if profile_id == "guest-profile-id":
+        try:
+            from app.db import get_pool
+            from app.utils.guest import find_default_guest_profile
+
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as conn:
+                    default_guest = await find_default_guest_profile(conn)
+                    if default_guest:
+                        profile_id = str(default_guest['id'])
+                        logger.info(f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}")
+                    else:
+                        logger.warning("No default guest profile found; treating as anonymous guest")
+                        profile_id = None
+            else:
+                logger.error("Database pool not available; cannot resolve guest profile")
+                profile_id = None
+        except Exception as e:
+            logger.error(f"Error resolving guest profile: {e}")
+            profile_id = None
+
     if profile_id:
         # Check if another socket is already active for this profile
         old_sid = await get_socket_owner(profile_id)

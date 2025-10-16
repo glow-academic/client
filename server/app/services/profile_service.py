@@ -170,11 +170,22 @@ class ProfileService:
         Returns:
             ProfileContextResponse with all consolidated data
         """
+        # Resolve "guest-profile-id" to actual default guest profile
+        effective_profile_id = request.effectiveProfileId
+        if effective_profile_id == "guest-profile-id":
+            from app.utils.guest import find_default_guest_profile
+            
+            default_guest = await find_default_guest_profile(self.conn)
+            if default_guest:
+                effective_profile_id = str(default_guest['id'])
+            else:
+                raise ValueError("No default guest profile found in database")
+        
         # Get profile
-        profile = await self.get_profile(request.effectiveProfileId)
+        profile = await self.get_profile(effective_profile_id)
 
         if not profile:
-            raise ValueError(f"Profile not found: {request.effectiveProfileId}")
+            raise ValueError(f"Profile not found: {effective_profile_id}")
 
         # Get departments for this profile
         query = """
@@ -183,13 +194,13 @@ class ProfileService:
             d.title,
             d.description,
             d.active,
-            pd.primary_department
+            pd.is_primary
         FROM profile_departments pd
         JOIN departments d ON d.id = pd.department_id
         WHERE pd.profile_id = $1 AND pd.active = true
-        ORDER BY pd.primary_department DESC, d.title
+        ORDER BY pd.is_primary DESC, d.title
         """
-        dept_rows = await self.conn.fetch(query, request.effectiveProfileId)
+        dept_rows = await self.conn.fetch(query, effective_profile_id)
 
         departments = [
             DepartmentItem(
@@ -229,7 +240,7 @@ class ProfileService:
               AND c.active = true
             ORDER BY c.name
             """
-            cohort_rows = await self.conn.fetch(query, request.effectiveProfileId)
+            cohort_rows = await self.conn.fetch(query, effective_profile_id)
 
             cohorts = [
                 CohortItem(
@@ -293,7 +304,7 @@ class ProfileService:
         
         # Get simulatable profiles
         simulatable_profiles = await self.get_simulatable_profiles(
-            request.effectiveProfileId, dept_ids_list
+            effective_profile_id, dept_ids_list
         )
         
         # Determine available sections based on role

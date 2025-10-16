@@ -6,6 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -192,6 +193,7 @@ export default function Login() {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
+  const log = useLogger();
 
   const handleMicrosoftLogin = async () => {
     try {

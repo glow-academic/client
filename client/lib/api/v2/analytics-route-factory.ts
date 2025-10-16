@@ -5,6 +5,7 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/analytics";
+import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
 /**

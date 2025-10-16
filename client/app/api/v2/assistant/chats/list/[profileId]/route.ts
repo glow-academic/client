@@ -8,11 +8,11 @@ import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { profileId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ profileId: string }> }
 ) {
   try {
-    const { profileId } = params;
+    const { profileId } = await params;
 
     const url = `${getApiBase()}/api/v2/assistant/chats/list/${profileId}`;
 

@@ -9,10 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
-    const { chatId } = params;
+    const { chatId } = await params;
     const { searchParams } = new URL(request.url);
     const profileId = searchParams.get("profile_id");
 
