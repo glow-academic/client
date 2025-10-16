@@ -1,5 +1,6 @@
 """Analytics service layer - business logic for analytics operations."""
 
+import json
 from typing import Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
@@ -380,6 +381,9 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
+        # Parse JSON string to dict if needed
+        if isinstance(result, str):
+            result = json.loads(result)
         overview_data = result or {}
         
         # Fetch history data
@@ -412,6 +416,9 @@ class AnalyticsService:
         result = await self.conn.fetchval(query, *params)
         if not result:
             return []
+        # Parse JSON string to list if needed
+        if isinstance(result, str):
+            result = json.loads(result)
         return [AttemptHistoryRow.model_validate(row) for row in result]
 
     async def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:

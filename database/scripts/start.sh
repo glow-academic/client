@@ -237,26 +237,6 @@ run_migrations() {
     -v ON_ERROR_STOP=1 -c "SELECT audit.install_row_triggers();" >/dev/null 2>&1 || true
 }
 
-generate_and_copy_files() {
-  echo "📝 Generating and copying files to client..."
-  
-  # Clean schema and copy to client
-  if node scripts/clean-schema.js; then
-    echo "✅ Schema cleaned and copied"
-  else
-    echo "❌ Failed to clean schema"
-    return 1
-  fi
-  
-    # Generate queries and mutations
-  if node scripts/generate-test-harness.js; then
-    echo "✅ Test harness generated"
-  else
-    echo "❌ Failed to generate test harness"
-    return 1
-  fi
-}
-
 # --- MAIN LOGIC ------------------------------------------------------
 
 # Handle connect mode
@@ -322,9 +302,6 @@ if [[ "$CLEAN_DB" == true ]]; then
   # Setup fresh database
   setup_database
   start_fresh_from_init
-  
-  # Generate and copy files
-  generate_and_copy_files
   
   echo "✅ Clean database setup completed!"
   exit 0

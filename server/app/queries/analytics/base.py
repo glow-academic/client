@@ -1,5 +1,6 @@
 """Base analytics query builder with common filtering logic."""
 
+from datetime import datetime
 from typing import Any, List, Optional, Tuple
 
 
@@ -26,13 +27,13 @@ class AnalyticsFilters:
         params: List[Any] = []
         param_counter = 1
 
-        # Date filters
+        # Date filters - convert ISO strings to datetime objects
         conditions.append(f"a.attempt_created_at >= ${param_counter}")
-        params.append(start_date)
+        params.append(datetime.fromisoformat(start_date.replace('Z', '+00:00')))
         param_counter += 1
         
         conditions.append(f"a.attempt_created_at < ${param_counter}")
-        params.append(end_date)
+        params.append(datetime.fromisoformat(end_date.replace('Z', '+00:00')))
         param_counter += 1
 
         # Simulation type filters
@@ -233,7 +234,7 @@ class AnalyticsQueryBuilder:
             value_field: Optional value field for response
             key_field: Optional key field for response
         """
-        where_clause, params, param_counter = self.filters.build_base_filter(
+        where_clause, params = self.filters.build_base_filter(
             start_date,
             end_date,
             cohort_ids,

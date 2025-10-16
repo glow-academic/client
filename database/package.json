@@ -16,10 +16,7 @@
     "logs": "node scripts/stream-logs.js",
     "drizzle:migrate": "npx drizzle-kit migrate",
     "drizzle:generate": "npx drizzle-kit generate",
-    "drizzle:studio": "npx drizzle-kit studio",
-    "generate:schema": "node scripts/clean-schema.js",
-    "generate:harness": "node scripts/generate-test-harness.js",
-    "generate:all": "npm run generate:schema && npm run generate:harness"
+    "drizzle:studio": "npx drizzle-kit studio"
   },
   "dependencies": {
     "drizzle-kit": "^0.31.1",

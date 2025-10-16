@@ -41,19 +41,20 @@ class PageQueries:
             ),
             simulation_items AS (
                 SELECT
-                    simulation_id,
-                    simulation_title,
-                    simulation_description,
-                    MAX(grade_percent) AS highest_score,
-                    COUNT(DISTINCT attempt_id)::int AS num_sessions,
+                    f.simulation_id,
+                    s.title AS simulation_title,
+                    s.description AS simulation_description,
+                    MAX(f.grade_percent) AS highest_score,
+                    COUNT(DISTINCT f.attempt_id)::int AS num_sessions,
                     CASE 
-                        WHEN MAX(grade_percent) >= MAX(pass_percent) THEN 'passed'
+                        WHEN MAX(f.grade_percent) >= MAX(f.rubric_pass_points * 100.0 / NULLIF(f.rubric_points, 0)) THEN 'passed'
                         WHEN COUNT(*) > 0 THEN 'in-progress'
                         ELSE 'not-started'
                     END AS status
-                FROM filt
-                WHERE simulation_id IS NOT NULL
-                GROUP BY simulation_id, simulation_title, simulation_description
+                FROM filt f
+                JOIN simulations s ON s.id = f.simulation_id
+                WHERE f.simulation_id IS NOT NULL
+                GROUP BY f.simulation_id, s.title, s.description
             ),
             simulation_rubrics AS (
                 SELECT DISTINCT
@@ -156,19 +157,22 @@ class PageQueries:
                 SELECT * FROM analytics a WHERE {where_clause}
             ),
             attempts AS (
-                SELECT DISTINCT ON (attempt_id)
-                    attempt_id,
-                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    profile_id,
-                    profile_first_name || ' ' || profile_last_name AS profile_name,
-                    simulation_title AS simulation_name,
-                    simulation_id,
-                    department_id,
-                    AVG(grade_percent) OVER (PARTITION BY attempt_id) AS score,
-                    COUNT(*) FILTER (WHERE completed) OVER (PARTITION BY attempt_id) AS num_scenarios_completed,
-                    is_archived,
-                    is_practice AS practice_simulation
-                FROM filt
+                SELECT DISTINCT ON (f.attempt_id)
+                    f.attempt_id,
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    f.profile_id,
+                    p.first_name || ' ' || p.last_name AS profile_name,
+                    s.title AS simulation_name,
+                    f.simulation_id,
+                    f.department_id,
+                    AVG(f.grade_percent) OVER (PARTITION BY f.attempt_id) AS score,
+                    COUNT(*) FILTER (WHERE f.completed) OVER (PARTITION BY f.attempt_id) AS num_scenarios_completed,
+                    f.is_archived,
+                    f.is_practice AS practice_simulation
+                FROM filt f
+                JOIN profiles p ON p.id = f.profile_id
+                JOIN simulations s ON s.id = f.simulation_id
+                ORDER BY f.attempt_id, f.attempt_created_at DESC
             )
             SELECT COALESCE((SELECT json_agg(json_build_object(
                 'attemptId', attempt_id::text,
@@ -223,14 +227,15 @@ class PageQueries:
             ),
             practice_items AS (
                 SELECT
-                    simulation_id,
-                    simulation_title,
-                    simulation_description,
-                    MAX(grade_percent) AS highest_score,
-                    COUNT(DISTINCT attempt_id)::int AS num_sessions
-                FROM filt
-                WHERE simulation_id IS NOT NULL
-                GROUP BY simulation_id, simulation_title, simulation_description
+                    f.simulation_id,
+                    s.title AS simulation_title,
+                    s.description AS simulation_description,
+                    MAX(f.grade_percent) AS highest_score,
+                    COUNT(DISTINCT f.attempt_id)::int AS num_sessions
+                FROM filt f
+                JOIN simulations s ON s.id = f.simulation_id
+                WHERE f.simulation_id IS NOT NULL
+                GROUP BY f.simulation_id, s.title, s.description
             ),
             simulation_rubrics AS (
                 SELECT DISTINCT
