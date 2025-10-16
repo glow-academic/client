@@ -3,6 +3,8 @@
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.scenario_queries import ScenarioQueries
 from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
                               DocumentMappingItem, ObjectiveMappingItem,
@@ -25,8 +27,6 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    ScenariosFilters, ScenariosListResponse,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
-import asyncpg  # type: ignore
-from app.db import transaction
 
 
 class ScenarioService:
@@ -798,407 +798,254 @@ class ScenarioService:
     async def create_scenario(
         self, request: CreateScenarioRequest
     ) -> CreateScenarioResponse:
-        """Create a new scenario using dynamic SQL."""
+        """Create a new scenario using asyncpg."""
 
-        # Insert scenario
-        create_query = text("""
-        INSERT INTO scenarios (
-            name,
-            problem_statement,
-            department_id,
-            active,
-            default_scenario
-        )
-        VALUES (
-            :name,
-            :problem_statement,
-            :department_id,
-            :active,
-            :default_scenario
-        )
-        RETURNING id
-        """)
-
-        result = self.db.execute(
-            create_query,
-            {
-                "name": request.name,
-                "problem_statement": request.problem_statement,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_scenario": request.default_scenario,
-            },
-        ).fetchone()
-
-        if not result:
-            raise ValueError("Failed to create scenario")
-
-        scenario_id = str(result['id'])
-
-        # Insert persona relationship
-        if request.persona_id:
-            persona_query = text("""
-            INSERT INTO scenario_personas (scenario_id, persona_id, active)
-            VALUES (:scenario_id, :persona_id, true)
-            """)
-
-            self.db.execute(
-                persona_query,
-                {"scenario_id": scenario_id, "persona_id": request.persona_id},
+        async with transaction(self.conn):
+            # Insert scenario with positional params
+            create_query = self.queries.create_scenario()
+            result = await self.conn.fetchrow(
+                create_query,
+                request.name,
+                request.problem_statement,
+                request.department_id,
+                request.active,
+                request.default_scenario,
             )
 
-        # Insert document relationships
-        for document_id in request.document_ids:
-            doc_query = text("""
-            INSERT INTO scenario_documents (scenario_id, document_id, active)
-            VALUES (:scenario_id, :document_id, true)
-            """)
+            if not result:
+                raise ValueError("Failed to create scenario")
 
-            self.db.execute(
-                doc_query, {"scenario_id": scenario_id, "document_id": document_id}
+            scenario_id = str(result['id'])
+
+            # Insert persona relationship
+            if request.persona_id:
+                persona_query = self.queries.insert_scenario_persona()
+                await self.conn.execute(
+                    persona_query,
+                    scenario_id,
+                    request.persona_id,
+                )
+
+            # Insert document relationships
+            for document_id in request.document_ids:
+                doc_query = self.queries.insert_scenario_document()
+                await self.conn.execute(
+                    doc_query,
+                    scenario_id,
+                    document_id,
+                )
+
+            # Insert objectives
+            for idx, obj_id in enumerate(request.objective_ids):
+                # If it's a composite ID, parse it; otherwise treat as raw text
+                if "_" in obj_id and len(obj_id.split("_")) == 2:
+                    # Skip - it's a reference to existing objective
+                    continue
+                else:
+                    # New objective text
+                    obj_insert_query = self.queries.insert_scenario_objective()
+                    await self.conn.execute(
+                        obj_insert_query,
+                        scenario_id,
+                        idx,
+                        obj_id,
+                    )
+
+            # Insert parameter relationships
+            for parameter_id, parameter_item_ids in request.parameters.items():
+                for param_item_id in parameter_item_ids:
+                    param_query = self.queries.insert_scenario_parameter()
+                    await self.conn.execute(
+                        param_query,
+                        scenario_id,
+                        param_item_id,
+                    )
+
+            return CreateScenarioResponse(
+                success=True,
+                scenarioId=scenario_id,
+                message=f"Scenario '{request.name}' created successfully",
             )
-
-        # Insert objectives
-        for idx, obj_id in enumerate(request.objective_ids):
-            # If it's a composite ID, parse it; otherwise treat as raw text
-            if "_" in obj_id and len(obj_id.split("_")) == 2:
-                # Skip - it's a reference to existing objective
-                continue
-            else:
-                # New objective text
-                obj_insert_query = text("""
-                INSERT INTO scenario_objectives (scenario_id, idx, objective)
-                VALUES (:scenario_id, :idx, :objective)
-                """)
-
-                self.db.execute(
-                    obj_insert_query,
-                    {"scenario_id": scenario_id, "idx": idx, "objective": obj_id},
-                )
-
-        # Insert parameter relationships
-        for parameter_id, parameter_item_ids in request.parameters.items():
-            for param_item_id in parameter_item_ids:
-                param_query = text("""
-                INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
-                VALUES (:scenario_id, :parameter_item_id, true)
-                """)
-
-                self.db.execute(
-                    param_query,
-                    {"scenario_id": scenario_id, "parameter_item_id": param_item_id},
-                )
-
-        # Transaction handled
-
-        return CreateScenarioResponse(
-            success=True,
-            scenarioId=scenario_id,
-            message=f"Scenario '{request.name}' created successfully",
-        )
 
     async def update_scenario(
         self, request: UpdateScenarioRequest
     ) -> UpdateScenarioResponse:
-        """Update an existing scenario using dynamic SQL."""
+        """Update an existing scenario using asyncpg."""
 
-        # Check if scenario exists
-        check_query = text("""
-        SELECT name FROM scenarios WHERE id = :scenario_id
-        """)
+        async with transaction(self.conn):
+            # Check if scenario exists
+            query, params = self.queries.get_scenario_name(request.scenarioId)
+            existing = await self.conn.fetchrow(query, *params)
 
-        existing = self.db.execute(
-            check_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
+            if not existing:
+                raise ValueError(f"Scenario not found: {request.scenarioId}")
 
-        if not existing:
-            raise ValueError(f"Scenario not found: {request.scenarioId}")
-
-        # Update scenario basic fields
-        update_query = text("""
-        UPDATE scenarios SET
-            name = :name,
-            problem_statement = :problem_statement,
-            department_id = :department_id,
-            active = :active,
-            default_scenario = :default_scenario,
-            updated_at = NOW()
-        WHERE id = :scenario_id
-        """)
-
-        self.db.execute(
-            update_query,
-            {
-                "scenario_id": request.scenarioId,
-                "name": request.name,
-                "problem_statement": request.problem_statement,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_scenario": request.default_scenario,
-            },
-        )
-
-        # Update persona (delete old, insert new)
-        delete_persona_query = text("""
-        DELETE FROM scenario_personas WHERE scenario_id = :scenario_id
-        """)
-
-        self.db.execute(delete_persona_query, {"scenario_id": request.scenarioId})
-
-        if request.persona_id:
-            insert_persona_query = text("""
-            INSERT INTO scenario_personas (scenario_id, persona_id, active)
-            VALUES (:scenario_id, :persona_id, true)
-            """)
-
-            self.db.execute(
-                insert_persona_query,
-                {"scenario_id": request.scenarioId, "persona_id": request.persona_id},
+            # Update scenario basic fields with positional params
+            update_query = self.queries.update_scenario()
+            await self.conn.execute(
+                update_query,
+                request.name,
+                request.problem_statement,
+                request.department_id,
+                request.active,
+                request.default_scenario,
+                request.scenarioId,
             )
 
-        # Update documents
-        delete_docs_query = text("""
-        DELETE FROM scenario_documents WHERE scenario_id = :scenario_id
-        """)
+            # Update persona (delete old, insert new)
+            query, params = self.queries.delete_scenario_personas(request.scenarioId)
+            await self.conn.execute(query, *params)
 
-        self.db.execute(delete_docs_query, {"scenario_id": request.scenarioId})
+            if request.persona_id:
+                insert_persona_query = self.queries.insert_scenario_persona()
+                await self.conn.execute(
+                    insert_persona_query,
+                    request.scenarioId,
+                    request.persona_id,
+                )
 
-        for document_id in request.document_ids:
-            insert_doc_query = text("""
-            INSERT INTO scenario_documents (scenario_id, document_id, active)
-            VALUES (:scenario_id, :document_id, true)
-            """)
+            # Update documents
+            query, params = self.queries.delete_scenario_documents(request.scenarioId)
+            await self.conn.execute(query, *params)
 
-            self.db.execute(
-                insert_doc_query,
-                {"scenario_id": request.scenarioId, "document_id": document_id},
+            for document_id in request.document_ids:
+                insert_doc_query = self.queries.insert_scenario_document()
+                await self.conn.execute(
+                    insert_doc_query,
+                    request.scenarioId,
+                    document_id,
+                )
+
+            # Update objectives
+            query, params = self.queries.delete_scenario_objectives(request.scenarioId)
+            await self.conn.execute(query, *params)
+
+            for idx, obj_id in enumerate(request.objective_ids):
+                if "_" in obj_id and len(obj_id.split("_")) == 2:
+                    # Skip existing composite IDs
+                    continue
+                else:
+                    # New objective
+                    insert_obj_query = self.queries.insert_scenario_objective()
+                    await self.conn.execute(
+                        insert_obj_query,
+                        request.scenarioId,
+                        idx,
+                        obj_id,
+                    )
+
+            # Update parameters
+            query, params = self.queries.delete_scenario_parameters(request.scenarioId)
+            await self.conn.execute(query, *params)
+
+            for parameter_id, parameter_item_ids in request.parameters.items():
+                for param_item_id in parameter_item_ids:
+                    insert_param_query = self.queries.insert_scenario_parameter()
+                    await self.conn.execute(
+                        insert_param_query,
+                        request.scenarioId,
+                        param_item_id,
+                    )
+
+            return UpdateScenarioResponse(
+                success=True, message=f"Scenario '{request.name}' updated successfully"
             )
-
-        # Update objectives
-        delete_obj_query = text("""
-        DELETE FROM scenario_objectives WHERE scenario_id = :scenario_id
-        """)
-
-        self.db.execute(delete_obj_query, {"scenario_id": request.scenarioId})
-
-        for idx, obj_id in enumerate(request.objective_ids):
-            if "_" in obj_id and len(obj_id.split("_")) == 2:
-                # Skip existing composite IDs
-                continue
-            else:
-                # New objective
-                insert_obj_query = text("""
-                INSERT INTO scenario_objectives (scenario_id, idx, objective)
-                VALUES (:scenario_id, :idx, :objective)
-                """)
-
-                self.db.execute(
-                    insert_obj_query,
-                    {"scenario_id": request.scenarioId, "idx": idx, "objective": obj_id},
-                )
-
-        # Update parameters
-        delete_params_query = text("""
-        DELETE FROM scenario_parameter_items WHERE scenario_id = :scenario_id
-        """)
-
-        self.db.execute(delete_params_query, {"scenario_id": request.scenarioId})
-
-        for parameter_id, parameter_item_ids in request.parameters.items():
-            for param_item_id in parameter_item_ids:
-                insert_param_query = text("""
-                INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
-                VALUES (:scenario_id, :parameter_item_id, true)
-                """)
-
-                self.db.execute(
-                    insert_param_query,
-                    {
-                        "scenario_id": request.scenarioId,
-                        "parameter_item_id": param_item_id,
-                    },
-                )
-
-        # Transaction handled
-
-        return UpdateScenarioResponse(
-            success=True, message=f"Scenario '{request.name}' updated successfully"
-        )
 
     async def duplicate_scenario(
         self, request: DuplicateScenarioRequest
     ) -> DuplicateScenarioResponse:
-        """Duplicate a scenario using dynamic SQL."""
+        """Duplicate a scenario using asyncpg."""
 
-        # Get original scenario
-        select_query = text("""
-        SELECT 
-            name,
-            problem_statement,
-            department_id,
-            active,
-            default_scenario
-        FROM scenarios
-        WHERE id = :scenario_id
-        """)
+        async with transaction(self.conn):
+            # Get original scenario
+            query, params = self.queries.get_scenario_for_duplicate(request.scenarioId)
+            original = await self.conn.fetchrow(query, *params)
 
-        original = self.db.execute(
-            select_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
+            if not original:
+                raise ValueError(f"Scenario not found: {request.scenarioId}")
 
-        if not original:
-            raise ValueError(f"Scenario not found: {request.scenarioId}")
+            # Create duplicate with positional params
+            insert_query = self.queries.insert_duplicate_scenario()
+            new_scenario = await self.conn.fetchrow(
+                insert_query,
+                original['name'],
+                original['problem_statement'],
+                original['department_id'],
+            )
 
-        # Create duplicate
-        insert_query = text("""
-        INSERT INTO scenarios (
-            name,
-            problem_statement,
-            department_id,
-            active,
-            default_scenario
-        )
-        VALUES (
-            :name || ' Copy',
-            :problem_statement,
-            :department_id,
-            false,
-            false
-        )
-        RETURNING id
-        """)
+            if not new_scenario:
+                raise ValueError("Failed to create duplicate scenario")
 
-        new_scenario = self.db.execute(
-            insert_query,
-            {
-                "name": original.name,
-                "problem_statement": original.problem_statement,
-                "department_id": original.department_id,
-            },
-        ).fetchone()
+            new_scenario_id = str(new_scenario['id'])
 
-        if not new_scenario:
-            raise ValueError("Failed to create duplicate scenario")
+            # Copy persona relationship
+            copy_persona_query = self.queries.copy_scenario_personas()
+            await self.conn.execute(
+                copy_persona_query,
+                new_scenario_id,
+                request.scenarioId,
+            )
 
-        new_scenario_id = str(new_scenario['id'])
+            # Copy document relationships
+            copy_docs_query = self.queries.copy_scenario_documents()
+            await self.conn.execute(
+                copy_docs_query,
+                new_scenario_id,
+                request.scenarioId,
+            )
 
-        # Copy persona relationship
-        copy_persona_query = text("""
-        INSERT INTO scenario_personas (scenario_id, persona_id, active)
-        SELECT :new_scenario_id, persona_id, active
-        FROM scenario_personas
-        WHERE scenario_id = :original_scenario_id
-        """)
+            # Copy objectives
+            copy_obj_query = self.queries.copy_scenario_objectives()
+            await self.conn.execute(
+                copy_obj_query,
+                new_scenario_id,
+                request.scenarioId,
+            )
 
-        self.db.execute(
-            copy_persona_query,
-            {
-                "new_scenario_id": new_scenario_id,
-                "original_scenario_id": request.scenarioId,
-            },
-        )
+            # Copy parameters
+            copy_params_query = self.queries.copy_scenario_parameters()
+            await self.conn.execute(
+                copy_params_query,
+                new_scenario_id,
+                request.scenarioId,
+            )
 
-        # Copy document relationships
-        copy_docs_query = text("""
-        INSERT INTO scenario_documents (scenario_id, document_id, active)
-        SELECT :new_scenario_id, document_id, active
-        FROM scenario_documents
-        WHERE scenario_id = :original_scenario_id
-        """)
-
-        self.db.execute(
-            copy_docs_query,
-            {
-                "new_scenario_id": new_scenario_id,
-                "original_scenario_id": request.scenarioId,
-            },
-        )
-
-        # Copy objectives
-        copy_obj_query = text("""
-        INSERT INTO scenario_objectives (scenario_id, idx, objective)
-        SELECT :new_scenario_id, idx, objective
-        FROM scenario_objectives
-        WHERE scenario_id = :original_scenario_id
-        """)
-
-        self.db.execute(
-            copy_obj_query,
-            {
-                "new_scenario_id": new_scenario_id,
-                "original_scenario_id": request.scenarioId,
-            },
-        )
-
-        # Copy parameters
-        copy_params_query = text("""
-        INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
-        SELECT :new_scenario_id, parameter_item_id, active
-        FROM scenario_parameter_items
-        WHERE scenario_id = :original_scenario_id
-        """)
-
-        self.db.execute(
-            copy_params_query,
-            {
-                "new_scenario_id": new_scenario_id,
-                "original_scenario_id": request.scenarioId,
-            },
-        )
-
-        # Transaction handled
-
-        return DuplicateScenarioResponse(
-            success=True,
-            scenarioId=new_scenario_id,
-            message=f"Scenario '{original.name}' duplicated successfully",
-        )
+            return DuplicateScenarioResponse(
+                success=True,
+                scenarioId=new_scenario_id,
+                message=f"Scenario '{original['name']}' duplicated successfully",
+            )
 
     async def delete_scenario(
         self, request: DeleteScenarioRequest
     ) -> DeleteScenarioResponse:
-        """Delete a scenario using dynamic SQL."""
+        """Delete a scenario using asyncpg."""
 
-        # Check if in use
-        usage_query = text("""
-        SELECT COUNT(*) as usage_count
-        FROM simulation_scenarios
-        WHERE scenario_id = :scenario_id AND active = true
-        """)
+        async with transaction(self.conn):
+            # Check if in use
+            query, params = self.queries.check_scenario_usage(request.scenarioId)
+            usage = await self.conn.fetchrow(query, *params)
 
-        usage = self.db.execute(
-            usage_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
+            if not usage:
+                raise ValueError("Failed to check scenario usage")
 
-        if not usage:
-            raise ValueError("Failed to check scenario usage")
+            if usage['usage_count'] > 0:
+                raise ValueError("Cannot delete scenario that is in use by simulations")
 
-        if usage.usage_count > 0:
-            raise ValueError("Cannot delete scenario that is in use by simulations")
+            # Get name for response
+            query, params = self.queries.get_scenario_name(request.scenarioId)
+            scenario = await self.conn.fetchrow(query, *params)
 
-        # Get name for response
-        name_query = text("""
-        SELECT name FROM scenarios WHERE id = :scenario_id
-        """)
+            if not scenario:
+                raise ValueError(f"Scenario not found: {request.scenarioId}")
 
-        scenario = self.db.execute(
-            name_query, {"scenario_id": request.scenarioId}
-        ).fetchone()
+            # Delete scenario (cascades will handle junction tables)
+            query, params = self.queries.delete_scenario(request.scenarioId)
+            await self.conn.execute(query, *params)
 
-        if not scenario:
-            raise ValueError(f"Scenario not found: {request.scenarioId}")
-
-        # Delete scenario (cascades will handle junction tables)
-        delete_query = text("""
-        DELETE FROM scenarios WHERE id = :scenario_id
-        """)
-
-        self.db.execute(delete_query, {"scenario_id": request.scenarioId})
-        # Transaction handled
-
-        return DeleteScenarioResponse(
-            success=True, message=f"Scenario '{scenario['name']}' deleted successfully"
-        )
+            return DeleteScenarioResponse(
+                success=True, message=f"Scenario '{scenario['name']}' deleted successfully"
+            )
 
     # AI Generation and Randomization Methods
     async def generate_scenario_ai(

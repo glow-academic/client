@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.simulation_queries import SimulationQueries
 from app.schemas.base import (DepartmentMappingItem, ParameterItemMapping,
                               ParameterItemMappingItem, ParameterMapping,
@@ -23,8 +25,6 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
 from app.services.scenario_service import ScenarioService
-import asyncpg  # type: ignore
-from app.db import transaction
 
 
 class SimulationService:
@@ -50,28 +50,28 @@ class SimulationService:
 
         # Build response
         simulations = []
-        scenario_mapping = {}
+        scenario_mapping: Dict[str, ScenarioMappingItem] = {}
         rubric_mapping: RubricMapping = {}
 
         for row in result:
             # Convert UUID arrays to string arrays
-            scenario_ids = [str(sid) for sid in (row.scenario_ids or [])]
+            scenario_ids = [str(sid) for sid in (row['scenario_ids'] or [])]
 
             simulations.append(
                 SimulationItem(
                     simulation_id=str(row['simulation_id']),
                     name=row['name'],
-                    description=row.description,
-                    time_limit=row.time_limit,
-                    active=row.active,
-                    default_simulation=row.default_simulation,
-                    practice_simulation=row.practice_simulation,
-                    can_edit=row.can_edit,
-                    can_delete=row.can_delete,
-                    can_duplicate=row.can_duplicate,
-                    num_scenarios=row.num_scenarios,
+                    description=row['description'],
+                    time_limit=row['time_limit'],
+                    active=row['active'],
+                    default_simulation=row['default_simulation'],
+                    practice_simulation=row['practice_simulation'],
+                    can_edit=row['can_edit'],
+                    can_delete=row['can_delete'],
+                    can_duplicate=row['can_duplicate'],
+                    num_scenarios=row['num_scenarios'],
                     scenario_ids=scenario_ids,
-                    rubric_id=str(row.rubric_id),
+                    rubric_id=str(row['rubric_id']),
                 )
             )
 
@@ -93,7 +93,7 @@ class SimulationService:
             for row in rubric_result:
                 rubric_mapping[str(row['id'])] = RubricMappingItem(
                     name=row['name'],
-                    description=row.description
+                    description=row['description']
                 )
 
         return SimulationsListResponse(
@@ -115,20 +115,22 @@ class SimulationService:
             raise ValueError(f"Simulation not found: {request.simulationId}")
 
         # Get user profile for permission checks
-        query = "SELECT role FROM profiles WHERE id = :profile_id"
-        profile = await self.conn.execute(query, {"profile_id": request.profileId}).fetchone()
-        user_role = profile.role if profile else 'trainee'
+        profile_row = await self.conn.fetchrow(
+            "SELECT role FROM profiles WHERE id = $1",
+            request.profileId
+        )
+        user_role = profile_row['role'] if profile_row else 'trainee'
 
         # Check if simulation is in use (linked to cohorts)
-        query = """
-        SELECT COUNT(*) as cohort_count
-        FROM cohort_simulations
-        WHERE simulation_id = :simulation_id
-        """
-        cohort_usage = self.db.execute(
-            text(query), {"simulation_id": request.simulationId}
-        ).fetchone()
-        cohort_count = cohort_usage.cohort_count if cohort_usage else 0
+        cohort_usage = await self.conn.fetchrow(
+            """
+            SELECT COUNT(*) as cohort_count
+            FROM cohort_simulations
+            WHERE simulation_id = $1
+            """,
+            request.simulationId
+        )
+        cohort_count = cohort_usage['cohort_count'] if cohort_usage else 0
         in_use = cohort_count > 0
 
         # Compute permissions
@@ -207,7 +209,7 @@ class SimulationService:
         rubrics_result = await self.conn.fetch(query, *params)
         valid_rubric_ids = [str(row['id']) for row in rubrics_result]
         rubric_mapping = {
-            str(row['id']): RubricMappingItem(name=row['name'], description=row.description)
+            str(row['id']): RubricMappingItem(name=row['name'], description=row['description'])
             for row in rubrics_result
         }
 
@@ -217,7 +219,7 @@ class SimulationService:
         # Get department mapping
         department_mapping = {
             str(row['id']): DepartmentMappingItem(
-                name=row['name'], description=row.description or ''
+                name=row['name'], description=row['description'] or ''
             )
             for row in dept_result
         }
@@ -238,7 +240,7 @@ class SimulationService:
         for row in params_result:
             parameter_mapping[str(row['id'])] = ParameterMappingItem(
                 name=row['name'],
-                description=row.description
+                description=row['description']
             )
 
         # Get parameter items for valid departments
@@ -260,7 +262,7 @@ class SimulationService:
                 ParameterItemDetail(
                     id=str(row['id']),
                     name=row['name'],
-                    description=row.description if row.description else None,
+                    description=row['description'] if row['description'] else None,
                     parameter_id=str(row.parameter_id)
                 )
             )
@@ -269,7 +271,7 @@ class SimulationService:
                     id=str(row['id']),
                     parameter_id=str(row.parameter_id),
                     name=row['name'],
-                    description=row.description if row.description else None
+                    description=row['description'] if row['description'] else None
                 )
             )
             # Get parameter name for the mapping
@@ -279,7 +281,7 @@ class SimulationService:
             )
             parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
                 name=row['name'],
-                description=row.description,
+                description=row['description'],
                 parameter_id=str(row.parameter_id),
                 parameter_name=param_name
             )
@@ -345,179 +347,171 @@ class SimulationService:
     async def create_simulation(
         self, request: CreateSimulationRequest
     ) -> CreateSimulationResponse:
-        """Create a new simulation using dynamic SQL."""
+        """Create a new simulation using asyncpg."""
 
-        query, _ = self.queries.create_simulation()
-        result = self.db.execute(
-            text(query),
-            {
-                "title": request.title,
-                "description": request.description,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_simulation": request.default_simulation,
-                "practice_simulation": request.practice_simulation,
-                "hints_enabled": request.hints_enabled,
-                "input_guardrail_active": request.input_guardrail_active,
-                "output_guardrail_active": request.output_guardrail_active,
-                "image_input_active": request.image_input_active,
-                "time_limit": request.time_limit,
-                "rubric_id": request.rubric_id,
-            },
-        ).fetchone()
-
-        if not result:
-            raise ValueError("Failed to create simulation")
-
-        simulation_id = str(result['id'])
-
-        # Insert scenario relationships
-        insert_query, _ = self.queries.insert_simulation_scenario()
-        for scenario_id in request.scenario_ids:
-            self.db.execute(
-                text(insert_query),
-                {"simulation_id": simulation_id, "scenario_id": scenario_id},
+        async with transaction(self.conn):
+            # Create simulation with positional params
+            query = self.queries.create_simulation()
+            result = await self.conn.fetchrow(
+                query,
+                request.title,
+                request.description,
+                request.department_id,
+                request.active,
+                request.default_simulation,
+                request.practice_simulation,
+                request.hints_enabled,
+                request.input_guardrail_active,
+                request.output_guardrail_active,
+                request.image_input_active,
+                request.time_limit,
+                request.rubric_id,
             )
 
-        # Transaction handled
+            if not result:
+                raise ValueError("Failed to create simulation")
 
-        return CreateSimulationResponse(
-            success=True,
-            simulationId=simulation_id,
-            message=f"Simulation '{request.title}' created successfully",
-        )
+            simulation_id = str(result['id'])
+
+            # Insert scenario relationships
+            insert_query = self.queries.insert_simulation_scenario()
+            for scenario_id in request.scenario_ids:
+                await self.conn.execute(
+                    insert_query,
+                    simulation_id,
+                    scenario_id,
+                )
+
+            return CreateSimulationResponse(
+                success=True,
+                simulationId=simulation_id,
+                message=f"Simulation '{request.title}' created successfully",
+            )
 
     async def update_simulation(
         self, request: UpdateSimulationRequest
     ) -> UpdateSimulationResponse:
-        """Update an existing simulation using dynamic SQL."""
+        """Update an existing simulation using asyncpg."""
 
-        # Check if simulation exists
-        query, params = self.queries.get_simulation_name(request.simulationId)
-        existing = await self.conn.fetchrow(query, *params)
+        async with transaction(self.conn):
+            # Check if simulation exists
+            query, params = self.queries.get_simulation_name(request.simulationId)
+            existing = await self.conn.fetchrow(query, *params)
 
-        if not existing:
-            raise ValueError(f"Simulation not found: {request.simulationId}")
+            if not existing:
+                raise ValueError(f"Simulation not found: {request.simulationId}")
 
-        # Update simulation
-        query, _ = self.queries.update_simulation()
-        self.db.execute(
-            text(query),
-            {
-                "simulation_id": request.simulationId,
-                "title": request.title,
-                "description": request.description,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_simulation": request.default_simulation,
-                "practice_simulation": request.practice_simulation,
-                "hints_enabled": request.hints_enabled,
-                "input_guardrail_active": request.input_guardrail_active,
-                "output_guardrail_active": request.output_guardrail_active,
-                "image_input_active": request.image_input_active,
-                "time_limit": request.time_limit,
-                "rubric_id": request.rubric_id,
-            },
-        )
-
-        # Delete existing scenarios
-        query, params = self.queries.delete_simulation_scenarios(request.simulationId)
-        await self.conn.execute(query, params)
-
-        # Insert new scenario relationships
-        insert_query, _ = self.queries.insert_simulation_scenario()
-        for scenario_id in request.scenario_ids:
-            self.db.execute(
-                text(insert_query),
-                {"simulation_id": request.simulationId, "scenario_id": scenario_id},
+            # Update simulation with positional params
+            query = self.queries.update_simulation()
+            await self.conn.execute(
+                query,
+                request.title,
+                request.description,
+                request.department_id,
+                request.active,
+                request.default_simulation,
+                request.practice_simulation,
+                request.hints_enabled,
+                request.input_guardrail_active,
+                request.output_guardrail_active,
+                request.image_input_active,
+                request.time_limit,
+                request.rubric_id,
+                request.simulationId,
             )
 
-        # Transaction handled
+            # Delete existing scenarios
+            query, params = self.queries.delete_simulation_scenarios(request.simulationId)
+            await self.conn.execute(query, *params)
 
-        return UpdateSimulationResponse(
-            success=True, message=f"Simulation '{request.title}' updated successfully"
-        )
+            # Insert new scenario relationships
+            insert_query = self.queries.insert_simulation_scenario()
+            for scenario_id in request.scenario_ids:
+                await self.conn.execute(
+                    insert_query,
+                    request.simulationId,
+                    scenario_id,
+                )
 
-    def duplicate_simulation(
+            return UpdateSimulationResponse(
+                success=True, message=f"Simulation '{request.title}' updated successfully"
+            )
+
+    async def duplicate_simulation(
         self, request: DuplicateSimulationRequest
     ) -> DuplicateSimulationResponse:
-        """Duplicate a simulation using dynamic SQL."""
+        """Duplicate a simulation using asyncpg."""
 
-        # Get original simulation data
-        query, params = self.queries.get_simulation_for_duplicate(
-            request.simulationId
-        )
-        result = await self.conn.fetchrow(query, *params)
+        async with transaction(self.conn):
+            # Get original simulation data
+            query, params = self.queries.get_simulation_for_duplicate(
+                request.simulationId
+            )
+            result = await self.conn.fetchrow(query, *params)
 
-        if not result:
-            raise ValueError(f"Simulation not found: {request.simulationId}")
+            if not result:
+                raise ValueError(f"Simulation not found: {request.simulationId}")
 
-        # Insert duplicate
-        duplicate_query, _ = self.queries.insert_duplicate_simulation()
-        new_simulation = self.db.execute(
-            text(duplicate_query),
-            {
-                "title": result.title,
-                "description": result.description,
-                "department_id": result.department_id,
-                "hints_enabled": result.hints_enabled,
-                "input_guardrail_active": result.input_guardrail_active,
-                "output_guardrail_active": result.output_guardrail_active,
-                "image_input_active": result.image_input_active,
-                "time_limit": result.time_limit,
-                "rubric_id": result.rubric_id,
-            },
-        ).fetchone()
+            # Insert duplicate with positional params
+            duplicate_query = self.queries.insert_duplicate_simulation()
+            new_simulation = await self.conn.fetchrow(
+                duplicate_query,
+                result['title'],
+                result['description'],
+                result['department_id'],
+                result['hints_enabled'],
+                result['input_guardrail_active'],
+                result['output_guardrail_active'],
+                result['image_input_active'],
+                result['time_limit'],
+                result['rubric_id'],
+            )
 
-        if not new_simulation:
-            raise ValueError("Failed to create duplicate simulation")
+            if not new_simulation:
+                raise ValueError("Failed to create duplicate simulation")
 
-        # Copy simulation_scenarios relationships
-        copy_query, _ = self.queries.copy_simulation_scenarios()
-        self.db.execute(
-            text(copy_query),
-            {
-                "new_simulation_id": new_simulation['id'],
-                "original_simulation_id": request.simulationId,
-            },
-        )
+            # Copy simulation_scenarios relationships
+            copy_query = self.queries.copy_simulation_scenarios()
+            await self.conn.execute(
+                copy_query,
+                new_simulation['id'],
+                request.simulationId,
+            )
 
-        # Transaction handled
-
-        return DuplicateSimulationResponse(
-            success=True,
-            simulationId=str(new_simulation['id']),
-            message=f"Simulation '{result.title}' duplicated successfully",
-        )
+            return DuplicateSimulationResponse(
+                success=True,
+                simulationId=str(new_simulation['id']),
+                message=f"Simulation '{result['title']}' duplicated successfully",
+            )
 
     async def delete_simulation(
         self, request: DeleteSimulationRequest
     ) -> DeleteSimulationResponse:
-        """Delete a simulation using dynamic SQL."""
+        """Delete a simulation using asyncpg."""
 
-        # Check if simulation is in use
-        query, params = self.queries.check_simulation_usage(request.simulationId)
-        usage = await self.conn.fetchrow(query, *params)
+        async with transaction(self.conn):
+            # Check if simulation is in use
+            query, params = self.queries.check_simulation_usage(request.simulationId)
+            usage = await self.conn.fetchrow(query, *params)
 
-        if not usage:
-            raise ValueError("Failed to check simulation usage")
+            if not usage:
+                raise ValueError("Failed to check simulation usage")
 
-        if usage.usage_count > 0:
-            raise ValueError("Cannot delete simulation that has attempts")
+            if usage['usage_count'] > 0:
+                raise ValueError("Cannot delete simulation that has attempts")
 
-        # Get simulation name
-        query, params = self.queries.get_simulation_name(request.simulationId)
-        simulation = await self.conn.fetchrow(query, *params)
+            # Get simulation name
+            query, params = self.queries.get_simulation_name(request.simulationId)
+            simulation = await self.conn.fetchrow(query, *params)
 
-        if not simulation:
-            raise ValueError(f"Simulation not found: {request.simulationId}")
+            if not simulation:
+                raise ValueError(f"Simulation not found: {request.simulationId}")
 
-        # Delete simulation
-        query, params = self.queries.delete_simulation(request.simulationId)
-        await self.conn.execute(query, params)
-        # Transaction handled
+            # Delete simulation
+            query, params = self.queries.delete_simulation(request.simulationId)
+            await self.conn.execute(query, *params)
 
-        return DeleteSimulationResponse(
-            success=True, message=f"Simulation '{simulation.title}' deleted successfully"
-        )
+            return DeleteSimulationResponse(
+                success=True, message=f"Simulation '{simulation['title']}' deleted successfully"
+            )
 

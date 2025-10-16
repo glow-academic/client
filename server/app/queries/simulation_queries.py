@@ -1,6 +1,6 @@
 """Simulation queries - SQL query builders."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 
 class SimulationQueries:
@@ -8,7 +8,7 @@ class SimulationQueries:
 
     def list_simulations(
         self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for simulations list with permissions."""
         query = """
         WITH simulation_scenarios AS (
@@ -44,10 +44,10 @@ class SimulationQueries:
             FROM simulations s
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
-            WHERE s.department_id = ANY(:department_ids)
+            WHERE s.department_id = ANY($1)
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+            SELECT role FROM profiles WHERE id = $2
         )
         SELECT 
             sd.*,
@@ -65,28 +65,25 @@ class SimulationQueries:
         ORDER BY sd.name
         """
 
-        params = {"department_ids": department_ids, "profile_id": profile_id}
-        return (query, params)
+        return (query, [department_ids, profile_id])
 
     def get_scenario_mapping(
         self, scenario_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for scenario mapping."""
-        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY(:scenario_ids)"
-        params = {"scenario_ids": scenario_ids}
-        return (query, params)
+        query = "SELECT id, name, problem_statement FROM scenarios WHERE id = ANY($1)"
+        return (query, [scenario_ids])
 
     def get_rubric_mapping(
         self, rubric_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for rubric mapping."""
-        query = "SELECT id, name, COALESCE(description, '') as description FROM rubrics WHERE id = ANY(:rubric_ids)"
-        params = {"rubric_ids": rubric_ids}
-        return (query, params)
+        query = "SELECT id, name, COALESCE(description, '') as description FROM rubrics WHERE id = ANY($1)"
+        return (query, [rubric_ids])
 
     def get_simulation_by_id(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get simulation by ID."""
         query = """
         SELECT 
@@ -103,30 +100,28 @@ class SimulationQueries:
             time_limit,
             rubric_id
         FROM simulations
-        WHERE id = :simulation_id
+        WHERE id = $1
         """
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        return (query, [simulation_id])
 
     def get_simulation_scenarios(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get simulation's scenarios."""
         query = """
         SELECT scenario_id FROM simulation_scenarios 
-        WHERE simulation_id = :simulation_id AND active = true
+        WHERE simulation_id = $1 AND active = true
         """
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        return (query, [simulation_id])
 
     def get_valid_scenarios(
         self, dept_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid scenarios - only returns root/parent scenarios."""
         query = """
         SELECT s.id 
         FROM scenarios s
-        WHERE s.department_id = ANY(:dept_ids) 
+        WHERE s.department_id = ANY($1) 
           AND s.active = true
           AND (
             -- Either not in tree at all (standalone)
@@ -142,44 +137,41 @@ class SimulationQueries:
           )
         ORDER BY s.name
         """
-        params = {"dept_ids": dept_ids}
-        return (query, params)
+        return (query, [dept_ids])
 
     def get_valid_rubrics(
         self, dept_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid rubrics."""
         query = """
         SELECT id, name, COALESCE(description, '') as description FROM rubrics 
-        WHERE department_id = ANY(:dept_ids) AND active = true
+        WHERE department_id = ANY($1) AND active = true
         ORDER BY name
         """
-        params = {"dept_ids": dept_ids}
-        return (query, params)
+        return (query, [dept_ids])
 
     def get_valid_departments_for_profile(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid departments."""
         query = """
         SELECT DISTINCT d.id, d.title as name, d.description
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = :profile_id AND d.active = true
+        WHERE pd.profile_id = $1 AND d.active = true
         ORDER BY d.title
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def get_default_simulation(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for default simulation."""
         query = """
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
-            WHERE pd.profile_id = :profile_id
+            WHERE pd.profile_id = $1
         ),
         user_simulations AS (
             SELECT s.*
@@ -192,12 +184,16 @@ class SimulationQueries:
         SELECT id
         FROM user_simulations
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def create_simulation(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to create simulation."""
-        query = """
+    def create_simulation(self) -> str:
+        """Build query to create simulation.
+        
+        Params order: title, description, department_id, active, default_simulation, 
+        practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
+        image_input_active, time_limit, rubric_id
+        """
+        return """
         INSERT INTO simulations (
             title,
             description,
@@ -212,77 +208,64 @@ class SimulationQueries:
             time_limit,
             rubric_id
         )
-        VALUES (
-            :title,
-            :description,
-            :department_id,
-            :active,
-            :default_simulation,
-            :practice_simulation,
-            :hints_enabled,
-            :input_guardrail_active,
-            :output_guardrail_active,
-            :image_input_active,
-            :time_limit,
-            :rubric_id
-        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def insert_simulation_scenario(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert simulation scenario."""
-        query = """
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
-        VALUES (:simulation_id, :scenario_id, true)
+    def insert_simulation_scenario(self) -> str:
+        """Build query to insert simulation scenario.
+        
+        Params order: simulation_id, scenario_id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return """
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
+        VALUES ($1, $2, true)
+        """
 
     def get_simulation_name(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get simulation name."""
-        query = "SELECT title FROM simulations WHERE id = :simulation_id"
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        query = "SELECT title FROM simulations WHERE id = $1"
+        return (query, [simulation_id])
 
-    def update_simulation(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to update simulation."""
-        query = """
-        UPDATE simulations SET
-            title = :title,
-            description = :description,
-            department_id = :department_id,
-            active = :active,
-            default_simulation = :default_simulation,
-            practice_simulation = :practice_simulation,
-            hints_enabled = :hints_enabled,
-            input_guardrail_active = :input_guardrail_active,
-            output_guardrail_active = :output_guardrail_active,
-            image_input_active = :image_input_active,
-            time_limit = :time_limit,
-            rubric_id = :rubric_id,
-            updated_at = NOW()
-        WHERE id = :simulation_id
+    def update_simulation(self) -> str:
+        """Build query to update simulation.
+        
+        Params order: title, description, department_id, active, default_simulation,
+        practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
+        image_input_active, time_limit, rubric_id, simulation_id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return """
+        UPDATE simulations SET
+            title = $1,
+            description = $2,
+            department_id = $3,
+            active = $4,
+            default_simulation = $5,
+            practice_simulation = $6,
+            hints_enabled = $7,
+            input_guardrail_active = $8,
+            output_guardrail_active = $9,
+            image_input_active = $10,
+            time_limit = $11,
+            rubric_id = $12,
+            updated_at = NOW()
+        WHERE id = $13
+        """
 
     def delete_simulation_scenarios(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete simulation scenarios."""
         query = """
-        DELETE FROM simulation_scenarios WHERE simulation_id = :simulation_id
+        DELETE FROM simulation_scenarios WHERE simulation_id = $1
         """
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        return (query, [simulation_id])
 
     def get_simulation_for_duplicate(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get simulation data for duplication."""
         query = """
         SELECT 
@@ -296,14 +279,17 @@ class SimulationQueries:
             time_limit,
             rubric_id
         FROM simulations
-        WHERE id = :simulation_id
+        WHERE id = $1
         """
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        return (query, [simulation_id])
 
-    def insert_duplicate_simulation(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert duplicate simulation."""
-        query = """
+    def insert_duplicate_simulation(self) -> str:
+        """Build query to insert duplicate simulation.
+        
+        Params order: title, description, department_id, hints_enabled, input_guardrail_active,
+        output_guardrail_active, image_input_active, time_limit, rubric_id
+        """
+        return """
         INSERT INTO simulations (
             title,
             description,
@@ -319,54 +305,51 @@ class SimulationQueries:
             rubric_id
         )
         VALUES (
-            :title || ' Copy',
-            :description,
-            :department_id,
+            $1 || ' Copy',
+            $2,
+            $3,
             false,
             false,
             false,
-            :hints_enabled,
-            :input_guardrail_active,
-            :output_guardrail_active,
-            :image_input_active,
-            :time_limit,
-            :rubric_id
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def copy_simulation_scenarios(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to copy simulation scenarios."""
-        query = """
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
-        SELECT :new_simulation_id, scenario_id, active
-        FROM simulation_scenarios
-        WHERE simulation_id = :original_simulation_id
+    def copy_simulation_scenarios(self) -> str:
+        """Build query to copy simulation scenarios.
+        
+        Params order: new_simulation_id, original_simulation_id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return """
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active)
+        SELECT $1, scenario_id, active
+        FROM simulation_scenarios
+        WHERE simulation_id = $2
+        """
 
     def check_simulation_usage(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to check simulation usage."""
         query = """
         SELECT COUNT(*) as usage_count
         FROM simulation_attempts
-        WHERE simulation_id = :simulation_id
+        WHERE simulation_id = $1
         """
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        return (query, [simulation_id])
 
     def delete_simulation(
         self, simulation_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete simulation."""
-        query = "DELETE FROM simulations WHERE id = :simulation_id"
-        params = {"simulation_id": simulation_id}
-        return (query, params)
+        query = "DELETE FROM simulations WHERE id = $1"
+        return (query, [simulation_id])
 
 
 def get_attempt_full_data(db: Any, attempt_id: Any) -> dict[str, Any]:

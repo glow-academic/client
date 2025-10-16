@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
 from app.repositories.scenario_repository import get_scenario_repository
 from app.schemas.scenarios import (CreateScenarioRequest,
@@ -21,7 +22,6 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -141,7 +141,7 @@ async def generate_scenario_ai(
     """Generate AI scenario content (title, description, objectives)."""
     try:
         repo = get_scenario_repository(conn)
-        return await await repo.generate_scenario_ai(request)
+        return await repo.generate_scenario_ai(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

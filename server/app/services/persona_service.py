@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.persona_queries import PersonaQueries
 from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
                               ScenarioMappingItem)
@@ -16,8 +18,6 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
 from app.services.scenario_service import ScenarioService
-import asyncpg  # type: ignore
-from app.db import transaction
 
 
 class PersonaService:
@@ -99,27 +99,23 @@ class PersonaService:
         if not result:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Insert duplicate
-        duplicate_query, _ = self.queries.insert_duplicate_persona()
-        new_persona = self.db.execute(
-            text(duplicate_query),
-            {
-                "name": result['name'],
-                "description": result.description,
-                "system_prompt": result.system_prompt,
-                "temperature": result.temperature,
-                "reasoning": result.reasoning,
-                "model_id": result.model_id,
-                "department_id": result.department_id,
-                "color": result.color,
-                "icon": result.icon,
-            },
-        ).fetchone()
+        # Insert duplicate with positional params
+        duplicate_query = self.queries.insert_duplicate_persona()
+        new_persona = await self.conn.fetchrow(
+            duplicate_query,
+            result['name'],
+            result['description'],
+            result['system_prompt'],
+            result['temperature'],
+            result['reasoning'],
+            result['model_id'],
+            result['department_id'],
+            result['color'],
+            result['icon'],
+        )
 
         if not new_persona:
             raise ValueError("Failed to create duplicate persona")
-
-        # Transaction handled
 
         return DuplicatePersonaResponse(
             success=True,
@@ -149,8 +145,7 @@ class PersonaService:
 
         # Delete persona
         query, params = self.queries.delete_persona(request.personaId)
-        self.db.execute(text(query), params)
-        # Transaction handled
+        await self.conn.execute(query, *params)
 
         return DeletePersonaResponse(
             success=True, message=f"Persona '{persona['name']}' deleted successfully"
@@ -351,28 +346,24 @@ class PersonaService:
     async def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
 
-        query, _ = self.queries.create_persona()
-        result = self.db.execute(
-            text(query),
-            {
-                "name": request.name,
-                "description": request.description,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_persona": request.default_persona,
-                "color": request.color,
-                "icon": request.icon,
-                "model_id": request.model_id,
-                "reasoning": request.reasoning,
-                "temperature": request.temperature,
-                "system_prompt": request.system_prompt,
-            },
-        ).fetchone()
+        query = self.queries.create_persona()
+        result = await self.conn.fetchrow(
+            query,
+            request.name,
+            request.description,
+            request.department_id,
+            request.active,
+            request.default_persona,
+            request.color,
+            request.icon,
+            request.model_id,
+            request.reasoning,
+            request.temperature,
+            request.system_prompt,
+        )
 
         if not result:
             raise ValueError("Failed to create persona")
-
-        # Transaction handled
 
         return CreatePersonaResponse(
             success=True,
@@ -391,26 +382,22 @@ class PersonaService:
             raise ValueError(f"Persona not found: {request.personaId}")
 
         # Update persona
-        query, _ = self.queries.update_persona()
-        self.db.execute(
-            text(query),
-            {
-                "persona_id": request.personaId,
-                "name": request.name,
-                "description": request.description,
-                "department_id": request.department_id,
-                "active": request.active,
-                "default_persona": request.default_persona,
-                "color": request.color,
-                "icon": request.icon,
-                "model_id": request.model_id,
-                "reasoning": request.reasoning,
-                "temperature": request.temperature,
-                "system_prompt": request.system_prompt,
-            },
+        query = self.queries.update_persona()
+        await self.conn.execute(
+            query,
+            request.personaId,
+            request.name,
+            request.description,
+            request.department_id,
+            request.active,
+            request.default_persona,
+            request.color,
+            request.icon,
+            request.model_id,
+            request.reasoning,
+            request.temperature,
+            request.system_prompt,
         )
-
-        # Transaction handled
 
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"

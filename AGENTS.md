@@ -2,211 +2,264 @@
 
 ## Dev Environment Tips
 
-This monorepo uses a Makefile as the primary entrypoint for dev tasks across client, server, and database.
-
-The easiest way to start everything is:
+This is a monorepo with a client, database, and server. The easiest way to start everything is:
 
 ```bash
-make dev
+bash run.sh
 ```
-This will:
-1. **Check and install all dependencies** (PostgreSQL, coturn, node, Python)
-2. **Start the TURN/STUN server** (coturn, for WebRTC)
-3. **Start the database** (with backup restore or clean init)
-4. **Launch client and server** in parallel
-5. **Display readiness status and URLs**
 
-### Quick Start Targets
+This will automatically:
+1. **Check and install dependencies** (PostgreSQL, coturn, Node.js packages, Python packages)
+2. **Start the TURN/STUN server** (coturn) for WebRTC connectivity
+3. **Start the database** (from latest backup)
+4. **Start the client and server** in parallel  
+5. **Show you when everything is ready**
 
-- `make dev` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Start all services (interactive mode)
-- `make dev-clean` &nbsp;: Start with fresh database (creates backup first)
-- `make test` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Run all test suites after startup
-- `make detach` &nbsp;&nbsp;&nbsp;&nbsp;: Start services in background, exit shell
-- `make dev-no-turn`: Start without TURN/STUN server
-- `make help` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: Show Makefile help/usage
+**Zero-setup experience**: Just run `bash run.sh` and everything will be installed and configured automatically.
 
-**For AI agents/automation**, use `make detach` for non-blocking startup.
+### Quick Start Options
 
----
+```bash
+bash run.sh                # Start all services (interactive mode)
+bash run.sh --clean        # Start with fresh database (creates backup first)
+bash run.sh --test         # Run all test suites after startup
+bash run.sh --detach       # Start services in background, script exits
+bash run.sh --no-turn      # Skip TURN/STUN server startup
+bash run.sh --clean --test # Clean start + run tests
+bash run.sh --help         # Show help message
+```
+
+**For AI agents/automation**, use `--detach` to avoid blocking the terminal:
+```bash
+bash run.sh --detach       # Services run in background, terminal is freed
+```
 
 ## Manual Setup (Advanced)
 
-If you wish to control the full stack manually or manage dependencies yourself, see below.
+If you need to start services individually or install dependencies manually:
 
-### Prerequisites (auto-managed by `make dev`)
-- **PostgreSQL**
-- **coturn** (TURN/STUN server for WebRTC)
-- **Node.js** and Yarn (for client)
-- **Python + uv** (for server)
+### Prerequisites (Auto-installed by `run.sh`)
+- **PostgreSQL** (auto-installed via brew/apt/yum)
+- **coturn** (TURN/STUN server for WebRTC, auto-installed via brew/apt/yum or Docker)
+- **Node.js and Yarn** for the client (dependencies auto-installed)
+- **Python and uv** for the server (dependencies auto-installed)
 
-### Install Only
-
+### Manual Dependency Installation
 ```bash
-make client-install     # installs yarn deps in client/
-make server-sync        # installs Python deps in server/
-make db-install         # installs yarn deps in database/
-```
-_You can also run individual package managers as before if preferred._
+# Client dependencies
+cd client && yarn install
 
-### Start Individual Services
+# Server dependencies  
+cd server && make sync
+# or: uv pip install -r requirements.txt
+# or: pip install -r requirements.txt
 
-```bash
-make db                # Database (from latest backup)
-make db-clean          # Wipe DB (auto-backup), clean start
-make client            # Client dev server (Next.js)
-make server            # Start API server (FastAPI)
+# Database dependencies
+cd database && yarn install
 ```
 
----
+### Manual Service Startup
+```bash
+# Database
+cd database && yarn start          # Start with latest backup
+cd database && yarn start --clean  # Clean start (backup first)
+
+# Client
+cd client && yarn dev
+
+# Server
+cd server && make run
+```
 
 ## WebRTC & TURN Server
 
-TURN/STUN server is **started automatically** on `make dev`. For management:
+The application includes WebRTC functionality for real-time audio streaming. A TURN/STUN server (coturn) is automatically started for reliable connectivity.
 
+### TURN Server Management
+
+**Automatic Setup** (recommended):
 ```bash
-make turn            # Start TURN server
-make turn-stop       # Stop TURN server
-make turn-status     # Check TURN server status
-make turn-test       # Test connectivity
+bash run.sh                    # Starts TURN server automatically
+bash run.sh --no-turn          # Skip TURN server startup
+```
+
+**Manual TURN Server Setup**:
+```bash
+bash realtime/setup.sh          # Setup and start TURN server
+bash realtime/setup.sh status   # Check TURN server status
+bash realtime/setup.sh stop     # Stop TURN server
+bash realtime/setup.sh test     # Test TURN server connectivity
 ```
 
 **Docker TURN Server** (alternative):
-
 ```bash
-docker compose up realtime -d      # Start TURN in Docker
-docker compose logs realtime
+docker compose up realtime -d      # Start TURN server in Docker
+docker compose logs realtime       # Check TURN server logs
 ```
 
-### TURN Environment
+### Environment Variables
 
-The TURN server expects (auto-managed):
+The TURN server requires these environment variables (auto-configured):
 
 ```bash
-export TURN_PUBLIC_IP="your.public.ip"
-export TURN_REALM="example.com"
-export TURN_USERNAME="webrtc"
-export TURN_PASS="auto_generated"
+export TURN_PUBLIC_IP="your.public.ip"    # Auto-detected
+export TURN_REALM="example.com"           # Default realm
+export TURN_USERNAME="webrtc"             # Default username
+export TURN_PASS="generated_password"     # Auto-generated
 ```
 
----
+### WebRTC Testing
 
-## WebRTC Testing
-
+**Test TURN Server Connectivity**:
 ```bash
-make turn-test
-cd client && node scripts/test-webrtc-turn.js     # Manual
-```
-Or use the UI:  
-1. Start: `make dev`
-2. Open http://localhost:3000  
-3. Test audio in a simulation.
-
----
-
-### Troubleshooting
-
-- **Slow audio?** TURN server may not be running.
-- **Connection failed?** Check firewalls (UDP 3478, 49160-49200)
-- **No audio?** Microphone permissions or browser settings.
-
-Useful debug:
-
-```bash
-make turn-status
 cd client && node scripts/test-webrtc-turn.js
+```
+
+**Test WebRTC in Browser**:
+1. Start services: `bash run.sh`
+2. Open http://localhost:3000
+3. Navigate to a simulation with audio features
+4. Test microphone functionality
+
+### Troubleshooting WebRTC
+
+**Common Issues:**
+- **Slow audio startup**: Ensure TURN server is running and accessible
+- **Connection failures**: Check firewall allows UDP traffic on ports 3478 and 49160-49200
+- **No audio detected**: Verify microphone permissions in browser
+
+**Debug Commands:**
+```bash
+# Check TURN server status
+bash realtime/setup.sh status
+
+# Test connectivity
+cd client && node scripts/test-webrtc-turn.js
+
+# Check server logs for WebRTC errors
 cd server && tail -f logs/server.log | grep -i webrtc
 ```
 
----
+**Network Requirements:**
+- Port 3478 (UDP/TCP): STUN/TURN server
+- Ports 49160-49200 (UDP): TURN relay ports
 
 ## Testing Instructions
 
-**All Tests** (Recommended):
-
+### All Tests (Recommended)
 ```bash
-make test         # All services + all tests
-make detach-test  # Detached mode, run all tests (for CI/agents)
+bash run.sh --test                    # Interactive mode with tests
+bash run.sh --detach --test           # Detached mode with tests (for automation)
 ```
 
-**Individual Suites**
+### Individual Test Suites
 
-- Client unit: `make client-test`
-- Server unit: `make server-test`
-- Database E2E (Cypress): `make db-test`
-
-**Docker E2E**:
-
+**Client Unit Tests** (vitest):
 ```bash
+cd client && yarn test
+```
+
+**Server Unit Tests** (pytest):
+```bash
+cd server && make test
+```
+
+**Database E2E Tests** (Cypress):
+```bash
+cd database && yarn test
+# Note: All services must be running first
+# Tests database operations end-to-end via API calls
+```
+
+### Docker E2E Testing
+```bash
+# Start all services and run E2E tests in containers
 docker compose --profile test up --build
-# Or run only
-docker compose --profile test up testing
-```
 
----
+# Or run tests against already running services
+docker compose --profile dev up -d        # Start dev services
+docker compose --profile test up testing  # Run E2E tests only
+```
 
 ## Database Migrations
 
-Behavior matches `make db` (default: restore from backup; clean: full wipe).
+Database behavior follows the same logic as `yarn start` in the database folder:
 
-**Migrate:**
+- **Default**: Restores from latest backup (no automatic migrations)
+- **Clean mode**: Creates backup first, then starts fresh from `init.sql`
+
+### Manual Migration Commands
+
 ```bash
-make db-generate    # Generate SQL migration files (from schema)
-make db-migrate     # Apply pending migrations
-make db-studio      # Open Drizzle Studio UI
-make db             # Launch DB as usual
+cd database && yarn generate    # Generate migrations from schema changes
+cd database && yarn migrate     # Apply pending migrations  
+cd database && yarn studio      # Open Drizzle Studio
+cd database && yarn start       # Start with latest backup
+cd database && yarn start --clean  # Clean start (backup first)
 ```
 
-**Migration Workflow:**
-1. Edit `client/drizzle/schema.ts`
-2. `make db-generate`
-3. Review `database/drizzle/`
-4. `make db-migrate`
-5. Restart services
-
----
+### Migration Workflow
+1. Modify `client/drizzle/schema.ts` (source of truth)
+2. Generate migrations: `cd database && yarn generate`
+3. Review generated migration files in `database/drizzle/`
+4. Apply migrations: `cd database && yarn migrate`
+5. Restart services to use updated schema
 
 ## Typechecking
 
-- `make client-typecheck` &nbsp;&nbsp;// client (tsc)
-- `make server-typecheck` &nbsp;&nbsp;// server (mypy)
+**Client:**
+```bash
+cd client && npx tsc --noEmit
+```
 
----
+**Server:**
+```bash
+cd server && make typecheck
+```
 
 ## Key Files & Folders
 
-- `client/package.json` &nbsp;&nbsp;&nbsp;Client scripts/deps
-- `client/drizzle/schema.ts` &nbsp;[DB schema source of truth]
-- `database/migrations/` &nbsp;&nbsp;&nbsp;All migration files
-- `database/init/` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DB initial modules
-- `server/Makefile` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Server commands
-- `server/models.py` &nbsp;&nbsp;&nbsp;Server-side models
+### Client
+- `client/package.json` - Dependencies and scripts
+- `client/drizzle/schema.ts` - **Source of truth** for database schema
 
----
+### Database  
+- `database/migrations/` - All migration files (auto-generated)
+- `database/init/` - Initial database setup modules
 
-## Architecture
+### Server
+- `server/Makefile` - Server commands and setup
+- `server/models.py` - Server-side models (generated from schema)
 
-- **Database-First**: DB starts before client/server
-- **Backup-Based**: DB restores from backup by default (no auto migrations)
-- **Manual Migration**: Use `make db-generate` + `make db-migrate`
-- **Clean Start**: Use `make db-clean` or `make dev-clean`
-- **Detached Mode**: Use `make detach` for background services (automation)
+## Architecture Notes
 
----
+- **Database First**: The database starts first, then client/server in parallel
+- **Backup-Based**: Database restores from latest backup by default (no auto-migrations)
+- **Manual Migrations**: Schema changes require manual migration generation and application
+- **Clean Start**: `--clean` flag creates backup first, then starts fresh from `init.sql`
+- **Detached Mode**: `--detach` flag runs services in background for automation/AI agents
 
 ## Docker Deployment
 
-- Dev: `docker compose --profile dev up --build -d`
-- Prod: `docker compose --profile prod up --build -d`
+**Development Environment:**
+```bash
+docker compose --profile dev up --build -d
+```
 
-- Client test: `docker compose --profile test run --rm client-test`
-- Server test: `docker compose --profile test run --rm server-test`
-- DB E2E: `docker compose --profile test run --rm database-test`
+**Production Environment:**
+```bash
+docker compose --profile prod up --build -d
+```
 
----
+**Individual Test Services:**
+```bash
+docker compose --profile test run --rm client-test      # Client unit tests
+docker compose --profile test run --rm server-test      # Server unit tests  
+docker compose --profile test run --rm database-test    # Database E2E tests
+```
 
 ## Folder Structure
 
 ```bash
 tree -I node_modules -I uploads -I history -I screenshots -I queries -I mutations
 ```
-

@@ -4,9 +4,7 @@ Note: This repository now delegates to the analytics service layer
 which uses Python SQL queries instead of stored procedures.
 """
 
-from typing import Optional
-
-from app.db import get_session
+import asyncpg  # type: ignore
 from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    AttemptImprovementResponse,
                                    CohortPerformanceResponse,
@@ -24,7 +22,6 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    SimulationPerformanceResponse,
                                    SkillPerformanceResponse)
 from app.services.analytics_service import get_analytics_service
-import asyncpg  # type: ignore
 
 
 class AnalyticsRepository:
@@ -35,9 +32,9 @@ class AnalyticsRepository:
     Python SQL queries instead of calling PostgreSQL stored procedures.
     """
 
-    async def __init__(self, conn: asyncpg.Connection):
-        """Initialize repository with database session."""
-        self.db = db
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.conn = conn
         self.service = get_analytics_service(conn)
 
 
@@ -206,9 +203,7 @@ class AnalyticsRepository:
         return await self.service.refresh_materialized_view()
 
 
-def get_analytics_repository(db: Optional[Session] = None) -> AnalyticsRepository:
+def get_analytics_repository(conn: asyncpg.Connection) -> AnalyticsRepository:
     """Get analytics repository instance."""
-    if db is None:
-        db = next(get_session())
     return AnalyticsRepository(conn)
 

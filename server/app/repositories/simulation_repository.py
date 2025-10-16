@@ -1,5 +1,6 @@
 """Simulation repository - thin wrapper around simulation service."""
 
+import asyncpg  # type: ignore
 from app.schemas.simulations import (CreateSimulationRequest,
                                      CreateSimulationResponse,
                                      DeleteSimulationRequest,
@@ -14,14 +15,13 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
 from app.services.simulation_service import SimulationService
-import asyncpg  # type: ignore
 
 
 class SimulationRepository:
     """Repository for simulation data access."""
 
-    async def __init__(self, conn: asyncpg.Connection):
-        """Initialize repository with database session."""
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
         self.service = SimulationService(conn)
 
     async def get_simulations_list(

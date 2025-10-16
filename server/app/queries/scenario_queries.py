@@ -1,6 +1,6 @@
 """Scenario queries - SQL query builders."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 
 class ScenarioQueries:
@@ -8,7 +8,7 @@ class ScenarioQueries:
 
     def list_scenarios(
         self, department_ids: List[str], profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for scenarios list with all relationships."""
         query = """
         WITH scenario_objectives AS (
@@ -52,7 +52,7 @@ class ScenarioQueries:
             WHERE sp.active = true
         ),
         user_profile AS (
-            SELECT role FROM profiles WHERE id = :profile_id
+            SELECT role FROM profiles WHERE id = $2
         )
         SELECT 
             s.id as scenario_id,
@@ -85,16 +85,15 @@ class ScenarioQueries:
         LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
         LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id
         CROSS JOIN user_profile up
-        WHERE s.department_id = ANY(:department_ids)
+        WHERE s.department_id = ANY($1)
         ORDER BY s.name
         """
 
-        params = {"department_ids": department_ids, "profile_id": profile_id}
-        return (query, params)
+        return (query, [department_ids, profile_id])
 
     def get_objective_mapping(
         self, scenario_ids: List[str], idxs: List[int]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for objective mapping."""
         query = """
         SELECT 
@@ -104,15 +103,14 @@ class ScenarioQueries:
             (scenario_id::text || '_' || idx::text) as objective_id
         FROM scenario_objectives
         WHERE (scenario_id, idx) IN (
-            SELECT unnest(:scenario_ids::uuid[]), unnest(:idxs::integer[])
+            SELECT unnest($1::uuid[]), unnest($2::integer[])
         )
         """
-        params = {"scenario_ids": scenario_ids, "idxs": idxs}
-        return (query, params)
+        return (query, [scenario_ids, idxs])
 
     def get_parameter_item_mapping(
         self, parameter_item_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for parameter item mapping."""
         query = """
         SELECT 
@@ -124,30 +122,27 @@ class ScenarioQueries:
             p.name as parameter_name
         FROM parameter_items pi
         JOIN parameters p ON p.id = pi.parameter_id
-        WHERE pi.id = ANY(:parameter_item_ids)
+        WHERE pi.id = ANY($1)
         """
-        params = {"parameter_item_ids": parameter_item_ids}
-        return (query, params)
+        return (query, [parameter_item_ids])
 
     def get_cohort_mapping(
         self, cohort_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for cohort mapping."""
-        query = "SELECT id, name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY(:cohort_ids)"
-        params = {"cohort_ids": cohort_ids}
-        return (query, params)
+        query = "SELECT id, name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
+        return (query, [cohort_ids])
 
     def get_persona_mapping(
         self, persona_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for persona mapping."""
-        query = "SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas WHERE id = ANY(:persona_ids)"
-        params = {"persona_ids": persona_ids}
-        return (query, params)
+        query = "SELECT id, name, COALESCE(description, '') as description, color, icon FROM personas WHERE id = ANY($1)"
+        return (query, [persona_ids])
 
     def get_scenario_by_id(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario by ID."""
         query = """
         SELECT 
@@ -157,49 +152,45 @@ class ScenarioQueries:
             s.default_scenario,
             s.department_id
         FROM scenarios s
-        WHERE s.id = :scenario_id
+        WHERE s.id = $1
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_scenario_persona(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario's persona."""
         query = """
         SELECT persona_id FROM scenario_personas 
-        WHERE scenario_id = :scenario_id AND active = true
+        WHERE scenario_id = $1 AND active = true
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_scenario_documents(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario's documents."""
         query = """
         SELECT document_id FROM scenario_documents 
-        WHERE scenario_id = :scenario_id AND active = true
+        WHERE scenario_id = $1 AND active = true
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_scenario_objectives(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario's objectives."""
         query = """
         SELECT (scenario_id::text || '_' || idx::text) as objective_id, objective
         FROM scenario_objectives
-        WHERE scenario_id = :scenario_id
+        WHERE scenario_id = $1
         ORDER BY idx
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_scenario_parameters(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario's parameters."""
         query = """
         SELECT 
@@ -207,79 +198,72 @@ class ScenarioQueries:
             spi.parameter_item_id
         FROM scenario_parameter_items spi
         JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-        WHERE spi.scenario_id = :scenario_id AND spi.active = true
+        WHERE spi.scenario_id = $1 AND spi.active = true
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_valid_parameter_items(
         self, parameter_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid parameter items."""
         query = """
         SELECT 
             pi.parameter_id,
             pi.id as parameter_item_id
         FROM parameter_items pi
-        WHERE pi.parameter_id = ANY(:parameter_ids) AND pi.active = true
+        WHERE pi.parameter_id = ANY($1) AND pi.active = true
         """
-        params = {"parameter_ids": parameter_ids}
-        return (query, params)
+        return (query, [parameter_ids])
 
     def get_scenario_simulations(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario's simulations."""
         query = """
         SELECT simulation_id FROM simulation_scenarios 
-        WHERE scenario_id = :scenario_id AND active = true
+        WHERE scenario_id = $1 AND active = true
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_valid_personas(
         self, dept_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid personas."""
         query = """
         SELECT id, name FROM personas 
-        WHERE department_id = ANY(:dept_ids) AND active = true
+        WHERE department_id = ANY($1) AND active = true
         ORDER BY name
         """
-        params = {"dept_ids": dept_ids}
-        return (query, params)
+        return (query, [dept_ids])
 
     def get_valid_documents(
         self, dept_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for valid documents."""
         query = """
         SELECT id, name FROM documents 
-        WHERE department_id = ANY(:dept_ids) AND active = true
+        WHERE department_id = ANY($1) AND active = true
         ORDER BY name
         """
-        params = {"dept_ids": dept_ids}
-        return (query, params)
+        return (query, [dept_ids])
 
     def get_simulation_mapping(
         self, sim_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for simulation mapping."""
-        query = "SELECT id, title FROM simulations WHERE id = ANY(:sim_ids)"
-        params = {"sim_ids": sim_ids}
-        return (query, params)
+        query = "SELECT id, title FROM simulations WHERE id = ANY($1)"
+        return (query, [sim_ids])
 
     def get_document_mapping(
         self, doc_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for document mapping."""
-        query = "SELECT id, name FROM documents WHERE id = ANY(:doc_ids)"
-        params = {"doc_ids": doc_ids}
-        return (query, params)
+        query = "SELECT id, name FROM documents WHERE id = ANY($1)"
+        return (query, [doc_ids])
 
     def get_parameter_mapping(
         self, param_item_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for parameter mapping."""
         query = """
         SELECT DISTINCT
@@ -288,20 +272,19 @@ class ScenarioQueries:
             p.description
         FROM parameters p
         JOIN parameter_items pi ON pi.parameter_id = p.id
-        WHERE pi.id = ANY(:param_item_ids)
+        WHERE pi.id = ANY($1)
         """
-        params = {"param_item_ids": param_item_ids}
-        return (query, params)
+        return (query, [param_item_ids])
 
     def get_default_scenario(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for default scenario."""
         query = """
         WITH user_departments AS (
             SELECT DISTINCT pd.department_id
             FROM profile_departments pd
-            WHERE pd.profile_id = :profile_id
+            WHERE pd.profile_id = $1
         ),
         user_scenarios AS (
             SELECT s.*
@@ -314,12 +297,14 @@ class ScenarioQueries:
         SELECT id
         FROM user_scenarios
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def create_scenario(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to create scenario."""
-        query = """
+    def create_scenario(self) -> str:
+        """Build query to create scenario.
+        
+        Params order: name, problem_statement, department_id, active, default_scenario
+        """
+        return """
         INSERT INTO scenarios (
             name,
             problem_statement,
@@ -327,112 +312,104 @@ class ScenarioQueries:
             active,
             default_scenario
         )
-        VALUES (
-            :name,
-            :problem_statement,
-            :department_id,
-            :active,
-            :default_scenario
-        )
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def insert_scenario_persona(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert scenario persona."""
-        query = """
+    def insert_scenario_persona(self) -> str:
+        """Build query to insert scenario persona.
+        
+        Params order: scenario_id, persona_id
+        """
+        return """
         INSERT INTO scenario_personas (scenario_id, persona_id, active)
-        VALUES (:scenario_id, :persona_id, true)
+        VALUES ($1, $2, true)
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def insert_scenario_document(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert scenario document."""
-        query = """
+    def insert_scenario_document(self) -> str:
+        """Build query to insert scenario document.
+        
+        Params order: scenario_id, document_id
+        """
+        return """
         INSERT INTO scenario_documents (scenario_id, document_id, active)
-        VALUES (:scenario_id, :document_id, true)
+        VALUES ($1, $2, true)
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def insert_scenario_objective(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert scenario objective."""
-        query = """
+    def insert_scenario_objective(self) -> str:
+        """Build query to insert scenario objective.
+        
+        Params order: scenario_id, idx, objective
+        """
+        return """
         INSERT INTO scenario_objectives (scenario_id, idx, objective)
-        VALUES (:scenario_id, :idx, :objective)
+        VALUES ($1, $2, $3)
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def insert_scenario_parameter(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert scenario parameter."""
-        query = """
+    def insert_scenario_parameter(self) -> str:
+        """Build query to insert scenario parameter.
+        
+        Params order: scenario_id, parameter_item_id
+        """
+        return """
         INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
-        VALUES (:scenario_id, :parameter_item_id, true)
+        VALUES ($1, $2, true)
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def get_scenario_name(self, scenario_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_scenario_name(self, scenario_id: str) -> Tuple[str, List[Any]]:
         """Build query to get scenario name."""
-        query = "SELECT name FROM scenarios WHERE id = :scenario_id"
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        query = "SELECT name FROM scenarios WHERE id = $1"
+        return (query, [scenario_id])
 
-    def update_scenario(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to update scenario."""
-        query = """
-        UPDATE scenarios SET
-            name = :name,
-            problem_statement = :problem_statement,
-            department_id = :department_id,
-            active = :active,
-            default_scenario = :default_scenario,
-            updated_at = NOW()
-        WHERE id = :scenario_id
+    def update_scenario(self) -> str:
+        """Build query to update scenario.
+        
+        Params order: name, problem_statement, department_id, active, default_scenario, scenario_id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return """
+        UPDATE scenarios SET
+            name = $1,
+            problem_statement = $2,
+            department_id = $3,
+            active = $4,
+            default_scenario = $5,
+            updated_at = NOW()
+        WHERE id = $6
+        """
 
     def delete_scenario_personas(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete scenario personas."""
-        query = "DELETE FROM scenario_personas WHERE scenario_id = :scenario_id"
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        query = "DELETE FROM scenario_personas WHERE scenario_id = $1"
+        return (query, [scenario_id])
 
     def delete_scenario_documents(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete scenario documents."""
-        query = "DELETE FROM scenario_documents WHERE scenario_id = :scenario_id"
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        query = "DELETE FROM scenario_documents WHERE scenario_id = $1"
+        return (query, [scenario_id])
 
     def delete_scenario_objectives(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete scenario objectives."""
-        query = "DELETE FROM scenario_objectives WHERE scenario_id = :scenario_id"
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        query = "DELETE FROM scenario_objectives WHERE scenario_id = $1"
+        return (query, [scenario_id])
 
     def delete_scenario_parameters(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to delete scenario parameters."""
         query = """
-        DELETE FROM scenario_parameter_items WHERE scenario_id = :scenario_id
+        DELETE FROM scenario_parameter_items WHERE scenario_id = $1
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
     def get_scenario_for_duplicate(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get scenario data for duplication."""
         query = """
         SELECT 
@@ -442,14 +419,16 @@ class ScenarioQueries:
             active,
             default_scenario
         FROM scenarios
-        WHERE id = :scenario_id
+        WHERE id = $1
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
-    def insert_duplicate_scenario(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to insert duplicate scenario."""
-        query = """
+    def insert_duplicate_scenario(self) -> str:
+        """Build query to insert duplicate scenario.
+        
+        Params order: name, problem_statement, department_id
+        """
+        return """
         INSERT INTO scenarios (
             name,
             problem_statement,
@@ -458,82 +437,82 @@ class ScenarioQueries:
             default_scenario
         )
         VALUES (
-            :name || ' Copy',
-            :problem_statement,
-            :department_id,
+            $1 || ' Copy',
+            $2,
+            $3,
             false,
             false
         )
         RETURNING id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def copy_scenario_personas(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to copy scenario personas."""
-        query = """
+    def copy_scenario_personas(self) -> str:
+        """Build query to copy scenario personas.
+        
+        Params order: new_scenario_id, original_scenario_id
+        """
+        return """
         INSERT INTO scenario_personas (scenario_id, persona_id, active)
-        SELECT :new_scenario_id, persona_id, active
+        SELECT $1, persona_id, active
         FROM scenario_personas
-        WHERE scenario_id = :original_scenario_id
+        WHERE scenario_id = $2
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def copy_scenario_documents(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to copy scenario documents."""
-        query = """
+    def copy_scenario_documents(self) -> str:
+        """Build query to copy scenario documents.
+        
+        Params order: new_scenario_id, original_scenario_id
+        """
+        return """
         INSERT INTO scenario_documents (scenario_id, document_id, active)
-        SELECT :new_scenario_id, document_id, active
+        SELECT $1, document_id, active
         FROM scenario_documents
-        WHERE scenario_id = :original_scenario_id
+        WHERE scenario_id = $2
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def copy_scenario_objectives(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to copy scenario objectives."""
-        query = """
+    def copy_scenario_objectives(self) -> str:
+        """Build query to copy scenario objectives.
+        
+        Params order: new_scenario_id, original_scenario_id
+        """
+        return """
         INSERT INTO scenario_objectives (scenario_id, idx, objective)
-        SELECT :new_scenario_id, idx, objective
+        SELECT $1, idx, objective
         FROM scenario_objectives
-        WHERE scenario_id = :original_scenario_id
+        WHERE scenario_id = $2
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
 
-    def copy_scenario_parameters(self) -> Tuple[str, Dict[str, Any]]:
-        """Build query to copy scenario parameters."""
-        query = """
-        INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
-        SELECT :new_scenario_id, parameter_item_id, active
-        FROM scenario_parameter_items
-        WHERE scenario_id = :original_scenario_id
+    def copy_scenario_parameters(self) -> str:
+        """Build query to copy scenario parameters.
+        
+        Params order: new_scenario_id, original_scenario_id
         """
-        params: Dict[str, Any] = {}  # Will be filled at execution time
-        return (query, params)
+        return """
+        INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
+        SELECT $1, parameter_item_id, active
+        FROM scenario_parameter_items
+        WHERE scenario_id = $2
+        """
 
     def check_scenario_usage(
         self, scenario_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to check scenario usage."""
         query = """
         SELECT COUNT(*) as usage_count
         FROM simulation_scenarios
-        WHERE scenario_id = :scenario_id AND active = true
+        WHERE scenario_id = $1 AND active = true
         """
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        return (query, [scenario_id])
 
-    def delete_scenario(self, scenario_id: str) -> Tuple[str, Dict[str, Any]]:
+    def delete_scenario(self, scenario_id: str) -> Tuple[str, List[Any]]:
         """Build query to delete scenario."""
-        query = "DELETE FROM scenarios WHERE id = :scenario_id"
-        params = {"scenario_id": scenario_id}
-        return (query, params)
+        query = "DELETE FROM scenarios WHERE id = $1"
+        return (query, [scenario_id])
 
     def get_enhanced_scenario_mapping(
         self, scenario_ids: List[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query for enhanced scenario mapping with nested data."""
         query = """
         SELECT 
@@ -549,8 +528,7 @@ class ScenarioQueries:
             ) as parameter_item_ids
         FROM scenarios s
         LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
-        WHERE s.id = ANY(:scenario_ids)
+        WHERE s.id = ANY($1)
         """
-        params = {"scenario_ids": scenario_ids}
-        return (query, params)
+        return (query, [scenario_ids])
 
