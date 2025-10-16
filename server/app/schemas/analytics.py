@@ -465,6 +465,35 @@ class HomeSimulationItem(BaseModel):
     passPct: Optional[float] = None
 
 
+class AttemptHistoryRow(BaseModel):
+    """Attempt history row."""
+
+    attemptId: str
+    date: str
+    profileId: str
+    profileName: str
+    simulationName: str
+    numScenarios: Optional[int] = None
+    numScenariosCompleted: int
+    infiniteMode: bool
+    infiniteModeTimeLimit: Optional[int] = None
+    personaNames: List[str]
+    personaColors: List[str]
+    score: Optional[float] = None
+    simulation_id: str
+    department_id: str
+    scenario_ids: List[str]
+    scenario_titles: Optional[List[str]] = None
+    isArchived: bool
+    showView: bool
+    showContinue: bool
+    practiceSimulation: bool
+    passPct: Optional[float] = None
+
+
+AttemptHistoryResponse = List[AttemptHistoryRow]
+
+
 class HomeOverviewResponse(BaseModel):
     """Home overview response with mappings and history."""
 
@@ -519,35 +548,6 @@ class PracticeOverviewResponse(BaseModel):
     scenario_mapping: ScenarioMapping
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
-
-
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
-
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: Optional[int] = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    infiniteModeTimeLimit: Optional[int] = None
-    personaNames: List[str]
-    personaColors: List[str]
-    score: Optional[float] = None
-    simulation_id: str
-    department_id: str
-    scenario_ids: List[str]
-    scenario_titles: Optional[List[str]] = None
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: Optional[float] = None
-
-
-AttemptHistoryResponse = List[AttemptHistoryRow]
 
 
 # Reports Bundle Schemas

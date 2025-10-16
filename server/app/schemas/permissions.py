@@ -17,8 +17,8 @@ class RoutePermission(BaseModel):
     path: str = Field(..., description="Route path with dynamic segments like [id]")
     roles: List[ProfileRole] = Field(..., description="Roles allowed to access this route")
     title: str = Field(..., description="Human-readable route title")
-    description: Optional[str] = Field(None, description="Route description")
-    redirectTo: Optional[str] = Field(None, description="Where to redirect if access denied")
+    description: Optional[str] = Field(default=None, description="Route description")
+    redirectTo: Optional[str] = Field(default=None, description="Where to redirect if access denied")
 
     class Config:
         populate_by_name = True
@@ -30,7 +30,7 @@ class SectionPermission(BaseModel):
     section: str = Field(..., description="Section identifier")
     roles: List[ProfileRole] = Field(..., description="Roles allowed to access this section")
     title: str = Field(..., description="Human-readable section title")
-    description: Optional[str] = Field(None, description="Section description")
+    description: Optional[str] = Field(default=None, description="Section description")
     routes: List[RoutePermission] = Field(..., description="Routes within this section")
 
     class Config:
