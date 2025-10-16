@@ -3,14 +3,13 @@ fastapi==0.116.0
 uvicorn[standard]==0.35.0
 
 python-dotenv==1.1.1
-sqlmodel==0.0.24
+asyncpg==0.30.0
 openai==1.99.6
 openai-agents[litellm]==0.2.7
 
 python-docx==1.1.0
 lxml==6.0.0
 numpy==1.24.4
-psycopg2-binary==2.9.10
 gunicorn==23.0.0
 pypdf==5.9.0
 
@@ -32,3 +31,6 @@ reportlab==4.0.4
 rapidfuzz==3.9.1
 textdistance==4.6.2
 pymupdf==1.24.10
+
+# Async testing
+pytest-asyncio==0.23.7

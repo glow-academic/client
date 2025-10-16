@@ -2,7 +2,8 @@
 
 from typing import Annotated
 
-from app.db import get_session
+import asyncpg
+from app.db import get_db
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.staff_repository import get_staff_repository
 from app.schemas.profile import (AuthorizeEmulationRequest,
@@ -28,7 +29,6 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffFilters, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -194,12 +194,12 @@ async def bulk_delete_profile(
 @router.post("/detail-simple", response_model=ProfileDetailResponse)
 async def get_profile_detail_simple(
     request: ProfileDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Get simple profile by ID (auth version without permissions)."""
     try:
-        repo = ProfileRepository(db)
-        profile = repo.get_profile(request.profileId)
+        repo = ProfileRepository(conn)
+        profile = await repo.get_profile(request.profileId)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -214,16 +214,16 @@ async def get_profile_detail_simple(
 @router.post("/update-simple", response_model=UpdateProfileResponse)
 async def update_profile_simple(
     request: UpdateProfileRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateProfileResponse:
     """Update profile fields (simple auth version)."""
     try:
-        repo = ProfileRepository(db)
+        repo = ProfileRepository(conn)
 
         # Extract updates from request, excluding profileId and None values
         updates = request.model_dump(exclude={"profileId"}, exclude_none=True)
 
-        profile = repo.update_profile(request.profileId, updates)
+        profile = await repo.update_profile(request.profileId, updates)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -243,12 +243,12 @@ async def update_profile_simple(
 @router.post("/authorize-emulation", response_model=AuthorizeEmulationResponse)
 async def authorize_emulation(
     request: AuthorizeEmulationRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> AuthorizeEmulationResponse:
     """Check if emulation is authorized."""
     try:
-        repo = ProfileRepository(db)
-        allowed, reason = repo.authorize_emulation(
+        repo = ProfileRepository(conn)
+        allowed, reason = await repo.authorize_emulation(
             request.requesterProfileId,
             request.targetProfileId,
             request.departmentIds,
@@ -267,12 +267,12 @@ async def authorize_emulation(
 @router.post("/context", response_model=ProfileContextResponse)
 async def get_profile_context(
     request: ProfileContextRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileContextResponse:
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     try:
-        repo = ProfileRepository(db)
-        return repo.get_profile_context(request)
+        repo = ProfileRepository(conn)
+        return await repo.get_profile_context(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -287,12 +287,12 @@ async def get_profile_context(
 @router.post("/mark-intro-complete", response_model=MarkTourStepResponse)
 async def mark_intro_complete(
     request: MarkIntroCompleteRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MarkTourStepResponse:
     """Mark intro tour step as complete."""
     try:
-        repo = ProfileRepository(db)
-        success = repo.mark_intro_complete(request.profileId)
+        repo = ProfileRepository(conn)
+        success = await repo.mark_intro_complete(request.profileId)
 
         if not success:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -310,12 +310,12 @@ async def mark_intro_complete(
 @router.post("/mark-chat-complete", response_model=MarkTourStepResponse)
 async def mark_chat_complete(
     request: MarkChatCompleteRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
     try:
-        repo = ProfileRepository(db)
-        success = repo.mark_chat_complete(request.profileId)
+        repo = ProfileRepository(conn)
+        success = await repo.mark_chat_complete(request.profileId)
 
         if not success:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -338,12 +338,12 @@ async def mark_chat_complete(
 @router.post("/by-alias", response_model=ProfileDetailResponse)
 async def get_profile_by_alias(
     request: ProfileByAliasRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProfileDetailResponse:
     """Get profile by alias (for auth operations)."""
     try:
-        repo = ProfileRepository(db)
-        profile = repo.get_profile_by_alias(request.alias)
+        repo = ProfileRepository(conn)
+        profile = await repo.get_profile_by_alias(request.alias)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -363,12 +363,12 @@ async def get_profile_by_alias(
 @router.post("/user-profiles/list-by-user", response_model=UserProfilesListResponse)
 async def list_user_profiles_by_user(
     request: ListUserProfilesByUserRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UserProfilesListResponse:
     """List user_profiles by user ID."""
     try:
-        repo = ProfileRepository(db)
-        user_profiles = repo.list_user_profiles_by_user(request.userId)
+        repo = ProfileRepository(conn)
+        user_profiles = await repo.list_user_profiles_by_user(request.userId)
 
         return UserProfilesListResponse(userProfiles=user_profiles)
     except Exception as e:
@@ -380,12 +380,12 @@ async def list_user_profiles_by_user(
 )
 async def list_user_profiles_by_profile(
     request: ListUserProfilesByProfileRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UserProfilesListResponse:
     """List user_profiles by profile ID."""
     try:
-        repo = ProfileRepository(db)
-        user_profiles = repo.list_user_profiles_by_profile(request.profileId)
+        repo = ProfileRepository(conn)
+        user_profiles = await repo.list_user_profiles_by_profile(request.profileId)
 
         return UserProfilesListResponse(userProfiles=user_profiles)
     except Exception as e:
@@ -395,12 +395,12 @@ async def list_user_profiles_by_profile(
 @router.post("/user-profiles/create", response_model=CreateUserProfileResponse)
 async def create_user_profile(
     request: CreateUserProfileRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateUserProfileResponse:
     """Create a user_profile link."""
     try:
-        repo = ProfileRepository(db)
-        user_profile = repo.create_user_profile(
+        repo = ProfileRepository(conn)
+        user_profile = await repo.create_user_profile(
             request.userId, request.profileId, request.isPrimary, request.active
         )
 

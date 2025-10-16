@@ -13,7 +13,7 @@ from typing import Any, AsyncIterator, Dict
 from urllib.parse import parse_qs
 
 import socketio  # type: ignore
-from app.db import init_db
+from app.db import close_db_pool, init_db_pool
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +24,6 @@ try:
     from socketio import AsyncRedisManager
 except ImportError:  # pip install redis-py not present
     AsyncRedisManager = None  # type: ignore
-from sqlmodel import select
 
 load_dotenv()
 
@@ -78,23 +77,19 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
 
     # Update database to mark profile as inactive
     try:
-        from app.db import get_session
-        from app.models import Profiles
+        from app.db import get_pool
 
-        db_session = next(get_session())
-        try:
-            profile = db_session.exec(
-                select(Profiles).where(Profiles.id == profile_id)
-            ).one_or_none()
-
-            if profile:
-                profile.active = False
-                profile.last_active = datetime.now(timezone.utc)
-                db_session.add(profile)
-                db_session.commit()
+        pool = get_pool()
+        if pool:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """UPDATE profiles 
+                       SET active = false, last_active = $1
+                       WHERE id = $2""",
+                    datetime.now(timezone.utc),
+                    profile_id
+                )
                 logger.info(f"Updated profile {profile_id} to inactive in database")
-        finally:
-            db_session.close()
     except Exception as e:
         logger.error(f"Error updating profile {profile_id} in database: {e}")
 
@@ -193,37 +188,37 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         try:
             chat_id = data.get("chat_id")
             if chat_id:
-                from app.db import get_session
-                from app.models import SimulationMessages
+                from app.db import get_pool
                 
-                db_session = next(get_session())
-                try:
-                    # Create an error message in the database
-                    error_message = SimulationMessages(
-                        chat_id=uuid.UUID(chat_id),
-                        type="response",
-                        content=f"Error: {str(e)}",
-                        completed=True
-                    )
-                    db_session.add(error_message)
-                    db_session.commit()
-                    db_session.refresh(error_message)
-                    
-                    # Emit the error message to clients
-                    await sio.emit(
-                        "simulation_new_message",
-                        {
-                            "message_id": str(error_message.id),
-                            "chat_id": str(chat_id),
-                            "role": "assistant",
-                            "content": f"Error: {str(e)}",
-                            "completed": True,
-                            "created_at": error_message.created_at.isoformat(),
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
-                finally:
-                    db_session.close()
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        # Create an error message in the database
+                        error_message = await conn.fetchrow(
+                            """INSERT INTO simulation_messages 
+                               (chat_id, type, content, completed, created_at)
+                               VALUES ($1, $2, $3, $4, NOW())
+                               RETURNING *""",
+                            uuid.UUID(chat_id),
+                            "response",
+                            f"Error: {str(e)}",
+                            True
+                        )
+                        
+                        # Emit the error message to clients
+                        if error_message:
+                            await sio.emit(
+                                "simulation_new_message",
+                                {
+                                    "message_id": str(error_message['id']),
+                                    "chat_id": str(chat_id),
+                                    "role": "assistant",
+                                    "content": f"Error: {str(e)}",
+                                    "completed": True,
+                                    "created_at": error_message['created_at'].isoformat(),
+                                },
+                                room=f"simulation_{chat_id}",
+                            )
         except Exception as db_error:
             logger.error(f"Failed to create error message in database: {db_error}")
         
@@ -557,12 +552,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         # Initialize Redis client for socket ownership management
         await init_redis_client()
         
-        # Initialize database
-        init_db()
+        # Initialize asyncpg database pool
+        await init_db_pool()
 
         await stack.enter_async_context(server.session_manager.run())
 
         yield
+        
+        # Clean up database pool
+        await close_db_pool()
         
         # Clean up Redis client on shutdown
         await cleanup_redis_client()

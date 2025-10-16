@@ -41,6 +41,32 @@ services:
     networks:
       - internal
 
+  # --------------------
+  # PgBouncer - Connection Pooler
+  # --------------------
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=1000
+      - DEFAULT_POOL_SIZE=25
+      - MIN_POOL_SIZE=5
+      - RESERVE_POOL_SIZE=5
+      - RESERVE_POOL_TIMEOUT=3
+      - MAX_DB_CONNECTIONS=100
+      - SERVER_IDLE_TIMEOUT=600
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "psql", "-U", "${DB_USER}", "-h", "localhost", "-p", "5432", "-d", "pgbouncer", "-c", "SHOW POOLS;"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # --------------------
   # Volume Init Service
@@ -102,7 +128,7 @@ services:
       - .env
     environment:
       - DB_PORT=5432
-      - DB_HOST=database
+      - DB_HOST=pgbouncer
       - DOCKER_ENV=1
       - APP_PREFIX=${APP_PREFIX}
       - INTERNAL_API_BASE=http://server:8000
@@ -117,7 +143,7 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
-      database:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_started
@@ -150,7 +176,7 @@ services:
         DB_PASSWORD: ${DB_PASSWORD}
         DB_NAME: ${DB_NAME}
         DB_PORT: 5432 # since we are running internally
-        DB_HOST: database
+        DB_HOST: pgbouncer
         AUTH_URL: ${ORIGIN}${APP_PREFIX}/api/auth
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}

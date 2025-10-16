@@ -1,38 +1,84 @@
-import os
-from typing import Generator
+"""Database connection management with asyncpg."""
 
+import os
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
+
+import asyncpg
 from dotenv import load_dotenv
-from sqlmodel import Session, SQLModel, create_engine
 
 load_dotenv()
 
-db_user = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-db_port = os.getenv("DB_PORT")
-db_host = os.getenv("DB_HOST")
-
-# Construct the database URL
-db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-
-if not db_url:
-    raise ValueError("Database url is not set")
-engine = create_engine(db_url)
+# Global connection pool
+_pool: Optional[asyncpg.Pool] = None
 
 
-def init_db() -> None:
-    # Skip schema creation if running in Docker environment
-    # Docker initialization already creates the schema from SQL files
-    if os.getenv("DOCKER_ENV"):
-        print(
-            "🐳 Running in Docker - skipping SQLModel schema creation (using SQL files instead)"
-        )
-        return
+async def init_db_pool() -> None:
+    """Initialize asyncpg connection pool."""
+    global _pool
+    
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    db_port = os.getenv("DB_PORT")
+    db_host = os.getenv("DB_HOST")
+    
+    # Construct the database URL
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    
+    if not db_url:
+        raise ValueError("Database url is not set")
+    
+    print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
+    
+    _pool = await asyncpg.create_pool(
+        db_url,
+        min_size=5,
+        max_size=20,
+        command_timeout=60,
+    )
+    
+    print("✅ Database pool initialized")
 
-    print("🔧 Creating database schema via SQLModel...")
-    SQLModel.metadata.create_all(engine)
+
+async def close_db_pool() -> None:
+    """Close asyncpg connection pool."""
+    global _pool
+    if _pool:
+        print("🔌 Closing database pool...")
+        await _pool.close()
+        print("✅ Database pool closed")
 
 
-def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session
+async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
+    """Dependency for FastAPI endpoints to get database connection."""
+    if not _pool:
+        raise RuntimeError("Database pool not initialized")
+    
+    async with _pool.acquire() as connection:
+        yield connection
+
+
+@asynccontextmanager
+async def transaction(conn: asyncpg.Connection):
+    """Simple transaction context manager.
+    
+    Usage:
+        async with transaction(conn):
+            await conn.execute(query1, *params1)
+            await conn.execute(query2, *params2)
+            # Commits on success, rolls back on exception
+    """
+    tr = conn.transaction()
+    await tr.start()
+    try:
+        yield conn
+        await tr.commit()
+    except Exception:
+        await tr.rollback()
+        raise
+
+
+def get_pool() -> Optional[asyncpg.Pool]:
+    """Get the global connection pool (for WebSocket handlers)."""
+    return _pool

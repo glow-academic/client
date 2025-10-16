@@ -14,50 +14,41 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi==0.116.0",
     "uvicorn[standard]==0.35.0",
-
     "python-dotenv==1.1.1",
-    "sqlmodel==0.0.24",
+    "asyncpg==0.30.0",
     "openai==1.99.6",
     "openai-agents[litellm]==0.2.7",
-
     "python-docx==1.1.0",
     "lxml==6.0.0",
     "numpy==1.24.4",
-    "psycopg2-binary==2.9.10",
     "gunicorn==23.0.0",
     "pypdf==5.9.0",
-
     "python-socketio==5.10.0",
     "redis==5.0.4",
     "fastmcp==2.10.2",
-
     "cryptography==44.0.2",
     "click==8.1.7",
     "cffi==1.17.1",
-
     "starlette==0.46.2",
     "pydantic==2.11.7",
     "requests==2.32.4",
-
     "reportlab==4.0.4",
-
     # Lightweight text similarity / fuzzy matching
     "rapidfuzz==3.9.1",
     "textdistance==4.6.2",
     "pymupdf==1.24.10",
+    # Async testing
+    "pytest-asyncio==0.23.7",
+    # Dev/test tooling
     "ruff",
     "mypy",
     "respx",
-
     # Testing
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
     "httpx>=0.24.0",
-
-    # Code-generation helpers
-    "sqlacodegen",
 ]
 
 [project.scripts]

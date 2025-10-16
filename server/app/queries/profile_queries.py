@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 class ProfileQueries:
     """Query builders for profile operations."""
 
-    def get_profile(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_profile(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query to get profile by ID."""
         query = """
         SELECT 
@@ -25,30 +25,34 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM profiles
-        WHERE id = :profile_id
+        WHERE id = $1
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def update_profile(
         self, profile_id: str, updates: Dict[str, Any]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to update profile fields."""
         # Build SET clause dynamically from updates
         set_clauses = []
-        params: Dict[str, Any] = {"profile_id": profile_id}
+        params: List[Any] = []
+        param_counter = 1
 
         for key, value in updates.items():
-            set_clauses.append(f"{key} = :{key}")
-            params[key] = value
+            set_clauses.append(f"{key} = ${param_counter}")
+            params.append(value)
+            param_counter += 1
 
         # Always update updated_at
         set_clauses.append("updated_at = NOW()")
 
+        # Add profile_id as last parameter
+        params.append(profile_id)
+
         query = f"""
         UPDATE profiles SET
             {', '.join(set_clauses)}
-        WHERE id = :profile_id
+        WHERE id = ${param_counter}
         RETURNING 
             id,
             first_name,
@@ -69,7 +73,7 @@ class ProfileQueries:
 
     def get_simulatable_profiles_superadmin(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get all profiles except self (for superadmin)."""
         query = """
         SELECT 
@@ -88,15 +92,14 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM profiles
-        WHERE id != :profile_id
+        WHERE id != $1
         ORDER BY first_name, last_name
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def get_simulatable_profiles_admin(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get instructional/ta/guest profiles (for admin)."""
         query = """
         SELECT 
@@ -115,16 +118,15 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM profiles
-        WHERE id != :profile_id
+        WHERE id != $1
           AND role IN ('instructional', 'ta', 'guest')
         ORDER BY first_name, last_name
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def get_simulatable_profiles_instructional(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to get ta/guest profiles (for instructional)."""
         query = """
         SELECT 
@@ -143,24 +145,22 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM profiles
-        WHERE id != :profile_id
+        WHERE id != $1
           AND role IN ('ta', 'guest')
         ORDER BY first_name, last_name
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def get_profile_role(self, profile_id: str) -> Tuple[str, Dict[str, Any]]:
+    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query to get profile role."""
         query = """
         SELECT role
         FROM profiles
-        WHERE id = :profile_id
+        WHERE id = $1
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
-    def get_profile_by_alias(self, alias: str) -> Tuple[str, Dict[str, Any]]:
+    def get_profile_by_alias(self, alias: str) -> Tuple[str, List[Any]]:
         """Build query to get profile by alias."""
         query = """
         SELECT 
@@ -179,14 +179,13 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM profiles
-        WHERE alias = :alias
+        WHERE alias = $1
         """
-        params = {"alias": alias}
-        return (query, params)
+        return (query, [alias])
 
     def list_user_profiles_by_user(
         self, user_id: int
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to list user_profiles by user_id."""
         query = """
         SELECT 
@@ -197,15 +196,14 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM user_profiles
-        WHERE user_id = :user_id
+        WHERE user_id = $1
         ORDER BY is_primary DESC, created_at ASC
         """
-        params = {"user_id": user_id}
-        return (query, params)
+        return (query, [user_id])
 
     def list_user_profiles_by_profile(
         self, profile_id: str
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to list user_profiles by profile_id."""
         query = """
         SELECT 
@@ -216,19 +214,18 @@ class ProfileQueries:
             created_at,
             updated_at
         FROM user_profiles
-        WHERE profile_id = :profile_id
+        WHERE profile_id = $1
         ORDER BY is_primary DESC, created_at ASC
         """
-        params = {"profile_id": profile_id}
-        return (query, params)
+        return (query, [profile_id])
 
     def create_user_profile(
         self, user_id: int, profile_id: str, is_primary: bool, active: bool
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, List[Any]]:
         """Build query to create a user_profile link."""
         query = """
         INSERT INTO user_profiles (user_id, profile_id, is_primary, active)
-        VALUES (:user_id, :profile_id, :is_primary, :active)
+        VALUES ($1, $2, $3, $4)
         RETURNING 
             user_id,
             profile_id,
@@ -237,11 +234,4 @@ class ProfileQueries:
             created_at,
             updated_at
         """
-        params = {
-            "user_id": user_id,
-            "profile_id": profile_id,
-            "is_primary": is_primary,
-            "active": active,
-        }
-        return (query, params)
-
+        return (query, [user_id, profile_id, is_primary, active])
