@@ -1,6 +1,6 @@
 """Log repository - thin wrapper around service."""
 
-import asyncpg
+import asyncpg # type: ignore
 from app.schemas.logs import (CreateLogRequest, CreateLogResponse,
                               LogsListRequest, LogsListResponse)
 from app.services.log_service import LogService

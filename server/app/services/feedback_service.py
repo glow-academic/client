@@ -2,7 +2,7 @@
 
 from typing import List
 
-import asyncpg
+import asyncpg # type: ignore
 from app.queries.feedback_queries import FeedbackQueries
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackItem,

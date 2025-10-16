@@ -1,7 +1,9 @@
 """Department service with business logic and dynamic SQL."""
 
-from typing import Any, Dict, List
+from typing import Dict, List
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
 from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
@@ -16,26 +18,24 @@ from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
                                      DuplicateDepartmentResponse,
                                      UpdateDepartmentRequest,
                                      UpdateDepartmentResponse)
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DepartmentService:
     """Service for department operations."""
 
-    def __init__(self) -> None:
-        """Initialize service with query builders."""
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize service with database connection."""
+        self.conn = conn
         self.queries = DepartmentQueries()
 
     async def get_departments_list(
-        self, filters: DepartmentsFilters, session: AsyncSession
+        self, filters: DepartmentsFilters
     ) -> DepartmentsListResponse:
         """
         Get list of departments with computed fields.
 
         Args:
             filters: Department filters
-            session: Database session
 
         Returns:
             DepartmentsListResponse
@@ -44,36 +44,34 @@ class DepartmentService:
             filters.departmentIds, filters.profileId
         )
 
-        result = await session.execute(text(query), params)
-        rows = result.fetchall()
+        rows = await self.conn.fetch(query, *params)
 
         departments: List[DepartmentItem] = []
         for row in rows:
             departments.append(
                 DepartmentItem(
-                    department_id=row.department_id,
-                    title=row.title,
-                    description=row.description,
-                    active=row.active,
-                    updated_at=row.updated_at.isoformat(),
-                    total_price_spent=float(row.total_price_spent),
-                    staff_count=int(row.staff_count),
-                    can_edit=row.can_edit,
-                    can_delete=row.can_delete,
+                    department_id=row['department_id'],
+                    title=row['title'],
+                    description=row['description'],
+                    active=row['active'],
+                    updated_at=row['updated_at'].isoformat(),
+                    total_price_spent=float(row['total_price_spent']),
+                    staff_count=int(row['staff_count']),
+                    can_edit=row['can_edit'],
+                    can_delete=row['can_delete'],
                 )
             )
 
         return DepartmentsListResponse(departments=departments)
 
     async def get_department_detail(
-        self, request: DepartmentDetailRequest, session: AsyncSession
+        self, request: DepartmentDetailRequest
     ) -> DepartmentDetailResponse:
         """
         Get department detail with agent role assignments, permissions, and stats.
 
         Args:
             request: Detail request
-            session: Database session
 
         Returns:
             DepartmentDetailResponse
@@ -82,16 +80,14 @@ class DepartmentService:
         query, params = self.queries.get_department_detail_with_stats(
             request.departmentId, request.profileId
         )
-        result = await session.execute(text(query), params)
-        dept_row = result.fetchone()
+        dept_row = await self.conn.fetchrow(query, *params)
 
         if not dept_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
         # Get agent role assignments (8 roles)
         query, params = self.queries.get_department_agent_roles(request.departmentId)
-        result = await session.execute(text(query), params)
-        agent_rows = result.fetchall()
+        agent_rows = await self.conn.fetch(query, *params)
 
         # Build agent_roles object
         agent_roles_dict: Dict[str, str] = {
@@ -106,79 +102,74 @@ class DepartmentService:
         }
 
         for row in agent_rows:
-            agent_roles_dict[row.role] = row.agent_id
+            agent_roles_dict[row['role']] = row['agent_id']
 
         # Get valid agents for selection
         query, params = self.queries.get_valid_agents()
-        result = await session.execute(text(query), params)
-        agent_rows = result.fetchall()
+        agent_rows = await self.conn.fetch(query, *params)
 
         valid_agent_ids: List[str] = []
         agent_mapping: AgentMapping = {}
 
         for row in agent_rows:
-            valid_agent_ids.append(row.agent_id)
-            agent_mapping[row.agent_id] = AgentMappingItem(
-                name=row.name,
-                description=row.description
+            valid_agent_ids.append(row['agent_id'])
+            agent_mapping[row['agent_id']] = AgentMappingItem(
+                name=row['name'],
+                description=row['description']
             )
 
         return DepartmentDetailResponse(
-            title=dept_row.title,
-            description=dept_row.description,
-            active=dept_row.active,
+            title=dept_row['title'],
+            description=dept_row['description'],
+            active=dept_row['active'],
             agent_roles=AgentRoles(**agent_roles_dict),
             valid_agent_ids=valid_agent_ids,
             agent_mapping=agent_mapping,
             # Permissions
-            can_edit=dept_row.can_edit,
-            can_duplicate=dept_row.can_duplicate,
-            can_delete=dept_row.can_delete,
+            can_edit=dept_row['can_edit'],
+            can_duplicate=dept_row['can_duplicate'],
+            can_delete=dept_row['can_delete'],
             # Usage/Stats
-            in_use=dept_row.in_use,
-            staff_count=int(dept_row.staff_count),
-            total_price_spent=float(dept_row.total_price_spent),
+            in_use=dept_row['in_use'],
+            staff_count=int(dept_row['staff_count']),
+            total_price_spent=float(dept_row['total_price_spent']),
         )
 
     async def get_department_detail_default(
-        self, profile_id: str, session: AsyncSession
+        self, profile_id: str
     ) -> DepartmentDetailResponse:
         """
         Get default department detail for creation mode.
 
         Args:
             profile_id: Profile ID
-            session: Database session
 
         Returns:
             DepartmentDetailResponse with defaults
         """
         # Get user role for permissions
-        query = """
-        SELECT role FROM profiles WHERE id = :profile_id
-        """
-        params = {"profile_id": profile_id}
-        result = await session.execute(text(query), params)
-        profile_row = result.fetchone()
+        profile_row = await self.conn.fetchrow(
+            "SELECT role FROM profiles WHERE id = $1",
+            profile_id
+        )
 
         if not profile_row:
             raise ValueError(f"Profile {profile_id} not found")
 
-        is_superadmin = profile_row.role == "superadmin"
+        is_superadmin = profile_row['role'] == "superadmin"
 
         # Get valid agents for selection
         query, params = self.queries.get_valid_agents()
-        result = await session.execute(text(query), params)
-        agent_rows = result.fetchall()
+        agent_rows = await self.conn.fetch(query, *params)
 
         valid_agent_ids: List[str] = []
         agent_mapping: AgentMapping = {}
 
         for row in agent_rows:
-            valid_agent_ids.append(row.agent_id)
-            agent_mapping[row.agent_id] = AgentMappingItem(
-                name=row.name,
-                description=row.description
+            valid_agent_ids.append(row['agent_id'])
+            agent_mapping[row['agent_id']] = AgentMappingItem(
+                name=row['name'],
+                description=row['description']
             )
 
         # Return defaults for creation
@@ -209,14 +200,13 @@ class DepartmentService:
         )
 
     async def create_department(
-        self, request: CreateDepartmentRequest, session: AsyncSession
+        self, request: CreateDepartmentRequest
     ) -> CreateDepartmentResponse:
         """
         Create a new department with agent role assignments.
 
         Args:
             request: Create request
-            session: Database session
 
         Returns:
             CreateDepartmentResponse
@@ -238,27 +228,25 @@ class DepartmentService:
             if not agent_roles_dict.get(role):
                 raise ValueError(f"Agent role {role} is required")
 
-        # Create department
-        query, params = self.queries.create_department(
-            request.title, request.description, request.active
-        )
-        result = await session.execute(text(query), params)
-        dept_row = result.fetchone()
-
-        if not dept_row:
-            raise ValueError("Failed to create department")
-
-        department_id = dept_row.department_id
-
-        # Create all 8 agent role assignments
-        for role in required_roles:
-            agent_id = agent_roles_dict[role]
-            query, params = self.queries.create_department_agent(
-                department_id, role, agent_id
+        async with transaction(self.conn):
+            # Create department
+            query, params = self.queries.create_department(
+                request.title, request.description, request.active
             )
-            await session.execute(text(query), params)
+            dept_row = await self.conn.fetchrow(query, *params)
 
-        await session.commit()
+            if not dept_row:
+                raise ValueError("Failed to create department")
+
+            department_id = dept_row['department_id']
+
+            # Create all 8 agent role assignments
+            for role in required_roles:
+                agent_id = agent_roles_dict[role]
+                query, params = self.queries.create_department_agent(
+                    department_id, role, agent_id
+                )
+                await self.conn.execute(query, *params)
 
         return CreateDepartmentResponse(
             success=True,
@@ -267,14 +255,13 @@ class DepartmentService:
         )
 
     async def update_department(
-        self, request: UpdateDepartmentRequest, session: AsyncSession
+        self, request: UpdateDepartmentRequest
     ) -> UpdateDepartmentResponse:
         """
         Update a department with agent role assignments.
 
         Args:
             request: Update request
-            session: Database session
 
         Returns:
             UpdateDepartmentResponse
@@ -296,72 +283,67 @@ class DepartmentService:
             if not agent_roles_dict.get(role):
                 raise ValueError(f"Agent role {role} is required")
 
-        # Update department
-        query, params = self.queries.update_department(
-            request.departmentId, request.title, request.description, request.active
-        )
-        await session.execute(text(query), params)
-
-        # Delete old agent role assignments
-        query, params = self.queries.delete_department_agents(request.departmentId)
-        await session.execute(text(query), params)
-
-        # Create new agent role assignments (upsert pattern)
-        for role in required_roles:
-            agent_id = agent_roles_dict[role]
-            query, params = self.queries.create_department_agent(
-                request.departmentId, role, agent_id
+        async with transaction(self.conn):
+            # Update department
+            query, params = self.queries.update_department(
+                request.departmentId, request.title, request.description, request.active
             )
-            await session.execute(text(query), params)
+            await self.conn.execute(query, *params)
 
-        await session.commit()
+            # Delete old agent role assignments
+            query, params = self.queries.delete_department_agents(request.departmentId)
+            await self.conn.execute(query, *params)
+
+            # Create new agent role assignments (upsert pattern)
+            for role in required_roles:
+                agent_id = agent_roles_dict[role]
+                query, params = self.queries.create_department_agent(
+                    request.departmentId, role, agent_id
+                )
+                await self.conn.execute(query, *params)
 
         return UpdateDepartmentResponse(
             success=True, message="Department updated successfully"
         )
 
     async def duplicate_department(
-        self, request: DuplicateDepartmentRequest, session: AsyncSession
+        self, request: DuplicateDepartmentRequest
     ) -> DuplicateDepartmentResponse:
         """
         Duplicate a department with all agent role assignments.
 
         Args:
             request: Duplicate request
-            session: Database session
 
         Returns:
             DuplicateDepartmentResponse
         """
         # Get original department title
         query, params = self.queries.get_department_basic(request.departmentId)
-        result = await session.execute(text(query), params)
-        dept_row = result.fetchone()
+        dept_row = await self.conn.fetchrow(query, *params)
 
         if not dept_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
-        new_title = f"{dept_row.title} Copy"
+        new_title = f"{dept_row['title']} Copy"
 
-        # Duplicate department
-        query, params = self.queries.duplicate_department(
-            request.departmentId, new_title
-        )
-        result = await session.execute(text(query), params)
-        new_dept_row = result.fetchone()
+        async with transaction(self.conn):
+            # Duplicate department
+            query, params = self.queries.duplicate_department(
+                request.departmentId, new_title
+            )
+            new_dept_row = await self.conn.fetchrow(query, *params)
 
-        if not new_dept_row:
-            raise ValueError("Failed to duplicate department")
+            if not new_dept_row:
+                raise ValueError("Failed to duplicate department")
 
-        new_department_id = new_dept_row.department_id
+            new_department_id = new_dept_row['department_id']
 
-        # Duplicate agent role assignments
-        query, params = self.queries.duplicate_department_agents(
-            request.departmentId, new_department_id
-        )
-        await session.execute(text(query), params)
-
-        await session.commit()
+            # Duplicate agent role assignments
+            query, params = self.queries.duplicate_department_agents(
+                request.departmentId, new_department_id
+            )
+            await self.conn.execute(query, *params)
 
         return DuplicateDepartmentResponse(
             success=True,
@@ -370,33 +352,31 @@ class DepartmentService:
         )
 
     async def delete_department(
-        self, request: DeleteDepartmentRequest, session: AsyncSession
+        self, request: DeleteDepartmentRequest
     ) -> DeleteDepartmentResponse:
         """
         Delete a department (with usage check).
 
         Args:
             request: Delete request
-            session: Database session
 
         Returns:
             DeleteDepartmentResponse
         """
         # Check if department is in use
         query, params = self.queries.check_department_usage(request.departmentId)
-        result = await session.execute(text(query), params)
-        usage_row = result.fetchone()
+        usage_row = await self.conn.fetchrow(query, *params)
 
         if not usage_row:
             raise ValueError(f"Department {request.departmentId} not found")
 
         total_usage = (
-            usage_row.profile_count
-            + usage_row.simulation_count
-            + usage_row.scenario_count
-            + usage_row.persona_count
-            + usage_row.document_count
-            + usage_row.cohort_count
+            usage_row['profile_count']
+            + usage_row['simulation_count']
+            + usage_row['scenario_count']
+            + usage_row['persona_count']
+            + usage_row['document_count']
+            + usage_row['cohort_count']
         )
 
         if total_usage > 0:
@@ -406,11 +386,8 @@ class DepartmentService:
 
         # Delete department (cascade deletes department_agents)
         query, params = self.queries.delete_department(request.departmentId)
-        await session.execute(text(query), params)
-
-        await session.commit()
+        await self.conn.execute(query, *params)
 
         return DeleteDepartmentResponse(
             success=True, message="Department deleted successfully"
         )
-

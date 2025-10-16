@@ -1,5 +1,6 @@
 """Provider repository - thin wrapper around provider service."""
 
+import asyncpg  # type: ignore
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
                                    CreateProviderResponse, DeleteModelRequest,
@@ -11,64 +12,62 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    UpdateModelResponse, UpdateProviderRequest,
                                    UpdateProviderResponse)
 from app.services.provider_service import ProviderService
-from sqlalchemy.orm import Session
 
 
 class ProviderRepository:
     """Repository for provider and model data access."""
 
-    def __init__(self, db: Session):
-        """Initialize repository with database session."""
-        self.service = ProviderService(db)
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.service = ProviderService(conn)
 
-    def get_providers_list(
+    async def get_providers_list(
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
         """Get providers list."""
-        return self.service.get_providers_list(filters)
+        return await self.service.get_providers_list(filters)
 
-    def get_provider_detail(
+    async def get_provider_detail(
         self, request: ProviderDetailRequest
     ) -> ProviderDetailResponse:
         """Get provider detail."""
-        return self.service.get_provider_detail(request)
+        return await self.service.get_provider_detail(request)
 
-    def get_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
+    async def get_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
         """Get model detail."""
-        return self.service.get_model_detail(request)
+        return await self.service.get_model_detail(request)
 
-    def create_provider(
+    async def create_provider(
         self, request: CreateProviderRequest
     ) -> CreateProviderResponse:
         """Create provider."""
-        return self.service.create_provider(request)
+        return await self.service.create_provider(request)
 
-    def update_provider(
+    async def update_provider(
         self, request: UpdateProviderRequest
     ) -> UpdateProviderResponse:
         """Update provider."""
-        return self.service.update_provider(request)
+        return await self.service.update_provider(request)
 
-    def delete_provider(
+    async def delete_provider(
         self, request: DeleteProviderRequest
     ) -> DeleteProviderResponse:
         """Delete provider."""
-        return self.service.delete_provider(request)
+        return await self.service.delete_provider(request)
 
-    def create_model(self, request: CreateModelRequest) -> CreateModelResponse:
+    async def create_model(self, request: CreateModelRequest) -> CreateModelResponse:
         """Create model."""
-        return self.service.create_model(request)
+        return await self.service.create_model(request)
 
-    def update_model(self, request: UpdateModelRequest) -> UpdateModelResponse:
+    async def update_model(self, request: UpdateModelRequest) -> UpdateModelResponse:
         """Update model."""
-        return self.service.update_model(request)
+        return await self.service.update_model(request)
 
-    def delete_model(self, request: DeleteModelRequest) -> DeleteModelResponse:
+    async def delete_model(self, request: DeleteModelRequest) -> DeleteModelResponse:
         """Delete model."""
-        return self.service.delete_model(request)
+        return await self.service.delete_model(request)
 
 
-def get_provider_repository(db: Session) -> ProviderRepository:
+def get_provider_repository(conn: asyncpg.Connection) -> ProviderRepository:
     """Dependency injection for provider repository."""
-    return ProviderRepository(db)
-
+    return ProviderRepository(conn)

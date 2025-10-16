@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-import asyncpg
+import asyncpg # type: ignore
 from app.db import get_db
 from app.repositories.feedback_repository import get_feedback_repository
 from app.schemas.feedback import (CreateFeedbackRequest,

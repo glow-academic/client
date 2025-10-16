@@ -2,7 +2,7 @@
 
 from typing import Dict, List
 
-import asyncpg
+import asyncpg # type: ignore
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,

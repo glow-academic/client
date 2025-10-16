@@ -2,7 +2,7 @@
 
 from typing import Dict, List
 
-import asyncpg
+import asyncpg # type: ignore
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem

@@ -3,7 +3,7 @@
 from typing import Any, Dict
 from uuid import UUID
 
-import asyncpg
+import asyncpg # type: ignore
 
 
 async def get_assistant_chat_full_data(conn: asyncpg.Connection, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:

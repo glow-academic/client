@@ -2,7 +2,7 @@
 
 from typing import List
 
-import asyncpg  # type: ignore
+import asyncpg  # type: ignore 
 from app.queries.agent_queries import AgentQueries
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentItem, AgentsListRequest,

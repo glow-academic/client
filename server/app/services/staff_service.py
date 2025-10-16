@@ -16,19 +16,19 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffDetailRequest, StaffDetailResponse,
                                StaffFilters, StaffItem, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
+from app.db import transaction
 
 
 class StaffService:
     """Service layer for staff operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.db = db
+        self.conn = conn
         self.queries = StaffQueries()
 
-    def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
+    async def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
         """Get staff list with permissions using dynamic SQL."""
 
         # Get campus email domain from environment
@@ -39,7 +39,7 @@ class StaffService:
             filters.departmentIds, filters.profileId, campus_domain
         )
 
-        result = self.db.execute(text(query), params).fetchall()
+        result = await self.conn.fetch(query, *params)
 
         # Build response
         staff = []
@@ -47,50 +47,50 @@ class StaffService:
 
         for row in result:
             # Convert UUID arrays to string arrays
-            cohort_ids = [str(cid) for cid in (row.cohort_ids or [])]
+            cohort_ids = [str(cid) for cid in (row['cohort_ids'] or [])]
 
             staff.append(
                 StaffItem(
-                    profile_id=str(row.profile_id),
-                    first_name=row.first_name,
-                    last_name=row.last_name,
-                    alias=row.alias,
-                    name=row.name,
-                    role=row.role,
-                    email=row.email,
-                    initials=row.initials,
-                    active=row.active,
-                    lastActive=row.lastActive.isoformat() if row.lastActive else None,
+                    profile_id=str(row['profile_id']),
+                    first_name=row['first_name'],
+                    last_name=row['last_name'],
+                    alias=row['alias'],
+                    name=row['name'],
+                    role=row['role'],
+                    email=row['email'],
+                    initials=row['initials'],
+                    active=row['active'],
+                    lastActive=row['lastActive'].isoformat() if row['lastActive'] else None,
                     cohort_ids=cohort_ids,
-                    requests_per_day=row.requests_per_day,
-                    default_profile=row.default_profile,
-                    requests_in_last_day=row.requests_in_last_day,
-                    can_edit=row.can_edit,
-                    can_delete=row.can_delete,
+                    requests_per_day=row['requests_per_day'],
+                    default_profile=row['default_profile'],
+                    requests_in_last_day=row['requests_in_last_day'],
+                    can_edit=row['can_edit'],
+                    can_delete=row['can_delete'],
                 )
             )
 
         # Get cohort names for mapping
         if cohort_ids_to_fetch := list(set([cid for s in staff for cid in s.cohort_ids])):
             query, params = self.queries.get_cohort_mapping(cohort_ids_to_fetch)
-            cohort_result = self.db.execute(text(query), params).fetchall()
+            cohort_result = await self.conn.fetch(query, *params)
 
             for row in cohort_result:
-                cohort_mapping[str(row.id)] = CohortMappingItem(
-                    name=row.name,
-                    description=row.description
+                cohort_mapping[str(row['id'])] = CohortMappingItem(
+                    name=row['name'],
+                    description=row['description']
                 )
 
         # Get department mapping from filter departmentIds
         department_mapping = {}
         if filters.departmentIds:
             query, params = self.queries.get_department_mapping(filters.departmentIds)
-            dept_result = self.db.execute(text(query), params).fetchall()
+            dept_result = await self.conn.fetch(query, *params)
 
             for row in dept_result:
-                department_mapping[str(row.id)] = DepartmentMappingItem(
-                    name=row.name,
-                    description=row.description
+                department_mapping[str(row['id'])] = DepartmentMappingItem(
+                    name=row['name'],
+                    description=row['description']
                 )
 
         return StaffListResponse(
@@ -99,7 +99,7 @@ class StaffService:
             department_mapping=department_mapping,
         )
 
-    def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
+    async def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
         """Get detailed staff information using dynamic SQL."""
 
         # Get campus email domain from environment
@@ -107,46 +107,46 @@ class StaffService:
 
         # Get profile basic info
         query, params = self.queries.get_profile_by_id(request.profileId)
-        profile = self.db.execute(text(query), params).fetchone()
+        profile = await self.conn.fetchrow(query, *params)
 
         if not profile:
             raise ValueError(f"Profile not found: {request.profileId}")
 
         # Construct email
-        email = profile.alias + campus_email
+        email = profile['alias'] + campus_email
 
         # Get profile's department
         query, params = self.queries.get_profile_department(request.profileId)
-        dept_result = self.db.execute(text(query), params).fetchone()
-        department_id = str(dept_result.department_id) if dept_result else ""
+        dept_result = await self.conn.fetchrow(query, *params)
+        department_id = str(dept_result['department_id']) if dept_result else ""
 
         # Get profile's cohorts
         query, params = self.queries.get_profile_cohorts(request.profileId)
-        cohort_result = self.db.execute(text(query), params).fetchall()
-        cohort_ids = [str(row.cohort_id) for row in cohort_result]
+        cohort_result = await self.conn.fetch(query, *params)
+        cohort_ids = [str(row['cohort_id']) for row in cohort_result]
 
         # Get valid departments
         query, params = self.queries.get_valid_departments_for_profile(
             request.currentProfileId
         )
-        dept_list = self.db.execute(text(query), params).fetchall()
-        valid_department_ids = [str(row.id) for row in dept_list]
+        dept_list = await self.conn.fetch(query, *params)
+        valid_department_ids = [str(row['id']) for row in dept_list]
 
         # Get cohort mapping
         cohort_mapping = {}
         if cohort_ids:
             query, params = self.queries.get_cohort_mapping(cohort_ids)
-            cohort_results = self.db.execute(text(query), params).fetchall()
+            cohort_results = await self.conn.fetch(query, *params)
             for row in cohort_results:
-                cohort_mapping[str(row.id)] = CohortMappingItem(
-                    name=row.name,
-                    description=row.description
+                cohort_mapping[str(row['id'])] = CohortMappingItem(
+                    name=row['name'],
+                    description=row['description']
                 )
 
         # Get department mapping
         department_mapping = {
-            str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description or ''
+            str(row['id']): DepartmentMappingItem(
+                name=row['name'], description=row['description'] or ''
             )
             for row in dept_list
         }
@@ -155,11 +155,11 @@ class StaffService:
         role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
 
         return StaffDetailResponse(
-            name=profile.name,
+            name=profile['name'],
             email=email,
-            role=profile.role,
-            requests_per_day=profile.requests_per_day,
-            active=profile.active,
+            role=profile['role'],
+            requests_per_day=profile['requests_per_day'],
+            active=profile['active'],
             department_id=department_id,
             valid_department_ids=valid_department_ids,
             cohort_ids=cohort_ids,
@@ -168,47 +168,47 @@ class StaffService:
             department_mapping=department_mapping,
         )
 
-    def get_staff_detail_bulk(
+    async def get_staff_detail_bulk(
         self, request: StaffDetailBulkRequest
     ) -> StaffDetailBulkResponse:
         """Get bulk staff detail information."""
 
         # Get profiles
         query, params = self.queries.get_profiles_by_ids(request.profileIds)
-        profiles = self.db.execute(text(query), params).fetchall()
+        profiles = await self.conn.fetch(query, *params)
 
         if not profiles:
             raise ValueError("No profiles found")
 
         # Check if roles are consistent
-        roles = list(set([p.role for p in profiles]))
+        roles = list(set([p['role'] for p in profiles]))
         role = roles[0] if len(roles) == 1 else None
 
         # Check if requests_per_day are consistent
         req_per_days = list(
-            set([p.requests_per_day for p in profiles if p.requests_per_day is not None])
+            set([p['requests_per_day'] for p in profiles if p['requests_per_day'] is not None])
         )
         requests_per_day = req_per_days[0] if len(req_per_days) == 1 else None
 
         # Get all departments for these profiles
         query, params = self.queries.get_profile_departments_bulk(request.profileIds)
-        dept_results = self.db.execute(text(query), params).fetchall()
-        department_ids = [str(row.department_id) for row in dept_results]
+        dept_results = await self.conn.fetch(query, *params)
+        department_ids = [str(row['department_id']) for row in dept_results]
 
         # Get valid departments
         query, params = self.queries.get_valid_departments_for_profile(
             request.currentProfileId
         )
-        dept_list = self.db.execute(text(query), params).fetchall()
-        valid_department_ids = [str(row.id) for row in dept_list]
+        dept_list = await self.conn.fetch(query, *params)
+        valid_department_ids = [str(row['id']) for row in dept_list]
 
         # Get department mapping
         if department_ids:
             query, params = self.queries.get_departments_mapping(department_ids)
-            dept_mapping_results = self.db.execute(text(query), params).fetchall()
+            dept_mapping_results = await self.conn.fetch(query, *params)
             department_mapping = {
-                str(row.id): DepartmentMappingItem(
-                    name=row.name, description=row.description
+                str(row['id']): DepartmentMappingItem(
+                    name=row['name'], description=row['description']
                 )
                 for row in dept_mapping_results
             }
@@ -227,12 +227,12 @@ class StaffService:
             department_mapping=department_mapping,
         )
 
-    def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
+    async def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
         """Create a new staff member."""
 
         # Check if alias already exists
         query, params = self.queries.check_alias_exists(request.alias)
-        existing = self.db.execute(text(query), params).fetchone()
+        existing = await self.conn.fetchrow(query, *params)
 
         if existing:
             raise ValueError(f"Alias '{request.alias}' already exists")
@@ -240,36 +240,34 @@ class StaffService:
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
 
-        # Insert profile
-        query, _ = self.queries.create_profile()
-        self.db.execute(
-            text(query),
-            {
-                "id": profile_id,
-                "first_name": request.firstName,
-                "last_name": request.lastName,
-                "alias": request.alias,
-                "role": request.role,
-                "active": True,
-                "default_profile": False,
-                "viewed_intro": False,
-                "viewed_chat": False,
-                "req_per_day": None,
-            },
-        )
-
-        # If department_id is provided, insert profile_departments relationship
-        if request.department_id:
-            query, _ = self.queries.insert_profile_department()
-            self.db.execute(
-                text(query),
-                {
-                    "profile_id": profile_id,
-                    "department_id": request.department_id,
-                },
+        async with transaction(self.conn):
+            # Insert profile
+            await self.conn.execute(
+                """INSERT INTO profiles (
+                    id, first_name, last_name, alias, role, active, 
+                    default_profile, viewed_intro, viewed_chat, req_per_day
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                profile_id,
+                request.firstName,
+                request.lastName,
+                request.alias,
+                request.role,
+                True,
+                False,
+                False,
+                False,
+                None,
             )
 
-        self.db.commit()
+            # If department_id is provided, insert profile_departments relationship
+            if request.department_id:
+                await self.conn.execute(
+                    """INSERT INTO profile_departments (profile_id, department_id)
+                       VALUES ($1, $2)
+                       ON CONFLICT (profile_id, department_id) DO NOTHING""",
+                    profile_id,
+                    request.department_id,
+                )
 
         return CreateStaffResponse(
             success=True,
@@ -277,7 +275,7 @@ class StaffService:
             message=f"Staff '{request.firstName} {request.lastName}' created successfully",
         )
 
-    def bulk_create_staff(
+    async def bulk_create_staff(
         self, request: BulkCreateStaffRequest
     ) -> BulkCreateStaffResponse:
         """Bulk create staff members."""
@@ -285,10 +283,10 @@ class StaffService:
         # Check for duplicate aliases
         aliases = [p.alias for p in request.profiles]
         query, params = self.queries.check_aliases_exist(aliases)
-        existing = self.db.execute(text(query), params).fetchall()
+        existing = await self.conn.fetch(query, *params)
 
         if existing:
-            existing_aliases = [row.alias for row in existing]
+            existing_aliases = [row['alias'] for row in existing]
             raise ValueError(
                 f"Aliases already exist: {', '.join(existing_aliases)}"
             )
@@ -301,8 +299,7 @@ class StaffService:
 
             # Insert profile
             query, _ = self.queries.create_profile()
-            self.db.execute(
-                text(query),
+            await self.conn.execute(
                 {
                     "id": profile_id,
                     "first_name": profile_req.firstName,
@@ -320,15 +317,14 @@ class StaffService:
             # If department_id is provided, insert profile_departments relationship
             if profile_req.department_id:
                 query, _ = self.queries.insert_profile_department()
-                self.db.execute(
-                    text(query),
+                await self.conn.execute(
                     {
                         "profile_id": profile_id,
                         "department_id": profile_req.department_id,
                     },
                 )
 
-        self.db.commit()
+        # Transaction handled by context manager
 
         return BulkCreateStaffResponse(
             success=True,
@@ -336,20 +332,19 @@ class StaffService:
             message=f"{len(profile_ids)} staff members created successfully",
         )
 
-    def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:
+    async def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:
         """Update a staff member."""
 
         # Check if profile exists
         query, params = self.queries.get_profile_name(request.profileId)
-        existing = self.db.execute(text(query), params).fetchone()
+        existing = await self.conn.fetchrow(query, *params)
 
         if not existing:
             raise ValueError(f"Profile not found: {request.profileId}")
 
         # Update profile
         query, _ = self.queries.update_profile()
-        self.db.execute(
-            text(query),
+        await self.conn.execute(
             {
                 "profile_id": request.profileId,
                 "role": request.role,
@@ -360,21 +355,20 @@ class StaffService:
 
         # Update department
         query, _ = self.queries.update_profile_department()
-        self.db.execute(
-            text(query),
+        await self.conn.execute(
             {
                 "profile_id": request.profileId,
                 "department_id": request.department_id,
             },
         )
 
-        self.db.commit()
+        # Transaction handled by context manager
 
         return UpdateStaffResponse(
-            success=True, message=f"Staff '{existing.name}' updated successfully"
+            success=True, message=f"Staff '{existing['name']}' updated successfully"
         )
 
-    def bulk_update_staff(
+    async def bulk_update_staff(
         self, request: BulkUpdateStaffRequest
     ) -> BulkUpdateStaffResponse:
         """Bulk update staff members."""
@@ -399,64 +393,61 @@ class StaffService:
         if set_clauses:
             query, _ = self.queries.bulk_update_profiles()
             query = query.format(set_clauses=", ".join(set_clauses) + ",")
-            self.db.execute(text(query), params)
 
         # Update departments if provided
         if request.department_id is not None:
             query, _ = self.queries.bulk_update_profile_departments()
-            self.db.execute(
-                text(query),
+            await self.conn.execute(
                 {
                     "profile_ids": request.profileIds,
                     "department_id": request.department_id,
                 },
             )
 
-        self.db.commit()
+        # Transaction handled by context manager
 
         return BulkUpdateStaffResponse(
             success=True,
             message=f"{len(request.profileIds)} staff members updated successfully",
         )
 
-    def delete_staff(self, request: DeleteStaffRequest) -> DeleteStaffResponse:
+    async def delete_staff(self, request: DeleteStaffRequest) -> DeleteStaffResponse:
         """Delete a staff member."""
 
         # Check if profile is default
         query, params = self.queries.check_default_profile(request.profileId)
-        result = self.db.execute(text(query), params).fetchone()
+        result = await self.conn.fetchrow(query, *params)
 
         if not result:
             raise ValueError(f"Profile not found: {request.profileId}")
 
-        if result.default_profile:
+        if result['default_profile']:
             raise ValueError("Cannot delete default profile")
 
         # Get profile name
         query, params = self.queries.get_profile_name(request.profileId)
-        profile = self.db.execute(text(query), params).fetchone()
+        profile = await self.conn.fetchrow(query, *params)
 
         if not profile:
             raise ValueError(f"Profile not found: {request.profileId}")
 
         # Delete profile
         query, params = self.queries.delete_profile(request.profileId)
-        self.db.execute(text(query), params)
-        self.db.commit()
+        # Transaction handled by context manager
 
         return DeleteStaffResponse(
-            success=True, message=f"Staff '{profile.name}' deleted successfully"
+            success=True, message=f"Staff '{profile['name']}' deleted successfully"
         )
 
-    def bulk_delete_staff(
+    async def bulk_delete_staff(
         self, request: BulkDeleteStaffRequest
     ) -> BulkDeleteStaffResponse:
         """Bulk delete staff members."""
 
         # Check for default profiles
         query, params = self.queries.bulk_check_default_profiles(request.profileIds)
-        default_profiles = self.db.execute(text(query), params).fetchall()
-        default_ids = [str(row.id) for row in default_profiles]
+        default_profiles = await self.conn.fetch(query, *params)
+        default_ids = [str(row['id']) for row in default_profiles]
 
         # Filter out default profiles
         deletable_ids = [
@@ -468,8 +459,7 @@ class StaffService:
 
         # Delete profiles
         query, params = self.queries.bulk_delete_profiles(deletable_ids)
-        self.db.execute(text(query), params)
-        self.db.commit()
+        # Transaction handled by context manager
 
         message = f"{len(deletable_ids)} staff members deleted successfully"
         if default_ids:

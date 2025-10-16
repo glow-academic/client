@@ -1,5 +1,6 @@
 """Department repository - thin wrapper around service."""
 
+import asyncpg  # type: ignore
 from app.schemas.departments import (CreateDepartmentRequest,
                                      CreateDepartmentResponse,
                                      DeleteDepartmentRequest,
@@ -13,55 +14,58 @@ from app.schemas.departments import (CreateDepartmentRequest,
                                      UpdateDepartmentRequest,
                                      UpdateDepartmentResponse)
 from app.services.department_service import DepartmentService
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DepartmentRepository:
     """Repository for department operations."""
 
-    def __init__(self) -> None:
-        """Initialize repository with service."""
-        self.service = DepartmentService()
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.service = DepartmentService(conn)
 
     async def get_departments_list(
-        self, filters: DepartmentsFilters, session: AsyncSession
+        self, filters: DepartmentsFilters
     ) -> DepartmentsListResponse:
         """Get list of departments."""
-        return await self.service.get_departments_list(filters, session)
+        return await self.service.get_departments_list(filters)
 
     async def get_department_detail(
-        self, request: DepartmentDetailRequest, session: AsyncSession
+        self, request: DepartmentDetailRequest
     ) -> DepartmentDetailResponse:
         """Get department detail."""
-        return await self.service.get_department_detail(request, session)
+        return await self.service.get_department_detail(request)
 
     async def get_department_detail_default(
-        self, profile_id: str, session: AsyncSession
+        self, profile_id: str
     ) -> DepartmentDetailResponse:
         """Get default department detail for a profile."""
-        return await self.service.get_department_detail_default(profile_id, session)
+        return await self.service.get_department_detail_default(profile_id)
 
     async def create_department(
-        self, request: CreateDepartmentRequest, session: AsyncSession
+        self, request: CreateDepartmentRequest
     ) -> CreateDepartmentResponse:
         """Create a new department."""
-        return await self.service.create_department(request, session)
+        return await self.service.create_department(request)
 
     async def update_department(
-        self, request: UpdateDepartmentRequest, session: AsyncSession
+        self, request: UpdateDepartmentRequest
     ) -> UpdateDepartmentResponse:
         """Update a department."""
-        return await self.service.update_department(request, session)
+        return await self.service.update_department(request)
 
     async def duplicate_department(
-        self, request: DuplicateDepartmentRequest, session: AsyncSession
+        self, request: DuplicateDepartmentRequest
     ) -> DuplicateDepartmentResponse:
         """Duplicate a department."""
-        return await self.service.duplicate_department(request, session)
+        return await self.service.duplicate_department(request)
 
     async def delete_department(
-        self, request: DeleteDepartmentRequest, session: AsyncSession
+        self, request: DeleteDepartmentRequest
     ) -> DeleteDepartmentResponse:
         """Delete a department."""
-        return await self.service.delete_department(request, session)
+        return await self.service.delete_department(request)
 
+
+def get_department_repository(conn: asyncpg.Connection) -> DepartmentRepository:
+    """Get department repository instance."""
+    return DepartmentRepository(conn)

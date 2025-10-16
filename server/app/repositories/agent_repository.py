@@ -1,6 +1,6 @@
 """Agent repository - thin wrapper around service."""
 
-import asyncpg
+import asyncpg # type: ignore
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentsListRequest, AgentsListResponse,
                                 CreateAgentRequest, CreateAgentResponse,

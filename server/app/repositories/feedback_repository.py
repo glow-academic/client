@@ -1,6 +1,6 @@
 """Feedback repository - thin wrapper around service."""
 
-import asyncpg
+import asyncpg # type: ignore
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackListRequest,
                                   FeedbackListResponse)

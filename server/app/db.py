@@ -4,7 +4,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
-import asyncpg
+import asyncpg  # type: ignore
 from dotenv import load_dotenv
 
 load_dotenv()

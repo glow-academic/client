@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-import asyncpg
+import asyncpg # type: ignore
 from app.db import get_db
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.staff_repository import get_staff_repository

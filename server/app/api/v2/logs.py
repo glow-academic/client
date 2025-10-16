@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-import asyncpg
+import asyncpg # type: ignore
 from app.db import get_db
 from app.repositories.log_repository import get_log_repository
 from app.schemas.logs import (CreateLogRequest, CreateLogResponse,

@@ -1,5 +1,6 @@
 """Staff repository - thin wrapper around staff service."""
 
+import asyncpg  # type: ignore
 from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
@@ -10,62 +11,60 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffFilters, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
 from app.services.staff_service import StaffService
-from sqlalchemy.orm import Session
 
 
 class StaffRepository:
     """Repository for staff data access."""
 
-    def __init__(self, db: Session):
-        """Initialize repository with database session."""
-        self.service = StaffService(db)
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.service = StaffService(conn)
 
-    def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
+    async def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
         """Get staff list."""
-        return self.service.get_staff_list(filters)
+        return await self.service.get_staff_list(filters)
 
-    def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
+    async def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
         """Get staff detail."""
-        return self.service.get_staff_detail(request)
+        return await self.service.get_staff_detail(request)
 
-    def get_staff_detail_bulk(
+    async def get_staff_detail_bulk(
         self, request: StaffDetailBulkRequest
     ) -> StaffDetailBulkResponse:
         """Get staff detail bulk."""
-        return self.service.get_staff_detail_bulk(request)
+        return await self.service.get_staff_detail_bulk(request)
 
-    def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
+    async def create_staff(self, request: CreateStaffRequest) -> CreateStaffResponse:
         """Create staff."""
-        return self.service.create_staff(request)
+        return await self.service.create_staff(request)
 
-    def bulk_create_staff(
+    async def bulk_create_staff(
         self, request: BulkCreateStaffRequest
     ) -> BulkCreateStaffResponse:
         """Bulk create staff."""
-        return self.service.bulk_create_staff(request)
+        return await self.service.bulk_create_staff(request)
 
-    def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:
+    async def update_staff(self, request: UpdateStaffRequest) -> UpdateStaffResponse:
         """Update staff."""
-        return self.service.update_staff(request)
+        return await self.service.update_staff(request)
 
-    def bulk_update_staff(
+    async def bulk_update_staff(
         self, request: BulkUpdateStaffRequest
     ) -> BulkUpdateStaffResponse:
         """Bulk update staff."""
-        return self.service.bulk_update_staff(request)
+        return await self.service.bulk_update_staff(request)
 
-    def delete_staff(self, request: DeleteStaffRequest) -> DeleteStaffResponse:
+    async def delete_staff(self, request: DeleteStaffRequest) -> DeleteStaffResponse:
         """Delete staff."""
-        return self.service.delete_staff(request)
+        return await self.service.delete_staff(request)
 
-    def bulk_delete_staff(
+    async def bulk_delete_staff(
         self, request: BulkDeleteStaffRequest
     ) -> BulkDeleteStaffResponse:
         """Bulk delete staff."""
-        return self.service.bulk_delete_staff(request)
+        return await self.service.bulk_delete_staff(request)
 
 
-def get_staff_repository(db: Session) -> StaffRepository:
+def get_staff_repository(conn: asyncpg.Connection) -> StaffRepository:
     """Dependency injection for staff repository."""
-    return StaffRepository(db)
-
+    return StaffRepository(conn)

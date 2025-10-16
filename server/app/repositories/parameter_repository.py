@@ -1,5 +1,6 @@
 """Parameter repository - thin wrapper around parameter service."""
 
+import asyncpg  # type: ignore
 from app.schemas.parameters import (CreateParameterItemRequest,
                                     CreateParameterItemResponse,
                                     CreateParameterRequest,
@@ -15,66 +16,64 @@ from app.schemas.parameters import (CreateParameterItemRequest,
                                     UpdateParameterRequest,
                                     UpdateParameterResponse)
 from app.services.parameter_service import ParameterService
-from sqlalchemy.orm import Session
 
 
 class ParameterRepository:
     """Repository for parameter data access."""
 
-    def __init__(self, db: Session):
-        """Initialize repository with database session."""
-        self.service = ParameterService(db)
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.service = ParameterService(conn)
 
-    def get_parameters_list(
+    async def get_parameters_list(
         self, filters: ParametersFilters
     ) -> ParametersListResponse:
         """Get parameters list."""
-        return self.service.get_parameters_list(filters)
+        return await self.service.get_parameters_list(filters)
 
-    def get_parameter_detail(
+    async def get_parameter_detail(
         self, request: ParameterDetailRequest
     ) -> ParameterDetailResponse:
         """Get parameter detail."""
-        return self.service.get_parameter_detail(request)
+        return await self.service.get_parameter_detail(request)
 
-    def get_parameter_detail_default(
+    async def get_parameter_detail_default(
         self, request: ParameterDetailDefaultRequest
     ) -> ParameterDetailResponse:
         """Get default parameter detail."""
-        return self.service.get_parameter_detail_default(request)
+        return await self.service.get_parameter_detail_default(request)
 
-    def create_parameter(
+    async def create_parameter(
         self, request: CreateParameterRequest
     ) -> CreateParameterResponse:
         """Create parameter."""
-        return self.service.create_parameter(request)
+        return await self.service.create_parameter(request)
 
-    def update_parameter(
+    async def update_parameter(
         self, request: UpdateParameterRequest
     ) -> UpdateParameterResponse:
         """Update parameter."""
-        return self.service.update_parameter(request)
+        return await self.service.update_parameter(request)
 
-    def duplicate_parameter(
+    async def duplicate_parameter(
         self, request: DuplicateParameterRequest
     ) -> DuplicateParameterResponse:
         """Duplicate parameter."""
-        return self.service.duplicate_parameter(request)
+        return await self.service.duplicate_parameter(request)
 
-    def delete_parameter(
+    async def delete_parameter(
         self, request: DeleteParameterRequest
     ) -> DeleteParameterResponse:
         """Delete parameter."""
-        return self.service.delete_parameter(request)
+        return await self.service.delete_parameter(request)
 
-    def create_parameter_item(
+    async def create_parameter_item(
         self, request: CreateParameterItemRequest
     ) -> CreateParameterItemResponse:
         """Create a single parameter item."""
-        return self.service.create_parameter_item(request)
+        return await self.service.create_parameter_item(request)
 
 
-def get_parameter_repository(db: Session) -> ParameterRepository:
+def get_parameter_repository(conn: asyncpg.Connection) -> ParameterRepository:
     """Dependency injection for parameter repository."""
-    return ParameterRepository(db)
-
+    return ParameterRepository(conn)

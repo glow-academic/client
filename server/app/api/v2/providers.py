@@ -2,7 +2,8 @@
 
 from typing import Annotated
 
-from app.db import get_session
+import asyncpg  # type: ignore
+from app.db import get_db
 from app.repositories.provider_repository import get_provider_repository
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
@@ -19,7 +20,6 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    UpdateProviderResponse)
 from app.utils.auth import decrypt_api_key
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -32,12 +32,12 @@ router = APIRouter(prefix="/providers", tags=["providers"])
 @router.post("/list", response_model=ProvidersListResponse)
 async def get_providers_list(
     filters: ProvidersFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProvidersListResponse:
     """Get providers list with nested models (hierarchical)."""
     try:
-        repo = get_provider_repository(db)
-        return repo.get_providers_list(filters)
+        repo = get_provider_repository(conn)
+        return await repo.get_providers_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,12 +45,12 @@ async def get_providers_list(
 @router.post("/detail", response_model=ProviderDetailResponse)
 async def get_provider_detail(
     request: ProviderDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ProviderDetailResponse:
     """Get detailed provider information."""
     try:
-        repo = get_provider_repository(db)
-        return repo.get_provider_detail(request)
+        repo = get_provider_repository(conn)
+        return await repo.get_provider_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -60,12 +60,12 @@ async def get_provider_detail(
 @router.post("/create", response_model=CreateProviderResponse)
 async def create_provider(
     request: CreateProviderRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateProviderResponse:
     """Create a new provider."""
     try:
-        repo = get_provider_repository(db)
-        return repo.create_provider(request)
+        repo = get_provider_repository(conn)
+        return await repo.create_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -75,12 +75,12 @@ async def create_provider(
 @router.post("/update", response_model=UpdateProviderResponse)
 async def update_provider(
     request: UpdateProviderRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateProviderResponse:
     """Update an existing provider."""
     try:
-        repo = get_provider_repository(db)
-        return repo.update_provider(request)
+        repo = get_provider_repository(conn)
+        return await repo.update_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -90,12 +90,12 @@ async def update_provider(
 @router.post("/delete", response_model=DeleteProviderResponse)
 async def delete_provider(
     request: DeleteProviderRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteProviderResponse:
     """Delete a provider."""
     try:
-        repo = get_provider_repository(db)
-        return repo.delete_provider(request)
+        repo = get_provider_repository(conn)
+        return await repo.delete_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -105,18 +105,18 @@ async def delete_provider(
 @router.post("/decrypt-key", response_model=DecryptProviderKeyResponse)
 async def decrypt_provider_key(
     request: DecryptProviderKeyRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DecryptProviderKeyResponse:
     """Decrypt provider API key for authorized users."""
     try:
-        repo = get_provider_repository(db)
+        repo = get_provider_repository(conn)
         
         # Get provider detail to verify access and get encrypted key
         provider_detail_request = ProviderDetailRequest(
             providerId=request.providerId,
             profileId=request.profileId
         )
-        provider_detail = repo.get_provider_detail(provider_detail_request)
+        provider_detail = await repo.get_provider_detail(provider_detail_request)
         
         # Decrypt the API key
         decrypted_key = decrypt_api_key(provider_detail.api_key)
@@ -136,12 +136,12 @@ async def decrypt_provider_key(
 @router.post("/models/detail", response_model=ModelDetailResponse)
 async def get_model_detail(
     request: ModelDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ModelDetailResponse:
     """Get detailed model information."""
     try:
-        repo = get_provider_repository(db)
-        return repo.get_model_detail(request)
+        repo = get_provider_repository(conn)
+        return await repo.get_model_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -151,12 +151,12 @@ async def get_model_detail(
 @router.post("/models/create", response_model=CreateModelResponse)
 async def create_model(
     request: CreateModelRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateModelResponse:
     """Create a new model."""
     try:
-        repo = get_provider_repository(db)
-        return repo.create_model(request)
+        repo = get_provider_repository(conn)
+        return await repo.create_model(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -166,12 +166,12 @@ async def create_model(
 @router.post("/models/update", response_model=UpdateModelResponse)
 async def update_model(
     request: UpdateModelRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateModelResponse:
     """Update an existing model."""
     try:
-        repo = get_provider_repository(db)
-        return repo.update_model(request)
+        repo = get_provider_repository(conn)
+        return await repo.update_model(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -181,14 +181,13 @@ async def update_model(
 @router.post("/models/delete", response_model=DeleteModelResponse)
 async def delete_model(
     request: DeleteModelRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteModelResponse:
     """Delete a model."""
     try:
-        repo = get_provider_repository(db)
-        return repo.delete_model(request)
+        repo = get_provider_repository(conn)
+        return await repo.delete_model(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

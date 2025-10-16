@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
-import asyncpg
+import asyncpg # type: ignore
 from app.schemas.profile import (ProfileContextRequest, ProfileContextResponse,
                                  ProfileItem, UserProfileItem)
 from app.services.profile_service import ProfileService

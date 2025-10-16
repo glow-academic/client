@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-import asyncpg
+import asyncpg # type: ignore
 from app.db import get_db
 from app.repositories.agent_repository import get_agent_repository
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,

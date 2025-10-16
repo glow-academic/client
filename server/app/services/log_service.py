@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-import asyncpg
+import asyncpg # type: ignore
 from app.queries.log_queries import LogQueries
 from app.schemas.logs import (ActorData, ContextData, CreateLogRequest,
                               CreateLogResponse, ErrorData, LogItem,
