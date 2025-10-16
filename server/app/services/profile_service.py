@@ -277,10 +277,10 @@ class ProfileService:
 
         # Get permissions data based on effective profile's role
         from typing import cast
-        
+
         from app.schemas.permissions import ProfileRole
         from app.services.permissions_service import permissions_service
-        
+
         # Cast role to ProfileRole for type safety
         profile_role = cast(ProfileRole, effective_profile.role)
         

@@ -1,0 +1,62 @@
+import { screen } from "@/test/custom-render";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// Import the hook to test
+import { usePersonaColumns } from "@/hooks/use-persona-columns";
+
+// Import mocks to ensure all API calls are stubbed
+import "@/mocks/api";
+
+// Import the test helper
+import { render } from "@/test/custom-render";
+
+// Test component that uses the hook
+function TestComponent() {
+  const result = usePersonaColumns();
+  return (
+    <div data-testid="hook-result">
+      <div data-testid="columns-length">{result.columns.length}</div>
+      <div data-testid="has-scenario-options">
+        {result.scenarioOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-reasoning-options">
+        {result.reasoningOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-model-options">
+        {result.modelOptions ? "true" : "false"}
+      </div>
+      <div data-testid="has-temperature-options">
+        {result.temperatureOptions ? "true" : "false"}
+      </div>
+    </div>
+  );
+}
+
+describe("usePersonaColumns", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("can be called and returns columns", () => {
+    render(<TestComponent />);
+
+    // Check that the component rendered successfully
+    expect(screen.getByTestId("hook-result")).toBeInTheDocument();
+
+    // Check that columns were returned
+    const columnsLength = screen.getByTestId("columns-length");
+    expect(parseInt(columnsLength.textContent || "0")).toBeGreaterThan(0);
+
+    // Check that all expected properties are present
+    expect(screen.getByTestId("has-scenario-options")).toHaveTextContent(
+      "true",
+    );
+    expect(screen.getByTestId("has-reasoning-options")).toHaveTextContent(
+      "true",
+    );
+    expect(screen.getByTestId("has-model-options")).toHaveTextContent("true");
+    expect(screen.getByTestId("has-temperature-options")).toHaveTextContent(
+      "true",
+    );
+  });
+});

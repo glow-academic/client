@@ -323,9 +323,8 @@ function generateTestTemplate(component, analysis) {
     analysis.hasDirectFetch ||
     needsVi;
 
-  let template = `import { screen } from '@testing-library/react';
-import { describe, it, expect${needsViForMocking ? ", vi, afterEach" : ""} } from 'vitest';
-import { renderWithMocks } from '@/test/renderWithMocks';`;
+  let template = `import { render, screen, waitFor } from '@/test/custom-render';
+import { describe, it, expect${needsViForMocking ? ", vi, afterEach" : ""} } from 'vitest';`;
 
   if (needsUserEvent) {
     template += `
@@ -364,12 +363,30 @@ ${analysis.hasDirectFetch ? "global.fetch = vi.fn();" : ""}`;
 
   // ✨ Import existing mock infrastructure instead of creating custom mocks
   const hasMocks = queryNames.length > 0 || mutationNames.length > 0;
+  const needsAuthMocks = analysis.usesContext || analysis.imports.some(i => i.includes('profile-context') || i.includes('next-auth'));
+  const needsNavigationMocks = analysis.usesRouter;
 
-  if (hasMocks) {
+  if (hasMocks || needsAuthMocks || needsNavigationMocks) {
     template += `
 
-// ✨ Import testing mocks
-import '@/mocks/api';
+// ✨ Import testing mocks`;
+    
+    if (hasMocks) {
+      template += `
+import '@/mocks/api';`;
+    }
+    
+    if (needsAuthMocks) {
+      template += `
+import '@/mocks/auth';`;
+    }
+    
+    if (needsNavigationMocks) {
+      template += `
+import '@/mocks/navigation';`;
+    }
+    
+    template += `
 `;
   }
 
@@ -400,9 +417,11 @@ ${mockPropLines.join("\n")}
 `;
   }
 
+  const showMockGuide = hasMocks || needsAuthMocks || needsNavigationMocks;
+  
   template += `describe('${componentName}', () => {
   ${
-    hasMocks
+    showMockGuide
       ? `
   /* ------------------------------------------------------------------ *
    * 💡 Mock Data Usage Guide:
@@ -430,10 +449,10 @@ ${mockPropLines.join("\n")}
   describe('basic render smoke-test', () => {
     it('renders without crashing', async () => {
       ${hasMocks ? "// ✨ All mocks are automatically set up via imports above" : ""}
-      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      render(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // TODO: Add meaningful assertions based on your component
-      // Example: expect(screen.getByText('Expected Text')).toBeInTheDocument();
+      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
     });
 
     ${
@@ -501,7 +520,7 @@ ${mockPropLines.join("\n")}
           : ""
       }
 
-      renderWithMocks(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
+      render(<${componentName.includes("-") ? componentName.replace(/-/g, "") : componentName} ${analysis.hasProps ? "{...mockProps}" : ""} />);
       
       // Assert: Check that your component shows an error message.
       // TODO: Add specific error state assertions
