@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateProvider,
   useDecryptProviderKey,
@@ -48,6 +49,7 @@ export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
+  const { error: logError } = useLogger();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -210,7 +212,7 @@ export default function Provider({ providerId }: ProviderProps) {
       }
     } catch (error) {
       const message = `Error ${isEditMode ? "updating" : "creating"} provider:`;
-      log.error("provider.save.failed", {
+      logError("provider.save.failed", {
         message,
         error,
         context: { component: "Provider", isEditMode, providerId },
@@ -235,7 +237,7 @@ export default function Provider({ providerId }: ProviderProps) {
         setDecryptedApiKey(result.api_key);
         setShowApiKey(true);
       } catch (error) {
-        log.error("provider.api_key.decrypt.failed", {
+        logError("provider.api_key.decrypt.failed", {
           message: "Error decrypting API key",
           error,
           context: {

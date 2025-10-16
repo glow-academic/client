@@ -25,6 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useProfile } from "@/contexts/profile-context";
 import { useCreateFeedbackV2 } from "@/lib/api/v2/hooks/feedback";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import type { CreateFeedbackResponse } from "@/lib/api/v2/schemas/feedback";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -56,6 +57,7 @@ export default function ReportProblem({
   const [isOpen, setIsOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const createAppFeedbackMutation = useCreateFeedbackV2();
+  const { error: logError } = useLogger();
 
   const { activeProfile } = useProfile();
 
@@ -106,7 +108,7 @@ export default function ReportProblem({
 
   // Handle feedback creation errors
   const handleError = async (error: Error) => {
-    await log.error("feedback.create.failed", {
+    await logError("feedback.create.failed", {
       message: "Failed to submit feedback",
       subject: { entityType: "app_feedback" },
       context: {

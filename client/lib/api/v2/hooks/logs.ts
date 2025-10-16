@@ -4,7 +4,7 @@
  */
 
 import { useProfile } from "@/contexts/profile-context";
-import { log as baseLog } from "@/utils/logger";
+import { log as baseLog } from "@/lib/api/v2/server/logs";
 
 /**
  * Logger hook that automatically includes the current profile as actor

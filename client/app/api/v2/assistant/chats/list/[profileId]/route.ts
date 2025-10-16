@@ -3,9 +3,9 @@
  * Proxies to FastAPI server for new chat state
  */
 
+import { getApiBase } from "@/lib/api-base";
+import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
@@ -14,30 +14,31 @@ export async function GET(
   try {
     const { profileId } = params;
 
-    const url = `${API_URL}/api/v2/assistant/chats/list/${profileId}`;
+    const url = `${getApiBase()}/api/v2/assistant/chats/list/${profileId}`;
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json(
-        { error: error || "Failed to fetch assistant chats list" },
-        { status: response.status }
-      );
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || error.message || "Server request failed");
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching assistant chats list:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.error("assistant.v2.chats.list.error", {
+      message: errorMessage,
+      error,
+    });
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -17,43 +17,41 @@ client/mocks/
 
 ## Mock Files Overview
 
-### 📡 `api.ts` - API Endpoint Mocks
+### 📡 `api.ts` - API Infrastructure Mocks
 
-**Purpose**: Mock API calls made with fetch to your Next.js Route Handlers and external APIs.
+**Purpose**: Mock the underlying API infrastructure (fetch, api-base) to support all API calls generically.
 
 **Key Responsibilities**:
 
-- Mock individual API client functions
-- Provide reusable response patterns (`mockSuccessResponse`, `mockErrorResponse`)
+- Provide reusable response patterns (`mockSuccessResponse`, `mockErrorResponse`, `mockPaginatedResponse`)
+- Mock global `fetch` API for all HTTP calls
+- Mock `@/lib/api-base` for API configuration
 - Export helper functions for easy test setup
-- Mock global `fetch` API
 
 **What to add here**:
 
-- New API endpoint mocks as you add them to your application
 - Custom response patterns for specific API scenarios
-- Mock implementations for external API integrations
+- Additional fetch utilities or configurations
 - Error handling patterns
 
-**Example additions**:
+**Example usage**:
 
 ```typescript
-// Add new API mocks
-export const uploadFileMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse({ fileId: "file-123" }));
+import { mockFetchResponse, mockSuccessResponse } from '@/mocks/api';
 
-// Add to vi.mock calls
-vi.mock("@/utils/api/files", () => ({
-  uploadFile: uploadFileMock,
-}));
-
-// Add to apiMocks export
-export const apiMocks = {
-  // ... existing mocks
-  uploadFile: uploadFileMock,
-};
+// Mock a fetch response for a v2 API endpoint
+test('fetches data successfully', async () => {
+  mockFetchResponse(
+    '/api/v2/scenarios/list',
+    mockSuccessResponse({ scenarios: [...] })
+  );
+  
+  // Your component/hook will use the mocked fetch
+  render(<YourComponent />);
+});
 ```
+
+**Note**: V2 API uses React Query hooks (`@/lib/api/v2/hooks/*`) that make fetch calls under the hood. These are automatically covered by the global fetch mock.
 
 ### 🔐 `auth.ts` - Authentication & Profile Mocks
 
@@ -138,7 +136,8 @@ export const setupProtectedRoute = (requiresAuth = true) => {
 
 - Mock browser APIs (ResizeObserver, IntersectionObserver, matchMedia)
 - Mock third-party UI libraries (charts, notifications, uploads)
-- Mock utility modules (logger, database connections)
+- Mock V2 API loggers (server-side and client-side)
+- Mock utility modules (database connections)
 - Set up environment variables for testing
 
 **What to add here**:
@@ -147,6 +146,50 @@ export const setupProtectedRoute = (requiresAuth = true) => {
 - Additional browser API mocks
 - Component library mocks
 - Global utility mocks
+
+**V2 Logger Mocks**:
+
+This file mocks both the server-side and client-side V2 loggers:
+
+```typescript
+// Server-side logger (used in API routes)
+vi.mock("@/lib/api/v2/server/logs", () => ({
+  log: {
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Client-side logger hook (used in components)
+vi.mock("@/lib/api/v2/hooks/logs", () => ({
+  useLogger: vi.fn(() => ({
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+```
+
+**Example usage in tests**:
+
+```typescript
+import { vi } from 'vitest';
+import { log } from '@/lib/api/v2/server/logs';
+
+test('logs error on failure', async () => {
+  // Test your code that uses the logger
+  await yourFunction();
+  
+  // Assert logger was called
+  expect(log.error).toHaveBeenCalledWith('your.error.event', {
+    message: 'Error message',
+    error: expect.any(Error),
+  });
+});
+```
 
 **Example additions**:
 
@@ -178,7 +221,14 @@ Object.defineProperty(window, "localStorage", {
 
 Each mock file should have a clear, single responsibility. Don't mix concerns between files.
 
-### 2. **Export Test Utilities**
+### 2. **V2 API and React Query**
+
+The V2 API architecture uses React Query hooks (`@/lib/api/v2/hooks/*`) that make fetch calls under the hood. Rather than mocking individual hook modules, mock the underlying `fetch` API or use the helper functions in `api.ts` (`mockFetchResponse`, `mockApiSuccess`, etc.). This approach:
+- Keeps mocks generic and maintainable
+- Avoids creating mocks for every new endpoint
+- Tests closer to production behavior
+
+### 3. **Export Test Utilities**
 
 Provide helper functions that make it easy to set up specific test scenarios:
 
@@ -198,7 +248,7 @@ export const setupAuthenticatedUser = (userData = {}) => {
 setupAuthenticatedUser({ role: "admin" });
 ```
 
-### 3. **Use Consistent Patterns**
+### 4. **Use Consistent Patterns**
 
 Follow the established patterns in each file for consistency:
 
@@ -207,11 +257,11 @@ Follow the established patterns in each file for consistency:
 - Use descriptive function names
 - Include TypeScript types
 
-### 4. **Document Complex Mocks**
+### 5. **Document Complex Mocks**
 
 Add comments for complex mock implementations or when mocking behavior differs from real behavior.
 
-### 5. **Test Your Mocks**
+### 6. **Test Your Mocks**
 
 Consider writing tests for complex mock utilities to ensure they work as expected.
 
@@ -282,14 +332,18 @@ cd database && node scripts/generate-test-harness.js
 ```typescript
 import { render, screen } from '@/test/custom-render';
 import { setupAuthenticatedUser, setupProfile } from '@/mocks/auth';
-import { mockApiSuccess } from '@/mocks/api';
-import { apiMocks } from '@/mocks/api';
+import { mockFetchResponse, mockSuccessResponse } from '@/mocks/api';
 
 describe('User Dashboard', () => {
   beforeEach(() => {
     setupAuthenticatedUser({ role: 'admin' });
     setupProfile({ firstName: 'John', lastName: 'Doe' });
-    mockApiSuccess(apiMocks.getAnalytics, { totalUsers: 150 });
+    
+    // Mock v2 API fetch response
+    mockFetchResponse(
+      '/api/v2/analytics/header/total-users',
+      mockSuccessResponse({ totalUsers: 150 })
+    );
   });
 
   it('displays user information', () => {

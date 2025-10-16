@@ -17,6 +17,7 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useAnalyticsHomeOverview } from "@/lib/api/v2/hooks/analytics";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 import { useDepartments } from "@/contexts/departments-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -32,6 +33,7 @@ import SimulationCard from "../common/simulation/SimulationCard";
 export default function Home() {
   const { effectiveProfile, activeProfile } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
+  const { info, error } = useLogger();
   const {
     startDate,
     endDate,
@@ -111,7 +113,7 @@ export default function Home() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      log.info("simulation.navigate.attempt", {
+      info("simulation.navigate.attempt", {
         message: "Navigating to simulation attempt",
         subject: { entityType: "attempt", entityId: attemptId },
         context: { component: "Home", function: "handleSimulationStarted" },
@@ -147,7 +149,7 @@ export default function Home() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId]);
+  }, [router, loadingToastId, info]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -168,12 +170,9 @@ export default function Home() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          log.error("simulation.start.precheck.failed", {
+          error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
             subject: { entityType: "simulation", entityId: simulationId },
-            ...(effectiveProfile?.id
-              ? { actor: { profileId: effectiveProfile.id } }
-              : {}),
             context: {
               component: "Home",
               function: "handleStartSimulation",
@@ -191,12 +190,9 @@ export default function Home() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        log.info("simulation.start", {
+        info("simulation.start", {
           message: "Starting simulation via global WebSocket",
           subject: { entityType: "simulation", entityId: simulationId },
-          ...(effectiveProfile?.id
-            ? { actor: { profileId: effectiveProfile.id } }
-            : {}),
           context: {
             component: "Home",
             function: "handleStartSimulation",
@@ -220,27 +216,21 @@ export default function Home() {
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          log.error("simulation.start.timeout", {
+          error("simulation.start.timeout", {
             message: "Simulation start timeout - no response from server",
             subject: { entityType: "simulation", entityId: simulationId },
-            ...(effectiveProfile?.id
-              ? { actor: { profileId: effectiveProfile.id } }
-              : {}),
             context: { component: "Home", function: "handleStartSimulation" },
           });
           toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingToastId(null);
         }, 30000);
-      } catch (error) {
-        log.error("simulation.start.failed", {
+      } catch (err) {
+        error("simulation.start.failed", {
           message: "Error starting simulation",
           subject: { entityType: "simulation", entityId: simulationId },
-          ...(effectiveProfile?.id
-            ? { actor: { profileId: effectiveProfile.id } }
-            : {}),
           context: { component: "Home", function: "handleStartSimulation" },
-          error,
+          error: err,
         });
         if (loadingToastId) toast.dismiss(loadingToastId);
         toast.error("Failed to start simulation. Please try again.");
@@ -255,6 +245,8 @@ export default function Home() {
       loadingToastId,
       effectiveDepartmentIds,
       simulations,
+      error,
+      info,
     ]
   );
 

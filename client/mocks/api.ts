@@ -10,7 +10,7 @@ export const mockSuccessResponse = (data: unknown = {}) => ({
 
 export const mockErrorResponse = (
   message = "An error occurred",
-  status = 400,
+  status = 400
 ) => ({
   success: false,
   error: { message },
@@ -21,7 +21,7 @@ export const mockErrorResponse = (
 export const mockPaginatedResponse = (
   data: unknown[],
   page = 1,
-  total = 100,
+  total = 100
 ) => ({
   success: true,
   data,
@@ -34,67 +34,9 @@ export const mockPaginatedResponse = (
   status: "success" as const,
 });
 
-// --- Individual API Endpoint Mocks ---
-// Document-related API mocks
-export const deleteDocumentMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse());
-export const uploadDocumentMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse({ id: "doc-123" }));
-export const getDocumentMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse({ id: "doc-123", name: "test.pdf" }));
-
-// Scenario-related API mocks
-export const createScenarioMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse({ id: "scenario-123" }));
-export const updateScenarioMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse());
-export const deleteScenarioMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse());
-
-// Simulation-related API mocks
-export const startSimulationMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse({ sessionId: "sim-123" }));
-export const endSimulationMock = vi
-  .fn()
-  .mockResolvedValue(mockSuccessResponse());
-
-// Analytics-related API mocks
-export const getAnalyticsMock = vi.fn().mockResolvedValue(
-  mockSuccessResponse({
-    totalUsers: 100,
-    activeSessions: 25,
-    completionRate: 0.85,
-  }),
-);
-
-// --- API Module Mocks ---
-vi.mock("@/utils/api/documents", () => ({
-  deleteDocument: deleteDocumentMock,
-  uploadDocument: uploadDocumentMock,
-  getDocument: getDocumentMock,
-}));
-
-vi.mock("@/utils/api/scenarios", () => ({
-  createScenario: createScenarioMock,
-  updateScenario: updateScenarioMock,
-  deleteScenario: deleteScenarioMock,
-}));
-
-vi.mock("@/utils/api/simulations", () => ({
-  startSimulation: startSimulationMock,
-  endSimulation: endSimulationMock,
-}));
-
-vi.mock("@/utils/api/analytics", () => ({
-  getAnalytics: getAnalyticsMock,
-}));
+// --- API Infrastructure Mocks ---
+// V2 API uses React Query hooks that make fetch calls
+// We mock fetch and api-base to support all endpoints generically
 
 // --- Fetch API Mock ---
 export const mockFetch = vi.fn();
@@ -111,23 +53,6 @@ vi.mock("@/lib/api-base", () => ({
 
 // --- Export a collection for easy access ---
 export const apiMocks = {
-  // Document mocks
-  deleteDocument: deleteDocumentMock,
-  uploadDocument: uploadDocumentMock,
-  getDocument: getDocumentMock,
-
-  // Scenario mocks
-  createScenario: createScenarioMock,
-  updateScenario: updateScenarioMock,
-  deleteScenario: deleteScenarioMock,
-
-  // Simulation mocks
-  startSimulation: startSimulationMock,
-  endSimulation: endSimulationMock,
-
-  // Analytics mocks
-  getAnalytics: getAnalyticsMock,
-
   // Global fetch
   fetch: mockFetch,
 };
@@ -135,41 +60,14 @@ export const apiMocks = {
 // --- Test Utilities ---
 /** Reset all API mocks to their default state */
 export const resetAllApiMocks = () => {
-  // Reset individual mocks
-  Object.values(apiMocks).forEach((mock) => {
-    if (typeof mock === "function" && "mockClear" in mock) {
-      mock.mockClear();
-    }
-  });
-
-  // Reset to default responses
-  deleteDocumentMock.mockResolvedValue(mockSuccessResponse());
-  uploadDocumentMock.mockResolvedValue(mockSuccessResponse({ id: "doc-123" }));
-  getDocumentMock.mockResolvedValue(
-    mockSuccessResponse({ id: "doc-123", name: "test.pdf" }),
-  );
-  createScenarioMock.mockResolvedValue(
-    mockSuccessResponse({ id: "scenario-123" }),
-  );
-  updateScenarioMock.mockResolvedValue(mockSuccessResponse());
-  deleteScenarioMock.mockResolvedValue(mockSuccessResponse());
-  startSimulationMock.mockResolvedValue(
-    mockSuccessResponse({ sessionId: "sim-123" }),
-  );
-  endSimulationMock.mockResolvedValue(mockSuccessResponse());
-  getAnalyticsMock.mockResolvedValue(
-    mockSuccessResponse({
-      totalUsers: 100,
-      activeSessions: 25,
-      completionRate: 0.85,
-    }),
-  );
+  // Reset fetch mock
+  mockFetch.mockClear();
 };
 
 /** Mock a successful API response */
 export const mockApiSuccess = (
   mockFn: ReturnType<typeof vi.fn>,
-  data: unknown = {},
+  data: unknown = {}
 ) => {
   mockFn.mockResolvedValue(mockSuccessResponse(data));
 };
@@ -178,7 +76,7 @@ export const mockApiSuccess = (
 export const mockApiError = (
   mockFn: ReturnType<typeof vi.fn>,
   message = "API Error",
-  status = 400,
+  status = 400
 ) => {
   mockFn.mockResolvedValue(mockErrorResponse(message, status));
 };
@@ -186,7 +84,7 @@ export const mockApiError = (
 /** Mock a network error */
 export const mockApiNetworkError = (
   mockFn: ReturnType<typeof vi.fn>,
-  error = new Error("Network error"),
+  error = new Error("Network error")
 ) => {
   mockFn.mockRejectedValue(error);
 };
@@ -195,7 +93,7 @@ export const mockApiNetworkError = (
 export const mockFetchResponse = (
   _url: string,
   response: unknown,
-  status = 200,
+  status = 200
 ) => {
   mockFetch.mockResolvedValueOnce({
     ok: status >= 200 && status < 300,
@@ -208,7 +106,7 @@ export const mockFetchResponse = (
 /** Mock fetch with an error */
 export const mockFetchError = (
   _url: string,
-  error = new Error("Fetch failed"),
+  error = new Error("Fetch failed")
 ) => {
   mockFetch.mockRejectedValueOnce(error);
 };
@@ -217,7 +115,7 @@ export const mockFetchError = (
 export const createMockApiResponse = (
   data: unknown,
   success = true,
-  message?: string,
+  message?: string
 ) => {
   if (success) {
     return mockSuccessResponse(data);

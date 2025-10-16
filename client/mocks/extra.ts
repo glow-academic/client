@@ -107,7 +107,7 @@ vi.mock("recharts", () => ({
         className: "recharts-responsive-container",
         style: { width: "100%", height: "100%", minWidth: 0 },
       },
-      children,
+      children
     ),
   LineChart: ({ children }: { children: React.ReactNode }) =>
     React.createElement("div", { "data-testid": "line-chart" }, children),
@@ -170,16 +170,24 @@ vi.mock("reactour", () => ({
 
 // --- Utility Module Mocks ---
 
-// Logger
-vi.mock("@/utils/logger", () => ({
+// V2 Server-side Logger (used in API routes)
+vi.mock("@/lib/api/v2/server/logs", () => ({
   log: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-    event: vi.fn(),
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
   },
-  withDuration: vi.fn(),
+}));
+
+// V2 Client-side Logger Hook (used in components)
+vi.mock("@/lib/api/v2/hooks/logs", () => ({
+  useLogger: vi.fn(() => ({
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 // API base for sockets and fetch base URLs
@@ -244,7 +252,7 @@ vi.mock("@/utils/drizzle/db", () => ({
             returning: vi.fn(() => Promise.resolve([])),
           })),
         })),
-      }),
+      })
     ),
   },
   db_url: "postgresql://test:test@localhost:5432/test",
@@ -280,10 +288,19 @@ export const extraMocks = {
     dismiss: vi.fn(),
     promise: vi.fn(),
   },
-  logInfo: vi.fn(),
-  logError: vi.fn(),
-  logWarn: vi.fn(),
-  logDebug: vi.fn(),
+  // V2 Logger mocks - access via vi.mocked()
+  log: {
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  },
+  useLogger: vi.fn(() => ({
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  })),
 };
 
 /** Reset all extra mocks to their default state */
@@ -295,11 +312,12 @@ export const resetExtraMocks = () => {
     }
   });
 
-  // Reset logger mocks
-  extraMocks.logInfo.mockClear();
-  extraMocks.logError.mockClear();
-  extraMocks.logWarn.mockClear();
-  extraMocks.logDebug.mockClear();
+  // Reset v2 logger mocks
+  extraMocks.log.info.mockClear();
+  extraMocks.log.warn.mockClear();
+  extraMocks.log.error.mockClear();
+  extraMocks.log.debug.mockClear();
+  extraMocks.useLogger.mockClear();
 };
 
 /** Mock a successful toast notification */
@@ -314,10 +332,10 @@ export const mockToastError = (message: string) => {
   return extraMocks.toast.error(message);
 };
 
-/** Mock logger calls */
+/** Mock v2 server logger calls */
 export const mockLoggerCalls = () => {
-  extraMocks.logInfo.mockImplementation(() => {});
-  extraMocks.logError.mockImplementation(() => {});
-  extraMocks.logWarn.mockImplementation(() => {});
-  extraMocks.logDebug.mockImplementation(() => {});
+  extraMocks.log.info.mockResolvedValue(undefined);
+  extraMocks.log.warn.mockResolvedValue(undefined);
+  extraMocks.log.error.mockResolvedValue(undefined);
+  extraMocks.log.debug.mockResolvedValue(undefined);
 };
