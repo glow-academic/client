@@ -2,18 +2,18 @@
 
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import RefreshResponse
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(tags=["analytics-utility"])
 
 
 @router.post("/refresh", response_model=RefreshResponse)
 async def refresh_analytics_view(
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
     try:

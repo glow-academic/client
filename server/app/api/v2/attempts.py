@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated, Any, Dict
 from uuid import UUID
 
-from app.db import get_session
+from app.db import get_db
 from app.models import SimulationChats
 from app.queries.simulation_queries import get_attempt_full_data
 from app.repositories.attempts_repository import get_attempts_repository
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/attempts", tags=["attempts"])
 @router.get("/{attempt_id}/full")
 async def get_attempt_full(
     attempt_id: UUID,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""
     try:
@@ -36,12 +36,12 @@ async def get_attempt_full(
 @router.post("/bulk-archive", response_model=BulkArchiveAttemptsResponse)
 async def bulk_archive_attempts(
     request: BulkArchiveAttemptsRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkArchiveAttemptsResponse:
     """Bulk archive or unarchive simulation attempts."""
     try:
-        repo = get_attempts_repository(db)
-        return repo.bulk_archive_attempts(request)
+        repo = get_attempts_repository(conn)
+        return await repo.bulk_archive_attempts(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -51,7 +51,7 @@ async def bulk_archive_attempts(
 @router.post("/chats/update-created-at", response_model=UpdateChatTimestampResponse)
 async def update_chat_created_at(
     request: UpdateChatCreatedAtRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat createdAt timestamp."""
     try:
@@ -81,7 +81,7 @@ async def update_chat_created_at(
 @router.post("/chats/update-completed-at", response_model=UpdateChatTimestampResponse)
 async def update_chat_completed_at(
     request: UpdateChatCompletedAtRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat completedAt timestamp."""
     try:

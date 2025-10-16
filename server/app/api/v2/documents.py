@@ -5,7 +5,7 @@ import os
 import urllib.parse
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.document_repository import get_document_repository
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
@@ -24,7 +24,7 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
 from app.services.document_service import DocumentService
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, Response
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -32,12 +32,12 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 @router.post("/list", response_model=DocumentsListResponse)
 async def get_documents_list(
     filters: DocumentsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentsListResponse:
     """Get documents list with tags and scenarios."""
     try:
-        repo = get_document_repository(db)
-        return repo.get_documents_list(filters)
+        repo = get_document_repository(conn)
+        return await repo.get_documents_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,12 +45,12 @@ async def get_documents_list(
 @router.post("/detail", response_model=DocumentDetailResponse)
 async def get_document_detail(
     request: DocumentDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentDetailResponse:
     """Get detailed document information."""
     try:
-        repo = get_document_repository(db)
-        return repo.get_document_detail(request)
+        repo = get_document_repository(conn)
+        return await repo.get_document_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -60,12 +60,12 @@ async def get_document_detail(
 @router.post("/detail-bulk", response_model=DocumentDetailBulkResponse)
 async def get_document_detail_bulk(
     request: DocumentDetailBulkRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DocumentDetailBulkResponse:
     """Get bulk document detail information."""
     try:
-        repo = get_document_repository(db)
-        return repo.get_document_detail_bulk(request)
+        repo = get_document_repository(conn)
+        return await repo.get_document_detail_bulk(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -75,12 +75,12 @@ async def get_document_detail_bulk(
 @router.post("/update", response_model=UpdateDocumentResponse)
 async def update_document(
     request: UpdateDocumentRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateDocumentResponse:
     """Update a document."""
     try:
-        repo = get_document_repository(db)
-        return repo.update_document(request)
+        repo = get_document_repository(conn)
+        return await repo.update_document(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -90,12 +90,12 @@ async def update_document(
 @router.post("/bulk-update", response_model=UpdateDocumentResponse)
 async def bulk_update_documents(
     request: BulkUpdateDocumentsRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateDocumentResponse:
     """Bulk update documents."""
     try:
-        repo = get_document_repository(db)
-        return repo.bulk_update_documents(request)
+        repo = get_document_repository(conn)
+        return await repo.bulk_update_documents(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -105,12 +105,12 @@ async def bulk_update_documents(
 @router.post("/delete", response_model=DeleteDocumentResponse)
 async def delete_document(
     request: DeleteDocumentRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteDocumentResponse:
     """Delete a document."""
     try:
-        repo = get_document_repository(db)
-        return repo.delete_document(request)
+        repo = get_document_repository(conn)
+        return await repo.delete_document(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -120,12 +120,12 @@ async def delete_document(
 @router.post("/bulk-delete", response_model=DeleteDocumentResponse)
 async def bulk_delete_documents(
     request: BulkDeleteDocumentsRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteDocumentResponse:
     """Bulk delete documents."""
     try:
-        repo = get_document_repository(db)
-        return repo.bulk_delete_documents(request)
+        repo = get_document_repository(conn)
+        return await repo.bulk_delete_documents(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -157,7 +157,7 @@ async def tus_options(request: Request) -> Response:
 @router.post("/upload")
 async def tus_creation(
     request: Request,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Handle POST request for tus protocol - create upload."""
     # Check tus version
@@ -222,7 +222,7 @@ async def tus_creation(
 async def tus_head(
     upload_id: str,
     request: Request,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Handle HEAD request for tus protocol - get upload info."""
     service = DocumentService(db)
@@ -247,7 +247,7 @@ async def tus_head(
 async def tus_patch(
     upload_id: str,
     request: Request,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Handle PATCH request for tus protocol - upload chunk."""
     # Check tus version
@@ -310,7 +310,7 @@ async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
 @router.post("/upload/finalize", response_model=FinalizeUploadResponse)
 async def finalize_upload(
     request: FinalizeUploadRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FinalizeUploadResponse:
     """Finalize an upload and process the file."""
     service = DocumentService(db)
@@ -324,7 +324,7 @@ async def finalize_upload(
 @router.get("/download/{document_id}")
 async def download_document(
     document_id: str,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse:
     """Download a document by ID."""
     service = DocumentService(db)
@@ -352,7 +352,7 @@ async def download_document(
 @router.get("/csv/{token}")
 async def download_csv(
     token: str,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse:
     """Download a CSV file by token."""
     service = DocumentService(db)
@@ -375,7 +375,7 @@ async def download_csv(
 @router.post("/certificate")
 async def generate_certificate(
     request: GenerateCertificateRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Generate a certificate PDF/text for a profile."""
     try:

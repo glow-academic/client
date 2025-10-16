@@ -25,19 +25,19 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    ScenariosFilters, ScenariosListResponse,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
+from app.db import transaction
 
 
 class ScenarioService:
     """Service layer for scenario operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.db = db
+        self.conn = conn
         self.queries = ScenarioQueries()
 
-    def build_enhanced_scenario_mapping(
+    async def build_enhanced_scenario_mapping(
         self, scenario_ids: List[str]
     ) -> Dict[str, ScenarioMappingItem]:
         """Build enhanced scenario mapping with nested persona, document, and parameter data."""
@@ -46,7 +46,7 @@ class ScenarioService:
 
         # Get base scenario data with persona_id and parameter_item_ids
         query, params = self.queries.get_enhanced_scenario_mapping(scenario_ids)
-        scenario_result = self.db.execute(text(query), params).fetchall()
+        scenario_result = await self.conn.fetch(query, *params)
 
         # Collect all IDs we need to fetch
         all_persona_ids = list(set([str(row.persona_id) for row in scenario_result if row.persona_id]))
@@ -66,7 +66,7 @@ class ScenarioService:
             """)
             doc_result = self.db.execute(doc_query, {"scenario_ids": scenario_ids}).fetchall()
             for row in doc_result:
-                scenario_document_map[str(row.scenario_id)] = [str(did) for did in (row.document_ids or [])]
+                scenario_document_map[str(row['scenario_id'])] = [str(did) for did in (row.document_ids or [])]
 
         all_document_ids = list(set([
             did for doc_ids in scenario_document_map.values() for did in doc_ids
@@ -76,11 +76,11 @@ class ScenarioService:
         persona_mapping = {}
         if all_persona_ids:
             query, params = self.queries.get_persona_mapping(all_persona_ids)
-            persona_result = self.db.execute(text(query), params).fetchall()
+            persona_result = await self.conn.fetch(query, *params)
             for row in persona_result:
-                persona_mapping[str(row.id)] = PersonaMappingItem(
-                    name=row.name,
-                    description=row.description or '',
+                persona_mapping[str(row['id'])] = PersonaMappingItem(
+                    name=row['name'],
+                    description=row['description'] or '',
                     color=row.color,
                     icon=row.icon
                 )
@@ -97,20 +97,20 @@ class ScenarioService:
                 doc_mapping_query, {"document_ids": all_document_ids}
             ).fetchall()
             for row in doc_mapping_result:
-                document_mapping[str(row.id)] = DocumentMappingItem(
-                    name=row.name,
-                    description=row.description
+                document_mapping[str(row['id'])] = DocumentMappingItem(
+                    name=row['name'],
+                    description=row['description']
                 )
 
         # Fetch parameter_item mapping
         parameter_item_mapping = {}
         if all_parameter_item_ids:
             query, params = self.queries.get_parameter_item_mapping(all_parameter_item_ids)
-            param_item_result = self.db.execute(text(query), params).fetchall()
+            param_item_result = await self.conn.fetch(query, *params)
             for row in param_item_result:
-                parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
-                    name=row.name,
-                    description=row.description or '',
+                parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
+                    name=row['name'],
+                    description=row['description'] or '',
                     parameter_id=str(row.parameter_id),
                     parameter_name=row.parameter_name
                 )
@@ -118,7 +118,7 @@ class ScenarioService:
         # Build the final mapping
         enhanced_mapping = {}
         for row in scenario_result:
-            scenario_id = str(row.scenario_id)
+            scenario_id = str(row['scenario_id'])
             parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
             document_ids = scenario_document_map.get(scenario_id, [])
 
@@ -138,8 +138,8 @@ class ScenarioService:
             }
 
             enhanced_mapping[scenario_id] = ScenarioMappingItem(
-                name=row.name,
-                description=row.description,
+                name=row['name'],
+                description=row['description'],
                 persona_id=str(row.persona_id) if row.persona_id else None,
                 persona_mapping=scenario_persona_mapping,
                 document_mapping=scenario_document_mapping,
@@ -149,7 +149,7 @@ class ScenarioService:
 
         return enhanced_mapping
 
-    def get_scenarios_list(
+    async def get_scenarios_list(
         self, filters: ScenariosFilters
     ) -> ScenariosListResponse:
         """Get scenarios list with all relationships using dynamic SQL."""
@@ -159,7 +159,7 @@ class ScenarioService:
             filters.departmentIds, filters.profileId
         )
 
-        result = self.db.execute(text(query), params).fetchall()
+        result = await self.conn.fetch(query, *params)
 
         # Build response
         scenarios = []
@@ -176,11 +176,11 @@ class ScenarioService:
 
             scenarios.append(
                 ScenarioItem(
-                    scenario_id=str(row.scenario_id),
+                    scenario_id=str(row['scenario_id']),
                     title=row.title,
                     problem_statement=row.problem_statement,
-                    active=row.active,
-                    default_scenario=row.default_scenario,
+                    active=row['active'],
+                    default_scenario=row['default_scenario'],
                     generated=row.generated,
                     parent_scenario_id=row.parent_scenario_id,
                     objective_ids=objective_ids,
@@ -188,9 +188,9 @@ class ScenarioService:
                     parameter_item_ids=parameter_item_ids,
                     simulation_ids=simulation_ids,
                     num_simulations=row.num_simulations,
-                    can_edit=row.can_edit,
-                    can_delete=row.can_delete,
-                    can_duplicate=row.can_duplicate,
+                    can_edit=row['can_edit'],
+                    can_delete=row['can_delete'],
+                    can_duplicate=row['can_duplicate'],
                     cohort_ids=cohort_ids,
                 )
             )
@@ -210,7 +210,7 @@ class ScenarioService:
                 idxs = [pair[1] for pair in scenario_idx_pairs]
 
                 query, params = self.queries.get_objective_mapping(scenario_ids, idxs)
-                obj_result = self.db.execute(text(query), params).fetchall()
+                obj_result = await self.conn.fetch(query, *params)
 
                 for row in obj_result:
                     objective_mapping[row.objective_id] = ObjectiveMappingItem(
@@ -225,12 +225,12 @@ class ScenarioService:
             query, params = self.queries.get_parameter_item_mapping(
                 parameter_item_ids_to_fetch
             )
-            param_item_result = self.db.execute(text(query), params).fetchall()
+            param_item_result = await self.conn.fetch(query, *params)
 
             for row in param_item_result:
-                parameter_item_mapping[str(row.id)] = ParameterItemMappingItem(
-                    name=row.name,
-                    description=row.description or '',
+                parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
+                    name=row['name'],
+                    description=row['description'] or '',
                     parameter_id=str(row.parameter_id),
                     parameter_name=row.parameter_name
                 )
@@ -240,12 +240,12 @@ class ScenarioService:
             set([cid for s in scenarios for cid in s.cohort_ids])
         ):
             query, params = self.queries.get_cohort_mapping(cohort_ids_to_fetch)
-            cohort_result = self.db.execute(text(query), params).fetchall()
+            cohort_result = await self.conn.fetch(query, *params)
 
             for row in cohort_result:
-                cohort_mapping[str(row.id)] = CohortMappingItem(
-                    name=row.name,
-                    description=row.description
+                cohort_mapping[str(row['id'])] = CohortMappingItem(
+                    name=row['name'],
+                    description=row['description']
                 )
 
         # Get persona names for mapping
@@ -253,12 +253,12 @@ class ScenarioService:
             set([s.persona_id for s in scenarios if s.persona_id])
         ):
             query, params = self.queries.get_persona_mapping(persona_ids_to_fetch)
-            persona_result = self.db.execute(text(query), params).fetchall()
+            persona_result = await self.conn.fetch(query, *params)
 
             for row in persona_result:
-                persona_mapping[str(row.id)] = PersonaMappingItem(
-                    name=row.name,
-                    description=row.description,
+                persona_mapping[str(row['id'])] = PersonaMappingItem(
+                    name=row['name'],
+                    description=row['description'],
                     color=row.color,
                     icon=row.icon
                 )
@@ -271,7 +271,7 @@ class ScenarioService:
             persona_mapping=persona_mapping,
         )
 
-    def get_scenario_detail(
+    async def get_scenario_detail(
         self, request: ScenarioDetailRequest
     ) -> ScenarioDetailResponse:
         """Get detailed scenario information using dynamic SQL."""
@@ -416,7 +416,7 @@ class ScenarioService:
         """)
 
         dept_ids = [
-            str(row.id)
+            str(row['id'])
             for row in self.db.execute(
                 user_dept_query, {"profile_id": request.profileId}
             ).fetchall()
@@ -433,11 +433,11 @@ class ScenarioService:
             valid_personas_query, {"dept_ids": dept_ids}
         ).fetchall()
 
-        valid_persona_ids = [str(row.id) for row in persona_results]
+        valid_persona_ids = [str(row['id']) for row in persona_results]
         persona_mapping = {
-            str(row.id): PersonaMappingItem(
-                name=row.name,
-                description=row.description,
+            str(row['id']): PersonaMappingItem(
+                name=row['name'],
+                description=row['description'],
                 color=row.color,
                 icon=row.icon
             )
@@ -455,9 +455,9 @@ class ScenarioService:
             valid_docs_query, {"dept_ids": dept_ids}
         ).fetchall()
 
-        valid_document_ids = [str(row.id) for row in doc_results]
+        valid_document_ids = [str(row['id']) for row in doc_results]
         document_mapping = {
-            str(row.id): DocumentMappingItem(name=row.name, description=row.description)
+            str(row['id']): DocumentMappingItem(name=row['name'], description=row['description'])
             for row in doc_results
         }
 
@@ -473,9 +473,9 @@ class ScenarioService:
             ).fetchall()
 
             for row in sim_mapping_result:
-                simulation_mapping[str(row.id)] = SimulationMappingItem(
+                simulation_mapping[str(row['id'])] = SimulationMappingItem(
                     name=row.title,
-                    description=row.description
+                    description=row['description']
                 )
 
         # Get parameter mapping
@@ -508,8 +508,8 @@ class ScenarioService:
 
             for row in param_mapping_result:
                 parameter_mapping[str(row.parameter_id)] = ParameterMappingItem(
-                    name=row.name,
-                    description=row.description or ''
+                    name=row['name'],
+                    description=row['description'] or ''
                 )
 
         # Get parameter_item mapping (already built above)
@@ -533,9 +533,9 @@ class ScenarioService:
             ).fetchall()
 
             for row in param_item_mapping_result:
-                param_item_full_mapping[str(row.id)] = ParameterItemMappingItem(
-                    name=row.name,
-                    description=row.description or '',
+                param_item_full_mapping[str(row['id'])] = ParameterItemMappingItem(
+                    name=row['name'],
+                    description=row['description'] or '',
                     parameter_id=str(row.parameter_id),
                     parameter_name=row.parameter_name
                 )
@@ -588,14 +588,14 @@ class ScenarioService:
             ).fetchall()
             
             for row in dept_mapping_result:
-                department_mapping[str(row.id)] = DepartmentMappingItem(
+                department_mapping[str(row['id'])] = DepartmentMappingItem(
                     name=row.title,
-                    description=row.description
+                    description=row['description']
                 )
 
         return ScenarioDetailResponse(
             # Basic fields
-            name=scenario.name,
+            name=scenario['name'],
             problem_statement=scenario.problem_statement,
             active=scenario.active,
             default_scenario=scenario.default_scenario,
@@ -630,7 +630,7 @@ class ScenarioService:
             department_mapping=department_mapping,
         )
 
-    def get_scenario_detail_default(
+    async def get_scenario_detail_default(
         self, request: ScenarioDetailDefaultRequest
     ) -> ScenarioDetailResponse:
         """Get default scenario structure for creation mode."""
@@ -647,7 +647,7 @@ class ScenarioService:
             user_dept_query, {"profile_id": request.profileId}
         ).fetchall()
         
-        dept_ids = [str(row.id) for row in dept_results]
+        dept_ids = [str(row['id']) for row in dept_results]
         
         if not dept_ids:
             raise ValueError("No accessible departments found for user")
@@ -667,11 +667,11 @@ class ScenarioService:
             valid_personas_query, {"dept_ids": dept_ids}
         ).fetchall()
 
-        valid_persona_ids = [str(row.id) for row in persona_results]
+        valid_persona_ids = [str(row['id']) for row in persona_results]
         persona_mapping = {
-            str(row.id): PersonaMappingItem(
-                name=row.name,
-                description=row.description,
+            str(row['id']): PersonaMappingItem(
+                name=row['name'],
+                description=row['description'],
                 color=row.color,
                 icon=row.icon
             )
@@ -690,9 +690,9 @@ class ScenarioService:
             valid_docs_query, {"dept_ids": dept_ids}
         ).fetchall()
 
-        valid_document_ids = [str(row.id) for row in doc_results]
+        valid_document_ids = [str(row['id']) for row in doc_results]
         document_mapping = {
-            str(row.id): DocumentMappingItem(name=row.name, description=row.description)
+            str(row['id']): DocumentMappingItem(name=row['name'], description=row['description'])
             for row in doc_results
         }
 
@@ -709,9 +709,9 @@ class ScenarioService:
         ).fetchall()
 
         parameter_mapping = {
-            str(row.id): ParameterMappingItem(
-                name=row.name,
-                description=row.description or ''
+            str(row['id']): ParameterMappingItem(
+                name=row['name'],
+                description=row['description'] or ''
             )
             for row in param_results
         }
@@ -730,9 +730,9 @@ class ScenarioService:
         ).fetchall()
 
         parameter_item_mapping = {
-            str(row.id): ParameterItemMappingItem(
-                name=row.name,
-                description=row.description or '',
+            str(row['id']): ParameterItemMappingItem(
+                name=row['name'],
+                description=row['description'] or '',
                 parameter_id=str(row.parameter_id),
                 parameter_name=row.parameter_name
             )
@@ -752,9 +752,9 @@ class ScenarioService:
         ).fetchall()
         
         for row in dept_mapping_results:
-            department_mapping[str(row.id)] = DepartmentMappingItem(
+            department_mapping[str(row['id'])] = DepartmentMappingItem(
                 name=row.title,
-                description=row.description
+                description=row['description']
             )
 
         # Return empty scenario with all valid options
@@ -795,7 +795,7 @@ class ScenarioService:
             department_mapping=department_mapping,
         )
 
-    def create_scenario(
+    async def create_scenario(
         self, request: CreateScenarioRequest
     ) -> CreateScenarioResponse:
         """Create a new scenario using dynamic SQL."""
@@ -833,7 +833,7 @@ class ScenarioService:
         if not result:
             raise ValueError("Failed to create scenario")
 
-        scenario_id = str(result.id)
+        scenario_id = str(result['id'])
 
         # Insert persona relationship
         if request.persona_id:
@@ -889,7 +889,7 @@ class ScenarioService:
                     {"scenario_id": scenario_id, "parameter_item_id": param_item_id},
                 )
 
-        self.db.commit()
+        # Transaction handled
 
         return CreateScenarioResponse(
             success=True,
@@ -897,7 +897,7 @@ class ScenarioService:
             message=f"Scenario '{request.name}' created successfully",
         )
 
-    def update_scenario(
+    async def update_scenario(
         self, request: UpdateScenarioRequest
     ) -> UpdateScenarioResponse:
         """Update an existing scenario using dynamic SQL."""
@@ -1019,13 +1019,13 @@ class ScenarioService:
                     },
                 )
 
-        self.db.commit()
+        # Transaction handled
 
         return UpdateScenarioResponse(
             success=True, message=f"Scenario '{request.name}' updated successfully"
         )
 
-    def duplicate_scenario(
+    async def duplicate_scenario(
         self, request: DuplicateScenarioRequest
     ) -> DuplicateScenarioResponse:
         """Duplicate a scenario using dynamic SQL."""
@@ -1080,7 +1080,7 @@ class ScenarioService:
         if not new_scenario:
             raise ValueError("Failed to create duplicate scenario")
 
-        new_scenario_id = str(new_scenario.id)
+        new_scenario_id = str(new_scenario['id'])
 
         # Copy persona relationship
         copy_persona_query = text("""
@@ -1146,7 +1146,7 @@ class ScenarioService:
             },
         )
 
-        self.db.commit()
+        # Transaction handled
 
         return DuplicateScenarioResponse(
             success=True,
@@ -1154,7 +1154,7 @@ class ScenarioService:
             message=f"Scenario '{original.name}' duplicated successfully",
         )
 
-    def delete_scenario(
+    async def delete_scenario(
         self, request: DeleteScenarioRequest
     ) -> DeleteScenarioResponse:
         """Delete a scenario using dynamic SQL."""
@@ -1194,10 +1194,10 @@ class ScenarioService:
         """)
 
         self.db.execute(delete_query, {"scenario_id": request.scenarioId})
-        self.db.commit()
+        # Transaction handled
 
         return DeleteScenarioResponse(
-            success=True, message=f"Scenario '{scenario.name}' deleted successfully"
+            success=True, message=f"Scenario '{scenario['name']}' deleted successfully"
         )
 
     # AI Generation and Randomization Methods

@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.simulation_repository import get_simulation_repository
 from app.schemas.simulations import (CreateSimulationRequest,
                                      CreateSimulationResponse,
@@ -18,7 +18,7 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
@@ -26,12 +26,12 @@ router = APIRouter(prefix="/simulations", tags=["simulations"])
 @router.post("/list", response_model=SimulationsListResponse)
 async def get_simulations_list(
     filters: SimulationsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationsListResponse:
     """Get simulations list with permissions and relationships."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.get_simulations_list(filters)
+        repo = get_simulation_repository(conn)
+        return await repo.get_simulations_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -39,12 +39,12 @@ async def get_simulations_list(
 @router.post("/detail", response_model=SimulationDetailResponse)
 async def get_simulation_detail(
     request: SimulationDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationDetailResponse:
     """Get detailed simulation information."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.get_simulation_detail(request)
+        repo = get_simulation_repository(conn)
+        return await repo.get_simulation_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -54,12 +54,12 @@ async def get_simulation_detail(
 @router.post("/detail-default", response_model=SimulationDetailResponse)
 async def get_simulation_detail_default(
     request: SimulationDetailDefaultRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationDetailResponse:
     """Get default simulation details for a profile."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.get_simulation_detail_default(request)
+        repo = get_simulation_repository(conn)
+        return await repo.get_simulation_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -69,12 +69,12 @@ async def get_simulation_detail_default(
 @router.post("/create", response_model=CreateSimulationResponse)
 async def create_simulation(
     request: CreateSimulationRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateSimulationResponse:
     """Create a new simulation."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.create_simulation(request)
+        repo = get_simulation_repository(conn)
+        return await repo.create_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -84,12 +84,12 @@ async def create_simulation(
 @router.post("/update", response_model=UpdateSimulationResponse)
 async def update_simulation(
     request: UpdateSimulationRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateSimulationResponse:
     """Update an existing simulation."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.update_simulation(request)
+        repo = get_simulation_repository(conn)
+        return await repo.update_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -99,12 +99,12 @@ async def update_simulation(
 @router.post("/duplicate", response_model=DuplicateSimulationResponse)
 async def duplicate_simulation(
     request: DuplicateSimulationRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateSimulationResponse:
     """Duplicate a simulation."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.duplicate_simulation(request)
+        repo = get_simulation_repository(conn)
+        return await repo.duplicate_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -114,12 +114,12 @@ async def duplicate_simulation(
 @router.post("/delete", response_model=DeleteSimulationResponse)
 async def delete_simulation(
     request: DeleteSimulationRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteSimulationResponse:
     """Delete a simulation."""
     try:
-        repo = get_simulation_repository(db)
-        return repo.delete_simulation(request)
+        repo = get_simulation_repository(conn)
+        return await repo.delete_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

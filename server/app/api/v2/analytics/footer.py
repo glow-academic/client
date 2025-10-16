@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import (AnalyticsFilters,
                                    ScenarioPerformanceResponse,
@@ -10,7 +10,7 @@ from app.schemas.analytics import (AnalyticsFilters,
                                    SimulationCompositionResponse,
                                    SimulationPerformanceResponse)
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/footer", tags=["analytics-footer"])
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/footer", tags=["analytics-footer"])
 @router.post("/scenario-performance", response_model=ScenarioPerformanceResponse)
 async def get_scenario_performance(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ScenarioPerformanceResponse:
     """Get scenario performance analytics."""
     try:
@@ -31,7 +31,7 @@ async def get_scenario_performance(
 @router.post("/scenario-stats", response_model=ScenarioStatsResponse)
 async def get_scenario_stats(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ScenarioStatsResponse:
     """Get scenario stats analytics."""
     try:
@@ -44,7 +44,7 @@ async def get_scenario_stats(
 @router.post("/simulation-composition", response_model=SimulationCompositionResponse)
 async def get_simulation_composition(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationCompositionResponse:
     """Get simulation composition analytics."""
     try:
@@ -57,7 +57,7 @@ async def get_simulation_composition(
 @router.post("/simulation-performance", response_model=SimulationPerformanceResponse)
 async def get_simulation_performance(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SimulationPerformanceResponse:
     """Get simulation performance analytics."""
     try:

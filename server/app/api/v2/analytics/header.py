@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import AnalyticsFilters, MetricResponse
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/header", tags=["analytics-header"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/header", tags=["analytics-header"])
 @router.post("/average-score", response_model=MetricResponse)
 async def get_average_score(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get average score metric."""
     try:
@@ -27,7 +27,7 @@ async def get_average_score(
 @router.post("/completion-percentage", response_model=MetricResponse)
 async def get_completion_percentage(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get completion percentage metric."""
     try:
@@ -40,7 +40,7 @@ async def get_completion_percentage(
 @router.post("/first-attempt-pass-rate", response_model=MetricResponse)
 async def get_first_attempt_pass_rate(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get first attempt pass rate metric."""
     try:
@@ -53,7 +53,7 @@ async def get_first_attempt_pass_rate(
 @router.post("/highest-score", response_model=MetricResponse)
 async def get_highest_score(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get highest score metric."""
     try:
@@ -66,7 +66,7 @@ async def get_highest_score(
 @router.post("/messages-per-session", response_model=MetricResponse)
 async def get_messages_per_session(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get messages per session metric."""
     try:
@@ -79,7 +79,7 @@ async def get_messages_per_session(
 @router.post("/persona-response-times", response_model=MetricResponse)
 async def get_persona_response_times(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get persona response times metric."""
     try:
@@ -92,7 +92,7 @@ async def get_persona_response_times(
 @router.post("/session-efficiency", response_model=MetricResponse)
 async def get_session_efficiency(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get session efficiency metric."""
     try:
@@ -105,7 +105,7 @@ async def get_session_efficiency(
 @router.post("/stagnation-rate", response_model=MetricResponse)
 async def get_stagnation_rate(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get stagnation rate metric."""
     try:
@@ -118,7 +118,7 @@ async def get_stagnation_rate(
 @router.post("/time-spent", response_model=MetricResponse)
 async def get_time_spent(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get time spent metric."""
     try:
@@ -131,7 +131,7 @@ async def get_time_spent(
 @router.post("/total-attempts", response_model=MetricResponse)
 async def get_total_attempts(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get total attempts metric."""
     try:

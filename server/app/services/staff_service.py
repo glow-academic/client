@@ -4,6 +4,8 @@ import os
 import uuid
 from typing import Any, Dict, List
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.staff_queries import StaffQueries
 from app.schemas.base import (CohortMapping, CohortMappingItem,
                               DepartmentMappingItem)
@@ -16,8 +18,6 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffDetailRequest, StaffDetailResponse,
                                StaffFilters, StaffItem, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
-import asyncpg  # type: ignore
-from app.db import transaction
 
 
 class StaffService:

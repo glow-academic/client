@@ -15,7 +15,7 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonasFilters, PersonasListResponse,
                                   UpdatePersonaRequest, UpdatePersonaResponse)
 from app.services.persona_service import PersonaService
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 
 class PersonaRepository:
@@ -25,55 +25,55 @@ class PersonaRepository:
     This repository delegates to the persona service layer.
     """
 
-    def __init__(self, db: Session):
+    async def __init__(self, conn: asyncpg.Connection):
         """Initialize repository with database session."""
         self.db = db
-        self.service = PersonaService(db)
+        self.service = PersonaService(conn)
 
-    def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
+    async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list."""
-        return self.service.get_personas_list(filters)
+        return await self.service.get_personas_list(filters)
 
-    def get_persona_detail(
+    async def get_persona_detail(
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
         """Get persona detail."""
-        return self.service.get_persona_detail(request)
+        return await self.service.get_persona_detail(request)
 
-    def get_persona_detail_default(
+    async def get_persona_detail_default(
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Get default persona detail."""
-        return self.service.get_persona_detail_default(request)
+        return await self.service.get_persona_detail_default(request)
 
-    def duplicate_persona(
+    async def duplicate_persona(
         self, request: DuplicatePersonaRequest
     ) -> DuplicatePersonaResponse:
         """Duplicate persona."""
-        return self.service.duplicate_persona(request)
+        return await self.service.duplicate_persona(request)
 
-    def delete_persona(
+    async def delete_persona(
         self, request: DeletePersonaRequest
     ) -> DeletePersonaResponse:
         """Delete persona."""
-        return self.service.delete_persona(request)
+        return await self.service.delete_persona(request)
 
-    def create_persona(
+    async def create_persona(
         self, request: CreatePersonaRequest
     ) -> CreatePersonaResponse:
         """Create persona."""
-        return self.service.create_persona(request)
+        return await self.service.create_persona(request)
 
-    def update_persona(
+    async def update_persona(
         self, request: UpdatePersonaRequest
     ) -> UpdatePersonaResponse:
         """Update persona."""
-        return self.service.update_persona(request)
+        return await self.service.update_persona(request)
 
 
 def get_persona_repository(db: Optional[Session] = None) -> PersonaRepository:
     """Get persona repository instance."""
     if db is None:
         db = next(get_session())
-    return PersonaRepository(db)
+    return PersonaRepository(conn)
 

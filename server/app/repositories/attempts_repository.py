@@ -5,21 +5,21 @@ from typing import Optional
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse)
 from app.services.attempts_service import get_attempts_service
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 
 class AttemptsRepository:
     """Repository layer for attempts operations."""
 
-    def __init__(self, db: Session):
+    async def __init__(self, conn: asyncpg.Connection):
         """Initialize attempts repository."""
-        self.service = get_attempts_service(db)
+        self.service = get_attempts_service(conn)
 
-    def bulk_archive_attempts(
+    async def bulk_archive_attempts(
         self, request: BulkArchiveAttemptsRequest
     ) -> BulkArchiveAttemptsResponse:
         """Bulk archive or unarchive simulation attempts."""
-        return self.service.bulk_archive_attempts(request)
+        return await self.service.bulk_archive_attempts(request)
 
 
 def get_attempts_repository(db: Optional[Session] = None) -> AttemptsRepository:
@@ -28,5 +28,5 @@ def get_attempts_repository(db: Optional[Session] = None) -> AttemptsRepository:
         from app.db import get_session
 
         db = next(get_session())
-    return AttemptsRepository(db)
+    return AttemptsRepository(conn)
 

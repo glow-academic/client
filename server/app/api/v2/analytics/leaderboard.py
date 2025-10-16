@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from app.db import get_session
+from app.db import get_db
 from app.repositories.analytics_repository import get_analytics_repository
 from app.schemas.analytics import AnalyticsFilters, MetricResponse
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/leaderboard", tags=["analytics-leaderboard"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/leaderboard", tags=["analytics-leaderboard"])
 @router.post("/improvement-per-day", response_model=MetricResponse)
 async def get_improvement_per_day(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get improvement per day metric."""
     try:
@@ -27,7 +27,7 @@ async def get_improvement_per_day(
 @router.post("/perfect-scores", response_model=MetricResponse)
 async def get_perfect_scores(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get perfect scores metric."""
     try:
@@ -40,7 +40,7 @@ async def get_perfect_scores(
 @router.post("/quickest-pass", response_model=MetricResponse)
 async def get_quickest_pass(
     filters: AnalyticsFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> MetricResponse:
     """Get quickest pass metric."""
     try:

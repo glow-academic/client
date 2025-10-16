@@ -3,9 +3,7 @@
 This repository delegates to the document service layer.
 """
 
-from typing import Optional
-
-from app.db import get_session
+import asyncpg  # type: ignore
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
                                    DeleteDocumentRequest,
@@ -18,7 +16,6 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
 from app.services.document_service import DocumentService
-from sqlalchemy.orm import Session
 
 
 class DocumentRepository:
@@ -28,57 +25,53 @@ class DocumentRepository:
     This repository delegates to the document service layer.
     """
 
-    def __init__(self, db: Session):
-        """Initialize repository with database session."""
-        self.db = db
-        self.service = DocumentService(db)
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize repository with database connection."""
+        self.service = DocumentService(conn)
 
-    def get_documents_list(
+    async def get_documents_list(
         self, filters: DocumentsFilters
     ) -> DocumentsListResponse:
         """Get documents list."""
-        return self.service.get_documents_list(filters)
+        return await self.service.get_documents_list(filters)
 
-    def get_document_detail(
+    async def get_document_detail(
         self, request: DocumentDetailRequest
     ) -> DocumentDetailResponse:
         """Get document detail."""
-        return self.service.get_document_detail(request)
+        return await self.service.get_document_detail(request)
 
-    def get_document_detail_bulk(
+    async def get_document_detail_bulk(
         self, request: DocumentDetailBulkRequest
     ) -> DocumentDetailBulkResponse:
         """Get bulk document detail."""
-        return self.service.get_document_detail_bulk(request)
+        return await self.service.get_document_detail_bulk(request)
 
-    def update_document(
+    async def update_document(
         self, request: UpdateDocumentRequest
     ) -> UpdateDocumentResponse:
         """Update document."""
-        return self.service.update_document(request)
+        return await self.service.update_document(request)
 
-    def bulk_update_documents(
+    async def bulk_update_documents(
         self, request: BulkUpdateDocumentsRequest
     ) -> UpdateDocumentResponse:
         """Bulk update documents."""
-        return self.service.bulk_update_documents(request)
+        return await self.service.bulk_update_documents(request)
 
-    def delete_document(
+    async def delete_document(
         self, request: DeleteDocumentRequest
     ) -> DeleteDocumentResponse:
         """Delete document."""
-        return self.service.delete_document(request)
+        return await self.service.delete_document(request)
 
-    def bulk_delete_documents(
+    async def bulk_delete_documents(
         self, request: BulkDeleteDocumentsRequest
     ) -> DeleteDocumentResponse:
         """Bulk delete documents."""
-        return self.service.bulk_delete_documents(request)
+        return await self.service.bulk_delete_documents(request)
 
 
-def get_document_repository(db: Optional[Session] = None) -> DocumentRepository:
+def get_document_repository(conn: asyncpg.Connection) -> DocumentRepository:
     """Get document repository instance."""
-    if db is None:
-        db = next(get_session())
-    return DocumentRepository(db)
-
+    return DocumentRepository(conn)

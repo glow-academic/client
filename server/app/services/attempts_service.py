@@ -1,42 +1,31 @@
 """Service layer for attempts operations."""
 
-from typing import Optional
-
+import asyncpg  # type: ignore
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse)
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 
 class AttemptsService:
     """Service layer for attempts operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, conn: asyncpg.Connection):
         """Initialize attempts service."""
-        self.db = db
+        self.conn = conn
 
-    def bulk_archive_attempts(
+    async def bulk_archive_attempts(
         self, request: BulkArchiveAttemptsRequest
     ) -> BulkArchiveAttemptsResponse:
         """Bulk archive or unarchive simulation attempts."""
 
         # Update all attempts
-        update_query = text("""
-            UPDATE simulation_attempts
-            SET archived = :archived,
-                updated_at = NOW()
-            WHERE id = ANY(:attempt_ids::uuid[])
-        """)
-
-        self.db.execute(
-            update_query,
-            {
-                "archived": request.archived,
-                "attempt_ids": request.attemptIds,
-            },
+        await self.conn.execute(
+            """UPDATE simulation_attempts
+               SET archived = $1,
+                   updated_at = NOW()
+               WHERE id = ANY($2::uuid[])""",
+            request.archived,
+            request.attemptIds,
         )
-
-        self.db.commit()
 
         action = "archived" if request.archived else "unarchived"
         count = len(request.attemptIds)
@@ -46,13 +35,3 @@ class AttemptsService:
             message=f"{count} simulation attempt(s) {action} successfully",
             count=count,
         )
-
-
-def get_attempts_service(db: Optional[Session] = None) -> AttemptsService:
-    """Get attempts service instance."""
-    if db is None:
-        from app.db import get_session
-
-        db = next(get_session())
-    return AttemptsService(db)
-

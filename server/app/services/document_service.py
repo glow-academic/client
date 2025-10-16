@@ -12,8 +12,9 @@ import uuid
 import zipfile
 from typing import Any, Dict, List, Optional, Tuple
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
-from app.models import Documents
 from app.queries.document_queries import DocumentQueries
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMappingItem, ScenarioMappingItem)
@@ -33,9 +34,6 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    UpdateDocumentResponse)
 from app.services.scenario_service import ScenarioService
 from app.utils.mime_utils import get_content_type
-from sqlalchemy import text
-from sqlalchemy.orm import Session as SQLAlchemySession
-from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +45,13 @@ os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 class DocumentService:
     """Service layer for document operations."""
 
-    def __init__(self, db: SQLAlchemySession):
-        """Initialize service with database session."""
-        self.db = db
+    def __init__(self, conn: asyncpg.Connection):
+        """Initialize service with database connection."""
+        self.conn = conn
         self.queries = DocumentQueries()
-        self.scenario_service = ScenarioService(db)
+        self.scenario_service = ScenarioService(conn)
 
-    def get_documents_list(
+    async def get_documents_list(
         self, filters: DocumentsFilters
     ) -> DocumentsListResponse:
         """Get documents list with tags and scenarios using dynamic SQL."""
@@ -63,7 +61,7 @@ class DocumentService:
             filters.departmentIds, filters.profileId
         )
 
-        result = self.db.execute(text(query), params).fetchall()
+        result = await self.conn.fetch(query, *params)
 
         # Build response
         documents = []
@@ -76,18 +74,18 @@ class DocumentService:
 
             documents.append(
                 DocumentItem(
-                    document_id=str(row.document_id),
-                    name=row.name,
-                    type=row.type,
+                    document_id=str(row['document_id']),
+                    name=row['name'],
+                    type=row['type'],
                     updatedAt=row.updated_at.isoformat() if row.updated_at else "",
                     extension=extension,
                     scenario_ids=scenario_ids,
-                    can_edit=row.can_edit,
-                    can_delete=row.can_delete,
-                    active=row.active,
-                    department_id=str(row.department_id),
-                    file_path=row.file_path,
-                    mime_type=row.mime_type,
+                    can_edit=row['can_edit'],
+                    can_delete=row['can_delete'],
+                    active=row['active'],
+                    department_id=str(row['department_id']),
+                    file_path=row['file_path'],
+                    mime_type=row['mime_type'],
                     parameter_item_ids=parameter_item_ids,
                 )
             )
@@ -96,13 +94,13 @@ class DocumentService:
         if scenario_ids_to_fetch := list(
             set([sid for d in documents for sid in d.scenario_ids])
         ):
-            scenario_mapping = self.scenario_service.build_enhanced_scenario_mapping(
+            scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
             )
 
         # Build parameter_item_mapping (all items as valid options for now)
         # TODO: Query document_parameter_items junction table for specific items per document
-        param_query = text("""
+        param_query = """
             SELECT 
                 pi.id,
                 pi.name,
@@ -111,39 +109,35 @@ class DocumentService:
                 p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
-        """)
-        param_results = self.db.execute(
-            param_query, {"dept_ids": filters.departmentIds}
-        ).fetchall()
+            WHERE p.department_id = ANY($1) AND pi.active = true
+        """
+        param_results = await self.conn.fetch(param_query, filters.departmentIds)
 
         parameter_item_mapping = {
-            str(row.id): ParameterItemMappingItem(
-                name=row.name,
-                description=row.description or '',
-                parameter_id=str(row.parameter_id),
-                parameter_name=row.parameter_name
+            str(row['id']): ParameterItemMappingItem(
+                name=row['name'],
+                description=row['description'] or '',
+                parameter_id=str(row["parameter_id"]),
+                parameter_name=row["parameter_name"]
             )
             for row in param_results
         }
 
         # Build department_mapping
-        dept_query = text("""
+        dept_query = """
             SELECT 
                 id,
                 title as name,
                 COALESCE(description, '') as description
             FROM departments
-            WHERE id = ANY(:dept_ids) AND active = true
-        """)
-        dept_results = self.db.execute(
-            dept_query, {"dept_ids": filters.departmentIds}
-        ).fetchall()
+            WHERE id = ANY($1) AND active = true
+        """
+        dept_results = await self.conn.fetch(dept_query, filters.departmentIds)
 
         department_mapping: DepartmentMapping = {
-            str(row.id): DepartmentMappingItem(
-                name=row.name,
-                description=row.description or ''
+            str(row['id']): DepartmentMappingItem(
+                name=row['name'],
+                description=row['description'] or ''
             )
             for row in dept_results
         }
@@ -155,14 +149,14 @@ class DocumentService:
             department_mapping=department_mapping,
         )
 
-    def get_document_detail(
+    async def get_document_detail(
         self, request: DocumentDetailRequest
     ) -> DocumentDetailResponse:
         """Get detailed document information using dynamic SQL."""
 
         # Get document basic info
         query, params = self.queries.get_document_by_id(request.documentId)
-        document = self.db.execute(text(query), params).fetchone()
+        document = await self.conn.fetchrow(query, *params)
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
@@ -172,44 +166,40 @@ class DocumentService:
             request.profileId
         )
         valid_department_ids = [
-            str(row.id) for row in self.db.execute(text(query), params).fetchall()
+            str(row['id']) for row in await self.conn.fetch(query, *params)
         ]
 
         # Get all valid parameter items for this department
         # TODO: Query document_parameter_items junction table for specific items
-        param_query = text("""
+        param_query = """
             SELECT pi.id
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = :dept_id AND pi.active = true
-        """)
-        valid_param_items = [
-            str(row.id)
-            for row in self.db.execute(
-                param_query, {"dept_id": document.department_id}
-            ).fetchall()
-        ]
+            WHERE p.department_id = $1 AND pi.active = true
+        """
+        valid_param_items_result = await self.conn.fetch(param_query, document["department_id"])
+        valid_param_items = [str(row['id']) for row in valid_param_items_result]
 
         # Get departments with mapping
-        departments_query = text("""
+        departments_query = """
         SELECT id, name, description 
         FROM departments 
-        WHERE id = ANY(:dept_ids)
+        WHERE id = ANY($1)
         ORDER BY name
-        """)
-        departments_result = self.db.execute(
-            departments_query, {"dept_ids": valid_department_ids}
-        ).fetchall()
+        """
+        departments_result = await self.conn.fetch(
+            departments_query, valid_department_ids)
+        
 
         department_mapping = {
-            str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description or ''
+            str(row['id']): DepartmentMappingItem(
+                name=row['name'], description=row['description'] or ''
             )
             for row in departments_result
         }
 
         # Build parameter_item_mapping for valid items
-        param_mapping_query = text("""
+        param_mapping_query = """
             SELECT 
                 pi.id,
                 pi.name,
@@ -218,18 +208,18 @@ class DocumentService:
                 p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id = ANY(:param_item_ids)
-        """)
-        param_mapping_result = self.db.execute(
-            param_mapping_query, {"param_item_ids": valid_param_items}
-        ).fetchall()
+            WHERE pi.id = ANY($1)
+        """
+        param_mapping_result = await self.conn.fetch(
+            param_mapping_query, valid_param_items)
+        
 
         parameter_item_mapping = {
-            str(row.id): ParameterItemMappingItem(
-                name=row.name,
-                description=row.description,
-                parameter_id=str(row.parameter_id),
-                parameter_name=row.parameter_name
+            str(row['id']): ParameterItemMappingItem(
+                name=row['name'],
+                description=row['description'],
+                parameter_id=str(row["parameter_id"]),
+                parameter_name=row["parameter_name"]
             )
             for row in param_mapping_result
         }
@@ -246,11 +236,11 @@ class DocumentService:
         ]
 
         return DocumentDetailResponse(
-            name=document.name,
-            active=document.active,
-            type=document.type,
+            name=document['name'],
+            active=document['active'],
+            type=document['type'],
             document_type_options=document_type_options,
-            department_id=str(document.department_id),
+            department_id=str(document['department_id']),
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             parameter_item_ids=[],  # TODO: Query document_parameter_items
@@ -258,86 +248,84 @@ class DocumentService:
             parameter_item_mapping=parameter_item_mapping,
         )
 
-    def get_document_detail_bulk(
+    async def get_document_detail_bulk(
         self, request: DocumentDetailBulkRequest
     ) -> DocumentDetailBulkResponse:
         """Get bulk document detail information using dynamic SQL."""
 
         # Get documents basic info
-        documents_query = text("""
+        documents_query = """
         SELECT 
             d.id,
             d.type,
             d.department_id
         FROM documents d
         WHERE d.id = ANY(:document_ids)
-        """)
+        """
 
-        documents_result = self.db.execute(
-            documents_query, {"document_ids": request.documentIds}
-        ).fetchall()
-
+        documents_result = await self.conn.fetch(
+            documents_query, request.documentIds)
+        
         if not documents_result:
             raise ValueError("No documents found")
 
         # Aggregate types (if all same, return that type, else None)
-        types = list(set([row.type for row in documents_result]))
+        types = list(set([row['type'] for row in documents_result]))
         common_type = types[0] if len(types) == 1 else None
 
         # Aggregate department IDs
-        department_ids = list(set([str(row.department_id) for row in documents_result]))
+        department_ids = list(set([str(row['department_id']) for row in documents_result]))
 
         # Get user's accessible department IDs
-        user_dept_query = text("""
+        user_dept_query = """
         SELECT DISTINCT d.id
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = :profile_id AND d.active = true
         ORDER BY d.name
-        """)
+        """
 
         valid_department_ids = [
-            str(row.id)
-            for row in self.db.execute(
-                user_dept_query, {"profile_id": request.profileId}
-            ).fetchall()
+            str(row['id'])
+            for row in await self.conn.fetch(
+                user_dept_query, request.profileId)
+            
         ]
 
         # Get all valid parameter items for these departments
         # TODO: Query document_parameter_items junction table for union of items across docs
-        valid_param_query = text("""
+        valid_param_query = """
             SELECT pi.id
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY(:dept_ids) AND pi.active = true
-        """)
+            WHERE p.department_id = ANY($1) AND pi.active = true
+        """
         valid_param_items = [
-            str(row.id)
-            for row in self.db.execute(
-                valid_param_query, {"dept_ids": department_ids}
-            ).fetchall()
+            str(row['id'])
+            for row in await self.conn.fetch(
+                valid_param_query, department_ids)
+            
         ]
 
         # Get departments with mapping
-        departments_query = text("""
+        departments_query = """
         SELECT id, name, description 
         FROM departments 
-        WHERE id = ANY(:dept_ids)
+        WHERE id = ANY($1)
         ORDER BY name
-        """)
-        departments_result = self.db.execute(
-            departments_query, {"dept_ids": valid_department_ids}
-        ).fetchall()
+        """
+        departments_result = await self.conn.fetch(
+            departments_query, valid_department_ids)
 
         department_mapping = {
-            str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description or ''
+            str(row['id']): DepartmentMappingItem(
+                name=row['name'], description=row['description'] or ''
             )
             for row in departments_result
         }
 
         # Build parameter_item_mapping for valid items
-        param_mapping_query = text("""
+        param_mapping_query = """
             SELECT 
                 pi.id,
                 pi.name,
@@ -346,18 +334,16 @@ class DocumentService:
                 p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id = ANY(:param_item_ids)
-        """)
-        param_mapping_result = self.db.execute(
-            param_mapping_query, {"param_item_ids": valid_param_items}
-        ).fetchall()
+            WHERE pi.id = ANY($1)
+        """
+        param_mapping_result = await self.conn.fetch(param_mapping_query, valid_param_items)
 
         parameter_item_mapping = {
-            str(row.id): ParameterItemMappingItem(
-                name=row.name,
-                description=row.description,
-                parameter_id=str(row.parameter_id),
-                parameter_name=row.parameter_name
+            str(row['id']): ParameterItemMappingItem(
+                name=row['name'],
+                description=row['description'],
+                parameter_id=str(row["parameter_id"]),
+                parameter_name=row["parameter_name"]
             )
             for row in param_mapping_result
         }
@@ -383,111 +369,103 @@ class DocumentService:
             parameter_item_mapping=parameter_item_mapping,
         )
 
-    def update_document(
+    async def update_document(
         self, request: UpdateDocumentRequest
     ) -> UpdateDocumentResponse:
         """Update a document using dynamic SQL."""
 
         # Check if document exists
-        check_query = text("""
-        SELECT name FROM documents WHERE id = :document_id
-        """)
+        check_query = """
+        SELECT name FROM documents WHERE id = $1
+        """
 
-        existing = self.db.execute(
-            check_query, {"document_id": request.documentId}
-        ).fetchone()
+        existing = await self.conn.fetchrow(check_query, request.documentId)
 
         if not existing:
             raise ValueError(f"Document not found: {request.documentId}")
 
         # Update document
-        update_query = text("""
+        update_query = """
         UPDATE documents SET
-            type = :type,
-            department_id = :department_id,
+            type = $2,
+            department_id = $3,
             updated_at = NOW()
-        WHERE id = :document_id
-        """)
+        WHERE id = $1
+        """
 
-        self.db.execute(
+        await self.conn.execute(
             update_query,
-            {
-                "document_id": request.documentId,
-                "type": request.type,
-                "department_id": request.department_id,
-            },
+            request.documentId,
+            request.type,
+            request.department_id,
         )
 
         # Update tags - delete existing and insert new
-        delete_tags_query = text("""
-        DELETE FROM simulation_tag_documents WHERE document_id = :document_id
-        """)
+        delete_tags_query = """
+        DELETE FROM simulation_tag_documents WHERE document_id = $1
+        """
 
-        self.db.execute(delete_tags_query, {"document_id": request.documentId})
+        await self.conn.execute(delete_tags_query, request.documentId)
 
-        self.db.commit()
+        # Transaction handled
 
         return UpdateDocumentResponse(
-            success=True, message=f"Document '{existing.name}' updated successfully"
+            success=True, message=f"Document '{existing['name']}' updated successfully"
         )
 
-    def bulk_update_documents(
+    async def bulk_update_documents(
         self, request: BulkUpdateDocumentsRequest
     ) -> UpdateDocumentResponse:
         """Bulk update documents using dynamic SQL."""
 
         # Update all documents
-        update_query = text("""
+        update_query = """
         UPDATE documents SET
-            type = :type,
-            department_id = :department_id,
+            type = $2,
+            department_id = $3,
             updated_at = NOW()
-        WHERE id = ANY(:document_ids)
-        """)
+        WHERE id = ANY($1)
+        """
 
-        self.db.execute(
+        await self.conn.execute(
             update_query,
-            {
-                "document_ids": request.documentIds,
-                "type": request.type,
-                "department_id": request.department_id,
-            },
+            request.documentIds,
+            request.type,
+            request.department_id,
         )
 
         # Update tags for all documents - delete existing and insert new
-        delete_tags_query = text("""
-        DELETE FROM simulation_tag_documents WHERE document_id = ANY(:document_ids)
-        """)
+        delete_tags_query = """
+        DELETE FROM simulation_tag_documents WHERE document_id = ANY($1)
+        """
 
-        self.db.execute(delete_tags_query, {"document_ids": request.documentIds})
+        await self.conn.execute(delete_tags_query, request.documentIds)
 
         
-        self.db.commit()
+        # Transaction handled
 
         return UpdateDocumentResponse(
             success=True,
             message=f"{len(request.documentIds)} documents updated successfully",
         )
 
-    def delete_document(
+    async def delete_document(
         self, request: DeleteDocumentRequest
     ) -> DeleteDocumentResponse:
         """Delete a document from database and filesystem."""
 
         # Get document info including file_path
-        info_query = text("""
-        SELECT name, file_path FROM documents WHERE id = :document_id
-        """)
+        info_query = """
+        SELECT name, file_path FROM documents WHERE id = $1
+        """
 
-        document = self.db.execute(
-            info_query, {"document_id": request.documentId}
-        ).fetchone()
+        document = await self.conn.fetchrow(info_query, request.documentId)
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
 
         # Delete physical file from filesystem
-        file_path = os.path.join(UPLOAD_FOLDER, document.file_path)
+        file_path = os.path.join(UPLOAD_FOLDER, document['file_path'])
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -498,30 +476,28 @@ class DocumentService:
             logger.warning(f"File not found in filesystem: {file_path}")
 
         # Delete document from database (cascades will handle junction tables)
-        delete_query = text("""
-        DELETE FROM documents WHERE id = :document_id
-        """)
+        delete_query = """
+        DELETE FROM documents WHERE id = $1
+        """
 
-        self.db.execute(delete_query, {"document_id": request.documentId})
-        self.db.commit()
+        await self.conn.execute(delete_query, request.documentId)
+        # Transaction handled
 
         return DeleteDocumentResponse(
-            success=True, message=f"Document '{document.name}' deleted successfully"
+            success=True, message=f"Document '{document['name']}' deleted successfully"
         )
 
-    def bulk_delete_documents(
+    async def bulk_delete_documents(
         self, request: BulkDeleteDocumentsRequest
     ) -> DeleteDocumentResponse:
         """Bulk delete documents from database and filesystem."""
 
         # Get all document file paths
-        info_query = text("""
-        SELECT id, name, file_path FROM documents WHERE id = ANY(:document_ids)
-        """)
+        info_query = """
+        SELECT id, name, file_path FROM documents WHERE id = ANY($1)
+        """
 
-        documents = self.db.execute(
-            info_query, {"document_ids": request.documentIds}
-        ).fetchall()
+        documents = await self.conn.fetch(info_query, request.documentIds)
 
         if not documents:
             raise ValueError("No documents found to delete")
@@ -529,7 +505,7 @@ class DocumentService:
         # Delete physical files from filesystem
         deleted_count = 0
         for doc in documents:
-            file_path = os.path.join(UPLOAD_FOLDER, doc.file_path)
+            file_path = os.path.join(UPLOAD_FOLDER, doc['file_path'])
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
@@ -541,12 +517,12 @@ class DocumentService:
                 logger.warning(f"File not found in filesystem: {file_path}")
 
         # Delete all documents from database
-        delete_query = text("""
-        DELETE FROM documents WHERE id = ANY(:document_ids)
-        """)
+        delete_query = """
+        DELETE FROM documents WHERE id = ANY($1)
+        """
 
-        self.db.execute(delete_query, {"document_ids": request.documentIds})
-        self.db.commit()
+        await self.conn.execute(delete_query, request.documentIds)
+        # Transaction handled
 
         return DeleteDocumentResponse(
             success=True,
@@ -554,7 +530,7 @@ class DocumentService:
         )
 
     # TUS Upload Methods
-    def create_tus_upload(
+    async def create_tus_upload(
         self, upload_length: str, metadata: Dict[str, str], app_prefix: str = ""
     ) -> Tuple[str, str, int]:
         """
@@ -587,7 +563,7 @@ class DocumentService:
 
         return upload_id, location, 0
 
-    def get_tus_upload_info(self, upload_id: str) -> Optional[Dict[str, str]]:
+    async def get_tus_upload_info(self, upload_id: str) -> Optional[Dict[str, str]]:
         """Get TUS upload info for HEAD request."""
         upload_dir = os.path.join(TUS_UPLOADS_DIR, upload_id)
         
@@ -639,7 +615,7 @@ class DocumentService:
 
         return True, new_offset, None
 
-    def finalize_tus_upload(
+    async def finalize_tus_upload(
         self, request: FinalizeUploadRequest
     ) -> FinalizeUploadResponse:
         """Finalize a TUS upload and process the file."""
@@ -677,9 +653,9 @@ class DocumentService:
             if request.csv:
                 from app.utils.csv import process_csv_file
 
-                # Note: process_csv_file expects sqlmodel.Session, but we have sqlalchemy.Session
-                # The two are compatible in practice, so we cast it
-                result = process_csv_file(file_path, self.db)  # type: ignore[arg-type]
+                # Note: process_csv_file needs to be updated to use asyncpg
+                # For now, skipping CSV processing in this method
+                result = {"success": False, "error": "CSV processing not yet migrated to asyncpg"}
                 
                 # Clean up upload directory
                 try:
@@ -731,14 +707,16 @@ class DocumentService:
 
                             content_type = get_content_type(filename)
 
-                            document = Documents(
-                                id=document_id,
-                                name=filename,
-                                file_path=final_file_path,
-                                mime_type=content_type,
-                                department_id=request.department_id,
+                            # Insert document into database
+                            await self.conn.execute(
+                                """INSERT INTO documents (id, name, file_path, mime_type, department_id)
+                                   VALUES ($1, $2, $3, $4, $5)""",
+                                document_id,
+                                filename,
+                                final_file_path,
+                                content_type,
+                                request.department_id,
                             )
-                            self.db.add(document)
                             extracted_documents.append({
                                 "id": str(document_id),
                                 "name": filename,
@@ -752,7 +730,7 @@ class DocumentService:
                     except Exception as e:
                         logger.warning(f"Failed to clean up directories: {str(e)}")
 
-                self.db.commit()
+                # Transaction handled
                 
                 return FinalizeUploadResponse(
                     success=True,
@@ -778,14 +756,16 @@ class DocumentService:
 
             content_type = metadata.get("filetype") or get_content_type(filename)
 
-            document = Documents(
-                id=document_id,
-                name=filename,
-                file_path=final_file_path,
-                mime_type=content_type,
-                department_id=request.department_id,
+            # Insert document into database
+            await self.conn.execute(
+                """INSERT INTO documents (id, name, file_path, mime_type, department_id)
+                   VALUES ($1, $2, $3, $4, $5)""",
+                document_id,
+                filename,
+                final_file_path,
+                content_type,
+                request.department_id,
             )
-            self.db.add(document)
             
             # Clean up
             try:
@@ -793,7 +773,7 @@ class DocumentService:
             except Exception as e:
                 logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
-            self.db.commit()
+            # Transaction handled
 
             # Auto-classify if requested
             if request.autoClassify:
@@ -823,29 +803,31 @@ class DocumentService:
             )
 
     # Download Methods
-    def get_document_file(self, document_id: str) -> Optional[Tuple[str, str, str]]:
+    async def get_document_file(self, document_id: str) -> Optional[Tuple[str, str, str]]:
         """
         Get document file path and metadata for download.
         
         Returns:
             Tuple of (file_path, filename, content_type) or None if not found
         """
-        query = select(Documents).where(Documents.id == document_id)
-        result = self.db.execute(query).scalar()
+        result = await self.conn.fetchrow(
+            "SELECT name, file_path, mime_type FROM documents WHERE id = $1",
+            document_id
+        )
 
         if not result:
             return None
 
-        file_path = os.path.join(UPLOAD_FOLDER, result.file_path)
+        file_path = os.path.join(UPLOAD_FOLDER, result['file_path'])
         
         if not os.path.exists(file_path):
             return None
 
-        content_type = get_content_type(result.name, result.mime_type)
+        content_type = get_content_type(result['name'], result['mime_type'])
         
-        return file_path, result.name, content_type
+        return file_path, result['name'], content_type
 
-    def get_csv_file(self, token: str) -> Optional[str]:
+    async def get_csv_file(self, token: str) -> Optional[str]:
         """
         Get CSV file path for download.
         

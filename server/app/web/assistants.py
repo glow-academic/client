@@ -13,13 +13,10 @@ from typing import Any, Dict
 
 import socketio  # type: ignore
 from agents import gen_trace_id
-from app.db import get_session
-from app.models import (AssistantChats, AssistantMessages, AssistantToolCalls,
-                        Profiles)
+from app.db import get_pool
 from app.services.agents.collection.assistant import (cancel_assistant_run,
                                                       run_assistant_agent)
 from app.services.agents.collection.title import run_title_agent
-from sqlmodel import select
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -59,12 +56,18 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
         logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
 
-        # Create a new session for this operation
-        db_session = next(get_session())
+        # Get connection from pool
+        pool = get_pool()
+        if not pool:
+            await emit_assistant_error(sid, "Database not available")
+            return
 
-        try:
+        async with pool.acquire() as conn:
             # Verify profile exists
-            profile = db_session.get(Profiles, uuid.UUID(profile_id))
+            profile = await conn.fetchrow(
+                "SELECT id FROM profiles WHERE id = $1",
+                uuid.UUID(profile_id)
+            )
             if not profile:
                 await emit_assistant_error(sid, "Profile not found")
                 return
@@ -72,21 +75,20 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             # Generate a trace id for the chat
             trace_id = gen_trace_id()
 
-            # Create the assistant chat (similar to simulation chat creation)
+            # Create the assistant chat
             from datetime import datetime, timezone
             
-            chat = AssistantChats(
-                created_at=datetime.now(timezone.utc),
-                title="New Chat",  # Will be updated by title agent
-                profile_id=uuid.UUID(profile_id),
-                trace_id=trace_id,
+            chat = await conn.fetchrow(
+                """INSERT INTO assistant_chats (created_at, title, profile_id, trace_id)
+                   VALUES ($1, $2, $3, $4)
+                   RETURNING id""",
+                datetime.now(timezone.utc),
+                "New Chat",  # Will be updated by title agent
+                uuid.UUID(profile_id),
+                trace_id,
             )
 
-            db_session.add(chat)
-            db_session.commit()
-            db_session.refresh(chat)
-
-            chat_id = str(chat.id)
+            chat_id = str(chat['id'])
             logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room

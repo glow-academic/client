@@ -41,12 +41,12 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 @router.post("/list", response_model=StaffListResponse)
 async def get_profile_list(
     filters: StaffFilters,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffListResponse:
     """Get profile/staff list with permissions and relationships."""
     try:
-        repo = get_staff_repository(db)
-        return repo.get_staff_list(filters)
+        repo = get_staff_repository(conn)
+        return await repo.get_staff_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -54,12 +54,12 @@ async def get_profile_list(
 @router.post("/detail", response_model=StaffDetailResponse)
 async def get_profile_detail_staff(
     request: StaffDetailRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffDetailResponse:
     """Get detailed profile information (staff version with permissions)."""
     try:
-        repo = get_staff_repository(db)
-        return repo.get_staff_detail(request)
+        repo = get_staff_repository(conn)
+        return await repo.get_staff_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -69,12 +69,12 @@ async def get_profile_detail_staff(
 @router.post("/detail-bulk", response_model=StaffDetailBulkResponse)
 async def get_profile_detail_bulk(
     request: StaffDetailBulkRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> StaffDetailBulkResponse:
     """Get bulk profile detail information."""
     try:
-        repo = get_staff_repository(db)
-        return repo.get_staff_detail_bulk(request)
+        repo = get_staff_repository(conn)
+        return await repo.get_staff_detail_bulk(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -89,12 +89,12 @@ async def get_profile_detail_bulk(
 @router.post("/create", response_model=CreateStaffResponse)
 async def create_profile(
     request: CreateStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateStaffResponse:
     """Create a new profile."""
     try:
-        repo = get_staff_repository(db)
-        return repo.create_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.create_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -104,12 +104,12 @@ async def create_profile(
 @router.post("/bulk-create", response_model=BulkCreateStaffResponse)
 async def bulk_create_profile(
     request: BulkCreateStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkCreateStaffResponse:
     """Bulk create profiles."""
     try:
-        repo = get_staff_repository(db)
-        return repo.bulk_create_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.bulk_create_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -124,12 +124,12 @@ async def bulk_create_profile(
 @router.post("/update", response_model=UpdateStaffResponse)
 async def update_profile(
     request: UpdateStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateStaffResponse:
     """Update a profile."""
     try:
-        repo = get_staff_repository(db)
-        return repo.update_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.update_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -139,12 +139,12 @@ async def update_profile(
 @router.post("/bulk-update", response_model=BulkUpdateStaffResponse)
 async def bulk_update_profile(
     request: BulkUpdateStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkUpdateStaffResponse:
     """Bulk update profiles."""
     try:
-        repo = get_staff_repository(db)
-        return repo.bulk_update_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.bulk_update_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -159,12 +159,12 @@ async def bulk_update_profile(
 @router.post("/delete", response_model=DeleteStaffResponse)
 async def delete_profile(
     request: DeleteStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteStaffResponse:
     """Delete a profile."""
     try:
-        repo = get_staff_repository(db)
-        return repo.delete_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.delete_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -174,12 +174,12 @@ async def delete_profile(
 @router.post("/bulk-delete", response_model=BulkDeleteStaffResponse)
 async def bulk_delete_profile(
     request: BulkDeleteStaffRequest,
-    db: Annotated[Session, Depends(get_session)],
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BulkDeleteStaffResponse:
     """Bulk delete profiles."""
     try:
-        repo = get_staff_repository(db)
-        return repo.bulk_delete_staff(request)
+        repo = get_staff_repository(conn)
+        return await repo.bulk_delete_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

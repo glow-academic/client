@@ -16,20 +16,20 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
 from app.services.scenario_service import ScenarioService
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
+from app.db import transaction
 
 
 class PersonaService:
     """Service layer for persona operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.db = db
+        self.conn = conn
         self.queries = PersonaQueries()
-        self.scenario_service = ScenarioService(db)
+        self.scenario_service = None  # Lazy init to avoid circular import
 
-    def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
+    async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list with permissions and scenario details using dynamic SQL."""
 
         # Get query from query builder
@@ -37,7 +37,7 @@ class PersonaService:
             filters.departmentIds, filters.profileId
         )
 
-        result = self.db.execute(text(query), params).fetchall()
+        result = await self.conn.fetch(query, *params)
 
         # Build response
         personas = []
@@ -46,30 +46,30 @@ class PersonaService:
 
         for row in result:
             # Convert UUID arrays to string arrays
-            scenario_ids = [str(sid) for sid in (row.scenario_ids or [])]
+            scenario_ids = [str(sid) for sid in (row['scenario_ids'] or [])]
 
             personas.append(
                 PersonaItem(
-                    persona_id=str(row.persona_id),
-                    name=row.persona_name,  # Added name
-                    description=row.description,
-                    color=row.color,
-                    icon=row.icon,
+                    persona_id=str(row['persona_id']),
+                    name=row['persona_name'],  # Added name
+                    description=row['description'],
+                    color=row['color'],
+                    icon=row['icon'],
                     scenario_ids=scenario_ids,
-                    model_id=str(row.model_id),
-                    reasoning=row.reasoning,
-                    temperature=float(row.temperature),
-                    active=row.active,
-                    num_scenarios=row.num_scenarios,
-                    can_edit=row.can_edit,
-                    can_duplicate=row.can_duplicate,
-                    can_delete=row.can_delete,
+                    model_id=str(row['model_id']),
+                    reasoning=row['reasoning'],
+                    temperature=float(row['temperature']),
+                    active=row['active'],
+                    num_scenarios=row['num_scenarios'],
+                    can_edit=row['can_edit'],
+                    can_duplicate=row['can_duplicate'],
+                    can_delete=row['can_delete'],
                 )
             )
 
-            if row.model_id and row.model_name:
-                model_mapping[str(row.model_id)] = ModelMappingItem(
-                    name=row.model_name,
+            if row['model_id'] and row['model_name']:
+                model_mapping[str(row['model_id'])] = ModelMappingItem(
+                    name=row['model_name'],
                     description=getattr(row, 'model_description', '') or ''
                 )
 
@@ -87,14 +87,14 @@ class PersonaService:
             model_mapping=model_mapping,
         )
 
-    def duplicate_persona(
+    async def duplicate_persona(
         self, request: DuplicatePersonaRequest
     ) -> DuplicatePersonaResponse:
         """Duplicate a persona using dynamic SQL."""
 
         # Get original persona data
         query, params = self.queries.get_persona_for_duplicate(request.personaId)
-        result = self.db.execute(text(query), params).fetchone()
+        result = await self.conn.fetchrow(query, *params)
 
         if not result:
             raise ValueError(f"Persona not found: {request.personaId}")
@@ -104,7 +104,7 @@ class PersonaService:
         new_persona = self.db.execute(
             text(duplicate_query),
             {
-                "name": result.name,
+                "name": result['name'],
                 "description": result.description,
                 "system_prompt": result.system_prompt,
                 "temperature": result.temperature,
@@ -119,20 +119,20 @@ class PersonaService:
         if not new_persona:
             raise ValueError("Failed to create duplicate persona")
 
-        self.db.commit()
+        # Transaction handled
 
         return DuplicatePersonaResponse(
             success=True,
-            personaId=str(new_persona.id),
-            message=f"Persona '{result.name}' duplicated successfully",
+            personaId=str(new_persona['id']),
+            message=f"Persona '{result['name']}' duplicated successfully",
         )
 
-    def delete_persona(self, request: DeletePersonaRequest) -> DeletePersonaResponse:
+    async def delete_persona(self, request: DeletePersonaRequest) -> DeletePersonaResponse:
         """Delete a persona using dynamic SQL."""
 
         # Check if persona is in use
         query, params = self.queries.check_persona_usage(request.personaId)
-        usage = self.db.execute(text(query), params).fetchone()
+        usage = await self.conn.fetchrow(query, *params)
 
         if not usage:
             raise ValueError("Failed to check persona usage")
@@ -142,7 +142,7 @@ class PersonaService:
 
         # Get persona name
         query, params = self.queries.get_persona_name(request.personaId)
-        persona = self.db.execute(text(query), params).fetchone()
+        persona = await self.conn.fetchrow(query, *params)
 
         if not persona:
             raise ValueError(f"Persona not found: {request.personaId}")
@@ -150,20 +150,20 @@ class PersonaService:
         # Delete persona
         query, params = self.queries.delete_persona(request.personaId)
         self.db.execute(text(query), params)
-        self.db.commit()
+        # Transaction handled
 
         return DeletePersonaResponse(
-            success=True, message=f"Persona '{persona.name}' deleted successfully"
+            success=True, message=f"Persona '{persona['name']}' deleted successfully"
         )
 
-    def get_persona_detail(
+    async def get_persona_detail(
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
         """Get detailed persona information using dynamic SQL."""
 
         # Get persona basic info
         query, params = self.queries.get_persona_by_id(request.personaId)
-        persona = self.db.execute(text(query), params).fetchone()
+        persona = await self.conn.fetchrow(query, *params)
 
         if not persona:
             raise ValueError(f"Persona not found: {request.personaId}")
@@ -173,26 +173,26 @@ class PersonaService:
             request.profileId
         )
         valid_department_ids = [
-            str(row.id) for row in self.db.execute(text(query), params).fetchall()
+            str(row['id']) for row in await self.conn.fetch(query, *params)
         ]
 
         # Get models with mapping
         query, params = self.queries.get_valid_models()
-        models_result = self.db.execute(text(query), params).fetchall()
+        models_result = await self.conn.fetch(query, *params)
 
-        valid_model_ids = [str(row.id) for row in models_result]
+        valid_model_ids = [str(row['id']) for row in models_result]
         model_mapping = {
-            str(row.id): ModelMappingItem(name=row.name, description=row.description)
+            str(row['id']): ModelMappingItem(name=row['name'], description=row['description'])
             for row in models_result
         }
 
         # Get departments with mapping
         query, params = self.queries.get_departments_mapping(valid_department_ids)
-        departments_result = self.db.execute(text(query), params).fetchall()
+        departments_result = await self.conn.fetch(query, *params)
 
         department_mapping = {
-            str(row.id): DepartmentMappingItem(
-                name=row.name, description=row.description or ''
+            str(row['id']): DepartmentMappingItem(
+                name=row['name'], description=row['description'] or ''
             )
             for row in departments_result
         }
@@ -296,7 +296,7 @@ class PersonaService:
 
         return PersonaDetailResponse(
             # Basic fields
-            name=persona.name,
+            name=persona['name'],
             description=persona.description,
             department_id=str(persona.department_id),
             active=persona.active,
@@ -329,26 +329,26 @@ class PersonaService:
             debug_info=debug_info,
         )
 
-    def get_persona_detail_default(
+    async def get_persona_detail_default(
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Get default persona details based on profile."""
 
         # Get default persona for profile
         query, params = self.queries.get_default_persona(request.profileId)
-        persona = self.db.execute(text(query), params).fetchone()
+        persona = await self.conn.fetchrow(query, *params)
 
         if not persona:
             raise ValueError("No personas found for user's departments")
 
         # Reuse the detail logic with the found persona_id
         detail_request = PersonaDetailRequest(
-            personaId=str(persona.id), profileId=request.profileId
+            personaId=str(persona['id']), profileId=request.profileId
         )
 
         return self.get_persona_detail(detail_request)
 
-    def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
+    async def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
 
         query, _ = self.queries.create_persona()
@@ -372,20 +372,20 @@ class PersonaService:
         if not result:
             raise ValueError("Failed to create persona")
 
-        self.db.commit()
+        # Transaction handled
 
         return CreatePersonaResponse(
             success=True,
-            personaId=str(result.id),
+            personaId=str(result['id']),
             message=f"Persona '{request.name}' created successfully",
         )
 
-    def update_persona(self, request: UpdatePersonaRequest) -> UpdatePersonaResponse:
+    async def update_persona(self, request: UpdatePersonaRequest) -> UpdatePersonaResponse:
         """Update an existing persona using dynamic SQL."""
 
         # Check if persona exists
         query, params = self.queries.get_persona_name(request.personaId)
-        existing = self.db.execute(text(query), params).fetchone()
+        existing = await self.conn.fetchrow(query, *params)
 
         if not existing:
             raise ValueError(f"Persona not found: {request.personaId}")
@@ -410,7 +410,7 @@ class PersonaService:
             },
         )
 
-        self.db.commit()
+        # Transaction handled
 
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"

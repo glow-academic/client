@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List, Optional
 
+import asyncpg  # type: ignore
+from app.db import transaction
 from app.queries.analytics.bundle_queries import BundleQueries
 from app.queries.analytics.footer_queries import FooterQueries
 from app.queries.analytics.header_queries import HeaderQueries
@@ -39,16 +41,14 @@ from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ScenarioMapping, ScenarioMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 
 class AnalyticsService:
     """Service layer for analytics operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.db = db
+        self.conn = conn
         self.header_queries = HeaderQueries()
         self.primary_queries = PrimaryQueries()
         self.secondary_queries = SecondaryQueries()
@@ -58,11 +58,11 @@ class AnalyticsService:
         self.leaderboard_queries = LeaderboardQueries()
         self.pricing_queries = PricingQueries()
 
-    def _execute_metric_query(
-        self, query: str, params: Dict[str, Any]
+    async def _execute_metric_query(
+        self, query: str, params: List[Any]
     ) -> MetricResponse:
         """Execute a metric query and parse the result."""
-        result = self.db.execute(text(query), params).fetchone()
+        result = await self.conn.fetchrow(query, *params)
         
         if not result:
             return MetricResponse(
@@ -74,16 +74,16 @@ class AnalyticsService:
 
         # Parse the result into MetricResponse
         return MetricResponse(
-            hasData=result.has_data,
-            method=result.method,
-            valueField=result.value_field,
-            keyField=result.key_field,
-            trendData=result.trend_data or [],
-            dataPoints=result.data_points or [],
+            hasData=result['has_data'],
+            method=result['method'],
+            valueField=result['value_field'],
+            keyField=result['key_field'],
+            trendData=result['trend_data'] or [],
+            dataPoints=result['data_points'] or [],
         )
 
     # Header Analytics (10 metrics)
-    def get_average_score(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_average_score(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get average score metric."""
         query, params = self.header_queries.average_score(
             start_date=filters.startDate,
@@ -94,9 +94,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_completion_percentage(
+    async def get_completion_percentage(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get completion percentage metric."""
@@ -109,9 +109,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_first_attempt_pass_rate(
+    async def get_first_attempt_pass_rate(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get first attempt pass rate metric."""
@@ -124,9 +124,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_highest_score(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_highest_score(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get highest score metric."""
         query, params = self.header_queries.highest_score(
             start_date=filters.startDate,
@@ -137,9 +137,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_messages_per_session(
+    async def get_messages_per_session(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get messages per session metric."""
@@ -152,9 +152,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_persona_response_times(
+    async def get_persona_response_times(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get persona response times metric."""
@@ -167,9 +167,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_session_efficiency(
+    async def get_session_efficiency(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get session efficiency metric."""
@@ -182,9 +182,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_stagnation_rate(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_stagnation_rate(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get stagnation rate metric."""
         query, params = self.header_queries.stagnation_rate(
             start_date=filters.startDate,
@@ -195,9 +195,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_time_spent(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_time_spent(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get time spent metric."""
         query, params = self.header_queries.time_spent(
             start_date=filters.startDate,
@@ -208,9 +208,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_total_attempts(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_total_attempts(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get total attempts metric."""
         query, params = self.header_queries.total_attempts(
             start_date=filters.startDate,
@@ -221,10 +221,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
     # Primary Analytics (3 complex metrics)
-    def get_rubric_heatmap(self, filters: AnalyticsFilters) -> RubricHeatmapResponse:
+    async def get_rubric_heatmap(self, filters: AnalyticsFilters) -> RubricHeatmapResponse:
         """Get rubric heatmap data."""
         query, params = self.primary_queries.rubric_heatmap(
             start_date=filters.startDate,
@@ -235,10 +235,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return RubricHeatmapResponse.model_validate(result or {})
 
-    def get_growth_data(self, filters: AnalyticsFilters) -> GrowthDataResponse:
+    async def get_growth_data(self, filters: AnalyticsFilters) -> GrowthDataResponse:
         """Get growth data."""
         query, params = self.primary_queries.growth_data(
             start_date=filters.startDate,
@@ -249,10 +249,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return GrowthDataResponse.model_validate(result or {})
 
-    def get_persona_performance(self, filters: AnalyticsFilters) -> PersonaPerformanceResponse:
+    async def get_persona_performance(self, filters: AnalyticsFilters) -> PersonaPerformanceResponse:
         """Get persona performance data."""
         query, params = self.primary_queries.persona_performance(
             start_date=filters.startDate,
@@ -263,11 +263,11 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return PersonaPerformanceResponse.model_validate(result or {})
 
     # Secondary Analytics (3 complex metrics)
-    def get_attempt_improvement(self, filters: AnalyticsFilters) -> AttemptImprovementResponse:
+    async def get_attempt_improvement(self, filters: AnalyticsFilters) -> AttemptImprovementResponse:
         """Get attempt improvement data."""
         query, params = self.secondary_queries.attempt_improvement(
             start_date=filters.startDate,
@@ -278,10 +278,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return AttemptImprovementResponse.model_validate(result or {})
 
-    def get_cohort_performance(self, filters: AnalyticsFilters) -> CohortPerformanceResponse:
+    async def get_cohort_performance(self, filters: AnalyticsFilters) -> CohortPerformanceResponse:
         """Get cohort performance data."""
         query, params = self.secondary_queries.cohort_performance(
             start_date=filters.startDate,
@@ -292,10 +292,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return CohortPerformanceResponse.model_validate(result or {})
 
-    def get_skill_performance(self, filters: AnalyticsFilters) -> SkillPerformanceResponse:
+    async def get_skill_performance(self, filters: AnalyticsFilters) -> SkillPerformanceResponse:
         """Get skill performance data."""
         query, params = self.secondary_queries.skill_performance(
             start_date=filters.startDate,
@@ -306,11 +306,11 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return SkillPerformanceResponse.model_validate(result or {})
 
     # Footer Analytics (4 new metrics)
-    def get_scenario_performance(self, filters: AnalyticsFilters) -> ScenarioPerformanceResponse:
+    async def get_scenario_performance(self, filters: AnalyticsFilters) -> ScenarioPerformanceResponse:
         """Get scenario performance data."""
         query, params = self.footer_queries.scenario_performance(
             start_date=filters.startDate,
@@ -321,10 +321,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return ScenarioPerformanceResponse.model_validate(result or {})
 
-    def get_scenario_stats(self, filters: AnalyticsFilters) -> ScenarioStatsResponse:
+    async def get_scenario_stats(self, filters: AnalyticsFilters) -> ScenarioStatsResponse:
         """Get scenario stats data."""
         query, params = self.footer_queries.scenario_stats(
             start_date=filters.startDate,
@@ -335,10 +335,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return ScenarioStatsResponse.model_validate(result or {})
 
-    def get_simulation_composition(self, filters: AnalyticsFilters) -> SimulationCompositionResponse:
+    async def get_simulation_composition(self, filters: AnalyticsFilters) -> SimulationCompositionResponse:
         """Get simulation composition data."""
         query, params = self.footer_queries.simulation_composition(
             start_date=filters.startDate,
@@ -349,10 +349,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return SimulationCompositionResponse.model_validate(result or {})
 
-    def get_simulation_performance(self, filters: AnalyticsFilters) -> SimulationPerformanceResponse:
+    async def get_simulation_performance(self, filters: AnalyticsFilters) -> SimulationPerformanceResponse:
         """Get simulation performance data."""
         query, params = self.footer_queries.simulation_performance(
             start_date=filters.startDate,
@@ -363,11 +363,11 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return SimulationPerformanceResponse.model_validate(result or {})
 
     # Page-specific Analytics
-    def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
+    async def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
         """Get home overview data with history and simulation mapping."""
         # Get overview items
         query, params = self.page_queries.home_overview(
@@ -379,14 +379,14 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         overview_data = result or {}
         
         # Fetch history data
-        history = self.get_attempt_history(filters)
+        history = await self.get_attempt_history(filters)
         
         # Build simulation mapping
-        simulation_mapping = self._build_simulation_mapping(filters)
+        simulation_mapping = await self._build_simulation_mapping(filters)
         
         return HomeOverviewResponse(
             mode=overview_data.get("mode", "empty"),
@@ -398,7 +398,7 @@ class AnalyticsService:
             simulation_mapping=simulation_mapping,
         )
 
-    def get_attempt_history(self, filters: AnalyticsFilters) -> AttemptHistoryResponse:
+    async def get_attempt_history(self, filters: AnalyticsFilters) -> AttemptHistoryResponse:
         """Get attempt history data."""
         query, params = self.page_queries.attempt_history(
             start_date=filters.startDate,
@@ -409,12 +409,12 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         if not result:
             return []
         return [AttemptHistoryRow.model_validate(row) for row in result]
 
-    def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:
+    async def get_practice_overview(self, filters: AnalyticsFilters) -> PracticeOverviewResponse:
         """Get practice overview data with history and all entity mappings."""
         # Get overview items
         query, params = self.page_queries.practice_overview(
@@ -426,18 +426,18 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         overview_data = result or {}
         
         # Fetch history data
-        history = self.get_attempt_history(filters)
+        history = await self.get_attempt_history(filters)
         
         # Build all entity mappings
-        simulation_mapping = self._build_simulation_mapping(filters)
-        persona_mapping = self._build_persona_mapping(filters)
-        scenario_mapping = self._build_scenario_mapping(filters)
-        parameter_mapping = self._build_parameter_mapping(filters)
-        parameter_item_mapping = self._build_parameter_item_mapping(filters)
+        simulation_mapping = await self._build_simulation_mapping(filters)
+        persona_mapping = await self._build_persona_mapping(filters)
+        scenario_mapping = await self._build_scenario_mapping(filters)
+        parameter_mapping = await self._build_parameter_mapping(filters)
+        parameter_item_mapping = await self._build_parameter_item_mapping(filters)
         
         return PracticeOverviewResponse(
             mode=overview_data.get("mode", "practice"),
@@ -454,7 +454,7 @@ class AnalyticsService:
         )
 
     # Bundle Analytics
-    def get_reports_bundle(self, filters: AnalyticsFilters) -> ReportsBundleResponse:
+    async def get_reports_bundle(self, filters: AnalyticsFilters) -> ReportsBundleResponse:
         """Get reports bundle data with entity mappings."""
         # Get profile metrics data
         query, params = self.bundle_queries.reports_bundle(
@@ -466,12 +466,12 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         bundle_data = result.get("data", []) if result else []
         
         # Build entity mappings (reuse methods from dashboard bundle)
-        scenario_mapping = self._build_scenario_mapping(filters)
-        simulation_mapping = self._build_simulation_mapping(filters)
+        scenario_mapping = await self._build_scenario_mapping(filters)
+        simulation_mapping = await self._build_simulation_mapping(filters)
         
         return ReportsBundleResponse(
             data=bundle_data,
@@ -479,7 +479,7 @@ class AnalyticsService:
             simulation_mapping=simulation_mapping,
         )
 
-    def get_leaderboard_bundle(self, filters: AnalyticsFilters) -> LeaderboardBundleResponse:
+    async def get_leaderboard_bundle(self, filters: AnalyticsFilters) -> LeaderboardBundleResponse:
         """Get leaderboard bundle data."""
         query, params = self.bundle_queries.leaderboard_bundle(
             start_date=filters.startDate,
@@ -490,10 +490,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        result = self.db.execute(text(query), params).scalar()
+        result = await self.conn.fetchval(query, *params)
         return LeaderboardBundleResponse.model_validate(result or {})
 
-    def get_pricing_analytics(
+    async def get_pricing_analytics(
         self, filters: AnalyticsFilters
     ) -> PricingAnalyticsResponse:
         """Get pricing analytics for model runs."""
@@ -507,7 +507,7 @@ class AnalyticsService:
             sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
         )
 
-        runs_result = self.db.execute(text(query), params).fetchall()
+        runs_result = await self.conn.fetch(query, *params)
 
         # Build model runs list
         model_runs = []
@@ -516,37 +516,37 @@ class AnalyticsService:
         for row in runs_result:
             model_runs.append(
                 ModelRunItem(
-                    model_run_id=str(row.model_run_id),
-                    created_at=row.created_at.isoformat(),
-                    input_tokens=row.input_tokens,
-                    output_tokens=row.output_tokens,
-                    model_id=str(row.model_id) if row.model_id else None,
-                    profile_id=str(row.profile_id) if row.profile_id else None,
-                    agent_id=str(row.agent_id) if row.agent_id else None,
-                    persona_id=str(row.persona_id) if row.persona_id else None,
+                    model_run_id=str(row['model_run_id']),
+                    created_at=row['created_at'].isoformat(),
+                    input_tokens=row['input_tokens'],
+                    output_tokens=row['output_tokens'],
+                    model_id=str(row['model_id']) if row['model_id'] else None,
+                    profile_id=str(row['profile_id']) if row['profile_id'] else None,
+                    agent_id=str(row['agent_id']) if row['agent_id'] else None,
+                    persona_id=str(row['persona_id']) if row['persona_id'] else None,
                     debug_info=[],  # Will be populated below
                 )
             )
-            model_run_ids.append(str(row.model_run_id))
+            model_run_ids.append(str(row['model_run_id']))
 
         # Get debug info for all runs
         if model_run_ids:
             query, params = self.pricing_queries.get_debug_info_for_runs(
                 model_run_ids
             )
-            debug_result = self.db.execute(text(query), params).fetchall()
+            debug_result = await self.conn.fetch(query, *params)
 
             # Group debug info by model_run_id
             debug_by_run: Dict[str, List[DebugInfoItem]] = {}
             for debug in debug_result:
-                run_id = str(debug.model_run_id)
+                run_id = str(debug['model_run_id'])
                 if run_id not in debug_by_run:
                     debug_by_run[run_id] = []
                 debug_by_run[run_id].append(
                     DebugInfoItem(
-                        id=str(debug.id),
-                        created_at=debug.created_at.isoformat(),
-                        content=debug.content,
+                        id=str(debug['id']),
+                        created_at=debug['created_at'].isoformat(),
+                        content=debug['content'],
                     )
                 )
 
@@ -567,14 +567,14 @@ class AnalyticsService:
             query, params = self.pricing_queries.get_model_mapping(
                 model_ids_to_fetch
             )
-            model_result = self.db.execute(text(query), params).fetchall()
+            model_result = await self.conn.fetch(query, *params)
 
             for row in model_result:
-                model_mapping[str(row.id)] = ModelMappingWithPricing(
-                    name=row.name,
-                    description=row.description,
-                    input_ppm=row.input_ppm,
-                    output_ppm=row.output_ppm,
+                model_mapping[str(row['id'])] = ModelMappingWithPricing(
+                    name=row['name'],
+                    description=row['description'],
+                    input_ppm=row['input_ppm'],
+                    output_ppm=row['output_ppm'],
                 )
 
         # Get profile mapping
@@ -584,20 +584,20 @@ class AnalyticsService:
             query, params = self.pricing_queries.get_profile_mapping(
                 profile_ids_to_fetch
             )
-            profile_result = self.db.execute(text(query), params).fetchall()
+            profile_result = await self.conn.fetch(query, *params)
 
             for row in profile_result:
-                profile_mapping[str(row.id)] = row.name
+                profile_mapping[str(row['id'])] = row['name']
 
         # Get agent mapping
         if agent_ids_to_fetch := list(
             set([r.agent_id for r in model_runs if r.agent_id])
         ):
             query, params = self.pricing_queries.get_agent_mapping(agent_ids_to_fetch)
-            agent_result = self.db.execute(text(query), params).fetchall()
+            agent_result = await self.conn.fetch(query, *params)
 
             for row in agent_result:
-                agent_mapping[str(row.id)] = row.name
+                agent_mapping[str(row['id'])] = row['name']
 
         # Get persona mapping
         if persona_ids_to_fetch := list(
@@ -606,10 +606,10 @@ class AnalyticsService:
             query, params = self.pricing_queries.get_persona_mapping(
                 persona_ids_to_fetch
             )
-            persona_result = self.db.execute(text(query), params).fetchall()
+            persona_result = await self.conn.fetch(query, *params)
 
             for row in persona_result:
-                persona_mapping[str(row.id)] = row.name
+                persona_mapping[str(row['id'])] = row['name']
 
         return PricingAnalyticsResponse(
             model_runs=model_runs,
@@ -620,7 +620,7 @@ class AnalyticsService:
         )
 
     # Leaderboard-Specific Metrics (3 additional metrics)
-    def get_improvement_per_day(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_improvement_per_day(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get improvement per day metric."""
         query, params = self.leaderboard_queries.improvement_per_day(
             start_date=filters.startDate,
@@ -631,9 +631,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_perfect_scores(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_perfect_scores(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get perfect scores metric."""
         query, params = self.leaderboard_queries.perfect_scores(
             start_date=filters.startDate,
@@ -644,9 +644,9 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
-    def get_quickest_pass(self, filters: AnalyticsFilters) -> MetricResponse:
+    async def get_quickest_pass(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get quickest pass metric."""
         query, params = self.leaderboard_queries.quickest_pass(
             start_date=filters.startDate,
@@ -657,10 +657,10 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params)
 
     # Utility
-    def get_dashboard_bundle(
+    async def get_dashboard_bundle(
         self, filters: AnalyticsFilters
     ) -> DashboardBundleResponse:
         """
@@ -670,22 +670,22 @@ class AnalyticsService:
         """
         # Fetch all header metrics (10 metrics)
         header = DashboardHeaderMetrics(
-            average_score=self.get_average_score(filters),
-            completion_percentage=self.get_completion_percentage(filters),
-            first_attempt_pass_rate=self.get_first_attempt_pass_rate(filters),
-            highest_score=self.get_highest_score(filters),
-            messages_per_session=self.get_messages_per_session(filters),
-            persona_response_times=self.get_persona_response_times(filters),
-            session_efficiency=self.get_session_efficiency(filters),
-            stagnation_rate=self.get_stagnation_rate(filters),
-            time_spent=self.get_time_spent(filters),
-            total_attempts=self.get_total_attempts(filters),
+            average_score=await self.get_average_score(filters),
+            completion_percentage=await self.get_completion_percentage(filters),
+            first_attempt_pass_rate=await self.get_first_attempt_pass_rate(filters),
+            highest_score=await self.get_highest_score(filters),
+            messages_per_session=await self.get_messages_per_session(filters),
+            persona_response_times=await self.get_persona_response_times(filters),
+            session_efficiency=await self.get_session_efficiency(filters),
+            stagnation_rate=await self.get_stagnation_rate(filters),
+            time_spent=await self.get_time_spent(filters),
+            total_attempts=await self.get_total_attempts(filters),
         )
 
         # Fetch all primary metrics (3 metrics)
-        growth_data = self.get_growth_data(filters)
-        persona_performance = self.get_persona_performance(filters)
-        rubric_heatmap = self.get_rubric_heatmap(filters)
+        growth_data = await self.get_growth_data(filters)
+        persona_performance = await self.get_persona_performance(filters)
+        rubric_heatmap = await self.get_rubric_heatmap(filters)
 
         primary = DashboardPrimaryMetrics(
             growth_data=growth_data,
@@ -694,9 +694,9 @@ class AnalyticsService:
         )
 
         # Fetch all secondary metrics (3 metrics)
-        attempt_improvement = self.get_attempt_improvement(filters)
-        cohort_performance = self.get_cohort_performance(filters)
-        skill_performance = self.get_skill_performance(filters)
+        attempt_improvement = await self.get_attempt_improvement(filters)
+        cohort_performance = await self.get_cohort_performance(filters)
+        skill_performance = await self.get_skill_performance(filters)
 
         secondary = DashboardSecondaryMetrics(
             attempt_improvement=attempt_improvement,
@@ -705,10 +705,10 @@ class AnalyticsService:
         )
 
         # Fetch all footer metrics (4 metrics)
-        scenario_performance = self.get_scenario_performance(filters)
-        scenario_stats = self.get_scenario_stats(filters)
-        simulation_performance = self.get_simulation_performance(filters)
-        simulation_composition = self.get_simulation_composition(filters)
+        scenario_performance = await self.get_scenario_performance(filters)
+        scenario_stats = await self.get_scenario_stats(filters)
+        simulation_performance = await self.get_simulation_performance(filters)
+        simulation_composition = await self.get_simulation_composition(filters)
 
         footer = DashboardFooterMetrics(
             scenario_performance=scenario_performance,
@@ -718,13 +718,13 @@ class AnalyticsService:
         )
 
         # Fetch history data
-        history = self.get_attempt_history(filters)
+        history = await self.get_attempt_history(filters)
 
         # Build entity mappings
-        simulation_mapping = self._build_simulation_mapping(filters)
-        rubric_mapping = self._build_rubric_mapping(filters)
-        parameter_mapping = self._build_parameter_mapping(filters)
-        parameter_item_mapping = self._build_parameter_item_mapping(filters)
+        simulation_mapping = await self._build_simulation_mapping(filters)
+        rubric_mapping = await self._build_rubric_mapping(filters)
+        parameter_mapping = await self._build_parameter_mapping(filters)
+        parameter_item_mapping = await self._build_parameter_item_mapping(filters)
 
         # Compute all actionable insights using the insights service
         insights = DashboardInsights(
@@ -783,24 +783,21 @@ class AnalyticsService:
             parameter_item_mapping=parameter_item_mapping,
         )
 
-    def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
+    async def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
         """Build scenario mapping from database."""
-        query = text("""
+        query = """
             SELECT DISTINCT s.id, s.title, s.problem_statement
             FROM scenarios s
-            WHERE (:department_ids::uuid[] IS NULL OR s.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
             AND s.active = true
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): ScenarioMappingItem(
-                name=row.title,
-                description=row.problem_statement or "",
+            str(row['id']): ScenarioMappingItem(
+                name=row['title'],
+                description=row['problem_statement'] or "",
                 persona_id=None,
                 persona_mapping={},
                 document_mapping={},
@@ -810,138 +807,121 @@ class AnalyticsService:
             for row in results
         }
 
-    def _build_simulation_mapping(
+    async def _build_simulation_mapping(
         self, filters: AnalyticsFilters
     ) -> SimulationMapping:
         """Build simulation mapping from database - only practice simulations."""
         # Get only practice simulations for the practice page
-        query = text("""
+        query = """
             SELECT DISTINCT s.id, s.title, s.description
             FROM simulations s
-            WHERE (:department_ids::uuid[] IS NULL OR s.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
             AND s.active = true
             AND s.practice_simulation = true
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): SimulationMappingItem(
-                name=row.title,
-                description=row.description or "",
+            str(row['id']): SimulationMappingItem(
+                name=row['title'],
+                description=row['description'] or "",
             )
             for row in results
         }
 
-    def _build_rubric_mapping(self, filters: AnalyticsFilters) -> RubricMapping:
+    async def _build_rubric_mapping(self, filters: AnalyticsFilters) -> RubricMapping:
         """Build rubric mapping from database."""
-        query = text("""
+        query = """
             SELECT DISTINCT r.id, r.name, r.description
             FROM rubrics r
-            WHERE (:department_ids::uuid[] IS NULL OR r.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR r.department_id = ANY($1::uuid[]))
             AND r.active = true
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): RubricMappingItem(
-                name=row.name,
-                description=row.description or "",
+            str(row['id']): RubricMappingItem(
+                name=row['name'],
+                description=row['description'] or "",
             )
             for row in results
         }
 
-    def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
+    async def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
         """Build parameter mapping from database - only non-default parameters for customization."""
-        query = text("""
+        query = """
             SELECT DISTINCT p.id, p.name, p.description
             FROM parameters p
-            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
             AND p.active = true
             AND p.default_parameter = false
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): ParameterMappingItem(
-                name=row.name,
-                description=row.description or "",
+            str(row['id']): ParameterMappingItem(
+                name=row['name'],
+                description=row['description'] or "",
             )
             for row in results
         }
 
-    def _build_parameter_item_mapping(
+    async def _build_parameter_item_mapping(
         self, filters: AnalyticsFilters
     ) -> ParameterItemMapping:
         """Build parameter item mapping from database - only default items for non-default parameters."""
-        query = text("""
+        query = """
             SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON pi.parameter_id = p.id
-            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
             AND p.active = true
             AND p.default_parameter = false
             AND pi.default_item = true
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): ParameterItemMappingItem(
-                name=row.name,
-                description=row.description or "",
-                parameter_id=str(row.parameter_id),
-                parameter_name=row.parameter_name,
+            str(row['id']): ParameterItemMappingItem(
+                name=row['name'],
+                description=row['description'] or "",
+                parameter_id=str(row["parameter_id"]),
+                parameter_name=row["parameter_name"],
             )
             for row in results
         }
 
-    def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
+    async def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
         """Build persona mapping from database."""
-        query = text("""
+        query = """
             SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon
             FROM personas p
-            WHERE (:department_ids::uuid[] IS NULL OR p.department_id = ANY(:department_ids::uuid[]))
+            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
             AND p.active = true
-        """)
-        params = {
-            "department_ids": filters.departmentIds,
-        }
+        """
         
-        results = self.db.execute(query, params).fetchall()
+        results = await self.conn.fetch(query, filters.departmentIds)
         
         return {
-            str(row.id): PersonaMappingItem(
-                name=row.name,
-                description=row.description or "",
-                color=row.color,
-                icon=row.icon,
+            str(row['id']): PersonaMappingItem(
+                name=row['name'],
+                description=row['description'] or "",
+                color=row['color'],
+                icon=row['icon'],
             )
             for row in results
         }
 
-    def refresh_materialized_view(self) -> None:
+    async def refresh_materialized_view(self) -> None:
         """Refresh the analytics materialized view."""
-        query = text("REFRESH MATERIALIZED VIEW CONCURRENTLY analytics")
-        self.db.execute(query)
-        self.db.commit()
+        await self.conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY analytics")
 
 
-def get_analytics_service(db: Session) -> AnalyticsService:
+def get_analytics_service(conn: asyncpg.Connection) -> AnalyticsService:
     """Get analytics service instance."""
-    return AnalyticsService(db)
+    return AnalyticsService(conn)
 

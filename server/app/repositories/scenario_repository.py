@@ -23,7 +23,7 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
 from app.services.scenario_service import ScenarioService
-from sqlalchemy.orm import Session
+import asyncpg  # type: ignore
 
 
 class ScenarioRepository:
@@ -33,52 +33,52 @@ class ScenarioRepository:
     This repository delegates to the scenario service layer.
     """
 
-    def __init__(self, db: Session):
+    async def __init__(self, conn: asyncpg.Connection):
         """Initialize repository with database session."""
         self.db = db
-        self.service = ScenarioService(db)
+        self.service = ScenarioService(conn)
 
-    def get_scenarios_list(
+    async def get_scenarios_list(
         self, filters: ScenariosFilters
     ) -> ScenariosListResponse:
         """Get scenarios list."""
-        return self.service.get_scenarios_list(filters)
+        return await self.service.get_scenarios_list(filters)
 
-    def get_scenario_detail(
+    async def get_scenario_detail(
         self, request: ScenarioDetailRequest
     ) -> ScenarioDetailResponse:
         """Get scenario detail."""
-        return self.service.get_scenario_detail(request)
+        return await self.service.get_scenario_detail(request)
 
-    def get_scenario_detail_default(
+    async def get_scenario_detail_default(
         self, request: ScenarioDetailDefaultRequest
     ) -> ScenarioDetailResponse:
         """Get default scenario detail."""
-        return self.service.get_scenario_detail_default(request)
+        return await self.service.get_scenario_detail_default(request)
 
-    def create_scenario(
+    async def create_scenario(
         self, request: CreateScenarioRequest
     ) -> CreateScenarioResponse:
         """Create scenario."""
-        return self.service.create_scenario(request)
+        return await self.service.create_scenario(request)
 
-    def update_scenario(
+    async def update_scenario(
         self, request: UpdateScenarioRequest
     ) -> UpdateScenarioResponse:
         """Update scenario."""
-        return self.service.update_scenario(request)
+        return await self.service.update_scenario(request)
 
-    def duplicate_scenario(
+    async def duplicate_scenario(
         self, request: DuplicateScenarioRequest
     ) -> DuplicateScenarioResponse:
         """Duplicate scenario."""
-        return self.service.duplicate_scenario(request)
+        return await self.service.duplicate_scenario(request)
 
-    def delete_scenario(
+    async def delete_scenario(
         self, request: DeleteScenarioRequest
     ) -> DeleteScenarioResponse:
         """Delete scenario."""
-        return self.service.delete_scenario(request)
+        return await self.service.delete_scenario(request)
 
     async def generate_scenario_ai(
         self, request: GenerateScenarioAIRequest
@@ -86,16 +86,16 @@ class ScenarioRepository:
         """Generate AI scenario content."""
         return await self.service.generate_scenario_ai(request)
 
-    def randomize_scenario_sections(
+    async def randomize_scenario_sections(
         self, request: RandomizeScenarioRequest
     ) -> RandomizeScenarioResponse:
         """Randomize scenario sections."""
-        return self.service.randomize_scenario_sections(request)
+        return await self.service.randomize_scenario_sections(request)
 
 
 def get_scenario_repository(db: Optional[Session] = None) -> ScenarioRepository:
     """Get scenario repository instance."""
     if db is None:
         db = next(get_session())
-    return ScenarioRepository(db)
+    return ScenarioRepository(conn)
 
