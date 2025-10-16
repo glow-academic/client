@@ -277,14 +277,15 @@ class ProfileService:
 
         # Get permissions data based on effective profile's role
         from typing import cast
-
+        
         from app.schemas.permissions import ProfileRole
         from app.services.permissions_service import permissions_service
-
+        
         # Cast role to ProfileRole for type safety
         profile_role = cast(ProfileRole, effective_profile.role)
         
-        available_sections = permissions_service.get_available_sections_for_role(
+        # Get both main sections and subsections for client-side navigation
+        available_sections = permissions_service.get_available_subsections_for_role(
             profile_role
         )
         redirect_path = permissions_service.get_redirect_path_for_role(

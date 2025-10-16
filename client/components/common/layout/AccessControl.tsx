@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
-import { hasRouteAccess } from "@/utils/route-permissions";
 import { AlertTriangle, Home, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -23,6 +22,15 @@ interface AccessControlProps {
   children: React.ReactNode;
   pathname: string;
 }
+
+/**
+ * Helper to extract the top-level section from a pathname
+ * e.g., "/analytics/dashboard" -> "analytics"
+ */
+const extractSection = (pathname: string): string => {
+  const parts = pathname.split("/").filter(Boolean);
+  return parts[0] || "";
+};
 
 export function AccessControl({ children, pathname }: AccessControlProps) {
   const { effectiveProfile, isLoading, availableSections, redirectPath } =
@@ -39,11 +47,9 @@ export function AccessControl({ children, pathname }: AccessControlProps) {
 
     // Small delay to prevent flickering during profile transitions
     const timer = setTimeout(() => {
-      // Use server-provided permissions (authoritative) with client-side fallback for optimistic UI
-      const hasAccess =
-        availableSections.length > 0
-          ? hasRouteAccess(pathname, effectiveProfile.role)
-          : hasRouteAccess(pathname, effectiveProfile.role);
+      // Use server-provided permissions (authoritative source)
+      const currentSection = extractSection(pathname);
+      const hasAccess = availableSections.includes(currentSection);
 
       if (!hasAccess) {
         setShowAccessDenied(true);

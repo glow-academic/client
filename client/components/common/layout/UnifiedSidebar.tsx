@@ -45,7 +45,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { getAvailableSubsectionsForRole } from "@/utils/route-permissions";
 import {
   Brain,
   ChartBar,
@@ -205,6 +204,7 @@ export function UnifiedSidebar({
     isLoading,
     cohorts,
     simulatableProfiles,
+    availableSections,
   } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
   const { update } = useSession();
@@ -267,9 +267,7 @@ export function UnifiedSidebar({
     if (!effectiveProfile) return [];
 
     const menu: NavSection[] = [];
-    const availableSections = getAvailableSubsectionsForRole(
-      effectiveProfile.role
-    );
+    // Use server-provided available sections from profile context
 
     // Home - Only for non guest users
     if (availableSections.includes("home")) {
@@ -507,7 +505,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveProfile, searchTerm, getCohortSubItems]);
+  }, [effectiveProfile, searchTerm, getCohortSubItems, availableSections]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
