@@ -1,0 +1,127 @@
+import { render, screen, waitFor } from '@/test/custom-render';
+import { describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
+
+// ——————————————————————————————————————————
+import { ScenarioSlider, ScenarioSliderProps } from '@/components/common/scenario/ScenarioSlider';
+
+
+
+// ------------------------------------------------------------------
+// Minimal props factory – edit values as needed
+const mockProps: ScenarioSliderProps = {
+  // leftContent: <div>test-leftContent</div>, /* optional */
+  // rightContent: <div>test-rightContent</div>, /* optional */
+  defaultValue: [],
+  // label: 'test-label', /* optional */
+  // description: 'test-description', /* optional */
+  // min: 0, /* optional */
+  // max: 0, /* optional */
+  // step: 0, /* optional */
+  // value: [], /* optional */
+  // disabled: false, /* optional */
+  // showReset: false, /* optional */
+  // inlineTitle: false, /* optional */
+};
+// ------------------------------------------------------------------
+describe('ScenarioSlider', () => {
+  
+
+  describe('basic render smoke-test', () => {
+    it('renders without crashing', async () => {
+      
+      render(<ScenarioSlider {...mockProps} />);
+      
+      // TODO: Add meaningful assertions based on your component
+      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+    });
+
+    it.skip('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ScenarioSliderProps
+      
+      // TODO add props assertions
+    });
+
+    it.skip('should have correct accessibility attributes', () => {
+      // TODO: Test accessibility features
+      
+      // TODO add accessibility assertions
+
+    });
+  });
+
+  describe('User Interactions', () => {
+    
+
+    it.skip('should handle state changes', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: state management assertions
+      // Mock data is available from @/mocks/schema for realistic testing
+    });
+
+    it.skip('should handle user events', async () => {
+      const user = userEvent.setup();
+      void user;
+      // TODO: interaction assertions
+
+    });
+  });
+
+  
+
+  
+
+  describe('Edge Cases', () => {
+    it.skip('should handle edge cases gracefully', () => {
+      // TODO: Test edge cases and error scenarios
+      
+      // TODO: edge-case assertions
+
+    });
+
+    it.skip('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // TODO: invalid props assertions
+    });
+  });
+});
+
+/*
+ * Component Analysis for ScenarioSlider:
+ * Path: common/scenario/ScenarioSlider.tsx
+ * 
+ * Features detected:
+ * - Default export: false
+ * - Named exports: ScenarioSlider, ScenarioSliderProps
+ * - Has props: true
+ * - Props interface: ScenarioSliderProps
+ * - Client component: true
+ * - Uses hooks: useState
+ * - Uses router: false
+ * - Has API calls: false
+ * - Has form handling: false
+ * - Uses state: true
+ * - Uses effects: false
+ * - Uses context: false
+ * 
+ * TODO: Implement the failing tests above with actual test logic
+ * 
+ * Example implementations:
+ * 
+ * Basic rendering:
+ * render(<ScenarioSlider {...mockProps} />);
+ * expect(screen.getByRole('...')).toBeInTheDocument();
+ * 
+ * Props testing:
+ * const props = { ... };
+ * render(<ScenarioSlider {...props} />);
+ * expect(screen.getByText(props.someText)).toBeInTheDocument();
+ * 
+ * User interaction:
+ * const button = screen.getByRole('button');
+ * await user.click(button);
+ * expect(mockFunction).toHaveBeenCalled();
+ */
