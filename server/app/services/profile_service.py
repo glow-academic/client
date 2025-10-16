@@ -221,31 +221,27 @@ class ProfileService:
         if departments:
             dept_ids = [d.id for d in departments]
             
-            # Get cohorts via profile_cohorts junction
+            # Get cohorts via cohort_profiles junction
             query = """
             SELECT DISTINCT
                 c.id,
-                c.name,
+                c.title,
                 c.description,
                 c.active,
-                c.department_id,
-                CASE WHEN EXISTS (
-                    SELECT 1 FROM cohort_staff cs
-                    WHERE cs.cohort_id = c.id AND cs.profile_id = $1
-                ) THEN true ELSE false END as is_staff
+                c.department_id
             FROM cohorts c
-            JOIN profile_cohorts pc ON pc.cohort_id = c.id
+            JOIN cohort_profiles pc ON pc.cohort_id = c.id
             WHERE pc.profile_id = $1 
               AND pc.active = true
               AND c.active = true
-            ORDER BY c.name
+            ORDER BY c.title
             """
             cohort_rows = await self.conn.fetch(query, effective_profile_id)
 
             cohorts = [
                 CohortItem(
                     id=str(row['id']),
-                    title=row['name'],
+                    title=row['title'],
                     description=row['description'],
                     active=row['active'],
                     departmentId=str(row['department_id']),
