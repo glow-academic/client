@@ -260,7 +260,7 @@ class ProfileService:
                 query = f"""
                 SELECT DISTINCT
                     s.id,
-                    s.name,
+                    s.title,
                     s.description,
                     s.department_id,
                     s.time_limit,
@@ -271,14 +271,14 @@ class ProfileService:
                 JOIN cohort_simulations cs ON cs.simulation_id = s.id
                 WHERE cs.cohort_id IN ({placeholders})
                   AND s.active = true
-                ORDER BY s.name
+                ORDER BY s.title
                 """
                 sim_rows = await self.conn.fetch(query, *cohort_ids)
 
                 simulations = [
                     SimulationContextItem(
                         id=str(row['id']),
-                        name=row['name'],
+                        name=row['title'],
                         description=row['description'],
                         departmentId=str(row['department_id']),
                         timeLimit=row['time_limit'],
@@ -311,6 +311,18 @@ class ProfileService:
         # Determine redirect path based on role
         redirect_path = "/practice" if profile.role == "guest" else "/home"
 
+        # Get earliest attempt date for the effective profile
+        earliest_attempt_date = None
+        earliest_query = """
+        SELECT MIN(sa.created_at) as earliest
+        FROM simulation_attempts sa
+        JOIN attempt_profiles ap ON ap.attempt_id = sa.id
+        WHERE ap.profile_id = $1
+        """
+        earliest_row = await self.conn.fetchrow(earliest_query, effective_profile_id)
+        if earliest_row and earliest_row['earliest']:
+            earliest_attempt_date = earliest_row['earliest'].isoformat()
+
         return ProfileContextResponse(
             actualProfile=profile,
             effectiveProfile=profile,  # Same for now, emulation logic would differ
@@ -322,7 +334,7 @@ class ProfileService:
             simulationIds=simulation_ids_list,
             breadcrumbs=breadcrumbs,
             simulatableProfiles=simulatable_profiles,
-            earliestAttemptDate=None,  # TODO: Query for earliest attempt
+            earliestAttemptDate=earliest_attempt_date,
             availableSections=available_sections,
             redirectPath=redirect_path,
         )
