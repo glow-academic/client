@@ -29,3 +29,37 @@ class AttemptsQueries:
         params = [archived, attempt_ids]
         return query, params
 
+    def update_chat_created_at(
+        self, chat_id: str, created_at: Any
+    ) -> Tuple[str, List[Any]]:
+        """
+        Update simulation chat created_at timestamp.
+
+        Args:
+            chat_id: Chat UUID
+            created_at: New created_at timestamp
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = "UPDATE simulation_chats SET created_at = $1 WHERE id = $2"
+        params = [created_at, chat_id]
+        return query, params
+
+    def update_chat_completed_at(
+        self, chat_id: str, completed_at: Any
+    ) -> Tuple[str, List[Any]]:
+        """
+        Update simulation chat completed_at timestamp.
+
+        Args:
+            chat_id: Chat UUID
+            completed_at: New completed_at timestamp
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2"
+        params = [completed_at, chat_id]
+        return query, params
+

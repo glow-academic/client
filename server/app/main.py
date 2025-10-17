@@ -78,14 +78,15 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     # Update database to mark profile as inactive
     try:
         from app.db import get_pool
+        from app.queries.profile_queries import ProfileQueries
 
         pool = get_pool()
         if pool:
             async with pool.acquire() as conn:
+                queries = ProfileQueries()
+                query = queries.update_profile_to_inactive()
                 await conn.execute(
-                    """UPDATE profiles 
-                       SET active = false, last_active = $1
-                       WHERE id = $2""",
+                    query,
                     datetime.now(timezone.utc),
                     profile_id
                 )
@@ -194,11 +195,12 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
                 if pool:
                     async with pool.acquire() as conn:
                         # Create an error message in the database
+                        from app.queries.simulation_queries import SimulationQueries
+                        
+                        queries = SimulationQueries()
+                        query = queries.insert_error_message()
                         error_message = await conn.fetchrow(
-                            """INSERT INTO simulation_messages 
-                               (chat_id, type, content, completed, created_at)
-                               VALUES ($1, $2, $3, $4, NOW())
-                               RETURNING *""",
+                            query,
                             uuid.UUID(chat_id),
                             "response",
                             f"Error: {str(e)}",
@@ -331,14 +333,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         # Update database to mark profile as active
         try:
             from app.db import get_pool
+            from app.queries.profile_queries import ProfileQueries
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
+                    queries = ProfileQueries()
+                    query = queries.update_profile_to_active()
                     await conn.execute(
-                        """UPDATE profiles 
-                           SET active = true, last_active = $1 
-                           WHERE id = $2""",
+                        query,
                         datetime.now(timezone.utc),
                         profile_id
                     )
@@ -357,15 +360,16 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 await increment_guest_count()
 
                 from app.db import get_pool
+                from app.queries.profile_queries import ProfileQueries
 
                 pool = get_pool()
                 if pool:
                     async with pool.acquire() as conn:
                         # Find and update default guest profile
+                        queries = ProfileQueries()
+                        query = queries.update_default_guest_profile_to_active()
                         await conn.execute(
-                            """UPDATE profiles 
-                               SET active = true, last_active = $1 
-                               WHERE role = 'guest' AND default_profile = true""",
+                            query,
                             datetime.now(timezone.utc)
                         )
                         logger.info(
@@ -413,15 +417,16 @@ async def disconnect(sid: str) -> None:
             remaining_guests = await decrement_guest_count()
 
             from app.db import get_pool
+            from app.queries.profile_queries import ProfileQueries
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
                     # Update default guest profile: refresh last_active, set active False only when all guests are gone
+                    queries = ProfileQueries()
+                    query = queries.update_default_guest_profile_activity()
                     await conn.execute(
-                        """UPDATE profiles 
-                           SET last_active = $1, active = $2
-                           WHERE role = 'guest' AND default_profile = true""",
+                        query,
                         datetime.now(timezone.utc),
                         remaining_guests > 0
                     )

@@ -4,7 +4,10 @@ from typing import Optional
 
 import asyncpg  # type: ignore
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
-                                  BulkArchiveAttemptsResponse)
+                                  BulkArchiveAttemptsResponse,
+                                  UpdateChatCompletedAtRequest,
+                                  UpdateChatCreatedAtRequest,
+                                  UpdateChatTimestampResponse)
 from app.services.attempts_service import get_attempts_service
 
 
@@ -20,6 +23,18 @@ class AttemptsRepository:
     ) -> BulkArchiveAttemptsResponse:
         """Bulk archive or unarchive simulation attempts."""
         return await self.service.bulk_archive_attempts(request)
+
+    async def update_chat_created_at(
+        self, request: UpdateChatCreatedAtRequest
+    ) -> UpdateChatTimestampResponse:
+        """Update simulation chat createdAt timestamp."""
+        return await self.service.update_chat_created_at(request)
+
+    async def update_chat_completed_at(
+        self, request: UpdateChatCompletedAtRequest
+    ) -> UpdateChatTimestampResponse:
+        """Update simulation chat completedAt timestamp."""
+        return await self.service.update_chat_completed_at(request)
 
 
 def get_attempts_repository(conn: asyncpg.Connection) -> AttemptsRepository:

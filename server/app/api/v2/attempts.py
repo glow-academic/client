@@ -1,6 +1,5 @@
 """Attempts v2 API endpoints."""
 
-from datetime import datetime
 from typing import Annotated, Any, Dict
 from uuid import UUID
 
@@ -54,25 +53,10 @@ async def update_chat_created_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat createdAt timestamp."""
     try:
-        # Parse ISO string to datetime
-        created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
-        
-        # Update the createdAt timestamp
-        result = await conn.execute(
-            "UPDATE simulation_chats SET created_at = $1 WHERE id = $2",
-            created_at,
-            request.chatId
-        )
-
-        if result == "UPDATE 0":
-            raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
-
-        return UpdateChatTimestampResponse(
-            success=True,
-            message=f"Chat {request.chatId} createdAt updated successfully",
-        )
-    except HTTPException:
-        raise
+        repo = get_attempts_repository(conn)
+        return await repo.update_chat_created_at(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -84,25 +68,10 @@ async def update_chat_completed_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat completedAt timestamp."""
     try:
-        # Parse ISO string to datetime
-        completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
-        
-        # Update the completedAt timestamp
-        result = await conn.execute(
-            "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2",
-            completed_at,
-            request.chatId
-        )
-
-        if result == "UPDATE 0":
-            raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
-
-        return UpdateChatTimestampResponse(
-            success=True,
-            message=f"Chat {request.chatId} completedAt updated successfully",
-        )
-    except HTTPException:
-        raise
+        repo = get_attempts_repository(conn)
+        return await repo.update_chat_completed_at(request)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

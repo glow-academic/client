@@ -344,3 +344,7 @@ class AnalyticsQueryBuilder:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
+
+    def refresh_materialized_view(self) -> str:
+        """Build query to refresh the analytics materialized view."""
+        return "REFRESH MATERIALIZED VIEW CONCURRENTLY analytics"

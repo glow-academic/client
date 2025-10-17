@@ -633,6 +633,32 @@ class SimulationQueries:
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
 
+    def update_chat_created_at(self) -> str:
+        """Build query to update chat created_at timestamp.
+        
+        Params order: created_at, chat_id
+        """
+        return "UPDATE simulation_chats SET created_at = $1 WHERE id = $2"
+
+    def update_chat_completed_at(self) -> str:
+        """Build query to update chat completed_at timestamp.
+        
+        Params order: completed_at, chat_id
+        """
+        return "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2"
+
+    def insert_error_message(self) -> str:
+        """Build query to insert an error message in simulation chat.
+        
+        Params order: chat_id, type, content, completed
+        """
+        return """
+        INSERT INTO simulation_messages 
+        (chat_id, type, content, completed, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        RETURNING *
+        """
+
     def get_simulation_overview_complete(self, sim_id: Any) -> Tuple[str, List[Any]]:
         """Build optimized query to get simulation overview with all related data in ONE query.
         

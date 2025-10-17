@@ -434,3 +434,49 @@ class ProfileQueries:
         """
         search_pattern = f"%{profile_id_or_name.lower()}%"
         return (query, [profile_id_or_name, search_pattern, limit])
+
+    # ===== WebSocket Connection Management Queries =====
+
+    def update_profile_to_inactive(self) -> str:
+        """Build query to set profile inactive with last_active timestamp.
+        
+        Params order: last_active, profile_id
+        """
+        return """
+        UPDATE profiles 
+        SET active = false, last_active = $1
+        WHERE id = $2
+        """
+
+    def update_profile_to_active(self) -> str:
+        """Build query to set profile active with last_active timestamp.
+        
+        Params order: last_active, profile_id
+        """
+        return """
+        UPDATE profiles 
+        SET active = true, last_active = $1 
+        WHERE id = $2
+        """
+
+    def update_default_guest_profile_to_active(self) -> str:
+        """Build query to set default guest profile active with last_active timestamp.
+        
+        Params order: last_active
+        """
+        return """
+        UPDATE profiles 
+        SET active = true, last_active = $1 
+        WHERE role = 'guest' AND default_profile = true
+        """
+
+    def update_default_guest_profile_activity(self) -> str:
+        """Build query to update default guest profile activity status.
+        
+        Params order: last_active, active
+        """
+        return """
+        UPDATE profiles 
+        SET last_active = $1, active = $2
+        WHERE role = 'guest' AND default_profile = true
+        """

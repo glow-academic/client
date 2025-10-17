@@ -1,9 +1,14 @@
 """Service layer for attempts operations."""
 
+from datetime import datetime
+
 import asyncpg  # type: ignore
 from app.queries.attempts_queries import AttemptsQueries
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
-                                  BulkArchiveAttemptsResponse)
+                                  BulkArchiveAttemptsResponse,
+                                  UpdateChatCompletedAtRequest,
+                                  UpdateChatCreatedAtRequest,
+                                  UpdateChatTimestampResponse)
 
 
 class AttemptsService:
@@ -32,6 +37,44 @@ class AttemptsService:
             success=True,
             message=f"{count} simulation attempt(s) {action} successfully",
             count=count,
+        )
+
+    async def update_chat_created_at(
+        self, request: UpdateChatCreatedAtRequest
+    ) -> UpdateChatTimestampResponse:
+        """Update simulation chat createdAt timestamp."""
+        # Parse ISO string to datetime
+        created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
+        
+        # Update the createdAt timestamp
+        query, params = self.queries.update_chat_created_at(request.chatId, created_at)
+        result = await self.conn.execute(query, *params)
+
+        if result == "UPDATE 0":
+            raise ValueError(f"Chat not found: {request.chatId}")
+
+        return UpdateChatTimestampResponse(
+            success=True,
+            message=f"Chat {request.chatId} createdAt updated successfully",
+        )
+
+    async def update_chat_completed_at(
+        self, request: UpdateChatCompletedAtRequest
+    ) -> UpdateChatTimestampResponse:
+        """Update simulation chat completedAt timestamp."""
+        # Parse ISO string to datetime
+        completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
+        
+        # Update the completedAt timestamp
+        query, params = self.queries.update_chat_completed_at(request.chatId, completed_at)
+        result = await self.conn.execute(query, *params)
+
+        if result == "UPDATE 0":
+            raise ValueError(f"Chat not found: {request.chatId}")
+
+        return UpdateChatTimestampResponse(
+            success=True,
+            message=f"Chat {request.chatId} completedAt updated successfully",
         )
 
 

@@ -953,7 +953,8 @@ class AnalyticsService:
 
     async def refresh_materialized_view(self) -> None:
         """Refresh the analytics materialized view."""
-        await self.conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY analytics")
+        query = self.query_builder.refresh_materialized_view()
+        await self.conn.execute(query)
 
 
 def get_analytics_service(conn: asyncpg.Connection) -> AnalyticsService:
