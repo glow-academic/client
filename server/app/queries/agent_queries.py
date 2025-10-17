@@ -319,6 +319,116 @@ class AgentQueries:
         """
         return query, []
 
+    def get_hint_run_context(
+        self, message_id: str, chat_id: str, department_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run hint agent with optimized JOIN.
+        
+        Fetches message, chat, attempt, scenario, agent (via department_agents),
+        model, provider, documents, and profile in a single query.
+        Messages are fetched separately using get_simulation_messages().
+
+        Args:
+            message_id: Message UUID as string
+            chat_id: Chat UUID as string
+            department_id: Department UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH target_message AS (
+            SELECT id, chat_id, role, content, created_at
+            FROM simulation_messages
+            WHERE id = $1 AND chat_id = $2
+        ),
+        chat_info AS (
+            SELECT sc.id, sc.attempt_id, sc.scenario_id, sc.trace_id, sc.title
+            FROM simulation_chats sc
+            JOIN target_message tm ON tm.chat_id = sc.id
+        ),
+        attempt_info AS (
+            SELECT sa.id, sa.simulation_id
+            FROM simulation_attempts sa
+            JOIN chat_info ci ON ci.attempt_id = sa.id
+        ),
+        scenario_info AS (
+            SELECT s.id, s.problem_statement
+            FROM scenarios s
+            JOIN chat_info ci ON ci.scenario_id = s.id
+        ),
+        profile_info AS (
+            SELECT ap.profile_id
+            FROM attempt_profiles ap
+            JOIN attempt_info ai ON ai.id = ap.attempt_id
+            WHERE ap.active = true
+            LIMIT 1
+        )
+        SELECT 
+            -- Message data
+            tm.id::text as message_id,
+            tm.created_at as message_created_at,
+            
+            -- Chat data
+            ci.id::text as chat_id,
+            ci.attempt_id::text,
+            ci.scenario_id::text,
+            ci.trace_id,
+            ci.title as chat_title,
+            
+            -- Attempt data
+            ai.id::text as attempt_id,
+            ai.simulation_id::text,
+            
+            -- Scenario data
+            si.problem_statement,
+            
+            -- Agent data (via department_agents junction for 'hint' role)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Profile data
+            pi.profile_id::text,
+            
+            -- Documents data (aggregated as JSON array)
+            COALESCE(
+                (
+                    SELECT json_agg(sd.document_id::text ORDER BY sd.document_id)
+                    FROM scenario_documents sd
+                    WHERE sd.scenario_id = si.id AND sd.active = true
+                ),
+                '[]'::json
+            ) as document_ids
+        
+        FROM target_message tm
+        CROSS JOIN chat_info ci
+        CROSS JOIN attempt_info ai
+        CROSS JOIN scenario_info si
+        LEFT JOIN profile_info pi ON true
+        INNER JOIN department_agents da ON da.department_id = $3 AND da.role = 'hint'
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        """
+        
+        params: list[Any] = [message_id, chat_id, department_id]
+        return query, params
+
     def get_simulation_run_context(
         self, chat_id: str
     ) -> tuple[str, list[Any]]:
@@ -606,6 +716,28 @@ class AgentQueries:
         """
         
         params: list[Any] = [simulation_chat_id]
+        return query, params
+
+    def create_simulation_hint(
+        self, hint_text: str, message_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Create a simulation hint for a message.
+
+        Args:
+            hint_text: The hint content
+            message_id: Message UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO simulation_hints (hint, simulation_message_id, created_at)
+        VALUES ($1, $2, NOW())
+        RETURNING id::text
+        """
+        
+        params: list[Any] = [hint_text, message_id]
         return query, params
 
     def get_guardrail_run_context(

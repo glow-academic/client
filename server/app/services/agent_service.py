@@ -517,6 +517,101 @@ class AgentService:
         
         return [dict(row) for row in rows]
 
+    async def create_simulation_hint(
+        self, hint_text: str, message_id: uuid.UUID
+    ) -> uuid.UUID:
+        """
+        Create a simulation hint for a message.
+        
+        Args:
+            hint_text: The hint content
+            message_id: UUID of the message
+        
+        Returns:
+            UUID of created hint
+        """
+        message_id_str = str(message_id)
+        
+        query, params = self.queries.create_simulation_hint(hint_text, message_id_str)
+        result = await self.conn.fetchval(query, *params)
+        
+        return uuid.UUID(result)
+
+    async def get_hint_run_context(
+        self, message_id: uuid.UUID, chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run hint agent with optimized query.
+        
+        Reduces 12+ database queries to 1 JOIN query.
+        Messages are fetched separately using get_simulation_messages().
+        
+        Args:
+            message_id: UUID of the target message
+            chat_id: UUID of the simulation chat
+            department_id: UUID of the department
+        
+        Returns:
+            Dict with message, chat, attempt, scenario, agent, model, provider,
+            profile, and document IDs data
+        
+        Raises:
+            ValueError: If message/chat not found or no hint agent configured for department
+        """
+        message_id_str = str(message_id)
+        chat_id_str = str(chat_id)
+        department_id_str = str(department_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_hint_run_context(
+            message_id_str, chat_id_str, department_id_str
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"Message {message_id} in chat {chat_id} not found or "
+                f"no hint agent configured for department {department_id}"
+            )
+        
+        # Parse JSON array for document_ids
+        document_ids = json.loads(context_row['document_ids']) if isinstance(context_row['document_ids'], str) else context_row['document_ids']
+        
+        return {
+            # Message data
+            'message_id': context_row['message_id'],
+            'message_created_at': context_row['message_created_at'],
+            # Chat data
+            'chat_id': context_row['chat_id'],
+            'attempt_id': context_row['attempt_id'],
+            'scenario_id': context_row['scenario_id'],
+            'trace_id': context_row['trace_id'],
+            'chat_title': context_row['chat_title'],
+            # Attempt data
+            'simulation_id': context_row['simulation_id'],
+            # Scenario data
+            'problem_statement': context_row['problem_statement'],
+            # Agent data
+            'agent_id': context_row['agent_id'],
+            'agent_name': context_row['agent_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Profile data
+            'profile_id': context_row['profile_id'],
+            # Documents
+            'document_ids': document_ids,
+        }
+
     async def get_guardrail_run_context(
         self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
     ) -> Dict[str, Any]:
