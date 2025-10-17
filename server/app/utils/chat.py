@@ -167,18 +167,17 @@ def get_assistant_conversation_history(
     return conversation_history
 
 
-async def get_chat_scenario(conn: asyncpg.Connection, scenario_id: str) -> TResponseInputItem:
+def format_chat_scenario(problem_statement: str) -> TResponseInputItem:
     """
-    Get the scenario for a given chat.
+    Format a problem statement as a chat scenario message.
+    
+    Args:
+        problem_statement: The scenario problem statement text
+        
+    Returns:
+        Formatted message dict for chat input
     """
-    scenario = await conn.fetchrow(
-        "SELECT problem_statement FROM scenarios WHERE id = $1",
-        scenario_id
-    )
-    if not scenario:
-        raise ValueError(f"Scenario not found: {scenario_id}")
-
     return {
         "role": "user",
-        "content": f"The following is the scenario for the chat: {scenario['problem_statement']}",
+        "content": f"The following is the scenario for the chat: {problem_statement}",
     }

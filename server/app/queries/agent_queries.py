@@ -319,6 +319,207 @@ class AgentQueries:
         """
         return query, []
 
+    def get_grading_run_context(
+        self, simulation_chat_id: str, department_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run grading agent with optimized JOIN.
+        
+        Fetches chat, scenario, attempt, simulation, rubric, standard groups,
+        standards, agent (via department_agents), model, provider, and profile
+        in a single query to minimize database round trips.
+
+        Args:
+            simulation_chat_id: Simulation chat UUID as string
+            department_id: Department UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH chat_info AS (
+            SELECT 
+                sc.id,
+                sc.scenario_id,
+                sc.attempt_id,
+                sc.title,
+                sc.trace_id,
+                sc.created_at,
+                sc.completed_at
+            FROM simulation_chats sc
+            WHERE sc.id = $1
+        ),
+        attempt_info AS (
+            SELECT 
+                sa.id,
+                sa.simulation_id,
+                (SELECT COUNT(*) FROM simulation_chats WHERE attempt_id = sa.id) as total_chats
+            FROM simulation_attempts sa
+            WHERE sa.id = (SELECT attempt_id FROM chat_info)
+        ),
+        simulation_info AS (
+            SELECT 
+                s.id,
+                s.rubric_id,
+                s.department_id,
+                s.time_limit
+            FROM simulations s
+            WHERE s.id = (SELECT simulation_id FROM attempt_info)
+        )
+        SELECT 
+            -- Chat data
+            ci.id::text as chat_id,
+            ci.scenario_id::text,
+            ci.attempt_id::text,
+            ci.title,
+            ci.trace_id,
+            ci.created_at,
+            ci.completed_at,
+            
+            -- Scenario data
+            sc.problem_statement,
+            
+            -- Attempt data
+            ai.id::text as attempt_id,
+            ai.simulation_id::text,
+            ai.total_chats,
+            
+            -- Simulation data
+            si.id::text as simulation_id,
+            si.rubric_id::text,
+            si.department_id::text,
+            si.time_limit,
+            
+            -- Rubric data
+            r.id::text as rubric_id,
+            r.name as rubric_name,
+            r.description as rubric_description,
+            r.points as rubric_points,
+            r.pass_points as rubric_pass_points,
+            
+            -- Standard groups (aggregated as JSON array)
+            COALESCE(
+                json_agg(
+                    DISTINCT jsonb_build_object(
+                        'id', sg.id::text,
+                        'name', sg.name,
+                        'short_name', sg.short_name,
+                        'description', sg.description,
+                        'points', sg.points,
+                        'pass_points', sg.pass_points,
+                        'rubric_id', sg.rubric_id::text
+                    )
+                    ORDER BY jsonb_build_object(
+                        'id', sg.id::text,
+                        'name', sg.name,
+                        'short_name', sg.short_name,
+                        'description', sg.description,
+                        'points', sg.points,
+                        'pass_points', sg.pass_points,
+                        'rubric_id', sg.rubric_id::text
+                    )
+                ) FILTER (WHERE sg.id IS NOT NULL),
+                '[]'::json
+            ) as standard_groups,
+            
+            -- Standards (aggregated as JSON array)
+            COALESCE(
+                json_agg(
+                    DISTINCT jsonb_build_object(
+                        'id', std.id::text,
+                        'name', std.name,
+                        'description', std.description,
+                        'points', std.points,
+                        'standard_group_id', std.standard_group_id::text
+                    )
+                    ORDER BY jsonb_build_object(
+                        'id', std.id::text,
+                        'name', std.name,
+                        'description', std.description,
+                        'points', std.points,
+                        'standard_group_id', std.standard_group_id::text
+                    )
+                ) FILTER (WHERE std.id IS NOT NULL),
+                '[]'::json
+            ) as standards,
+            
+            -- Agent data (via department_agents junction for 'grade' role)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Profile data (via attempt_profiles junction)
+            ap.profile_id::text
+        
+        FROM chat_info ci
+        CROSS JOIN attempt_info ai
+        CROSS JOIN simulation_info si
+        INNER JOIN scenarios sc ON sc.id = ci.scenario_id
+        INNER JOIN rubrics r ON r.id = si.rubric_id
+        LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
+        LEFT JOIN standards std ON std.standard_group_id = sg.id
+        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'grade'
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
+        GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed_at,
+                 sc.problem_statement,
+                 ai.id, ai.simulation_id, ai.total_chats,
+                 si.id, si.rubric_id, si.department_id, si.time_limit,
+                 r.id, r.name, r.description, r.points, r.pass_points,
+                 a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
+                 m.id, m.name, m.custom_model,
+                 pr.id, pr.name, pr.base_url, pr.api_key,
+                 ap.profile_id
+        """
+        
+        params: list[Any] = [simulation_chat_id, department_id]
+        return query, params
+
+    def get_simulation_messages(
+        self, simulation_chat_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all messages for a simulation chat.
+
+        Args:
+            simulation_chat_id: Simulation chat UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            id::text,
+            chat_id::text,
+            role,
+            content,
+            created_at,
+            model_run_id::text,
+            audio_url,
+            completed
+        FROM simulation_messages
+        WHERE chat_id = $1
+        ORDER BY created_at
+        """
+        
+        params: list[Any] = [simulation_chat_id]
+        return query, params
+
     def get_guardrail_run_context(
         self, chat_id: str, department_id: str, guardrail_type: str
     ) -> tuple[str, list[Any]]:

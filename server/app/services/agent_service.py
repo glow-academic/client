@@ -340,6 +340,115 @@ class AgentService:
         count = int(result.split()[-1]) if result else 0
         return count
 
+    async def get_grading_run_context(
+        self, simulation_chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run grading agent with optimized query.
+        
+        Reduces 13+ database queries to 2 JOIN queries (context + messages).
+        
+        Args:
+            simulation_chat_id: UUID of the simulation chat
+            department_id: UUID of the department
+        
+        Returns:
+            Dict with chat, scenario, attempt, simulation, rubric, 
+            standard_groups, standards, agent, model, provider, and profile data
+        
+        Raises:
+            ValueError: If chat not found or no grade agent configured for department
+        """
+        simulation_chat_id_str = str(simulation_chat_id)
+        department_id_str = str(department_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_grading_run_context(
+            simulation_chat_id_str, department_id_str
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"Chat {simulation_chat_id} not found or no grade agent "
+                f"configured for department {department_id}"
+            )
+        
+        # Parse JSON arrays for standard_groups and standards
+        standard_groups = json.loads(context_row['standard_groups']) if isinstance(context_row['standard_groups'], str) else context_row['standard_groups']
+        standards = json.loads(context_row['standards']) if isinstance(context_row['standards'], str) else context_row['standards']
+        
+        return {
+            # Chat data
+            'chat_id': context_row['chat_id'],
+            'scenario_id': context_row['scenario_id'],
+            'attempt_id': context_row['attempt_id'],
+            'title': context_row['title'],
+            'trace_id': context_row['trace_id'],
+            'created_at': context_row['created_at'],
+            'completed_at': context_row['completed_at'],
+            # Scenario data
+            'problem_statement': context_row['problem_statement'],
+            # Attempt data
+            'total_chats': context_row['total_chats'],
+            # Simulation data
+            'simulation_id': context_row['simulation_id'],
+            'time_limit': context_row['time_limit'],
+            # Rubric data
+            'rubric': {
+                'id': context_row['rubric_id'],
+                'name': context_row['rubric_name'],
+                'description': context_row['rubric_description'],
+                'points': context_row['rubric_points'],
+                'pass_points': context_row['rubric_pass_points'],
+            },
+            # Standard groups and standards
+            'standard_groups': standard_groups,
+            'standards': standards,
+            # Agent data
+            'agent': {
+                'id': context_row['agent_id'],
+                'name': context_row['agent_name'],
+                'system_prompt': context_row['system_prompt'],
+                'temperature': float(context_row['temperature']),
+                'reasoning': context_row['reasoning'],
+            },
+            # Model data
+            'model': {
+                'id': context_row['model_id'],
+                'name': context_row['model_name'],
+                'custom_model': context_row['custom_model'],
+            },
+            # Provider data
+            'provider': {
+                'id': context_row['provider_id'],
+                'name': context_row['provider_name'],
+                'base_url': context_row['base_url'],
+                'api_key': context_row['api_key'],
+            },
+            # Profile data
+            'profile_id': context_row['profile_id'],
+        }
+
+    async def get_simulation_messages(
+        self, simulation_chat_id: uuid.UUID
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all messages for a simulation chat.
+        
+        Args:
+            simulation_chat_id: UUID of the simulation chat
+        
+        Returns:
+            List of message dicts
+        """
+        simulation_chat_id_str = str(simulation_chat_id)
+        
+        query, params = self.queries.get_simulation_messages(simulation_chat_id_str)
+        rows = await self.conn.fetch(query, *params)
+        
+        return [dict(row) for row in rows]
+
     async def get_guardrail_run_context(
         self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
     ) -> Dict[str, Any]:
