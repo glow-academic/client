@@ -285,7 +285,7 @@ class AnalyticsQueryBuilder:
                     {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(
                         'date', date,
-                        'value', ROUND(value)::int,
+                        'value', ROUND(COALESCE(value, 0))::int,
                         'count', count
                     ) ORDER BY date) FROM by_day), '[]'::json) AS trend_data,
                     COALESCE((SELECT json_agg(json_build_object(
@@ -326,7 +326,7 @@ class AnalyticsQueryBuilder:
                     {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(
                         'date', date,
-                        'value', ROUND(value)::int,
+                        'value', ROUND(COALESCE(value, 0))::int,
                         'count', count
                     ) ORDER BY date) FROM by_day), '[]'::json) AS trend_data,
                     COALESCE((SELECT json_agg(json_build_object(

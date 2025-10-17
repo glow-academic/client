@@ -108,8 +108,8 @@ class FooterQueries:
                 SELECT
                     f.simulation_id,
                     s.title AS simulation_title,
-                    AVG(f.grade_percent)::float AS avg_score,
-                    (100.0 * COUNT(*) FILTER (WHERE f.completed) / NULLIF(COUNT(*), 0))::float AS completion_rate,
+                    COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
+                    COALESCE((100.0 * COUNT(*) FILTER (WHERE f.completed) / NULLIF(COUNT(*), 0)), 0)::float AS completion_rate,
                     COUNT(*)::int AS total_attempts,
                     COUNT(DISTINCT f.scenario_id)::int AS scenario_count
                 FROM filt f
@@ -119,7 +119,7 @@ class FooterQueries:
             )
             SELECT json_build_object(
                 'validSimulationIds', COALESCE((
-                    SELECT json_agg(DISTINCT simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
+                    SELECT json_agg(DISTINCT simulation_id::text ORDER BY simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
                 ), '[]'::json),
                 'simulationFacts', COALESCE((SELECT json_agg(json_build_object(
                     'simulationId', simulation_id::text,
@@ -164,25 +164,26 @@ class FooterQueries:
             ),
             scenario_facts AS (
                 SELECT
-                    simulation_id,
-                    scenario_id,
-                    scenario_title,
-                    AVG(grade_percent)::float AS avg_score,
-                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / NULLIF(COUNT(*), 0))::float AS success_rate,
+                    f.simulation_id,
+                    f.scenario_id,
+                    MIN(sc.name) AS scenario_name,
+                    COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
+                    COALESCE((100.0 * COUNT(*) FILTER (WHERE f.grade_percent >= (f.rubric_pass_points * 100.0 / NULLIF(f.rubric_points, 0))) / NULLIF(COUNT(*), 0)), 0)::float AS success_rate,
                     COUNT(*)::int AS total_attempts,
-                    COUNT(*) FILTER (WHERE completed)::int AS completed_attempts
-                FROM filt
-                WHERE simulation_id IS NOT NULL AND scenario_id IS NOT NULL
-                GROUP BY simulation_id, scenario_id, scenario_title
+                    COUNT(*) FILTER (WHERE f.completed)::int AS completed_attempts
+                FROM filt f
+                JOIN scenarios sc ON sc.id = f.scenario_id
+                WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
+                GROUP BY f.simulation_id, f.scenario_id
             )
             SELECT json_build_object(
                 'validSimulationIds', COALESCE((
-                    SELECT json_agg(DISTINCT simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
+                    SELECT json_agg(DISTINCT simulation_id::text ORDER BY simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
                 ), '[]'::json),
                 'scenarioFacts', COALESCE((SELECT json_agg(json_build_object(
                     'simulationId', simulation_id::text,
                     'scenarioId', scenario_id::text,
-                    'scenarioName', scenario_title,
+                    'scenarioName', scenario_name,
                     'avgScore', ROUND(avg_score)::int,
                     'successRate', ROUND(success_rate)::int,
                     'totalAttempts', total_attempts,

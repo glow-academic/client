@@ -32,14 +32,15 @@ class PrimaryQueries:
             department_ids,
         )
 
+        # Reuse the first two parameters ($1, $2) for the spine since they're already the date range
         # This query calls other metric functions and combines them
         # For now, we'll build a simplified version that fetches from analytics directly
         query = f"""
             WITH
             spine AS (
                 SELECT generate_series(
-                    date_trunc('day', :start_date::timestamptz)::date,
-                    (date_trunc('day', :end_date::timestamptz) - interval '1 second')::date,
+                    date_trunc('day', $1::timestamptz)::date,
+                    (date_trunc('day', $2::timestamptz) - interval '1 second')::date,
                     interval '1 day'
                 )::date AS d
             ),
@@ -68,24 +69,29 @@ class PrimaryQueries:
                 ) first_attempts
                 GROUP BY date
             ),
-            -- Combined chart data
-            chart_data AS (
+            -- Combined chart data (keep date as date for window calculations)
+            chart_data_dates AS (
                 SELECT
-                    s.d::text AS date,
+                    s.d AS date_val,
+                    to_char(s.d, 'YYYY-MM-DD') AS date,
                     ROUND(COALESCE(avg_score.value, 0))::int AS average_score,
                     ROUND(COALESCE(pass_rate.value, 0))::int AS pass_rate
                 FROM spine s
                 LEFT JOIN avg_score ON avg_score.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN pass_rate ON pass_rate.date = to_char(s.d, 'YYYY-MM-DD')
-                ORDER BY s.d
             ),
             -- Window averages for actionable insights
             window_data AS (
                 SELECT
-                    AVG(average_score) FILTER (WHERE date >= (SELECT MAX(date) FROM chart_data) - interval '7 days') AS last_avg,
-                    AVG(average_score) FILTER (WHERE date >= (SELECT MAX(date) FROM chart_data) - interval '14 days' 
-                                                     AND date < (SELECT MAX(date) FROM chart_data) - interval '7 days') AS prev_avg
-                FROM chart_data
+                    AVG(average_score) FILTER (WHERE date_val >= (SELECT MAX(date_val) FROM chart_data_dates) - interval '7 days') AS last_avg,
+                    AVG(average_score) FILTER (WHERE date_val >= (SELECT MAX(date_val) FROM chart_data_dates) - interval '14 days' 
+                                                     AND date_val < (SELECT MAX(date_val) FROM chart_data_dates) - interval '7 days') AS prev_avg
+                FROM chart_data_dates
+            ),
+            chart_data AS (
+                SELECT date, average_score, pass_rate
+                FROM chart_data_dates
+                ORDER BY date_val
             )
             SELECT json_build_object(
                 'chartData', COALESCE((SELECT json_agg(json_build_object(
@@ -131,44 +137,84 @@ class PrimaryQueries:
             WITH filt AS (
                 SELECT * FROM analytics a WHERE """ + where_clause + """
             ),
-            persona_data AS (
-                SELECT
-                    persona_name,
-                    persona_id,
-                    persona_color,
-                    AVG(grade_percent)::float AS avg_score,
-                    COUNT(DISTINCT chat_id)::int AS sessions,
-                    ARRAY_AGG(DISTINCT simulation_id::text) AS simulation_ids,
-                    json_agg(json_build_object(
-                        'date', to_char(chat_created_at, 'YYYY-MM-DD'),
-                        'score', grade_percent,
-                        'timestamp', EXTRACT(epoch FROM chat_created_at)::bigint,
-                        'simulationId', simulation_id::text
-                    ) ORDER BY chat_created_at) AS trend_data
+            -- Get distinct persona IDs from filtered data
+            persona_ids AS (
+                SELECT DISTINCT persona_id
                 FROM filt
                 WHERE persona_id IS NOT NULL
-                  AND persona_name IS NOT NULL
-                  AND grade_percent IS NOT NULL
-                GROUP BY persona_name, persona_id, persona_color
+            ),
+            -- Join with personas table to get name and color
+            personas_info AS (
+                SELECT 
+                    pi.persona_id, 
+                    p.name, 
+                    COALESCE(p.color, '#3b82f6') AS color
+                FROM persona_ids pi
+                JOIN personas p ON p.id = pi.persona_id
+            ),
+            -- Aggregate performance data per persona
+            persona_data AS (
+                SELECT
+                    f.persona_id,
+                    pinfo.name AS persona_name,
+                    pinfo.color AS persona_color,
+                    AVG(f.grade_percent)::float AS avg_score,
+                    COUNT(DISTINCT f.chat_id)::int AS sessions,
+                    ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids
+                FROM filt f
+                JOIN personas_info pinfo ON pinfo.persona_id = f.persona_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY f.persona_id, pinfo.name, pinfo.color
+            ),
+            -- Build trend data per persona (compute averages first)
+            trend_data_raw AS (
+                SELECT
+                    f.persona_id,
+                    date_trunc('day', f.chat_created_at) AS day,
+                    to_char(date_trunc('day', f.chat_created_at), 'YYYY-MM-DD') AS date,
+                    EXTRACT(epoch FROM date_trunc('day', f.chat_created_at))::bigint AS timestamp,
+                    f.simulation_id,
+                    AVG(f.grade_percent)::float AS avg_score
+                FROM filt f
+                WHERE f.persona_id IS NOT NULL
+                  AND f.grade_percent IS NOT NULL
+                GROUP BY f.persona_id, date_trunc('day', f.chat_created_at), f.simulation_id
+            ),
+            -- Aggregate into JSON per persona
+            persona_trends AS (
+                SELECT 
+                    persona_id,
+                    COALESCE(json_agg(json_build_object(
+                        'date', date,
+                        'score', ROUND(avg_score)::int,
+                        'timestamp', timestamp,
+                        'simulationId', simulation_id::text
+                    ) ORDER BY day), '[]'::json) AS trend_data
+                FROM trend_data_raw
+                GROUP BY persona_id
             ),
             persona_colors AS (
                 SELECT json_object_agg(
-                    persona_id::text,
-                    COALESCE(persona_color, '#6366f1')
+                    persona_name,
+                    persona_color
                 ) AS colors
-                FROM (SELECT DISTINCT persona_id, persona_color FROM persona_data) p
+                FROM (SELECT DISTINCT persona_name, persona_color FROM persona_data) p
             )
             SELECT json_build_object(
-                'chartData', COALESCE((SELECT json_agg(json_build_object(
-                    'name', persona_name,
-                    'score', ROUND(avg_score)::int,
-                    'sessions', sessions,
-                    'color', COALESCE(persona_color, '#6366f1'),
-                    'simulationIds', simulation_ids,
-                    'trendData', trend_data
-                ) ORDER BY avg_score DESC) FROM persona_data), '[]'::json),
+                'chartData', COALESCE((
+                    SELECT json_agg(json_build_object(
+                        'name', pd.persona_name,
+                        'score', ROUND(pd.avg_score)::int,
+                        'sessions', pd.sessions,
+                        'color', pd.persona_color,
+                        'simulationIds', pd.simulation_ids,
+                        'trendData', COALESCE(pt.trend_data, '[]'::json)
+                    ) ORDER BY pd.avg_score DESC)
+                    FROM persona_data pd
+                    LEFT JOIN persona_trends pt ON pt.persona_id = pd.persona_id
+                ), '[]'::json),
                 'validSimulationIds', COALESCE((
-                    SELECT json_agg(DISTINCT simulation_id::text) 
+                    SELECT json_agg(DISTINCT simulation_id::text ORDER BY simulation_id::text) 
                     FROM filt WHERE simulation_id IS NOT NULL
                 ), '[]'::json),
                 'personaColors', COALESCE((SELECT colors FROM persona_colors), '{}'::json)
@@ -215,20 +261,19 @@ class PrimaryQueries:
                     sg.name,
                     sg.short_name,
                     sg.rubric_id
-                FROM rubric_standard_groups sg
+                FROM standard_groups sg
                 WHERE sg.rubric_id IN (SELECT rubric_id FROM rubric_ids)
-                ORDER BY sg.rubric_id, sg.order_index
             ),
             -- Build empty matrix structure
             matrix_structure AS (
                 SELECT
                     r.rubric_id,
-                    json_agg(json_build_object(
+                    COALESCE(json_agg(json_build_object(
                         'id', sg.id::text,
                         'name', sg.name,
                         'shortName', sg.short_name,
                         'rubricId', sg.rubric_id::text
-                    ) ORDER BY sg.order_index) AS standard_groups
+                    ) ORDER BY sg.name), '[]'::json) AS standard_groups
                 FROM rubric_ids r
                 JOIN standard_groups sg ON sg.rubric_id = r.rubric_id
                 GROUP BY r.rubric_id

@@ -219,18 +219,18 @@ class SecondaryQueries:
                     sg.description AS group_description,
                     sg.rubric_id,
                     sg.points
-                FROM rubric_standard_groups sg
+                FROM standard_groups sg
                 WHERE sg.rubric_id IN (SELECT rubric_id FROM rubric_ids)
             ),
             packages AS (
                 SELECT
                     sg.rubric_id,
-                    json_agg(json_build_object(
+                    COALESCE(json_agg(json_build_object(
                         'metric', sg.group_name,
                         'description', sg.group_description,
                         'value', 0.5,
                         'fullMark', 1.0
-                    )) AS radar_data,
+                    )), '[]'::json) AS radar_data,
                     '[]'::json AS group_facts
                 FROM standard_groups sg
                 GROUP BY sg.rubric_id
