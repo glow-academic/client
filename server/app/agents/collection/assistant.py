@@ -9,8 +9,8 @@ from agents import Runner, trace
 from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.db import get_db
 from app.agents.generic import GenericAgent
+from app.db import get_db
 from app.services.assistant_service import AssistantService
 from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history
@@ -46,31 +46,22 @@ async def run_assistant_agent(
         Text chunks from the agent's response
     """
 
-    # Try to get assistant chat first
-    assistant_chat = await conn.fetchrow(
-        "SELECT id, title, trace_id, profile_id FROM assistant_chats WHERE id = $1",
-        chat_id
-    )
+    # Use internal server URL for MCP server connection
+    # In Docker, the server is accessible at http://localhost:8000
+    # This avoids Traefik routing issues and uses internal networking
+    base_url = os.getenv("INTERNAL_API_BASE")
+    mcp_server_url = f"{base_url}/domain/mcp/"
 
-    if assistant_chat:
-        # Use internal server URL for MCP server connection
-        # In Docker, the server is accessible at http://localhost:8000
-        # This avoids Traefik routing issues and uses internal networking
-        base_url = os.getenv("INTERNAL_API_BASE")
-        mcp_server_url = f"{base_url}/domain/mcp/"
-
-        async with MCPServerStreamableHttp(
-            name="MCP Server",
-            params={"url": mcp_server_url},
-            cache_tools_list=True,
-        ) as domain_server:
-            mcp_servers = [domain_server]
-            async for token in _handle_assistant_chat(
-                assistant_chat, mcp_servers, department_id, conn
-            ):
-                yield token
-    else:
-        raise ValueError(f"Chat not found with ID: {chat_id}")
+    async with MCPServerStreamableHttp(
+        name="MCP Server",
+        params={"url": mcp_server_url},
+        cache_tools_list=True,
+    ) as domain_server:
+        mcp_servers = [domain_server]
+        async for token in _handle_assistant_chat(
+            chat_id, mcp_servers, department_id, conn
+        ):
+            yield token
 
 
 async def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
@@ -89,14 +80,15 @@ async def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_assistant_chat(
-    chat: asyncpg.Record, mcp_servers: list[MCPServer], department_id: uuid.UUID, conn: asyncpg.Connection
+    chat_id: uuid.UUID, mcp_servers: list[MCPServer], department_id: uuid.UUID, conn: asyncpg.Connection
 ) -> AsyncGenerator[str, None]:
-    """Handle simulation chat processing."""
+    """Handle assistant chat processing."""
 
     # Get all context data in optimized queries (1 JOIN + 2 parallel queries)
+    # This also validates that the chat exists and has an assistant agent configured
     assistant_service = AssistantService(conn)
     context = await assistant_service.get_assistant_run_context(
-        chat_id=chat['id'],
+        chat_id=chat_id,
         department_id=department_id
     )
 
