@@ -2,7 +2,7 @@
 
 from typing import Dict, List
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
@@ -197,18 +197,7 @@ class ProviderService:
         # Encrypt API key before storing
         encrypted_api_key = encrypt_api_key(request.api_key)
 
-        query = """
-        INSERT INTO providers (
-            name,
-            description,
-            api_key,
-            base_url,
-            department_id
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-        """
-        
+        query, _ = self.queries.create_provider()
         result = await self.conn.fetchrow(
             query,
             request.name,
@@ -240,14 +229,9 @@ class ProviderService:
             raise ValueError(f"Provider not found: {request.providerId}")
 
         # Update provider basic fields
+        query, _ = self.queries.update_provider()
         await self.conn.execute(
-            """UPDATE providers SET
-                name = $2,
-                description = $3,
-                base_url = $4,
-                department_id = $5,
-                updated_at = NOW()
-            WHERE id = $1""",
+            query,
             request.providerId,
             request.name,
             request.description,
@@ -258,11 +242,9 @@ class ProviderService:
         # Update API key if provided (encrypt before storing)
         if request.api_key is not None:
             encrypted_api_key = encrypt_api_key(request.api_key)
+            query, _ = self.queries.update_provider_api_key()
             await self.conn.execute(
-                """UPDATE providers SET
-                    api_key = $2,
-                    updated_at = NOW()
-                WHERE id = $1""",
+                query,
                 request.providerId,
                 encrypted_api_key,
             )
@@ -317,20 +299,7 @@ class ProviderService:
     async def create_model(self, request: CreateModelRequest) -> CreateModelResponse:
         """Create a new model."""
 
-        query = """
-        INSERT INTO models (
-            provider_id,
-            name,
-            description,
-            active,
-            custom_model,
-            input_ppm,
-            output_ppm
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
-        """
-        
+        query, _ = self.queries.create_model()
         result = await self.conn.fetchrow(
             query,
             request.provider_id,
@@ -362,16 +331,9 @@ class ProviderService:
             raise ValueError(f"Model not found: {request.modelId}")
 
         # Update model
+        query, _ = self.queries.update_model()
         await self.conn.execute(
-            """UPDATE models SET
-                name = $2,
-                description = $3,
-                active = $4,
-                custom_model = $5,
-                input_ppm = $6,
-                output_ppm = $7,
-                updated_at = NOW()
-            WHERE id = $1""",
+            query,
             request.modelId,
             request.name,
             request.description,

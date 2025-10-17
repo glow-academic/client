@@ -100,18 +100,8 @@ class DocumentService:
 
         # Build parameter_item_mapping (all items as valid options for now)
         # TODO: Query document_parameter_items junction table for specific items per document
-        param_query = """
-            SELECT 
-                pi.id,
-                pi.name,
-                COALESCE(pi.description, '') as description,
-                pi.parameter_id,
-                p.name as parameter_name
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1) AND p.active = true
-        """
-        param_results = await self.conn.fetch(param_query, filters.departmentIds)
+        query, params = self.queries.get_parameter_items_for_departments(filters.departmentIds)
+        param_results = await self.conn.fetch(query, *params)
 
         parameter_item_mapping = {
             str(row['id']): ParameterItemMappingItem(
@@ -124,15 +114,8 @@ class DocumentService:
         }
 
         # Build department_mapping
-        dept_query = """
-            SELECT 
-                id,
-                title as name,
-                COALESCE(description, '') as description
-            FROM departments
-            WHERE id = ANY($1) AND active = true
-        """
-        dept_results = await self.conn.fetch(dept_query, filters.departmentIds)
+        query, params = self.queries.get_departments_mapping(filters.departmentIds)
+        dept_results = await self.conn.fetch(query, *params)
 
         department_mapping: DepartmentMapping = {
             str(row['id']): DepartmentMappingItem(
@@ -171,24 +154,13 @@ class DocumentService:
 
         # Get all valid parameter items for this department
         # TODO: Query document_parameter_items junction table for specific items
-        param_query = """
-            SELECT pi.id
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = $1 AND pi.active = true
-        """
-        valid_param_items_result = await self.conn.fetch(param_query, document["department_id"])
+        query, params = self.queries.get_parameter_items_for_department(document["department_id"])
+        valid_param_items_result = await self.conn.fetch(query, *params)
         valid_param_items = [str(row['id']) for row in valid_param_items_result]
 
         # Get departments with mapping
-        departments_query = """
-        SELECT id, name, description 
-        FROM departments 
-        WHERE id = ANY($1)
-        ORDER BY name
-        """
-        departments_result = await self.conn.fetch(
-            departments_query, valid_department_ids)
+        query, params = self.queries.get_departments_mapping(valid_department_ids)
+        departments_result = await self.conn.fetch(query, *params)
         
 
         department_mapping = {
@@ -199,19 +171,8 @@ class DocumentService:
         }
 
         # Build parameter_item_mapping for valid items
-        param_mapping_query = """
-            SELECT 
-                pi.id,
-                pi.name,
-                COALESCE(pi.description, '') as description,
-                pi.parameter_id,
-                p.name as parameter_name
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id = ANY($1)
-        """
-        param_mapping_result = await self.conn.fetch(
-            param_mapping_query, valid_param_items)
+        query, params = self.queries.get_parameter_item_mapping(valid_param_items)
+        param_mapping_result = await self.conn.fetch(query, *params)
         
 
         parameter_item_mapping = {
@@ -254,17 +215,8 @@ class DocumentService:
         """Get bulk document detail information using dynamic SQL."""
 
         # Get documents basic info
-        documents_query = """
-        SELECT 
-            d.id,
-            d.type,
-            d.department_id
-        FROM documents d
-        WHERE d.id = ANY($1::uuid[])
-        """
-
-        documents_result = await self.conn.fetch(
-            documents_query, request.documentIds)
+        query, params = self.queries.get_documents_by_ids(request.documentIds)
+        documents_result = await self.conn.fetch(query, *params)
         
         if not documents_result:
             raise ValueError("No documents found")
@@ -277,45 +229,23 @@ class DocumentService:
         department_ids = list(set([str(row['department_id']) for row in documents_result]))
 
         # Get user's accessible department IDs
-        user_dept_query = """
-        SELECT DISTINCT d.id
-        FROM departments d
-        JOIN profile_departments pd ON pd.department_id = d.id
-        WHERE pd.profile_id = $1 AND d.active = true
-        ORDER BY d.name
-        """
-
+        query, params = self.queries.get_valid_departments_for_profile(request.profileId)
         valid_department_ids = [
             str(row['id'])
-            for row in await self.conn.fetch(
-                user_dept_query, request.profileId)
-            
+            for row in await self.conn.fetch(query, *params)
         ]
 
         # Get all valid parameter items for these departments
         # TODO: Query document_parameter_items junction table for union of items across docs
-        valid_param_query = """
-            SELECT pi.id
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1) AND pi.active = true
-        """
+        query, params = self.queries.get_valid_parameter_items_for_departments(department_ids)
         valid_param_items = [
             str(row['id'])
-            for row in await self.conn.fetch(
-                valid_param_query, department_ids)
-            
+            for row in await self.conn.fetch(query, *params)
         ]
 
         # Get departments with mapping
-        departments_query = """
-        SELECT id, name, description 
-        FROM departments 
-        WHERE id = ANY($1)
-        ORDER BY name
-        """
-        departments_result = await self.conn.fetch(
-            departments_query, valid_department_ids)
+        query, params = self.queries.get_departments_mapping(valid_department_ids)
+        departments_result = await self.conn.fetch(query, *params)
 
         department_mapping = {
             str(row['id']): DepartmentMappingItem(
@@ -325,18 +255,8 @@ class DocumentService:
         }
 
         # Build parameter_item_mapping for valid items
-        param_mapping_query = """
-            SELECT 
-                pi.id,
-                pi.name,
-                COALESCE(pi.description, '') as description,
-                pi.parameter_id,
-                p.name as parameter_name
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE pi.id = ANY($1)
-        """
-        param_mapping_result = await self.conn.fetch(param_mapping_query, valid_param_items)
+        query, params = self.queries.get_parameter_item_mapping(valid_param_items)
+        param_mapping_result = await self.conn.fetch(query, *params)
 
         parameter_item_mapping = {
             str(row['id']): ParameterItemMappingItem(
@@ -375,37 +295,24 @@ class DocumentService:
         """Update a document using dynamic SQL."""
 
         # Check if document exists
-        check_query = """
-        SELECT name FROM documents WHERE id = $1
-        """
-
-        existing = await self.conn.fetchrow(check_query, request.documentId)
+        query, params = self.queries.get_document_name(request.documentId)
+        existing = await self.conn.fetchrow(query, *params)
 
         if not existing:
             raise ValueError(f"Document not found: {request.documentId}")
 
         # Update document
-        update_query = """
-        UPDATE documents SET
-            type = $2,
-            department_id = $3,
-            updated_at = NOW()
-        WHERE id = $1
-        """
-
+        query, _ = self.queries.update_document()
         await self.conn.execute(
-            update_query,
+            query,
             request.documentId,
             request.type,
             request.department_id,
         )
 
         # Update tags - delete existing and insert new
-        delete_tags_query = """
-        DELETE FROM simulation_tag_documents WHERE document_id = $1
-        """
-
-        await self.conn.execute(delete_tags_query, request.documentId)
+        query, params = self.queries.delete_document_tags(request.documentId)
+        await self.conn.execute(query, *params)
 
         # Transaction handled
 
@@ -419,27 +326,17 @@ class DocumentService:
         """Bulk update documents using dynamic SQL."""
 
         # Update all documents
-        update_query = """
-        UPDATE documents SET
-            type = $2,
-            department_id = $3,
-            updated_at = NOW()
-        WHERE id = ANY($1)
-        """
-
+        query, _ = self.queries.bulk_update_documents()
         await self.conn.execute(
-            update_query,
+            query,
             request.documentIds,
             request.type,
             request.department_id,
         )
 
         # Update tags for all documents - delete existing and insert new
-        delete_tags_query = """
-        DELETE FROM simulation_tag_documents WHERE document_id = ANY($1)
-        """
-
-        await self.conn.execute(delete_tags_query, request.documentIds)
+        query, params = self.queries.delete_document_tags_bulk(request.documentIds)
+        await self.conn.execute(query, *params)
 
         
         # Transaction handled
@@ -455,11 +352,8 @@ class DocumentService:
         """Delete a document from database and filesystem."""
 
         # Get document info including file_path
-        info_query = """
-        SELECT name, file_path FROM documents WHERE id = $1
-        """
-
-        document = await self.conn.fetchrow(info_query, request.documentId)
+        query, params = self.queries.get_document_info_with_path(request.documentId)
+        document = await self.conn.fetchrow(query, *params)
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
@@ -476,11 +370,8 @@ class DocumentService:
             logger.warning(f"File not found in filesystem: {file_path}")
 
         # Delete document from database (cascades will handle junction tables)
-        delete_query = """
-        DELETE FROM documents WHERE id = $1
-        """
-
-        await self.conn.execute(delete_query, request.documentId)
+        query, params = self.queries.delete_document(request.documentId)
+        await self.conn.execute(query, *params)
         # Transaction handled
 
         return DeleteDocumentResponse(
@@ -493,11 +384,8 @@ class DocumentService:
         """Bulk delete documents from database and filesystem."""
 
         # Get all document file paths
-        info_query = """
-        SELECT id, name, file_path FROM documents WHERE id = ANY($1)
-        """
-
-        documents = await self.conn.fetch(info_query, request.documentIds)
+        query, params = self.queries.get_documents_info_with_path(request.documentIds)
+        documents = await self.conn.fetch(query, *params)
 
         if not documents:
             raise ValueError("No documents found to delete")
@@ -517,11 +405,8 @@ class DocumentService:
                 logger.warning(f"File not found in filesystem: {file_path}")
 
         # Delete all documents from database
-        delete_query = """
-        DELETE FROM documents WHERE id = ANY($1)
-        """
-
-        await self.conn.execute(delete_query, request.documentIds)
+        query, params = self.queries.bulk_delete_documents(request.documentIds)
+        await self.conn.execute(query, *params)
         # Transaction handled
 
         return DeleteDocumentResponse(
@@ -710,9 +595,9 @@ class DocumentService:
                             content_type = get_content_type(filename)
 
                             # Insert document into database
+                            query, _ = self.queries.insert_document()
                             await self.conn.execute(
-                                """INSERT INTO documents (id, name, file_path, mime_type, department_id)
-                                   VALUES ($1, $2, $3, $4, $5)""",
+                                query,
                                 document_id,
                                 filename,
                                 final_file_path,
@@ -759,9 +644,9 @@ class DocumentService:
             content_type = metadata.get("filetype") or get_content_type(filename)
 
             # Insert document into database
+            query, _ = self.queries.insert_document()
             await self.conn.execute(
-                """INSERT INTO documents (id, name, file_path, mime_type, department_id)
-                   VALUES ($1, $2, $3, $4, $5)""",
+                query,
                 document_id,
                 filename,
                 final_file_path,
@@ -812,10 +697,8 @@ class DocumentService:
         Returns:
             Tuple of (file_path, filename, content_type) or None if not found
         """
-        result = await self.conn.fetchrow(
-            "SELECT name, file_path, mime_type FROM documents WHERE id = $1",
-            document_id
-        )
+        query, params = self.queries.get_document_file_info(document_id)
+        result = await self.conn.fetchrow(query, *params)
 
         if not result:
             return None

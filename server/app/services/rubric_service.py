@@ -129,10 +129,8 @@ class RubricService:
         valid_department_ids = [str(row['id']) for row in dept_result]
 
         # Get user role for permission checks
-        user_result = await self.conn.fetchrow(
-            "SELECT role FROM profiles WHERE id = $1",
-            request.profileId
-        )
+        query, params = self.queries.get_profile_role(request.profileId)
+        user_result = await self.conn.fetchrow(query, *params)
         user_role = user_result['role'] if user_result else "student"
 
         # Compute can_edit permission
@@ -232,11 +230,9 @@ class RubricService:
 
         async with transaction(self.conn):
             # Create rubric
+            query, _ = self.queries.create_rubric()
             rubric_result = await self.conn.fetchrow(
-                """INSERT INTO rubrics (
-                    name, description, department_id, active, default_rubric, points, pass_points
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id""",
+                query,
                 request.name,
                 request.description,
                 request.department_id,
@@ -254,11 +250,9 @@ class RubricService:
             # Create standard groups and their standards
             for group in request.standard_groups:
                 # Create standard group
+                query, _ = self.queries.create_standard_group()
                 group_result = await self.conn.fetchrow(
-                    """INSERT INTO standard_groups (
-                        rubric_id, name, short_name, description, points, pass_points
-                    ) VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING id""",
+                    query,
                     rubric_id,
                     group.name,
                     group.short_name,
@@ -273,11 +267,10 @@ class RubricService:
                 group_id = str(group_result['id'])
 
                 # Create standards for this group
+                query, _ = self.queries.create_standard()
                 for standard in group.standards:
                     await self.conn.execute(
-                        """INSERT INTO standards (
-                            standard_group_id, name, description, points
-                        ) VALUES ($1, $2, $3, $4)""",
+                        query,
                         group_id,
                         standard.name,
                         standard.description,
@@ -309,15 +302,9 @@ class RubricService:
                     await self.conn.execute(query, *params)
                 elif group.id:
                     # Update existing standard group
+                    query, _ = self.queries.update_standard_group()
                     await self.conn.execute(
-                        """UPDATE standard_groups SET
-                            name = $2,
-                            short_name = $3,
-                            description = $4,
-                            points = $5,
-                            pass_points = $6,
-                            updated_at = NOW()
-                        WHERE id = $1""",
+                        query,
                         group.id,
                         group.name,
                         group.short_name,
@@ -330,11 +317,9 @@ class RubricService:
                     await self._process_standards(group.id, group.standards)
                 else:
                     # Create new standard group
+                    query, _ = self.queries.create_standard_group()
                     group_result = await self.conn.fetchrow(
-                        """INSERT INTO standard_groups (
-                            rubric_id, name, short_name, description, points, pass_points
-                        ) VALUES ($1, $2, $3, $4, $5, $6)
-                        RETURNING id""",
+                        query,
                         request.rubricId,
                         group.name,
                         group.short_name,
@@ -349,12 +334,11 @@ class RubricService:
                     group_id = str(group_result['id'])
 
                     # Create standards for new group
+                    query, _ = self.queries.create_standard()
                     for standard in group.standards:
                         if not standard.deleted:
                             await self.conn.execute(
-                                """INSERT INTO standards (
-                                    standard_group_id, name, description, points
-                                ) VALUES ($1, $2, $3, $4)""",
+                                query,
                                 group_id,
                                 standard.name,
                                 standard.description,
@@ -365,17 +349,9 @@ class RubricService:
             calculated_points = await self._calculate_rubric_points(request.rubricId)
 
             # Update rubric with basic info and calculated points
+            query, _ = self.queries.update_rubric()
             await self.conn.execute(
-                """UPDATE rubrics SET
-                    name = $2,
-                    description = $3,
-                    department_id = $4,
-                    active = $5,
-                    default_rubric = $6,
-                    points = $7,
-                    pass_points = $8,
-                    updated_at = NOW()
-                WHERE id = $1""",
+                query,
                 request.rubricId,
                 request.name,
                 request.description,
@@ -406,13 +382,9 @@ class RubricService:
                 await self.conn.execute(query, *params)
             elif standard.id:
                 # Update existing standard
+                query, _ = self.queries.update_standard()
                 await self.conn.execute(
-                    """UPDATE standards SET
-                        name = $2,
-                        description = $3,
-                        points = $4,
-                        updated_at = NOW()
-                    WHERE id = $1""",
+                    query,
                     standard.id,
                     standard.name,
                     standard.description,
@@ -420,10 +392,9 @@ class RubricService:
                 )
             else:
                 # Create new standard
+                query, _ = self.queries.create_standard()
                 await self.conn.execute(
-                    """INSERT INTO standards (
-                        standard_group_id, name, description, points
-                    ) VALUES ($1, $2, $3, $4)""",
+                    query,
                     group_id,
                     standard.name,
                     standard.description,
@@ -457,11 +428,9 @@ class RubricService:
 
         async with transaction(self.conn):
             # Create duplicate rubric
+            query, _ = self.queries.insert_duplicate_rubric()
             new_rubric = await self.conn.fetchrow(
-                """INSERT INTO rubrics (
-                    name, description, department_id, active, default_rubric, points, pass_points
-                ) VALUES ($1 || ' Copy', $2, $3, false, false, $4, $5)
-                RETURNING id""",
+                query,
                 rubric['name'],
                 rubric['description'],
                 rubric['department_id'],
@@ -481,11 +450,9 @@ class RubricService:
             # Duplicate groups and standards
             for group in groups:
                 # Create new group
+                query, _ = self.queries.create_standard_group()
                 new_group = await self.conn.fetchrow(
-                    """INSERT INTO standard_groups (
-                        rubric_id, name, short_name, description, points, pass_points
-                    ) VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING id""",
+                    query,
                     new_rubric_id,
                     group['name'],
                     group['short_name'],
@@ -503,11 +470,10 @@ class RubricService:
                 query, params = self.queries.get_standards_for_duplicate(str(group['id']))
                 standards = await self.conn.fetch(query, *params)
 
+                query, _ = self.queries.create_standard()
                 for standard in standards:
                     await self.conn.execute(
-                        """INSERT INTO standards (
-                            standard_group_id, name, description, points
-                        ) VALUES ($1, $2, $3, $4)""",
+                        query,
                         new_group_id,
                         standard['name'],
                         standard['description'],

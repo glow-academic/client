@@ -1,6 +1,7 @@
 """Service layer for attempts operations."""
 
 import asyncpg  # type: ignore
+from app.queries.attempts_queries import AttemptsQueries
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse)
 
@@ -11,6 +12,7 @@ class AttemptsService:
     def __init__(self, conn: asyncpg.Connection):
         """Initialize attempts service."""
         self.conn = conn
+        self.queries = AttemptsQueries()
 
     async def bulk_archive_attempts(
         self, request: BulkArchiveAttemptsRequest
@@ -18,14 +20,10 @@ class AttemptsService:
         """Bulk archive or unarchive simulation attempts."""
 
         # Update all attempts
-        await self.conn.execute(
-            """UPDATE simulation_attempts
-               SET archived = $1,
-                   updated_at = NOW()
-               WHERE id = ANY($2::uuid[])""",
-            request.archived,
-            request.attemptIds,
+        query, params = self.queries.bulk_archive_attempts(
+            request.archived, request.attemptIds
         )
+        await self.conn.execute(query, *params)
 
         action = "archived" if request.archived else "unarchived"
         count = len(request.attemptIds)

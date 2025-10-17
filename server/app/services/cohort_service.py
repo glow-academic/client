@@ -318,10 +318,9 @@ class CohortService:
 
         async with transaction(self.conn):
             # Create cohort
+            query, _ = self.queries.create_cohort()
             result = await self.conn.fetchrow(
-                """INSERT INTO cohorts (title, description, department_id, active, default_cohort)
-                   VALUES ($1, $2, $3, $4, $5)
-                   RETURNING id""",
+                query,
                 request.title,
                 request.description,
                 request.department_id,
@@ -335,24 +334,14 @@ class CohortService:
             cohort_id = str(result['id'])
 
             # Insert profile relationships
+            query, _ = self.queries.insert_cohort_profile()
             for profile_id in request.profile_ids:
-                await self.conn.execute(
-                    """INSERT INTO cohort_profiles (cohort_id, profile_id)
-                       VALUES ($1, $2)
-                       ON CONFLICT (cohort_id, profile_id) DO NOTHING""",
-                    cohort_id,
-                    profile_id,
-                )
+                await self.conn.execute(query, cohort_id, profile_id)
 
             # Insert simulation relationships
+            query, _ = self.queries.insert_cohort_simulation()
             for simulation_id in request.simulation_ids:
-                await self.conn.execute(
-                    """INSERT INTO cohort_simulations (cohort_id, simulation_id)
-                       VALUES ($1, $2)
-                       ON CONFLICT (cohort_id, simulation_id) DO NOTHING""",
-                    cohort_id,
-                    simulation_id,
-                )
+                await self.conn.execute(query, cohort_id, simulation_id)
 
         return CreateCohortResponse(
             success=True,
@@ -372,15 +361,9 @@ class CohortService:
 
         async with transaction(self.conn):
             # Update cohort
+            query, _ = self.queries.update_cohort()
             await self.conn.execute(
-                """UPDATE cohorts SET
-                    title = $2,
-                    description = $3,
-                    department_id = $4,
-                    active = $5,
-                    default_cohort = $6,
-                    updated_at = NOW()
-                WHERE id = $1""",
+                query,
                 request.cohortId,
                 request.title,
                 request.description,
@@ -397,23 +380,13 @@ class CohortService:
             await self.conn.execute(query, *params)
 
             # Insert new relationships
+            query, _ = self.queries.insert_cohort_profile()
             for profile_id in request.profile_ids:
-                await self.conn.execute(
-                    """INSERT INTO cohort_profiles (cohort_id, profile_id)
-                       VALUES ($1, $2)
-                       ON CONFLICT (cohort_id, profile_id) DO NOTHING""",
-                    request.cohortId,
-                    profile_id,
-                )
+                await self.conn.execute(query, request.cohortId, profile_id)
 
+            query, _ = self.queries.insert_cohort_simulation()
             for simulation_id in request.simulation_ids:
-                await self.conn.execute(
-                    """INSERT INTO cohort_simulations (cohort_id, simulation_id)
-                       VALUES ($1, $2)
-                       ON CONFLICT (cohort_id, simulation_id) DO NOTHING""",
-                    request.cohortId,
-                    simulation_id,
-                )
+                await self.conn.execute(query, request.cohortId, simulation_id)
 
         return UpdateCohortResponse(
             success=True, message=f"Cohort '{request.title}' updated successfully"
@@ -433,10 +406,9 @@ class CohortService:
 
         async with transaction(self.conn):
             # Insert duplicate
+            query, _ = self.queries.insert_duplicate_cohort()
             new_cohort = await self.conn.fetchrow(
-                """INSERT INTO cohorts (title, description, department_id, active, default_cohort)
-                   VALUES ($1 || ' Copy', $2, $3, false, false)
-                   RETURNING id""",
+                query,
                 result['title'],
                 result['description'],
                 result['department_id'],
@@ -541,11 +513,9 @@ class CohortService:
                 profile_ids_to_add.append(profile_id)
 
                 # Insert profile
+                query, _ = self.staff_queries.create_profile()
                 await self.conn.execute(
-                    """INSERT INTO profiles (
-                        id, first_name, last_name, alias, role, active,
-                        default_profile, viewed_intro, viewed_chat, req_per_day
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                    query,
                     profile_id,
                     profile_req.firstName,
                     profile_req.lastName,
@@ -559,24 +529,14 @@ class CohortService:
                 )
 
                 # Insert profile-department relationships for all departments
+                query, _ = self.staff_queries.insert_profile_department()
                 for dept_id in request.departmentIds:
-                    await self.conn.execute(
-                        """INSERT INTO profile_departments (profile_id, department_id)
-                           VALUES ($1, $2)
-                           ON CONFLICT (profile_id, department_id) DO NOTHING""",
-                        profile_id,
-                        dept_id,
-                    )
+                    await self.conn.execute(query, profile_id, dept_id)
 
         # Add all profiles to cohort
+        query, _ = self.queries.insert_cohort_profile()
         for profile_id in profile_ids_to_add:
-            await self.conn.execute(
-                """INSERT INTO cohort_profiles (cohort_id, profile_id)
-                   VALUES ($1, $2)
-                   ON CONFLICT (cohort_id, profile_id) DO NOTHING""",
-                request.cohortId,
-                profile_id,
-            )
+            await self.conn.execute(query, request.cohortId, profile_id)
 
         # Transaction handled
 

@@ -144,6 +144,11 @@ class RubricQueries:
         """
         return (query, [profile_id])
 
+    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get profile role."""
+        query = "SELECT role FROM profiles WHERE id = $1"
+        return (query, [profile_id])
+
     def get_default_rubric(self, profile_id: str) -> Tuple[str, List[Any]]:
         """Build query for default rubric."""
         query = """

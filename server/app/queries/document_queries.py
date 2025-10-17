@@ -243,3 +243,96 @@ class DocumentQueries:
         """Build query to bulk delete documents."""
         query = "DELETE FROM documents WHERE id = ANY($1)"
         return (query, [document_ids])
+
+    def get_parameter_items_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items for departments."""
+        query = """
+            SELECT 
+                pi.id,
+                pi.name,
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY($1) AND p.active = true
+        """
+        return (query, [department_ids])
+
+    def get_parameter_items_for_department(
+        self, department_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items for a single department."""
+        query = """
+            SELECT pi.id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = $1 AND pi.active = true
+        """
+        return (query, [department_id])
+
+    def get_parameter_item_mapping(
+        self, parameter_item_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameter item mapping."""
+        query = """
+            SELECT 
+                pi.id,
+                pi.name,
+                COALESCE(pi.description, '') as description,
+                pi.parameter_id,
+                p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE pi.id = ANY($1)
+        """
+        return (query, [parameter_item_ids])
+
+    def get_valid_parameter_items_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get valid parameter items for multiple departments."""
+        query = """
+            SELECT pi.id
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.department_id = ANY($1) AND pi.active = true
+        """
+        return (query, [department_ids])
+
+    def get_document_info_with_path(
+        self, document_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get document info including file path."""
+        query = """
+        SELECT name, file_path FROM documents WHERE id = $1
+        """
+        return (query, [document_id])
+
+    def get_documents_info_with_path(
+        self, document_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get multiple documents info including file paths."""
+        query = """
+        SELECT id, name, file_path FROM documents WHERE id = ANY($1)
+        """
+        return (query, [document_ids])
+
+    def insert_document(self) -> Tuple[str, List[Any]]:
+        """Build query to insert a new document."""
+        query = """
+        INSERT INTO documents (id, name, file_path, mime_type, department_id)
+        VALUES ($1, $2, $3, $4, $5)
+        """
+        return (query, [])  # Parameters filled at execution time
+
+    def get_document_file_info(
+        self, document_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get document file info for download."""
+        query = """
+        SELECT name, file_path, mime_type FROM documents WHERE id = $1
+        """
+        return (query, [document_id])
