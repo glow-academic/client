@@ -458,6 +458,9 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
+        # Parse JSON string to dict if needed
+        if isinstance(result, str):
+            result = json.loads(result)
         overview_data = result or {}
         
         # Fetch history data
@@ -817,7 +820,7 @@ class AnalyticsService:
     async def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
         """Build scenario mapping from database."""
         query = """
-            SELECT DISTINCT s.id, s.title, s.problem_statement
+            SELECT DISTINCT s.id, s.name, s.problem_statement
             FROM scenarios s
             WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
             AND s.active = true
@@ -827,7 +830,7 @@ class AnalyticsService:
         
         return {
             str(row['id']): ScenarioMappingItem(
-                name=row['title'],
+                name=row['name'],
                 description=row['problem_statement'] or "",
                 persona_id=None,
                 persona_mapping={},
