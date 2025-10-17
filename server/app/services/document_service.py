@@ -13,8 +13,9 @@ import zipfile
 from typing import Any, Dict, List, Optional, Tuple
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
-from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
+from app.extensions import CSV_FOLDER, UPLOAD_FOLDER, get_query_client
 from app.queries.document_queries import DocumentQueries
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMappingItem, ScenarioMappingItem)
@@ -55,7 +56,23 @@ class DocumentService:
         self, filters: DocumentsFilters
     ) -> DocumentsListResponse:
         """Get documents list with tags and scenarios using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            # Execute directly without cache
+            return await self._fetch_documents_list(filters)
+        
+        key = keys.document_list(filters)
+        
+        async def fetcher() -> DocumentsListResponse:
+            return await self._fetch_documents_list(filters)
+        
+        result: DocumentsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_documents_list(
+        self, filters: DocumentsFilters
+    ) -> DocumentsListResponse:
+        """Helper to fetch documents list (extracted for caching)."""
         # Get query from query builder
         query, params = self.queries.list_documents(
             filters.departmentIds, filters.profileId
@@ -136,7 +153,22 @@ class DocumentService:
         self, request: DocumentDetailRequest
     ) -> DocumentDetailResponse:
         """Get detailed document information using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_document_detail(request)
+        
+        key = keys.document_by_id(request.documentId)
+        
+        async def fetcher() -> DocumentDetailResponse:
+            return await self._fetch_document_detail(request)
+        
+        result: DocumentDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_document_detail(
+        self, request: DocumentDetailRequest
+    ) -> DocumentDetailResponse:
+        """Helper to fetch document detail (extracted for caching)."""
         # Get document basic info
         query, params = self.queries.get_document_by_id(request.documentId)
         document = await self.conn.fetchrow(query, *params)
@@ -213,7 +245,22 @@ class DocumentService:
         self, request: DocumentDetailBulkRequest
     ) -> DocumentDetailBulkResponse:
         """Get bulk document detail information using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_document_detail_bulk(request)
+        
+        key = keys.document_bulk_detail(request.documentIds, request.profileId)
+        
+        async def fetcher() -> DocumentDetailBulkResponse:
+            return await self._fetch_document_detail_bulk(request)
+        
+        result: DocumentDetailBulkResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_document_detail_bulk(
+        self, request: DocumentDetailBulkRequest
+    ) -> DocumentDetailBulkResponse:
+        """Helper to fetch bulk document detail (extracted for caching)."""
         # Get documents basic info
         query, params = self.queries.get_documents_by_ids(request.documentIds)
         documents_result = await self.conn.fetch(query, *params)
@@ -316,6 +363,14 @@ class DocumentService:
 
         # Transaction handled
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_document_by_id(request.documentId),
+                keys.tag_document_all(),
+            ])
+
         return UpdateDocumentResponse(
             success=True, message=f"Document '{existing['name']}' updated successfully"
         )
@@ -340,6 +395,14 @@ class DocumentService:
 
         
         # Transaction handled
+
+        # Invalidate caches for all affected documents
+        qc = get_query_client()
+        if qc:
+            tags = [keys.tag_document_all()]
+            for doc_id in request.documentIds:
+                tags.append(keys.tag_document_by_id(doc_id))
+            await qc.invalidate(tags=tags)
 
         return UpdateDocumentResponse(
             success=True,
@@ -373,6 +436,14 @@ class DocumentService:
         query, params = self.queries.delete_document(request.documentId)
         await self.conn.execute(query, *params)
         # Transaction handled
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_document_by_id(request.documentId),
+                keys.tag_document_all(),
+            ])
 
         return DeleteDocumentResponse(
             success=True, message=f"Document '{document['name']}' deleted successfully"
@@ -408,6 +479,14 @@ class DocumentService:
         query, params = self.queries.bulk_delete_documents(request.documentIds)
         await self.conn.execute(query, *params)
         # Transaction handled
+
+        # Invalidate caches for all deleted documents
+        qc = get_query_client()
+        if qc:
+            tags = [keys.tag_document_all()]
+            for doc_id in request.documentIds:
+                tags.append(keys.tag_document_by_id(doc_id))
+            await qc.invalidate(tags=tags)
 
         return DeleteDocumentResponse(
             success=True,
@@ -619,6 +698,11 @@ class DocumentService:
 
                 # Transaction handled
                 
+                # Invalidate document list cache after bulk upload
+                qc = get_query_client()
+                if qc:
+                    await qc.invalidate(tags=[keys.tag_document_all()])
+                
                 return FinalizeUploadResponse(
                     success=True,
                     message=f"ZIP file processed successfully. Extracted {len(extracted_documents)} documents.",
@@ -662,6 +746,14 @@ class DocumentService:
 
             # Transaction handled
 
+            # Invalidate document list cache after upload
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_document_by_id(str(document_id)),
+                    keys.tag_document_all(),
+                ])
+
             # Auto-classify if requested
             if request.autoClassify:
                 try:
@@ -697,6 +789,20 @@ class DocumentService:
         Returns:
             Tuple of (file_path, filename, content_type) or None if not found
         """
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_document_file(document_id)
+        
+        key = keys.document_file_info(document_id)
+        
+        async def fetcher() -> Optional[Tuple[str, str, str]]:
+            return await self._fetch_document_file(document_id)
+        
+        result: Optional[Tuple[str, str, str]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _fetch_document_file(self, document_id: str) -> Optional[Tuple[str, str, str]]:
+        """Helper to fetch document file info (extracted for caching)."""
         query, params = self.queries.get_document_file_info(document_id)
         result = await self.conn.fetchrow(query, *params)
 
@@ -719,6 +825,20 @@ class DocumentService:
         Returns:
             File path or None if not found
         """
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_csv_file(token)
+        
+        key = keys.document_csv_file(token)
+        
+        async def fetcher() -> Optional[str]:
+            return await self._fetch_csv_file(token)
+        
+        result: Optional[str] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _fetch_csv_file(self, token: str) -> Optional[str]:
+        """Helper to fetch CSV file path (extracted for caching)."""
         file_path = os.path.join(CSV_FOLDER, f"{token}.csv")
         
         if not os.path.exists(file_path):

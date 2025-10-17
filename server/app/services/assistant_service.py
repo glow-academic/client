@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
 
@@ -39,7 +41,27 @@ class AssistantService:
         """
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
+        
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_assistant_run_context(chat_id_str, department_id_str)
+        
+        # Create cache key
+        key = keys.assistant_run_context(chat_id_str, department_id_str)
+        
+        # Define fetcher function
+        async def fetcher() -> AssistantRunContext:
+            return await self._fetch_assistant_run_context(chat_id_str, department_id_str)
+        
+        # Query with cache
+        result: AssistantRunContext = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_assistant_run_context(
+        self, chat_id_str: str, department_id_str: str
+    ) -> AssistantRunContext:
+        """Internal method to fetch assistant run context from database."""
         # 1. Get main context with optimized JOIN query
         query, params = self.queries.get_assistant_run_context(
             chat_id_str, department_id_str
@@ -48,7 +70,7 @@ class AssistantService:
 
         if not context_row:
             raise ValueError(
-                f"Chat {chat_id} not found or no assistant agent configured for department {department_id}"
+                f"Chat {chat_id_str} not found or no assistant agent configured for department {department_id_str}"
             )
 
         # 2. Get messages and tool calls in parallel
@@ -110,6 +132,14 @@ class AssistantService:
         chat_id_str = str(chat_id)
         query, params = self.queries.update_chat_title(chat_id_str, title)
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_assistant_by_chat_id(chat_id_str),
+                keys.tag_assistant_all(),
+            ])
 
     async def verify_profile_exists(self, profile_id: UUID) -> bool:
         """
@@ -163,7 +193,17 @@ class AssistantService:
             profile_id_str, title, trace_id, created_at
         )
         result = await self.conn.fetchrow(query, *params)
-        return {"id": str(result["id"])}
+        chat_id_str = str(result["id"])
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_assistant_by_chat_id(chat_id_str),
+                keys.tag_assistant_all(),
+            ])
+        
+        return {"id": chat_id_str}
 
     async def create_user_message(
         self, chat_id: UUID, content: str
@@ -186,6 +226,15 @@ class AssistantService:
             chat_id_str, "user", content, True, created_at
         )
         result = await self.conn.fetchrow(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_assistant_by_chat_id(chat_id_str),
+                keys.tag_assistant_all(),
+            ])
+        
         return {
             "id": result["id"],
             "created_at": result["created_at"],
@@ -209,6 +258,15 @@ class AssistantService:
             chat_id_str, "assistant", "", False, created_at
         )
         result = await self.conn.fetchrow(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_assistant_by_chat_id(chat_id_str),
+                keys.tag_assistant_all(),
+            ])
+        
         return {
             "id": result["id"],
             "created_at": result["created_at"],
@@ -225,6 +283,11 @@ class AssistantService:
         message_id_str = str(message_id)
         query, params = self.queries.update_message_content(message_id_str, content)
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches (coarse-grained since we don't have chat_id)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_assistant_all()])
 
     async def complete_message(self, message_id: UUID, content: str) -> None:
         """
@@ -237,6 +300,11 @@ class AssistantService:
         message_id_str = str(message_id)
         query, params = self.queries.complete_message(message_id_str, content, True)
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches (coarse-grained since we don't have chat_id)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_assistant_all()])
 
     async def create_tool_call(
         self,
@@ -267,6 +335,15 @@ class AssistantService:
             chat_id_str, tool_name, tool_type, tool_arguments_json, created_at
         )
         result = await self.conn.fetchrow(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_assistant_by_chat_id(chat_id_str),
+                keys.tag_assistant_all(),
+            ])
+        
         return {"id": result["id"]}
 
     async def complete_tool_call(
@@ -287,6 +364,11 @@ class AssistantService:
             tool_call_id_str, tool_result_json, True
         )
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches (coarse-grained since we don't have chat_id)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_assistant_all()])
 
     async def get_usage_stats(self, days: int = 7) -> Dict[str, Any]:
         """
@@ -298,6 +380,24 @@ class AssistantService:
         Returns:
             Dict containing summary, daily_stats, top_users, and tool_usage
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_usage_stats(days)
+        
+        # Create cache key
+        key = keys.assistant_usage_stats(days)
+        
+        # Define fetcher function
+        async def fetcher() -> Dict[str, Any]:
+            return await self._fetch_usage_stats(days)
+        
+        # Query with cache (longer TTL for expensive aggregation)
+        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=60, stale_ttl=600)
+        return result
+
+    async def _fetch_usage_stats(self, days: int) -> Dict[str, Any]:
+        """Internal method to fetch usage stats from database."""
         from datetime import datetime, timedelta
 
         cutoff_date = datetime.now() - timedelta(days=days)

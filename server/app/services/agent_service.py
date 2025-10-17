@@ -2,9 +2,11 @@
 
 import json
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.agent_queries import AgentQueries
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentItem, AgentsListRequest,
@@ -36,6 +38,31 @@ class AgentService:
         Returns:
             AgentsListResponse
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_agents_list_direct(request)
+        
+        key = keys.agent_list(request.profileId)
+        
+        async def fetcher() -> AgentsListResponse:
+            return await self._get_agents_list_direct(request)
+        
+        return cast(
+            AgentsListResponse,
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_agents_list_direct(
+        self, request: AgentsListRequest
+    ) -> AgentsListResponse:
+        """Direct execution without cache."""
         query, params = self.queries.get_agents_list(request.profileId)
 
         rows = await self.conn.fetch(query, *params)
@@ -86,6 +113,31 @@ class AgentService:
         Returns:
             AgentDetailResponse
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_agent_detail_direct(request)
+        
+        key = keys.agent_by_id(request.agentId)
+        
+        async def fetcher() -> AgentDetailResponse:
+            return await self._get_agent_detail_direct(request)
+        
+        return cast(
+            AgentDetailResponse,
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_agent_detail_direct(
+        self, request: AgentDetailRequest
+    ) -> AgentDetailResponse:
+        """Direct execution without cache."""
         # Get basic agent info
         query, params = self.queries.get_agent_detail(request.agentId)
         agent_row = await self.conn.fetchrow(query, *params)
@@ -182,6 +234,11 @@ class AgentService:
 
         if not agent_row:
             raise ValueError("Failed to create agent")
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_agent_all()])
 
         return CreateAgentResponse(
             success=True,
@@ -211,6 +268,15 @@ class AgentService:
             request.reasoning,
         )
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_agent_by_id(request.agentId),
+                keys.tag_agent_all(),
+                keys.tag_department_all(),  # Departments reference agents
+            ])
 
         return UpdateAgentResponse(
             success=True, message="Agent updated successfully"
@@ -234,6 +300,11 @@ class AgentService:
 
         if not new_agent_row:
             raise ValueError("Failed to duplicate agent")
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_agent_all()])
 
         return DuplicateAgentResponse(
             success=True,
@@ -256,6 +327,15 @@ class AgentService:
         # Delete agent
         query, params = self.queries.delete_agent(request.agentId)
         await self.conn.execute(query, *params)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_agent_by_id(request.agentId),
+                keys.tag_agent_all(),
+                keys.tag_department_all(),
+            ])
 
         return DeleteAgentResponse(success=True, message="Agent deleted successfully")
 
@@ -277,6 +357,31 @@ class AgentService:
         Raises:
             ValueError: If no classify agent configured for department
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_classification_run_context_direct(document_ids, department_id)
+        
+        key = keys.agent_classification_context([str(d) for d in document_ids], str(department_id))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_classification_run_context_direct(document_ids, department_id)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_classification_run_context_direct(
+        self, document_ids: list[uuid.UUID], department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         document_ids_str = [str(d) for d in document_ids]
         department_id_str = str(department_id)
         
@@ -338,6 +443,12 @@ class AgentService:
         
         # Parse result like "UPDATE 15" to get count
         count = int(result.split()[-1]) if result else 0
+        
+        # Invalidate affected caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_agent_all()])
+        
         return count
 
     async def get_scenario_run_context(
@@ -365,6 +476,44 @@ class AgentService:
         Raises:
             ValueError: If no scenario agent configured for department
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_scenario_run_context_direct(
+                department_id, persona_id, document_ids, parameter_item_ids
+            )
+        
+        key = keys.agent_scenario_context(
+            str(department_id),
+            str(persona_id) if persona_id else None,
+            [str(d) for d in document_ids] if document_ids else None,
+            [str(p) for p in parameter_item_ids] if parameter_item_ids else None
+        )
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_scenario_run_context_direct(
+                department_id, persona_id, document_ids, parameter_item_ids
+            )
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_scenario_run_context_direct(
+        self,
+        department_id: uuid.UUID,
+        persona_id: uuid.UUID | None = None,
+        document_ids: List[uuid.UUID] | None = None,
+        parameter_item_ids: List[uuid.UUID] | None = None,
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         # Convert UUIDs to strings for query
         department_id_str = str(department_id)
         persona_id_str = str(persona_id) if persona_id else None
@@ -437,6 +586,31 @@ class AgentService:
         Raises:
             ValueError: If chat not found or missing required data
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_simulation_run_context_direct(chat_id)
+        
+        key = keys.agent_simulation_context(str(chat_id))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_simulation_run_context_direct(chat_id)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_simulation_run_context_direct(
+        self, chat_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         chat_id_str = str(chat_id)
         
         # Single optimized JOIN query
@@ -513,6 +687,31 @@ class AgentService:
         Raises:
             ValueError: If chat not found or no grade agent configured for department
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_grading_run_context_direct(simulation_chat_id, department_id)
+        
+        key = keys.agent_grading_context(str(simulation_chat_id), str(department_id))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_grading_run_context_direct(simulation_chat_id, department_id)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_grading_run_context_direct(
+        self, simulation_chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         simulation_chat_id_str = str(simulation_chat_id)
         department_id_str = str(department_id)
         
@@ -603,6 +802,31 @@ class AgentService:
         Returns:
             List of message dicts
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_simulation_messages_direct(simulation_chat_id)
+        
+        key = keys.agent_simulation_messages(str(simulation_chat_id))
+        
+        async def fetcher() -> List[Dict[str, Any]]:
+            return await self._get_simulation_messages_direct(simulation_chat_id)
+        
+        return cast(
+            List[Dict[str, Any]],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=10,  # Shorter TTL since messages change during simulation
+                stale_ttl=60
+            )
+        )
+    
+    async def _get_simulation_messages_direct(
+        self, simulation_chat_id: uuid.UUID
+    ) -> List[Dict[str, Any]]:
+        """Direct execution without cache."""
         simulation_chat_id_str = str(simulation_chat_id)
         
         query, params = self.queries.get_simulation_messages(simulation_chat_id_str)
@@ -628,6 +852,11 @@ class AgentService:
         query, params = self.queries.create_simulation_hint(hint_text, message_id_str)
         result = await self.conn.fetchval(query, *params)
         
+        # Invalidate simulation messages cache
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_agent_all()])
+        
         return uuid.UUID(result)
 
     async def get_hint_run_context(
@@ -651,6 +880,31 @@ class AgentService:
         Raises:
             ValueError: If message/chat not found or no hint agent configured for department
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_hint_run_context_direct(message_id, chat_id, department_id)
+        
+        key = keys.agent_hint_context(str(message_id), str(chat_id), str(department_id))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_hint_run_context_direct(message_id, chat_id, department_id)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_hint_run_context_direct(
+        self, message_id: uuid.UUID, chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         message_id_str = str(message_id)
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
@@ -736,6 +990,31 @@ class AgentService:
                 f"Invalid guardrail_type: {guardrail_type}. Must be 'input' or 'output'"
             )
         
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_guardrail_run_context_direct(chat_id, department_id, guardrail_type)
+        
+        key = keys.agent_guardrail_context(str(chat_id), str(department_id), guardrail_type)
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_guardrail_run_context_direct(chat_id, department_id, guardrail_type)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_guardrail_run_context_direct(
+        self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
         
@@ -804,6 +1083,31 @@ class AgentService:
         Raises:
             ValueError: If no title agent configured for department or chat not found
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._get_title_run_context_direct(chat_id, department_id)
+        
+        key = keys.agent_title_context(str(chat_id), str(department_id))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._get_title_run_context_direct(chat_id, department_id)
+        
+        return cast(
+            Dict[str, Any],
+            await qc.query(
+                key,
+                fetcher,
+                tags=list(key.tags()),
+                fresh_ttl=30,
+                stale_ttl=300
+            )
+        )
+    
+    async def _get_title_run_context_direct(
+        self, chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """Direct execution without cache."""
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
         

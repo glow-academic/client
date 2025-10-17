@@ -1,9 +1,11 @@
 """Department service with business logic and dynamic SQL."""
 
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.department_queries import DepartmentQueries
 from app.schemas.base import AgentMapping, AgentMappingItem
 from app.schemas.departments import (AgentRoles, CreateDepartmentRequest,
@@ -40,12 +42,38 @@ class DepartmentService:
         Returns:
             DepartmentsListResponse
         """
-        query, params = self.queries.get_departments_list(
-            filters.departmentIds, filters.profileId
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            query, params = self.queries.get_departments_list(
+                filters.departmentIds, filters.profileId
+            )
+            rows = await self.conn.fetch(query, *params)
+            return self._build_departments_list(rows)
+        
+        # Create cache key
+        key = keys.department_list(filters)
+        
+        # Define fetcher function
+        async def fetcher() -> DepartmentsListResponse:
+            query, params = self.queries.get_departments_list(
+                filters.departmentIds, filters.profileId
+            )
+            rows = await self.conn.fetch(query, *params)
+            return self._build_departments_list(rows)
+        
+        # Query with cache
+        result: DepartmentsListResponse = await qc.query(
+            key,
+            fetcher,
+            tags=list(key.tags()),
+            fresh_ttl=30,
+            stale_ttl=300
         )
+        return result
 
-        rows = await self.conn.fetch(query, *params)
-
+    def _build_departments_list(self, rows: List[Any]) -> DepartmentsListResponse:
+        """Build departments list response from query rows."""
         departments: List[DepartmentItem] = []
         for row in rows:
             departments.append(
@@ -61,7 +89,6 @@ class DepartmentService:
                     can_delete=row['can_delete'],
                 )
             )
-
         return DepartmentsListResponse(departments=departments)
 
     async def get_department_detail(
@@ -76,17 +103,43 @@ class DepartmentService:
         Returns:
             DepartmentDetailResponse
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_department_detail(request.departmentId, request.profileId)
+        
+        # Create cache key
+        key = keys.department_by_id(request.departmentId)
+        
+        # Define fetcher function
+        async def fetcher() -> DepartmentDetailResponse:
+            return await self._fetch_department_detail(request.departmentId, request.profileId)
+        
+        # Query with cache
+        result: DepartmentDetailResponse = await qc.query(
+            key,
+            fetcher,
+            tags=list(key.tags()),
+            fresh_ttl=30,
+            stale_ttl=300
+        )
+        return result
+
+    async def _fetch_department_detail(
+        self, department_id: str, profile_id: str
+    ) -> DepartmentDetailResponse:
+        """Fetch department detail from database."""
         # Get department info with permissions and stats
         query, params = self.queries.get_department_detail_with_stats(
-            request.departmentId, request.profileId
+            department_id, profile_id
         )
         dept_row = await self.conn.fetchrow(query, *params)
 
         if not dept_row:
-            raise ValueError(f"Department {request.departmentId} not found")
+            raise ValueError(f"Department {department_id} not found")
 
         # Get agent role assignments (8 roles)
-        query, params = self.queries.get_department_agent_roles(request.departmentId)
+        query, params = self.queries.get_department_agent_roles(department_id)
         agent_rows = await self.conn.fetch(query, *params)
 
         # Build agent_roles object
@@ -147,6 +200,32 @@ class DepartmentService:
         Returns:
             DepartmentDetailResponse with defaults
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_department_default(profile_id)
+        
+        # Create cache key
+        key = keys.department_default(profile_id)
+        
+        # Define fetcher function
+        async def fetcher() -> DepartmentDetailResponse:
+            return await self._fetch_department_default(profile_id)
+        
+        # Query with cache
+        result: DepartmentDetailResponse = await qc.query(
+            key,
+            fetcher,
+            tags=list(key.tags()),
+            fresh_ttl=30,
+            stale_ttl=300
+        )
+        return result
+
+    async def _fetch_department_default(
+        self, profile_id: str
+    ) -> DepartmentDetailResponse:
+        """Fetch department creation defaults from database."""
         # Get user role for permissions
         query, params = self.queries.get_profile_role(profile_id)
         profile_row = await self.conn.fetchrow(query, *params)
@@ -246,6 +325,14 @@ class DepartmentService:
                 )
                 await self.conn.execute(query, *params)
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ])
+
         return CreateDepartmentResponse(
             success=True,
             departmentId=department_id,
@@ -300,6 +387,15 @@ class DepartmentService:
                 )
                 await self.conn.execute(query, *params)
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_department_by_id(request.departmentId),
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ])
+
         return UpdateDepartmentResponse(
             success=True, message="Department updated successfully"
         )
@@ -343,6 +439,14 @@ class DepartmentService:
             )
             await self.conn.execute(query, *params)
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ])
+
         return DuplicateDepartmentResponse(
             success=True,
             departmentId=new_department_id,
@@ -385,6 +489,15 @@ class DepartmentService:
         # Delete department (cascade deletes department_agents)
         query, params = self.queries.delete_department(request.departmentId)
         await self.conn.execute(query, *params)
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_department_by_id(request.departmentId),
+                keys.tag_department_all(),
+                keys.tag_profile_all(),
+            ])
 
         return DeleteDepartmentResponse(
             success=True, message="Department deleted successfully"

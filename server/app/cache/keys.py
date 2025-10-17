@@ -13,6 +13,12 @@ NS_ANALYTICS = "analytics"
 NS_PROFILE = "profile"
 NS_SIMULATION = "simulation"
 NS_ATTEMPT = "attempt"
+NS_AGENT = "agent"
+NS_DEPARTMENT = "department"
+NS_COHORT = "cohort"
+NS_DOCUMENT = "document"
+NS_ASSISTANT = "assistant"
+NS_MODEL_RUN = "model_run"
 
 
 def _stable_json(obj: Any) -> str:
@@ -102,6 +108,26 @@ def _extract_primary_id(ns: str, name: str, params: Any) -> Any | None:
     if ns == NS_ATTEMPT:
         if name == "by_id":
             return params.get("attempt_id")
+
+    # Document namespace
+    if ns == NS_DOCUMENT:
+        if name in ("by_id", "file_info"):
+            return params.get("document_id")
+
+    # Cohort namespace
+    if ns == NS_COHORT:
+        if name in ("by_id", "with_profiles", "overview", "pass_matrix"):
+            return params.get("cohort_id")
+
+    # Department namespace
+    if ns == NS_DEPARTMENT:
+        if name == "by_id":
+            return params.get("department_id")
+
+    # Assistant namespace
+    if ns == NS_ASSISTANT:
+        if name == "run_context":
+            return params.get("chat_id")
 
     return None
 
@@ -447,6 +473,290 @@ def profile_by_email(email: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
 
 
 # ============================================================================
+# ASSISTANT KEY FACTORIES
+# ============================================================================
+
+
+def assistant_run_context(chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for assistant run context query."""
+    return Key(
+        ns=NS_ASSISTANT,
+        name="run_context",
+        params={"chat_id": chat_id, "department_id": department_id},
+        v=v,
+    )
+
+
+def assistant_usage_stats(days: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for assistant usage statistics query."""
+    return Key(
+        ns=NS_ASSISTANT,
+        name="usage_stats",
+        params={"days": days},
+        v=v,
+    )
+
+
+# ============================================================================
+# COHORT KEY FACTORIES
+# ============================================================================
+
+
+def cohort_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohorts list query."""
+    return Key(
+        ns=NS_COHORT,
+        name="list",
+        params={"filters": _serialize_cohort_filters(filters)},
+        v=v,
+    )
+
+
+def cohort_by_id(cohort_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohort detail query."""
+    return Key(
+        ns=NS_COHORT,
+        name="by_id",
+        params={"cohort_id": cohort_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def cohort_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default cohort query."""
+    return Key(
+        ns=NS_COHORT,
+        name="default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
+def cohort_with_profiles(cohort_id: str, department_ids: list[str], profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohort with profiles query."""
+    return Key(
+        ns=NS_COHORT,
+        name="with_profiles",
+        params={"cohort_id": cohort_id, "department_ids": sorted(department_ids), "profile_id": profile_id},
+        v=v,
+    )
+
+
+def cohort_search(query: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohort search query."""
+    return Key(
+        ns=NS_COHORT,
+        name="search",
+        params={"query": query, "limit": limit},
+        v=v,
+    )
+
+
+def cohort_overview(cohort_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohort overview query."""
+    return Key(
+        ns=NS_COHORT,
+        name="overview",
+        params={"cohort_id": cohort_id},
+        v=v,
+    )
+
+
+def cohort_pass_matrix(cohort_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for cohort pass matrix query."""
+    return Key(
+        ns=NS_COHORT,
+        name="pass_matrix",
+        params={"cohort_id": cohort_id},
+        v=v,
+    )
+
+
+def _serialize_cohort_filters(filters: Any) -> dict[str, Any]:
+    """Serialize cohort filters to stable dict."""
+    if hasattr(filters, "model_dump"):
+        return filters.model_dump()  # type: ignore
+    elif hasattr(filters, "dict"):
+        return filters.dict()  # type: ignore
+    elif isinstance(filters, dict):
+        return filters  # type: ignore
+    else:
+        return {"raw": str(filters)}
+
+
+# ============================================================================
+# DEPARTMENT KEY FACTORIES
+# ============================================================================
+
+
+def department_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for departments list query."""
+    return Key(
+        ns=NS_DEPARTMENT,
+        name="list",
+        params={"filters": _serialize_filters(filters)},
+        v=v
+    )
+
+
+def department_by_id(department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for department detail query."""
+    return Key(
+        ns=NS_DEPARTMENT,
+        name="by_id",
+        params={"department_id": department_id},
+        v=v
+    )
+
+
+def department_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for department creation defaults query."""
+    return Key(
+        ns=NS_DEPARTMENT,
+        name="default",
+        params={"profile_id": profile_id},
+        v=v
+    )
+
+
+# ============================================================================
+# DOCUMENT KEY FACTORIES
+# ============================================================================
+
+
+def document_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for documents list query."""
+    return Key(
+        ns=NS_DOCUMENT,
+        name="list",
+        params={"filters": _serialize_document_filters(filters)},
+        v=v
+    )
+
+
+def document_by_id(document_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for document detail by ID."""
+    return Key(
+        ns=NS_DOCUMENT,
+        name="by_id",
+        params={"document_id": document_id},
+        v=v
+    )
+
+
+def document_bulk_detail(document_ids: list[str], profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for bulk document detail."""
+    return Key(
+        ns=NS_DOCUMENT,
+        name="bulk_detail",
+        params={"document_ids": sorted(document_ids), "profile_id": profile_id},
+        v=v
+    )
+
+
+def document_file_info(document_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for document file metadata."""
+    return Key(
+        ns=NS_DOCUMENT,
+        name="file_info",
+        params={"document_id": document_id},
+        v=v
+    )
+
+
+def document_csv_file(token: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for CSV file metadata."""
+    return Key(
+        ns=NS_DOCUMENT,
+        name="csv_file",
+        params={"token": token},
+        v=v
+    )
+
+
+def _serialize_document_filters(filters: Any) -> dict[str, Any]:
+    """Serialize document filters to stable dict format."""
+    if hasattr(filters, "model_dump"):
+        return filters.model_dump()  # type: ignore
+    elif hasattr(filters, "dict"):
+        return filters.dict()  # type: ignore
+    elif isinstance(filters, dict):
+        return filters  # type: ignore
+    else:
+        return {"raw": str(filters)}
+
+
+# ============================================================================
+# AGENT KEY FACTORIES
+# ============================================================================
+
+
+def agent_list(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for agents list query."""
+    return Key(ns=NS_AGENT, name="list", params={"profile_id": profile_id}, v=v)
+
+
+def agent_by_id(agent_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for agent detail query."""
+    return Key(ns=NS_AGENT, name="by_id", params={"agent_id": agent_id}, v=v)
+
+
+def agent_classification_context(document_ids: list[str], department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for classification agent run context."""
+    doc_ids_str = ",".join(sorted(str(d) for d in document_ids))
+    return Key(ns=NS_AGENT, name="classification_context", 
+               params={"document_ids": doc_ids_str, "department_id": department_id}, v=v)
+
+
+def agent_scenario_context(department_id: str, persona_id: str | None, 
+                          document_ids: list[str] | None, parameter_item_ids: list[str] | None,
+                          *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenario agent run context."""
+    params = {"department_id": department_id}
+    if persona_id:
+        params["persona_id"] = persona_id
+    if document_ids:
+        params["document_ids"] = ",".join(sorted(str(d) for d in document_ids))
+    if parameter_item_ids:
+        params["parameter_item_ids"] = ",".join(sorted(str(p) for p in parameter_item_ids))
+    return Key(ns=NS_AGENT, name="scenario_context", params=params, v=v)
+
+
+def agent_simulation_context(chat_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation agent run context."""
+    return Key(ns=NS_AGENT, name="simulation_context", params={"chat_id": chat_id}, v=v)
+
+
+def agent_grading_context(simulation_chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for grading agent run context."""
+    return Key(ns=NS_AGENT, name="grading_context",
+               params={"simulation_chat_id": simulation_chat_id, "department_id": department_id}, v=v)
+
+
+def agent_simulation_messages(simulation_chat_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation messages query."""
+    return Key(ns=NS_AGENT, name="simulation_messages", params={"simulation_chat_id": simulation_chat_id}, v=v)
+
+
+def agent_hint_context(message_id: str, chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for hint agent run context."""
+    return Key(ns=NS_AGENT, name="hint_context",
+               params={"message_id": message_id, "chat_id": chat_id, "department_id": department_id}, v=v)
+
+
+def agent_guardrail_context(chat_id: str, department_id: str, guardrail_type: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for guardrail agent run context."""
+    return Key(ns=NS_AGENT, name="guardrail_context",
+               params={"chat_id": chat_id, "department_id": department_id, "guardrail_type": guardrail_type}, v=v)
+
+
+def agent_title_context(chat_id: str, department_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for title agent run context."""
+    return Key(ns=NS_AGENT, name="title_context",
+               params={"chat_id": chat_id, "department_id": department_id}, v=v)
+
+
+# ============================================================================
 # TAG HELPERS
 # ============================================================================
 
@@ -474,4 +784,64 @@ def tag_simulation_all() -> str:
 def tag_simulation_by_id(simulation_id: str) -> str:
     """Fine tag to invalidate specific simulation caches."""
     return f"{NS_SIMULATION}:{simulation_id}"
+
+
+def tag_cohort_all() -> str:
+    """Coarse tag to invalidate all cohort caches."""
+    return f"{NS_COHORT}:*"
+
+
+def tag_cohort_by_id(cohort_id: str) -> str:
+    """Fine tag to invalidate specific cohort caches."""
+    return f"{NS_COHORT}:{cohort_id}"
+
+
+def tag_department_all() -> str:
+    """Coarse tag to invalidate all department caches."""
+    return f"{NS_DEPARTMENT}:*"
+
+
+def tag_department_by_id(department_id: str) -> str:
+    """Fine tag to invalidate specific department caches."""
+    return f"{NS_DEPARTMENT}:{department_id}"
+
+
+def tag_document_all() -> str:
+    """Coarse tag to invalidate all document caches."""
+    return f"{NS_DOCUMENT}:*"
+
+
+def tag_document_by_id(document_id: str) -> str:
+    """Fine tag to invalidate specific document caches."""
+    return f"{NS_DOCUMENT}:{document_id}"
+
+
+def tag_agent_all() -> str:
+    """Coarse tag to invalidate all agent caches."""
+    return f"{NS_AGENT}:*"
+
+
+def tag_agent_by_id(agent_id: str) -> str:
+    """Fine tag to invalidate specific agent caches."""
+    return f"{NS_AGENT}:{agent_id}"
+
+
+def tag_assistant_all() -> str:
+    """Coarse tag to invalidate all assistant caches."""
+    return f"{NS_ASSISTANT}:*"
+
+
+def tag_assistant_by_chat_id(chat_id: str) -> str:
+    """Fine tag to invalidate specific assistant chat caches."""
+    return f"{NS_ASSISTANT}:{chat_id}"
+
+
+def tag_model_run_all() -> str:
+    """Coarse tag to invalidate all model run caches."""
+    return f"{NS_MODEL_RUN}:*"
+
+
+def tag_model_run_by_id(model_run_id: str) -> str:
+    """Fine tag to invalidate specific model run caches."""
+    return f"{NS_MODEL_RUN}:{model_run_id}"
 
