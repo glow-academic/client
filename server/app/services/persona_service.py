@@ -72,7 +72,7 @@ class PersonaService:
             if row['model_id'] and row['model_name']:
                 model_mapping[str(row['model_id'])] = ModelMappingItem(
                     name=row['model_name'],
-                    description=getattr(row, 'model_description', '') or ''
+                    description=row['model_description'] or ''
                 )
 
         # Get scenario mapping with enhanced data

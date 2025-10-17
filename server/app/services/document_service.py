@@ -68,16 +68,16 @@ class DocumentService:
         scenario_mapping = {}
 
         for row in result:
-            scenario_ids = [str(sid) for sid in (row.scenario_ids or [])]
-            parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
-            extension = row.extension or ""
+            scenario_ids = [str(sid) for sid in (row['scenario_ids'] or [])]
+            parameter_item_ids = [str(pid) for pid in (row['parameter_item_ids'] or [])]
+            extension = row['extension'] or ""
 
             documents.append(
                 DocumentItem(
                     document_id=str(row['document_id']),
                     name=row['name'],
                     type=row['type'],
-                    updatedAt=row.updated_at.isoformat() if row.updated_at else "",
+                    updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
                     extension=extension,
                     scenario_ids=scenario_ids,
                     can_edit=row['can_edit'],

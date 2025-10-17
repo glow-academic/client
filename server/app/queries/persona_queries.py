@@ -46,7 +46,20 @@ class PersonaQueries:
             SELECT role FROM profiles WHERE id = $2
         )
         SELECT 
-            pd.*,
+            pd.persona_id,
+            pd.persona_name,
+            pd.description,
+            pd.color,
+            pd.icon,
+            pd.model_id,
+            pd.reasoning,
+            pd.temperature,
+            pd.active,
+            pd.default_persona,
+            pd.scenario_ids,
+            pd.num_scenarios,
+            pd.model_name,
+            pd.model_description,
             CASE 
                 WHEN up.role = 'superadmin' THEN true
                 WHEN pd.default_persona = true THEN false

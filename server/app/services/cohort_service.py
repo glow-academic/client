@@ -138,7 +138,7 @@ class CohortService:
         # Get simulation IDs for this cohort
         query, params = self.queries.get_cohort_simulations(request.cohortId)
         simulation_result = await self.conn.fetch(query, *params)
-        simulation_ids = [str(row.simulation_id) for row in simulation_result]
+        simulation_ids = [str(row['simulation_id']) for row in simulation_result]
 
         # Get user's accessible department IDs
         query, params = self.queries.get_valid_departments_for_profile(

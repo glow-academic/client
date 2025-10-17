@@ -49,10 +49,10 @@ class ScenarioService:
         scenario_result = await self.conn.fetch(query, *params)
 
         # Collect all IDs we need to fetch
-        all_persona_ids = list(set([str(row.persona_id) for row in scenario_result if row.persona_id]))
+        all_persona_ids = list(set([str(row['persona_id']) for row in scenario_result if row['persona_id']]))
         all_parameter_item_ids = list(set([
             str(pid) for row in scenario_result 
-            for pid in (row.parameter_item_ids or [])
+            for pid in (row['parameter_item_ids'] or [])
         ]))
 
         # Get document IDs for each scenario
@@ -80,15 +80,15 @@ class ScenarioService:
                 persona_mapping[str(row['id'])] = PersonaMappingItem(
                     name=row['name'],
                     description=row['description'] or '',
-                    color=row.color,
-                    icon=row.icon
+                    color=row['color'],
+                    icon=row['icon']
                 )
 
         # Fetch document mapping
         document_mapping = {}
         if all_document_ids:
             doc_mapping_result = await self.conn.fetch("""
-                SELECT id, name, COALESCE(type, '') as description
+                SELECT id, name, type::text as description
                 FROM documents
                 WHERE id = ANY($1::uuid[])
             """, all_document_ids)
@@ -107,21 +107,21 @@ class ScenarioService:
                 parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
                     name=row['name'],
                     description=row['description'] or '',
-                    parameter_id=str(row.parameter_id),
-                    parameter_name=row.parameter_name
+                    parameter_id=str(row['parameter_id']),
+                    parameter_name=row['parameter_name']
                 )
 
         # Build the final mapping
         enhanced_mapping = {}
         for row in scenario_result:
             scenario_id = str(row['scenario_id'])
-            parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
+            parameter_item_ids = [str(pid) for pid in (row['parameter_item_ids'] or [])]
             document_ids = scenario_document_map.get(scenario_id, [])
 
             # Filter mappings to only include relevant items for this scenario
             scenario_persona_mapping = {}
-            if row.persona_id:
-                persona_id_str = str(row.persona_id)
+            if row['persona_id']:
+                persona_id_str = str(row['persona_id'])
                 if persona_id_str in persona_mapping:
                     scenario_persona_mapping[persona_id_str] = persona_mapping[persona_id_str]
 
@@ -136,7 +136,7 @@ class ScenarioService:
             enhanced_mapping[scenario_id] = ScenarioMappingItem(
                 name=row['name'],
                 description=row['description'],
-                persona_id=str(row.persona_id) if row.persona_id else None,
+                persona_id=str(row['persona_id']) if row['persona_id'] else None,
                 persona_mapping=scenario_persona_mapping,
                 document_mapping=scenario_document_mapping,
                 parameter_item_mapping=scenario_parameter_item_mapping,
@@ -165,25 +165,25 @@ class ScenarioService:
         persona_mapping = {}
 
         for row in result:
-            objective_ids = row.objective_ids or []
-            parameter_item_ids = [str(pid) for pid in (row.parameter_item_ids or [])]
-            simulation_ids = [str(sid) for sid in (row.simulation_ids or [])]
-            cohort_ids = [str(cid) for cid in (row.cohort_ids or [])]
+            objective_ids = row['objective_ids'] or []
+            parameter_item_ids = [str(pid) for pid in (row['parameter_item_ids'] or [])]
+            simulation_ids = [str(sid) for sid in (row['simulation_ids'] or [])]
+            cohort_ids = [str(cid) for cid in (row['cohort_ids'] or [])]
 
             scenarios.append(
                 ScenarioItem(
                     scenario_id=str(row['scenario_id']),
-                    title=row.title,
-                    problem_statement=row.problem_statement,
+                    title=row['title'],
+                    problem_statement=row['problem_statement'],
                     active=row['active'],
                     default_scenario=row['default_scenario'],
-                    generated=row.generated,
-                    parent_scenario_id=row.parent_scenario_id,
+                    generated=row['generated'],
+                    parent_scenario_id=row['parent_scenario_id'],
                     objective_ids=objective_ids,
-                    persona_id=str(row.persona_id) if row.persona_id else None,
+                    persona_id=str(row['persona_id']) if row['persona_id'] else None,
                     parameter_item_ids=parameter_item_ids,
                     simulation_ids=simulation_ids,
-                    num_simulations=row.num_simulations,
+                    num_simulations=row['num_simulations'],
                     can_edit=row['can_edit'],
                     can_delete=row['can_delete'],
                     can_duplicate=row['can_duplicate'],
@@ -209,9 +209,9 @@ class ScenarioService:
                 obj_result = await self.conn.fetch(query, *params)
 
                 for row in obj_result:
-                    objective_mapping[row.objective_id] = ObjectiveMappingItem(
-                        name=row.objective,
-                        description=row.objective
+                    objective_mapping[row['objective_id']] = ObjectiveMappingItem(
+                        name=row['objective'],
+                        description=row['objective']
                     )
 
         # Get parameter_item names for mapping
@@ -227,8 +227,8 @@ class ScenarioService:
                 parameter_item_mapping[str(row['id'])] = ParameterItemMappingItem(
                     name=row['name'],
                     description=row['description'] or '',
-                    parameter_id=str(row.parameter_id),
-                    parameter_name=row.parameter_name
+                    parameter_id=str(row['parameter_id']),
+                    parameter_name=row['parameter_name']
                 )
 
         # Get cohort names for mapping
@@ -255,8 +255,8 @@ class ScenarioService:
                 persona_mapping[str(row['id'])] = PersonaMappingItem(
                     name=row['name'],
                     description=row['description'],
-                    color=row.color,
-                    icon=row.icon
+                    color=row['color'],
+                    icon=row['icon']
                 )
 
         return ScenariosListResponse(
@@ -403,7 +403,7 @@ class ScenarioService:
 
         # Get valid documents
         doc_results = await self.conn.fetch("""
-            SELECT id, name, COALESCE(type, '') as description FROM documents 
+            SELECT id, name, type::text as description FROM documents 
             WHERE department_id = ANY($1::uuid[]) AND active = true
             ORDER BY name
         """, dept_ids)
@@ -601,7 +601,7 @@ class ScenarioService:
 
         # Get valid documents
         doc_results = await self.conn.fetch("""
-            SELECT id, name, COALESCE(type, '') as description 
+            SELECT id, name, type::text as description 
             FROM documents 
             WHERE department_id = ANY($1::uuid[]) AND active = true
             ORDER BY name

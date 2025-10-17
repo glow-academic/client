@@ -142,7 +142,7 @@ class SimulationService:
         # Get scenario IDs with positions from junction table
         query, params = self.queries.get_simulation_scenarios(request.simulationId)
         scenario_result = await self.conn.fetch(query, *params)
-        scenario_ids = [str(row.scenario_id) for row in scenario_result]
+        scenario_ids = [str(row['scenario_id']) for row in scenario_result]
 
         # Get full scenario data with positions
         scenarios_list: List[ScenarioInSimulation] = []
