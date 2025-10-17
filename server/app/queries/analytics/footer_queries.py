@@ -168,7 +168,7 @@ class FooterQueries:
                     scenario_id,
                     scenario_title,
                     AVG(grade_percent)::float AS avg_score,
-                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= pass_percent) / NULLIF(COUNT(*), 0))::float AS success_rate,
+                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / NULLIF(COUNT(*), 0))::float AS success_rate,
                     COUNT(*)::int AS total_attempts,
                     COUNT(*) FILTER (WHERE completed)::int AS completed_attempts
                 FROM filt

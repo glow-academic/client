@@ -152,7 +152,7 @@ class HeaderQueries:
                     attempt_created_at,
                     simulation_id,
                     profile_id,
-                    grade_percent >= pass_percent AS passed
+                    grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0)) AS passed
                 FROM filt
                 ORDER BY simulation_id, profile_id, attempt_created_at
             ),
@@ -342,13 +342,13 @@ class HeaderQueries:
             WITH filt AS (
                 SELECT * FROM analytics a
                 WHERE {where_clause}
-                  AND chat_time_taken_seconds > 0
+                  AND time_taken_seconds > 0
                   AND grade_percent IS NOT NULL
             ),
             with_eff AS (
                 SELECT
                     *,
-                    (grade_percent / NULLIF(chat_time_taken_seconds / 60.0, 0))::float AS efficiency
+                    (grade_percent / NULLIF(time_taken_seconds / 60.0, 0))::float AS efficiency
                 FROM filt
             ),
             by_day AS (
@@ -490,7 +490,7 @@ class HeaderQueries:
     ) -> Tuple[str, List[Any]]:
         """Build time spent query (in minutes)."""
         return self.builder.build_metric_query(
-            metric_expression="(chat_time_taken_seconds / 60.0)",
+            metric_expression="(time_taken_seconds / 60.0)",
             aggregate_func="AVG",
             method="avg",
             start_date=start_date,

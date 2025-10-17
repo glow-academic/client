@@ -59,10 +59,10 @@ class PrimaryQueries:
             pass_rate AS (
                 SELECT
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= pass_percent) / NULLIF(COUNT(*), 0))::float AS value
+                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0))) / NULLIF(COUNT(*), 0))::float AS value
                 FROM (
                     SELECT DISTINCT ON (simulation_id, profile_id)
-                        attempt_created_at, grade_percent, pass_percent
+                        attempt_created_at, grade_percent, rubric_pass_points, rubric_points
                     FROM filt
                     ORDER BY simulation_id, profile_id, attempt_created_at
                 ) first_attempts

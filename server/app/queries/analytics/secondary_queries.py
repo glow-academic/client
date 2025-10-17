@@ -43,8 +43,8 @@ class SecondaryQueries:
                     attempt_id,
                     attempt_created_at,
                     grade_percent,
-                    pass_percent,
-                    chat_time_taken_seconds / 60.0 AS minutes,
+                    (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0)) AS pass_percent,
+                    time_taken_seconds / 60.0 AS minutes,
                     ROW_NUMBER() OVER (PARTITION BY simulation_id, profile_id ORDER BY attempt_created_at) AS attempt_no
                 FROM filt
                 WHERE grade_percent IS NOT NULL
@@ -123,8 +123,9 @@ class SecondaryQueries:
             ),
             cohort_data AS (
                 SELECT
-                    UNNEST(cohort_ids) AS cohort_id
-                FROM filt
+                    c_id AS cohort_id
+                FROM filt f,
+                LATERAL unnest(f.cohort_ids) AS c_id
             ),
             cohort_names AS (
                 SELECT DISTINCT
@@ -140,19 +141,20 @@ class SecondaryQueries:
                     COUNT(DISTINCT f.profile_id)::int AS total_students,
                     COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
                     AVG(f.grade_percent)::float AS avg_score,
-                    (100.0 * COUNT(*) FILTER (WHERE f.grade_percent >= f.pass_percent) / NULLIF(COUNT(*), 0))::float AS pass_rate
+                    (100.0 * COUNT(*) FILTER (WHERE f.grade_percent >= (f.rubric_pass_points * 100.0 / NULLIF(f.rubric_points, 0))) / NULLIF(COUNT(*), 0))::float AS pass_rate
                 FROM cohort_names cn
                 LEFT JOIN filt f ON cn.cohort_id = ANY(f.cohort_ids)
                 GROUP BY cn.cohort_id, cn.cohort_name
             ),
             daily_data AS (
                 SELECT
-                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    AVG(grade_percent)::float AS avg_score,
-                    UNNEST(cohort_ids)::text AS cohort_id
-                FROM filt
-                WHERE grade_percent IS NOT NULL
-                GROUP BY date, cohort_id
+                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
+                    AVG(f.grade_percent)::float AS avg_score,
+                    c_id::text AS cohort_id
+                FROM filt f,
+                LATERAL unnest(f.cohort_ids) AS c_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY date, c_id
             )
             SELECT json_build_object(
                 'cohortData', COALESCE((SELECT json_agg(json_build_object(

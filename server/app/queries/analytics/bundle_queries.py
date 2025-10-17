@@ -47,7 +47,7 @@ class BundleQueries:
                     MAX(f.grade_percent) AS highest_score,
                     COUNT(*)::int AS total_attempts,
                     AVG(f.num_messages_total) AS avg_messages,
-                    AVG(f.chat_time_taken_seconds / 60.0) AS avg_time_minutes
+                    AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
                 FROM filt f
                 JOIN profiles p ON f.profile_id = p.id
                 WHERE f.grade_percent IS NOT NULL
@@ -187,7 +187,7 @@ class BundleQueries:
                     COUNT(*)::int AS total_attempts,
                     MAX(grade_percent) AS highest_score,
                     AVG(num_messages_total) AS avg_messages,
-                    AVG(chat_time_taken_seconds / 60.0) AS avg_time
+                    AVG(time_taken_seconds / 60.0) AS avg_time
                 FROM filt
                 WHERE grade_percent IS NOT NULL
                 GROUP BY profile_id, profile_first_name, profile_last_name
