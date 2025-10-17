@@ -1,32 +1,16 @@
-# server.py — Clean MCP server wrapper that imports all individual tools
-# Import analytics tools
+# server.py — Clean MCP server with inlined tool logic
 from typing import Any, Dict, List
 
 from app.db import get_pool
-from app.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
-from app.mcp.tools.analytics.persona_response_times import \
-    persona_response_times
-from app.mcp.tools.analytics.simulation_attempts import simulation_attempts
-from app.mcp.tools.analytics.student_sim_report import student_sim_report
-# Import log tools
-from app.mcp.tools.log.assistant_usage import assistant_usage
-from app.mcp.tools.log.export_csv import export_csv
-from app.mcp.tools.log.recent_app_logs import recent_app_logs
-from app.mcp.tools.lookup.cohort_overview import cohort_overview
-# Import lookup tools
-from app.mcp.tools.lookup.persona_overview import persona_overview
-from app.mcp.tools.lookup.profile_overview import profile_overview
-from app.mcp.tools.lookup.scenario_overview import scenario_overview
-from app.mcp.tools.lookup.simulation_overview import simulation_overview
-# Import schema tools
-from app.mcp.tools.schema.list_schema import list_schema
-from app.mcp.tools.schema.query_data import query_data
-# Import search tools
-from app.mcp.tools.search.find_cohorts import find_cohorts
-from app.mcp.tools.search.find_personas import find_personas
-from app.mcp.tools.search.find_profiles import find_profiles
-from app.mcp.tools.search.find_scenarios import find_scenarios
-from app.mcp.tools.search.find_simulations import find_simulations
+from app.services.assistant_service import AssistantService
+from app.services.cohort_service import CohortService
+from app.services.export_service import ExportService
+from app.services.log_service import LogService
+from app.services.persona_service import PersonaService
+from app.services.profile_service import ProfileService
+from app.services.scenario_service import ScenarioService
+from app.services.schema_service import SchemaService
+from app.services.simulation_service import SimulationService
 from mcp.server.fastmcp import FastMCP
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -53,7 +37,8 @@ async def _list_schema() -> str:
         return "Error: Database pool not initialized"
     
     async with pool.acquire() as conn:
-        return await list_schema(conn)
+        service = SchemaService(conn)
+        return await service.list_schema_columns()
 
 
 @server.tool()
@@ -86,7 +71,24 @@ async def _query_data(sql: str) -> str:
         return "Error: Database pool not initialized"
     
     async with pool.acquire() as conn:
-        return await query_data(conn, sql)
+        lowered = sql.lstrip().lower()
+        if not lowered.startswith(("select", "explain")):
+            return "Error: only read-only queries are allowed."
+
+        try:
+            # Fetch up to 200 rows
+            rows = await conn.fetch(sql)
+            limited_rows = rows[:200]
+            
+            # If there are rows, join them. Otherwise, return the "0 rows" message.
+            if limited_rows:
+                return "\n".join(str(dict(r)) for r in limited_rows)
+            else:
+                return "(0 rows)"
+        except Exception as e:
+            # Return a concise version of the error to the model.
+            # The full error is still logged for developers.
+            return f"Error: {e}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -119,7 +121,8 @@ async def _profile_overview(profile_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await profile_overview(conn, profile_id)
+        service = ProfileService(conn)
+        return await service.get_profile_overview(profile_id)
 
 
 @server.tool()
@@ -146,7 +149,8 @@ async def _cohort_overview(cohort_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await cohort_overview(conn, cohort_id)
+        service = CohortService(conn)
+        return await service.get_cohort_overview(cohort_id)
 
 
 @server.tool()
@@ -173,7 +177,8 @@ async def _simulation_overview(sim_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await simulation_overview(conn, sim_id)
+        service = SimulationService(conn)
+        return await service.get_simulation_overview(sim_id)
 
 
 @server.tool()
@@ -200,7 +205,8 @@ async def _scenario_overview(scenario_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await scenario_overview(conn, scenario_id)
+        service = ScenarioService(conn)
+        return await service.get_scenario_overview(scenario_id)
 
 
 @server.tool()
@@ -227,7 +233,8 @@ async def _persona_overview(persona_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await persona_overview(conn, persona_id)
+        service = PersonaService(conn)
+        return await service.get_persona_overview(persona_id)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -271,7 +278,11 @@ async def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await find_profiles(conn, query, limit)
+        try:
+            service = ProfileService(conn)
+            return await service.search_profiles(query, limit)
+        except Exception as e:
+            return [{"error": f"Search error: {str(e)}"}]
 
 
 @server.tool()
@@ -309,7 +320,11 @@ async def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await find_simulations(conn, query, limit)
+        try:
+            service = SimulationService(conn)
+            return await service.search_simulations(query, limit)
+        except Exception as e:
+            return [{"error": f"Search error: {str(e)}"}]
 
 
 @server.tool()
@@ -338,7 +353,11 @@ async def _find_personas(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await find_personas(conn, query, limit)
+        try:
+            service = PersonaService(conn)
+            return await service.search_personas(query, limit)
+        except Exception as e:
+            return [{"error": f"Search error: {str(e)}"}]
 
 
 @server.tool()
@@ -376,7 +395,11 @@ async def _find_cohorts(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await find_cohorts(conn, query, limit)
+        try:
+            service = CohortService(conn)
+            return await service.search_cohorts(query, limit)
+        except Exception as e:
+            return [{"error": f"Search error: {str(e)}"}]
 
 
 @server.tool()
@@ -414,7 +437,11 @@ async def _find_scenarios(query: str, limit: int = 10) -> List[Dict[str, Any]]:
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await find_scenarios(conn, query, limit)
+        try:
+            service = ScenarioService(conn)
+            return await service.search_scenarios(query, limit)
+        except Exception as e:
+            return [{"error": f"Search error: {str(e)}"}]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -446,7 +473,8 @@ async def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, An
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await student_sim_report(conn, profile_id, recent)
+        service = ProfileService(conn)
+        return await service.get_student_simulation_report(profile_id, recent)
 
 
 @server.tool()
@@ -472,7 +500,8 @@ async def _cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await cohort_pass_matrix(conn, cohort_id)
+        service = CohortService(conn)
+        return await service.get_cohort_pass_matrix(cohort_id)
 
 
 @server.tool()
@@ -499,7 +528,8 @@ async def _simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, 
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await simulation_attempts(conn, sim_id, limit)
+        service = SimulationService(conn)
+        return await service.get_simulation_attempts(sim_id, limit)
 
 
 @server.tool()
@@ -526,7 +556,8 @@ async def _persona_response_times(persona_id: str, window_days: int = 30) -> Dic
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await persona_response_times(conn, persona_id, window_days)
+        service = PersonaService(conn)
+        return await service.get_persona_response_times(persona_id, window_days)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -559,7 +590,11 @@ async def _recent_app_logs(level: str = "error", limit: int = 100) -> List[Dict[
         return [{"error": "Database pool not initialized"}]
     
     async with pool.acquire() as conn:
-        return await recent_app_logs(conn, level, limit)
+        try:
+            service = LogService(conn)
+            return await service.get_recent_logs(level, limit)
+        except Exception as e:
+            return [{"error": f"Database error: {str(e)}"}]
 
 
 @server.tool()
@@ -586,7 +621,8 @@ async def _export_csv(sql: str) -> str:
         return "Error: Database pool not initialized"
     
     async with pool.acquire() as conn:
-        return await export_csv(conn, sql)
+        service = ExportService(conn)
+        return await service.export_to_csv(sql, max_rows=1000)
 
 
 @server.tool()
@@ -613,7 +649,11 @@ async def _assistant_usage(days: int = 7) -> Dict[str, Any]:
         return {"error": "Database pool not initialized"}
     
     async with pool.acquire() as conn:
-        return await assistant_usage(conn, days)
+        try:
+            service = AssistantService(conn)
+            return await service.get_usage_stats(days)
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
