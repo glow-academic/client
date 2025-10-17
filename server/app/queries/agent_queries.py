@@ -319,6 +319,70 @@ class AgentQueries:
         """
         return query, []
 
+    def get_guardrail_run_context(
+        self, chat_id: str, department_id: str, guardrail_type: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run guardrail agent with optimized JOIN.
+        
+        Fetches agent (via department_agents), model, provider, chat, attempt,
+        and active profile in a single query to minimize database round trips.
+
+        Args:
+            chat_id: Chat UUID as string
+            department_id: Department UUID as string
+            guardrail_type: Either "input" or "output" for role filtering
+
+        Returns:
+            Tuple of (query, params)
+        """
+        # Role will be 'input_guardrail' or 'output_guardrail'
+        query = """
+        SELECT 
+            -- Agent data (via department_agents junction)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Chat data
+            sc.id::text as chat_id,
+            sc.title as chat_title,
+            sc.trace_id as trace_id,
+            
+            -- Attempt data
+            sa.id::text as attempt_id,
+            sa.simulation_id::text as simulation_id,
+            
+            -- Profile data (via attempt_profiles junction)
+            ap.profile_id::text as profile_id
+        
+        FROM simulation_chats sc
+        INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        INNER JOIN department_agents da ON da.department_id = $2 
+            AND da.role = $3 || '_guardrail'
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
+        WHERE sc.id = $1
+        """
+        
+        params: list[Any] = [chat_id, department_id, guardrail_type]
+        return query, params
+
     def get_title_run_context(
         self, chat_id: str, department_id: str
     ) -> tuple[str, list[Any]]:

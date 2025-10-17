@@ -340,6 +340,73 @@ class AgentService:
         count = int(result.split()[-1]) if result else 0
         return count
 
+    async def get_guardrail_run_context(
+        self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run guardrail agent with optimized query.
+        
+        Reduces multiple database queries to 1 JOIN query.
+        
+        Args:
+            chat_id: UUID of the simulation chat
+            department_id: UUID of the department
+            guardrail_type: Either "input" or "output" for role filtering
+        
+        Returns:
+            Dict with agent, model, provider, chat, attempt, and profile data
+        
+        Raises:
+            ValueError: If guardrail agent not configured or chat not found
+        """
+        if guardrail_type not in ("input", "output"):
+            raise ValueError(
+                f"Invalid guardrail_type: {guardrail_type}. Must be 'input' or 'output'"
+            )
+        
+        chat_id_str = str(chat_id)
+        department_id_str = str(department_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_guardrail_run_context(
+            chat_id_str, department_id_str, guardrail_type
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"No {guardrail_type} guardrail agent configured for department "
+                f"{department_id} or chat {chat_id} not found"
+            )
+        
+        return {
+            # Agent data
+            'agent_id': context_row['agent_id'],
+            'agent_name': context_row['agent_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Chat data
+            'chat_id': context_row['chat_id'],
+            'chat_title': context_row['chat_title'],
+            'trace_id': context_row['trace_id'],
+            # Attempt data
+            'attempt_id': context_row['attempt_id'],
+            'simulation_id': context_row['simulation_id'],
+            # Profile data
+            'profile_id': context_row['profile_id'],
+        }
+
+
     async def get_title_run_context(
         self, chat_id: uuid.UUID, department_id: uuid.UUID
     ) -> Dict[str, Any]:
