@@ -749,3 +749,77 @@ class ScenarioQueries:
         """
         return (query, [scenario_id])
 
+    def get_valid_parameter_items_for_parameters(
+        self, parameter_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get valid parameter items for given parameters."""
+        query = """
+        SELECT 
+            pi.parameter_id,
+            pi.id as parameter_item_id
+        FROM parameter_items pi
+        WHERE pi.parameter_id = ANY($1::uuid[]) AND pi.active = true
+        """
+        return (query, [parameter_ids])
+
+    def get_departments_for_profile(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get departments for a profile."""
+        query = """
+        SELECT DISTINCT d.id
+        FROM departments d
+        JOIN profile_departments pd ON pd.department_id = d.id
+        WHERE pd.profile_id = $1 AND d.active = true
+        """
+        return (query, [profile_id])
+
+    def get_valid_personas_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get valid personas for departments."""
+        query = """
+        SELECT id, name, COALESCE(description, '') as description, color, icon 
+        FROM personas 
+        WHERE department_id = ANY($1::uuid[]) AND active = true
+        ORDER BY name
+        """
+        return (query, [department_ids])
+
+    def get_valid_documents_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get valid documents for departments."""
+        query = """
+        SELECT id, name, type::text as description 
+        FROM documents 
+        WHERE department_id = ANY($1::uuid[]) AND active = true
+        ORDER BY name
+        """
+        return (query, [department_ids])
+
+    def get_simulations_by_ids(
+        self, simulation_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get simulations by IDs."""
+        query = """
+        SELECT id, title, COALESCE(description, '') as description 
+        FROM simulations 
+        WHERE id = ANY($1::uuid[])
+        """
+        return (query, [simulation_ids])
+
+    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get profile role."""
+        query = "SELECT role FROM profiles WHERE id = $1"
+        return (query, [profile_id])
+
+    def get_departments_by_ids(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get departments by IDs."""
+        query = """
+        SELECT id, title, COALESCE(description, '') as description 
+        FROM departments 
+        WHERE id = ANY($1::uuid[])
+        """
+        return (query, [department_ids])
+

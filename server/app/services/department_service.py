@@ -148,10 +148,8 @@ class DepartmentService:
             DepartmentDetailResponse with defaults
         """
         # Get user role for permissions
-        profile_row = await self.conn.fetchrow(
-            "SELECT role FROM profiles WHERE id = $1",
-            profile_id
-        )
+        query, params = self.queries.get_profile_role(profile_id)
+        profile_row = await self.conn.fetchrow(query, *params)
 
         if not profile_row:
             raise ValueError(f"Profile {profile_id} not found")

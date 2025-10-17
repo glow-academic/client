@@ -367,3 +367,13 @@ class DepartmentQueries:
         """
 
         return query, [department_id]
+
+    def get_profile_role(self, profile_id: str) -> tuple[str, List[Any]]:
+        """
+        Get profile role.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = "SELECT role FROM profiles WHERE id = $1"
+        return query, [profile_id]

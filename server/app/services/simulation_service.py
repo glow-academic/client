@@ -116,10 +116,8 @@ class SimulationService:
             raise ValueError(f"Simulation not found: {request.simulationId}")
 
         # Get user profile for permission checks
-        profile_row = await self.conn.fetchrow(
-            "SELECT role FROM profiles WHERE id = $1",
-            request.profileId
-        )
+        query, params = self.queries.get_profile_role(request.profileId)
+        profile_row = await self.conn.fetchrow(query, *params)
         user_role = profile_row['role'] if profile_row else 'trainee'
 
         # Check if simulation is in use (linked to cohorts)

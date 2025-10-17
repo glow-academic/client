@@ -1,31 +1,47 @@
-"""Log query builders with dynamic SQL."""
+"""Log queries - SQL query builders."""
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 
 class LogQueries:
     """Query builders for log operations."""
 
-    def get_logs_list(self) -> tuple[str, List[Any]]:
+    def insert_log(self) -> Tuple[str, List[Any]]:
+        """Build query to insert a log entry."""
+        query = """
+        INSERT INTO app_logs (
+            event,
+            level,
+            message,
+            correlation_id,
+            actor,
+            subject,
+            metrics,
+            context,
+            error,
+            created_at
+        )
+        VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10
+        )
+        RETURNING id
         """
-        Get logs list with actor name resolution and all JSONB fields.
+        return (query, [])  # Will be filled at execution time
 
-        Joins:
-        - app_logs
-        - profiles (for actor name resolution)
-
-        Actor name resolution priority:
-        1. actor.profileName if present
-        2. profiles.first_name + last_name if actor.profileId matches
-        3. actor.userId if present
-        4. null
-
-        Returns:
-            Tuple of (query, params)
-        """
+    def get_logs_list(self) -> Tuple[str, List[Any]]:
+        """Build query to get logs list with actor information."""
         query = """
         SELECT 
-            al.id as log_id,
+            al.id::text as log_id,
             al.event,
             al.level,
             al.message,
@@ -36,47 +52,30 @@ class LogQueries:
             al.context,
             al.error,
             al.created_at,
-            CASE
-                WHEN al.actor->>'profileName' IS NOT NULL THEN al.actor->>'profileName'
-                WHEN al.actor->>'profileId' IS NOT NULL AND p.first_name IS NOT NULL 
-                    THEN p.first_name || ' ' || p.last_name
-                WHEN al.actor->>'userId' IS NOT NULL THEN al.actor->>'userId'
-                ELSE NULL
-            END as actor_name
+            COALESCE(
+                p.first_name || ' ' || p.last_name,
+                (al.actor->>'profileId')::text,
+                'System'
+            ) as actor_name
         FROM app_logs al
-        LEFT JOIN profiles p ON (al.actor->>'profileId')::uuid = p.id
+        LEFT JOIN profiles p ON p.id::text = (al.actor->>'profileId')::text
         ORDER BY al.created_at DESC
+        LIMIT 1000
         """
+        return (query, [])
 
-        params: List[Any] = []
-
-        return query, params
-
-    def get_recent_logs(self, level: str, limit: int) -> tuple[str, List[Any]]:
+    def get_recent_logs(self, level: str, limit: int) -> Tuple[str, List[Any]]:
+        """Build query to get recent logs filtered by level."""
+        query = """
+        SELECT 
+            id,
+            level,
+            message,
+            context,
+            created_at
+        FROM app_logs
+        WHERE ($1 = 'all' OR level = $1)
+        ORDER BY created_at DESC
+        LIMIT $2
         """
-        Get recent app logs filtered by level.
-
-        Args:
-            level: Log level filter (or "all" for no filtering)
-            limit: Maximum number of logs to return
-
-        Returns:
-            Tuple of (query, params)
-        """
-        if level.lower() == "all":
-            query = """
-                SELECT id, level, message, context, created_at
-                FROM app_logs
-                ORDER BY created_at DESC
-                LIMIT $1
-            """
-            return query, [limit]
-        else:
-            query = """
-                SELECT id, level, message, context, created_at
-                FROM app_logs
-                WHERE LOWER(level) LIKE LOWER($1)
-                ORDER BY created_at DESC
-                LIMIT $2
-            """
-            return query, [f"%{level.lower()}%", limit]
+        return (query, [level, limit])

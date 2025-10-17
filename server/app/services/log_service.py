@@ -116,14 +116,7 @@ class LogService:
         error_json = ensure_json(request.error)
 
         # Insert log entry
-        insert_query = """
-            INSERT INTO app_logs (
-                event, level, message, correlation_id, actor, subject, metrics, context, error, created_at
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-            )
-            RETURNING id
-        """
+        insert_query, _ = self.queries.insert_log()
 
         result = await self.conn.fetchrow(
             insert_query,

@@ -628,6 +628,11 @@ class SimulationQueries:
         """
         return (query, [limit])
 
+    def get_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get profile role."""
+        query = "SELECT role FROM profiles WHERE id = $1"
+        return (query, [profile_id])
+
     def get_simulation_overview_complete(self, sim_id: Any) -> Tuple[str, List[Any]]:
         """Build optimized query to get simulation overview with all related data in ONE query.
         

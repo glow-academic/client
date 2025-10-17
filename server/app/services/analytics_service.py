@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
 from app.db import transaction
+from app.queries.analytics.base import AnalyticsQueryBuilder
 from app.queries.analytics.bundle_queries import BundleQueries
 from app.queries.analytics.footer_queries import FooterQueries
 from app.queries.analytics.header_queries import HeaderQueries
@@ -50,6 +51,7 @@ class AnalyticsService:
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
         self.conn = conn
+        self.query_builder = AnalyticsQueryBuilder()
         self.header_queries = HeaderQueries()
         self.primary_queries = PrimaryQueries()
         self.secondary_queries = SecondaryQueries()
@@ -375,10 +377,8 @@ class AnalyticsService:
         effective_profile_id = None
         if filters.profileId:
             # Fetch profile role to determine if we should use profileId
-            role_row = await self.conn.fetchrow(
-                "SELECT role FROM profiles WHERE id = $1",
-                filters.profileId
-            )
+            query, params = self.query_builder.get_profile_role(filters.profileId)
+            role_row = await self.conn.fetchrow(query, *params)
             if role_row:
                 role = role_row['role']
                 # Only use profileId for non-admin roles (ta, guest, etc.)

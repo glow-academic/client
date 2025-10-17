@@ -242,11 +242,9 @@ class StaffService:
 
         async with transaction(self.conn):
             # Insert profile
+            query, _ = self.queries.create_profile()
             await self.conn.execute(
-                """INSERT INTO profiles (
-                    id, first_name, last_name, alias, role, active, 
-                    default_profile, viewed_intro, viewed_chat, req_per_day
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                query,
                 profile_id,
                 request.firstName,
                 request.lastName,
@@ -261,10 +259,9 @@ class StaffService:
 
             # If department_id is provided, insert profile_departments relationship
             if request.department_id:
+                dept_query, _ = self.queries.insert_profile_department()
                 await self.conn.execute(
-                    """INSERT INTO profile_departments (profile_id, department_id)
-                       VALUES ($1, $2)
-                       ON CONFLICT (profile_id, department_id) DO NOTHING""",
+                    dept_query,
                     profile_id,
                     request.department_id,
                 )

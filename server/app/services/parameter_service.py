@@ -2,7 +2,7 @@
 
 from typing import Dict, List
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.db import transaction
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
@@ -159,11 +159,9 @@ class ParameterService:
 
         async with transaction(self.conn):
             # Create parameter
+            query, _ = self.queries.create_parameter()
             parameter_result = await self.conn.fetchrow(
-                """INSERT INTO parameters (
-                    name, description, numerical, active, default_parameter, department_id
-                ) VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING id""",
+                query,
                 request.name,
                 request.description,
                 request.numerical,
@@ -178,11 +176,10 @@ class ParameterService:
             parameter_id = str(parameter_result['id'])
 
             # Create parameter items
+            item_query, _ = self.queries.create_parameter_item()
             for item in request.parameter_items:
                 await self.conn.execute(
-                    """INSERT INTO parameter_items (
-                        parameter_id, name, description, value, default_item
-                    ) VALUES ($1, $2, $3, $4, $5)""",
+                    item_query,
                     parameter_id,
                     item.name,
                     item.description,
@@ -210,16 +207,9 @@ class ParameterService:
 
         async with transaction(self.conn):
             # Update parameter
+            update_query, _ = self.queries.update_parameter()
             await self.conn.execute(
-                """UPDATE parameters SET
-                    name = $2,
-                    description = $3,
-                    numerical = $4,
-                    active = $5,
-                    default_parameter = $6,
-                    department_id = $7,
-                    updated_at = NOW()
-                WHERE id = $1""",
+                update_query,
                 request.parameterId,
                 request.name,
                 request.description,
@@ -234,11 +224,10 @@ class ParameterService:
             await self.conn.execute(query, *params)
 
             # Recreate parameter items
+            item_query, _ = self.queries.create_parameter_item()
             for item in request.parameter_items:
                 await self.conn.execute(
-                    """INSERT INTO parameter_items (
-                        parameter_id, name, description, value, default_item
-                    ) VALUES ($1, $2, $3, $4, $5)""",
+                    item_query,
                     request.parameterId,
                     item.name,
                     item.description,
@@ -266,11 +255,9 @@ class ParameterService:
 
         async with transaction(self.conn):
             # Create duplicate parameter
+            dup_query, _ = self.queries.insert_duplicate_parameter()
             new_parameter = await self.conn.fetchrow(
-                """INSERT INTO parameters (
-                    name, description, numerical, active, default_parameter, department_id
-                ) VALUES ($1 || ' Copy', $2, $3, false, false, $4)
-                RETURNING id""",
+                dup_query,
                 parameter['name'],
                 parameter['description'],
                 parameter['numerical'],
@@ -287,11 +274,10 @@ class ParameterService:
             items = await self.conn.fetch(query, *params)
 
             # Duplicate items
+            item_query, _ = self.queries.create_parameter_item()
             for item in items:
                 await self.conn.execute(
-                    """INSERT INTO parameter_items (
-                        parameter_id, name, description, value, default_item
-                    ) VALUES ($1, $2, $3, $4, $5)""",
+                    item_query,
                     new_parameter_id,
                     item['name'],
                     item['description'],
@@ -350,11 +336,9 @@ class ParameterService:
             raise ValueError(f"Parameter not found: {request.parameterId}")
 
         # Create parameter item
+        query, _ = self.queries.create_parameter_item()
         result = await self.conn.fetchrow(
-            """INSERT INTO parameter_items (
-                parameter_id, name, description, value, default_item
-            ) VALUES ($1, $2, $3, $4, $5)
-            RETURNING id""",
+            query,
             request.parameterId,
             request.name,
             request.description,
