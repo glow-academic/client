@@ -1,15 +1,12 @@
 # app/utils/csv.py
 import csv
 import io
-import uuid
-from typing import Any, Dict
-
-import asyncpg  # type: ignore
+from typing import Any, Dict, List
 
 
-async def process_csv_file(file_path: str, conn: asyncpg.Connection) -> Dict[str, Any]:
+def parse_csv_file(file_path: str) -> Dict[str, Any]:
     """
-    Process a CSV file containing user data and insert users into the database.
+    Parse a CSV file containing user data and return structured data.
 
     Expected CSV format:
     name,username
@@ -18,14 +15,16 @@ async def process_csv_file(file_path: str, conn: asyncpg.Connection) -> Dict[str
 
     Args:
         file_path: Path to the CSV file
-        conn: Database connection
 
     Returns:
-        Dictionary with processing results
+        Dictionary with parsing results:
+        - success: bool - whether parsing was successful
+        - users: List[Dict] - list of parsed user dictionaries
+        - errors: List[str] - list of validation errors
+        - error: str (optional) - error message if parsing failed
     """
     try:
-        users_created = []
-        users_skipped = []
+        users = []
         errors = []
 
         with open(file_path, "r", encoding="utf-8") as file:
@@ -47,66 +46,38 @@ async def process_csv_file(file_path: str, conn: asyncpg.Connection) -> Dict[str
                 return {
                     "success": False,
                     "error": f"Missing required headers: {', '.join(missing_headers)}",
-                    "users_created": 0,
-                    "users_skipped": 0,
+                    "users": [],
+                    "errors": [],
                 }
 
-            # Start a transaction
-            async with conn.transaction():
-                # Process each row
-                for row_num, row in enumerate(
-                    csv_reader, start=2
-                ):  # Start at 2 because row 1 is headers
-                    try:
-                        # Extract and validate data
-                        name = row.get("name", "").strip()
-                        username = row.get("username", "").strip()
+            # Process each row
+            for row_num, row in enumerate(
+                csv_reader, start=2
+            ):  # Start at 2 because row 1 is headers
+                # Extract and validate data
+                name = row.get("name", "").strip()
+                username = row.get("username", "").strip()
 
-                        if not name or not username:
-                            errors.append(
-                                f"Row {row_num}: Missing required fields (name, username)"
-                            )
-                            continue
+                if not name or not username:
+                    errors.append(
+                        f"Row {row_num}: Missing required fields (name, username)"
+                    )
+                    continue
 
-                        # Check if user already exists
-                        existing_user = await conn.fetchrow(
-                            "SELECT id FROM profiles WHERE alias = $1",
-                            username
-                        )
-                        if existing_user:
-                            users_skipped.append(
-                                {"username": username, "reason": "User already exists"}
-                            )
-                            continue
-
-                        # Create new user
-                        user_id = uuid.uuid4()
-                        await conn.execute("""
-                            INSERT INTO profiles (id, first_name, alias, role, viewed_intro)
-                            VALUES ($1, $2, $3, $4, $5)
-                        """, user_id, name, username, "ta", False)
-
-                        users_created.append({"name": name, "username": username})
-
-                    except Exception as e:
-                        errors.append(f"Row {row_num}: {str(e)}")
-                        continue
+                users.append({"name": name, "username": username, "row_num": row_num})
 
             return {
                 "success": True,
-                "users_created": len(users_created),
-                "users_skipped": len(users_skipped),
+                "users": users,
                 "errors": errors,
-                "created_users": users_created,
-                "skipped_users": users_skipped,
             }
 
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to process CSV file: {str(e)}",
-            "users_created": 0,
-            "users_skipped": 0,
+            "error": f"Failed to parse CSV file: {str(e)}",
+            "users": [],
+            "errors": [],
         }
 
 

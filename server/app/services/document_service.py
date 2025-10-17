@@ -651,20 +651,36 @@ class DocumentService:
 
             # Handle CSV uploads
             if request.csv:
-                from app.utils.csv import process_csv_file
+                from app.services.profile_service import ProfileService
 
-                # Note: process_csv_file needs to be updated to use asyncpg
-                # For now, return error for CSV uploads
+                # Process CSV file to create profiles
+                profile_service = ProfileService(self.conn)
+                result = await profile_service.create_profiles_from_csv(file_path)
+
                 # Clean up upload directory
                 try:
                     shutil.rmtree(upload_dir)
                 except Exception as e:
                     logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
+                if not result["success"]:
+                    return FinalizeUploadResponse(
+                        success=False,
+                        message=result.get("error", "Failed to process CSV file"),
+                        status="error",
+                    )
+
+                # Build success message
+                message_parts = [f"Created {result['users_created']} users"]
+                if result["users_skipped"] > 0:
+                    message_parts.append(f"skipped {result['users_skipped']} existing users")
+                if result["errors"]:
+                    message_parts.append(f"{len(result['errors'])} errors encountered")
+
                 return FinalizeUploadResponse(
-                    success=False,
-                    message="CSV processing not yet migrated to asyncpg",
-                    status="error",
+                    success=True,
+                    message=", ".join(message_parts),
+                    status="complete",
                 )
 
             # Handle ZIP file uploads

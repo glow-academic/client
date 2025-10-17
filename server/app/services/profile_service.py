@@ -1,6 +1,7 @@
 """Profile service layer - business logic for profile and emulation operations."""
 
 import re
+import uuid
 from typing import Any, Dict, List, Optional, Tuple, cast
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  SimulationContextItem, SimulationsData,
                                  UserProfileItem)
 from app.services.permissions_service import PermissionsService
+from app.utils.csv import parse_csv_file
 
 
 class ProfileService:
@@ -415,6 +417,89 @@ class ProfileService:
         result = await self.conn.fetchrow(query, *params)
 
         return self._row_to_user_profile_item(result)
+
+    async def create_profiles_from_csv(self, file_path: str) -> Dict[str, Any]:
+        """
+        Process CSV file and create profiles in database.
+
+        Args:
+            file_path: Path to the CSV file
+
+        Returns:
+            Dictionary with processing results:
+            - success: bool - whether processing was successful
+            - users_created: int - number of users created
+            - users_skipped: int - number of users skipped
+            - errors: List[str] - list of errors encountered
+            - created_users: List[Dict] - list of created user details
+            - skipped_users: List[Dict] - list of skipped user details
+        """
+        # Step 1: Parse the CSV file
+        parse_result = parse_csv_file(file_path)
+
+        if not parse_result["success"]:
+            return {
+                "success": False,
+                "error": parse_result.get("error", "Failed to parse CSV file"),
+                "users_created": 0,
+                "users_skipped": 0,
+                "errors": parse_result.get("errors", []),
+            }
+
+        users_data = parse_result["users"]
+        errors = parse_result["errors"].copy()
+        users_created = []
+        users_skipped = []
+
+        # Step 2: Process each user within a transaction
+        try:
+            async with self.conn.transaction():
+                for user in users_data:
+                    try:
+                        name = user["name"]
+                        username = user["username"]
+                        row_num = user["row_num"]
+
+                        # Check if user already exists
+                        check_query, check_params = self.queries.check_profile_exists_by_alias(username)
+                        existing_user = await self.conn.fetchrow(check_query, *check_params)
+
+                        if existing_user:
+                            users_skipped.append(
+                                {"username": username, "reason": "User already exists"}
+                            )
+                            continue
+
+                        # Create new user with 'ta' role
+                        user_id = str(uuid.uuid4())
+                        insert_query, insert_params = self.queries.insert_profile(
+                            user_id, name, username, "ta", False
+                        )
+                        await self.conn.execute(insert_query, *insert_params)
+
+                        users_created.append({"name": name, "username": username})
+
+                    except Exception as e:
+                        errors.append(f"Row {row_num}: {str(e)}")
+                        continue
+
+            return {
+                "success": True,
+                "users_created": len(users_created),
+                "users_skipped": len(users_skipped),
+                "errors": errors,
+                "created_users": users_created,
+                "skipped_users": users_skipped,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Database error: {str(e)}",
+                "users_created": 0,
+                "users_skipped": 0,
+                "errors": errors,
+            }
 
     # Helper methods
     def _row_to_profile_item(self, row: asyncpg.Record) -> ProfileItem:

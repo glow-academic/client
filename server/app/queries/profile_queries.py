@@ -245,3 +245,23 @@ class ProfileQueries:
         LIMIT 1
         """
         return (query, [])
+
+    def check_profile_exists_by_alias(self, alias: str) -> Tuple[str, List[Any]]:
+        """Build query to check if profile with alias exists."""
+        query = """
+        SELECT id
+        FROM profiles
+        WHERE alias = $1
+        """
+        return (query, [alias])
+
+    def insert_profile(
+        self, profile_id: str, first_name: str, alias: str, role: str, viewed_intro: bool
+    ) -> Tuple[str, List[Any]]:
+        """Build query to insert a new profile."""
+        query = """
+        INSERT INTO profiles (id, first_name, alias, role, viewed_intro)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, first_name, alias, role
+        """
+        return (query, [profile_id, first_name, alias, role, viewed_intro])
