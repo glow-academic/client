@@ -31,7 +31,7 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
-  const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveProfile, activeProfile, cohortIds } = useProfile();
   const { effectiveDepartmentIds } = useDepartments();
   const { info, error } = useLogger();
   const {
@@ -42,23 +42,24 @@ export default function Home() {
     simulationFilters,
   } = useAnalytics();
 
+  // Use all user's cohorts if none specifically selected (same pattern as departments)
+  const effectiveCohortIds =
+    selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds;
+
   // Single optimized bundle call with items, history, and mappings
   const { data: bundle, isLoading: isHomeOverviewLoading } =
     useAnalyticsHomeOverview({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      cohortIds: selectedCohortIds,
+      cohortIds: effectiveCohortIds,
       roles: selectedRoles,
       simulationFilters: simulationFilters?.map((f) => f.toLowerCase()) as (
         | "general"
         | "practice"
         | "archived"
       )[],
-      // Pass profileId for TA view, omit for instructor/admin view
-      ...(effectiveProfile?.role !== "admin" &&
-        effectiveProfile?.role !== "superadmin" &&
-        effectiveProfile?.role !== "instructional" &&
-        effectiveProfile?.id && { profileId: effectiveProfile.id }),
+      // Always send profileId - server will decide whether to use it based on role
+      profileId: effectiveProfile?.id || undefined,
       departmentIds: effectiveDepartmentIds,
     });
 

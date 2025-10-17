@@ -43,6 +43,10 @@ from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class AnalyticsService:
     """Service layer for analytics operations."""
@@ -370,6 +374,22 @@ class AnalyticsService:
     # Page-specific Analytics
     async def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
         """Get home overview data with history and simulation mapping."""
+        logger.info(f"Getting home overview for filters: {filters}")
+        # Determine effective profile ID based on role
+        # Admins, superadmins, and instructional staff see all data (no profile filter)
+        effective_profile_id = None
+        if filters.profileId:
+            # Fetch profile role to determine if we should use profileId
+            role_row = await self.conn.fetchrow(
+                "SELECT role FROM profiles WHERE id = $1",
+                filters.profileId
+            )
+            if role_row:
+                role = role_row['role']
+                # Only use profileId for non-admin roles (ta, guest, etc.)
+                if role not in ('admin', 'superadmin', 'instructional'):
+                    effective_profile_id = filters.profileId
+        
         # Get overview items
         query, params = self.page_queries.home_overview(
             start_date=filters.startDate,
@@ -377,7 +397,7 @@ class AnalyticsService:
             cohort_ids=filters.cohortIds,
             roles=filters.roles,
             sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
+            profile_id=effective_profile_id,
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
@@ -386,11 +406,20 @@ class AnalyticsService:
             result = json.loads(result)
         overview_data = result or {}
         
-        # Fetch history data
-        history = await self.get_attempt_history(filters)
+        # Fetch history data (use effective_profile_id)
+        history_filters = AnalyticsFilters(
+            startDate=filters.startDate,
+            endDate=filters.endDate,
+            cohortIds=filters.cohortIds,
+            roles=filters.roles,
+            simulationFilters=filters.simulationFilters,
+            profileId=effective_profile_id,
+            departmentIds=filters.departmentIds,
+        )
+        history = await self.get_attempt_history(history_filters)
         
-        # Build simulation mapping
-        simulation_mapping = await self._build_simulation_mapping(filters)
+        # Build simulation mapping (use effective_profile_id)
+        simulation_mapping = await self._build_simulation_mapping(history_filters)
         
         return HomeOverviewResponse(
             mode=overview_data.get("mode", "empty"),

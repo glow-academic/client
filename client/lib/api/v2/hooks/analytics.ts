@@ -589,11 +589,23 @@ export function useAnalyticsHomeOverview(
     queryKey: analyticsHomeOverviewKeys.list(filters),
     ...queryOptions,
     queryFn: async () => {
-      const res = await api<unknown>("/api/v2/analytics/home", {
-        method: "POST",
-        body: JSON.stringify(filters),
-      });
-      return HomeOverviewResponseSchema.parse(res);
+      console.log(
+        "[useAnalyticsHomeOverview] Calling API with filters:",
+        filters
+      );
+      try {
+        const res = await api<unknown>("/api/v2/analytics/home", {
+          method: "POST",
+          body: JSON.stringify(filters),
+        });
+        console.log("[useAnalyticsHomeOverview] Raw API response:", res);
+        const parsed = HomeOverviewResponseSchema.parse(res);
+        console.log("[useAnalyticsHomeOverview] Parsed response:", parsed);
+        return parsed;
+      } catch (error) {
+        console.error("[useAnalyticsHomeOverview] Error:", error);
+        throw error;
+      }
     },
   });
 }
