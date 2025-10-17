@@ -557,6 +557,145 @@ class SimulationQueries:
         """
         return (query, [chat_ids])
 
+    # ===== Analytics Queries for MCP Tools =====
+
+    def get_simulation_attempts_list(
+        self, simulation_id: str, limit: int
+    ) -> Tuple[str, List[Any]]:
+        """Build query to list all attempts for a simulation with grades."""
+        query = """
+        WITH attempt_data AS (
+            SELECT 
+                sa.id,
+                sa.created_at,
+                ap.profile_id,
+                p.first_name,
+                p.last_name,
+                p.alias
+            FROM simulation_attempts sa
+            LEFT JOIN attempt_profiles ap ON sa.id = ap.attempt_id AND ap.active = true
+            LEFT JOIN profiles p ON p.id = ap.profile_id
+            WHERE sa.simulation_id = $1
+            ORDER BY sa.created_at DESC
+            LIMIT $2
+        ),
+        latest_grades AS (
+            SELECT DISTINCT ON (sc.attempt_id)
+                sc.attempt_id,
+                scg.score,
+                scg.passed,
+                scg.time_taken
+            FROM simulation_chats sc
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE sc.attempt_id IN (SELECT id FROM attempt_data)
+            ORDER BY sc.attempt_id, sc.created_at DESC
+        )
+        SELECT 
+            ad.id,
+            ad.created_at,
+            ad.profile_id,
+            ad.first_name,
+            ad.last_name,
+            ad.alias,
+            lg.score,
+            lg.passed,
+            lg.time_taken
+        FROM attempt_data ad
+        LEFT JOIN latest_grades lg ON lg.attempt_id = ad.id
+        ORDER BY ad.created_at DESC
+        """
+        return (query, [simulation_id, limit])
+
+    def search_simulations_fuzzy(
+        self, where_clause: str, limit: int
+    ) -> Tuple[str, List[Any]]:
+        """
+        Build fuzzy search query for simulations by title.
+        Uses dynamic WHERE clause built by search utilities.
+        
+        Params: Built dynamically by search utilities, plus limit at end
+        """
+        query = f"""
+            SELECT 
+                s.id,
+                s.title,
+                s.active,
+                s.time_limit,
+                s.created_at
+            FROM simulations s
+            WHERE {where_clause}
+            LIMIT ${{param_count}}
+        """
+        return (query, [limit])
+
+    def get_simulation_overview_complete(self, sim_id: Any) -> Tuple[str, List[Any]]:
+        """Build optimized query to get simulation overview with all related data in ONE query.
+        
+        Fetches simulation + rubric + cohorts + scenarios + pass stats using LEFT JOINs 
+        and JSON aggregation to avoid N+1 queries.
+        
+        Args:
+            sim_id: UUID of the simulation
+            
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH stats AS (
+            SELECT 
+                COUNT(DISTINCT sa.id) as total_attempts,
+                COUNT(DISTINCT scg.id) as total_graded,
+                SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END) as total_passed
+            FROM simulation_attempts sa
+            LEFT JOIN simulation_chats sc ON sc.attempt_id = sa.id
+            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE sa.simulation_id = $1
+        )
+        SELECT 
+            s.id, s.title, s.active, s.time_limit, s.created_at,
+            -- Rubric data (LEFT JOIN, single row)
+            jsonb_build_object(
+                'id', r.id, 
+                'name', r.name, 
+                'description', r.description,
+                'points', r.points,
+                'pass_points', r.pass_points
+            ) as rubric,
+            -- Cohorts array (json_agg with filtering)
+            COALESCE(
+                jsonb_agg(DISTINCT jsonb_build_object(
+                    'id', c.id,
+                    'title', c.title,
+                    'active', c.active
+                )) FILTER (WHERE c.id IS NOT NULL),
+                '[]'::jsonb
+            ) as cohorts,
+            -- Scenarios array (json_agg with ordering)
+            COALESCE(
+                jsonb_agg(jsonb_build_object(
+                    'id', sc.id,
+                    'name', sc.name,
+                    'problem_statement', sc.problem_statement,
+                    'position', ss.position
+                ) ORDER BY ss.position) FILTER (WHERE sc.id IS NOT NULL),
+                '[]'::jsonb
+            ) as scenarios,
+            -- Stats from CTE
+            st.total_attempts, st.total_graded, st.total_passed
+        FROM simulations s
+        LEFT JOIN rubrics r ON r.id = s.rubric_id
+        LEFT JOIN cohort_simulations cs ON cs.simulation_id = s.id AND cs.active = true
+        LEFT JOIN cohorts c ON c.id = cs.cohort_id
+        LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+        LEFT JOIN scenarios sc ON sc.id = ss.scenario_id
+        CROSS JOIN stats st
+        WHERE s.id = $1
+        GROUP BY s.id, s.title, s.active, s.time_limit, s.created_at, r.id, r.name, 
+                 r.description, r.points, r.pass_points, st.total_attempts, 
+                 st.total_graded, st.total_passed
+        """
+        return (query, [sim_id])
+
 
 async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""

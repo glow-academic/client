@@ -288,3 +288,152 @@ class AssistantService:
         )
         await self.conn.execute(query, *params)
 
+    async def get_usage_stats(self, days: int = 7) -> Dict[str, Any]:
+        """
+        Get assistant usage statistics over a time period.
+
+        Args:
+            days: Number of days to analyze (default 7)
+
+        Returns:
+            Dict containing summary, daily_stats, top_users, and tool_usage
+        """
+        from datetime import datetime, timedelta
+
+        cutoff_date = datetime.now() - timedelta(days=days)
+
+        # Fetch data in parallel
+        chats_query, chats_params = self.queries.get_chats_in_timeframe(cutoff_date)
+        messages_query, messages_params = self.queries.get_messages_in_timeframe(cutoff_date)
+        tool_calls_query, tool_calls_params = self.queries.get_tool_calls_in_timeframe(cutoff_date)
+
+        chats_rows, messages_rows, tool_calls_rows = await asyncio.gather(
+            self.conn.fetch(chats_query, *chats_params),
+            self.conn.fetch(messages_query, *messages_params),
+            self.conn.fetch(tool_calls_query, *tool_calls_params),
+        )
+
+        # Convert to lists of dicts for easier processing
+        chats = [dict(row) for row in chats_rows]
+        messages = [dict(row) for row in messages_rows]
+        tool_calls = [dict(row) for row in tool_calls_rows]
+
+        # Overall summary
+        total_chats = len(chats)
+        total_messages = len(messages)
+        total_tool_calls = len(tool_calls)
+
+        # Count unique users
+        unique_users = len(set(chat["profile_id"] for chat in chats if chat["profile_id"]))
+
+        # Count completed vs incomplete
+        completed_chats = len(
+            [
+                chat
+                for chat in chats
+                if any(msg["completed"] for msg in messages if msg["chat_id"] == chat["id"])
+            ]
+        )
+
+        completed_tool_calls = len([tc for tc in tool_calls if tc["completed"]])
+
+        # Daily breakdown
+        daily_stats = []
+        for i in range(days):
+            day_start = cutoff_date + timedelta(days=i)
+            day_end = day_start + timedelta(days=1)
+
+            day_chats = [c for c in chats if day_start <= c["created_at"] < day_end]
+            day_messages = [m for m in messages if day_start <= m["created_at"] < day_end]
+            day_tool_calls = [tc for tc in tool_calls if day_start <= tc["created_at"] < day_end]
+
+            daily_stats.append(
+                {
+                    "date": day_start.strftime("%Y-%m-%d"),
+                    "chats": len(day_chats),
+                    "messages": len(day_messages),
+                    "tool_calls": len(day_tool_calls),
+                    "unique_users": len(set(c["profile_id"] for c in day_chats if c["profile_id"])),
+                }
+            )
+
+        # Top users by chat count
+        user_chat_counts: Dict[Any, int] = {}
+        for chat in chats:
+            if chat["profile_id"]:
+                user_chat_counts[chat["profile_id"]] = (
+                    user_chat_counts.get(chat["profile_id"], 0) + 1
+                )
+
+        # Get user details for top users
+        top_users = []
+        for profile_id, chat_count in sorted(
+            user_chat_counts.items(), key=lambda x: x[1], reverse=True
+        )[:10]:
+            profile_query, profile_params = self.queries.get_profile_by_id(profile_id)
+            profile_row = await self.conn.fetchrow(profile_query, *profile_params)
+            
+            if profile_row:
+                user_messages = len(
+                    [
+                        m
+                        for m in messages
+                        if m["chat_id"] in [c["id"] for c in chats if c["profile_id"] == profile_id]
+                    ]
+                )
+                user_tool_calls = len(
+                    [
+                        tc
+                        for tc in tool_calls
+                        if tc["chat_id"] in [c["id"] for c in chats if c["profile_id"] == profile_id]
+                    ]
+                )
+
+                name = f"{profile_row['first_name']} {profile_row['last_name']}".strip()
+                if not name:
+                    name = profile_row["alias"]
+
+                top_users.append(
+                    {
+                        "user_id": str(profile_row["id"]),
+                        "name": name,
+                        "alias": profile_row["alias"],
+                        "role": profile_row["role"],
+                        "chat_count": chat_count,
+                        "message_count": user_messages,
+                        "tool_call_count": user_tool_calls,
+                    }
+                )
+
+        # Tool usage breakdown
+        tool_usage: Dict[str, int] = {}
+        for tc in tool_calls:
+            tool_name = tc["tool_name"]
+            tool_usage[tool_name] = tool_usage.get(tool_name, 0) + 1
+
+        tool_usage_list = [
+            {"tool_name": name, "usage_count": count}
+            for name, count in sorted(tool_usage.items(), key=lambda x: x[1], reverse=True)
+        ]
+
+        summary = {
+            "analysis_period": f"{cutoff_date.strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}",
+            "days": days,
+            "total_chats": total_chats,
+            "total_messages": total_messages,
+            "total_tool_calls": total_tool_calls,
+            "unique_users": unique_users,
+            "completed_chats": completed_chats,
+            "completed_tool_calls": completed_tool_calls,
+            "avg_chats_per_day": round(total_chats / days, 1) if days > 0 else 0,
+            "avg_messages_per_chat": round(total_messages / total_chats, 1) if total_chats > 0 else 0,
+            "avg_tool_calls_per_chat": round(total_tool_calls / total_chats, 1) if total_chats > 0 else 0,
+        }
+
+        return {
+            "summary": summary,
+            "daily_stats": daily_stats,
+            "top_users": top_users,
+            "tool_usage": tool_usage_list,
+        }
+

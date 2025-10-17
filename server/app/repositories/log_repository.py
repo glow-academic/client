@@ -1,6 +1,8 @@
 """Log repository - thin wrapper around service."""
 
-import asyncpg # type: ignore
+from typing import Any, Dict, List
+
+import asyncpg  # type: ignore
 from app.schemas.logs import (CreateLogRequest, CreateLogResponse,
                               LogsListRequest, LogsListResponse)
 from app.services.log_service import LogService
@@ -24,6 +26,12 @@ class LogRepository:
     ) -> CreateLogResponse:
         """Create a new log entry."""
         return await self.service.create_log(request)
+
+    async def get_recent_logs(
+        self, level: str = "error", limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Get recent application logs filtered by level."""
+        return await self.service.get_recent_logs(level, limit)
 
 
 def get_log_repository(conn: asyncpg.Connection) -> LogRepository:

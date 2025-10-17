@@ -27,6 +27,7 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  RemoveProfilesFromCohortResponse,
                                  UpdateCohortRequest, UpdateCohortResponse)
 from app.schemas.staff import StaffItem
+from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -611,4 +612,320 @@ class CohortService:
             success=True,
             message=f"Removed {len(request.profileIds)} profile(s) from cohort '{cohort['title']}' successfully",
         )
+
+    async def search_cohorts(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Fuzzy search cohorts by title and description.
+        Returns scored and sorted results with profile counts.
+        
+        Args:
+            query: Search query string
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of cohort dictionaries with scores
+        """
+        q_norm = normalize_text(query)
+        if not q_norm:
+            return []
+
+        toks = tokenize(query)
+
+        # Build fuzzy search conditions
+        where_clause, params, param_idx = build_fuzzy_conditions(
+            ["c.title", "c.description"], query
+        )
+
+        # Build and execute query
+        query_template, _ = self.queries.search_cohorts_fuzzy(where_clause, limit * 5)
+        sql = query_template.replace("{param_count}", str(param_idx))
+        params.append(limit * 5)  # Candidate pool
+
+        cohorts = await self.conn.fetch(sql, *params)
+
+        if not cohorts:
+            return []
+
+        # Get profile counts from junction table
+        cohort_ids = [str(c["id"]) for c in cohorts]
+        count_query, count_params = self.queries.get_cohort_profile_counts(cohort_ids)
+        count_results = await self.conn.fetch(count_query, *count_params)
+        cohort_profile_counts = {
+            str(row["cohort_id"]): row["profile_count"]
+            for row in count_results
+        }
+
+        # Score and build results
+        results = []
+        for c in cohorts:
+            score = self._score_cohort(q_norm, toks, c["title"], c["description"])
+            results.append({
+                "id": str(c["id"]),
+                "title": c["title"],
+                "active": c["active"],
+                "description": c["description"],
+                "profile_count": cohort_profile_counts.get(str(c["id"]), 0),
+                "score": score,
+            })
+
+        results.sort(key=lambda r: (-r["score"], r["title"] or ""))
+        return results[:limit]
+
+    def _score_cohort(
+        self, q_norm: str, toks: List[str], title: str | None, desc: str | None
+    ) -> int:
+        """
+        Rank cohort relevance. Title is much stronger than description.
+        
+        Args:
+            q_norm: Normalized query string
+            toks: Query tokens
+            title: Cohort title
+            desc: Cohort description
+            
+        Returns:
+            Relevance score (higher is better)
+        """
+        t_norm = normalize_text(title or "")
+        d_norm = normalize_text(desc or "")
+
+        score = 0
+
+        # Exact whole-title match
+        if t_norm == q_norm:
+            score += 100
+
+        # Exact description match (rare, low weight)
+        if d_norm and d_norm == q_norm:
+            score += 40
+
+        # Prefix on full query
+        if t_norm.startswith(q_norm):
+            score += 60
+        if d_norm.startswith(q_norm):
+            score += 20
+
+        # Token boosts
+        for tok in toks:
+            if t_norm.startswith(tok):
+                score += 25
+            if tok in t_norm:
+                score += 10
+
+            if d_norm.startswith(tok):
+                score += 8
+            if tok in d_norm:
+                score += 4
+
+        # Whole query appears somewhere
+        if q_norm in t_norm or q_norm in d_norm:
+            score += 5
+
+        # Length proximity bonus (favor tight title matches)
+        gap = abs(len(t_norm) - len(q_norm))
+        score += max(0, 10 - gap)
+
+        return score
+
+    # ===== Overview Methods for MCP Tools =====
+
+    async def get_cohort_overview(self, cohort_id: str) -> Dict[str, Any]:
+        """Get cohort overview with all related data in ONE optimized query.
+        
+        Returns cohort details, roster (profiles), and active simulations.
+        
+        Args:
+            cohort_id: UUID string of the cohort
+            
+        Returns:
+            Dict with cohort overview data or {"error": "..."}
+        """
+        import uuid
+        
+        try:
+            cohort_uuid = uuid.UUID(cohort_id)
+        except ValueError:
+            return {"error": f"Invalid cohort_id format: {cohort_id}"}
+
+        try:
+            query, params = self.queries.get_cohort_overview_complete(cohort_uuid)
+            result = await self.conn.fetchrow(query, *params)
+            
+            if not result:
+                return {"error": f"Cohort not found: {cohort_id}"}
+
+            cohort_data = {
+                "id": str(result["id"]),
+                "title": result["title"],
+                "description": result["description"],
+                "active": result["active"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
+            }
+
+            # Transform roster (jsonb array to list of dicts)
+            roster = []
+            for profile in result["roster"]:
+                roster.append({
+                    "id": str(profile["id"]),
+                    "first_name": profile["first_name"],
+                    "last_name": profile["last_name"],
+                    "alias": profile["alias"],
+                    "role": profile["role"],
+                })
+
+            # Transform simulations (jsonb array to list of dicts)
+            simulations_data = []
+            for sim in result["simulations"]:
+                simulations_data.append({
+                    "id": str(sim["id"]),
+                    "title": sim["title"],
+                    "active": sim["active"],
+                    "time_limit": sim["time_limit"],
+                })
+
+            return {
+                "cohort": cohort_data,
+                "roster": roster,
+                "simulations": simulations_data,
+                "stats": {
+                    "total_students": len(roster),
+                    "active_simulations": len(simulations_data),
+                },
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
+
+    async def get_cohort_pass_matrix(self, cohort_id: str) -> Dict[str, Any]:
+        """Get cohort pass/fail matrix across simulations.
+        
+        Show pass/fail rates for all students in a cohort.
+        
+        Args:
+            cohort_id: UUID string of the cohort
+            
+        Returns:
+            Dict with structure: {"cohort": {...}, "matrix": [...], "summary": {...}, "simulations": [...]}
+            or {"error": "..."}
+        """
+        try:
+            cohort_uuid = uuid.UUID(cohort_id)
+        except ValueError:
+            return {"error": f"Invalid cohort_id format: {cohort_id}"}
+
+        try:
+            # Get cohort with members and simulations
+            query, params = self.queries.get_cohort_with_members(str(cohort_uuid))
+            cohort_data = await self.conn.fetchrow(query, *params)
+            
+            if not cohort_data:
+                return {"error": f"Cohort not found: {cohort_id}"}
+
+            # Parse JSON fields
+            members = cohort_data["members"] if cohort_data["members"] else []
+            simulations = cohort_data["simulations"] if cohort_data["simulations"] else []
+
+            # Build pass/fail matrix
+            matrix = []
+            for student in members:
+                student_name = f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
+                if not student_name:
+                    student_name = student["alias"] or "Unknown"
+
+                student_results: Dict[str, Any] = {
+                    "student_id": str(student["id"]),
+                    "student_name": student_name,
+                    "alias": student["alias"],
+                    "simulations": {},
+                }
+
+                # Get results for each simulation
+                for sim in simulations:
+                    # Get best grade for this student and simulation
+                    query, params = self.queries.get_student_simulation_best_result(
+                        str(student["id"]),
+                        str(sim["id"])
+                    )
+                    best_result_row = await self.conn.fetchrow(query, *params)
+
+                    if best_result_row and best_result_row["best_score"] is not None:
+                        best_result = {
+                            "score": best_result_row["best_score"],
+                            "passed": best_result_row["passed"],
+                            "time_taken": best_result_row["time_taken"],
+                            "attempt_count": best_result_row["attempt_count"],
+                            "last_attempt": best_result_row["last_attempt"].isoformat()
+                            if best_result_row["last_attempt"]
+                            else None,
+                        }
+                    else:
+                        best_result = None
+
+                    student_results["simulations"][str(sim["id"])] = best_result
+
+                matrix.append(student_results)
+
+            # Calculate summary statistics
+            summary: Dict[str, Any] = {
+                "total_students": len(members),
+                "total_simulations": len(simulations),
+                "simulation_stats": {},
+            }
+
+            for sim in simulations:
+                sim_id = str(sim["id"])
+                passed_count = 0
+                attempted_count = 0
+                total_score = 0
+
+                for student_result in matrix:
+                    if (
+                        sim_id in student_result["simulations"]
+                        and student_result["simulations"][sim_id]
+                    ):
+                        attempted_count += 1
+                        result = student_result["simulations"][sim_id]
+                        if result["passed"]:
+                            passed_count += 1
+                        total_score += result["score"]
+
+                summary["simulation_stats"][sim_id] = {
+                    "simulation_title": sim["title"],
+                    "attempted_count": attempted_count,
+                    "passed_count": passed_count,
+                    "pass_rate": round(passed_count / attempted_count * 100, 1)
+                    if attempted_count > 0
+                    else 0,
+                    "average_score": round(total_score / attempted_count, 1)
+                    if attempted_count > 0
+                    else 0,
+                }
+
+            return {
+                "cohort": {
+                    "id": str(cohort_data["id"]),
+                    "title": cohort_data["title"],
+                    "description": cohort_data["description"],
+                    "active": cohort_data["active"],
+                    "created_at": cohort_data["created_at"].isoformat()
+                    if cohort_data["created_at"]
+                    else None,
+                },
+                "matrix": matrix,
+                "summary": summary,
+                "simulations": [
+                    {
+                        "id": str(sim["id"]),
+                        "title": sim["title"],
+                        "active": sim["active"],
+                        "time_limit": sim["time_limit"],
+                    }
+                    for sim in simulations
+                ],
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
 

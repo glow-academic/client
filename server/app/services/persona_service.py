@@ -17,6 +17,7 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonaItem, PersonasFilters,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
+from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 if TYPE_CHECKING:
     from app.services.scenario_service import ScenarioService
@@ -407,4 +408,253 @@ class PersonaService:
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"
         )
+
+    async def search_personas(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Fuzzy search personas by name.
+        Returns scored and sorted results.
+        
+        Args:
+            query: Search query string
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of persona dictionaries with scores
+        """
+        q_norm = normalize_text(query)
+        if not q_norm:
+            return []
+
+        toks = tokenize(query)
+
+        # Build fuzzy search conditions
+        where_clause, params, param_idx = build_fuzzy_conditions(["p.name"], query)
+
+        # Build and execute query
+        query_template, _ = self.queries.search_personas_fuzzy(where_clause, limit * 5)
+        sql = query_template.replace("{param_count}", str(param_idx))
+        params.append(limit * 5)  # Candidate pool
+
+        personas = await self.conn.fetch(sql, *params)
+
+        # Score and build results
+        results = []
+        for persona in personas:
+            score = self._score_persona(q_norm, toks, persona["name"])
+            results.append({
+                "id": str(persona["id"]),
+                "name": persona["name"],
+                "description": persona["description"],
+                "score": score,
+            })
+
+        results.sort(key=lambda r: (-r["score"], r["name"] or ""))
+        return results[:limit]
+
+    def _score_persona(
+        self, q_norm: str, toks: List[str], name: str | None
+    ) -> int:
+        """
+        Score persona relevance based on name matching.
+        
+        Args:
+            q_norm: Normalized query string
+            toks: Query tokens
+            name: Persona name
+            
+        Returns:
+            Relevance score (higher is better)
+        """
+        n_norm = normalize_text(name or "")
+        score = 0
+
+        # Whole-string exact
+        if n_norm == q_norm:
+            score += 100
+
+        # Whole-string prefix
+        if n_norm.startswith(q_norm):
+            score += 60
+
+        # Per-token boosts
+        for tok in toks:
+            if n_norm.startswith(tok):
+                score += 25
+            if tok in n_norm:
+                score += 10
+
+        # Whole query appears anywhere
+        if q_norm in n_norm:
+            score += 5
+
+        # Length proximity bonus (prefer shorter closer names)
+        gap = abs(len(n_norm) - len(q_norm))
+        score += max(0, 10 - gap)
+
+        return score
+
+    # ===== Analytics Methods for MCP Tools =====
+
+    async def get_persona_response_times(
+        self, persona_id: str, window_days: int = 30
+    ) -> Dict[str, Any]:
+        """Get persona response time analysis.
+        
+        Analyze response times for a specific persona across its scenarios.
+        
+        Args:
+            persona_id: UUID string of the persona
+            window_days: Analysis window in days (default: 30)
+            
+        Returns:
+            Dict with structure: {"persona": {...}, "stats": {...}, "recent_responses": [...]}
+            or {"error": "..."}
+        """
+        from datetime import datetime, timedelta
+        
+        try:
+            persona_uuid = __import__('uuid').UUID(persona_id)
+        except ValueError:
+            return {"error": f"Invalid persona_id format: {persona_id}"}
+
+        try:
+            # Get persona details with scenarios
+            query, params = self.queries.get_persona_with_scenarios(str(persona_uuid))
+            persona = await self.conn.fetchrow(query, *params)
+            
+            if not persona:
+                return {"error": f"Persona not found: {persona_id}"}
+
+            # Parse scenarios from JSON
+            scenarios = persona["scenarios"] if persona["scenarios"] else []
+            
+            if not scenarios:
+                return {
+                    "persona": {
+                        "id": str(persona["persona_id"]),
+                        "name": persona["persona_name"],
+                        "description": persona["persona_description"],
+                    },
+                    "stats": {"message": "No scenarios found for this persona"},
+                    "recent_responses": [],
+                }
+
+            # Get recent response times for this persona's scenarios
+            cutoff_date = datetime.now() - timedelta(days=window_days)
+            scenario_ids = [str(s["id"]) for s in scenarios]
+
+            # Get response time data
+            query, params = self.queries.get_persona_response_time_data(
+                scenario_ids, cutoff_date
+            )
+            response_data = await self.conn.fetch(query, *params)
+
+            response_times: List[float] = []
+            recent_responses: List[Dict[str, Any]] = []
+
+            for row in response_data:
+                response_time_seconds = float(row["response_time_seconds"])
+                response_times.append(response_time_seconds)
+                
+                recent_responses.append({
+                    "chat_id": str(row["chat_id"]),
+                    "scenario_name": row["scenario_name"],
+                    "query_time": row["query_time"].isoformat(),
+                    "response_time": row["response_time"].isoformat(),
+                    "response_time_seconds": response_time_seconds,
+                    "query_length": row["query_length"],
+                    "response_length": row["response_length"],
+                })
+
+            # Calculate statistics
+            if response_times:
+                sorted_times = sorted(response_times)
+                stats = {
+                    "total_responses": len(response_times),
+                    "avg_response_time": round(sum(response_times) / len(response_times), 2),
+                    "min_response_time": round(min(response_times), 2),
+                    "max_response_time": round(max(response_times), 2),
+                    "median_response_time": round(sorted_times[len(sorted_times) // 2], 2),
+                    "responses_under_5s": len([t for t in response_times if t < 5]),
+                    "responses_under_10s": len([t for t in response_times if t < 10]),
+                    "responses_over_30s": len([t for t in response_times if t > 30]),
+                    "window_days": window_days,
+                    "analysis_period": f"{cutoff_date.strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}",
+                }
+            else:
+                stats = {
+                    "message": f"No response data found in the last {window_days} days",
+                    "window_days": window_days,
+                    "analysis_period": f"{cutoff_date.strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}",
+                }
+
+            return {
+                "persona": {
+                    "id": str(persona["persona_id"]),
+                    "name": persona["persona_name"],
+                    "description": persona["persona_description"],
+                    "scenario_count": len(scenarios),
+                },
+                "stats": stats,
+                "recent_responses": recent_responses[:20],  # Limit to 20 most recent
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
+
+    # ===== Overview Methods for MCP Tools =====
+
+    async def get_persona_overview(self, persona_id: str) -> Dict[str, Any]:
+        """Get persona overview with all related data in ONE optimized query.
+        
+        Returns persona details and associated scenarios.
+        
+        Args:
+            persona_id: UUID string of the persona
+            
+        Returns:
+            Dict with persona overview data or {"error": "..."}
+        """
+        import uuid
+        
+        try:
+            persona_uuid = uuid.UUID(persona_id)
+        except ValueError:
+            return {"error": f"Invalid persona_id format: {persona_id}"}
+
+        try:
+            query, params = self.queries.get_persona_overview_complete(persona_uuid)
+            result = await self.conn.fetchrow(query, *params)
+            
+            if not result:
+                return {"error": f"Persona not found: {persona_id}"}
+
+            # Transform scenarios (jsonb array to list of dicts)
+            scenario_list = []
+            for scenario in result["scenarios"]:
+                scenario_list.append({
+                    "id": str(scenario["id"]),
+                    "name": scenario["name"],
+                    "problem_statement": scenario["problem_statement"],
+                    "default_scenario": scenario["default_scenario"],
+                    "created_at": scenario["created_at"] if scenario.get("created_at") else None,
+                })
+
+            return {
+                "id": str(result["id"]),
+                "name": result["name"],
+                "description": result["description"],
+                "system_prompt": result["system_prompt"],
+                "temperature": float(result["temperature"]) if result["temperature"] else None,
+                "default_persona": result["default_persona"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
+                "updated_at": result["updated_at"].isoformat() if result["updated_at"] else None,
+                "scenarios": scenario_list,
+                "scenario_count": len(scenario_list),
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
 

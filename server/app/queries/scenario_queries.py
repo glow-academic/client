@@ -532,3 +532,220 @@ class ScenarioQueries:
         """
         return (query, [scenario_ids])
 
+    # Queries for randomly_fill_scenario_attributes
+    def get_scenario_persona_link(self, scenario_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get scenario's active persona link."""
+        query = """
+        SELECT persona_id
+        FROM scenario_personas
+        WHERE scenario_id = $1 AND active = true
+        LIMIT 1
+        """
+        return (query, [scenario_id])
+
+    def get_active_personas(self) -> Tuple[str, List[Any]]:
+        """Build query to get all active personas."""
+        query = "SELECT id FROM personas WHERE active = true"
+        return (query, [])
+
+    def get_scenario_document_links(self, scenario_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get scenario's document links."""
+        query = """
+        SELECT document_id FROM scenario_documents 
+        WHERE scenario_id = $1
+        """
+        return (query, [scenario_id])
+
+    def get_scenario_parameter_links(self, scenario_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get scenario's parameter item links."""
+        query = """
+        SELECT parameter_item_id FROM scenario_parameter_items 
+        WHERE scenario_id = $1
+        """
+        return (query, [scenario_id])
+
+    def get_active_documents(self) -> Tuple[str, List[Any]]:
+        """Build query to get all active documents with details."""
+        query = "SELECT id, name, type, file_path FROM documents WHERE active = true"
+        return (query, [])
+
+    def get_active_parameters(self) -> Tuple[str, List[Any]]:
+        """Build query to get all active parameters."""
+        query = "SELECT id, name FROM parameters WHERE active = true"
+        return (query, [])
+
+    def get_parameter_items_by_parameter(self, parameter_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items for a parameter."""
+        query = "SELECT id, name FROM parameter_items WHERE parameter_id = $1"
+        return (query, [parameter_id])
+
+    def get_parameter_items_batch(self, parameter_item_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items with their parameter_id."""
+        query = """
+        SELECT id, parameter_id FROM parameter_items 
+        WHERE id = ANY($1::uuid[])
+        """
+        return (query, [parameter_item_ids])
+
+    def insert_scenario_variant(self) -> str:
+        """Build query to insert a scenario variant.
+        
+        Params order: name, problem_statement, department_id, generated, active, default_scenario
+        """
+        return """
+        INSERT INTO scenarios (name, problem_statement, department_id, generated, active, default_scenario)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+        """
+
+    def insert_scenario_tree_edge(self) -> str:
+        """Build query to insert scenario tree edge.
+        
+        Params order: parent_scenario_id, child_scenario_id, active
+        """
+        return """
+        INSERT INTO scenario_tree (parent_scenario_id, child_scenario_id, active)
+        VALUES ($1, $2, $3)
+        """
+
+    def insert_scenario_persona_link(self) -> str:
+        """Build query to insert scenario-persona link.
+        
+        Params order: scenario_id, persona_id, active
+        """
+        return """
+        INSERT INTO scenario_personas (scenario_id, persona_id, active)
+        VALUES ($1, $2, $3)
+        """
+
+    def insert_scenario_document_link(self) -> str:
+        """Build query to insert scenario-document link.
+        
+        Params order: scenario_id, document_id, active
+        """
+        return """
+        INSERT INTO scenario_documents (scenario_id, document_id, active)
+        VALUES ($1, $2, $3)
+        """
+
+    def insert_scenario_parameter_link(self) -> str:
+        """Build query to insert scenario-parameter_item link.
+        
+        Params order: scenario_id, parameter_item_id, active
+        """
+        return """
+        INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active)
+        VALUES ($1, $2, $3)
+        """
+
+    # Queries for suggest_randomized_sections
+    def get_persona_by_id(self, persona_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get persona by ID."""
+        query = "SELECT id, name, description FROM personas WHERE id = $1"
+        return (query, [persona_id])
+
+    def get_documents_by_ids(self, document_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build query to get documents by IDs."""
+        query = "SELECT id, name, type, file_path FROM documents WHERE id = ANY($1::uuid[])"
+        return (query, [document_ids])
+
+    def get_parameter_items_with_details(self, parameter_item_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items with full details."""
+        query = """
+        SELECT id, name, description, value, parameter_id 
+        FROM parameter_items 
+        WHERE id = ANY($1::uuid[])
+        """
+        return (query, [parameter_item_ids])
+
+    def get_parameters_with_items(self, parameter_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build query to get parameters with their items."""
+        query = """
+        SELECT 
+            p.id as parameter_id,
+            p.name as parameter_name,
+            p.description as parameter_description,
+            p.default_parameter,
+            pi.id as item_id,
+            pi.name as item_name,
+            pi.description as item_description,
+            pi.value as item_value
+        FROM parameters p
+        LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
+        WHERE p.id = ANY($1::uuid[])
+        ORDER BY p.id, pi.name
+        """
+        return (query, [parameter_ids])
+
+    def search_scenarios_fuzzy(
+        self, where_clause: str, limit: int
+    ) -> Tuple[str, List[Any]]:
+        """
+        Build fuzzy search query for scenarios by name and problem_statement.
+        Uses dynamic WHERE clause built by search utilities.
+        
+        Params: Built dynamically by search utilities, plus limit at end
+        """
+        query = f"""
+            SELECT 
+                s.id,
+                s.name,
+                s.problem_statement,
+                s.default_scenario
+            FROM scenarios s
+            WHERE {where_clause}
+            LIMIT ${{param_count}}
+        """
+        return (query, [limit])
+
+    def get_scenario_personas_batch(
+        self, scenario_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get persona associations for multiple scenarios."""
+        query = """
+            SELECT scenario_id, persona_id
+            FROM scenario_personas
+            WHERE scenario_id = ANY($1::uuid[])
+                AND active = true
+        """
+        return (query, [scenario_ids])
+
+    def get_scenario_overview_complete(self, scenario_id: Any) -> Tuple[str, List[Any]]:
+        """Build optimized query to get scenario overview with all related data in ONE query.
+        
+        Fetches scenario + simulations + persona using LEFT JOINs and JSON aggregation 
+        to avoid N+1 queries.
+        
+        Args:
+            scenario_id: UUID of the scenario
+            
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        SELECT 
+            s.id, s.name, s.problem_statement, s.default_scenario, 
+            s.created_at, s.updated_at,
+            -- Simulations array (json_agg with filtering)
+            COALESCE(
+                jsonb_agg(DISTINCT jsonb_build_object(
+                    'id', sim.id,
+                    'title', sim.title,
+                    'active', sim.active,
+                    'time_limit', sim.time_limit,
+                    'created_at', sim.created_at
+                )) FILTER (WHERE sim.id IS NOT NULL),
+                '[]'::jsonb
+            ) as simulations,
+            -- Persona ID (single value from junction)
+            (SELECT persona_id FROM scenario_personas 
+             WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+        FROM scenarios s
+        LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+        LEFT JOIN simulations sim ON sim.id = ss.simulation_id
+        WHERE s.id = $1
+        GROUP BY s.id, s.name, s.problem_statement, s.default_scenario, 
+                 s.created_at, s.updated_at
+        """
+        return (query, [scenario_id])
+

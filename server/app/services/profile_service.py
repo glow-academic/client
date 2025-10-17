@@ -15,6 +15,7 @@ from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  UserProfileItem)
 from app.services.permissions_service import PermissionsService
 from app.utils.csv import parse_csv_file
+from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 
 class ProfileService:
@@ -575,3 +576,357 @@ class ProfileService:
             re.IGNORECASE
         )
         return bool(uuid_pattern.match(value))
+
+    # ===== Analytics Methods for MCP Tools =====
+
+    async def get_student_simulation_report(
+        self, profile_id: str, recent: int = 50
+    ) -> Dict[str, Any]:
+        """Get comprehensive student simulation report.
+        
+        Deep dive: every attempt, chat, grade, feedback for a student.
+        
+        Args:
+            profile_id: UUID string of the student profile
+            recent: Limit messages per chat (default: 50)
+            
+        Returns:
+            Dict with structure: {"profile": {...}, "attempts": [...]}
+            or {"error": "..."}
+        """
+        try:
+            profile_uuid = uuid.UUID(profile_id)
+        except ValueError:
+            return {"error": f"Invalid profile_id format: {profile_id}"}
+
+        try:
+            # Get profile
+            query, params = self.queries.get_student_simulation_report_profile(
+                str(profile_uuid)
+            )
+            profile = await self.conn.fetchrow(query, *params)
+            
+            if not profile:
+                return {"error": f"Profile not found: {profile_id}"}
+
+            profile_data = {
+                "id": str(profile["id"]),
+                "first_name": profile["first_name"],
+                "last_name": profile["last_name"],
+                "alias": profile["alias"],
+                "role": profile["role"],
+                "created_at": profile["created_at"].isoformat() if profile["created_at"] else None,
+            }
+
+            # Get all attempts with their chats, grades
+            query, params = self.queries.get_student_simulation_report_attempts(
+                str(profile_uuid)
+            )
+            attempts_raw = await self.conn.fetch(query, *params)
+
+            # Group attempts by attempt_id and chat_id
+            attempts_dict: Dict[str, Dict[str, Any]] = {}
+            
+            for row in attempts_raw:
+                attempt_id = str(row["attempt_id"])
+                chat_id = str(row["chat_id"]) if row["chat_id"] else None
+                
+                if attempt_id not in attempts_dict:
+                    attempts_dict[attempt_id] = {
+                        "simulation_id": str(row["simulation_id"]),
+                        "title": row["simulation_title"],
+                        "chats": {}
+                    }
+                
+                if chat_id and chat_id not in attempts_dict[attempt_id]["chats"]:
+                    attempts_dict[attempt_id]["chats"][chat_id] = {
+                        "id": chat_id,
+                        "title": row["chat_title"],
+                        "completed": row["chat_completed"],
+                        "completed_at": row["chat_completed_at"].isoformat() if row["chat_completed_at"] else None,
+                        "scenario": {
+                            "id": str(row["scenario_id"]) if row["scenario_id"] else None,
+                            "name": row["scenario_name"],
+                            "description": row["scenario_description"],
+                        } if row["scenario_id"] else {},
+                        "grade": {
+                            "score": row["score"],
+                            "passed": row["passed"],
+                            "time_taken": row["time_taken"],
+                            "created_at": row["grade_created_at"].isoformat() if row["grade_created_at"] else None,
+                        } if row["grade_id"] else {},
+                        "messages": [],
+                        "feedback": [],
+                        "grade_id": row["grade_id"]
+                    }
+
+            # Get messages for all chats
+            chat_ids = []
+            for attempt in attempts_dict.values():
+                chat_ids.extend(attempt["chats"].keys())
+            
+            if chat_ids:
+                # Convert string UUIDs for query
+                chat_uuids = [str(uuid.UUID(cid)) for cid in chat_ids]
+                query, params = self.queries.get_student_simulation_report_messages(
+                    chat_uuids
+                )
+                messages = await self.conn.fetch(query, *params)
+                
+                # Group messages by chat_id
+                messages_by_chat: Dict[str, List[Dict[str, Any]]] = {}
+                for msg in messages:
+                    chat_id_str = str(msg["chat_id"])
+                    if chat_id_str not in messages_by_chat:
+                        messages_by_chat[chat_id_str] = []
+                    messages_by_chat[chat_id_str].append({
+                        "created_at": msg["created_at"].isoformat() if msg["created_at"] else None,
+                        "type": msg["type"],
+                        "content": msg["content"],
+                        "completed": msg["completed"],
+                    })
+                
+                # Add messages to chats (limit to recent)
+                for attempt in attempts_dict.values():
+                    for chat_id, chat_data in attempt["chats"].items():
+                        if chat_id in messages_by_chat:
+                            all_messages = messages_by_chat[chat_id]
+                            if len(all_messages) > recent:
+                                chat_data["messages"] = all_messages[-recent:]
+                            else:
+                                chat_data["messages"] = all_messages
+
+            # Get feedback for all grades
+            grade_ids = []
+            for attempt in attempts_dict.values():
+                for chat_data in attempt["chats"].values():
+                    if chat_data.get("grade_id"):
+                        grade_ids.append(chat_data["grade_id"])
+            
+            if grade_ids:
+                query, params = self.queries.get_student_simulation_report_feedback(
+                    grade_ids
+                )
+                feedback = await self.conn.fetch(query, *params)
+                
+                # Group feedback by grade_id
+                feedback_by_grade: Dict[str, List[Dict[str, Any]]] = {}
+                for fb in feedback:
+                    grade_id = fb["simulation_chat_grade_id"]
+                    if grade_id not in feedback_by_grade:
+                        feedback_by_grade[grade_id] = []
+                    feedback_by_grade[grade_id].append({
+                        "standard": fb["standard_name"],
+                        "points": fb["points"],
+                        "feedback": fb["feedback"],
+                    })
+                
+                # Add feedback to chats
+                for attempt in attempts_dict.values():
+                    for chat_data in attempt["chats"].values():
+                        if chat_data.get("grade_id") and chat_data["grade_id"] in feedback_by_grade:
+                            chat_data["feedback"] = feedback_by_grade[chat_data["grade_id"]]
+                        # Remove grade_id from output
+                        if "grade_id" in chat_data:
+                            del chat_data["grade_id"]
+
+            # Convert to list format
+            attempts_data = []
+            for attempt_data in attempts_dict.values():
+                for chat_data in attempt_data["chats"].values():
+                    attempts_data.append({
+                        "simulation_id": attempt_data["simulation_id"],
+                        "title": attempt_data["title"],
+                        "scenario": chat_data["scenario"],
+                        "chat": {
+                            "id": chat_data["id"],
+                            "title": chat_data["title"],
+                            "completed": chat_data["completed"],
+                            "completed_at": chat_data["completed_at"],
+                            "messages": chat_data["messages"],
+                            "grade": chat_data["grade"],
+                            "feedback": chat_data["feedback"],
+                        }
+                    })
+
+            return {"profile": profile_data, "attempts": attempts_data}
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
+
+    async def search_profiles(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Fuzzy search profiles by first_name, last_name, and alias.
+        Returns scored and sorted results.
+        
+        Args:
+            query: Search query string
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of profile dictionaries with scores
+        """
+        q_norm = normalize_text(query)
+        if not q_norm:
+            return []
+
+        toks = tokenize(query)
+
+        # Build fuzzy search conditions
+        where_clause, params, param_idx = build_fuzzy_conditions(
+            ["p.first_name", "p.last_name", "p.alias"], query
+        )
+
+        # Build and execute query
+        query_template, _ = self.queries.search_profiles_fuzzy(where_clause, limit * 5)
+        sql = query_template.replace("{param_count}", str(param_idx))
+        params.append(limit * 5)  # Candidate pool
+
+        profiles = await self.conn.fetch(sql, *params)
+
+        # Score and build results
+        results = []
+        for profile in profiles:
+            first = profile["first_name"]
+            last = profile["last_name"]
+            alias = profile["alias"]
+            full_name = " ".join(x for x in (first, last) if x) or alias or "Unknown"
+
+            score = self._score_profile(q_norm, toks, first, last, alias)
+
+            results.append({
+                "id": str(profile["id"]),
+                "first_name": first,
+                "last_name": last,
+                "alias": alias,
+                "role": profile["role"],
+                "full_name": full_name,
+                "score": score,
+            })
+
+        results.sort(key=lambda r: (-r["score"], r["full_name"]))
+        return results[:limit]
+
+    def _score_profile(
+        self,
+        q_norm: str,
+        toks: List[str],
+        first: str | None,
+        last: str | None,
+        alias: str | None,
+    ) -> int:
+        """
+        Score profile relevance. Bigger is better.
+        
+        Args:
+            q_norm: Normalized query string
+            toks: Query tokens
+            first: First name
+            last: Last name
+            alias: Alias
+            
+        Returns:
+            Relevance score (higher is better)
+        """
+        first_n = normalize_text(first or "")
+        last_n = normalize_text(last or "")
+        alias_n = normalize_text(alias or "")
+
+        full_n = (first_n + " " + last_n).strip()
+
+        score = 0
+
+        # Exact full-name match
+        if full_n and full_n == q_norm:
+            score += 100
+
+        # Exact single-field matches
+        if first_n and first_n == q_norm:
+            score += 90
+        if last_n and last_n == q_norm:
+            score += 90
+        if alias_n and alias_n == q_norm:
+            score += 90
+
+        # Prefix bumps (full query)
+        if first_n.startswith(q_norm):
+            score += 60
+        if last_n.startswith(q_norm):
+            score += 60
+        if alias_n.startswith(q_norm):
+            score += 40
+
+        # Per-token prefix + contains bumps
+        for t in toks:
+            if first_n.startswith(t):
+                score += 30
+            if last_n.startswith(t):
+                score += 30
+            if alias_n.startswith(t):
+                score += 20
+
+            if t in first_n:
+                score += 10
+            if t in last_n:
+                score += 10
+            if t in alias_n:
+                score += 5
+
+        # Whole-query contains bump
+        if q_norm in first_n or q_norm in last_n or q_norm in alias_n:
+            score += 5
+
+        return score
+
+    # ===== Overview Methods for MCP Tools =====
+
+    async def get_profile_overview(self, profile_id: str) -> Dict[str, Any]:
+        """Get profile overview with all related data in ONE optimized query.
+        
+        Returns profile details and latest grades. Supports searching by UUID or name.
+        
+        Args:
+            profile_id: UUID string or name pattern (searches first_name, last_name, alias)
+            
+        Returns:
+            Dict with profile overview data or {"error": "..."}
+        """
+        try:
+            query, params = self.queries.get_profile_overview_complete(profile_id, limit=5)
+            result = await self.conn.fetchrow(query, *params)
+            
+            if not result:
+                return {"error": f"Profile not found: {profile_id}"}
+
+            profile_data = {
+                "id": str(result["id"]),
+                "first_name": result["first_name"],
+                "last_name": result["last_name"],
+                "alias": result["alias"],
+                "role": result["role"],
+                "last_login": result["last_login"].isoformat() if result["last_login"] else None,
+                "viewed_intro": result["viewed_intro"],
+                "active": result["active"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
+            }
+
+            # Transform latest grades (jsonb array to list of dicts)
+            latest_grades = []
+            for grade in result["latest_grades"]:
+                latest_grades.append({
+                    "simulation_title": grade["simulation_title"],
+                    "score": float(grade["score"]) if grade["score"] else None,
+                    "passed": grade["passed"],
+                    "time_taken": grade["time_taken"],
+                    "created_at": grade["created_at"] if grade.get("created_at") else None,
+                })
+
+            return {
+                "profile": profile_data,
+                "latest_grades": latest_grades,
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}

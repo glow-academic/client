@@ -323,6 +323,82 @@ class AssistantQueries:
         params: List[Any] = [tool_result, completed, tool_call_id]
         return query, params
 
+    def get_chats_in_timeframe(self, cutoff_date: datetime) -> Tuple[str, List[Any]]:
+        """
+        Get all assistant chats created after cutoff date.
+
+        Args:
+            cutoff_date: Minimum creation date
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id, profile_id, created_at
+        FROM assistant_chats
+        WHERE created_at >= $1
+        """
+        
+        params: List[Any] = [cutoff_date]
+        return query, params
+
+    def get_messages_in_timeframe(self, cutoff_date: datetime) -> Tuple[str, List[Any]]:
+        """
+        Get all assistant messages created after cutoff date.
+
+        Args:
+            cutoff_date: Minimum creation date
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id, chat_id, completed, created_at
+        FROM assistant_messages
+        WHERE created_at >= $1
+        """
+        
+        params: List[Any] = [cutoff_date]
+        return query, params
+
+    def get_tool_calls_in_timeframe(self, cutoff_date: datetime) -> Tuple[str, List[Any]]:
+        """
+        Get all assistant tool calls created after cutoff date.
+
+        Args:
+            cutoff_date: Minimum creation date
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id, chat_id, tool_name, completed, created_at
+        FROM assistant_tool_calls
+        WHERE created_at >= $1
+        """
+        
+        params: List[Any] = [cutoff_date]
+        return query, params
+
+    def get_profile_by_id(self, profile_id: UUID) -> Tuple[str, List[Any]]:
+        """
+        Get profile details by ID.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id, first_name, last_name, alias, role
+        FROM profiles
+        WHERE id = $1
+        """
+        
+        params: List[Any] = [str(profile_id)]
+        return query, params
+
 
 async def get_assistant_chat_full_data(conn: asyncpg.Connection, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:
     """Get complete assistant chat data with all related entities.

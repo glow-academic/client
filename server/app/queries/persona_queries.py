@@ -303,3 +303,130 @@ class PersonaQueries:
         """Build query to get profile role."""
         query = "SELECT role FROM profiles WHERE id = $1"
         return (query, [profile_id])
+
+    def search_personas_fuzzy(
+        self, where_clause: str, limit: int
+    ) -> Tuple[str, List[Any]]:
+        """
+        Build fuzzy search query for personas by name.
+        Uses dynamic WHERE clause built by search utilities.
+        
+        Params: Built dynamically by search utilities, plus limit at end
+        """
+        query = f"""
+            SELECT 
+                p.id,
+                p.name,
+                p.description
+            FROM personas p
+            WHERE {where_clause}
+            LIMIT ${{param_count}}
+        """
+        return (query, [limit])
+
+    # ===== Analytics Queries for MCP Tools =====
+
+    def get_persona_with_scenarios(
+        self, persona_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get persona details and its scenarios."""
+        query = """
+        SELECT 
+            p.id as persona_id,
+            p.name as persona_name,
+            p.description as persona_description,
+            COALESCE(
+                json_agg(
+                    json_build_object('id', s.id, 'name', s.name)
+                ) FILTER (WHERE s.id IS NOT NULL),
+                '[]'::json
+            ) as scenarios
+        FROM personas p
+        LEFT JOIN scenario_personas sp ON p.id = sp.persona_id AND sp.active = true
+        LEFT JOIN scenarios s ON s.id = sp.scenario_id
+        WHERE p.id = $1
+        GROUP BY p.id, p.name, p.description
+        """
+        return (query, [persona_id])
+
+    def get_persona_response_time_data(
+        self, scenario_ids: List[str], cutoff_date: Any
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get response time analysis data for persona scenarios."""
+        query = """
+        WITH message_pairs AS (
+            SELECT 
+                sc.id as chat_id,
+                s.name as scenario_name,
+                sm1.created_at as query_time,
+                sm2.created_at as response_time,
+                sm2.created_at - sm1.created_at as response_interval,
+                LENGTH(sm1.content) as query_length,
+                LENGTH(sm2.content) as response_length,
+                ROW_NUMBER() OVER (
+                    PARTITION BY sc.id 
+                    ORDER BY sm1.created_at
+                ) as pair_num
+            FROM simulation_chats sc
+            JOIN scenarios s ON s.id = sc.scenario_id
+            JOIN simulation_messages sm1 ON sm1.chat_id = sc.id
+            JOIN simulation_messages sm2 ON sm2.chat_id = sc.id
+            WHERE sc.scenario_id = ANY($1)
+              AND sc.created_at >= $2
+              AND sm1.type = 'query'
+              AND sm2.type = 'response'
+              AND sm2.created_at > sm1.created_at
+              AND NOT EXISTS (
+                  SELECT 1 FROM simulation_messages sm_between
+                  WHERE sm_between.chat_id = sc.id
+                    AND sm_between.created_at > sm1.created_at
+                    AND sm_between.created_at < sm2.created_at
+              )
+        )
+        SELECT 
+            chat_id,
+            scenario_name,
+            query_time,
+            response_time,
+            EXTRACT(EPOCH FROM response_interval) as response_time_seconds,
+            query_length,
+            response_length
+        FROM message_pairs
+        ORDER BY response_time_seconds DESC
+        """
+        return (query, [scenario_ids, cutoff_date])
+
+    def get_persona_overview_complete(self, persona_id: Any) -> Tuple[str, List[Any]]:
+        """Build optimized query to get persona overview with all related data in ONE query.
+        
+        Fetches persona + scenarios using LEFT JOIN and JSON aggregation to avoid N+1 queries.
+        
+        Args:
+            persona_id: UUID of the persona
+            
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        SELECT 
+            p.id, p.name, p.description, p.system_prompt, p.temperature, 
+            p.default_persona, p.created_at, p.updated_at,
+            -- Scenarios array (json_agg with filtering)
+            COALESCE(
+                jsonb_agg(DISTINCT jsonb_build_object(
+                    'id', s.id,
+                    'name', s.name,
+                    'problem_statement', s.problem_statement,
+                    'default_scenario', s.default_scenario,
+                    'created_at', s.created_at
+                )) FILTER (WHERE s.id IS NOT NULL),
+                '[]'::jsonb
+            ) as scenarios
+        FROM personas p
+        LEFT JOIN scenario_personas sp ON sp.persona_id = p.id AND sp.active = true
+        LEFT JOIN scenarios s ON s.id = sp.scenario_id
+        WHERE p.id = $1
+        GROUP BY p.id, p.name, p.description, p.system_prompt, p.temperature, 
+                 p.default_persona, p.created_at, p.updated_at
+        """
+        return (query, [persona_id])

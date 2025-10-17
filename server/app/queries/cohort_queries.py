@@ -364,3 +364,181 @@ class CohortQueries:
         WHERE cohort_id = $1 AND profile_id = $2
         """
         return (query, [cohort_id, profile_id])
+
+    # ===== Analytics Queries for MCP Tools =====
+
+    def get_cohort_with_members(
+        self, cohort_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get cohort with members and simulations."""
+        query = """
+        WITH cohort_members AS (
+            SELECT 
+                p.id,
+                p.first_name,
+                p.last_name,
+                p.alias
+            FROM profiles p
+            JOIN cohort_profiles cp ON p.id = cp.profile_id
+            WHERE cp.cohort_id = $1 AND cp.active = true
+        ),
+        cohort_sims AS (
+            SELECT 
+                s.id,
+                s.title,
+                s.active,
+                s.time_limit
+            FROM simulations s
+            JOIN cohort_simulations cs ON s.id = cs.simulation_id
+            WHERE cs.cohort_id = $1 AND cs.active = true
+        )
+        SELECT 
+            c.id,
+            c.title,
+            c.description,
+            c.active,
+            c.created_at,
+            COALESCE(
+                json_agg(DISTINCT jsonb_build_object(
+                    'id', cm.id,
+                    'first_name', cm.first_name,
+                    'last_name', cm.last_name,
+                    'alias', cm.alias
+                )) FILTER (WHERE cm.id IS NOT NULL),
+                '[]'::json
+            ) as members,
+            COALESCE(
+                json_agg(DISTINCT jsonb_build_object(
+                    'id', cs.id,
+                    'title', cs.title,
+                    'active', cs.active,
+                    'time_limit', cs.time_limit
+                )) FILTER (WHERE cs.id IS NOT NULL),
+                '[]'::json
+            ) as simulations
+        FROM cohorts c
+        LEFT JOIN cohort_members cm ON true
+        LEFT JOIN cohort_sims cs ON true
+        WHERE c.id = $1
+        GROUP BY c.id, c.title, c.description, c.active, c.created_at
+        """
+        return (query, [cohort_id])
+
+    def get_student_simulation_best_result(
+        self, profile_id: str, simulation_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get best result for a student on a simulation."""
+        query = """
+        WITH student_attempts AS (
+            SELECT sa.id AS attempt_id, sa.created_at
+            FROM simulation_attempts sa
+            JOIN attempt_profiles ap ON sa.id = ap.attempt_id
+            WHERE ap.profile_id = $1
+              AND ap.active = true
+              AND sa.simulation_id = $2
+        ),
+        chat_grades AS (
+            SELECT 
+                sa.attempt_id,
+                sa.created_at,
+                scg.score,
+                scg.passed,
+                scg.time_taken,
+                ROW_NUMBER() OVER (
+                    PARTITION BY sa.attempt_id 
+                    ORDER BY sc.created_at DESC
+                ) as rn
+            FROM student_attempts sa
+            JOIN simulation_chats sc ON sc.attempt_id = sa.attempt_id
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+        )
+        SELECT 
+            MAX(score) as best_score,
+            BOOL_OR(passed) as passed,
+            (ARRAY_AGG(time_taken ORDER BY score DESC))[1] as time_taken,
+            COUNT(DISTINCT attempt_id) as attempt_count,
+            MAX(created_at) as last_attempt
+        FROM chat_grades
+        WHERE rn = 1
+        """
+        return (query, [profile_id, simulation_id])
+
+    def search_cohorts_fuzzy(
+        self, where_clause: str, limit: int
+    ) -> Tuple[str, List[Any]]:
+        """
+        Build fuzzy search query for cohorts by title and description.
+        Uses dynamic WHERE clause built by search utilities.
+        
+        Params: Built dynamically by search utilities, plus limit at end
+        """
+        query = f"""
+            SELECT 
+                c.id,
+                c.title,
+                c.active,
+                c.description
+            FROM cohorts c
+            WHERE {where_clause}
+            LIMIT ${{param_count}}
+        """
+        return (query, [limit])
+
+    def get_cohort_profile_counts(
+        self, cohort_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get profile counts for multiple cohorts."""
+        query = """
+            SELECT cohort_id, COUNT(*) as profile_count
+            FROM cohort_profiles
+            WHERE cohort_id = ANY($1::uuid[])
+                AND active = true
+            GROUP BY cohort_id
+        """
+        return (query, [cohort_ids])
+
+    def get_cohort_overview_complete(self, cohort_id: Any) -> Tuple[str, List[Any]]:
+        """Build optimized query to get cohort overview with all related data in ONE query.
+        
+        Fetches cohort + profiles (roster) + simulations using LEFT JOINs and JSON aggregation 
+        to avoid N+1 queries.
+        
+        Args:
+            cohort_id: UUID of the cohort
+            
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        SELECT 
+            c.id, c.title, c.description, c.active, c.created_at,
+            -- Profiles array (json_agg with ordering)
+            COALESCE(
+                jsonb_agg(DISTINCT jsonb_build_object(
+                    'id', p.id,
+                    'first_name', p.first_name,
+                    'last_name', p.last_name,
+                    'alias', p.alias,
+                    'role', p.role
+                ) ORDER BY p.last_name, p.first_name) FILTER (WHERE p.id IS NOT NULL),
+                '[]'::jsonb
+            ) as roster,
+            -- Simulations array (json_agg with filtering)
+            COALESCE(
+                jsonb_agg(DISTINCT jsonb_build_object(
+                    'id', s.id,
+                    'title', s.title,
+                    'active', s.active,
+                    'time_limit', s.time_limit
+                )) FILTER (WHERE s.id IS NOT NULL),
+                '[]'::jsonb
+            ) as simulations
+        FROM cohorts c
+        LEFT JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.active = true
+        LEFT JOIN profiles p ON p.id = cp.profile_id
+        LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
+        LEFT JOIN simulations s ON s.id = cs.simulation_id AND s.active = true
+        WHERE c.id = $1
+        GROUP BY c.id, c.title, c.description, c.active, c.created_at
+        """
+        return (query, [cohort_id])

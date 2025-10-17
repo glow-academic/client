@@ -51,3 +51,32 @@ class LogQueries:
         params: List[Any] = []
 
         return query, params
+
+    def get_recent_logs(self, level: str, limit: int) -> tuple[str, List[Any]]:
+        """
+        Get recent app logs filtered by level.
+
+        Args:
+            level: Log level filter (or "all" for no filtering)
+            limit: Maximum number of logs to return
+
+        Returns:
+            Tuple of (query, params)
+        """
+        if level.lower() == "all":
+            query = """
+                SELECT id, level, message, context, created_at
+                FROM app_logs
+                ORDER BY created_at DESC
+                LIMIT $1
+            """
+            return query, [limit]
+        else:
+            query = """
+                SELECT id, level, message, context, created_at
+                FROM app_logs
+                WHERE LOWER(level) LIKE LOWER($1)
+                ORDER BY created_at DESC
+                LIMIT $2
+            """
+            return query, [f"%{level.lower()}%", limit]

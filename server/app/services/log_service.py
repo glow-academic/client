@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.queries.log_queries import LogQueries
 from app.schemas.logs import (ActorData, ContextData, CreateLogRequest,
                               CreateLogResponse, ErrorData, LogItem,
@@ -142,3 +142,32 @@ class LogService:
         log_id = result['id'] if result else None
 
         return CreateLogResponse(success=True, log_id=log_id)
+
+    async def get_recent_logs(
+        self, level: str = "error", limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent application logs filtered by level.
+
+        Args:
+            level: Log level filter (or "all" for no filtering)
+            limit: Maximum number of logs to return
+
+        Returns:
+            List of log dictionaries with formatted data
+        """
+        query, params = self.queries.get_recent_logs(level, limit)
+        rows = await self.conn.fetch(query, *params)
+
+        return [
+            {
+                "id": row["id"],
+                "level": row["level"],
+                "message": row["message"],
+                "context": row["context"],
+                "created_at": row["created_at"].isoformat()
+                if row["created_at"]
+                else None,
+            }
+            for row in rows
+        ]

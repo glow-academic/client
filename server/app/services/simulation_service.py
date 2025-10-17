@@ -25,6 +25,7 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
 from app.services.scenario_service import ScenarioService
+from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 
 class SimulationService:
@@ -528,7 +529,6 @@ class SimulationService:
 
         from agents import gen_trace_id
         from app.agents.collection.scenario import run_scenario_agent
-        from app.utils.scenario import randomly_fill_scenario_attributes
 
         # Get the simulation
         query, params = self.queries.get_simulation_by_id(simulation_id)
@@ -580,7 +580,9 @@ class SimulationService:
 
         # Randomly fill any null attributes in the scenario
         import uuid as uuid_module
-        scenario = await randomly_fill_scenario_attributes(dict(old_scenario), self.conn, uuid_module.UUID(department_id))
+        scenario = await self.scenario_service.randomly_fill_scenario_attributes(
+            dict(old_scenario), uuid_module.UUID(department_id)
+        )
 
         # Generate scenario problem_statement if empty
         if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
@@ -869,7 +871,6 @@ class SimulationService:
 
         from agents import gen_trace_id
         from app.agents.collection.scenario import run_scenario_agent
-        from app.utils.scenario import randomly_fill_scenario_attributes
 
         query, params = self.queries.get_scenario_by_id(scenario_id)
         old_scenario = await self.conn.fetchrow(query, *params)
@@ -878,7 +879,9 @@ class SimulationService:
 
         # Randomly fill any null attributes
         import uuid as uuid_module
-        scenario = await randomly_fill_scenario_attributes(dict(old_scenario), self.conn, uuid_module.UUID(department_id))
+        scenario = await self.scenario_service.randomly_fill_scenario_attributes(
+            dict(old_scenario), uuid_module.UUID(department_id)
+        )
 
         # Generate scenario problem_statement if empty
         if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
@@ -924,4 +927,242 @@ class SimulationService:
         )
 
         return dict(chat) if chat else None
+
+    # ===== Analytics Methods for MCP Tools =====
+
+    async def get_simulation_attempts(
+        self, sim_id: str, limit: int = 200
+    ) -> List[Dict[str, Any]]:
+        """Get flat list of attempts for a simulation.
+        
+        List all attempts (who, when, score) for a specific simulation.
+        
+        Args:
+            sim_id: UUID string of the simulation
+            limit: Max results (default: 200)
+            
+        Returns:
+            List of attempt dicts with student info and grades
+            or [{"error": "..."}] if error
+        """
+        try:
+            simulation_uuid = __import__('uuid').UUID(sim_id)
+        except ValueError:
+            return [{"error": f"Invalid sim_id format: {sim_id}"}]
+
+        try:
+            # Verify simulation exists
+            query, params = self.queries.get_simulation_by_id(str(simulation_uuid))
+            simulation = await self.conn.fetchrow(query, *params)
+            if not simulation:
+                return [{"error": f"Simulation not found: {sim_id}"}]
+
+            # Get all attempts for this simulation with student info and grades
+            query, params = self.queries.get_simulation_attempts_list(
+                str(simulation_uuid), limit
+            )
+            attempts = await self.conn.fetch(query, *params)
+
+            results = []
+            for attempt in attempts:
+                # Build student name
+                student_name = "Unknown"
+                if attempt["first_name"] or attempt["last_name"]:
+                    name_parts = []
+                    if attempt["first_name"]:
+                        name_parts.append(attempt["first_name"])
+                    if attempt["last_name"]:
+                        name_parts.append(attempt["last_name"])
+                    student_name = " ".join(name_parts)
+                elif attempt["alias"]:
+                    student_name = attempt["alias"]
+
+                results.append({
+                    "id": str(attempt["id"]),
+                    "student": student_name,
+                    "student_id": str(attempt["profile_id"]) if attempt["profile_id"] else None,
+                    "score": attempt["score"],
+                    "passed": attempt["passed"],
+                    "time_taken": attempt["time_taken"],
+                    "created_at": attempt["created_at"].isoformat() if attempt["created_at"] else None,
+                })
+
+            return results
+
+        except Exception as e:
+            return [{"error": f"Database error: {str(e)}"}]
+
+    # ===== Overview Methods for MCP Tools =====
+
+    async def get_simulation_overview(self, sim_id: str) -> Dict[str, Any]:
+        """Get simulation overview with all related data in ONE optimized query.
+        
+        Returns simulation meta, rubric, cohorts, scenarios, and pass stats.
+        
+        Args:
+            sim_id: UUID string of the simulation
+            
+        Returns:
+            Dict with simulation overview data or {"error": "..."}
+        """
+        import uuid
+        
+        try:
+            simulation_uuid = uuid.UUID(sim_id)
+        except ValueError:
+            return {"error": f"Invalid sim_id format: {sim_id}"}
+
+        try:
+            query, params = self.queries.get_simulation_overview_complete(simulation_uuid)
+            result = await self.conn.fetchrow(query, *params)
+            
+            if not result:
+                return {"error": f"Simulation not found: {sim_id}"}
+
+            # Transform JSON-aggregated data into response dict
+            simulation_data = {
+                "id": str(result["id"]),
+                "title": result["title"],
+                "active": result["active"],
+                "time_limit": result["time_limit"],
+                "created_at": result["created_at"].isoformat() if result["created_at"] else None,
+            }
+
+            # Transform rubric (jsonb object to dict)
+            rubric_data = {}
+            if result["rubric"] and result["rubric"].get("id"):
+                rubric_data = {
+                    "id": str(result["rubric"]["id"]),
+                    "name": result["rubric"]["name"],
+                    "description": result["rubric"]["description"],
+                    "points": result["rubric"]["points"],
+                    "pass_points": result["rubric"]["pass_points"],
+                }
+
+            # Transform cohorts (jsonb array to list of dicts)
+            cohorts_data = []
+            for cohort in result["cohorts"]:
+                cohorts_data.append({
+                    "id": str(cohort["id"]),
+                    "title": cohort["title"],
+                    "active": cohort["active"],
+                })
+
+            # Transform scenarios (jsonb array to list of dicts)
+            scenarios_data = []
+            for scenario in result["scenarios"]:
+                scenarios_data.append({
+                    "id": str(scenario["id"]),
+                    "name": scenario["name"],
+                    "problem_statement": scenario["problem_statement"],
+                    "position": scenario["position"],
+                })
+
+            # Calculate pass rate
+            pass_rate = 0.0
+            if result["total_graded"] and result["total_graded"] > 0:
+                pass_rate = round((result["total_passed"] / result["total_graded"]) * 100, 2)
+
+            return {
+                "simulation": simulation_data,
+                "rubric": rubric_data,
+                "cohorts": cohorts_data,
+                "scenarios": scenarios_data,
+                "stats": {
+                    "total_attempts": result["total_attempts"],
+                    "total_graded": result["total_graded"],
+                    "pass_rate": pass_rate,
+                },
+            }
+
+        except Exception as e:
+            return {"error": f"Database error: {str(e)}"}
+
+    async def search_simulations(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Fuzzy search simulations by title.
+        Returns scored and sorted results.
+        
+        Args:
+            query: Search query string
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of simulation dictionaries with scores
+        """
+        q_norm = normalize_text(query)
+        if not q_norm:
+            return []
+
+        toks = tokenize(query)
+
+        # Build fuzzy search conditions
+        where_clause, params, param_idx = build_fuzzy_conditions(["s.title"], query)
+
+        # Build and execute query
+        query_template, _ = self.queries.search_simulations_fuzzy(where_clause, limit * 5)
+        sql = query_template.replace("{param_count}", str(param_idx))
+        params.append(limit * 5)  # Candidate pool
+
+        sims = await self.conn.fetch(sql, *params)
+
+        # Score and build results
+        results = []
+        for sim in sims:
+            score = self._score_simulation(q_norm, toks, sim["title"])
+            results.append({
+                "id": str(sim["id"]),
+                "title": sim["title"],
+                "active": sim["active"],
+                "time_limit": sim["time_limit"],
+                "created_at": sim["created_at"].isoformat() if sim["created_at"] else None,
+                "score": score,
+            })
+
+        results.sort(key=lambda r: (-r["score"], r["title"]))
+        return results[:limit]
+
+    def _score_simulation(
+        self, q_norm: str, toks: List[str], title: str | None
+    ) -> int:
+        """
+        Score simulation relevance based on title matching.
+        
+        Args:
+            q_norm: Normalized query string
+            toks: Query tokens
+            title: Simulation title
+            
+        Returns:
+            Relevance score (higher is better)
+        """
+        t_norm = normalize_text(title or "")
+        score = 0
+
+        # Exact whole-title match
+        if t_norm == q_norm:
+            score += 100
+
+        # Prefix (whole query)
+        if t_norm.startswith(q_norm):
+            score += 70
+
+        # Per-token boosts
+        for tok in toks:
+            if t_norm.startswith(tok):
+                score += 20
+            if tok in t_norm:
+                score += 10
+
+        # Whole query appears somewhere
+        if q_norm in t_norm:
+            score += 5
+
+        # Length proximity bonus (favor shorter / tighter match)
+        gap = abs(len(t_norm) - len(q_norm))
+        score += max(0, 10 - gap)
+
+        return score
 
