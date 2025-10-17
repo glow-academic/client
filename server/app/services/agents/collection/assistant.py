@@ -145,17 +145,21 @@ async def _handle_assistant_chat(
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id
-    queries = ProviderQueries()
-    query, params = queries.get_model_for_agent(agent['model_id'])
-    model = await conn.fetchrow(query, *params)
+    model = await conn.fetchrow(
+        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
+        agent['model_id']
+    )
     if not model:
         raise ValueError(f"Model with ID {agent['model_id']} not found")
 
     # getting the provider from the model's provider_id
-    query, params = queries.get_provider_for_agent(model['provider_id'])
-    provider = await conn.fetchrow(query, *params)
+    provider = await conn.fetchrow(
+        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
+        model['provider_id']
+    )
     if not provider:
         raise ValueError(f"Provider with ID {model['provider_id']} not found")
+
 
     agent_instance = GenericAgent(
         agent_name=agent['name'],
