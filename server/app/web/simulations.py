@@ -15,12 +15,12 @@ import asyncpg  # type: ignore
 import socketio  # type: ignore
 from agents import gen_trace_id
 from agents.exceptions import OutputGuardrailTripwireTriggered
+from app.agents.collection.grade import run_grade_agent
+from app.agents.collection.hint import run_hint_agent
+from app.agents.collection.scenario import run_scenario_agent
+from app.agents.collection.simulation import (cancel_simulation_run,
+                                              run_simulation_agent)
 from app.db import get_pool
-from app.services.agents.collection.grade import run_grade_agent
-from app.services.agents.collection.hint import run_hint_agent
-from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import (cancel_simulation_run,
-                                                       run_simulation_agent)
 from app.utils.guest import find_default_guest_profile
 from app.utils.scenario import randomly_fill_scenario_attributes
 

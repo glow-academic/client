@@ -3,13 +3,13 @@
 from pathlib import Path
 from unittest.mock import ANY, MagicMock, mock_open, patch
 
-from app.services.mcp.tools.log.export_csv import export_csv
+from app.mcp.tools.log.export_csv import export_csv
 from sqlalchemy.exc import ProgrammingError
 
 
-@patch("app.services.mcp.tools.log.export_csv.csv")
-@patch("app.services.mcp.tools.log.export_csv.engine")
-@patch("app.services.mcp.tools.log.export_csv.CSV_FOLDER", Path("/tmp/csv_test"))
+@patch("app.mcp.tools.log.export_csv.csv")
+@patch("app.mcp.tools.log.export_csv.engine")
+@patch("app.mcp.tools.log.export_csv.CSV_FOLDER", Path("/tmp/csv_test"))
 @patch("builtins.open", new_callable=mock_open)
 class TestExport_Csv:
     """Tests for the export_csv function."""

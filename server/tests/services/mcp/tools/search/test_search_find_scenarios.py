@@ -1,11 +1,11 @@
 """
-Tests for app.services.mcp.tools.search.find_scenarios
+Tests for app.mcp.tools.search.find_scenarios
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.search.find_scenarios import find_scenarios
+from app.mcp.tools.search.find_scenarios import find_scenarios
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -29,7 +29,7 @@ class MockScenario:
         self.practice_scenario = practice_scenario
 
 
-@patch("app.services.mcp.tools.search.find_scenarios.get_session")
+@patch("app.mcp.tools.search.find_scenarios.get_session")
 class TestFind_Scenarios:
     """Tests for find_scenarios function."""
 

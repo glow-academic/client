@@ -3,9 +3,9 @@
 import uuid
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import SQLAlchemyError
 
-from app.services.mcp.tools.log.assistant_usage import assistant_usage
+from app.mcp.tools.log.assistant_usage import assistant_usage
+from sqlalchemy.exc import SQLAlchemyError
 
 
 # Mock data classes to simulate SQLModel objects
@@ -46,7 +46,7 @@ class MockAssistantToolCall:
         )
 
 
-@patch("app.services.mcp.tools.log.assistant_usage.get_session")
+@patch("app.mcp.tools.log.assistant_usage.get_session")
 class TestAssistant_Usage:
     """Tests for the assistant_usage function."""
 

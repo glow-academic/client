@@ -1,12 +1,12 @@
 """
-Tests for app.services.agents.collection.scenario
+Tests for app.agents.collection.scenario
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.services.agents.collection.scenario import run_scenario_agent
+from app.agents.collection.scenario import run_scenario_agent
 from sqlmodel import Session
 
 
@@ -106,15 +106,15 @@ class TestRun_Scenario_Agent:
         )
 
         with patch(
-            "app.services.agents.collection.scenario.Runner.run",
+            "app.agents.collection.scenario.Runner.run",
             return_value=mock_result,
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
                 with patch(
-                    "app.services.agents.collection.scenario.trace"
+                    "app.agents.collection.scenario.trace"
                 ) as mock_trace:
                     # Mock the trace context manager
                     mock_trace.return_value.__enter__ = MagicMock()
@@ -174,11 +174,11 @@ class TestRun_Scenario_Agent:
         )
 
         with patch(
-            "app.services.agents.collection.scenario.Runner.run",
+            "app.agents.collection.scenario.Runner.run",
             return_value=mock_result,
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
                 title, description, trace_id = await run_scenario_agent(

@@ -4,8 +4,8 @@ from typing import Any
 
 import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
+from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
 from app.services.model_run_service import ModelRunService
 from app.utils.agents import get_department_agent
 from app.utils.debug_info import DebugContext

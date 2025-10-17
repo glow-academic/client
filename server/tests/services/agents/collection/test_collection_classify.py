@@ -1,12 +1,12 @@
 """
-Tests for app.services.agents.collection.classify
+Tests for app.agents.collection.classify
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.services.agents.collection.classify import run_classify_agent
+from app.agents.collection.classify import run_classify_agent
 from sqlmodel import Session
 
 
@@ -101,15 +101,15 @@ class TestRun_Classify_Agent:
         )
 
         with patch(
-            "app.services.agents.collection.classify.Runner.run",
+            "app.agents.collection.classify.Runner.run",
             return_value=mock_result,
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
                 with patch(
-                    "app.services.agents.collection.classify.trace"
+                    "app.agents.collection.classify.trace"
                 ) as mock_trace:
                     # Mock the trace context manager
                     mock_trace.return_value.__enter__ = MagicMock()
@@ -152,9 +152,9 @@ class TestRun_Classify_Agent:
         mock_session.exec.return_value.all.return_value = mock_documents
 
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
-            with patch("app.services.agents.collection.classify.trace") as mock_trace:
+            with patch("app.agents.collection.classify.trace") as mock_trace:
                 # Mock the trace context manager
                 mock_trace.return_value.__enter__ = MagicMock()
                 mock_trace.return_value.__exit__ = MagicMock()

@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.lookup.scenario_overview
+Tests for app.mcp.tools.lookup.scenario_overview
 """
 
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.lookup.scenario_overview import scenario_overview
+from app.mcp.tools.lookup.scenario_overview import scenario_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -31,7 +31,7 @@ class MockSimulation:
         self.created_at = datetime.now()
 
 
-@patch("app.services.mcp.tools.lookup.scenario_overview.get_session")
+@patch("app.mcp.tools.lookup.scenario_overview.get_session")
 class TestScenario_Overview:
     """Tests for scenario_overview function."""
 

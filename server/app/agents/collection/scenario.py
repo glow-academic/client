@@ -7,8 +7,8 @@ import asyncpg  # type: ignore
 from agents import (Runner, ToolsToFinalOutputResult, function_tool,
                     gen_trace_id, trace)
 from agents.items import TResponseInputItem
+from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
 from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool

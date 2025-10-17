@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.lookup.persona_overview
+Tests for app.mcp.tools.lookup.persona_overview
 """
 
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.lookup.persona_overview import persona_overview
+from app.mcp.tools.lookup.persona_overview import persona_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -39,7 +39,7 @@ class MockScenario:
         self.created_at = datetime.now()
 
 
-@patch("app.services.mcp.tools.lookup.persona_overview.get_session")
+@patch("app.mcp.tools.lookup.persona_overview.get_session")
 class TestPersona_Overview:
     """Tests for persona_overview function."""
 

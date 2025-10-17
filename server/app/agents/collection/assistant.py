@@ -10,7 +10,7 @@ from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
+from app.agents.generic import GenericAgent
 from app.services.assistant_service import AssistantService
 from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history

@@ -2,9 +2,9 @@
 
 import uuid
 from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import SQLAlchemyError
 
-from app.services.mcp.tools.search.find_profiles import find_profiles
+from app.mcp.tools.search.find_profiles import find_profiles
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockProfile:
@@ -16,7 +16,7 @@ class MockProfile:
         self.role = role
 
 
-@patch("app.services.mcp.tools.search.find_profiles.get_session")
+@patch("app.mcp.tools.search.find_profiles.get_session")
 class TestFind_Profiles:
     """Tests for find_profiles function."""
 

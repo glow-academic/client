@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.analytics.student_sim_report
+Tests for app.mcp.tools.analytics.student_sim_report
 """
 
 import uuid
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.analytics.student_sim_report import student_sim_report
+from app.mcp.tools.analytics.student_sim_report import student_sim_report
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -82,7 +82,7 @@ class MockSimulationChatGrade:
         self.created_at = datetime.now()
 
 
-@patch("app.services.mcp.tools.analytics.student_sim_report.get_session")
+@patch("app.mcp.tools.analytics.student_sim_report.get_session")
 class TestStudent_Sim_Report:
     """Tests for student_sim_report function."""
 

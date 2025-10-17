@@ -764,7 +764,7 @@ class DocumentService:
             # Auto-classify if requested
             if request.autoClassify:
                 try:
-                    from app.services.agents.collection.classify import \
+                    from app.agents.collection.classify import \
                         run_classify_agent
 
                     # Note: run_classify_agent might be async or have different signature

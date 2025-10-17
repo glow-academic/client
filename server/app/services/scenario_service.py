@@ -961,7 +961,7 @@ class ScenarioService:
         Generate AI scenario content (title, description, objectives).
         Uses the scenario agent to create content based on inputs.
         """
-        from app.services.agents.collection.scenario import run_scenario_agent
+        from app.agents.collection.scenario import run_scenario_agent
 
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)

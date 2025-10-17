@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import SQLAlchemyError
 
-from app.services.mcp.tools.search.find_simulations import find_simulations
+from app.mcp.tools.search.find_simulations import find_simulations
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockSimulation:
@@ -15,7 +15,7 @@ class MockSimulation:
         self.created_at = datetime.now()
 
 
-@patch("app.services.mcp.tools.search.find_simulations.get_session")
+@patch("app.mcp.tools.search.find_simulations.get_session")
 class TestFind_Simulations:
     """Tests for find_simulations function."""
 

@@ -7,8 +7,8 @@ from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
                     OutputGuardrail, RunContextWrapper, Runner, TContext,
                     ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
+from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
 from app.utils.agents import get_department_agent
 from app.utils.debug_info import DebugContext, debug_info
 from app.utils.guest import find_default_guest_profile

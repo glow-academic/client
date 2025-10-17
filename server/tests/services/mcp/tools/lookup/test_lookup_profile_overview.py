@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.lookup.profile_overview
+Tests for app.mcp.tools.lookup.profile_overview
 """
 
 import uuid
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.lookup.profile_overview import profile_overview
+from app.mcp.tools.lookup.profile_overview import profile_overview
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -53,7 +53,7 @@ class MockSimulationChatGrade:
         self.created_at = datetime.now()
 
 
-@patch("app.services.mcp.tools.lookup.profile_overview.get_session")
+@patch("app.mcp.tools.lookup.profile_overview.get_session")
 class TestProfile_Overview:
     """Tests for profile_overview function."""
 

@@ -7,8 +7,8 @@ from typing import Any, List
 import asyncpg  # type: ignore
 from agents import (Runner, ToolsToFinalOutputResult, TResponseInputItem,
                     function_tool, trace)
+from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext

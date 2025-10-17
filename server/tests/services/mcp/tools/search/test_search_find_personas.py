@@ -1,11 +1,11 @@
 """
-Tests for app.services.mcp.tools.search.find_personas
+Tests for app.mcp.tools.search.find_personas
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.search.find_personas import find_personas
+from app.mcp.tools.search.find_personas import find_personas
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -16,7 +16,7 @@ class MockPersona:
         self.description = description
 
 
-@patch("app.services.mcp.tools.search.find_personas.get_session")
+@patch("app.mcp.tools.search.find_personas.get_session")
 class TestFind_Personas:
     """Tests for find_personas function."""
 

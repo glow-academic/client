@@ -1,5 +1,5 @@
 """
-Tests for app.services.agents.collection.grade
+Tests for app.agents.collection.grade
 """
 
 import uuid
@@ -7,11 +7,9 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.services.agents.collection.grade import (
-    create_dynamic_rubric_model,
-    create_safe_field_name,
-    run_grade_agent,
-)
+from app.agents.collection.grade import (create_dynamic_rubric_model,
+                                         create_safe_field_name,
+                                         run_grade_agent)
 from sqlmodel import Session
 
 
@@ -273,11 +271,11 @@ class TestRun_Grade_Agent:
         mock_agent_instance = MagicMock()
 
         with patch(
-            "app.services.agents.collection.grade.GenericAgent",
+            "app.agents.collection.grade.GenericAgent",
             return_value=mock_agent_instance,
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
                 result = await run_grade_agent(chat_id, mock_session)
@@ -296,6 +294,7 @@ class TestRun_Grade_Agent:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `format_minutes`")
 class TestFormat_Minutes:

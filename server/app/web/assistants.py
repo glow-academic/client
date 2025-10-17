@@ -13,10 +13,10 @@ from typing import Any, Dict
 
 import socketio  # type: ignore
 from agents import gen_trace_id
+from app.agents.collection.assistant import (cancel_assistant_run,
+                                             run_assistant_agent)
+from app.agents.collection.title import run_title_agent
 from app.db import get_pool
-from app.services.agents.collection.assistant import (cancel_assistant_run,
-                                                      run_assistant_agent)
-from app.services.agents.collection.title import run_title_agent
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")

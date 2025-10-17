@@ -1,12 +1,12 @@
 """
-Tests for app.services.agents.collection.title
+Tests for app.agents.collection.title
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app.services.agents.collection.title import run_title_agent
+from app.agents.collection.title import run_title_agent
 from sqlmodel import Session
 
 
@@ -83,13 +83,13 @@ class TestRun_Title_Agent:
         mock_result.final_output = "Assignment Help Request"
 
         with patch(
-            "app.services.agents.collection.title.Runner.run", return_value=mock_result
+            "app.agents.collection.title.Runner.run", return_value=mock_result
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
-                with patch("app.services.agents.collection.title.trace") as mock_trace:
+                with patch("app.agents.collection.title.trace") as mock_trace:
                     # Mock the trace context manager
                     mock_trace.return_value.__enter__ = MagicMock()
                     mock_trace.return_value.__exit__ = MagicMock()

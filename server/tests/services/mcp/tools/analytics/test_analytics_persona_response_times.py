@@ -1,14 +1,13 @@
 """
-Tests for app.services.mcp.tools.analytics.persona_response_times
+Tests for app.mcp.tools.analytics.persona_response_times
 """
 
 import uuid
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.analytics.persona_response_times import (
-    persona_response_times,
-)
+from app.mcp.tools.analytics.persona_response_times import \
+    persona_response_times
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -42,7 +41,7 @@ class MockSimulationMessage:
         self.created_at = created_at or datetime.now()
 
 
-@patch("app.services.mcp.tools.analytics.persona_response_times.get_session")
+@patch("app.mcp.tools.analytics.persona_response_times.get_session")
 class TestPersona_Response_Times:
     """Tests for persona_response_times function."""
 

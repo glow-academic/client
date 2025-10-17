@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 
 import asyncpg  # type: ignore
 from agents import Runner, trace
+from app.agents.generic import GenericAgent
 from app.db import get_db
-from app.services.agents.generic import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit

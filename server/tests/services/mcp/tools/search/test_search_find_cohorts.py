@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.search.find_cohorts
+Tests for app.mcp.tools.search.find_cohorts
 """
 
 import uuid
 from unittest.mock import MagicMock, patch
-from sqlalchemy.exc import SQLAlchemyError
 
-from app.services.mcp.tools.search.find_cohorts import find_cohorts
+from app.mcp.tools.search.find_cohorts import find_cohorts
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class MockCohort:
@@ -20,7 +20,7 @@ class MockCohort:
         self.description = description
 
 
-@patch("app.services.mcp.tools.search.find_cohorts.get_session")
+@patch("app.mcp.tools.search.find_cohorts.get_session")
 class TestFind_Cohorts:
     """Tests for find_cohorts function."""
 

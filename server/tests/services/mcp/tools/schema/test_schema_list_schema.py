@@ -3,14 +3,14 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from app.services.mcp.tools.schema.list_schema import list_schema
+from app.mcp.tools.schema.list_schema import list_schema
 
 
 class TestList_Schema:
     """Unit tests for the list_schema function."""
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.list_schema.get_pool")
+    @patch("app.mcp.tools.schema.list_schema.get_pool")
     async def test_list_schema_success(self, mock_get_pool: AsyncMock) -> None:
         """Tests that list_schema correctly formats the output from the DB."""
         mock_conn = AsyncMock()
@@ -33,7 +33,7 @@ class TestList_Schema:
         mock_conn.fetch.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.list_schema.get_pool")
+    @patch("app.mcp.tools.schema.list_schema.get_pool")
     async def test_list_schema_error(self, mock_get_pool: AsyncMock) -> None:
         """Tests that list_schema raises an error if the DB connection fails."""
         mock_conn = AsyncMock()

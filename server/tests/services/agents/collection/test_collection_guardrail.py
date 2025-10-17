@@ -1,11 +1,13 @@
 """
-Tests for app.services.agents.collection.guardrail
+Tests for app.agents.collection.guardrail
 """
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from sqlmodel import Session
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from app.services.agents.collection.guardrail import *
+
+import pytest
+from app.agents.collection.guardrail import *
+from sqlmodel import Session
+
 
 @pytest.fixture
 def mock_session():
@@ -14,6 +16,7 @@ def mock_session():
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_input_guardrails`")
 class TestGet_Input_Guardrails:
@@ -31,6 +34,7 @@ class TestGet_Input_Guardrails:
 
 
 import pytest
+
 
 @pytest.mark.skip(reason="TODO: implement tests for `get_output_guardrails`")
 class TestGet_Output_Guardrails:

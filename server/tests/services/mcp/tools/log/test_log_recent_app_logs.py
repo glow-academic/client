@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.log.recent_app_logs import recent_app_logs
+from app.mcp.tools.log.recent_app_logs import recent_app_logs
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -21,7 +21,7 @@ class MockAppLog:
         return self.created_at.isoformat()
 
 
-@patch("app.services.mcp.tools.log.recent_app_logs.get_session")
+@patch("app.mcp.tools.log.recent_app_logs.get_session")
 class TestRecent_App_Logs:
     """Tests for the recent_app_logs function."""
 

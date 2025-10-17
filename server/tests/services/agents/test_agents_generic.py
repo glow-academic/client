@@ -1,12 +1,12 @@
 """
-Tests for app.services.agents.generic
+Tests for app.agents.generic
 """
 
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.services.agents.generic import GenericAgent, run_generic_agent
+from app.agents.generic import GenericAgent, run_generic_agent
 from sqlmodel import Session
 
 
@@ -78,13 +78,13 @@ class TestRun_Generic_Agent:
         mock_result.stream_events = mock_stream_events
 
         with patch(
-            "app.services.agents.generic.Runner.run_streamed", return_value=mock_result
+            "app.agents.generic.Runner.run_streamed", return_value=mock_result
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
-                with patch("app.services.agents.generic.trace") as mock_trace:
+                with patch("app.agents.generic.trace") as mock_trace:
                     # Mock the trace context manager
                     mock_trace.return_value.__enter__ = MagicMock()
                     mock_trace.return_value.__exit__ = MagicMock()
@@ -111,7 +111,7 @@ class TestGenericAgent:
     def test_generic_agent_init_success(self):
         """Test successful GenericAgent initialization."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -132,7 +132,7 @@ class TestGenericAgent:
     def test_generic_agent_init_with_low_reasoning(self):
         """Test GenericAgent initialization with low reasoning."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -149,7 +149,7 @@ class TestGenericAgent:
     def test_generic_agent_init_with_high_reasoning(self):
         """Test GenericAgent initialization with high reasoning."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -166,7 +166,7 @@ class TestGenericAgent:
     def test_generic_agent_init_with_none_reasoning(self):
         """Test GenericAgent initialization with None reasoning."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -180,7 +180,7 @@ class TestGenericAgent:
 
             assert agent.reasoning.effort is None
 
-    @patch("app.services.agents.generic.decrypt_api_key")
+    @patch("app.agents.generic.decrypt_api_key")
     def test_generic_agent_decrypts_api_key(self, mock_decrypt):
         """Test that GenericAgent decrypts the API key."""
         mock_decrypt.return_value = "decrypted_key"
@@ -201,7 +201,7 @@ class TestGenericAgent:
     def test_generic_agent_creates_agent(self):
         """Test that GenericAgent creates an Agent instance."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -224,7 +224,7 @@ class TestAgent:
     def test_agent_success(self):
         """Test successful agent execution."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",
@@ -247,7 +247,7 @@ class TestAgent:
     def test_agent_error(self):
         """Test agent error handling."""
         with patch(
-            "app.services.agents.generic.decrypt_api_key", return_value="decrypted_key"
+            "app.agents.generic.decrypt_api_key", return_value="decrypted_key"
         ):
             agent = GenericAgent(
                 agent_name="Test Agent",

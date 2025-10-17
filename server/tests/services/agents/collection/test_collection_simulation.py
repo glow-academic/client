@@ -1,5 +1,5 @@
 """
-Tests for app.services.agents.collection.simulation
+Tests for app.agents.collection.simulation
 """
 
 import uuid
@@ -7,10 +7,8 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.services.agents.collection.simulation import (
-    cancel_simulation_run,
-    run_simulation_agent,
-)
+from app.agents.collection.simulation import (cancel_simulation_run,
+                                              run_simulation_agent)
 from sqlmodel import Session
 
 
@@ -145,15 +143,15 @@ class TestRun_Simulation_Agent:
         mock_result.stream_events = mock_stream_events
 
         with patch(
-            "app.services.agents.collection.simulation.Runner.run_streamed",
+            "app.agents.collection.simulation.Runner.run_streamed",
             return_value=mock_result,
         ):
             with patch(
-                "app.services.agents.generic.decrypt_api_key",
+                "app.agents.generic.decrypt_api_key",
                 return_value="decrypted_key",
             ):
                 with patch(
-                    "app.services.agents.collection.simulation.trace"
+                    "app.agents.collection.simulation.trace"
                 ) as mock_trace:
                     # Mock the trace context manager
                     mock_trace.return_value.__enter__ = MagicMock()

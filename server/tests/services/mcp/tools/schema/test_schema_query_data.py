@@ -1,18 +1,18 @@
 """
-Tests for app.services.mcp.tools.schema.query_data
+Tests for app.mcp.tools.schema.query_data
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.services.mcp.tools.schema.query_data import query_data
+from app.mcp.tools.schema.query_data import query_data
 
 
 class TestQuery_Data:
     """Tests for query_data function."""
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_success(self, mock_get_pool: MagicMock) -> None:
         """Test successful query_data execution."""
         mock_conn = AsyncMock()
@@ -32,7 +32,7 @@ class TestQuery_Data:
         assert "test@example.com" in result
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_error(self, mock_get_pool: MagicMock) -> None:
         """Test query_data error handling."""
         mock_conn = AsyncMock()
@@ -76,7 +76,7 @@ class TestQuery_Data:
         assert "Error: only read-only queries are allowed." in result
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_empty_result(self, mock_get_pool: MagicMock) -> None:
         """Test query_data with empty result set."""
         mock_conn = AsyncMock()
@@ -91,7 +91,7 @@ class TestQuery_Data:
         assert result == "(0 rows)"
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_single_column(self, mock_get_pool: MagicMock) -> None:
         """Test query_data with single column result."""
         mock_conn = AsyncMock()
@@ -109,7 +109,7 @@ class TestQuery_Data:
         assert "User 2" in result
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_complex_query(self, mock_get_pool: MagicMock) -> None:
         """Test query_data with complex SELECT query."""
         mock_conn = AsyncMock()
@@ -128,7 +128,7 @@ class TestQuery_Data:
         assert "85.5" in result
 
     @pytest.mark.asyncio
-    @patch("app.services.mcp.tools.schema.query_data.get_pool")
+    @patch("app.mcp.tools.schema.query_data.get_pool")
     async def test_query_data_with_join(self, mock_get_pool: MagicMock) -> None:
         """Test query_data with JOIN query."""
         mock_conn = AsyncMock()

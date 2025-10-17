@@ -1,12 +1,12 @@
 """
-Tests for app.services.mcp.tools.analytics.cohort_pass_matrix
+Tests for app.mcp.tools.analytics.cohort_pass_matrix
 """
 
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from app.services.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
+from app.mcp.tools.analytics.cohort_pass_matrix import cohort_pass_matrix
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -68,7 +68,7 @@ class MockSimulationChatGrade:
         self.time_taken = time_taken
 
 
-@patch("app.services.mcp.tools.analytics.cohort_pass_matrix.get_session")
+@patch("app.mcp.tools.analytics.cohort_pass_matrix.get_session")
 class TestCohort_Pass_Matrix:
     """Tests for cohort_pass_matrix function."""
 
