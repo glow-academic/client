@@ -111,3 +111,180 @@ class AssistantService:
         query, params = self.queries.update_chat_title(chat_id_str, title)
         await self.conn.execute(query, *params)
 
+    async def verify_profile_exists(self, profile_id: UUID) -> bool:
+        """
+        Verify that a profile exists.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            True if profile exists, False otherwise
+        """
+        profile_id_str = str(profile_id)
+        query, params = self.queries.verify_profile_exists(profile_id_str)
+        result = await self.conn.fetchrow(query, *params)
+        return result is not None
+
+    async def verify_chat_exists(self, chat_id: UUID) -> bool:
+        """
+        Verify that an assistant chat exists.
+
+        Args:
+            chat_id: UUID of the assistant chat
+
+        Returns:
+            True if chat exists, False otherwise
+        """
+        chat_id_str = str(chat_id)
+        query, params = self.queries.verify_chat_exists(chat_id_str)
+        result = await self.conn.fetchrow(query, *params)
+        return result is not None
+
+    async def create_chat(
+        self, profile_id: UUID, title: str, trace_id: str
+    ) -> Dict[str, Any]:
+        """
+        Create a new assistant chat.
+
+        Args:
+            profile_id: UUID of the profile
+            title: Title for the chat
+            trace_id: Trace ID for the chat
+
+        Returns:
+            Dict containing chat data (id)
+        """
+        from datetime import datetime, timezone
+
+        profile_id_str = str(profile_id)
+        created_at = datetime.now(timezone.utc)
+        query, params = self.queries.create_chat(
+            profile_id_str, title, trace_id, created_at
+        )
+        result = await self.conn.fetchrow(query, *params)
+        return {"id": str(result["id"])}
+
+    async def create_user_message(
+        self, chat_id: UUID, content: str
+    ) -> Dict[str, Any]:
+        """
+        Create a new user message in the chat.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            content: Content of the message
+
+        Returns:
+            Dict containing message data (id, created_at)
+        """
+        from datetime import datetime, timezone
+
+        chat_id_str = str(chat_id)
+        created_at = datetime.now(timezone.utc)
+        query, params = self.queries.create_message(
+            chat_id_str, "user", content, True, created_at
+        )
+        result = await self.conn.fetchrow(query, *params)
+        return {
+            "id": result["id"],
+            "created_at": result["created_at"],
+        }
+
+    async def create_assistant_message(self, chat_id: UUID) -> Dict[str, Any]:
+        """
+        Create a new assistant message placeholder in the chat.
+
+        Args:
+            chat_id: UUID of the assistant chat
+
+        Returns:
+            Dict containing message data (id, created_at)
+        """
+        from datetime import datetime, timezone
+
+        chat_id_str = str(chat_id)
+        created_at = datetime.now(timezone.utc)
+        query, params = self.queries.create_message(
+            chat_id_str, "assistant", "", False, created_at
+        )
+        result = await self.conn.fetchrow(query, *params)
+        return {
+            "id": result["id"],
+            "created_at": result["created_at"],
+        }
+
+    async def update_message_content(self, message_id: UUID, content: str) -> None:
+        """
+        Update the content of an assistant message.
+
+        Args:
+            message_id: UUID of the message
+            content: New content for the message
+        """
+        message_id_str = str(message_id)
+        query, params = self.queries.update_message_content(message_id_str, content)
+        await self.conn.execute(query, *params)
+
+    async def complete_message(self, message_id: UUID, content: str) -> None:
+        """
+        Mark a message as completed and update its content.
+
+        Args:
+            message_id: UUID of the message
+            content: Final content for the message
+        """
+        message_id_str = str(message_id)
+        query, params = self.queries.complete_message(message_id_str, content, True)
+        await self.conn.execute(query, *params)
+
+    async def create_tool_call(
+        self,
+        chat_id: UUID,
+        tool_name: str,
+        tool_type: str,
+        tool_arguments: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Create a new assistant tool call.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            tool_name: Name of the tool being called
+            tool_type: Type of tool operation (read/create/update/delete)
+            tool_arguments: Dict of tool arguments
+
+        Returns:
+            Dict containing tool call data (id)
+        """
+        import json
+        from datetime import datetime, timezone
+
+        chat_id_str = str(chat_id)
+        tool_arguments_json = json.dumps(tool_arguments)
+        created_at = datetime.now(timezone.utc)
+        query, params = self.queries.create_tool_call(
+            chat_id_str, tool_name, tool_type, tool_arguments_json, created_at
+        )
+        result = await self.conn.fetchrow(query, *params)
+        return {"id": result["id"]}
+
+    async def complete_tool_call(
+        self, tool_call_id: UUID, tool_result: Dict[str, Any]
+    ) -> None:
+        """
+        Update a tool call with its result and mark as completed.
+
+        Args:
+            tool_call_id: UUID of the tool call
+            tool_result: Dict of tool result
+        """
+        import json
+
+        tool_call_id_str = str(tool_call_id)
+        tool_result_json = json.dumps(tool_result)
+        query, params = self.queries.update_tool_call_result(
+            tool_call_id_str, tool_result_json, True
+        )
+        await self.conn.execute(query, *params)
+

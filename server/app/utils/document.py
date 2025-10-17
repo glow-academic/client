@@ -69,30 +69,6 @@ def _pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
 
     return image_urls
 
-
-async def get_document_info(
-    conn: asyncpg.Connection, document_ids: List[uuid.UUID], show_images: bool = False
-) -> TResponseInputItem:
-    """Build a structured list of per-document, per-page text and optional images.
-    
-    DEPRECATED: Use format_document_info instead with pre-fetched document data.
-
-    Order per document: docN-image-pageM, then docN-text-pageM. If images are
-    unavailable or disabled, only include docN-text-pageM.
-    """
-    # Fetch all requested documents, then preserve input order
-    documents = await conn.fetch(
-        "SELECT id, name, file_path, mime_type FROM documents WHERE id = ANY($1::uuid[])",
-        document_ids
-    )
-    if not documents:
-        raise ValueError(f"Documents not found for document ids {document_ids}")
-
-    # Convert to list of dicts for format_document_info
-    docs_list = [dict(doc) for doc in documents]
-    return format_document_info(docs_list, show_images)
-
-
 def format_document_info(
     documents: List[Dict[str, Any]], show_images: bool = False
 ) -> TResponseInputItem:

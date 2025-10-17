@@ -1,5 +1,6 @@
 """Assistant queries for v2 API endpoints."""
 
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 from uuid import UUID
 
@@ -144,6 +145,182 @@ class AssistantQueries:
         """
         
         params: List[Any] = [title, chat_id]
+        return query, params
+
+    def verify_profile_exists(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """
+        Verify that a profile exists.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id FROM profiles WHERE id = $1
+        """
+        
+        params: List[Any] = [profile_id]
+        return query, params
+
+    def verify_chat_exists(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """
+        Verify that an assistant chat exists.
+
+        Args:
+            chat_id: UUID of the assistant chat
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT id FROM assistant_chats WHERE id = $1
+        """
+        
+        params: List[Any] = [chat_id]
+        return query, params
+
+    def create_chat(
+        self, profile_id: str, title: str, trace_id: str, created_at: datetime
+    ) -> Tuple[str, List[Any]]:
+        """
+        Create a new assistant chat.
+
+        Args:
+            profile_id: UUID of the profile
+            title: Title for the chat
+            trace_id: Trace ID for the chat
+            created_at: Timestamp for chat creation
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO assistant_chats (created_at, title, profile_id, trace_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+        """
+        
+        params: List[Any] = [created_at, title, profile_id, trace_id]
+        return query, params
+
+    def create_message(
+        self, chat_id: str, role: str, content: str, completed: bool, created_at: datetime
+    ) -> Tuple[str, List[Any]]:
+        """
+        Create a new assistant message.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            role: Role of the message sender (user/assistant)
+            content: Content of the message
+            completed: Whether the message is completed
+            created_at: Timestamp for message creation
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO assistant_messages (chat_id, role, content, completed, created_at)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, created_at
+        """
+        
+        params: List[Any] = [chat_id, role, content, completed, created_at]
+        return query, params
+
+    def update_message_content(
+        self, message_id: str, content: str
+    ) -> Tuple[str, List[Any]]:
+        """
+        Update the content of an assistant message.
+
+        Args:
+            message_id: UUID of the message
+            content: New content for the message
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE assistant_messages SET content = $1 WHERE id = $2
+        """
+        
+        params: List[Any] = [content, message_id]
+        return query, params
+
+    def complete_message(
+        self, message_id: str, content: str, completed: bool
+    ) -> Tuple[str, List[Any]]:
+        """
+        Mark a message as completed and update its content.
+
+        Args:
+            message_id: UUID of the message
+            content: Final content for the message
+            completed: Whether the message is completed
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE assistant_messages SET content = $1, completed = $2 WHERE id = $3
+        """
+        
+        params: List[Any] = [content, completed, message_id]
+        return query, params
+
+    def create_tool_call(
+        self,
+        chat_id: str,
+        tool_name: str,
+        tool_type: str,
+        tool_arguments: str,
+        created_at: datetime,
+    ) -> Tuple[str, List[Any]]:
+        """
+        Create a new assistant tool call.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            tool_name: Name of the tool being called
+            tool_type: Type of tool operation (read/create/update/delete)
+            tool_arguments: JSON string of tool arguments
+            created_at: Timestamp for tool call creation
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO assistant_tool_calls 
+        (chat_id, tool_name, tool_type, tool_arguments, tool_result, completed, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id
+        """
+        
+        params: List[Any] = [chat_id, tool_name, tool_type, tool_arguments, "{}", False, created_at]
+        return query, params
+
+    def update_tool_call_result(
+        self, tool_call_id: str, tool_result: str, completed: bool
+    ) -> Tuple[str, List[Any]]:
+        """
+        Update a tool call with its result.
+
+        Args:
+            tool_call_id: UUID of the tool call
+            tool_result: JSON string of tool result
+            completed: Whether the tool call is completed
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE assistant_tool_calls SET tool_result = $1, completed = $2 WHERE id = $3
+        """
+        
+        params: List[Any] = [tool_result, completed, tool_call_id]
         return query, params
 
 

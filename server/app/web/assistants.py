@@ -63,12 +63,13 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
+            # Import service layer
+            from app.services.assistant_service import AssistantService
+            
+            service = AssistantService(conn)
+            
             # Verify profile exists
-            profile = await conn.fetchrow(
-                "SELECT id FROM profiles WHERE id = $1",
-                uuid.UUID(profile_id)
-            )
-            if not profile:
+            if not await service.verify_profile_exists(uuid.UUID(profile_id)):
                 await emit_assistant_error(sid, "Profile not found")
                 return
 
@@ -76,19 +77,12 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             trace_id = gen_trace_id()
 
             # Create the assistant chat
-            from datetime import datetime, timezone
-            
-            chat = await conn.fetchrow(
-                """INSERT INTO assistant_chats (created_at, title, profile_id, trace_id)
-                   VALUES ($1, $2, $3, $4)
-                   RETURNING id""",
-                datetime.now(timezone.utc),
-                "New Chat",  # Will be updated by title agent
+            chat = await service.create_chat(
                 uuid.UUID(profile_id),
+                "New Chat",  # Will be updated by title agent
                 trace_id,
             )
-
-            chat_id = str(chat['id'])
+            chat_id = chat['id']
             logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room
@@ -147,12 +141,13 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
+            # Import service layer
+            from app.services.assistant_service import AssistantService
+            
+            service = AssistantService(conn)
+            
             # Verify the chat exists
-            chat = await conn.fetchrow(
-                "SELECT id FROM assistant_chats WHERE id = $1",
-                uuid.UUID(chat_id)
-            )
-            if not chat:
+            if not await service.verify_chat_exists(uuid.UUID(chat_id)):
                 await emit_assistant_error(sid, "Chat not found")
                 return
 
@@ -214,28 +209,18 @@ async def process_assistant_message_websocket(
     active_tool_calls = {}  # Track tool calls by ID
 
     async with pool.acquire() as conn:
+        # Import service layer
+        from app.services.assistant_service import AssistantService
+        
+        service = AssistantService(conn)
+        
         try:
             # Verify the chat exists
-            chat = await conn.fetchrow(
-                "SELECT id FROM assistant_chats WHERE id = $1",
-                chat_id
-            )
-            if not chat:
+            if not await service.verify_chat_exists(chat_id):
                 raise ValueError(f"Chat {chat_id} not found")
 
             # 1. Add the user message to the chat
-            from datetime import datetime, timezone
-            
-            user_message = await conn.fetchrow(
-                """INSERT INTO assistant_messages (chat_id, role, content, completed, created_at)
-                   VALUES ($1, $2, $3, $4, $5)
-                   RETURNING id, created_at""",
-                chat_id,
-                "user",
-                message,
-                True,
-                datetime.now(timezone.utc)
-            )
+            user_message = await service.create_user_message(chat_id, message)
 
             # 2. Emit user message to connected clients
             await sio_instance.emit(
@@ -268,11 +253,9 @@ async def process_assistant_message_websocket(
                     # If we have accumulated content, complete the current message and create a new one
                     if accumulated_content.strip() and current_message:
                         # Complete current message
-                        await conn.execute(
-                            "UPDATE assistant_messages SET content = $1, completed = $2 WHERE id = $3",
-                            accumulated_content,
-                            True,
-                            current_message['id']
+                        await service.complete_message(
+                            current_message['id'],
+                            accumulated_content
                         )
 
                         # Emit completion for current message
@@ -320,18 +303,11 @@ async def process_assistant_message_websocket(
                         # Otherwise defaults to 'read' for find, get, list, etc.
 
                         # Save tool call to database (without associating to a message)
-                        tool_call = await conn.fetchrow(
-                            """INSERT INTO assistant_tool_calls 
-                            (chat_id, tool_name, tool_type, tool_arguments, tool_result, completed, created_at)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7)
-                            RETURNING id""",
+                        tool_call = await service.create_tool_call(
                             chat_id,
                             tool_name,
                             tool_type,
-                            json.dumps(tool_call_data.get("arguments", {})),
-                            json.dumps({}),  # Will be updated when result comes in
-                            False,  # Mark as incomplete initially
-                            datetime.now(timezone.utc)
+                            tool_call_data.get("arguments", {})
                         )
                         logger.info(
                             f"Successfully created tool call record: {tool_call['id']}"
@@ -373,11 +349,9 @@ async def process_assistant_message_websocket(
                         tool_call_record = None
                         if tool_call_id and tool_call_id in active_tool_calls:
                             tool_call_record = active_tool_calls[tool_call_id]
-                            await conn.execute(
-                                "UPDATE assistant_tool_calls SET tool_result = $1, completed = $2 WHERE id = $3",
-                                json.dumps(tool_result_data.get("result", {})),
-                                True,
-                                tool_call_record['id']
+                            await service.complete_tool_call(
+                                tool_call_record['id'],
+                                tool_result_data.get("result", {})
                             )
                             logger.info(
                                 f"Successfully updated tool call record {tool_call_record['id']} with result"
@@ -410,16 +384,7 @@ async def process_assistant_message_websocket(
 
                     # Create assistant message if we don't have one yet
                     if not current_message:
-                        current_message = await conn.fetchrow(
-                            """INSERT INTO assistant_messages (chat_id, role, content, completed, created_at)
-                               VALUES ($1, $2, $3, $4, $5)
-                               RETURNING id, created_at""",
-                            chat_id,
-                            "assistant",
-                            "",
-                            False,
-                            datetime.now(timezone.utc)
-                        )
+                        current_message = await service.create_assistant_message(chat_id)
 
                         # Emit new placeholder message
                         await sio_instance.emit(
@@ -436,10 +401,9 @@ async def process_assistant_message_websocket(
                         )
 
                     # Update the database with accumulated content
-                    await conn.execute(
-                        "UPDATE assistant_messages SET content = $1 WHERE id = $2",
-                        accumulated_content,
-                        current_message['id']
+                    await service.update_message_content(
+                        current_message['id'],
+                        accumulated_content
                     )
 
                     # Emit token update to connected clients
@@ -456,10 +420,9 @@ async def process_assistant_message_websocket(
 
             # 4. Mark current message as completed (if we have one)
             if current_message:
-                await conn.execute(
-                    "UPDATE assistant_messages SET completed = $1 WHERE id = $2",
-                    True,
-                    current_message['id']
+                await service.complete_message(
+                    current_message['id'],
+                    accumulated_content
                 )
 
                 # 5. Emit completion signal
@@ -480,11 +443,9 @@ async def process_assistant_message_websocket(
 
                 # Finalize the message with the content received so far
                 if current_message:
-                    await conn.execute(
-                        "UPDATE assistant_messages SET content = $1, completed = $2 WHERE id = $3",
-                        accumulated_content,
-                        True,
-                        current_message['id']
+                    await service.complete_message(
+                        current_message['id'],
+                        accumulated_content
                     )
 
                     # Emit a cancellation event
