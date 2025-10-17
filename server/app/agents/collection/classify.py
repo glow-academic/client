@@ -6,8 +6,8 @@ import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
 from app.agents.generic import GenericAgent
 from app.db import get_db
+from app.services.agent_service import AgentService
 from app.services.model_run_service import ModelRunService
-from app.utils.agents import get_department_agent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.guest import find_default_guest_profile
@@ -107,15 +107,14 @@ async def run_classify_agent(
     for category in DEFAULT_CATEGORIES:
         classification_results[category] = []
 
-    # Get the classify agent configured for this department (via junction table)
-    agent = await get_department_agent(conn, department_id, 'classify')
-
-    # get all the documents for the class that haven't been classified yet
-    documents = await conn.fetch(
-        "SELECT id, name, type FROM documents WHERE id = ANY($1)",
-        document_ids
+    # Get all agent/model/provider/documents data in single query via service
+    agent_service = AgentService(conn)
+    context = await agent_service.get_classification_run_context(
+        document_ids=document_ids,
+        department_id=department_id
     )
 
+    documents = context['documents']
     if not documents:
         logger.info(f"No documents found for document_ids {document_ids}")
         return {
@@ -130,29 +129,11 @@ async def run_classify_agent(
     document_mapping = {}
     for i, doc in enumerate(documents, 1):
         document_list.append(f"{i}: {doc['name']}")
-        document_mapping[str(i)] = dict(doc)
+        document_mapping[str(i)] = doc
 
     formatted_documents = "\n".join(document_list)
 
-    logger.info(
-        f"Classifying {len(documents)} documents for document_ids {document_ids}"
-    )
-
-    # getting the model from the agent's model_id
-    model = await conn.fetchrow(
-        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
-        agent['model_id']
-    )
-    if not model:
-        raise ValueError(f"Model with ID {agent['model_id']} not found")
-
-    # getting the provider from the model's provider_id
-    provider = await conn.fetchrow(
-        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
-        model['provider_id']
-    )
-    if not provider:
-        raise ValueError(f"Provider with ID {model['provider_id']} not found")
+    logger.info(f"Classifying {len(documents)} documents for department {department_id}")
 
     # Create classification tools
     classification_tools = create_classification_tools()
@@ -171,18 +152,18 @@ async def run_classify_agent(
         return ToolsToFinalOutputResult(is_final_output=False)
 
     classify_agent = GenericAgent(
-        agent_name=agent['name'],
-        system_prompt=agent['system_prompt'],
-        temperature=agent['temperature'],
-        model_name=model['name'],
-        model_provider=provider['name'],
-        base_url=provider['base_url'],
-        api_key=provider['api_key'],
-        reasoning=agent['reasoning'],
+        agent_name=context['name'],
+        system_prompt=context['system_prompt'],
+        temperature=context['temperature'],
+        model_name=context['model_name'],
+        model_provider=context['provider_name'],
+        base_url=context['base_url'],
+        api_key=context['api_key'],
+        reasoning=context['reasoning'],
         tools=classification_tools,
         parallel_tool_calls=True,
         tool_use_behavior=tool_use_behavior,
-        custom_model=model['custom_model'],
+        custom_model=context['custom_model'],
     )
 
     try:
@@ -212,8 +193,8 @@ async def run_classify_agent(
                 model_run_service = ModelRunService(conn)
                 model_run_id = await model_run_service.create_model_run(
                     department_id=department_id,
-                    model_id=model['id'],
-                    entity_id=agent['id'],
+                    model_id=uuid.UUID(context['model_id']),
+                    entity_id=uuid.UUID(context['agent_id']),
                     entity_type="agent",
                     profile_id=final_profile_id,
                 )
@@ -241,8 +222,8 @@ async def run_classify_agent(
                 logger.info("Classification completed successfully")
                 logger.info(f"Classification results: {classification_dict}")
 
-        # Update the type of all the mapped documents
-        classified_count = 0
+        # Build batch updates
+        document_updates: dict[uuid.UUID, str] = {}
 
         # Map category names to document types
         type_mapping = {
@@ -267,13 +248,9 @@ async def run_classify_agent(
                         document = document_mapping[doc_num]
                         new_type = type_mapping.get(category, "homework")
                         if document['type'] != new_type:
-                            await conn.execute(
-                                "UPDATE documents SET type = $1 WHERE id = $2",
-                                new_type, document['id']
-                            )
-                            classified_count += 1
+                            document_updates[uuid.UUID(document['id'])] = new_type
                             logger.info(
-                                f"Updated document '{document['name']}' to type '{new_type}'"
+                                f"Queued update for document '{document['name']}' to type '{new_type}'"
                             )
 
         # Lazy behavior: Any documents not classified by any tool default to "homework"
@@ -292,15 +269,15 @@ async def run_classify_agent(
                 if doc_num in document_mapping:
                     document = document_mapping[doc_num]
                     if document['type'] != "homework":
-                        await conn.execute(
-                            "UPDATE documents SET type = $1 WHERE id = $2",
-                            "homework", document['id']
-                        )
-                        classified_count += 1
-                        logger.info(f"Defaulted document '{document['name']}' to type 'homework'")
+                        document_updates[uuid.UUID(document['id'])] = "homework"
+                        logger.info(f"Queued default for document '{document['name']}' to type 'homework'")
             
             # Add to classification results for completeness
             classification_dict.setdefault("homeworks", []).extend(list(unclassified_doc_nums))
+
+        # Batch update all documents in single query
+        classified_count = await agent_service.batch_update_document_types(document_updates)
+        logger.info(f"Batch updated {classified_count} documents")
 
         logger.info(
             f"Successfully classified {classified_count} documents for document_ids {document_ids}"

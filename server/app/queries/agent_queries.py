@@ -234,3 +234,87 @@ class AgentQueries:
         params: List[Any] = [agent_id]
 
         return query, params
+
+    def get_classification_run_context(
+        self, document_ids: list[str], department_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run classification agent with optimized JOIN.
+        
+        Fetches agent (via department_agents), model, provider, and documents
+        in a single query to minimize database round trips.
+
+        Args:
+            document_ids: List of document UUIDs as strings
+            department_id: Department UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            -- Agent data (via department_agents junction for 'classify' role)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Documents data (aggregated as JSON array)
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', d.id::text,
+                        'name', d.name,
+                        'type', d.type
+                    )
+                    ORDER BY d.name
+                ) FILTER (WHERE d.id IS NOT NULL),
+                '[]'::json
+            ) as documents
+        
+        FROM department_agents da
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN documents d ON d.id = ANY($1::uuid[])
+        WHERE da.department_id = $2 AND da.role = 'classify'
+        GROUP BY a.id, a.name, a.system_prompt, a.temperature, a.reasoning,
+                 m.id, m.name, m.custom_model,
+                 pr.id, pr.name, pr.base_url, pr.api_key
+        """
+        
+        params: list[Any] = [document_ids, department_id]
+        return query, params
+
+    def batch_update_document_types(self) -> tuple[str, List[Any]]:
+        """
+        Batch update document types using UNNEST for efficiency.
+        
+        Returns query that accepts two arrays: document_ids and types.
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE documents
+        SET type = updates.new_type
+        FROM (
+            SELECT 
+                UNNEST($1::uuid[]) as doc_id,
+                UNNEST($2::text[]) as new_type
+        ) as updates
+        WHERE documents.id = updates.doc_id
+        """
+        return query, []

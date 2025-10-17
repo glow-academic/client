@@ -1,8 +1,10 @@
 """Agent service with business logic and dynamic SQL."""
 
-from typing import List
+import json
+import uuid
+from typing import Any, Dict, List
 
-import asyncpg  # type: ignore 
+import asyncpg  # type: ignore
 from app.queries.agent_queries import AgentQueries
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentItem, AgentsListRequest,
@@ -256,3 +258,84 @@ class AgentService:
         await self.conn.execute(query, *params)
 
         return DeleteAgentResponse(success=True, message="Agent deleted successfully")
+
+    async def get_classification_run_context(
+        self, document_ids: list[uuid.UUID], department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run classification agent with optimized query.
+        
+        Reduces 5 database queries to 1 JOIN query.
+        
+        Args:
+            document_ids: List of document UUIDs to classify
+            department_id: UUID of the department
+        
+        Returns:
+            Dict with agent, model, provider, and documents data
+        
+        Raises:
+            ValueError: If no classify agent configured for department
+        """
+        document_ids_str = [str(d) for d in document_ids]
+        department_id_str = str(department_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_classification_run_context(
+            document_ids_str, department_id_str
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"No classify agent configured for department {department_id} "
+                f"or no documents found"
+            )
+        
+        # Parse documents JSON array
+        documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
+        
+        return {
+            # Agent data
+            'agent_id': context_row['agent_id'],
+            'name': context_row['agent_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Documents
+            'documents': documents,
+        }
+
+    async def batch_update_document_types(
+        self, document_updates: Dict[uuid.UUID, str]
+    ) -> int:
+        """
+        Batch update document types efficiently.
+        
+        Args:
+            document_updates: Dict mapping document_id -> new_type
+        
+        Returns:
+            Number of documents updated
+        """
+        if not document_updates:
+            return 0
+        
+        doc_ids = [str(d) for d in document_updates.keys()]
+        types = list(document_updates.values())
+        
+        query, _ = self.queries.batch_update_document_types()
+        result = await self.conn.execute(query, doc_ids, types)
+        
+        # Parse result like "UPDATE 15" to get count
+        count = int(result.split()[-1]) if result else 0
+        return count
