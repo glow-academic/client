@@ -837,6 +837,7 @@ class AnalyticsService:
                 document_mapping={},
                 parameter_item_mapping={},
                 parameter_item_ids=[],
+                document_ids=[],
             )
             for row in results
         }

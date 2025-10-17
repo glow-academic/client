@@ -1,9 +1,130 @@
 """Assistant queries for v2 API endpoints."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 from uuid import UUID
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
+
+
+class AssistantQueries:
+    """Query builders for assistant operations."""
+
+    def get_assistant_run_context(
+        self, chat_id: str, department_id: str
+    ) -> Tuple[str, List[Any]]:
+        """
+        Get all data needed to run assistant agent with optimized JOIN query.
+
+        Fetches chat, profile, agent (via department_agents), model, and provider
+        in a single query to minimize database round trips.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            department_id: UUID of the department
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            -- Chat data
+            ac.id::text as chat_id,
+            ac.title,
+            ac.trace_id,
+            ac.profile_id::text,
+            
+            -- Profile data
+            p.role as user_role,
+            p.first_name as user_first_name,
+            p.last_name as user_last_name,
+            
+            -- Agent data (via department_agents junction)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key
+
+        FROM assistant_chats ac
+        INNER JOIN profiles p ON p.id = ac.profile_id
+        INNER JOIN department_agents da ON da.department_id = $2 AND da.role = 'assistant'
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        WHERE ac.id = $1
+        """
+        
+        params: List[Any] = [chat_id, department_id]
+        return query, params
+
+    def get_messages_for_chat(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """
+        Get all messages for a chat, ordered chronologically.
+
+        Args:
+            chat_id: UUID of the assistant chat
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            id,
+            created_at,
+            updated_at,
+            completed_at,
+            chat_id,
+            role,
+            content,
+            completed
+        FROM assistant_messages
+        WHERE chat_id = $1
+        ORDER BY created_at ASC
+        """
+        
+        params: List[Any] = [chat_id]
+        return query, params
+
+    def get_tool_calls_for_chat(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """
+        Get all tool calls for a chat, ordered chronologically.
+
+        Args:
+            chat_id: UUID of the assistant chat
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            id,
+            created_at,
+            updated_at,
+            completed_at,
+            chat_id,
+            tool_name,
+            tool_type,
+            tool_arguments,
+            tool_result,
+            completed
+        FROM assistant_tool_calls
+        WHERE chat_id = $1
+        ORDER BY created_at ASC
+        """
+        
+        params: List[Any] = [chat_id]
+        return query, params
 
 
 async def get_assistant_chat_full_data(conn: asyncpg.Connection, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:

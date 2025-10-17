@@ -6,6 +6,7 @@ import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, function_tool, trace
 from app.db import get_db
 from app.services.agents.generic import GenericAgent
+from app.services.model_run_service import ModelRunService
 from app.utils.agents import get_department_agent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -207,31 +208,15 @@ async def run_classify_agent(
                 if not success:
                     raise ValueError(error_message)
                 
-                # create model run
-                model_run_id = await conn.fetchval("""
-                    INSERT INTO model_runs (input_tokens, output_tokens, department_id)
-                    VALUES ($1, $2, $3)
-                    RETURNING id
-                """, 0, 0, department_id)
-
-                # Create model_run junction records
-                if model['id']:
-                    await conn.execute("""
-                        INSERT INTO model_run_models (model_run_id, model_id, active)
-                        VALUES ($1, $2, $3)
-                    """, model_run_id, model['id'], True)
-                
-                if agent['id']:
-                    await conn.execute("""
-                        INSERT INTO model_run_agents (model_run_id, agent_id, active)
-                        VALUES ($1, $2, $3)
-                    """, model_run_id, agent['id'], True)
-                
-                if final_profile_id:
-                    await conn.execute("""
-                        INSERT INTO model_run_profiles (model_run_id, profile_id, active)
-                        VALUES ($1, $2, $3)
-                    """, model_run_id, final_profile_id, True)
+                # Create model run with all junction records
+                model_run_service = ModelRunService(conn)
+                model_run_id = await model_run_service.create_model_run(
+                    department_id=department_id,
+                    model_id=model['id'],
+                    entity_id=agent['id'],
+                    entity_type="agent",
+                    profile_id=final_profile_id,
+                )
 
                 result = await Runner.run(
                     classify_agent.agent(), input=formatted_documents, context=DebugContext(conn=conn, model_run_id=model_run_id)
@@ -239,11 +224,12 @@ async def run_classify_agent(
 
                 usage = result.context_wrapper.usage
 
-                await conn.execute("""
-                    UPDATE model_runs 
-                    SET input_tokens = $1, output_tokens = $2
-                    WHERE id = $3
-                """, usage.input_tokens, usage.output_tokens, model_run_id)
+                # Update model run tokens
+                await model_run_service.update_model_run_tokens(
+                    model_run_id=model_run_id,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                )
 
                 # Extract results from the global storage
                 # Categories not called by agent remain as empty lists (lazy default)

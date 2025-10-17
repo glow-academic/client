@@ -12,6 +12,7 @@ from app.db import get_db
 from app.extensions import UPLOAD_FOLDER
 from app.services.agents.collection.guardrail import get_output_guardrails
 from app.services.agents.generic import GenericAgent
+from app.services.model_run_service import ModelRunService
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
@@ -213,33 +214,15 @@ async def _handle_simulation_chat(
     if not success:
         raise ValueError(error_message)
 
-    # create model run
-    model_run = await conn.fetchrow("""
-        INSERT INTO model_runs (input_tokens, output_tokens, department_id, created_at)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id
-    """, 0, 0, scenario['department_id'], datetime.now(timezone.utc))
-
-    model_run_id = model_run['id']
-
-    # Create model_run junction records
-    if model['id']:
-        await conn.execute("""
-            INSERT INTO model_run_models (model_run_id, model_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, model['id'], True)
-    
-    if persona['id']:
-        await conn.execute("""
-            INSERT INTO model_run_personas (model_run_id, persona_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, persona['id'], True)
-    
-    if final_profile_id:
-        await conn.execute("""
-            INSERT INTO model_run_profiles (model_run_id, profile_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, final_profile_id, True)
+    # Create model run with all junction records (using persona, not agent)
+    model_run_service = ModelRunService(conn)
+    model_run_id = await model_run_service.create_model_run(
+        department_id=scenario['department_id'],
+        model_id=model['id'],
+        entity_id=persona['id'],
+        entity_type="persona",
+        profile_id=final_profile_id,
+    )
 
     with trace(chat['title'], trace_id=chat['trace_id'], group_id=str(attempt['id'])):
         result = Runner.run_streamed(

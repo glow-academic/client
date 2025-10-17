@@ -10,9 +10,9 @@ from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_db
-from app.queries.provider_queries import ProviderQueries
 from app.services.agents.generic import GenericAgent
-from app.utils.agents import get_department_agent
+from app.services.assistant_service import AssistantService
+from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.limit import check_rate_limit
@@ -93,126 +93,66 @@ async def _handle_assistant_chat(
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
-    # Get the assistant agent configured for this department (via junction table)
-    agent = await get_department_agent(conn, department_id, 'assistant')
+    # Get all context data in optimized queries (1 JOIN + 2 parallel queries)
+    assistant_service = AssistantService(conn)
+    context = await assistant_service.get_assistant_run_context(
+        chat_id=chat['id'],
+        department_id=department_id
+    )
 
     input_items: list[TResponseInputItem] = []
 
-    # get the user profile from the chat
-    user_profile = await conn.fetchrow(
-        "SELECT id, role, first_name, last_name FROM profiles WHERE id = $1",
-        chat['profile_id']
-    )
-    if not user_profile:
-        raise ValueError(f"User profile not found with ID: {chat['profile_id']}")
-
-    # get the user's role
-    user_role = user_profile['role']
-    if user_role == "superadmin":
-        user_role = "Super Administrator"
-    elif user_role == "admin":
-        user_role = "Administrator"
-    elif user_role == "instructional":
-        user_role = "Instructional"
-    elif user_role == "ta":
-        user_role = "GTA"
-
-    # get the user's name
-    user_name = f"{user_profile['first_name']} {user_profile['last_name']}"
-
-    # add the user profile to the input items
+    # Add the user profile to the input items
     input_items.append(
         {
             "role": "user",
-            "content": f"The user's profile ID: {chat['profile_id']}. The user's name is {user_name}. The user's role is {user_role}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well.",
+            "content": f"The user's profile ID: {context.profile_id}. The user's name is {context.user_name}. The user's role is {context.user_role_display}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well.",
         }
     )
 
-    # Get all the messages for the chat_id, including the new one, order by created_at
-    messages = await conn.fetch(
-        "SELECT * FROM assistant_messages WHERE chat_id = $1 ORDER BY created_at",
-        chat['id']
+    # Prepare conversation history from context data
+    conversation_history = get_assistant_conversation_history(
+        context.messages, context.tool_calls
     )
-
-    # get all the tool calls for the chat_id
-    tool_calls = await conn.fetch(
-        "SELECT * FROM assistant_tool_calls WHERE chat_id = $1 ORDER BY created_at",
-        chat['id']
-    )
-
-    # Prepare conversation history from chat_id
-    conversation_history = get_assistant_conversation_history(messages, tool_calls)
     input_items.extend(conversation_history)
 
-    # getting the model from the agent's model_id
-    model = await conn.fetchrow(
-        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
-        agent['model_id']
-    )
-    if not model:
-        raise ValueError(f"Model with ID {agent['model_id']} not found")
-
-    # getting the provider from the model's provider_id
-    provider = await conn.fetchrow(
-        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
-        model['provider_id']
-    )
-    if not provider:
-        raise ValueError(f"Provider with ID {model['provider_id']} not found")
-
-
+    # Create agent instance with context data
     agent_instance = GenericAgent(
-        agent_name=agent['name'],
-        system_prompt=agent['system_prompt'],
-        temperature=agent['temperature'],
-        model_name=model['name'],
-        model_provider=provider['name'],
-        base_url=provider['base_url'],
-        api_key=provider['api_key'],
-        reasoning=agent['reasoning'],
+        agent_name=context.agent_name,
+        system_prompt=context.system_prompt,
+        temperature=context.temperature,
+        model_name=context.model_name,
+        model_provider=context.provider_name,
+        base_url=context.base_url,
+        api_key=context.api_key,
+        reasoning=context.reasoning,
         mcp_servers=mcp_servers,
-        custom_model=model['custom_model'],
+        custom_model=context.custom_model,
     )
 
-    final_profile_id = chat['profile_id']
+    final_profile_id = uuid.UUID(context.profile_id)
 
     success, error_message = await check_rate_limit(conn, final_profile_id)
     if not success:
         raise ValueError(error_message)
 
-    # create a model run
-    model_run_id = await conn.fetchval("""
-        INSERT INTO model_runs (input_tokens, output_tokens, department_id)
-        VALUES ($1, $2, $3)
-        RETURNING id
-    """, 0, 0, department_id)
+    # Create model run with all junction records
+    model_run_service = ModelRunService(conn)
+    model_run_id = await model_run_service.create_model_run(
+        department_id=department_id,
+        model_id=uuid.UUID(context.model_id),
+        entity_id=uuid.UUID(context.agent_id),
+        entity_type="agent",
+        profile_id=final_profile_id,
+    )
 
-    # Create model_run junction records
-    if model['id']:
-        await conn.execute("""
-            INSERT INTO model_run_models (model_run_id, model_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, model['id'], True)
-    
-    if agent['id']:
-        await conn.execute("""
-            INSERT INTO model_run_agents (model_run_id, agent_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, agent['id'], True)
-    
-    if final_profile_id:
-        await conn.execute("""
-            INSERT INTO model_run_profiles (model_run_id, profile_id, active)
-            VALUES ($1, $2, $3)
-        """, model_run_id, final_profile_id, True)
-
-    with trace(chat['title'], trace_id=chat['trace_id']):
+    with trace(context.title, trace_id=context.trace_id):
         result = Runner.run_streamed(agent_instance.agent(), input=input_items, context=DebugContext(conn=conn, model_run_id=model_run_id))
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run
 
-    chat_id_str = str(chat['id'])
+    chat_id_str = context.chat_id
     await store_active_run(chat_id_str, result)
 
     # Track active tool calls to match with their results
@@ -287,12 +227,12 @@ async def _handle_assistant_chat(
 
         usage = result.context_wrapper.usage
 
-        # update model run
-        await conn.execute("""
-            UPDATE model_runs 
-            SET input_tokens = $1, output_tokens = $2
-            WHERE id = $3
-        """, usage.input_tokens, usage.output_tokens, model_run_id)
+        # Update model run tokens
+        await model_run_service.update_model_run_tokens(
+            model_run_id=model_run_id,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+        )
 
     except Exception as e:
         # Handle cancellation or other errors
