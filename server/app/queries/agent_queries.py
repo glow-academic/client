@@ -319,6 +319,113 @@ class AgentQueries:
         """
         return query, []
 
+    def get_scenario_run_context(
+        self, 
+        department_id: str, 
+        persona_id: str | None,
+        document_ids: list[str] | None,
+        parameter_item_ids: list[str] | None
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run scenario agent with optimized JOIN.
+        
+        Fetches agent (via department_agents), model, provider, persona,
+        documents, parameter items, and default guest profile in a single query.
+
+        Args:
+            department_id: Department UUID as string
+            persona_id: Optional persona UUID as string
+            document_ids: Optional list of document UUIDs as strings
+            parameter_item_ids: Optional list of parameter item UUIDs as strings
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        WITH default_guest AS (
+            SELECT id::text as guest_profile_id
+            FROM profiles 
+            WHERE role = 'guest' AND default_profile = true 
+            LIMIT 1
+        )
+        SELECT 
+            -- Agent data (via department_agents junction for 'scenario' role)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Persona data (nullable)
+            p.id::text as persona_id,
+            p.name as persona_name,
+            p.description as persona_description,
+            
+            -- Documents data (aggregated as JSON array)
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'id', d.id::text,
+                        'name', d.name,
+                        'file_path', d.file_path,
+                        'mime_type', d.mime_type
+                    )
+                    ORDER BY array_position($3::uuid[], d.id)
+                )
+                FROM documents d
+                WHERE d.id = ANY($3::uuid[])
+                ),
+                '[]'::json
+            ) as documents,
+            
+            -- Parameter items data (aggregated as JSON array with parameter info)
+            COALESCE(
+                (SELECT json_agg(
+                    json_build_object(
+                        'item_name', pi.name,
+                        'item_description', pi.description,
+                        'param_name', pa.name,
+                        'param_description', pa.description
+                    )
+                    ORDER BY array_position($4::uuid[], pi.id)
+                )
+                FROM parameter_items pi
+                JOIN parameters pa ON pi.parameter_id = pa.id
+                WHERE pi.id = ANY($4::uuid[])
+                ),
+                '[]'::json
+            ) as parameter_items,
+            
+            -- Default guest profile
+            dg.guest_profile_id
+        
+        FROM department_agents da
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN personas p ON p.id = $2
+        CROSS JOIN default_guest dg
+        WHERE da.department_id = $1 AND da.role = 'scenario'
+        """
+        
+        # Convert None to empty arrays for proper SQL handling
+        doc_ids = document_ids if document_ids else []
+        param_ids = parameter_item_ids if parameter_item_ids else []
+        
+        params: list[Any] = [department_id, persona_id, doc_ids, param_ids]
+        return query, params
+
     def get_hint_run_context(
         self, message_id: str, chat_id: str, department_id: str
     ) -> tuple[str, list[Any]]:
@@ -405,15 +512,24 @@ class AgentQueries:
             -- Profile data
             pi.profile_id::text,
             
-            -- Documents data (aggregated as JSON array)
+            -- Documents data (aggregated as JSON array with full document info)
             COALESCE(
                 (
-                    SELECT json_agg(sd.document_id::text ORDER BY sd.document_id)
+                    SELECT json_agg(
+                        json_build_object(
+                            'id', d.id::text,
+                            'name', d.name,
+                            'file_path', d.file_path,
+                            'mime_type', d.mime_type
+                        )
+                        ORDER BY d.id
+                    )
                     FROM scenario_documents sd
+                    JOIN documents d ON d.id = sd.document_id
                     WHERE sd.scenario_id = si.id AND sd.active = true
                 ),
                 '[]'::json
-            ) as document_ids
+            ) as documents
         
         FROM target_message tm
         CROSS JOIN chat_info ci
@@ -486,14 +602,19 @@ class AgentQueries:
             -- Profile data (via attempt_profiles junction)
             ap.profile_id::text as profile_id,
             
-            -- Documents data (aggregated as JSON array from scenario_documents junction)
+            -- Documents data (aggregated as JSON array with full document info)
             COALESCE(
                 json_agg(
-                    sd.document_id::text
-                    ORDER BY sd.document_id
-                ) FILTER (WHERE sd.document_id IS NOT NULL AND sd.active = true),
+                    json_build_object(
+                        'id', d.id::text,
+                        'name', d.name,
+                        'file_path', d.file_path,
+                        'mime_type', d.mime_type
+                    )
+                    ORDER BY d.id
+                ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true),
                 '[]'::json
-            ) as document_ids
+            ) as documents
         
         FROM simulation_chats sc
         INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
@@ -505,6 +626,7 @@ class AgentQueries:
         INNER JOIN providers pr ON pr.id = m.provider_id
         LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
         LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+        LEFT JOIN documents d ON d.id = sd.document_id
         WHERE sc.id = $1
         GROUP BY sc.id, sc.title, sc.trace_id,
                  sa.id, sa.simulation_id,

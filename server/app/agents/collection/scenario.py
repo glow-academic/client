@@ -9,14 +9,14 @@ from agents import (Runner, ToolsToFinalOutputResult, function_tool,
 from agents.items import TResponseInputItem
 from app.agents.generic import GenericAgent
 from app.db import get_db
+from app.services.agent_service import AgentService
 from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document import get_document_info
-from app.utils.guest import find_default_guest_profile
+from app.utils.document import format_document_info
 from app.utils.limit import check_rate_limit
-from app.utils.personas import get_persona_info
-from app.utils.scenario import get_parameter_item_info
+from app.utils.personas import format_persona_info
+from app.utils.scenario import format_parameter_item_info
 from fastapi import Depends
 from pydantic import Field
 
@@ -147,51 +147,36 @@ async def run_scenario_agent(
         scenario_results.clear()
         scenario_progress.clear()
 
-        # Get the agent to get its name for the agent
-        if persona_id is None:
+        # Get all context data in a single optimized query via service layer
+        agent_service = AgentService(conn)
+        context = await agent_service.get_scenario_run_context(
+            department_id=department_id,
+            persona_id=persona_id,
+            document_ids=document_ids,
+            parameter_item_ids=parameter_item_ids,
+        )
+
+        # Format persona info if persona was provided
+        if persona_id is None or context['persona'] is None:
             persona_info = None
             show_images = False
         else:
-            persona = await conn.fetchrow(
-                "SELECT id FROM personas WHERE id = $1",
-                persona_id
-            )
-            if not persona:
-                raise ValueError(f"Persona with ID {persona_id} not found")
-            persona_info = await get_persona_info(conn, persona['id'])
+            persona_info = format_persona_info(context['persona'])
             # Note: image_input_active moved to simulation level
             # For scenario generation, default to False
             show_images = False
 
+        # Format document info if documents were provided
         if document_ids is None or len(document_ids) == 0:
             document_info = None
         else:
-            document_info = await get_document_info(conn, document_ids, show_images)
+            document_info = format_document_info(context['documents'], show_images)
 
+        # Format parameter item info if parameter items were provided
         if parameter_item_ids is None or len(parameter_item_ids) == 0:
             parameter_item_info = None
         else:
-            parameter_item_info = await get_parameter_item_info(conn, parameter_item_ids)
-
-        # Get the scenario agent configured for this department (via junction table)
-        from app.utils.agents import get_department_agent
-        scenario_agent = await get_department_agent(conn, department_id, 'scenario')
-
-        # getting the model from the agent's model_id
-        model = await conn.fetchrow(
-            "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
-            scenario_agent['model_id']
-        )
-        if not model:
-            raise ValueError(f"Model with ID {scenario_agent['model_id']} not found")
-
-        # getting the provider from the model's provider_id
-        provider = await conn.fetchrow(
-            "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
-            model['provider_id']
-        )
-        if not provider:
-            raise ValueError(f"Provider with ID {model['provider_id']} not found")
+            parameter_item_info = format_parameter_item_info(context['parameter_items'])
 
         # Create scenario generation tools
         scenario_tools = create_scenario_tools(group_id)
@@ -217,18 +202,18 @@ async def run_scenario_agent(
             return ToolsToFinalOutputResult(is_final_output=completed_required)
 
         scenario_agent_generic = GenericAgent(
-            agent_name=scenario_agent['name'],
-            system_prompt=scenario_agent['system_prompt'],
-            temperature=scenario_agent['temperature'],
-            model_name=model['name'],
-            model_provider=provider['name'],
-            base_url=provider['base_url'],
-            api_key=provider['api_key'],
-            reasoning=scenario_agent['reasoning'],
+            agent_name=context['agent_name'],
+            system_prompt=context['system_prompt'],
+            temperature=context['temperature'],
+            model_name=context['model_name'],
+            model_provider=context['provider_name'],
+            base_url=context['base_url'],
+            api_key=context['api_key'],
+            reasoning=context['reasoning'],
             tools=scenario_tools,
             parallel_tool_calls=False,
             tool_use_behavior=tool_use_behavior,
-            custom_model=model['custom_model'],
+            custom_model=context['custom_model'],
         )
 
         agent_instance = scenario_agent_generic.agent()
@@ -244,9 +229,8 @@ async def run_scenario_agent(
         # generate a trace id for the scenario
         trace_id = gen_trace_id()
 
-        default_guest_profile = await find_default_guest_profile(conn)
-
-        final_profile_id = (profile_id if profile_id else (default_guest_profile['id'] if default_guest_profile else None))
+        # Use default guest profile from context if no profile_id provided
+        final_profile_id = profile_id if profile_id else context['default_guest_profile_id']
 
         success, error_message = await check_rate_limit(conn, final_profile_id)
         if not success:
@@ -256,8 +240,8 @@ async def run_scenario_agent(
         model_run_service = ModelRunService(conn)
         model_run_id = await model_run_service.create_model_run(
             department_id=department_id,
-            model_id=model['id'],
-            entity_id=scenario_agent['id'],
+            model_id=context['model_id'],
+            entity_id=context['agent_id'],
             entity_type="agent",
             profile_id=final_profile_id,
         )
@@ -279,11 +263,11 @@ async def run_scenario_agent(
         usage = result.context_wrapper.usage
 
         # Update model run with token usage
-        await conn.execute("""
-            UPDATE model_runs 
-            SET input_tokens = $1, output_tokens = $2 
-            WHERE id = $3
-        """, usage.input_tokens, usage.output_tokens, model_run_id)
+        await model_run_service.update_model_run_tokens(
+            model_run_id=model_run_id,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+        )
 
         # Get result values
         title = scenario_result.get("title", "")

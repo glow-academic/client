@@ -53,6 +53,8 @@ async def get_parameter_item_info(
 ) -> TResponseInputItem:
     """
     Get the parameter item information for a given parameter item ids, including their value.
+    
+    DEPRECATED: Use format_parameter_item_info instead with pre-fetched data.
     """
     # Join ParameterItems with Parameters to get parameter name and description
     parameter_items_with_params = await conn.fetch("""
@@ -66,7 +68,25 @@ async def get_parameter_item_info(
         WHERE pi.id = ANY($1::uuid[])
     """, parameter_item_ids)
 
-    if not parameter_items_with_params:
+    # Convert to list of dicts for format_parameter_item_info
+    items_list = [dict(row) for row in parameter_items_with_params]
+    return format_parameter_item_info(items_list)
+
+
+def format_parameter_item_info(
+    parameter_items: List[Dict[str, Any]]
+) -> TResponseInputItem:
+    """
+    Format parameter item information as TResponseInputItem.
+    
+    Args:
+        parameter_items: List of dicts with keys: item_name, item_description,
+                        param_name, param_description
+    
+    Returns:
+        TResponseInputItem formatted for agent input
+    """
+    if not parameter_items:
         return {
             "role": "user",
             "content": "No parameter items found.",
@@ -74,7 +94,7 @@ async def get_parameter_item_info(
 
     # Format each parameter item using the template
     formatted_items = []
-    for row in parameter_items_with_params:
+    for row in parameter_items:
         formatted_item = (
             f"This is the {row['param_name']} ({row.get('param_description', '')}) for this chat: {row['item_name']}. "
             f"Description: {row.get('item_description', '')}."

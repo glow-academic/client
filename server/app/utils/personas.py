@@ -1,22 +1,20 @@
 # app/utils/personas.py
-import uuid
+from typing import Dict
 
-import asyncpg  # type: ignore
 from agents.items import TResponseInputItem
 
 
-async def get_persona_info(conn: asyncpg.Connection, persona_id: uuid.UUID) -> TResponseInputItem:
+def format_persona_info(persona_data: Dict[str, str]) -> TResponseInputItem:
     """
-    Get the persona information for a given persona.
+    Format persona information as TResponseInputItem.
+    
+    Args:
+        persona_data: Dict with 'name' and 'description' keys
+    
+    Returns:
+        TResponseInputItem formatted for agent input
     """
-    persona = await conn.fetchrow(
-        "SELECT name, description FROM personas WHERE id = $1",
-        persona_id
-    )
-    if not persona:
-        raise ValueError(f"Persona with ID {persona_id} not found")
-
     return {
         "role": "user",
-        "content": f"This is the profile of the student: Name: {persona['name']} Description: {persona.get('description', '')}",
+        "content": f"This is the profile of the student: Name: {persona_data['name']} Description: {persona_data.get('description', '')}",
     }

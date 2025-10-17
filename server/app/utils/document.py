@@ -74,6 +74,8 @@ async def get_document_info(
     conn: asyncpg.Connection, document_ids: List[uuid.UUID], show_images: bool = False
 ) -> TResponseInputItem:
     """Build a structured list of per-document, per-page text and optional images.
+    
+    DEPRECATED: Use format_document_info instead with pre-fetched document data.
 
     Order per document: docN-image-pageM, then docN-text-pageM. If images are
     unavailable or disabled, only include docN-text-pageM.
@@ -86,12 +88,37 @@ async def get_document_info(
     if not documents:
         raise ValueError(f"Documents not found for document ids {document_ids}")
 
-    by_id = {doc['id']: doc for doc in documents}
+    # Convert to list of dicts for format_document_info
+    docs_list = [dict(doc) for doc in documents]
+    return format_document_info(docs_list, show_images)
+
+
+def format_document_info(
+    documents: List[Dict[str, Any]], show_images: bool = False
+) -> TResponseInputItem:
+    """Build a structured list of per-document, per-page text and optional images.
+
+    Order per document: docN-image-pageM, then docN-text-pageM. If images are
+    unavailable or disabled, only include docN-text-pageM.
+    
+    Args:
+        documents: List of dicts with keys: id, name, file_path, mime_type
+        show_images: Whether to include images in the output
+        
+    Returns:
+        TResponseInputItem formatted for agent input
+    """
+    if not documents:
+        # Return a minimal message if no documents provided
+        msg: Message = {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "No documents provided"}]
+        }
+        return msg
 
     content_items: ResponseInputMessageContentListParam = []
 
-    for doc_index, doc_id in enumerate(document_ids, start=1):
-        document = by_id.get(doc_id)
+    for doc_index, document in enumerate(documents, start=1):
         if not document:
             # Skip missing docs quietly to keep order for others
             continue
@@ -189,5 +216,5 @@ async def get_document_info(
         # Fallback to a minimal text item if nothing could be built
         content_items.append({"type": "input_text", "text": "No documents provided"})
 
-    msg: Message = {"role": "user", "content": content_items}
-    return msg
+    result_msg: Message = {"role": "user", "content": content_items}
+    return result_msg

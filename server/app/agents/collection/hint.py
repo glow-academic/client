@@ -12,7 +12,7 @@ from app.services.model_run_service import ModelRunService
 from app.utils.chat import (format_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext, debug_info
-from app.utils.document import get_document_info
+from app.utils.document import format_document_info
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
 from fastapi import Depends
@@ -207,10 +207,9 @@ async def run_hint_agent(
         # Build input items
         input_items: list[TResponseInputItem] = []
         
-        # Add document info if available (no images needed for hints)
-        doc_ids = [uuid.UUID(doc_id) for doc_id in context['document_ids']]
-        if doc_ids:
-            document_info = await get_document_info(conn, doc_ids, False)
+        # Format document info if documents are available (no images needed for hints)
+        if context['documents']:
+            document_info = format_document_info(context['documents'], False)
             input_items.append(document_info)
         
         # Get all messages for the chat

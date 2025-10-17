@@ -340,6 +340,85 @@ class AgentService:
         count = int(result.split()[-1]) if result else 0
         return count
 
+    async def get_scenario_run_context(
+        self,
+        department_id: uuid.UUID,
+        persona_id: uuid.UUID | None = None,
+        document_ids: List[uuid.UUID] | None = None,
+        parameter_item_ids: List[uuid.UUID] | None = None,
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run scenario agent with optimized query.
+        
+        Reduces 8-10 database queries to 1 JOIN query.
+        
+        Args:
+            department_id: UUID of the department
+            persona_id: Optional persona UUID
+            document_ids: Optional list of document UUIDs
+            parameter_item_ids: Optional list of parameter item UUIDs
+        
+        Returns:
+            Dict with agent, model, provider, persona, documents, 
+            parameter_items, and default_guest_profile_id
+        
+        Raises:
+            ValueError: If no scenario agent configured for department
+        """
+        # Convert UUIDs to strings for query
+        department_id_str = str(department_id)
+        persona_id_str = str(persona_id) if persona_id else None
+        document_ids_str = [str(d) for d in document_ids] if document_ids else None
+        parameter_item_ids_str = [str(p) for p in parameter_item_ids] if parameter_item_ids else None
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_scenario_run_context(
+            department_id_str, persona_id_str, document_ids_str, parameter_item_ids_str
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"No scenario agent configured for department {department_id}"
+            )
+        
+        # Parse JSON arrays
+        documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
+        parameter_items = json.loads(context_row['parameter_items']) if isinstance(context_row['parameter_items'], str) else context_row['parameter_items']
+        
+        # Build persona dict if persona was requested and found
+        persona = None
+        if persona_id and context_row['persona_id']:
+            persona = {
+                'id': context_row['persona_id'],
+                'name': context_row['persona_name'],
+                'description': context_row['persona_description'],
+            }
+        
+        return {
+            # Agent data
+            'agent_id': context_row['agent_id'],
+            'agent_name': context_row['agent_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Entity data
+            'persona': persona,
+            'documents': documents,
+            'parameter_items': parameter_items,
+            # Default guest profile
+            'default_guest_profile_id': context_row['guest_profile_id'],
+        }
+
     async def get_simulation_run_context(
         self, chat_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -369,8 +448,8 @@ class AgentService:
                 f"Simulation chat {chat_id} not found or missing required data"
             )
         
-        # Parse document_ids JSON array
-        document_ids = json.loads(context_row['document_ids']) if isinstance(context_row['document_ids'], str) else context_row['document_ids']
+        # Parse documents JSON array
+        documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
         
         return {
             # Chat data
@@ -404,8 +483,8 @@ class AgentService:
             'output_guardrail_active': context_row['output_guardrail_active'],
             # Profile data (nullable)
             'profile_id': context_row['profile_id'],
-            # Documents
-            'document_ids': document_ids,
+            # Documents (full document data, not just IDs)
+            'documents': documents,
         }
 
     async def get_grading_run_context(
@@ -574,8 +653,8 @@ class AgentService:
                 f"no hint agent configured for department {department_id}"
             )
         
-        # Parse JSON array for document_ids
-        document_ids = json.loads(context_row['document_ids']) if isinstance(context_row['document_ids'], str) else context_row['document_ids']
+        # Parse JSON array for documents
+        documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
         
         return {
             # Message data
@@ -608,8 +687,8 @@ class AgentService:
             'api_key': context_row['api_key'],
             # Profile data
             'profile_id': context_row['profile_id'],
-            # Documents
-            'document_ids': document_ids,
+            # Documents (full document data, not just IDs)
+            'documents': documents,
         }
 
     async def get_guardrail_run_context(

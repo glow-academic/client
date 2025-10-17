@@ -15,10 +15,9 @@ from app.extensions import UPLOAD_FOLDER
 from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
-from app.utils.document import get_document_info
+from app.utils.document import format_document_info
 from app.utils.guest import find_default_guest_profile
 from app.utils.limit import check_rate_limit
-from app.utils.personas import get_persona_info
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 
@@ -76,10 +75,9 @@ async def _handle_simulation_chat(
 
     input_items: list[TResponseInputItem] = []
     
-    # Load document info if needed
-    doc_ids = [uuid.UUID(doc_id) for doc_id in context['document_ids']]
-    if doc_ids:
-        document_info = await get_document_info(conn, doc_ids, context['image_input_active'])
+    # Format document info if documents are available
+    if context['documents']:
+        document_info = format_document_info(context['documents'], context['image_input_active'])
         input_items.append(document_info)
 
     # Get all messages using service layer
