@@ -99,3 +99,15 @@ class AssistantService:
             tool_calls=tool_calls,
         )
 
+    async def update_chat_title(self, chat_id: UUID, title: str) -> None:
+        """
+        Update the title of an assistant chat.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            title: New title for the chat
+        """
+        chat_id_str = str(chat_id)
+        query, params = self.queries.update_chat_title(chat_id_str, title)
+        await self.conn.execute(query, *params)
+

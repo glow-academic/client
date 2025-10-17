@@ -126,6 +126,26 @@ class AssistantQueries:
         params: List[Any] = [chat_id]
         return query, params
 
+    def update_chat_title(self, chat_id: str, title: str) -> Tuple[str, List[Any]]:
+        """
+        Update the title of an assistant chat.
+
+        Args:
+            chat_id: UUID of the assistant chat
+            title: New title for the chat
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        UPDATE assistant_chats 
+        SET title = $1, updated_at = NOW()
+        WHERE id = $2
+        """
+        
+        params: List[Any] = [title, chat_id]
+        return query, params
+
 
 async def get_assistant_chat_full_data(conn: asyncpg.Connection, chat_id: UUID, profile_id: UUID) -> Dict[str, Any]:
     """Get complete assistant chat data with all related entities.

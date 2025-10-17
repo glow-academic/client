@@ -339,3 +339,59 @@ class AgentService:
         # Parse result like "UPDATE 15" to get count
         count = int(result.split()[-1]) if result else 0
         return count
+
+    async def get_title_run_context(
+        self, chat_id: uuid.UUID, department_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run title agent with optimized query.
+        
+        Reduces 4 database queries to 1 JOIN query.
+        
+        Args:
+            chat_id: UUID of the assistant chat
+            department_id: UUID of the department
+        
+        Returns:
+            Dict with agent, model, provider, and chat data
+        
+        Raises:
+            ValueError: If no title agent configured for department or chat not found
+        """
+        chat_id_str = str(chat_id)
+        department_id_str = str(department_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_title_run_context(
+            chat_id_str, department_id_str
+        )
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"No title agent configured for department {department_id} "
+                f"or chat {chat_id} not found"
+            )
+        
+        return {
+            # Agent data
+            'agent_id': context_row['agent_id'],
+            'name': context_row['agent_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Chat data
+            'chat_id': context_row['chat_id'],
+            'profile_id': context_row['profile_id'],
+            'chat_title': context_row['chat_title'],
+            'trace_id': context_row['trace_id'],
+        }

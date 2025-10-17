@@ -318,3 +318,56 @@ class AgentQueries:
         WHERE documents.id = updates.doc_id
         """
         return query, []
+
+    def get_title_run_context(
+        self, chat_id: str, department_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run title agent with optimized JOIN.
+        
+        Fetches agent (via department_agents), model, provider, and chat
+        in a single query to minimize database round trips.
+
+        Args:
+            chat_id: Assistant chat UUID as string
+            department_id: Department UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            -- Agent data (via department_agents junction for 'title' role)
+            a.id::text as agent_id,
+            a.name as agent_name,
+            a.system_prompt,
+            a.temperature,
+            a.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Chat data
+            ac.id::text as chat_id,
+            ac.profile_id::text as profile_id,
+            ac.title as chat_title,
+            ac.trace_id as trace_id
+        
+        FROM department_agents da
+        INNER JOIN agents a ON a.id = da.agent_id
+        INNER JOIN models m ON m.id = a.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        INNER JOIN assistant_chats ac ON ac.id = $1
+        WHERE da.department_id = $2 AND da.role = 'title'
+        """
+        
+        params: list[Any] = [chat_id, department_id]
+        return query, params
