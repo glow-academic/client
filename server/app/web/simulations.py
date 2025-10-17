@@ -21,7 +21,6 @@ from app.agents.collection.scenario import run_scenario_agent
 from app.agents.collection.simulation import (cancel_simulation_run,
                                               run_simulation_agent)
 from app.db import get_pool
-from app.utils.guest import find_default_guest_profile
 from app.utils.scenario import randomly_fill_scenario_attributes
 
 logger = logging.getLogger(__name__)
@@ -80,9 +79,10 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             # Resolve profile for guests to avoid ghost attempts
             if profile_id is None:
-                default_guest = await find_default_guest_profile(conn)
-                if default_guest is not None:
-                    profile_id = default_guest['id']
+                from app.services.profile_service import ProfileService
+                profile_service = ProfileService(conn)
+                profile_id = await profile_service.get_default_guest_profile_id()
+                if profile_id:
                     logger.info(
                         f"Assigning simulation attempt to default guest profile {profile_id}"
                     )

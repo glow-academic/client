@@ -10,7 +10,6 @@ from app.services.agent_service import AgentService
 from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.guest import find_default_guest_profile
 from fastapi import Depends
 from pydantic import Field
 
@@ -97,6 +96,12 @@ async def run_classify_agent(
         A dictionary containing classification results and statistics.
     """
     
+    # Resolve guest profile if needed
+    if not profile_id:
+        from app.services.profile_service import ProfileService
+        profile_service = ProfileService(conn)
+        profile_id = await profile_service.get_default_guest_profile_id()
+    
     # Clear previous results and initialize all categories to empty
     global classification_results, classification_progress
     classification_results.clear()
@@ -179,14 +184,9 @@ async def run_classify_agent(
                     "syllabi": [],
                 }
             else:
-
-                default_guest_profile = await find_default_guest_profile(conn)
-
-                final_profile_id = (profile_id if profile_id else (default_guest_profile['id'] if default_guest_profile else None))
-
                 # Create model run service and check rate limit
                 model_run_service = ModelRunService(conn)
-                success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+                success, error_message = await model_run_service.check_rate_limit(profile_id)
                 if not success:
                     raise ValueError(error_message)
                 
@@ -196,7 +196,7 @@ async def run_classify_agent(
                     model_id=uuid.UUID(context['model_id']),
                     entity_id=uuid.UUID(context['agent_id']),
                     entity_type="agent",
-                    profile_id=final_profile_id,
+                    profile_id=profile_id,
                 )
 
                 result = await Runner.run(

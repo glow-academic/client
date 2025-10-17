@@ -16,7 +16,6 @@ from app.utils.chat import (format_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.guest import find_default_guest_profile
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
 from pydantic import Field
@@ -401,15 +400,9 @@ async def run_grade_agent(
 
         agent_instance = grading_agent.agent()
 
-        # Get profile from context (already includes attempt_profiles junction)
-        attempt_profile_id = uuid.UUID(context['profile_id']) if context['profile_id'] else None
-        default_guest_profile = await find_default_guest_profile(conn)
-
-        final_profile_id = (attempt_profile_id if attempt_profile_id else (default_guest_profile['id'] if default_guest_profile else None))
-
         # Create model run service and check rate limit
         model_run_service = ModelRunService(conn)
-        success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+        success, error_message = await model_run_service.check_rate_limit(context['profile_id'])
         if not success:
             raise ValueError(error_message)
 
@@ -419,7 +412,7 @@ async def run_grade_agent(
             model_id=uuid.UUID(model['id']),
             entity_id=uuid.UUID(agent['id']),
             entity_type="agent",
-            profile_id=final_profile_id,
+            profile_id=context['profile_id'],
         )
 
         # Run the grading

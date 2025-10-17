@@ -291,14 +291,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
     if profile_id == "guest-profile-id":
         try:
             from app.db import get_pool
-            from app.utils.guest import find_default_guest_profile
+            from app.services.profile_service import ProfileService
 
             pool = get_pool()
             if pool:
                 async with pool.acquire() as conn:
-                    default_guest = await find_default_guest_profile(conn)
-                    if default_guest:
-                        profile_id = str(default_guest['id'])
+                    profile_service = ProfileService(conn)
+                    resolved_guest_id = await profile_service.get_default_guest_profile_id()
+                    if resolved_guest_id:
+                        profile_id = str(resolved_guest_id)
                         logger.info(f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}")
                     else:
                         logger.warning("No default guest profile found; treating as anonymous guest")

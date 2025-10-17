@@ -13,7 +13,6 @@ from app.utils.chat import (format_chat_scenario,
                             get_simulation_conversation_history)
 from app.utils.debug_info import DebugContext, debug_info
 from app.utils.document import format_document_info
-from app.utils.guest import find_default_guest_profile
 from fastapi import Depends
 from pydantic import Field
 
@@ -228,18 +227,9 @@ async def run_hint_agent(
         input_items.insert(0, chat_scenario)
         input_items.extend(conversation_history)
         
-        # Get profile from context or default guest profile
-        attempt_profile_id = uuid.UUID(context['profile_id']) if context['profile_id'] else None
-        default_guest_profile = await find_default_guest_profile(conn)
-        final_profile_id = (
-            attempt_profile_id 
-            if attempt_profile_id 
-            else (default_guest_profile['id'] if default_guest_profile else None)
-        )
-        
         # Create model run service and check rate limit
         model_run_service = ModelRunService(conn)
-        success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+        success, error_message = await model_run_service.check_rate_limit(context['profile_id'])
         if not success:
             raise ValueError(error_message)
         
@@ -252,7 +242,7 @@ async def run_hint_agent(
             model_id=uuid.UUID(context['model_id']),
             entity_id=uuid.UUID(context['agent_id']),
             entity_type="agent",
-            profile_id=final_profile_id,
+            profile_id=context['profile_id'],
         )
         
         # Run the hint agent

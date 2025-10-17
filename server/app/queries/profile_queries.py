@@ -235,3 +235,13 @@ class ProfileQueries:
             updated_at
         """
         return (query, [user_id, profile_id, is_primary, active])
+
+    def get_default_guest_profile(self) -> Tuple[str, List[Any]]:
+        """Build query to get default guest profile."""
+        query = """
+        SELECT id
+        FROM profiles
+        WHERE role = 'guest' AND default_profile = true
+        LIMIT 1
+        """
+        return (query, [])

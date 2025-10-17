@@ -8,7 +8,6 @@ from app.services.agent_service import AgentService
 from app.services.assistant_service import AssistantService
 from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
-from app.utils.guest import find_default_guest_profile
 from fastapi import Depends
 
 
@@ -39,13 +38,9 @@ async def run_title_agent(
         custom_model=context['custom_model'],
     )
 
-    default_guest_profile = await find_default_guest_profile(conn)
-
-    final_profile_id = (context['profile_id'] if context['profile_id'] else (default_guest_profile['id'] if default_guest_profile else None))
-
     # Create model run service and check rate limit
     model_run_service = ModelRunService(conn)
-    success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+    success, error_message = await model_run_service.check_rate_limit(context['profile_id'])
     if not success:
         raise ValueError(error_message)
 
@@ -55,7 +50,7 @@ async def run_title_agent(
         model_id=uuid.UUID(context['model_id']),
         entity_id=uuid.UUID(context['agent_id']),
         entity_type="agent",
-        profile_id=final_profile_id,
+        profile_id=context['profile_id'],
     )
 
     with trace(context['chat_title'], trace_id=context['trace_id']):

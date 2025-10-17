@@ -2,6 +2,7 @@
 
 import re
 from typing import Any, Dict, List, Optional, Tuple, cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.queries.profile_queries import ProfileQueries
@@ -86,6 +87,16 @@ class ProfileService:
         """
         result = await self.update_profile(profile_id, {"viewed_chat": True})
         return result is not None
+
+    async def get_default_guest_profile_id(self) -> Optional[UUID]:
+        """Get default guest profile ID.
+        
+        Returns:
+            UUID of default guest profile, or None if not found
+        """
+        query, params = self.queries.get_default_guest_profile()
+        result = await self.conn.fetchrow(query, *params)
+        return UUID(result['id']) if result else None
 
     async def get_simulatable_profiles(
         self, profile_id: str, department_ids: List[str]
@@ -175,11 +186,9 @@ class ProfileService:
         # Resolve "guest-profile-id" to actual default guest profile
         effective_profile_id = request.effectiveProfileId
         if effective_profile_id == "guest-profile-id":
-            from app.utils.guest import find_default_guest_profile
-            
-            default_guest = await find_default_guest_profile(self.conn)
-            if default_guest:
-                effective_profile_id = str(default_guest['id'])
+            guest_id = await self.get_default_guest_profile_id()
+            if guest_id:
+                effective_profile_id = str(guest_id)
             else:
                 raise ValueError("No default guest profile found in database")
         

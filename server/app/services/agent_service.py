@@ -451,6 +451,13 @@ class AgentService:
         # Parse documents JSON array
         documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
         
+        # Resolve guest profile if needed
+        profile_id = context_row['profile_id']
+        if not profile_id:
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            profile_id = await profile_service.get_default_guest_profile_id()
+        
         return {
             # Chat data
             'chat_id': context_row['chat_id'],
@@ -481,8 +488,8 @@ class AgentService:
             # Simulation settings
             'image_input_active': context_row['image_input_active'],
             'output_guardrail_active': context_row['output_guardrail_active'],
-            # Profile data (nullable)
-            'profile_id': context_row['profile_id'],
+            # Profile data (resolved to guest if null)
+            'profile_id': profile_id,
             # Documents (full document data, not just IDs)
             'documents': documents,
         }
@@ -524,6 +531,13 @@ class AgentService:
         # Parse JSON arrays for standard_groups and standards
         standard_groups = json.loads(context_row['standard_groups']) if isinstance(context_row['standard_groups'], str) else context_row['standard_groups']
         standards = json.loads(context_row['standards']) if isinstance(context_row['standards'], str) else context_row['standards']
+        
+        # Resolve guest profile if needed
+        profile_id = context_row['profile_id']
+        if not profile_id:
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            profile_id = await profile_service.get_default_guest_profile_id()
         
         return {
             # Chat data
@@ -573,8 +587,8 @@ class AgentService:
                 'base_url': context_row['base_url'],
                 'api_key': context_row['api_key'],
             },
-            # Profile data
-            'profile_id': context_row['profile_id'],
+            # Profile data (resolved to guest if null)
+            'profile_id': profile_id,
         }
 
     async def get_simulation_messages(
@@ -656,6 +670,13 @@ class AgentService:
         # Parse JSON array for documents
         documents = json.loads(context_row['documents']) if isinstance(context_row['documents'], str) else context_row['documents']
         
+        # Resolve guest profile if needed
+        profile_id = context_row['profile_id']
+        if not profile_id:
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            profile_id = await profile_service.get_default_guest_profile_id()
+        
         return {
             # Message data
             'message_id': context_row['message_id'],
@@ -685,8 +706,8 @@ class AgentService:
             'provider_name': context_row['provider_name'],
             'base_url': context_row['base_url'],
             'api_key': context_row['api_key'],
-            # Profile data
-            'profile_id': context_row['profile_id'],
+            # Profile data (resolved to guest if null)
+            'profile_id': profile_id,
             # Documents (full document data, not just IDs)
             'documents': documents,
         }
@@ -730,6 +751,13 @@ class AgentService:
                 f"{department_id} or chat {chat_id} not found"
             )
         
+        # Resolve guest profile if needed
+        profile_id = context_row['profile_id']
+        if not profile_id:
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            profile_id = await profile_service.get_default_guest_profile_id()
+        
         return {
             # Agent data
             'agent_id': context_row['agent_id'],
@@ -753,8 +781,8 @@ class AgentService:
             # Attempt data
             'attempt_id': context_row['attempt_id'],
             'simulation_id': context_row['simulation_id'],
-            # Profile data
-            'profile_id': context_row['profile_id'],
+            # Profile data (resolved to guest if null)
+            'profile_id': profile_id,
         }
 
 
@@ -791,6 +819,13 @@ class AgentService:
                 f"or chat {chat_id} not found"
             )
         
+        # Resolve guest profile if needed
+        profile_id = context_row['profile_id']
+        if not profile_id:
+            from app.services.profile_service import ProfileService
+            profile_service = ProfileService(self.conn)
+            profile_id = await profile_service.get_default_guest_profile_id()
+        
         return {
             # Agent data
             'agent_id': context_row['agent_id'],
@@ -809,7 +844,7 @@ class AgentService:
             'api_key': context_row['api_key'],
             # Chat data
             'chat_id': context_row['chat_id'],
-            'profile_id': context_row['profile_id'],
+            'profile_id': profile_id,
             'chat_title': context_row['chat_title'],
             'trace_id': context_row['trace_id'],
         }

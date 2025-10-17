@@ -16,7 +16,6 @@ from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
-from app.utils.guest import find_default_guest_profile
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 
@@ -113,15 +112,9 @@ async def _handle_simulation_chat(
         custom_model=context['custom_model'],
     )
 
-    # Use profile from context or default guest profile
-    final_profile_id = context['profile_id']
-    if not final_profile_id:
-        default_guest_profile = await find_default_guest_profile(conn)
-        final_profile_id = default_guest_profile['id'] if default_guest_profile else None
-
     # Create model run service and check rate limit
     model_run_service = ModelRunService(conn)
-    success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+    success, error_message = await model_run_service.check_rate_limit(context['profile_id'])
     if not success:
         raise ValueError(error_message)
 
@@ -131,7 +124,7 @@ async def _handle_simulation_chat(
         model_id=uuid.UUID(context['model_id']),
         entity_id=uuid.UUID(context['persona_id']),
         entity_type="persona",
-        profile_id=final_profile_id,
+        profile_id=context['profile_id'],
     )
 
     with trace(context['chat_title'], trace_id=context['trace_id'], group_id=context['attempt_id']):

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
+from app.services.model_run_service import ModelRunService
 
 
 @dataclass
@@ -35,18 +36,10 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
     conn = ctx.context.conn
 
     try:
-        # Run async insert in sync context (agents framework may not be async-aware)
-        asyncio.create_task(_insert_debug_info(conn, model_run_id, content))
+        # Create service and insert debug info asynchronously (fire-and-forget)
+        service = ModelRunService(conn)
+        asyncio.create_task(service.insert_debug_info(model_run_id, content))
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"
     return "Saved debug info"
-
-
-async def _insert_debug_info(conn: asyncpg.Connection, model_run_id: uuid.UUID, content: str) -> None:
-    """Helper to insert debug info asynchronously."""
-    await conn.execute(
-        "INSERT INTO debug_info (model_run_id, content) VALUES ($1, $2)",
-        model_run_id,
-        content
-    )

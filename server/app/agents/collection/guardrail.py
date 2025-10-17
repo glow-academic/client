@@ -12,7 +12,6 @@ from app.db import get_db
 from app.services.agent_service import AgentService
 from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext, debug_info
-from app.utils.guest import find_default_guest_profile
 from fastapi import Depends
 from pydantic import Field
 
@@ -127,17 +126,9 @@ async def _run_guardrail_evaluation(
     # Build guardrail agent from context
     guardrail_agent = _build_guardrail_agent(context)
     
-    # Get default guest profile if no profile linked
-    default_guest_profile = await find_default_guest_profile(conn)
-    profile_id_str = context.get('profile_id')
-    final_profile_id = (
-        uuid.UUID(profile_id_str) if profile_id_str 
-        else (default_guest_profile['id'] if default_guest_profile else None)
-    )
-    
     # Create model run service and check rate limit
     model_run_service = ModelRunService(conn)
-    success, error_message = await model_run_service.check_rate_limit(final_profile_id)
+    success, error_message = await model_run_service.check_rate_limit(context['profile_id'])
     if not success:
         raise ValueError(error_message)
     
@@ -147,7 +138,7 @@ async def _run_guardrail_evaluation(
         model_id=uuid.UUID(context['model_id']),
         entity_id=uuid.UUID(context['agent_id']),
         entity_type="agent",
-        profile_id=final_profile_id,
+        profile_id=context['profile_id'],
     )
     
     # Run guardrail evaluation with tracing

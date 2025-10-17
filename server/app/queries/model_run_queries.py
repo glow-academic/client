@@ -160,3 +160,20 @@ class ModelRunQueries:
         """
         return query, [profile_id, start_of_day]
 
+    def create_debug_info(self, model_run_id: str, content: str) -> Tuple[str, List[Any]]:
+        """
+        Build query to insert debug info for a model run.
+
+        Args:
+            model_run_id: UUID of the model run
+            content: Debug information content
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        INSERT INTO debug_info (model_run_id, content) 
+        VALUES ($1, $2)
+        """
+        return query, [model_run_id, content]
+

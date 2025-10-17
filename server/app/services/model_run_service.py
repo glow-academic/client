@@ -177,3 +177,19 @@ class ModelRunService:
 
         return True, None
 
+    async def insert_debug_info(self, model_run_id: UUID, content: str) -> None:
+        """
+        Insert debug info for a model run.
+
+        This is called by the debug_info function_tool to save debugging context
+        for human review and troubleshooting. It runs in a fire-and-forget manner
+        to avoid blocking agent execution.
+
+        Args:
+            model_run_id: UUID of the model run
+            content: Debug information content describing what the agent is blocked on
+        """
+        model_run_id_str = str(model_run_id)
+        query, params = self.queries.create_debug_info(model_run_id_str, content)
+        await self.conn.execute(query, *params)
+
