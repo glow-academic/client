@@ -14,7 +14,6 @@ from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document import format_document_info
-from app.utils.limit import check_rate_limit
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from fastapi import Depends
@@ -232,12 +231,13 @@ async def run_scenario_agent(
         # Use default guest profile from context if no profile_id provided
         final_profile_id = profile_id if profile_id else context['default_guest_profile_id']
 
-        success, error_message = await check_rate_limit(conn, final_profile_id)
+        # Create model run service and check rate limit
+        model_run_service = ModelRunService(conn)
+        success, error_message = await model_run_service.check_rate_limit(final_profile_id)
         if not success:
             raise ValueError(error_message)
 
         # Create model run with all junction records
-        model_run_service = ModelRunService(conn)
         model_run_id = await model_run_service.create_model_run(
             department_id=department_id,
             model_id=context['model_id'],

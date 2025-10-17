@@ -11,7 +11,6 @@ from app.services.model_run_service import ModelRunService
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.guest import find_default_guest_profile
-from app.utils.limit import check_rate_limit
 from fastapi import Depends
 from pydantic import Field
 
@@ -185,12 +184,13 @@ async def run_classify_agent(
 
                 final_profile_id = (profile_id if profile_id else (default_guest_profile['id'] if default_guest_profile else None))
 
-                success, error_message = await check_rate_limit(conn, final_profile_id)
+                # Create model run service and check rate limit
+                model_run_service = ModelRunService(conn)
+                success, error_message = await model_run_service.check_rate_limit(final_profile_id)
                 if not success:
                     raise ValueError(error_message)
                 
                 # Create model run with all junction records
-                model_run_service = ModelRunService(conn)
                 model_run_id = await model_run_service.create_model_run(
                     department_id=department_id,
                     model_id=uuid.UUID(context['model_id']),

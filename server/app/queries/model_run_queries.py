@@ -120,3 +120,43 @@ class ModelRunQueries:
         """
         return query, [input_tokens, output_tokens, model_run_id]
 
+    def get_profile_rate_limit(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """
+        Build query to fetch rate limit (req_per_day) for a profile.
+
+        Args:
+            profile_id: UUID of the profile
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT req_per_day FROM profiles WHERE id = $1
+        """
+        return query, [profile_id]
+
+    def count_model_runs_today(
+        self, profile_id: str, start_of_day: str
+    ) -> Tuple[str, List[Any]]:
+        """
+        Build query to count model runs for a profile since start of day.
+
+        Counts via model_run_profiles junction table.
+
+        Args:
+            profile_id: UUID of the profile
+            start_of_day: ISO datetime string for start of current day in UTC
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT mr.id, mr.created_at
+        FROM model_runs mr
+        JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+        WHERE mrp.profile_id = $1
+          AND mrp.active = true
+          AND mr.created_at >= $2
+        """
+        return query, [profile_id, start_of_day]
+

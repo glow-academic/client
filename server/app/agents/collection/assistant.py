@@ -15,7 +15,6 @@ from app.services.assistant_service import AssistantService
 from app.services.model_run_service import ModelRunService
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
-from app.utils.limit import check_rate_limit
 from dotenv import load_dotenv
 from fastapi import Depends
 from openai.types.responses import (ResponseFunctionToolCall,
@@ -124,12 +123,13 @@ async def _handle_assistant_chat(
 
     final_profile_id = uuid.UUID(context.profile_id)
 
-    success, error_message = await check_rate_limit(conn, final_profile_id)
+    # Create model run service and check rate limit
+    model_run_service = ModelRunService(conn)
+    success, error_message = await model_run_service.check_rate_limit(final_profile_id)
     if not success:
         raise ValueError(error_message)
 
     # Create model run with all junction records
-    model_run_service = ModelRunService(conn)
     model_run_id = await model_run_service.create_model_run(
         department_id=department_id,
         model_id=uuid.UUID(context.model_id),

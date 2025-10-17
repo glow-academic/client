@@ -1,6 +1,7 @@
 """Model run service layer - business logic for tracking model usage and tokens."""
 
-from typing import Literal, Optional
+from datetime import datetime, timedelta, timezone, tzinfo
+from typing import Literal, Optional, Tuple
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -106,4 +107,73 @@ class ModelRunService:
             model_run_id_str, input_tokens, output_tokens
         )
         await self.conn.execute(query, *params)
+
+    async def check_rate_limit(
+        self, profile_id: Optional[UUID]
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Check if the profile has exceeded their daily request limit.
+
+        Returns (True, None) if under the limit, or (False, error_message) if exceeded.
+        If req_per_day is None, unlimited requests are allowed.
+
+        Args:
+            profile_id: UUID of the profile to check
+
+        Returns:
+            Tuple of (success: bool, error_message: Optional[str])
+        """
+        if not profile_id:
+            return False, "Profile not found. Please contact support."
+
+        # Fetch profile rate limit
+        query, params = self.queries.get_profile_rate_limit(str(profile_id))
+        profile = await self.conn.fetchrow(query, *params)
+        
+        if not profile:
+            return False, "Profile not found."
+
+        req_per_day = profile['req_per_day']
+        if req_per_day is None:
+            # Unlimited requests allowed
+            return True, None
+
+        # Calculate the start of the current day in UTC
+        now_utc = datetime.now(timezone.utc)
+        start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Count model runs for this profile since the start of the day
+        query, params = self.queries.count_model_runs_today(
+            str(profile_id), start_of_day_utc.isoformat()
+        )
+        model_runs_today = await self.conn.fetch(query, *params)
+
+        if len(model_runs_today) >= req_per_day:
+            # Find the earliest run today to determine when the next request is allowed
+            earliest_run = min(model_runs_today, key=lambda run: run['created_at'])
+            # Next available time is 24h after the earliest run today
+            next_allowed_utc = earliest_run['created_at'] + timedelta(days=1)
+            
+            # Convert to US/Eastern for user-friendly display using zoneinfo (Python 3.9+)
+            eastern_tz: tzinfo
+            try:
+                from zoneinfo import ZoneInfo
+                eastern_tz = ZoneInfo("America/New_York")
+            except ImportError:
+                # Fallback for Python <3.9: use UTC and indicate as such
+                eastern_tz = timezone.utc
+
+            next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+            # Use %-I for Linux, but on Windows use %#I. We'll use %-I and fallback if ValueError.
+            try:
+                formatted_time = next_allowed_et.strftime("%-I:%M %p ET").replace("AM", "am").replace("PM", "pm")
+            except ValueError:
+                formatted_time = next_allowed_et.strftime("%#I:%M %p ET").replace("AM", "am").replace("PM", "pm")
+            
+            return (
+                False,
+                f"You've reached your daily request limit. You can make your next request after {formatted_time}."
+            )
+
+        return True, None
 
