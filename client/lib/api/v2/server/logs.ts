@@ -24,7 +24,39 @@ export type LogEntry = {
   error?: unknown;
 };
 
+function devLog(level: LogEntry["level"], entry: LogEntry) {
+  if (process.env.NODE_ENV !== "production") {
+    const args = [
+      `[${entry.level?.toUpperCase()}] ${entry.event}`,
+      entry.message,
+      entry,
+    ];
+    switch (level) {
+      case "debug":
+        // eslint-disable-next-line no-console
+        console.debug(...args);
+        break;
+      case "info":
+        // eslint-disable-next-line no-console
+        console.info(...args);
+        break;
+      case "warn":
+        // eslint-disable-next-line no-console
+        console.warn(...args);
+        break;
+      case "error":
+        // eslint-disable-next-line no-console
+        console.error(...args);
+        break;
+      default:
+        // eslint-disable-next-line no-console
+        console.log(...args);
+    }
+  }
+}
+
 async function sendLog(entry: LogEntry): Promise<void> {
+  devLog(entry.level, entry);
   try {
     await fetch(`${getApiBase()}/api/v2/logs/create`, {
       method: "POST",
