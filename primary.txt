@@ -1,0 +1,812 @@
+-- Growth Data Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with chart data, available metrics, and optional window averages
+-- This function provides raw data without opinionated growth computations
+
+CREATE OR REPLACE FUNCTION analytics_growth_data_fn(
+  p_start        timestamptz,
+  p_end          timestamptz,
+  p_cohort_ids   uuid[],
+  p_roles        profile_role[],
+  p_sim_filters  text[],
+  p_profile_id   uuid,
+  p_department_ids uuid[]
+) RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+WITH
+-- 1) Date spine (daily) — drives consistent x-axis even if a metric is missing that day
+spine AS (
+  SELECT generate_series(date_trunc('day', p_start)::date,
+                         (date_trunc('day', p_end) - interval '1 second')::date,
+                         interval '1 day')::date AS d
+),
+
+-- 2) Pull each metric's trendData (date text like 'MM/DD', value int, count int)
+--    Normalize to a real date by matching the spine via to_char(spine.d,'MM/DD')
+avg_score AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_average_score_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+pass_rate AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_first_attempt_pass_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+completion AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_completion_percentage_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+msgs AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_messages_per_session_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+resp AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_persona_response_times_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+eff AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_session_efficiency_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+stagn AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_stagnation_rate_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+time_spent AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_time_spent_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+attempts AS (
+  SELECT s.d, x.value::int, x.count::int
+  FROM spine s
+  LEFT JOIN LATERAL (
+    SELECT * FROM jsonb_to_recordset(
+      (SELECT analytics_total_attempts_fn(p_start,p_end,p_cohort_ids,p_roles,p_sim_filters,p_profile_id,p_department_ids)->'trendData')
+    ) AS t(date text, value int, count int)
+  ) x ON x.date = to_char(s.d, 'YYYY-MM-DD')
+),
+
+-- 3) UI-ready chart rows (only days with actual data, like header functions)
+chart AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'date', to_char(s.d,'YYYY-MM-DD'),
+             'averageScore',         a.value,
+             'passRate',             p.value,
+             'completionRate',       c.value,
+             'firstAttemptPassRate', p.value,   -- synonym for pass rate
+             'messagesPerSession',   m.value,
+             'personaResponseTimes', r.value,
+             'sessionEfficiency',    e.value,
+             'stagnationRate',       g.value,
+             'timeSpent',            ts.value,
+             'totalAttempts',        t.value
+           )
+           ORDER BY s.d
+         ) AS payload
+  FROM spine s
+  LEFT JOIN avg_score   a  ON a.d  = s.d
+  LEFT JOIN pass_rate   p  ON p.d  = s.d
+  LEFT JOIN completion  c  ON c.d  = s.d
+  LEFT JOIN msgs        m  ON m.d  = s.d
+  LEFT JOIN resp        r  ON r.d  = s.d
+  LEFT JOIN eff         e  ON e.d  = s.d
+  LEFT JOIN stagn       g  ON g.d  = s.d
+  LEFT JOIN time_spent  ts ON ts.d = s.d
+  LEFT JOIN attempts    t  ON t.d  = s.d
+  -- Only include days where at least one metric has data (like header functions)
+  WHERE a.value IS NOT NULL 
+     OR p.value IS NOT NULL 
+     OR c.value IS NOT NULL 
+     OR m.value IS NOT NULL 
+     OR r.value IS NOT NULL 
+     OR e.value IS NOT NULL 
+     OR g.value IS NOT NULL 
+     OR ts.value IS NOT NULL 
+     OR t.value IS NOT NULL
+),
+
+-- 4) Metric catalog for your GrowthPicker (no opinions, just metadata)
+available_metrics AS (
+  SELECT jsonb_build_array(
+    jsonb_build_object('id','averageScore','name','Average Score','color','#3b82f6','unit','%','description','Average performance score','formatterId','percent'),
+    jsonb_build_object('id','passRate','name','Pass Rate','color','#10b981','unit','%','description','Passes on first attempt','formatterId','percent'),
+    jsonb_build_object('id','completionRate','name','Completion Rate','color','#22c55e','unit','%','description','Sessions completed','formatterId','percent'),
+    jsonb_build_object('id','firstAttemptPassRate','name','First Attempt Pass','color','#0ea5e9','unit','%','description','First try pass rate','formatterId','percent'),
+    jsonb_build_object('id','messagesPerSession','name','Messages/Session','color','#f59e0b','unit','msgs','description','Average message count','formatterId','int'),
+    jsonb_build_object('id','personaResponseTimes','name','Response Time','color','#a855f7','unit','sec','description','Avg reply latency','formatterId','sec'),
+    jsonb_build_object('id','sessionEfficiency','name','Efficiency','color','#8b5cf6','unit','%','description','Score per time proxy','formatterId','percent'),
+    jsonb_build_object('id','stagnationRate','name','Stagnation','color','#ef4444','unit','%','description','Stalled sessions share','formatterId','percent'),
+    jsonb_build_object('id','timeSpent','name','Time Spent','color','#64748b','unit','min','description','Total time spent (minutes)','formatterId','minutes'),
+    jsonb_build_object('id','totalAttempts','name','Total Attempts','color','#14b8a6','unit','attempts','description','Attempt count','formatterId','int')
+  ) AS payload
+),
+
+-- 5) Optional: Raw window averages for client-side threshold application
+win_params AS (
+  SELECT 7::int AS n
+),
+
+avg_series AS (
+  SELECT s.d, a.value AS average_score
+  FROM spine s LEFT JOIN avg_score a ON a.d = s.d
+  WHERE a.value IS NOT NULL  -- Only include days with actual data
+  ORDER BY s.d
+),
+avg_positions AS (
+  SELECT
+    COUNT(*) AS total_days,
+    (SELECT n FROM win_params) AS n
+  FROM avg_series
+),
+avg_windows AS (
+  SELECT
+    (SELECT AVG(average_score)::numeric FROM avg_series
+     WHERE d >  (SELECT max(d) FROM avg_series) - (SELECT make_interval(days => n) FROM win_params)
+    ) AS lastn_avg,
+    (SELECT AVG(average_score)::numeric FROM avg_series
+     WHERE d <= (SELECT max(d) FROM avg_series) - (SELECT make_interval(days => n) FROM win_params)
+       AND d >  (SELECT max(d) FROM avg_series) - (SELECT make_interval(days => 2*n) FROM win_params)
+    ) AS prevn_avg,
+    (SELECT n FROM win_params) AS n
+)
+
+SELECT jsonb_build_object(
+  'chartData',        COALESCE((SELECT payload FROM chart), '[]'::jsonb),
+  'availableMetrics', (SELECT payload FROM available_metrics),
+  'windowAverages', jsonb_build_object(
+    'averageScore', jsonb_build_object(
+        'n', (SELECT n FROM avg_windows),
+        'last', COALESCE((SELECT lastn_avg FROM avg_windows), NULL),
+        'prev', COALESCE((SELECT prevn_avg FROM avg_windows), NULL)
+    )
+  )
+);
+$$;
+-- Helper functions for analytics calculations
+-- These provide statistical functions needed for correlation analysis
+
+-- Helper: fast normal CDF approximation (sufficient for p-values)
+CREATE OR REPLACE FUNCTION analytics_normal_cdf(x double precision)
+RETURNS double precision
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT 0.5 * (1.0 + SIGN($1) * SQRT(1.0 - EXP(-2.0 * $1 * $1 / (PI()))));
+$$;
+
+-- Helper: two-tailed p-value from r and n
+CREATE OR REPLACE FUNCTION analytics_p_value_from_r_n(r double precision, n int)
+RETURNS double precision
+LANGUAGE sql IMMUTABLE AS $$
+  WITH z AS (
+    SELECT CASE
+             WHEN $2 <= 3 OR $1 IS NULL OR ABS($1) >= 0.999999 THEN NULL
+             ELSE 0.5 * LN((1+$1)/(1-$1)) * SQRT(GREATEST($2-3,1))
+           END AS zscore
+  )
+  SELECT CASE
+           WHEN zscore IS NULL THEN NULL
+           ELSE 2.0 * (1.0 - analytics_normal_cdf(ABS(zscore)))
+         END
+  FROM z;
+$$;
+-- Persona Performance Analytics Function
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with persona performance data, available simulations, and persona colors
+-- This function provides raw data without opinionated performance computations
+
+CREATE OR REPLACE FUNCTION analytics_persona_performance_fn(
+  p_start        timestamptz,
+  p_end          timestamptz,
+  p_cohort_ids   uuid[],
+  p_roles        profile_role[],
+  p_sim_filters  text[],
+  p_profile_id   uuid,
+  p_department_ids uuid[]
+) RETURNS jsonb
+LANGUAGE sql STABLE AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (chat date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.chat_created_at >= pr.start_at
+    AND a.chat_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+/* Handle case where we want only archived items (regardless of simulation type) */
+base_archived_only AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND NOT w.want_nonarchived_or_any
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+/* Handle case where we want archived items that are neither general nor practice */
+base_archived_other AS MATERIALIZED (
+  SELECT a.*
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND w.want_nonarchived_or_any
+    AND a.is_general = FALSE
+    AND a.is_practice = FALSE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+  UNION ALL
+  SELECT * FROM base_archived_only
+  UNION ALL
+  SELECT * FROM base_archived_other
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+filtered_chats AS MATERIALIZED (
+  SELECT DISTINCT chat_id
+  FROM cohort_scoped
+  WHERE chat_id IS NOT NULL
+),
+persona_ids AS MATERIALIZED (
+  SELECT DISTINCT persona_id
+  FROM cohort_scoped
+  WHERE persona_id IS NOT NULL
+),
+
+filt AS (
+  SELECT * FROM cohort_scoped
+),
+pers AS (
+  SELECT pi.persona_id, p.name, COALESCE(p.color, '#3b82f6') AS color
+  FROM persona_ids pi
+  JOIN personas p ON p.id = pi.persona_id
+),
+-- Aggregate persona-level summary
+main AS (
+  SELECT
+    f.persona_id,
+    p.name,
+    p.color,
+    AVG(f.grade_percent)::float AS score,
+    COUNT(*)::int               AS sessions
+  FROM filt f
+  JOIN pers p ON p.persona_id = f.persona_id
+  WHERE f.grade_percent IS NOT NULL
+  GROUP BY f.persona_id, p.name, p.color
+),
+-- Distinct sim ids per persona (for quick filter UI)
+persona_sim_ids AS (
+  SELECT f.persona_id, array_agg(DISTINCT f.simulation_id::text ORDER BY f.simulation_id::text) AS sim_ids
+  FROM filt f
+  GROUP BY f.persona_id
+),
+-- latest grade per chat (same chat may have multiple grades; we want each event)
+grade_events AS (
+  SELECT
+    scg.id                AS grade_id,
+    b.persona_id,
+    b.simulation_id,
+    b.chat_id,
+    scg.created_at        AS grade_at,
+    (CASE WHEN r.points > 0 THEN (scg.score::numeric / r.points::numeric) * 100.0 END) AS pct
+  FROM simulation_chat_grades scg
+  JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
+  JOIN analytics b ON b.chat_id = scg.simulation_chat_id
+  JOIN rubrics r   ON r.id = scg.rubric_id
+),
+trend AS (
+  SELECT
+    g.persona_id,
+    g.simulation_id,
+    to_char(date_trunc('day', g.grade_at),'YYYY-MM-DD') AS date,
+    AVG(g.pct::float)                                  AS score,
+    (EXTRACT(EPOCH FROM date_trunc('day', g.grade_at))*1000)::bigint AS ts
+  FROM grade_events g
+  WHERE g.pct IS NOT NULL
+  GROUP BY g.persona_id, g.simulation_id, date_trunc('day', g.grade_at)
+),
+chart AS (
+  SELECT jsonb_agg(
+           jsonb_build_object(
+             'name',     m.name,
+             'score',    ROUND(m.score)::int,
+             'sessions', m.sessions,
+             'color',    m.color,
+             'simulationIds', COALESCE(ps.sim_ids, ARRAY[]::text[]),
+             'trendData', COALESCE((
+                SELECT jsonb_agg(jsonb_build_object(
+                         'date', t.date,
+                         'score', ROUND(t.score)::int,
+                         'timestamp', t.ts,
+                         'simulationId', t.simulation_id::text
+                       ) ORDER BY t.ts)
+                FROM trend t
+                WHERE t.persona_id = m.persona_id
+             ), '[]'::jsonb)
+           )
+           ORDER BY m.score DESC NULLS LAST
+         ) AS payload
+  FROM main m
+  LEFT JOIN persona_sim_ids ps ON ps.persona_id = m.persona_id
+),
+-- Valid simulation IDs that have data in filtered rows
+valid_sim_ids AS (
+  SELECT DISTINCT f.simulation_id
+  FROM filt f
+  WHERE f.simulation_id IS NOT NULL
+),
+sim_id_array AS (
+  SELECT jsonb_agg(vsi.simulation_id::text ORDER BY vsi.simulation_id::text) AS payload
+  FROM valid_sim_ids vsi
+),
+color_map AS (
+  SELECT jsonb_object_agg(p.name, p.color) AS payload
+  FROM (SELECT DISTINCT name, color FROM pers) p
+)
+SELECT jsonb_build_object(
+  'chartData',            COALESCE((SELECT payload FROM chart), '[]'::jsonb),
+  'validSimulationIds',   COALESCE((SELECT payload FROM sim_id_array), '[]'::jsonb),
+  'personaColors',        COALESCE((SELECT payload FROM color_map), '{}'::jsonb)
+);
+$$;
+-- Rubric Correlation Heatmap Analytics Function (Multi-Rubric)
+-- Parameters: startDate, endDate, cohortIds, roles, simulationFilters, profileId
+-- Returns: JSON object with matrices for all rubrics, available rubrics, and valid rubric IDs
+
+CREATE OR REPLACE FUNCTION analytics_rubric_heatmap_fn(
+  p_start        timestamptz,
+  p_end          timestamptz,
+  p_cohort_ids   uuid[],
+  p_roles        profile_role[],
+  p_sim_filters  text[],
+  p_profile_id   uuid,
+  p_department_ids uuid[]
+) RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $$
+/* -------- Params and flags -------- */
+WITH params AS (
+  SELECT
+    COALESCE(p_cohort_ids, '{}')               AS cohort_ids,
+    COALESCE(p_roles, '{}')                    AS roles,
+    COALESCE(p_sim_filters, ARRAY['general'])  AS sim_filters,
+    p_profile_id                               AS profile_id,
+    p_start                                    AS start_at,
+    p_end                                      AS end_at,
+    'general'  = ANY (COALESCE(p_sim_filters, ARRAY['general'])) AS want_general,
+    'practice' = ANY (COALESCE(p_sim_filters, ARRAY['practice'])) AS want_practice,
+    'archived' = ANY (COALESCE(p_sim_filters, ARRAY['archived'])) AS want_archived
+),
+want AS (
+  SELECT
+    want_general, want_practice, want_archived,
+    (want_general OR want_practice) AS want_nonarchived_or_any
+  FROM params
+),
+
+/* -------- Base selection from analytics (attempt date window) -------- */
+base_general AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_general
+    AND a.is_general = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_practice AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_practice
+    AND a.is_practice = TRUE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+/* Handle case where we want only archived items (regardless of simulation type) */
+base_archived_only AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND NOT w.want_nonarchived_or_any
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+/* Handle case where we want archived items that are neither general nor practice */
+base_archived_other AS MATERIALIZED (
+  SELECT a.chat_id, a.profile_id, a.profile_role, a.cohort_ids, a.profile_cohort_ids,
+         a.is_general, a.is_practice, a.is_archived, a.simulation_id
+  FROM analytics a
+  CROSS JOIN params pr
+  CROSS JOIN want w
+  WHERE w.want_archived 
+    AND w.want_nonarchived_or_any
+    AND a.is_general = FALSE
+    AND a.is_practice = FALSE
+    AND (cardinality(p_department_ids) = 0 OR a.department_id = ANY(p_department_ids))
+    AND a.attempt_created_at >= pr.start_at
+    AND a.attempt_created_at <  pr.end_at
+    AND (
+      pr.profile_id IS NOT NULL
+      OR cardinality(pr.roles) = 0
+      OR a.profile_role = ANY (pr.roles)
+    )
+    AND (pr.profile_id IS NULL OR a.profile_id = pr.profile_id)
+),
+base_union AS MATERIALIZED (
+  SELECT * FROM base_general
+  UNION ALL
+  SELECT * FROM base_practice
+  UNION ALL
+  SELECT * FROM base_archived_only
+  UNION ALL
+  SELECT * FROM base_archived_other
+),
+
+/* -------- Archived tri-state -------- */
+base_archived AS MATERIALIZED (
+  SELECT bu.*
+  FROM base_union bu
+  CROSS JOIN want w
+  WHERE
+    CASE
+      WHEN w.want_archived AND w.want_nonarchived_or_any THEN TRUE
+      WHEN w.want_archived AND NOT w.want_nonarchived_or_any THEN bu.is_archived = TRUE
+      WHEN NOT w.want_archived AND w.want_nonarchived_or_any THEN bu.is_archived = FALSE
+      ELSE FALSE
+    END
+),
+
+/* -------- Cohort scoping (if passed) -------- */
+cohort_scoped AS MATERIALIZED (
+  SELECT b.*
+  FROM base_archived b
+  CROSS JOIN params pr
+  WHERE cardinality(pr.cohort_ids) = 0
+     OR (b.cohort_ids && pr.cohort_ids OR b.profile_cohort_ids && pr.cohort_ids)
+),
+
+/* Only the chats we care about, distinct */
+filtered_chats AS MATERIALIZED (
+  SELECT DISTINCT chat_id
+  FROM cohort_scoped
+  WHERE chat_id IS NOT NULL
+),
+
+/* -------- Latest grade per kept chat (no per-row EXISTS) -------- */
+latest_grade_per_chat AS MATERIALIZED (
+  SELECT DISTINCT ON (scg.simulation_chat_id)
+         scg.id,
+         scg.simulation_chat_id AS chat_id,
+         scg.rubric_id
+  FROM simulation_chat_grades scg
+  JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
+  ORDER BY scg.simulation_chat_id, scg.created_at DESC
+),
+
+/* -------- Aggregate feedback into per-(chat,rubric,group) pct -------- */
+per_grade_group AS MATERIALIZED (
+  SELECT
+    lg.chat_id,
+    sg.rubric_id,
+    sg.id   AS group_id,
+    sg.name AS group_name,
+    /* Sum totals divided by standard group max points */
+    (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
+  FROM latest_grade_per_chat lg
+  JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
+  JOIN standards s          ON s.id = scf.standard_id
+  JOIN standard_groups sg   ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
+  GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name
+),
+
+/* -------- Correlations per rubric (upper triangle) -------- */
+corrs AS MATERIALIZED (
+  SELECT
+    a.rubric_id,
+    a.group_id AS g1,
+    b.group_id AS g2,
+    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL) AS n,
+    corr(a.pct, b.pct) AS r
+  FROM per_grade_group a
+  JOIN per_grade_group b
+    ON b.rubric_id = a.rubric_id
+   AND b.chat_id   = a.chat_id
+   AND b.group_id >= a.group_id
+  GROUP BY a.rubric_id, a.group_id, b.group_id
+),
+
+/* -------- Groups actually present -------- */
+groups AS MATERIALIZED (
+  SELECT DISTINCT pgg.rubric_id, sg.id, sg.name, sg.short_name
+  FROM per_grade_group pgg
+  JOIN standard_groups sg ON sg.id = pgg.group_id
+),
+valid_rubrics AS MATERIALIZED (
+  SELECT DISTINCT rubric_id FROM groups
+),
+
+/* -------- Enrich with p-values, strength, color -------- */
+enriched AS MATERIALIZED (
+  SELECT
+    c.rubric_id, c.g1, c.g2, c.n,
+    CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
+    NULL AS p_value,  -- Disabled due to underflow issues with high correlations
+    CASE
+      WHEN c.n IS NULL OR c.n < 3 THEN 'No Data'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN 'Strong'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN 'Moderate'
+      WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >  0.0 THEN 'Weak'
+      ELSE 'No Data'
+    END AS strength,
+    CASE
+      WHEN c.n IS NULL OR c.n < 3 THEN '#e5e7eb'
+      WHEN (CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.0 THEN
+        CASE
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#10b981'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#34d399'
+          ELSE '#a7f3d0'
+        END
+      ELSE
+        CASE
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#ef4444'
+          WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#f87171'
+          ELSE '#fecaca'
+        END
+    END AS color
+  FROM corrs c
+),
+
+/* -------- Build matrices per rubric -------- */
+per_rubric_matrix AS MATERIALIZED (
+  SELECT
+    g1.rubric_id,
+    ROW_NUMBER() OVER (PARTITION BY g1.rubric_id ORDER BY g1.name) - 1 AS row_idx,
+    jsonb_agg(
+      jsonb_build_object(
+        'rubricId', g1.rubric_id::text,
+        'correlation', COALESCE(e.r, 0.0),
+        'pValue',      e.p_value,
+        'color',       COALESCE(e.color, '#e5e7eb'),
+        'strength',    COALESCE(e.strength, 'No Data'),
+        'dataPoints',  COALESCE(e.n, 0)
+      )
+      ORDER BY g2.name
+    ) AS row_json
+  FROM groups g1
+  JOIN groups g2
+    ON g2.rubric_id = g1.rubric_id
+  LEFT JOIN enriched e
+    ON e.rubric_id = g1.rubric_id AND e.g1 = g1.id AND e.g2 = g2.id
+  GROUP BY g1.rubric_id, g1.id, g1.name
+),
+matrix_json AS (
+  SELECT rubric_id, jsonb_agg(row_json ORDER BY row_idx) AS matrix
+  FROM per_rubric_matrix
+  GROUP BY rubric_id
+),
+sg_json AS (
+  SELECT rubric_id,
+         jsonb_agg(jsonb_build_object(
+           'id', id::text,
+           'name', name,
+           'shortName', short_name,
+           'rubricId', rubric_id::text
+         ) ORDER BY name) AS standard_groups
+  FROM groups
+  GROUP BY rubric_id
+),
+insights AS (
+  SELECT
+    e.rubric_id,
+    CASE
+      WHEN COALESCE(SUM(CASE WHEN e.n >= 3 THEN 1 ELSE 0 END),0) = 0 THEN NULL
+      ELSE (
+        SELECT 'Top pair: "' || g1.name || '" vs "' || g2.name ||
+               '" r=' || TO_CHAR(e2.r, 'FM0.00') ||
+               ' (n=' || e2.n || ')'
+        FROM enriched e2
+        JOIN groups g1 ON g1.id = e2.g1 AND g1.rubric_id = e2.rubric_id
+        JOIN groups g2 ON g2.id = e2.g2 AND g2.rubric_id = e2.rubric_id
+        WHERE e2.rubric_id = e.rubric_id AND e2.n >= 3
+        ORDER BY ABS(e2.r) DESC, e2.n DESC
+        LIMIT 1
+      )
+    END AS txt
+  FROM enriched e
+  GROUP BY e.rubric_id
+),
+has_data AS (
+  SELECT rubric_id,
+         (SUM(CASE WHEN n >= 3 THEN 1 ELSE 0 END) > 0) AS has_data
+  FROM enriched
+  GROUP BY rubric_id
+),
+per_rubric AS (
+  SELECT
+    r.rubric_id,
+    COALESCE(m.matrix, '[]'::jsonb)           AS matrix,
+    COALESCE(sg.standard_groups, '[]'::jsonb) AS standard_groups,
+    (SELECT txt FROM insights i WHERE i.rubric_id = r.rubric_id) AS insights,
+    (SELECT h.has_data FROM has_data h WHERE h.rubric_id = r.rubric_id) AS has_data
+  FROM valid_rubrics r
+  LEFT JOIN matrix_json m ON m.rubric_id = r.rubric_id
+  LEFT JOIN sg_json      sg ON sg.rubric_id = r.rubric_id
+),
+valid_rubric_ids AS (
+  SELECT jsonb_agg(rubric_id::text ORDER BY rubric_id::text) AS payload
+  FROM valid_rubrics
+)
+SELECT jsonb_build_object(
+  'matrices', COALESCE(
+    (
+      SELECT jsonb_agg(jsonb_build_object(
+               'rubricId', pr.rubric_id::text,
+               'standardGroups', pr.standard_groups,
+               'matrix', pr.matrix,
+               'insights', pr.insights,
+               'hasData', COALESCE(pr.has_data, FALSE)
+             ) ORDER BY pr.rubric_id::text)
+      FROM per_rubric pr
+    ),
+    '[]'::jsonb
+  ),
+  'validRubricIds', COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::jsonb)
+);
+$$;
