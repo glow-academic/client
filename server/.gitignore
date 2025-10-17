@@ -9,7 +9,6 @@ uploads/*
 !uploads/CS182-HW1.pdf
 !uploads/CS253-PSO1.pdf
 audio/
-cache/
 sketches/
 csv/
 htmlcov/

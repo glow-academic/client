@@ -4,7 +4,9 @@ import json
 from typing import Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.analytics.base import AnalyticsQueryBuilder
 from app.queries.analytics.bundle_queries import BundleQueries
 from app.queries.analytics.footer_queries import FooterQueries
@@ -88,158 +90,369 @@ class AnalyticsService:
     # Header Analytics (10 metrics)
     async def get_average_score(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get average score metric."""
-        query, params = self.header_queries.average_score(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            query, params = self.header_queries.average_score(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_average_score(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.average_score(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_completion_percentage(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get completion percentage metric."""
-        query, params = self.header_queries.completion_percentage(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.completion_percentage(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_completion_percentage(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.completion_percentage(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_first_attempt_pass_rate(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get first attempt pass rate metric."""
-        query, params = self.header_queries.first_attempt_pass_rate(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.first_attempt_pass_rate(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_first_attempt_pass_rate(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.first_attempt_pass_rate(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_highest_score(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get highest score metric."""
-        query, params = self.header_queries.highest_score(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.highest_score(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_highest_score(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.highest_score(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_messages_per_session(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get messages per session metric."""
-        query, params = self.header_queries.messages_per_session(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.messages_per_session(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_messages_per_session(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.messages_per_session(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_persona_response_times(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get persona response times metric."""
-        query, params = self.header_queries.persona_response_times(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.persona_response_times(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_persona_response_times(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.persona_response_times(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_session_efficiency(
         self, filters: AnalyticsFilters
     ) -> MetricResponse:
         """Get session efficiency metric."""
-        query, params = self.header_queries.session_efficiency(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.session_efficiency(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_session_efficiency(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.session_efficiency(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_stagnation_rate(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get stagnation rate metric."""
-        query, params = self.header_queries.stagnation_rate(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.stagnation_rate(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_stagnation_rate(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.stagnation_rate(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_time_spent(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get time spent metric."""
-        query, params = self.header_queries.time_spent(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.time_spent(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_time_spent(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.time_spent(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     async def get_total_attempts(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get total attempts metric."""
-        query, params = self.header_queries.total_attempts(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        return await self._execute_metric_query(query, params)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.header_queries.total_attempts(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        key = keys.analytics_total_attempts(filters)
+        
+        async def fetcher() -> MetricResponse:
+            query, params = self.header_queries.total_attempts(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            return await self._execute_metric_query(query, params)
+        
+        result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
     # Primary Analytics (3 complex metrics)
     async def get_rubric_heatmap(self, filters: AnalyticsFilters) -> RubricHeatmapResponse:
         """Get rubric heatmap data."""
-        query, params = self.primary_queries.rubric_heatmap(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        return RubricHeatmapResponse.model_validate(result or {})
+        qc = get_query_client()
+        if not qc:
+            query, params = self.primary_queries.rubric_heatmap(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            result = await self.conn.fetchval(query, *params)
+            return RubricHeatmapResponse.model_validate(result or {})
+        
+        key = keys.analytics_rubric_heatmap(filters)
+        
+        async def fetcher() -> RubricHeatmapResponse:
+            query, params = self.primary_queries.rubric_heatmap(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            result = await self.conn.fetchval(query, *params)
+            return RubricHeatmapResponse.model_validate(result or {})
+        
+        result_data: RubricHeatmapResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result_data
 
     async def get_growth_data(self, filters: AnalyticsFilters) -> GrowthDataResponse:
         """Get growth data."""

@@ -3,6 +3,8 @@
 from datetime import datetime
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.attempts_queries import AttemptsQueries
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse,
@@ -30,6 +32,11 @@ class AttemptsService:
         )
         await self.conn.execute(query, *params)
 
+        # Invalidate analytics cache (attempt changes affect all analytics)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_analytics_all()])
+
         action = "archived" if request.archived else "unarchived"
         count = len(request.attemptIds)
 
@@ -53,6 +60,11 @@ class AttemptsService:
         if result == "UPDATE 0":
             raise ValueError(f"Chat not found: {request.chatId}")
 
+        # Invalidate analytics cache (timestamp changes affect analytics)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_analytics_all()])
+
         return UpdateChatTimestampResponse(
             success=True,
             message=f"Chat {request.chatId} createdAt updated successfully",
@@ -71,6 +83,11 @@ class AttemptsService:
 
         if result == "UPDATE 0":
             raise ValueError(f"Chat not found: {request.chatId}")
+
+        # Invalidate analytics cache (timestamp changes affect analytics)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_analytics_all()])
 
         return UpdateChatTimestampResponse(
             success=True,

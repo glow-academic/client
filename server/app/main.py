@@ -49,10 +49,11 @@ from app.extensions import (  # New Redis functions for active connections and r
     add_guest_socket, cancel_active_run, cleanup_redis_client,
     decrement_guest_count, find_chat_by_socket, find_chats_by_socket,
     find_profile_by_socket, get_active_connection, get_active_run,
-    get_guest_count, get_socket_owner, increment_guest_count,
-    init_redis_client, is_guest_socket, remove_active_connection,
-    remove_active_run, remove_guest_socket, remove_socket_owner,
-    set_active_connection, set_active_run, set_socket_owner)
+    get_guest_count, get_query_client, get_socket_owner, increment_guest_count,
+    init_query_client, init_redis_client, is_guest_socket,
+    remove_active_connection, remove_active_run, remove_guest_socket,
+    remove_socket_owner, set_active_connection, set_active_run,
+    set_socket_owner)
 
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
@@ -570,6 +571,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize Redis client for socket ownership management
         await init_redis_client()
+        
+        # Initialize query cache client (depends on Redis)
+        await init_query_client()
         
         # Initialize asyncpg database pool
         await init_db_pool()

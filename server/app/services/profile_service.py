@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.profile_queries import ProfileQueries
 from app.schemas.permissions import ProfileRole
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
@@ -35,13 +37,25 @@ class ProfileService:
         Returns:
             ProfileItem if found, None otherwise
         """
-        query, params = self.queries.get_profile(profile_id)
-        result = await self.conn.fetchrow(query, *params)
-
-        if not result:
-            return None
-
-        return self._row_to_profile_item(result)
+        qc = get_query_client()
+        if not qc:
+            query, params = self.queries.get_profile(profile_id)
+            result = await self.conn.fetchrow(query, *params)
+            if not result:
+                return None
+            return self._row_to_profile_item(result)
+        
+        key = keys.profile_by_id(profile_id)
+        
+        async def fetcher() -> Optional[ProfileItem]:
+            query, params = self.queries.get_profile(profile_id)
+            result = await self.conn.fetchrow(query, *params)
+            if not result:
+                return None
+            return self._row_to_profile_item(result)
+        
+        result_data: Optional[ProfileItem] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result_data
 
     async def update_profile(
         self, profile_id: str, updates: Dict[str, Any]
@@ -65,7 +79,18 @@ class ProfileService:
         if not result:
             return None
 
-        return self._row_to_profile_item(result)
+        profile_item = self._row_to_profile_item(result)
+        
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_profile_by_id(profile_id),
+                keys.tag_profile_all(),
+                keys.tag_analytics_all(),  # Profile changes may affect analytics
+            ])
+        
+        return profile_item
 
     async def mark_intro_complete(self, profile_id: str) -> bool:
         """Mark viewedIntro as complete for a profile.
