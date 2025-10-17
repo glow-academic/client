@@ -109,7 +109,7 @@ class DocumentService:
                 p.name as parameter_name
             FROM parameter_items pi
             JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1) AND pi.active = true
+            WHERE p.department_id = ANY($1) AND p.active = true
         """
         param_results = await self.conn.fetch(param_query, filters.departmentIds)
 
