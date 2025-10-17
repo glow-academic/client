@@ -340,6 +340,74 @@ class AgentService:
         count = int(result.split()[-1]) if result else 0
         return count
 
+    async def get_simulation_run_context(
+        self, chat_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Get all data needed to run simulation agent with optimized query.
+        
+        Reduces 12 database queries to 1 JOIN query.
+        
+        Args:
+            chat_id: UUID of the simulation chat
+        
+        Returns:
+            Dict with chat, attempt, scenario, persona, model, provider, 
+            simulation settings, profile, and documents data
+        
+        Raises:
+            ValueError: If chat not found or missing required data
+        """
+        chat_id_str = str(chat_id)
+        
+        # Single optimized JOIN query
+        query, params = self.queries.get_simulation_run_context(chat_id_str)
+        context_row = await self.conn.fetchrow(query, *params)
+        
+        if not context_row:
+            raise ValueError(
+                f"Simulation chat {chat_id} not found or missing required data"
+            )
+        
+        # Parse document_ids JSON array
+        document_ids = json.loads(context_row['document_ids']) if isinstance(context_row['document_ids'], str) else context_row['document_ids']
+        
+        return {
+            # Chat data
+            'chat_id': context_row['chat_id'],
+            'chat_title': context_row['chat_title'],
+            'trace_id': context_row['trace_id'],
+            # Attempt data
+            'attempt_id': context_row['attempt_id'],
+            'simulation_id': context_row['simulation_id'],
+            # Scenario data
+            'scenario_id': context_row['scenario_id'],
+            'department_id': context_row['department_id'],
+            'problem_statement': context_row['problem_statement'],
+            # Persona data
+            'persona_id': context_row['persona_id'],
+            'persona_name': context_row['persona_name'],
+            'system_prompt': context_row['system_prompt'],
+            'temperature': float(context_row['temperature']),
+            'reasoning': context_row['reasoning'],
+            # Model data
+            'model_id': context_row['model_id'],
+            'model_name': context_row['model_name'],
+            'custom_model': context_row['custom_model'],
+            # Provider data
+            'provider_id': context_row['provider_id'],
+            'provider_name': context_row['provider_name'],
+            'base_url': context_row['base_url'],
+            'api_key': context_row['api_key'],
+            # Simulation settings
+            'image_input_active': context_row['image_input_active'],
+            'output_guardrail_active': context_row['output_guardrail_active'],
+            # Profile data (nullable)
+            'profile_id': context_row['profile_id'],
+            # Documents
+            'document_ids': document_ids,
+        }
+
     async def get_grading_run_context(
         self, simulation_chat_id: uuid.UUID, department_id: uuid.UUID
     ) -> Dict[str, Any]:

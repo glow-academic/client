@@ -319,6 +319,96 @@ class AgentQueries:
         """
         return query, []
 
+    def get_simulation_run_context(
+        self, chat_id: str
+    ) -> tuple[str, list[Any]]:
+        """
+        Get all data needed to run simulation agent with optimized JOIN.
+        
+        Fetches chat, attempt, scenario, persona (via junction), model, provider,
+        simulation settings, profile (via junction), and documents (via junction)
+        in a single query to minimize database round trips.
+
+        Args:
+            chat_id: Simulation chat UUID as string
+
+        Returns:
+            Tuple of (query, params)
+        """
+        query = """
+        SELECT 
+            -- Chat data
+            sc.id::text as chat_id,
+            sc.title as chat_title,
+            sc.trace_id,
+            
+            -- Attempt data
+            sa.id::text as attempt_id,
+            sa.simulation_id::text,
+            
+            -- Scenario data
+            s.id::text as scenario_id,
+            s.department_id::text,
+            s.problem_statement,
+            
+            -- Persona data (via scenario_personas junction)
+            p.id::text as persona_id,
+            p.name as persona_name,
+            p.system_prompt,
+            p.temperature,
+            p.reasoning,
+            
+            -- Model data
+            m.id::text as model_id,
+            m.name as model_name,
+            m.custom_model,
+            
+            -- Provider data
+            pr.id::text as provider_id,
+            pr.name as provider_name,
+            pr.base_url,
+            pr.api_key,
+            
+            -- Simulation settings
+            sim.image_input_active,
+            sim.output_guardrail_active,
+            
+            -- Profile data (via attempt_profiles junction)
+            ap.profile_id::text as profile_id,
+            
+            -- Documents data (aggregated as JSON array from scenario_documents junction)
+            COALESCE(
+                json_agg(
+                    sd.document_id::text
+                    ORDER BY sd.document_id
+                ) FILTER (WHERE sd.document_id IS NOT NULL AND sd.active = true),
+                '[]'::json
+            ) as document_ids
+        
+        FROM simulation_chats sc
+        INNER JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        INNER JOIN scenarios s ON s.id = sc.scenario_id
+        INNER JOIN simulations sim ON sim.id = sa.simulation_id
+        INNER JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+        INNER JOIN personas p ON p.id = sp.persona_id
+        INNER JOIN models m ON m.id = p.model_id
+        INNER JOIN providers pr ON pr.id = m.provider_id
+        LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
+        LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+        WHERE sc.id = $1
+        GROUP BY sc.id, sc.title, sc.trace_id,
+                 sa.id, sa.simulation_id,
+                 s.id, s.department_id, s.problem_statement,
+                 p.id, p.name, p.system_prompt, p.temperature, p.reasoning,
+                 m.id, m.name, m.custom_model,
+                 pr.id, pr.name, pr.base_url, pr.api_key,
+                 sim.image_input_active, sim.output_guardrail_active,
+                 ap.profile_id
+        """
+        
+        params: list[Any] = [chat_id]
+        return query, params
+
     def get_grading_run_context(
         self, simulation_chat_id: str, department_id: str
     ) -> tuple[str, list[Any]]:
@@ -509,8 +599,6 @@ class AgentQueries:
             role,
             content,
             created_at,
-            model_run_id::text,
-            audio_url,
             completed
         FROM simulation_messages
         WHERE chat_id = $1
