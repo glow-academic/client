@@ -10,6 +10,7 @@ from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_db
+from app.queries.provider_queries import ProviderQueries
 from app.services.agents.generic import GenericAgent
 from app.utils.agents import get_department_agent
 from app.utils.chat import get_assistant_conversation_history
@@ -144,18 +145,15 @@ async def _handle_assistant_chat(
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id
-    model = await conn.fetchrow(
-        "SELECT id, name, provider_id, custom_model FROM models WHERE id = $1",
-        agent['model_id']
-    )
+    queries = ProviderQueries()
+    query, params = queries.get_model_for_agent(agent['model_id'])
+    model = await conn.fetchrow(query, *params)
     if not model:
         raise ValueError(f"Model with ID {agent['model_id']} not found")
 
     # getting the provider from the model's provider_id
-    provider = await conn.fetchrow(
-        "SELECT id, name, base_url, api_key FROM providers WHERE id = $1",
-        model['provider_id']
-    )
+    query, params = queries.get_provider_for_agent(model['provider_id'])
+    provider = await conn.fetchrow(query, *params)
     if not provider:
         raise ValueError(f"Provider with ID {model['provider_id']} not found")
 

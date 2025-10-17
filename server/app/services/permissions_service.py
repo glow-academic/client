@@ -27,10 +27,9 @@ class PermissionsService:
         # Remove leading slash and normalize
         normalized = pathname[1:] if pathname.startswith("/") else pathname
 
-        # Convert dynamic segments to pattern format
-        # Replace UUID-like segments or any segment that looks like an ID
-        normalized = re.sub(r"/[a-f0-9-]{8,}", "/[id]", normalized)
-        normalized = re.sub(r"/[a-zA-Z0-9_-]{20,}", "/[id]", normalized)
+        # Only standardize bracket notation, don't try to detect actual IDs
+        # This matches the TypeScript implementation
+        normalized = re.sub(r"/\[[^\]]+\]", "/[id]", normalized)
 
         return normalized
 
@@ -52,8 +51,7 @@ class PermissionsService:
         # Convert pattern to regex
         # Replace [anything] with regex that matches any non-slash characters
         regex_pattern = re.sub(r"\[[^\]]+\]", "[^/]+", clean_pattern)
-        # Escape forward slashes
-        regex_pattern = regex_pattern.replace("/", r"\/")
+        # No need to escape / in Python regex (unlike JavaScript)
 
         # Match the pattern
         regex = re.compile(f"^{regex_pattern}$")

@@ -1,15 +1,17 @@
 """Profile service layer - business logic for profile and emulation operations."""
 
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import asyncpg  # type: ignore
 from app.queries.profile_queries import ProfileQueries
+from app.schemas.permissions import ProfileRole
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
                                  ProfileContextResponse, ProfileItem,
                                  SimulationContextItem, SimulationsData,
                                  UserProfileItem)
+from app.services.permissions_service import PermissionsService
 
 
 class ProfileService:
@@ -303,13 +305,11 @@ class ProfileService:
             effective_profile_id, dept_ids_list
         )
         
-        # Determine available sections based on role
-        available_sections = ["home", "practice", "analytics", "profile"]
-        if profile.role in ("admin", "superadmin", "instructional"):
-            available_sections.extend(["cohorts", "simulations", "scenarios", "personas", "rubrics", "documents", "departments"])
-        
-        # Determine redirect path based on role
-        redirect_path = "/practice" if profile.role == "guest" else "/home"
+        # Use permissions service for available sections and redirect path
+        # profile.role is validated in the database, so we can safely cast it
+        role = cast(ProfileRole, profile.role)
+        available_sections = PermissionsService.get_available_subsections_for_role(role)  # type: ignore
+        redirect_path = PermissionsService.get_redirect_path_for_role(role)  # type: ignore
 
         # Get earliest attempt date for the effective profile
         earliest_attempt_date = None
