@@ -63,6 +63,27 @@ class AnalyticsService:
         self.leaderboard_queries = LeaderboardQueries()
         self.pricing_queries = PricingQueries()
 
+    def _parse_json_strings_recursive(self, obj: Any) -> Any:
+        """Recursively parse JSON strings in nested structures.
+        
+        This handles cases where PostgreSQL json_agg returns JSON strings
+        instead of parsed objects, particularly for trendData and dataPoints fields.
+        """
+        if isinstance(obj, str):
+            # Try to parse as JSON
+            try:
+                return json.loads(obj)
+            except (json.JSONDecodeError, ValueError):
+                return obj
+        elif isinstance(obj, dict):
+            # Recursively process dictionary values
+            return {k: self._parse_json_strings_recursive(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            # Recursively process list items
+            return [self._parse_json_strings_recursive(item) for item in obj]
+        else:
+            return obj
+
     async def _execute_metric_query(
         self, query: str, params: List[Any]
     ) -> MetricResponse:
@@ -444,7 +465,8 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
             result = await self.conn.fetchval(query, *params)
-            return RubricHeatmapResponse.model_validate(result or {})
+            parsed_result = self._parse_json_strings_recursive(result or {})
+            return RubricHeatmapResponse.model_validate(parsed_result)
         
         key = keys.analytics_rubric_heatmap(filters)
         
@@ -459,7 +481,8 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
             result = await self.conn.fetchval(query, *params)
-            return RubricHeatmapResponse.model_validate(result or {})
+            parsed_result = self._parse_json_strings_recursive(result or {})
+            return RubricHeatmapResponse.model_validate(parsed_result)
         
         result_data: RubricHeatmapResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result_data
@@ -476,7 +499,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return GrowthDataResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return GrowthDataResponse.model_validate(parsed_result)
 
     async def get_persona_performance(self, filters: AnalyticsFilters) -> PersonaPerformanceResponse:
         """Get persona performance data."""
@@ -490,7 +514,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return PersonaPerformanceResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return PersonaPerformanceResponse.model_validate(parsed_result)
 
     # Secondary Analytics (3 complex metrics)
     async def get_attempt_improvement(self, filters: AnalyticsFilters) -> AttemptImprovementResponse:
@@ -505,7 +530,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return AttemptImprovementResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return AttemptImprovementResponse.model_validate(parsed_result)
 
     async def get_cohort_performance(self, filters: AnalyticsFilters) -> CohortPerformanceResponse:
         """Get cohort performance data."""
@@ -519,7 +545,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return CohortPerformanceResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return CohortPerformanceResponse.model_validate(parsed_result)
 
     async def get_skill_performance(self, filters: AnalyticsFilters) -> SkillPerformanceResponse:
         """Get skill performance data."""
@@ -533,7 +560,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return SkillPerformanceResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return SkillPerformanceResponse.model_validate(parsed_result)
 
     # Footer Analytics (4 new metrics)
     async def get_scenario_performance(self, filters: AnalyticsFilters) -> ScenarioPerformanceResponse:
@@ -548,7 +576,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return ScenarioPerformanceResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return ScenarioPerformanceResponse.model_validate(parsed_result)
 
     async def get_scenario_stats(self, filters: AnalyticsFilters) -> ScenarioStatsResponse:
         """Get scenario stats data."""
@@ -562,7 +591,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return ScenarioStatsResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return ScenarioStatsResponse.model_validate(parsed_result)
 
     async def get_simulation_composition(self, filters: AnalyticsFilters) -> SimulationCompositionResponse:
         """Get simulation composition data."""
@@ -576,7 +606,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return SimulationCompositionResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return SimulationCompositionResponse.model_validate(parsed_result)
 
     async def get_simulation_performance(self, filters: AnalyticsFilters) -> SimulationPerformanceResponse:
         """Get simulation performance data."""
@@ -590,7 +621,8 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return SimulationPerformanceResponse.model_validate(result or {})
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return SimulationPerformanceResponse.model_validate(parsed_result)
 
     # Page-specific Analytics
     async def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
@@ -724,7 +756,9 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        bundle_data = result.get("data", []) if result else []
+        # Parse any JSON strings in nested structures
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        bundle_data = parsed_result.get("data", []) if parsed_result else []
         
         # Build entity mappings (reuse methods from dashboard bundle)
         scenario_mapping = await self._build_scenario_mapping(filters)
@@ -748,7 +782,9 @@ class AnalyticsService:
             department_ids=filters.departmentIds,
         )
         result = await self.conn.fetchval(query, *params)
-        return LeaderboardBundleResponse.model_validate(result or {})
+        # Parse any JSON strings in nested structures
+        parsed_result = self._parse_json_strings_recursive(result or {})
+        return LeaderboardBundleResponse.model_validate(parsed_result)
 
     async def get_pricing_analytics(
         self, filters: AnalyticsFilters
