@@ -497,7 +497,7 @@ export const AttemptHistoryRowSchema = z.object({
   simulation_id: z.string(),
   department_id: z.string(),
   scenario_ids: z.array(z.string()),
-  scenario_titles: z.array(z.string()).nullable(),
+  scenario_titles: z.array(z.string()),
   isArchived: z.boolean(),
   showView: z.boolean(),
   showContinue: z.boolean(),

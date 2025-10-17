@@ -43,10 +43,6 @@ from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               SimulationMapping, SimulationMappingItem)
 from app.services import analytics_insights
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class AnalyticsService:
     """Service layer for analytics operations."""
@@ -374,7 +370,6 @@ class AnalyticsService:
     # Page-specific Analytics
     async def get_home_overview(self, filters: AnalyticsFilters) -> HomeOverviewResponse:
         """Get home overview data with history and simulation mapping."""
-        logger.info(f"Getting home overview for filters: {filters}")
         # Determine effective profile ID based on role
         # Admins, superadmins, and instructional staff see all data (no profile filter)
         effective_profile_id = None

@@ -619,54 +619,118 @@ class PageQueries:
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
     ) -> Tuple[str, List[Any]]:
-        """Build practice overview query."""
-        where_clause, params = self.builder.filters.build_base_filter(
-            start_date,
-            end_date,
-            cohort_ids,
-            roles,
-            sim_filters,
-            profile_id,
-            department_ids,
-        )
+        """Build practice overview query - uses LIFETIME data for personal practice."""
+        # Practice uses lifetime data, not date-filtered for scores
+        # Only profile_id and department_ids matter
+        params: List[Any] = []
+        param_idx = 1
+        
+        # Add profile_id parameter
+        profile_param_placeholder = f"${param_idx}::uuid"
+        params.append(profile_id if profile_id else None)
+        param_idx += 1
+        
+        # Add department_ids parameter
+        dept_param_placeholder = f"${param_idx}::uuid[]"
+        params.append(department_ids if department_ids else [])
+        param_idx += 1
 
         query = f"""
-            WITH filt AS (
-                SELECT * FROM analytics a WHERE {where_clause} AND a.is_practice = TRUE
-            ),
-            practice_items AS (
+            WITH
+            -- 1) Simulation meta (practice only)
+            sim_meta AS (
                 SELECT
-                    f.simulation_id,
+                    s.id AS simulation_id,
                     s.title AS simulation_title,
                     s.description AS simulation_description,
-                    MAX(f.grade_percent) AS highest_score,
-                    COUNT(DISTINCT f.attempt_id)::int AS num_sessions
-                FROM filt f
-                JOIN simulations s ON s.id = f.simulation_id
-                WHERE f.simulation_id IS NOT NULL
-                GROUP BY f.simulation_id, s.title, s.description
-            ),
-            simulation_rubrics AS (
-                SELECT DISTINCT
-                    pi.simulation_id,
+                    NULL::int AS time_limit,
                     s.rubric_id,
-                    (
-                        SELECT jsonb_object_agg(
-                            sg.id::text,
-                            (
-                                SELECT jsonb_agg(st.id::text ORDER BY st.points DESC)
-                                FROM standards st
-                                WHERE st.standard_group_id = sg.id
-                            )
-                        )
-                        FROM standard_groups sg
-                        WHERE sg.rubric_id = s.rubric_id
-                    ) AS standard_groups
-                FROM practice_items pi
-                JOIN simulations s ON s.id = pi.simulation_id
+                    COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
+                    r.points AS rubric_points,
+                    r.pass_points AS rubric_pass_points,
+                    s.updated_at
+                FROM simulations s
+                JOIN rubrics r ON r.id = s.rubric_id
+                WHERE s.active = TRUE
+                  AND s.practice_simulation = TRUE
+                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
             ),
+            -- 2) Persona color/icon
+            sim_persona_meta AS (
+                SELECT
+                    sm.simulation_id,
+                    (ARRAY_AGG(p.color ORDER BY cnt DESC, COALESCE(p.color, '') DESC))[1] AS color,
+                    (ARRAY_AGG(p.icon ORDER BY cnt DESC, COALESCE(p.icon, '') DESC))[1] AS icon
+                FROM (
+                    SELECT
+                        s.id AS simulation_id,
+                        sp.persona_id,
+                        COUNT(*) AS cnt
+                    FROM simulations s
+                    LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
+                    LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
+                    LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
+                    WHERE s.practice_simulation = TRUE
+                      AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+                    GROUP BY s.id, sp.persona_id
+                ) sm
+                LEFT JOIN personas p ON p.id = sm.persona_id
+                GROUP BY sm.simulation_id
+            ),
+            -- 3) All-time analytics slice (lifetime data for this user)
+            filt_all AS (
+                SELECT a.*
+                FROM analytics a
+                WHERE a.profile_id = {profile_param_placeholder}
+                  AND a.is_practice = TRUE
+                  AND (cardinality({dept_param_placeholder}) = 0 OR a.department_id = ANY({dept_param_placeholder}))
+            ),
+            -- 4) Per-attempt progression (completed-only average - lifetime)
+            attempt_progress AS (
+                SELECT
+                    attempt_id,
+                    profile_id,
+                    simulation_id,
+                    COUNT(DISTINCT scenario_id) FILTER (WHERE completed) AS completed_root_scenarios,
+                    AVG(grade_percent) FILTER (WHERE completed) AS avg_score_completed,
+                    BOOL_OR(passed) AS any_passed_attempt,
+                    MAX(chat_created_at) AS last_time
+                FROM filt_all
+                GROUP BY attempt_id, profile_id, simulation_id
+            ),
+            -- 5) Latest attempt per (profile, simulation) for completionPct
+            latest_attempt_per_profile_sim AS (
+                SELECT DISTINCT ON (profile_id, simulation_id)
+                       profile_id, simulation_id, attempt_id,
+                       completed_root_scenarios, any_passed_attempt, last_time
+                FROM attempt_progress
+                ORDER BY profile_id, simulation_id, last_time DESC
+            ),
+            -- 6) Activity by (profile, simulation) - lifetime
+            activity_by_profile_sim AS (
+                SELECT
+                    profile_id,
+                    simulation_id,
+                    COUNT(DISTINCT chat_id) AS chats,
+                    BOOL_OR(passed) AS any_passed
+                FROM filt_all
+                GROUP BY profile_id, simulation_id
+            ),
+            -- 7) Pass threshold
+            sim_pass_pct AS (
+                SELECT s.id AS simulation_id,
+                       CASE WHEN r.points > 0
+                            THEN (r.pass_points::numeric / r.points::numeric) * 100.0
+                            ELSE 70 END AS pass_pct
+                FROM simulations s
+                JOIN rubrics r ON r.id = s.rubric_id
+                WHERE s.practice_simulation = TRUE
+                  AND s.active = TRUE
+                  AND (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
+            ),
+            -- 8) Standard groups/standards for rubrics
             all_rubric_ids AS (
-                SELECT DISTINCT rubric_id FROM simulation_rubrics
+                SELECT DISTINCT rubric_id FROM sim_meta
             ),
             standard_groups_mapping AS (
                 SELECT jsonb_object_agg(
@@ -695,22 +759,108 @@ class PageQueries:
                     SELECT sg.id FROM standard_groups sg
                     WHERE sg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids)
                 )
+            ),
+            -- 9) Final items
+            rows AS (
+                SELECT
+                    json_build_object(
+                        'viewMode', 'practice',
+                        'id', sm.simulation_id::text,
+                        'simulationTitle', sm.simulation_title,
+                        'simulationDescription', sm.simulation_description,
+                        'simulationName', sm.simulation_title,
+                        'timeLimit', NULL,
+                        'numSessions', sm.num_scenarios,
+                        'highestScore', (
+                            SELECT ROUND(MAX(ap.avg_score_completed))::int
+                            FROM attempt_progress ap
+                            WHERE ap.profile_id = {profile_param_placeholder}
+                              AND ap.simulation_id = sm.simulation_id
+                        ),
+                        'rubric_id', sm.rubric_id::text,
+                        'color', spm.color,
+                        'icon', spm.icon,
+                        'hasPassed', COALESCE((
+                            SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                            FROM attempt_progress ap
+                            JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
+                            WHERE ap.profile_id = {profile_param_placeholder} 
+                              AND ap.simulation_id = sm.simulation_id
+                            GROUP BY spp.pass_pct
+                        ), false),
+                        'passRate', CASE
+                                       WHEN sm.rubric_points > 0
+                                         THEN ROUND(100.0 * sm.rubric_pass_points::numeric / sm.rubric_points)::int
+                                       ELSE NULL
+                                     END,
+                        'status', CASE
+                                     WHEN COALESCE((
+                                            SELECT MAX(ap.avg_score_completed) >= spp.pass_pct
+                                            FROM attempt_progress ap
+                                            JOIN sim_pass_pct spp ON spp.simulation_id = ap.simulation_id
+                                            WHERE ap.profile_id = {profile_param_placeholder} 
+                                              AND ap.simulation_id = sm.simulation_id
+                                            GROUP BY spp.pass_pct
+                                          ), false) THEN 'passed'
+                                     WHEN COALESCE(aps.chats, 0) > 0 THEN 'in-progress'
+                                     ELSE 'not-started'
+                                   END,
+                        'completionPct', COALESCE((
+                            SELECT ROUND(100.0 * lap.completed_root_scenarios::numeric / GREATEST(sm.num_scenarios, 1))::int
+                            FROM latest_attempt_per_profile_sim lap
+                            WHERE lap.profile_id = {profile_param_placeholder}
+                              AND lap.simulation_id = sm.simulation_id
+                        ), 0),
+                        'passedCount', NULL,
+                        'inProgressCount', NULL,
+                        'notStartedCount', NULL,
+                        'passPct', NULL,
+                        'cohortName', NULL,
+                        'updatedAt', sm.updated_at,
+                        'lastActivityTs', (
+                            SELECT MAX(ap.last_time) 
+                            FROM attempt_progress ap
+                            WHERE ap.profile_id = {profile_param_placeholder} 
+                              AND ap.simulation_id = sm.simulation_id
+                        ),
+                        'hasActivity', (COALESCE(aps.chats, 0) > 0),
+                        'standard_groups', (
+                            SELECT jsonb_object_agg(
+                                sg.id::text,
+                                (
+                                    SELECT jsonb_agg(st.id::text ORDER BY st.points DESC)
+                                    FROM standards st
+                                    WHERE st.standard_group_id = sg.id
+                                )
+                            )
+                            FROM standard_groups sg
+                            WHERE sg.rubric_id = sm.rubric_id
+                        )
+                    ) AS item,
+                    sm.simulation_title AS sort_title,
+                    (
+                        SELECT MAX(ap.last_time)
+                        FROM attempt_progress ap
+                        WHERE ap.profile_id = {profile_param_placeholder}
+                          AND ap.simulation_id = sm.simulation_id
+                    ) AS sort_last_activity
+                FROM sim_meta sm
+                LEFT JOIN sim_persona_meta spm ON spm.simulation_id = sm.simulation_id
+                LEFT JOIN activity_by_profile_sim aps 
+                       ON aps.profile_id = {profile_param_placeholder}
+                      AND aps.simulation_id = sm.simulation_id
             )
             SELECT json_build_object(
                 'mode', 'practice',
-                'hasData', (SELECT COUNT(*) > 0 FROM practice_items),
-                'items', COALESCE((SELECT json_agg(json_build_object(
-                    'viewMode', 'practice',
-                    'id', pi.simulation_id::text,
-                    'simulationTitle', pi.simulation_title,
-                    'simulationDescription', pi.simulation_description,
-                    'simulationName', pi.simulation_title,
-                    'numSessions', pi.num_sessions,
-                    'highestScore', ROUND(pi.highest_score),
-                    'standard_groups', sr.standard_groups
-                ) ORDER BY pi.simulation_title) 
-                FROM practice_items pi
-                LEFT JOIN simulation_rubrics sr ON sr.simulation_id = pi.simulation_id
+                'hasData', EXISTS(SELECT 1 FROM rows),
+                'items', COALESCE((
+                    SELECT json_agg(item 
+                        ORDER BY
+                            (item->>'simulationTitle') ILIKE 'general%' DESC,
+                            sort_last_activity DESC NULLS LAST,
+                            sort_title
+                    )
+                    FROM rows
                 ), '[]'::json),
                 'standard_groups_mapping', COALESCE((SELECT mapping FROM standard_groups_mapping), '{{}}'::jsonb),
                 'standards_mapping', COALESCE((SELECT mapping FROM standards_mapping), '{{}}'::jsonb)
