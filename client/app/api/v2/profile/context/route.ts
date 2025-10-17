@@ -1,7 +1,7 @@
 import { getApiBase } from "@/lib/api-base";
 import { ProfileContextRequestSchema } from "@/lib/api/v2/schemas/profile";
-import { NextRequest, NextResponse } from "next/server";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
       },
       credentials: "include",
       body: JSON.stringify({
-        userId: request.userId,
         effectiveProfileId: request.effectiveProfileId,
         pathname: request.pathname,
       }),

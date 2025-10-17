@@ -172,11 +172,6 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_NAME: ${DB_NAME}
-        DB_PORT: 5432 # since we are running internally
-        DB_HOST: pgbouncer
         AUTH_URL: ${ORIGIN}${APP_PREFIX}/api/auth
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
@@ -189,8 +184,6 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=database
-      - DB_PORT=5432
       - HOSTNAME=0.0.0.0
       - PORT=3000
       - INTERNAL_API_BASE=http://server:8000
@@ -204,8 +197,6 @@ services:
       retries: 5
       start_period: 45s   # (see step 3)
     depends_on:
-      database:
-        condition: service_healthy
       server:
         condition: service_healthy
     networks:

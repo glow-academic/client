@@ -2,40 +2,19 @@
 import { log } from "@/lib/api/v2/server/logs";
 import {
   createProfile,
-  createUserProfile,
   fetchProfileByAlias,
-  fetchProfileSimple,
-  fetchUserProfilesByProfile,
-  fetchUserProfilesByUser,
   updateProfileSimple,
 } from "@/lib/api/v2/server/profile";
-import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-import { Pool } from "pg";
-
-const db_user = process.env["DB_USER"];
-const db_password = process.env["DB_PASSWORD"];
-const db_name = process.env["DB_NAME"];
-const db_port = process.env["DB_PORT"];
-const db_host = process.env["DB_HOST"];
-const db_url = `postgresql://${db_user}:${db_password}@${db_host}:${db_port}/${db_name}`;
 
 const appPrefix = process.env["APP_PREFIX"] || "";
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
-const pool = new Pool({
-  connectionString: db_url,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: `${appPrefix}/api/auth`,
-  adapter: PostgresAdapter(pool),
   providers: [
     MicrosoftEntraID({
       clientId,
@@ -44,7 +23,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   secret,
   trustHost: true,
-  // ✨ Use JWT strategy so we can store effectiveProfileId in the token
+  // ✨ Use JWT strategy - no database adapter needed
   session: { strategy: "jwt" },
   events: {
     async createUser({ user }) {
@@ -60,53 +39,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const existingProfile = await fetchProfileByAlias(alias || "");
 
         if (existingProfile) {
-          // Check if profile is already linked to a user
-          const existingUserProfiles = await fetchUserProfilesByProfile(
-            existingProfile.id
-          );
-          if (existingUserProfiles.length === 0) {
-            // Link existing profile to new user
-            await createUserProfile({
-              userId: parseInt(user.id!),
-              profileId: existingProfile.id,
-              isPrimary: true,
-              active: true,
-            });
+          // Update existing profile lastLogin
+          await updateProfileSimple(existingProfile.id, {
+            lastLogin: new Date().toISOString(),
+          });
 
-            // Update profile lastLogin
-            await updateProfileSimple(existingProfile.id, {
-              lastLogin: new Date().toISOString(),
-            });
-
-            await log.info("auth.profile.linked", {
-              subject: { entityType: "profile", entityId: existingProfile.id },
-              actor: { profileId: existingProfile.id },
-              context: {
-                file: "client/auth.ts",
-                function: "events.createUser",
-              },
-              message: "Linked existing profile to new user",
-            });
-          }
+          await log.info("auth.profile.found", {
+            subject: { entityType: "profile", entityId: existingProfile.id },
+            actor: { profileId: existingProfile.id },
+            context: {
+              file: "client/auth.ts",
+              function: "events.createUser",
+            },
+            message: "Found existing profile for user",
+          });
         } else {
           const nameParts = user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
 
           // Create new profile via server API
-          const newProfile = await createProfile({
+          await createProfile({
             firstName,
             lastName,
             alias: alias || "",
             role: "guest",
-          });
-
-          // Link profile to user
-          await createUserProfile({
-            userId: parseInt(user.id!),
-            profileId: newProfile.id,
-            isPrimary: true,
-            active: true,
           });
 
           await log.info("auth.profile.created", {
@@ -114,7 +71,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             context: {
               file: "client/auth.ts",
               function: "events.createUser",
-              userId: user.id,
               email: user.email,
               alias,
             },
@@ -144,25 +100,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             profile?.name?.split(" ") || user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
+          const alias = user.email.split("@")[0] || "";
+          if (!alias) {
+            await log.error("auth.sign_in.alias.failed", {
+              message: "Failed to extract alias from email",
+              context: { file: "client/auth.ts", function: "events.signIn" },
+            });
+            return;
+          }
 
           await log.info("auth.profile.update.start", {
-            subject: { entityType: "user", entityId: user.id ?? "" },
+            subject: { entityType: "profile" },
             context: {
               file: "client/auth.ts",
               function: "events.signIn",
               email: user.email,
+              alias,
             },
             message: "Updating existing user profile",
           });
 
-          const userProfileLinks = await fetchUserProfilesByUser(
-            parseInt(user.id!)
-          );
-          const primaryUserProfile = userProfileLinks.find(
-            (up) => up.isPrimary
-          );
-          if (primaryUserProfile) {
-            await updateProfileSimple(primaryUserProfile.profileId, {
+          const existingProfile = await fetchProfileByAlias(alias);
+          if (existingProfile) {
+            await updateProfileSimple(existingProfile.id, {
               firstName,
               lastName,
               lastLogin: new Date().toISOString(),
@@ -170,12 +130,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             await log.info("auth.profile.updated", {
               subject: {
                 entityType: "profile",
-                entityId: primaryUserProfile.profileId,
+                entityId: existingProfile.id,
               },
               context: {
                 file: "client/auth.ts",
                 function: "events.signIn",
-                userId: user.id,
                 email: user.email,
               },
               message: "Updated existing user profile",
@@ -194,22 +153,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     // 🔑 Put identity & emulation into the JWT
     async jwt({ token, user, trigger, session }) {
-      // On initial sign in, attach canonical profileId/role
-      if (user?.id) {
-        // your DB lookup to map user.id -> default profile via user_profiles junction
-        const userProfileLinks = await fetchUserProfilesByUser(
-          parseInt(user.id)
-        );
-        const primaryLink = userProfileLinks.find((up) => up.isPrimary);
-        if (primaryLink) {
-          // Get the actual profile to get role
-          const primary = await fetchProfileSimple(primaryLink.profileId);
-          if (primary.profile) {
-            token["profileId"] = primary.profile.id;
-            token["role"] = primary.profile.role;
+      // On initial sign in, attach canonical profileId/role from email → alias lookup
+      if (user?.email) {
+        const aliasParts = user.email.split("@");
+        const alias = aliasParts[0];
+        if (alias && alias.length > 0) {
+          const profile = await fetchProfileByAlias(alias);
+
+          if (profile) {
+            token["profileId"] = profile.id;
+            token["role"] = profile.role;
             // initialize effectiveProfileId to self
             token["effectiveProfileId"] =
-              token["effectiveProfileId"] ?? primary.profile.id;
+              token["effectiveProfileId"] ?? profile.id;
           }
         }
       }

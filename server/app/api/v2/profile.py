@@ -6,17 +6,12 @@ import asyncpg  # type: ignore
 from app.db import get_db
 from app.schemas.profile import (AuthorizeEmulationRequest,
                                  AuthorizeEmulationResponse,
-                                 CreateUserProfileRequest,
-                                 CreateUserProfileResponse,
-                                 ListUserProfilesByProfileRequest,
-                                 ListUserProfilesByUserRequest,
                                  MarkChatCompleteRequest,
                                  MarkIntroCompleteRequest,
                                  MarkTourStepResponse, ProfileByAliasRequest,
                                  ProfileContextRequest, ProfileContextResponse,
                                  ProfileDetailRequest, ProfileDetailResponse,
-                                 UpdateProfileRequest, UpdateProfileResponse,
-                                 UserProfilesListResponse)
+                                 UpdateProfileRequest, UpdateProfileResponse)
 from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
@@ -354,57 +349,4 @@ async def get_profile_by_alias(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ============================================================================
-# USER PROFILES OPERATIONS (Junction Table)
-# ============================================================================
-
-
-@router.post("/user-profiles/list-by-user", response_model=UserProfilesListResponse)
-async def list_user_profiles_by_user(
-    request: ListUserProfilesByUserRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UserProfilesListResponse:
-    """List user_profiles by user ID."""
-    try:
-        service = ProfileService(conn)
-        user_profiles = await service.list_user_profiles_by_user(request.userId)
-
-        return UserProfilesListResponse(userProfiles=user_profiles)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post(
-    "/user-profiles/list-by-profile", response_model=UserProfilesListResponse
-)
-async def list_user_profiles_by_profile(
-    request: ListUserProfilesByProfileRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UserProfilesListResponse:
-    """List user_profiles by profile ID."""
-    try:
-        service = ProfileService(conn)
-        user_profiles = await service.list_user_profiles_by_profile(request.profileId)
-
-        return UserProfilesListResponse(userProfiles=user_profiles)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/user-profiles/create", response_model=CreateUserProfileResponse)
-async def create_user_profile(
-    request: CreateUserProfileRequest,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateUserProfileResponse:
-    """Create a user_profile link."""
-    try:
-        service = ProfileService(conn)
-        user_profile = await service.create_user_profile(
-            request.userId, request.profileId, request.isPrimary, request.active
-        )
-
-        return CreateUserProfileResponse(userProfile=user_profile)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 

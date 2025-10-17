@@ -1,58 +1,10 @@
--- For Auth.js - Updated to match NextAuth Drizzle adapter requirements
+-- For Auth.js - JWT-only authentication (no database adapter)
 -- Enable the gen_random_uuid() function
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
-
-CREATE TABLE verification_token
-(
-  identifier TEXT NOT NULL,
-  expires TIMESTAMPTZ NOT NULL,
-  token TEXT NOT NULL,
- 
-  PRIMARY KEY (identifier, token)
-);
- 
-CREATE TABLE accounts
-(
-  id SERIAL,
-  "userId" INTEGER NOT NULL,
-  type VARCHAR(255) NOT NULL,
-  provider VARCHAR(255) NOT NULL,
-  "providerAccountId" VARCHAR(255) NOT NULL,
-  refresh_token TEXT,
-  access_token TEXT,
-  expires_at BIGINT,
-  id_token TEXT,
-  scope TEXT,
-  session_state TEXT,
-  token_type TEXT,
- 
-  PRIMARY KEY (id)
-);
- 
-CREATE TABLE sessions
-(
-  id SERIAL,
-  "userId" INTEGER NOT NULL,
-  expires TIMESTAMPTZ NOT NULL,
-  "sessionToken" VARCHAR(255) NOT NULL,
- 
-  PRIMARY KEY (id)
-);
- 
-CREATE TABLE users
-(
-  id SERIAL,
-  name VARCHAR(255),
-  email VARCHAR(255),
-  "emailVerified" TIMESTAMPTZ,
-  image TEXT,
- 
-  PRIMARY KEY (id)
-);
 
 CREATE TYPE profile_role AS ENUM ('superadmin', 'admin', 'instructional', 'ta', 'guest');
 
@@ -73,22 +25,8 @@ CREATE TABLE profiles (
   req_per_day INTEGER     NULL DEFAULT NULL -- model requests per day, null means unlimited
 );
 
--- User ↔ Profiles junction table (BCNF normalization - replaces profiles.user_id)
-CREATE TABLE user_profiles (
-  user_id     INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  profile_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  is_primary  BOOLEAN NOT NULL DEFAULT FALSE,
-  active      BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, profile_id)
-);
-
-CREATE UNIQUE INDEX user_profiles_one_primary_per_user
-  ON user_profiles(user_id) WHERE is_primary;
-
-CREATE INDEX ON user_profiles (profile_id);
-CREATE INDEX ON user_profiles (user_id, is_primary);
+-- Add unique constraint to alias (derived from email)
+CREATE UNIQUE INDEX profiles_alias_unique ON profiles(alias);
 
 -- Profile ↔ Department M:N relationship (BCNF normalization)
 CREATE TABLE profile_departments (

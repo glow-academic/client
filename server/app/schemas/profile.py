@@ -66,55 +66,6 @@ class ProfileByAliasRequest(BaseModel):
 
 
 # ============================================================================
-# USER PROFILES OPERATIONS (Junction Table)
-# ============================================================================
-
-
-class UserProfileItem(BaseModel):
-    """User profile link data item."""
-
-    userId: int
-    profileId: str
-    isPrimary: bool
-    active: bool
-    createdAt: str  # ISO datetime
-    updatedAt: str  # ISO datetime
-
-
-class ListUserProfilesByUserRequest(BaseModel):
-    """Request to list user_profiles by user ID."""
-
-    userId: int
-
-
-class ListUserProfilesByProfileRequest(BaseModel):
-    """Request to list user_profiles by profile ID."""
-
-    profileId: str
-
-
-class UserProfilesListResponse(BaseModel):
-    """Response containing list of user profiles."""
-
-    userProfiles: List[UserProfileItem]
-
-
-class CreateUserProfileRequest(BaseModel):
-    """Request to create a user profile link."""
-
-    userId: int
-    profileId: str
-    isPrimary: bool
-    active: bool
-
-
-class CreateUserProfileResponse(BaseModel):
-    """Response containing created user profile."""
-
-    userProfile: UserProfileItem
-
-
-# ============================================================================
 # TOUR COMPLETION OPERATIONS
 # ============================================================================
 
@@ -166,7 +117,6 @@ class AuthorizeEmulationResponse(BaseModel):
 class ProfileContextRequest(BaseModel):
     """Request to get consolidated profile context."""
 
-    userId: str
     effectiveProfileId: str
     pathname: str
 

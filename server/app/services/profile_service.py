@@ -13,8 +13,7 @@ from app.schemas.permissions import ProfileRole
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
                                  ProfileContextResponse, ProfileItem,
-                                 SimulationContextItem, SimulationsData,
-                                 UserProfileItem)
+                                 SimulationContextItem, SimulationsData)
 from app.services.permissions_service import PermissionsService
 from app.utils.csv import parse_csv_file
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
@@ -206,7 +205,7 @@ class ProfileService:
         """Get consolidated profile context (profile, departments, cohorts, breadcrumbs).
 
         Args:
-            request: ProfileContextRequest with userId, effectiveProfileId, pathname
+            request: ProfileContextRequest with effectiveProfileId, pathname
 
         Returns:
             ProfileContextResponse with all consolidated data
@@ -347,57 +346,6 @@ class ProfileService:
 
         return self._row_to_profile_item(result)
 
-    async def list_user_profiles_by_user(self, user_id: int) -> List[UserProfileItem]:
-        """List user_profiles by user ID.
-
-        Args:
-            user_id: Integer user ID
-
-        Returns:
-            List of UserProfileItem
-        """
-        query, params = self.queries.list_user_profiles_by_user(user_id)
-        result = await self.conn.fetch(query, *params)
-
-        return [self._row_to_user_profile_item(row) for row in result]
-
-    async def list_user_profiles_by_profile(
-        self, profile_id: str
-    ) -> List[UserProfileItem]:
-        """List user_profiles by profile ID.
-
-        Args:
-            profile_id: UUID of the profile
-
-        Returns:
-            List of UserProfileItem
-        """
-        query, params = self.queries.list_user_profiles_by_profile(profile_id)
-        result = await self.conn.fetch(query, *params)
-
-        return [self._row_to_user_profile_item(row) for row in result]
-
-    async def create_user_profile(
-        self, user_id: int, profile_id: str, is_primary: bool, active: bool
-    ) -> UserProfileItem:
-        """Create a user_profile link.
-
-        Args:
-            user_id: Integer user ID
-            profile_id: UUID of the profile
-            is_primary: Whether this is the primary profile for the user
-            active: Whether the link is active
-
-        Returns:
-            Created UserProfileItem
-        """
-        query, params = self.queries.create_user_profile(
-            user_id, profile_id, is_primary, active
-        )
-        result = await self.conn.fetchrow(query, *params)
-
-        return self._row_to_user_profile_item(result)
-
     async def create_profiles_from_csv(self, file_path: str) -> Dict[str, Any]:
         """
         Process CSV file and create profiles in database.
@@ -497,17 +445,6 @@ class ProfileService:
             reqPerDay=row['req_per_day'],
             lastLogin=row['last_login'].isoformat() if row['last_login'] else "",
             lastActive=row['last_active'].isoformat() if row['last_active'] else "",
-            createdAt=row['created_at'].isoformat() if row['created_at'] else "",
-            updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
-        )
-
-    def _row_to_user_profile_item(self, row: asyncpg.Record) -> UserProfileItem:
-        """Convert database row to UserProfileItem."""
-        return UserProfileItem(
-            userId=row['user_id'],
-            profileId=str(row['profile_id']),
-            isPrimary=row['is_primary'],
-            active=row['active'],
             createdAt=row['created_at'].isoformat() if row['created_at'] else "",
             updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
         )

@@ -183,59 +183,6 @@ class ProfileQueries:
         """
         return (query, [alias])
 
-    def list_user_profiles_by_user(
-        self, user_id: int
-    ) -> Tuple[str, List[Any]]:
-        """Build query to list user_profiles by user_id."""
-        query = """
-        SELECT 
-            user_id,
-            profile_id,
-            is_primary,
-            active,
-            created_at,
-            updated_at
-        FROM user_profiles
-        WHERE user_id = $1
-        ORDER BY is_primary DESC, created_at ASC
-        """
-        return (query, [user_id])
-
-    def list_user_profiles_by_profile(
-        self, profile_id: str
-    ) -> Tuple[str, List[Any]]:
-        """Build query to list user_profiles by profile_id."""
-        query = """
-        SELECT 
-            user_id,
-            profile_id,
-            is_primary,
-            active,
-            created_at,
-            updated_at
-        FROM user_profiles
-        WHERE profile_id = $1
-        ORDER BY is_primary DESC, created_at ASC
-        """
-        return (query, [profile_id])
-
-    def create_user_profile(
-        self, user_id: int, profile_id: str, is_primary: bool, active: bool
-    ) -> Tuple[str, List[Any]]:
-        """Build query to create a user_profile link."""
-        query = """
-        INSERT INTO user_profiles (user_id, profile_id, is_primary, active)
-        VALUES ($1, $2, $3, $4)
-        RETURNING 
-            user_id,
-            profile_id,
-            is_primary,
-            active,
-            created_at,
-            updated_at
-        """
-        return (query, [user_id, profile_id, is_primary, active])
-
     def get_default_guest_profile(self) -> Tuple[str, List[Any]]:
         """Build query to get default guest profile."""
         query = """

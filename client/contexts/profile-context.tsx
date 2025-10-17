@@ -162,27 +162,21 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const pathname = usePathname();
 
   // Internal hook: Get ALL data from consolidated API (single source of truth!)
-  const userId = session?.user?.id ?? "";
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
-    queryKey: layoutContextKeys.detail(
-      userId,
-      effectiveProfileId,
-      pathname ?? "/"
-    ),
+    queryKey: layoutContextKeys.detail(effectiveProfileId, pathname ?? "/"),
     queryFn: async () => {
       const res = await api<unknown>("/api/v2/profile/context", {
         method: "POST",
         body: JSON.stringify({
-          userId,
           effectiveProfileId,
           pathname: pathname ?? "/",
         }),
       });
       return LayoutContextResponseSchema.parse(res);
     },
-    enabled: !!userId && !!effectiveProfileId,
+    enabled: !!effectiveProfileId,
     staleTime: 5 * 60 * 1000, // 5 minutes default
   });
 

@@ -413,7 +413,6 @@ export type MarkTourStepResponse = z.infer<typeof MarkTourStepResponseSchema>;
 // ============================================================================
 
 export const ProfileContextRequestSchema = z.object({
-  userId: z.string(),
   effectiveProfileId: z.string(),
   pathname: z.string(),
 });

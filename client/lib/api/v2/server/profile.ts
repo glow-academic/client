@@ -10,11 +10,8 @@ import { ProfileRole } from "../schemas/base";
 import {
   CreateProfileRequestSchema,
   CreateProfileResponseSchema,
-  CreateUserProfileRequest,
-  CreateUserProfileResponseSchema,
   ProfileDetailResponseSchema,
   ProfileSimpleDetailResponseSchema,
-  UserProfilesListResponseSchema,
 } from "../schemas/profile";
 
 /**
@@ -79,75 +76,6 @@ export const fetchProfileByAlias = cache(async (alias: string) => {
   const parsed = ProfileSimpleDetailResponseSchema.parse(data);
   return parsed.profile;
 });
-
-/**
- * Fetch user_profiles by user ID from FastAPI server (memoized)
- * Used in auth.ts to find profile links for a user
- */
-export const fetchUserProfilesByUser = cache(async (userId: number) => {
-  const res = await fetch(
-    `${getApiBase()}/api/v2/profile/user-profiles/list-by-user`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ userId }),
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch user profiles by user");
-  }
-
-  const data = await res.json();
-  return UserProfilesListResponseSchema.parse(data).userProfiles;
-});
-
-/**
- * Fetch user_profiles by profile ID from FastAPI server (memoized)
- * Used in auth.ts to check if profile is already linked to a user
- */
-export const fetchUserProfilesByProfile = cache(async (profileId: string) => {
-  const res = await fetch(
-    `${getApiBase()}/api/v2/profile/user-profiles/list-by-profile`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ profileId }),
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch user profiles by profile");
-  }
-
-  const data = await res.json();
-  return UserProfilesListResponseSchema.parse(data).userProfiles;
-});
-
-/**
- * Create a user_profile link (not memoized - this is a mutation)
- * Used in auth.ts to link a user to a profile
- */
-export const createUserProfile = async (data: CreateUserProfileRequest) => {
-  const res = await fetch(
-    `${getApiBase()}/api/v2/profile/user-profiles/create`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to create user profile link");
-  }
-
-  const result = await res.json();
-  return CreateUserProfileResponseSchema.parse(result).userProfile;
-};
 
 /**
  * Update profile simple (not memoized - this is a mutation)
