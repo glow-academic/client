@@ -33,13 +33,30 @@ class ProfileQueries:
         self, profile_id: str, updates: Dict[str, Any]
     ) -> Tuple[str, List[Any]]:
         """Build query to update profile fields."""
+        # Map camelCase API field names to snake_case database column names
+        field_map = {
+            "firstName": "first_name",
+            "lastName": "last_name",
+            "lastLogin": "last_login",
+            "viewedIntro": "viewed_intro",
+            "viewedChat": "viewed_chat",
+            "reqPerDay": "req_per_day",
+            "lastActive": "last_active",
+            "defaultProfile": "default_profile",
+            # These are already snake_case or match
+            "role": "role",
+            "active": "active",
+        }
+        
         # Build SET clause dynamically from updates
         set_clauses = []
         params: List[Any] = []
         param_counter = 1
 
         for key, value in updates.items():
-            set_clauses.append(f"{key} = ${param_counter}")
+            # Convert camelCase to snake_case using the map
+            db_field = field_map.get(key, key)
+            set_clauses.append(f"{db_field} = ${param_counter}")
             params.append(value)
             param_counter += 1
 

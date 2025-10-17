@@ -77,14 +77,24 @@ class AnalyticsService:
                 dataPoints=[],
             )
 
+        # Parse JSON strings from database into Python lists
+        trend_data = result['trend_data']
+        data_points = result['data_points']
+        
+        # If they're JSON strings, parse them; otherwise use as-is
+        if isinstance(trend_data, str):
+            trend_data = json.loads(trend_data) if trend_data else []
+        if isinstance(data_points, str):
+            data_points = json.loads(data_points) if data_points else []
+
         # Parse the result into MetricResponse
         return MetricResponse(
             hasData=result['has_data'],
             method=result['method'],
             valueField=result['value_field'],
             keyField=result['key_field'],
-            trendData=result['trend_data'] or [],
-            dataPoints=result['data_points'] or [],
+            trendData=trend_data or [],
+            dataPoints=data_points or [],
         )
 
     # Header Analytics (10 metrics)
