@@ -11,7 +11,7 @@ class CohortQueries:
     ) -> Tuple[str, List[Any]]:
         """Build query for cohorts list with permissions and relationships."""
         query = """
-        WITH cohort_profiles AS (
+        WITH cohort_profiles_agg AS (
             SELECT 
                 cp.cohort_id,
                 ARRAY_AGG(cp.profile_id ORDER BY p.last_name, p.first_name) as profile_ids
@@ -20,7 +20,7 @@ class CohortQueries:
             WHERE cp.active = true
             GROUP BY cp.cohort_id
         ),
-        cohort_simulations AS (
+        cohort_simulations_agg AS (
             SELECT 
                 cs.cohort_id,
                 ARRAY_AGG(cs.simulation_id ORDER BY s.title) as simulation_ids
@@ -79,8 +79,8 @@ class CohortQueries:
                 ELSE false
             END as can_leave
         FROM cohorts c
-        LEFT JOIN cohort_profiles cp ON cp.cohort_id = c.id
-        LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
+        LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
+        LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
         LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
         LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
         CROSS JOIN user_profile up
@@ -103,15 +103,15 @@ class CohortQueries:
         return (query, [department_ids, profile_id])
 
     def get_profile_mapping(
-        self, profile_ids: List[str]
+        self, profile_ids: List[str], campus_domain: str
     ) -> Tuple[str, List[Any]]:
-        """Build query for profile mapping."""
+        """Build query for profile mapping with full email."""
         query = """
-        SELECT id, first_name || ' ' || last_name as name, COALESCE(email, '') as description 
+        SELECT id, first_name || ' ' || last_name as name, alias || '@' || $2 as description 
         FROM profiles 
         WHERE id = ANY($1)
         """
-        return (query, [profile_ids])
+        return (query, [profile_ids, campus_domain])
 
     def get_simulation_mapping(
         self, simulation_ids: List[str]

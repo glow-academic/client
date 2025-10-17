@@ -27,6 +27,9 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  RemoveProfilesFromCohortResponse,
                                  UpdateCohortRequest, UpdateCohortResponse)
 from app.schemas.staff import StaffItem
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class CohortService:
@@ -40,6 +43,9 @@ class CohortService:
 
     async def get_cohorts_list(self, filters: CohortsFilters) -> CohortsListResponse:
         """Get cohorts list with permissions and relationships."""
+        
+        # Get campus domain from environment
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
 
         # Get query from query builder
         query, params = self.queries.list_cohorts(
@@ -79,7 +85,7 @@ class CohortService:
         if profile_ids_to_fetch := list(
             set([pid for c in cohorts for pid in c.profile_ids])
         ):
-            query, params = self.queries.get_profile_mapping(profile_ids_to_fetch)
+            query, params = self.queries.get_profile_mapping(profile_ids_to_fetch, campus_domain)
             profile_result = await self.conn.fetch(query, *params)
 
             for row in profile_result:
@@ -113,6 +119,9 @@ class CohortService:
         self, request: CohortDetailRequest
     ) -> CohortDetailResponse:
         """Get detailed cohort information using dynamic SQL."""
+        
+        # Get campus domain from environment
+        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
 
         # Get cohort basic info
         query, params = self.queries.get_cohort_by_id(request.cohortId)
@@ -163,7 +172,7 @@ class CohortService:
 
         # Get profile mapping
         if profile_ids:
-            query, params = self.queries.get_profile_mapping(profile_ids)
+            query, params = self.queries.get_profile_mapping(profile_ids, campus_domain)
             prof_mapping_result = await self.conn.fetch(query, *params)
             profile_mapping = {
                 str(row['id']): ProfileMappingItem(name=row['name'], description=row['description'])
