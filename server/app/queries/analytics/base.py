@@ -348,3 +348,82 @@ class AnalyticsQueryBuilder:
     def refresh_materialized_view(self) -> str:
         """Build query to refresh the analytics materialized view."""
         return "REFRESH MATERIALIZED VIEW CONCURRENTLY analytics"
+
+    # ===== Entity mapping queries for analytics =====
+
+    def get_scenarios_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get scenarios for mapping."""
+        query = """
+        SELECT DISTINCT s.id, s.name, s.problem_statement
+        FROM scenarios s
+        WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
+        AND s.active = true
+        """
+        return (query, [department_ids])
+
+    def get_simulations_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get practice simulations for mapping."""
+        query = """
+        SELECT DISTINCT s.id, s.title, s.description
+        FROM simulations s
+        WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
+        AND s.active = true
+        AND s.practice_simulation = true
+        """
+        return (query, [department_ids])
+
+    def get_rubrics_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get rubrics for mapping."""
+        query = """
+        SELECT DISTINCT r.id, r.name, r.description
+        FROM rubrics r
+        WHERE ($1::uuid[] IS NULL OR r.department_id = ANY($1::uuid[]))
+        AND r.active = true
+        """
+        return (query, [department_ids])
+
+    def get_parameters_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get non-default parameters for mapping."""
+        query = """
+        SELECT DISTINCT p.id, p.name, p.description
+        FROM parameters p
+        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
+        AND p.active = true
+        AND p.default_parameter = false
+        """
+        return (query, [department_ids])
+
+    def get_parameter_items_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get default parameter items for non-default parameters."""
+        query = """
+        SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+        FROM parameter_items pi
+        JOIN parameters p ON pi.parameter_id = p.id
+        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
+        AND p.active = true
+        AND p.default_parameter = false
+        AND pi.default_item = true
+        """
+        return (query, [department_ids])
+
+    def get_personas_for_mapping(
+        self, department_ids: Optional[List[str]]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get personas for mapping."""
+        query = """
+        SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon
+        FROM personas p
+        WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
+        AND p.active = true
+        """
+        return (query, [department_ids])

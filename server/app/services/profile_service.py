@@ -202,19 +202,8 @@ class ProfileService:
             raise ValueError(f"Profile not found: {effective_profile_id}")
 
         # Get departments for this profile
-        query = """
-        SELECT 
-            d.id,
-            d.title,
-            d.description,
-            d.active,
-            pd.is_primary
-        FROM profile_departments pd
-        JOIN departments d ON d.id = pd.department_id
-        WHERE pd.profile_id = $1 AND pd.active = true
-        ORDER BY pd.is_primary DESC, d.title
-        """
-        dept_rows = await self.conn.fetch(query, effective_profile_id)
+        query, params = self.queries.get_profile_departments(effective_profile_id)
+        dept_rows = await self.conn.fetch(query, *params)
 
         departments = [
             DepartmentItem(
@@ -236,21 +225,8 @@ class ProfileService:
             dept_ids = [d.id for d in departments]
             
             # Get cohorts via cohort_profiles junction
-            query = """
-            SELECT DISTINCT
-                c.id,
-                c.title,
-                c.description,
-                c.active,
-                c.department_id
-            FROM cohorts c
-            JOIN cohort_profiles pc ON pc.cohort_id = c.id
-            WHERE pc.profile_id = $1 
-              AND pc.active = true
-              AND c.active = true
-            ORDER BY c.title
-            """
-            cohort_rows = await self.conn.fetch(query, effective_profile_id)
+            query, params = self.queries.get_profile_cohorts(effective_profile_id)
+            cohort_rows = await self.conn.fetch(query, *params)
 
             cohorts = [
                 CohortItem(
@@ -269,25 +245,8 @@ class ProfileService:
             # Get simulations from cohort memberships
             if cohorts:
                 cohort_ids = [c.id for c in cohorts]
-                placeholders = ','.join(f'${i+1}' for i in range(len(cohort_ids)))
-                
-                query = f"""
-                SELECT DISTINCT
-                    s.id,
-                    s.title,
-                    s.description,
-                    s.department_id,
-                    s.time_limit,
-                    s.active,
-                    s.default_simulation,
-                    s.practice_simulation
-                FROM simulations s
-                JOIN cohort_simulations cs ON cs.simulation_id = s.id
-                WHERE cs.cohort_id IN ({placeholders})
-                  AND s.active = true
-                ORDER BY s.title
-                """
-                sim_rows = await self.conn.fetch(query, *cohort_ids)
+                query, params = self.queries.get_cohort_simulations(cohort_ids)
+                sim_rows = await self.conn.fetch(query, *params)
 
                 simulations = [
                     SimulationContextItem(
@@ -325,13 +284,8 @@ class ProfileService:
 
         # Get earliest attempt date for the effective profile
         earliest_attempt_date = None
-        earliest_query = """
-        SELECT MIN(sa.created_at) as earliest
-        FROM simulation_attempts sa
-        JOIN attempt_profiles ap ON ap.attempt_id = sa.id
-        WHERE ap.profile_id = $1
-        """
-        earliest_row = await self.conn.fetchrow(earliest_query, effective_profile_id)
+        query, params = self.queries.get_earliest_attempt_date(effective_profile_id)
+        earliest_row = await self.conn.fetchrow(query, *params)
         if earliest_row and earliest_row['earliest']:
             earliest_attempt_date = earliest_row['earliest'].isoformat()
 

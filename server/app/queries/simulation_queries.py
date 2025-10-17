@@ -659,6 +659,74 @@ class SimulationQueries:
         RETURNING *
         """
 
+    # ===== Additional queries for simulation detail building =====
+
+    def get_cohort_usage_for_simulation(
+        self, simulation_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to check cohort usage for a simulation."""
+        query = """
+        SELECT COUNT(*) as cohort_count
+        FROM cohort_simulations
+        WHERE simulation_id = $1
+        """
+        return (query, [simulation_id])
+
+    def get_scenarios_with_positions(
+        self, simulation_id: str, scenario_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get scenarios with their positions in simulation."""
+        query = """
+        SELECT 
+            s.id,
+            s.name,
+            s.problem_statement,
+            s.active,
+            s.default_scenario,
+            ss.position
+        FROM scenarios s
+        JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+        WHERE ss.simulation_id = $1 AND s.id = ANY($2::uuid[])
+        ORDER BY ss.position
+        """
+        return (query, [simulation_id, scenario_ids])
+
+    def get_scenario_parameter_items(
+        self, scenario_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameter item IDs for a scenario."""
+        query = """
+        SELECT parameter_item_id
+        FROM scenario_parameter_items
+        WHERE scenario_id = $1
+        """
+        return (query, [scenario_id])
+
+    def get_parameters_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameters for departments."""
+        query = """
+        SELECT id, name, COALESCE(description, '') as description
+        FROM parameters
+        WHERE department_id = ANY($1::uuid[])
+        ORDER BY name
+        """
+        return (query, [department_ids])
+
+    def get_parameter_items_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items with parameter info for departments."""
+        query = """
+        SELECT pi.id, pi.parameter_id, pi.name, COALESCE(pi.description, '') as description
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.department_id = ANY($1::uuid[])
+        ORDER BY p.name, pi.name
+        """
+        return (query, [department_ids])
+
     def get_simulation_overview_complete(self, sim_id: Any) -> Tuple[str, List[Any]]:
         """Build optimized query to get simulation overview with all related data in ONE query.
         

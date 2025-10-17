@@ -121,14 +121,8 @@ class SimulationService:
         user_role = profile_row['role'] if profile_row else 'trainee'
 
         # Check if simulation is in use (linked to cohorts)
-        cohort_usage = await self.conn.fetchrow(
-            """
-            SELECT COUNT(*) as cohort_count
-            FROM cohort_simulations
-            WHERE simulation_id = $1
-            """,
-            request.simulationId
-        )
+        query, params = self.queries.get_cohort_usage_for_simulation(request.simulationId)
+        cohort_usage = await self.conn.fetchrow(query, *params)
         cohort_count = cohort_usage['cohort_count'] if cohort_usage else 0
         in_use = cohort_count > 0
 
@@ -147,28 +141,16 @@ class SimulationService:
         scenarios_list: List[ScenarioInSimulation] = []
         if scenario_ids:
             # Get scenarios with their data
-            scenarios_data = await self.conn.fetch("""
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.problem_statement,
-                    s.active,
-                    s.default_scenario,
-                    ss.position
-                FROM scenarios s
-                JOIN simulation_scenarios ss ON ss.scenario_id = s.id
-                WHERE ss.simulation_id = $1 AND s.id = ANY($2::uuid[])
-                ORDER BY ss.position
-            """, request.simulationId, scenario_ids)
+            query, params = self.queries.get_scenarios_with_positions(
+                request.simulationId, scenario_ids
+            )
+            scenarios_data = await self.conn.fetch(query, *params)
 
             # Get parameter items for each scenario
             for scenario_data in scenarios_data:
                 # Get parameter item IDs for this scenario
-                param_items = await self.conn.fetch("""
-                    SELECT parameter_item_id
-                    FROM scenario_parameter_items
-                    WHERE scenario_id = $1
-                """, str(scenario_data['id']))
+                query, params = self.queries.get_scenario_parameter_items(str(scenario_data['id']))
+                param_items = await self.conn.fetch(query, *params)
                 param_item_ids = [str(row['parameter_item_id']) for row in param_items]
 
                 scenarios_list.append(
@@ -217,12 +199,8 @@ class SimulationService:
         }
 
         # Get parameters for valid departments
-        params_result = await self.conn.fetch("""
-            SELECT id, name, COALESCE(description, '') as description
-            FROM parameters
-            WHERE department_id = ANY($1::uuid[])
-            ORDER BY name
-        """, valid_department_ids)
+        query, params = self.queries.get_parameters_for_departments(valid_department_ids)
+        params_result = await self.conn.fetch(query, *params)
         
         parameters_list = []
         parameter_mapping: ParameterMapping = {}
@@ -233,13 +211,8 @@ class SimulationService:
             )
 
         # Get parameter items for valid departments
-        param_items_result = await self.conn.fetch("""
-            SELECT pi.id, pi.parameter_id, pi.name, COALESCE(pi.description, '') as description
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1::uuid[])
-            ORDER BY p.name, pi.name
-        """, valid_department_ids)
+        query, params = self.queries.get_parameter_items_for_departments(valid_department_ids)
+        param_items_result = await self.conn.fetch(query, *params)
         
         parameter_items_list = []
         parameter_item_mapping: ParameterItemMapping = {}

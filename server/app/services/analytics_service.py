@@ -819,14 +819,8 @@ class AnalyticsService:
 
     async def _build_scenario_mapping(self, filters: AnalyticsFilters) -> ScenarioMapping:
         """Build scenario mapping from database."""
-        query = """
-            SELECT DISTINCT s.id, s.name, s.problem_statement
-            FROM scenarios s
-            WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
-            AND s.active = true
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_scenarios_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): ScenarioMappingItem(
@@ -847,15 +841,8 @@ class AnalyticsService:
     ) -> SimulationMapping:
         """Build simulation mapping from database - only practice simulations."""
         # Get only practice simulations for the practice page
-        query = """
-            SELECT DISTINCT s.id, s.title, s.description
-            FROM simulations s
-            WHERE ($1::uuid[] IS NULL OR s.department_id = ANY($1::uuid[]))
-            AND s.active = true
-            AND s.practice_simulation = true
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_simulations_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): SimulationMappingItem(
@@ -867,14 +854,8 @@ class AnalyticsService:
 
     async def _build_rubric_mapping(self, filters: AnalyticsFilters) -> RubricMapping:
         """Build rubric mapping from database."""
-        query = """
-            SELECT DISTINCT r.id, r.name, r.description
-            FROM rubrics r
-            WHERE ($1::uuid[] IS NULL OR r.department_id = ANY($1::uuid[]))
-            AND r.active = true
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_rubrics_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): RubricMappingItem(
@@ -886,15 +867,8 @@ class AnalyticsService:
 
     async def _build_parameter_mapping(self, filters: AnalyticsFilters) -> ParameterMapping:
         """Build parameter mapping from database - only non-default parameters for customization."""
-        query = """
-            SELECT DISTINCT p.id, p.name, p.description
-            FROM parameters p
-            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-            AND p.active = true
-            AND p.default_parameter = false
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_parameters_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): ParameterMappingItem(
@@ -908,17 +882,8 @@ class AnalyticsService:
         self, filters: AnalyticsFilters
     ) -> ParameterItemMapping:
         """Build parameter item mapping from database - only default items for non-default parameters."""
-        query = """
-            SELECT DISTINCT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
-            FROM parameter_items pi
-            JOIN parameters p ON pi.parameter_id = p.id
-            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-            AND p.active = true
-            AND p.default_parameter = false
-            AND pi.default_item = true
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_parameter_items_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): ParameterItemMappingItem(
@@ -932,14 +897,8 @@ class AnalyticsService:
 
     async def _build_persona_mapping(self, filters: AnalyticsFilters) -> PersonaMapping:
         """Build persona mapping from database."""
-        query = """
-            SELECT DISTINCT p.id, p.name, p.description, p.color, p.icon
-            FROM personas p
-            WHERE ($1::uuid[] IS NULL OR p.department_id = ANY($1::uuid[]))
-            AND p.active = true
-        """
-        
-        results = await self.conn.fetch(query, filters.departmentIds)
+        query, params = self.query_builder.get_personas_for_mapping(filters.departmentIds)
+        results = await self.conn.fetch(query, *params)
         
         return {
             str(row['id']): PersonaMappingItem(

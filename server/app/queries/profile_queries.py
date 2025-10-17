@@ -480,3 +480,77 @@ class ProfileQueries:
         SET last_active = $1, active = $2
         WHERE role = 'guest' AND default_profile = true
         """
+
+    # ===== Profile context queries =====
+
+    def get_profile_departments(
+        self, profile_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get departments for a profile with is_primary flag."""
+        query = """
+        SELECT 
+            d.id,
+            d.title,
+            d.description,
+            d.active,
+            pd.is_primary
+        FROM profile_departments pd
+        JOIN departments d ON d.id = pd.department_id
+        WHERE pd.profile_id = $1 AND pd.active = true
+        ORDER BY pd.is_primary DESC, d.title
+        """
+        return (query, [profile_id])
+
+    def get_profile_cohorts(
+        self, profile_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get cohorts for a profile."""
+        query = """
+        SELECT DISTINCT
+            c.id,
+            c.title,
+            c.description,
+            c.active,
+            c.department_id
+        FROM cohorts c
+        JOIN cohort_profiles pc ON pc.cohort_id = c.id
+        WHERE pc.profile_id = $1 
+          AND pc.active = true
+          AND c.active = true
+        ORDER BY c.title
+        """
+        return (query, [profile_id])
+
+    def get_cohort_simulations(
+        self, cohort_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get simulations for cohorts."""
+        query = """
+        SELECT DISTINCT
+            s.id,
+            s.title,
+            s.description,
+            s.department_id,
+            s.time_limit,
+            s.active,
+            s.default_simulation,
+            s.practice_simulation
+        FROM simulations s
+        JOIN cohort_simulations cs ON cs.simulation_id = s.id
+        WHERE cs.cohort_id = ANY($1::uuid[])
+          AND s.active = true
+        ORDER BY s.title
+        """
+        return (query, [cohort_ids])
+
+    def get_earliest_attempt_date(
+        self, profile_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get earliest attempt date for a profile."""
+        query = """
+        SELECT MIN(sa.created_at) as earliest
+        FROM simulation_attempts sa
+        JOIN attempt_profiles ap ON ap.attempt_id = sa.id
+        WHERE ap.profile_id = $1
+        """
+        return (query, [profile_id])

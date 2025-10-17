@@ -823,3 +823,119 @@ class ScenarioQueries:
         """
         return (query, [department_ids])
 
+    # ===== Additional queries for scenario detail and list building =====
+
+    def get_scenario_documents_aggregated(
+        self, scenario_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get aggregated document IDs per scenario."""
+        query = """
+        SELECT scenario_id, ARRAY_AGG(document_id) as document_ids
+        FROM scenario_documents
+        WHERE scenario_id = ANY($1::uuid[]) AND active = true
+        GROUP BY scenario_id
+        """
+        return (query, [scenario_ids])
+
+    def get_documents_mapping(
+        self, document_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get documents mapping with type as description."""
+        query = """
+        SELECT id, name, type::text as description
+        FROM documents
+        WHERE id = ANY($1::uuid[])
+        """
+        return (query, [document_ids])
+
+    def get_scenario_basic_with_tree(
+        self, scenario_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get scenario with tree parent relationship."""
+        query = """
+        SELECT 
+            s.name,
+            s.problem_statement,
+            s.active,
+            s.default_scenario,
+            s.department_id,
+            COALESCE(s.generated, false) as generated,
+            st.parent_scenario_id
+        FROM scenarios s
+        LEFT JOIN scenario_tree st ON st.child_scenario_id = s.id
+        WHERE s.id = $1
+        """
+        return (query, [scenario_id])
+
+    def get_parameters_from_items(
+        self, parameter_item_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get parameters from parameter items."""
+        query = """
+        SELECT DISTINCT
+            p.id as parameter_id,
+            p.name,
+            p.description
+        FROM parameters p
+        JOIN parameter_items pi ON pi.parameter_id = p.id
+        WHERE pi.id = ANY($1::uuid[])
+        """
+        return (query, [parameter_item_ids])
+
+    def get_parameter_items_full(
+        self, parameter_item_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get full parameter items with parameter name."""
+        query = """
+        SELECT 
+            pi.id,
+            pi.name,
+            pi.description,
+            pi.value,
+            pi.parameter_id,
+            p.name as parameter_name
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE pi.id = ANY($1::uuid[])
+        """
+        return (query, [parameter_item_ids])
+
+    def check_scenario_active_usage(
+        self, scenario_id: str
+    ) -> Tuple[str, List[Any]]:
+        """Build query to check if scenario is used by active simulations."""
+        query = """
+        SELECT COUNT(*) as usage_count
+        FROM simulation_scenarios ss
+        JOIN simulations s ON s.id = ss.simulation_id
+        WHERE ss.scenario_id = $1 
+        AND ss.active = true 
+        AND s.active = true
+        """
+        return (query, [scenario_id])
+
+    def get_active_parameters_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get active parameters for departments."""
+        query = """
+        SELECT DISTINCT p.id, p.name, p.description
+        FROM parameters p
+        WHERE p.department_id = ANY($1::uuid[]) AND p.active = true
+        ORDER BY p.name
+        """
+        return (query, [department_ids])
+
+    def get_active_parameter_items_for_departments(
+        self, department_ids: List[str]
+    ) -> Tuple[str, List[Any]]:
+        """Build query to get active parameter items with parameter name."""
+        query = """
+        SELECT pi.id, pi.name, pi.description, pi.parameter_id, p.name as parameter_name
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.department_id = ANY($1::uuid[]) AND pi.active = true
+        ORDER BY p.name, pi.name
+        """
+        return (query, [department_ids])
+

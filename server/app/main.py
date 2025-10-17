@@ -195,7 +195,8 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
                 if pool:
                     async with pool.acquire() as conn:
                         # Create an error message in the database
-                        from app.queries.simulation_queries import SimulationQueries
+                        from app.queries.simulation_queries import \
+                            SimulationQueries
                         
                         queries = SimulationQueries()
                         query = queries.insert_error_message()
