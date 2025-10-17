@@ -12,6 +12,7 @@ GLOBAL_CACHE_VERSION = 1
 NS_ANALYTICS = "analytics"
 NS_PROFILE = "profile"
 NS_SIMULATION = "simulation"
+NS_SCENARIO = "scenario"
 NS_ATTEMPT = "attempt"
 NS_AGENT = "agent"
 NS_DEPARTMENT = "department"
@@ -21,6 +22,10 @@ NS_ASSISTANT = "assistant"
 NS_LOG = "log"
 NS_MODEL_RUN = "model_run"
 NS_PARAMETER = "parameter"
+NS_STAFF = "staff"
+NS_PROVIDER = "provider"
+NS_RUBRIC = "rubric"
+NS_PERSONA = "persona"
 
 
 def _stable_json(obj: Any) -> str:
@@ -135,6 +140,33 @@ def _extract_primary_id(ns: str, name: str, params: Any) -> Any | None:
     if ns == NS_PARAMETER:
         if name in ("by_id", "detail"):
             return params.get("parameter_id")
+
+    # Scenario namespace
+    if ns == NS_SCENARIO:
+        if name in ("by_id", "overview"):
+            return params.get("scenario_id")
+
+    # Provider namespace
+    if ns == NS_PROVIDER:
+        if name == "by_id":
+            return params.get("provider_id")
+        if name == "model_by_id":
+            return f"model:{params.get('model_id')}"
+
+    # Staff namespace
+    if ns == NS_STAFF:
+        if name == "detail":
+            return params.get("profile_id")
+
+    # Persona namespace
+    if ns == NS_PERSONA:
+        if name in ("by_id", "overview", "response_times"):
+            return params.get("persona_id")
+
+    # Rubric namespace
+    if ns == NS_RUBRIC:
+        if name in ("by_id", "detail"):
+            return params.get("rubric_id")
 
     return None
 
@@ -480,6 +512,76 @@ def profile_by_email(email: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
 
 
 # ============================================================================
+# STAFF KEY FACTORIES
+# ============================================================================
+
+
+def staff_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for staff list query."""
+    return Key(
+        ns=NS_STAFF,
+        name="list",
+        params={"filters": _serialize_filters(filters)},
+        v=v
+    )
+
+
+def staff_detail(profile_id: str, current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for staff detail query."""
+    return Key(
+        ns=NS_STAFF,
+        name="detail",
+        params={"profile_id": profile_id, "current_profile_id": current_profile_id},
+        v=v
+    )
+
+
+def staff_detail_bulk(profile_ids: list[str], current_profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for bulk staff detail query."""
+    return Key(
+        ns=NS_STAFF,
+        name="detail_bulk",
+        params={"profile_ids": sorted(profile_ids), "current_profile_id": current_profile_id},
+        v=v
+    )
+
+
+# ============================================================================
+# PROVIDER KEY FACTORIES
+# ============================================================================
+
+
+def provider_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for providers list query."""
+    return Key(
+        ns=NS_PROVIDER,
+        name="list",
+        params={"filters": _serialize_filters(filters)},
+        v=v
+    )
+
+
+def provider_by_id(provider_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for provider by ID query."""
+    return Key(
+        ns=NS_PROVIDER,
+        name="by_id",
+        params={"provider_id": provider_id},
+        v=v
+    )
+
+
+def model_by_id(model_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for model by ID query."""
+    return Key(
+        ns=NS_PROVIDER,
+        name="model_by_id",
+        params={"model_id": model_id},
+        v=v
+    )
+
+
+# ============================================================================
 # ASSISTANT KEY FACTORIES
 # ============================================================================
 
@@ -799,6 +901,262 @@ def parameter_detail_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) 
 
 
 # ============================================================================
+# SCENARIO KEY FACTORIES
+# ============================================================================
+
+
+def scenario_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenarios list query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="list",
+        params={"filters": _serialize_filters(filters)},
+        v=v,
+    )
+
+
+def scenario_by_id(scenario_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenario detail by ID query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="by_id",
+        params={"scenario_id": scenario_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def scenario_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default scenario query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
+def scenario_mapping(scenario_ids: list[str], *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenario mapping query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="mapping",
+        params={"scenario_ids": sorted(scenario_ids)},
+        v=v,
+    )
+
+
+def scenario_search(query: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenario search query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="search",
+        params={"query": query, "limit": limit},
+        v=v,
+    )
+
+
+def scenario_overview(scenario_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for scenario overview query."""
+    return Key(
+        ns=NS_SCENARIO,
+        name="overview",
+        params={"scenario_id": scenario_id},
+        v=v,
+    )
+
+
+# ============================================================================
+# PERSONA KEY FACTORIES
+# ============================================================================
+
+
+def persona_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for personas list query."""
+    return Key(
+        ns=NS_PERSONA,
+        name="list",
+        params={"filters": _serialize_persona_filters(filters)},
+        v=v,
+    )
+
+
+def persona_by_id(persona_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for persona detail query."""
+    return Key(
+        ns=NS_PERSONA,
+        name="by_id",
+        params={"persona_id": persona_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def persona_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default persona detail query."""
+    return Key(
+        ns=NS_PERSONA,
+        name="default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
+def persona_overview(persona_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for persona overview query."""
+    return Key(
+        ns=NS_PERSONA,
+        name="overview",
+        params={"persona_id": persona_id},
+        v=v,
+    )
+
+
+def persona_response_times(persona_id: str, window_days: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for persona response times analysis."""
+    return Key(
+        ns=NS_PERSONA,
+        name="response_times",
+        params={"persona_id": persona_id, "window_days": window_days},
+        v=v,
+    )
+
+
+def persona_search(query: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for persona search query."""
+    return Key(
+        ns=NS_PERSONA,
+        name="search",
+        params={"query": query, "limit": limit},
+        v=v,
+    )
+
+
+def _serialize_persona_filters(filters: Any) -> dict[str, Any]:
+    """Serialize persona filters to stable dict."""
+    if hasattr(filters, "model_dump"):
+        return filters.model_dump()  # type: ignore
+    elif hasattr(filters, "dict"):
+        return filters.dict()  # type: ignore
+    elif isinstance(filters, dict):
+        return filters  # type: ignore
+    else:
+        return {"raw": str(filters)}
+
+
+# ============================================================================
+# RUBRIC KEY FACTORIES
+# ============================================================================
+
+
+def rubric_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for rubrics list query."""
+    return Key(
+        ns=NS_RUBRIC,
+        name="list",
+        params={"filters": _serialize_rubric_filters(filters)},
+        v=v,
+    )
+
+
+def rubric_by_id(rubric_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for rubric detail query."""
+    return Key(
+        ns=NS_RUBRIC,
+        name="by_id",
+        params={"rubric_id": rubric_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def rubric_detail_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default rubric query."""
+    return Key(
+        ns=NS_RUBRIC,
+        name="detail_default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
+def _serialize_rubric_filters(filters: Any) -> dict[str, Any]:
+    """Serialize rubric filters to stable dict format."""
+    if hasattr(filters, "model_dump"):
+        return filters.model_dump()  # type: ignore
+    elif hasattr(filters, "dict"):
+        return filters.dict()  # type: ignore
+    elif isinstance(filters, dict):
+        return filters  # type: ignore
+    else:
+        return {"raw": str(filters)}
+
+
+# ============================================================================
+# SIMULATION KEY FACTORIES
+# ============================================================================
+
+
+def simulation_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulations list query."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="list",
+        params={"filters": _serialize_simulation_filters(filters)},
+        v=v,
+    )
+
+
+def simulation_by_id(simulation_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation detail by ID query."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="by_id",
+        params={"simulation_id": simulation_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def simulation_overview(simulation_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation overview query."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="overview",
+        params={"simulation_id": simulation_id},
+        v=v,
+    )
+
+
+def simulation_attempts_list(simulation_id: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation attempts list query."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="attempts_list",
+        params={"simulation_id": simulation_id, "limit": limit},
+        v=v,
+    )
+
+
+def simulation_search(query: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation search query."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="search",
+        params={"query": query, "limit": limit},
+        v=v,
+    )
+
+
+def _serialize_simulation_filters(filters: Any) -> dict[str, Any]:
+    """Serialize simulation filters to stable dict format."""
+    if hasattr(filters, "model_dump"):
+        return filters.model_dump()  # type: ignore
+    elif hasattr(filters, "dict"):
+        return filters.dict()  # type: ignore
+    elif isinstance(filters, dict):
+        return filters  # type: ignore
+    else:
+        return {"raw": str(filters)}
+
+
+# ============================================================================
 # TAG HELPERS
 # ============================================================================
 
@@ -886,6 +1244,61 @@ def tag_parameter_all() -> str:
 def tag_parameter_by_id(parameter_id: str) -> str:
     """Fine tag to invalidate specific parameter caches."""
     return f"{NS_PARAMETER}:{parameter_id}"
+
+
+def tag_scenario_all() -> str:
+    """Coarse tag to invalidate all scenario caches."""
+    return f"{NS_SCENARIO}:*"
+
+
+def tag_scenario_by_id(scenario_id: str) -> str:
+    """Fine tag to invalidate specific scenario caches."""
+    return f"{NS_SCENARIO}:{scenario_id}"
+
+
+def tag_provider_all() -> str:
+    """Coarse tag to invalidate all provider caches."""
+    return f"{NS_PROVIDER}:*"
+
+
+def tag_provider_by_id(provider_id: str) -> str:
+    """Fine tag to invalidate specific provider caches."""
+    return f"{NS_PROVIDER}:{provider_id}"
+
+
+def tag_model_by_id(model_id: str) -> str:
+    """Fine tag to invalidate specific model caches."""
+    return f"{NS_PROVIDER}:model:{model_id}"
+
+
+def tag_staff_all() -> str:
+    """Coarse tag to invalidate all staff caches."""
+    return f"{NS_STAFF}:*"
+
+
+def tag_staff_by_id(profile_id: str) -> str:
+    """Fine tag to invalidate specific staff caches."""
+    return f"{NS_STAFF}:{profile_id}"
+
+
+def tag_persona_all() -> str:
+    """Coarse tag to invalidate all persona caches."""
+    return f"{NS_PERSONA}:*"
+
+
+def tag_persona_by_id(persona_id: str) -> str:
+    """Fine tag to invalidate specific persona caches."""
+    return f"{NS_PERSONA}:{persona_id}"
+
+
+def tag_rubric_all() -> str:
+    """Coarse tag to invalidate all rubric caches."""
+    return f"{NS_RUBRIC}:*"
+
+
+def tag_rubric_by_id(rubric_id: str) -> str:
+    """Fine tag to invalidate specific rubric caches."""
+    return f"{NS_RUBRIC}:{rubric_id}"
 
 
 # ============================================================================

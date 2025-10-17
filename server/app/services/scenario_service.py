@@ -4,7 +4,9 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.scenario_queries import ScenarioQueries
 from app.schemas.base import (CohortMappingItem, DepartmentMappingItem,
                               DocumentMappingItem, ObjectiveMappingItem,
@@ -45,6 +47,23 @@ class ScenarioService:
         if not scenario_ids:
             return {}
 
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_scenario_mapping(scenario_ids)
+        
+        key = keys.scenario_mapping(scenario_ids)
+        
+        async def fetcher() -> Dict[str, ScenarioMappingItem]:
+            return await self._execute_scenario_mapping(scenario_ids)
+        
+        result: Dict[str, ScenarioMappingItem] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _execute_scenario_mapping(
+        self, scenario_ids: List[str]
+    ) -> Dict[str, ScenarioMappingItem]:
+        """Execute scenario mapping query (internal helper for caching)."""
         # Get base scenario data with persona_id and parameter_item_ids
         query, params = self.queries.get_enhanced_scenario_mapping(scenario_ids)
         scenario_result = await self.conn.fetch(query, *params)
@@ -144,7 +163,23 @@ class ScenarioService:
         self, filters: ScenariosFilters
     ) -> ScenariosListResponse:
         """Get scenarios list with all relationships using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_scenarios_list(filters)
+        
+        key = keys.scenario_list(filters)
+        
+        async def fetcher() -> ScenariosListResponse:
+            return await self._execute_scenarios_list(filters)
+        
+        result: ScenariosListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_scenarios_list(
+        self, filters: ScenariosFilters
+    ) -> ScenariosListResponse:
+        """Execute scenarios list query (internal helper for caching)."""
         # Get query from query builder
         query, params = self.queries.list_scenarios(
             filters.departmentIds, filters.profileId
@@ -266,7 +301,23 @@ class ScenarioService:
         self, request: ScenarioDetailRequest
     ) -> ScenarioDetailResponse:
         """Get detailed scenario information using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_scenario_detail(request)
+        
+        key = keys.scenario_by_id(request.scenarioId, request.profileId)
+        
+        async def fetcher() -> ScenarioDetailResponse:
+            return await self._execute_scenario_detail(request)
+        
+        result: ScenarioDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_scenario_detail(
+        self, request: ScenarioDetailRequest
+    ) -> ScenarioDetailResponse:
+        """Execute scenario detail query (internal helper for caching)."""
         # Get scenario basic info including generated and parent_scenario_id
         query, params = self.queries.get_scenario_basic_with_tree(request.scenarioId)
         scenario = await self.conn.fetchrow(query, *params)
@@ -490,7 +541,23 @@ class ScenarioService:
         self, request: ScenarioDetailDefaultRequest
     ) -> ScenarioDetailResponse:
         """Get default scenario structure for creation mode."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_scenario_detail_default(request)
+        
+        key = keys.scenario_default(request.profileId)
+        
+        async def fetcher() -> ScenarioDetailResponse:
+            return await self._execute_scenario_detail_default(request)
+        
+        result: ScenarioDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_scenario_detail_default(
+        self, request: ScenarioDetailDefaultRequest
+    ) -> ScenarioDetailResponse:
+        """Execute default scenario detail query (internal helper for caching)."""
         # Get user's accessible department IDs
         query, params = self.queries.get_departments_for_profile(request.profileId)
         dept_results = await self.conn.fetch(query, *params)
@@ -669,6 +736,14 @@ class ScenarioService:
                         param_item_id,
                     )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_scenario_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return CreateScenarioResponse(
                 success=True,
                 scenarioId=scenario_id,
@@ -755,6 +830,15 @@ class ScenarioService:
                         param_item_id,
                     )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_scenario_by_id(request.scenarioId),
+                    keys.tag_scenario_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return UpdateScenarioResponse(
                 success=True, message=f"Scenario '{request.name}' updated successfully"
             )
@@ -818,6 +902,14 @@ class ScenarioService:
                 request.scenarioId,
             )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_scenario_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return DuplicateScenarioResponse(
                 success=True,
                 scenarioId=new_scenario_id,
@@ -850,6 +942,15 @@ class ScenarioService:
             # Delete scenario (cascades will handle junction tables)
             query, params = self.queries.delete_scenario(request.scenarioId)
             await self.conn.execute(query, *params)
+
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_scenario_by_id(request.scenarioId),
+                    keys.tag_scenario_all(),
+                    keys.tag_analytics_all(),
+                ])
 
             return DeleteScenarioResponse(
                 success=True, message=f"Scenario '{scenario['name']}' deleted successfully"
@@ -1414,6 +1515,23 @@ class ScenarioService:
         Returns:
             List of scenario dictionaries with scores
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_search_scenarios(query, limit)
+        
+        key = keys.scenario_search(query, limit)
+        
+        async def fetcher() -> List[Dict[str, Any]]:
+            return await self._execute_search_scenarios(query, limit)
+        
+        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _execute_search_scenarios(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Execute scenario search query (internal helper for caching)."""
         q_norm = normalize_text(query)
         if not q_norm:
             return []
@@ -1530,6 +1648,21 @@ class ScenarioService:
         Returns:
             Dict with scenario overview data or {"error": "..."}
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_scenario_overview(scenario_id)
+        
+        key = keys.scenario_overview(scenario_id)
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._execute_scenario_overview(scenario_id)
+        
+        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _execute_scenario_overview(self, scenario_id: str) -> Dict[str, Any]:
+        """Execute scenario overview query (internal helper for caching)."""
         import uuid
         
         try:

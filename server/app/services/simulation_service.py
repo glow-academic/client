@@ -3,7 +3,9 @@
 from typing import Any, Dict, List
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.simulation_queries import SimulationQueries
 from app.schemas.base import (DepartmentMappingItem, ParameterItemMapping,
                               ParameterItemMappingItem, ParameterMapping,
@@ -41,7 +43,23 @@ class SimulationService:
         self, filters: SimulationsFilters
     ) -> SimulationsListResponse:
         """Get simulations list with permissions using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._execute_get_simulations_list(filters)
+        
+        key = keys.simulation_list(filters)
+        
+        async def fetcher() -> SimulationsListResponse:
+            return await self._execute_get_simulations_list(filters)
+        
+        result: SimulationsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_get_simulations_list(
+        self, filters: SimulationsFilters
+    ) -> SimulationsListResponse:
+        """Execute simulations list query (extracted for caching)."""
         # Get query from query builder
         query, params = self.queries.list_simulations(
             filters.departmentIds, filters.profileId
@@ -107,7 +125,22 @@ class SimulationService:
         self, request: SimulationDetailRequest
     ) -> SimulationDetailResponse:
         """Get detailed simulation information using dynamic SQL."""
+        qc = get_query_client()
+        if not qc:
+            return await self._execute_get_simulation_detail(request)
+        
+        key = keys.simulation_by_id(request.simulationId, request.profileId)
+        
+        async def fetcher() -> SimulationDetailResponse:
+            return await self._execute_get_simulation_detail(request)
+        
+        result: SimulationDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_get_simulation_detail(
+        self, request: SimulationDetailRequest
+    ) -> SimulationDetailResponse:
+        """Execute simulation detail query (extracted for caching)."""
         # Get simulation basic info
         query, params = self.queries.get_simulation_by_id(request.simulationId)
         simulation = await self.conn.fetchrow(query, *params)
@@ -341,6 +374,14 @@ class SimulationService:
                     scenario_id,
                 )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_simulation_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return CreateSimulationResponse(
                 success=True,
                 simulationId=simulation_id,
@@ -392,6 +433,15 @@ class SimulationService:
                     scenario_id,
                 )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_simulation_by_id(request.simulationId),
+                    keys.tag_simulation_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return UpdateSimulationResponse(
                 success=True, message=f"Simulation '{request.title}' updated successfully"
             )
@@ -437,6 +487,14 @@ class SimulationService:
                 request.simulationId,
             )
 
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_simulation_all(),
+                    keys.tag_analytics_all(),
+                ])
+
             return DuplicateSimulationResponse(
                 success=True,
                 simulationId=str(new_simulation['id']),
@@ -469,6 +527,15 @@ class SimulationService:
             # Delete simulation
             query, params = self.queries.delete_simulation(request.simulationId)
             await self.conn.execute(query, *params)
+
+            # Invalidate affected caches
+            qc = get_query_client()
+            if qc:
+                await qc.invalidate(tags=[
+                    keys.tag_simulation_by_id(request.simulationId),
+                    keys.tag_simulation_all(),
+                    keys.tag_analytics_all(),
+                ])
 
             return DeleteSimulationResponse(
                 success=True, message=f"Simulation '{simulation['title']}' deleted successfully"
@@ -762,6 +829,13 @@ class SimulationService:
 
         is_attempt_finished = next_chat_id == chat_id
 
+        # Invalidate analytics caches (grades affect analytics)
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_analytics_all(),
+            ])
+
         return {
             "completed_chat_id": chat_id,
             "next_chat_id": next_chat_id,
@@ -920,17 +994,33 @@ class SimulationService:
             simulation_uuid = __import__('uuid').UUID(sim_id)
         except ValueError:
             return [{"error": f"Invalid sim_id format: {sim_id}"}]
+        
+        qc = get_query_client()
+        if not qc:
+            return await self._execute_get_simulation_attempts(str(simulation_uuid), limit)
+        
+        key = keys.simulation_attempts_list(str(simulation_uuid), limit)
+        
+        async def fetcher() -> List[Dict[str, Any]]:
+            return await self._execute_get_simulation_attempts(str(simulation_uuid), limit)
+        
+        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_get_simulation_attempts(
+        self, sim_id: str, limit: int
+    ) -> List[Dict[str, Any]]:
+        """Execute simulation attempts query (extracted for caching)."""
         try:
             # Verify simulation exists
-            query, params = self.queries.get_simulation_by_id(str(simulation_uuid))
+            query, params = self.queries.get_simulation_by_id(sim_id)
             simulation = await self.conn.fetchrow(query, *params)
             if not simulation:
                 return [{"error": f"Simulation not found: {sim_id}"}]
 
             # Get all attempts for this simulation with student info and grades
             query, params = self.queries.get_simulation_attempts_list(
-                str(simulation_uuid), limit
+                sim_id, limit
             )
             attempts = await self.conn.fetch(query, *params)
 
@@ -982,9 +1072,25 @@ class SimulationService:
             simulation_uuid = uuid.UUID(sim_id)
         except ValueError:
             return {"error": f"Invalid sim_id format: {sim_id}"}
+        
+        qc = get_query_client()
+        if not qc:
+            return await self._execute_get_simulation_overview(str(simulation_uuid))
+        
+        key = keys.simulation_overview(str(simulation_uuid))
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._execute_get_simulation_overview(str(simulation_uuid))
+        
+        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _execute_get_simulation_overview(self, sim_id: str) -> Dict[str, Any]:
+        """Execute simulation overview query (extracted for caching)."""
+        import uuid
+        
         try:
-            query, params = self.queries.get_simulation_overview_complete(simulation_uuid)
+            query, params = self.queries.get_simulation_overview_complete(uuid.UUID(sim_id))
             result = await self.conn.fetchrow(query, *params)
             
             if not result:
@@ -1063,6 +1169,22 @@ class SimulationService:
         Returns:
             List of simulation dictionaries with scores
         """
+        qc = get_query_client()
+        if not qc:
+            return await self._execute_search_simulations(query, limit)
+        
+        key = keys.simulation_search(query, limit)
+        
+        async def fetcher() -> List[Dict[str, Any]]:
+            return await self._execute_search_simulations(query, limit)
+        
+        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
+
+    async def _execute_search_simulations(
+        self, query: str, limit: int
+    ) -> List[Dict[str, Any]]:
+        """Execute simulation search query (extracted for caching)."""
         q_norm = normalize_text(query)
         if not q_norm:
             return []

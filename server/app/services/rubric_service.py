@@ -3,7 +3,9 @@
 from typing import Any, Dict, List
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.rubric_queries import RubricQueries
 from app.schemas.base import DepartmentMappingItem
 from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
@@ -29,7 +31,21 @@ class RubricService:
 
     async def get_rubrics_list(self, filters: RubricsFilters) -> RubricsListResponse:
         """Get rubrics list with hierarchical structure and permissions."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_rubrics_list(filters)
+        
+        key = keys.rubric_list(filters)
+        
+        async def fetcher() -> RubricsListResponse:
+            return await self._fetch_rubrics_list(filters)
+        
+        result: RubricsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_rubrics_list(self, filters: RubricsFilters) -> RubricsListResponse:
+        """Internal method to fetch rubrics list from database."""
         # Get rubrics
         query, params = self.queries.list_rubrics(
             filters.departmentIds, filters.profileId
@@ -113,7 +129,23 @@ class RubricService:
         self, request: RubricDetailRequest
     ) -> RubricDetailResponse:
         """Get detailed rubric information with hierarchical structure."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_rubric_detail(request)
+        
+        key = keys.rubric_by_id(request.rubricId, request.profileId)
+        
+        async def fetcher() -> RubricDetailResponse:
+            return await self._fetch_rubric_detail(request)
+        
+        result: RubricDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_rubric_detail(
+        self, request: RubricDetailRequest
+    ) -> RubricDetailResponse:
+        """Internal method to fetch rubric detail from database."""
         # Get rubric basic info
         query, params = self.queries.get_rubric_by_id(request.rubricId)
         rubric = await self.conn.fetchrow(query, *params)
@@ -210,7 +242,23 @@ class RubricService:
         self, request: RubricDetailDefaultRequest
     ) -> RubricDetailResponse:
         """Get default rubric details based on profile."""
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_rubric_detail_default(request)
+        
+        key = keys.rubric_detail_default(request.profileId)
+        
+        async def fetcher() -> RubricDetailResponse:
+            return await self._fetch_rubric_detail_default(request)
+        
+        result: RubricDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
+        return result
 
+    async def _fetch_rubric_detail_default(
+        self, request: RubricDetailDefaultRequest
+    ) -> RubricDetailResponse:
+        """Internal method to fetch default rubric detail from database."""
         # Get default rubric for profile
         query, params = self.queries.get_default_rubric(request.profileId)
         rubric = await self.conn.fetchrow(query, *params)
@@ -274,8 +322,16 @@ class RubricService:
                         group_id,
                         standard.name,
                         standard.description,
-                        standard.points,
-                    )
+                    standard.points,
+                )
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_rubric_all(),      # Coarse-grained
+                keys.tag_analytics_all(),   # Related caches
+            ])
 
         return CreateRubricResponse(
             success=True,
@@ -361,6 +417,15 @@ class RubricService:
                 calculated_points["points"],
                 calculated_points["passPoints"],
             )
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
+                keys.tag_rubric_all(),                     # Coarse-grained
+                keys.tag_analytics_all(),                  # Related caches
+            ])
 
         return UpdateRubricResponse(
             success=True,
@@ -480,6 +545,14 @@ class RubricService:
                         standard['points'],
                     )
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_rubric_all(),      # Coarse-grained
+                keys.tag_analytics_all(),   # Related caches
+            ])
+
         return DuplicateRubricResponse(
             success=True,
             rubricId=new_rubric_id,
@@ -509,6 +582,15 @@ class RubricService:
         # Delete rubric (cascade deletes groups and standards)
         query, params = self.queries.delete_rubric(request.rubricId)
         await self.conn.execute(query, *params)
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
+                keys.tag_rubric_all(),                     # Coarse-grained
+                keys.tag_analytics_all(),                  # Related caches
+            ])
 
         return DeleteRubricResponse(
             success=True, message=f"Rubric '{rubric['name']}' deleted successfully"

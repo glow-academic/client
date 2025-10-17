@@ -3,6 +3,8 @@
 from typing import Dict, List
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
@@ -32,7 +34,25 @@ class ProviderService:
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
         """Get providers list with nested models (hierarchical)."""
+        qc = get_query_client()
+        if not qc:
+            # Fallback: execute directly without cache
+            return await self._fetch_providers_list(filters)
+        
+        key = keys.provider_list(filters)
+        
+        async def fetcher() -> ProvidersListResponse:
+            return await self._fetch_providers_list(filters)
+        
+        result_data: ProvidersListResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result_data
 
+    async def _fetch_providers_list(
+        self, filters: ProvidersFilters
+    ) -> ProvidersListResponse:
+        """Fetch providers list from database."""
         # Get providers
         query, params = self.queries.list_providers(
             filters.departmentIds, filters.profileId
@@ -115,7 +135,24 @@ class ProviderService:
         self, request: ProviderDetailRequest
     ) -> ProviderDetailResponse:
         """Get detailed provider information."""
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_provider_detail(request)
+        
+        key = keys.provider_by_id(request.providerId)
+        
+        async def fetcher() -> ProviderDetailResponse:
+            return await self._fetch_provider_detail(request)
+        
+        result_data: ProviderDetailResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result_data
 
+    async def _fetch_provider_detail(
+        self, request: ProviderDetailRequest
+    ) -> ProviderDetailResponse:
+        """Fetch provider detail from database."""
         # Get provider basic info
         query, params = self.queries.get_provider_by_id(request.providerId)
         provider = await self.conn.fetchrow(query, *params)
@@ -150,7 +187,22 @@ class ProviderService:
 
     async def get_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
         """Get detailed model information."""
+        qc = get_query_client()
+        if not qc:
+            return await self._fetch_model_detail(request)
+        
+        key = keys.model_by_id(request.modelId)
+        
+        async def fetcher() -> ModelDetailResponse:
+            return await self._fetch_model_detail(request)
+        
+        result_data: ModelDetailResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result_data
 
+    async def _fetch_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
+        """Fetch model detail from database."""
         # Get model basic info
         query, params = self.queries.get_model_by_id(request.modelId)
         model = await self.conn.fetchrow(query, *params)
@@ -210,6 +262,13 @@ class ProviderService:
         if not result:
             raise ValueError("Failed to create provider")
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_provider_all(),
+            ])
+
         return CreateProviderResponse(
             success=True,
             providerId=str(result['id']),
@@ -248,6 +307,14 @@ class ProviderService:
                 request.providerId,
                 encrypted_api_key,
             )
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_provider_by_id(request.providerId),
+                keys.tag_provider_all(),
+            ])
 
         return UpdateProviderResponse(
             success=True, message=f"Provider '{request.name}' updated successfully"
@@ -292,6 +359,14 @@ class ProviderService:
         query, params = self.queries.delete_provider(request.providerId)
         await self.conn.execute(query, *params)
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_provider_by_id(request.providerId),
+                keys.tag_provider_all(),
+            ])
+
         return DeleteProviderResponse(
             success=True, message=f"Provider '{provider['name']}' deleted successfully"
         )
@@ -313,6 +388,13 @@ class ProviderService:
 
         if not result:
             raise ValueError("Failed to create model")
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_provider_all(),  # List queries include models
+            ])
 
         return CreateModelResponse(
             success=True,
@@ -342,6 +424,14 @@ class ProviderService:
             request.input_ppm,
             request.output_ppm,
         )
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_model_by_id(request.modelId),
+                keys.tag_provider_all(),
+            ])
 
         return UpdateModelResponse(
             success=True, message=f"Model '{request.name}' updated successfully"
@@ -374,6 +464,14 @@ class ProviderService:
         # Delete model
         query, params = self.queries.delete_model(request.modelId)
         await self.conn.execute(query, *params)
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_model_by_id(request.modelId),
+                keys.tag_provider_all(),
+            ])
 
         return DeleteModelResponse(
             success=True, message=f"Model '{model['name']}' deleted successfully"

@@ -3,7 +3,9 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
+from app.cache import keys
 from app.db import transaction
+from app.extensions import get_query_client
 from app.queries.persona_queries import PersonaQueries
 from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
                               ScenarioMappingItem)
@@ -34,7 +36,24 @@ class PersonaService:
 
     async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list with permissions and scenario details using dynamic SQL."""
+        
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_personas_list(filters)
+        
+        key = keys.persona_list(filters)
+        
+        async def fetcher() -> PersonasListResponse:
+            return await self._fetch_personas_list(filters)
+        
+        result: PersonasListResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
 
+    async def _fetch_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
+        """Internal method to fetch personas list from database."""
         # Get query from query builder
         query, params = self.queries.list_personas(
             filters.departmentIds, filters.profileId
@@ -123,6 +142,14 @@ class PersonaService:
         if not new_persona:
             raise ValueError("Failed to create duplicate persona")
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_persona_all(),
+                keys.tag_analytics_all(),
+            ])
+
         return DuplicatePersonaResponse(
             success=True,
             personaId=str(new_persona['id']),
@@ -153,6 +180,15 @@ class PersonaService:
         query, params = self.queries.delete_persona(request.personaId)
         await self.conn.execute(query, *params)
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_persona_by_id(request.personaId),
+                keys.tag_persona_all(),
+                keys.tag_analytics_all(),
+            ])
+
         return DeletePersonaResponse(
             success=True, message=f"Persona '{persona['name']}' deleted successfully"
         )
@@ -161,7 +197,26 @@ class PersonaService:
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
         """Get detailed persona information using dynamic SQL."""
+        
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_persona_detail(request)
+        
+        key = keys.persona_by_id(request.personaId, request.profileId)
+        
+        async def fetcher() -> PersonaDetailResponse:
+            return await self._fetch_persona_detail(request)
+        
+        result: PersonaDetailResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
 
+    async def _fetch_persona_detail(
+        self, request: PersonaDetailRequest
+    ) -> PersonaDetailResponse:
+        """Internal method to fetch persona detail from database."""
         # Get persona basic info
         query, params = self.queries.get_persona_by_id(request.personaId)
         persona = await self.conn.fetchrow(query, *params)
@@ -334,7 +389,26 @@ class PersonaService:
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Get default persona details based on profile."""
+        
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_persona_detail_default(request)
+        
+        key = keys.persona_default(request.profileId)
+        
+        async def fetcher() -> PersonaDetailResponse:
+            return await self._fetch_persona_detail_default(request)
+        
+        result: PersonaDetailResponse = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
 
+    async def _fetch_persona_detail_default(
+        self, request: PersonaDetailDefaultRequest
+    ) -> PersonaDetailResponse:
+        """Internal method to fetch default persona detail from database."""
         # Get default persona for profile
         query, params = self.queries.get_default_persona(request.profileId)
         persona = await self.conn.fetchrow(query, *params)
@@ -347,7 +421,7 @@ class PersonaService:
             personaId=str(persona['id']), profileId=request.profileId
         )
 
-        return await self.get_persona_detail(detail_request)
+        return await self._fetch_persona_detail(detail_request)
 
     async def create_persona(self, request: CreatePersonaRequest) -> CreatePersonaResponse:
         """Create a new persona using dynamic SQL."""
@@ -370,6 +444,14 @@ class PersonaService:
 
         if not result:
             raise ValueError("Failed to create persona")
+
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_persona_all(),
+                keys.tag_analytics_all(),  # Personas affect persona performance metrics
+            ])
 
         return CreatePersonaResponse(
             success=True,
@@ -405,6 +487,15 @@ class PersonaService:
             request.system_prompt,
         )
 
+        # Invalidate caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_persona_by_id(request.personaId),
+                keys.tag_persona_all(),
+                keys.tag_analytics_all(),  # Persona changes affect analytics
+            ])
+
         return UpdatePersonaResponse(
             success=True, message=f"Persona '{request.name}' updated successfully"
         )
@@ -423,6 +514,25 @@ class PersonaService:
         Returns:
             List of persona dictionaries with scores
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._search_personas_internal(query, limit)
+        
+        key = keys.persona_search(query, limit)
+        
+        async def fetcher() -> List[Dict[str, Any]]:
+            return await self._search_personas_internal(query, limit)
+        
+        result: List[Dict[str, Any]] = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
+
+    async def _search_personas_internal(
+        self, query: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Internal method to search personas from database."""
         q_norm = normalize_text(query)
         if not q_norm:
             return []
@@ -512,6 +622,25 @@ class PersonaService:
             Dict with structure: {"persona": {...}, "stats": {...}, "recent_responses": [...]}
             or {"error": "..."}
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_persona_response_times(persona_id, window_days)
+        
+        key = keys.persona_response_times(persona_id, window_days)
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._fetch_persona_response_times(persona_id, window_days)
+        
+        result: Dict[str, Any] = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
+
+    async def _fetch_persona_response_times(
+        self, persona_id: str, window_days: int = 30
+    ) -> Dict[str, Any]:
+        """Internal method to fetch persona response times from database."""
         from datetime import datetime, timedelta
         
         try:
@@ -617,6 +746,23 @@ class PersonaService:
         Returns:
             Dict with persona overview data or {"error": "..."}
         """
+        qc = get_query_client()
+        if not qc:
+            # No cache available, execute directly
+            return await self._fetch_persona_overview(persona_id)
+        
+        key = keys.persona_overview(persona_id)
+        
+        async def fetcher() -> Dict[str, Any]:
+            return await self._fetch_persona_overview(persona_id)
+        
+        result: Dict[str, Any] = await qc.query(
+            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
+        )
+        return result
+
+    async def _fetch_persona_overview(self, persona_id: str) -> Dict[str, Any]:
+        """Internal method to fetch persona overview from database."""
         import uuid
         
         try:
