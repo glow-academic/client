@@ -88,6 +88,7 @@ class ScenarioMappingItem(BaseModel):
     document_mapping: "DocumentMapping"
     parameter_item_mapping: "ParameterItemMapping"
     parameter_item_ids: list[str]
+    document_ids: list[str]
 
 
 class ModelMappingItem(MappingItem):

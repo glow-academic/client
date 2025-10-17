@@ -20,7 +20,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { DocumentPreviewCard } from "@/components/common/documents/DocumentPreviewCard";
@@ -49,7 +49,7 @@ import { DocumentType } from "@/lib/api/v2/schemas/base";
 import { UploadCloud } from "lucide-react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { ParameterItemSelector } from "@/components/common/scenario/ParameterItemSelector";
+import ParameterItemPicker from "@/components/common/scenario/ParameterItemPicker";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -67,6 +67,7 @@ import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 export default function Documents() {
   const { effectiveProfile } = useProfile();
+  const log = useLogger();
 
   // Mutation hooks
   const deleteDocumentMutation = useDeleteDocument();
@@ -174,9 +175,9 @@ export default function Documents() {
 
   const scenarioOptions = useMemo(
     () =>
-      Object.entries(scenarioMapping).map(([id, name]) => ({
+      Object.entries(scenarioMapping).map(([id, item]) => ({
         value: id,
-        label: name,
+        label: item.name,
       })),
     [scenarioMapping]
   );
@@ -251,7 +252,9 @@ export default function Documents() {
         header: "Scenarios",
         cell: ({ row }) => {
           const scenarioIds = row.getValue("scenario_ids") as string[];
-          return scenarioIds.map((id) => scenarioMapping[id] || id).join(", ");
+          return scenarioIds
+            .map((id) => scenarioMapping[id]?.name || id)
+            .join(", ");
         },
         filterFn: (row, _id, value) => {
           const scenarioIds = row.getValue("scenario_ids") as string[];
@@ -656,17 +659,20 @@ export default function Documents() {
 
               <div className="flex flex-col gap-2">
                 <Label>Parameter Items</Label>
-                <ParameterItemSelector
-                  parameterItemMapping={documentDetail.parameter_item_mapping}
-                  selectedParameterItemIds={documentDetail.parameter_item_ids}
-                  validParameterItemIds={
-                    documentDetail.valid_parameter_item_ids
-                  }
-                  onChange={(ids) =>
+                <ParameterItemPicker
+                  mapping={documentDetail["parameter_item_mapping"]}
+                  selectedIds={documentDetail.parameter_item_ids}
+                  onSelect={(ids) =>
                     setEditingDocument((prev) =>
-                      prev ? { ...prev, parameter_item_ids: ids } : null
+                      prev
+                        ? { ...prev, parameter_item_ids: ids as string[] }
+                        : null
                     )
                   }
+                  validIds={documentDetail.valid_parameter_item_ids}
+                  parameterId=""
+                  parameterName="Parameters"
+                  allowCreate={false}
                 />
               </div>
 
@@ -749,15 +755,14 @@ export default function Documents() {
 
               <div className="flex flex-col gap-2">
                 <Label>Parameter Items</Label>
-                <ParameterItemSelector
-                  parameterItemMapping={
-                    bulkDocumentDetail.parameter_item_mapping
-                  }
-                  selectedParameterItemIds={bulkParameterItemIds}
-                  validParameterItemIds={
-                    bulkDocumentDetail.valid_parameter_item_ids
-                  }
-                  onChange={setBulkParameterItemIds}
+                <ParameterItemPicker
+                  mapping={bulkDocumentDetail.parameter_item_mapping}
+                  selectedIds={bulkParameterItemIds}
+                  validIds={bulkDocumentDetail.valid_parameter_item_ids}
+                  onSelect={setBulkParameterItemIds}
+                  parameterId=""
+                  parameterName="Parameters"
+                  allowCreate={false}
                 />
               </div>
 
@@ -954,24 +959,19 @@ export default function Documents() {
             <div className="flex-1 min-h-0">
               <DocumentViewer
                 document={{
-                  id: previewDocument.document_id,
+                  document_id: previewDocument.document_id,
                   name: previewDocument.name,
-                  type: previewDocument.type as
-                    | "homework"
-                    | "project"
-                    | "quiz"
-                    | "midterm"
-                    | "lab"
-                    | "lecture"
-                    | "syllabus",
-                  active: previewDocument.active,
-                  filePath: previewDocument.file_path,
-                  mimeType: previewDocument.mime_type,
-                  departmentId: previewDocument.department_id,
+                  type: previewDocument.type,
                   updatedAt: previewDocument.updatedAt,
-                  createdAt: previewDocument.updatedAt,
-                  classified: false,
-                  fileId: null,
+                  extension: previewDocument.extension,
+                  scenario_ids: previewDocument.scenario_ids,
+                  can_edit: previewDocument.can_edit,
+                  can_delete: previewDocument.can_delete,
+                  active: previewDocument.active,
+                  department_id: previewDocument.department_id,
+                  file_path: previewDocument.file_path,
+                  mime_type: previewDocument.mime_type,
+                  parameter_item_ids: previewDocument.parameter_item_ids,
                 }}
                 bare={true}
                 isFormDocument={false}

@@ -68,7 +68,7 @@ export const DocumentDetailResponseSchema = z.object({
   department_mapping: DepartmentMappingSchema,
   parameter_item_ids: z.array(z.string()),
   valid_parameter_item_ids: z.array(z.string()),
-  parameter_item_mapping: ParameterItemMappingSchemaDoc,
+  parameter_item_mapping: ParameterItemMappingSchema,
 });
 
 export type DocumentDetailResponse = z.infer<
@@ -96,7 +96,7 @@ export const DocumentDetailBulkResponseSchema = z.object({
   department_mapping: DepartmentMappingSchema,
   parameter_item_ids: z.array(z.string()), // Union of all parameter_item_ids
   valid_parameter_item_ids: z.array(z.string()),
-  parameter_item_mapping: ParameterItemMappingSchemaDoc,
+  parameter_item_mapping: ParameterItemMappingSchema,
 });
 
 export type DocumentDetailBulkResponse = z.infer<
@@ -184,15 +184,15 @@ export const FinalizeUploadResponseSchema = z.object({
   message: z.string(),
   status: z.string(),
   document_id: z.string().optional(),
-  documents: z.array(z.record(z.any())).optional(),
+  documents: z.array(z.any()).optional(),
   extracted_count: z.number().optional(),
-  classification_result: z.record(z.any()).optional(),
-  course_result: z.record(z.any()).optional(),
+  classification_result: z.any().optional(),
+  course_result: z.any().optional(),
   users_created: z.number().optional(),
   users_skipped: z.number().optional(),
   errors: z.array(z.string()).optional(),
-  created_users: z.array(z.record(z.any())).optional(),
-  skipped_users: z.array(z.record(z.any())).optional(),
+  created_users: z.array(z.any()).optional(),
+  skipped_users: z.array(z.any()).optional(),
 });
 
 export type FinalizeUploadResponse = z.infer<

@@ -27,15 +27,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type {
+  ParameterItemMapping,
+  ScenarioMapping,
+} from "@/lib/api/v2/schemas/base";
 import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
-import type { ParameterItemMapping } from "@/lib/api/v2/schemas/personas";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import { DocumentsDataTableToolbar } from "./DocumentsDataTableToolbar";
 
 export interface DocumentsDataTableProps {
   columns: ColumnDef<DocumentItem>[];
   data: DocumentItem[];
-  scenarioMapping: Record<string, string>;
+  scenarioMapping: ScenarioMapping;
   parameterItemMapping: ParameterItemMapping;
   typeOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];

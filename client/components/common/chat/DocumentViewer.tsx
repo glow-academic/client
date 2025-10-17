@@ -52,12 +52,12 @@ export default function DocumentViewer({
 
         // Call the API route directly or use blob URL for form documents
         let response;
-        if (isFormDocument && document.filePath?.startsWith("blob:")) {
+        if (isFormDocument && document.file_path?.startsWith("blob:")) {
           // For form documents with blob URLs, fetch the blob directly
-          response = await fetch(document.filePath);
+          response = await fetch(document.file_path);
         } else {
           response = await fetch(
-            `${appPrefix}/api/v2/documents/download/${document.id}`,
+            `${appPrefix}/api/v2/documents/download/${document.document_id}`,
             {
               method: "GET",
               credentials: "include",
@@ -100,7 +100,7 @@ export default function DocumentViewer({
     };
 
     loadDocument();
-  }, [document.id, document.filePath, document.name, isFormDocument]);
+  }, [document.document_id, document.file_path, document.name, isFormDocument]);
 
   const typeInfo = getDocumentTypeInfo(document.type || "homework");
 

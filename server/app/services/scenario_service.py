@@ -140,7 +140,8 @@ class ScenarioService:
                 persona_mapping=scenario_persona_mapping,
                 document_mapping=scenario_document_mapping,
                 parameter_item_mapping=scenario_parameter_item_mapping,
-                parameter_item_ids=parameter_item_ids
+                parameter_item_ids=parameter_item_ids,
+                document_ids=document_ids
             )
 
         return enhanced_mapping

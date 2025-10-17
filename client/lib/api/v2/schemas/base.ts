@@ -192,6 +192,7 @@ export const ScenarioMappingItemSchema = z.object({
   document_mapping: z.lazy(() => DocumentMappingSchema),
   parameter_item_mapping: z.lazy(() => ParameterItemMappingSchema),
   parameter_item_ids: z.array(z.string()),
+  document_ids: z.array(z.string()),
 });
 
 export type ScenarioMappingItem = z.infer<typeof ScenarioMappingItemSchema>;
