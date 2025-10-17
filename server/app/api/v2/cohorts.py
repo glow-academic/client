@@ -2,8 +2,8 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.cohort_repository import get_cohort_repository
 from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  AddProfilesToCohortResponse,
                                  CohortDetailDefaultRequest,
@@ -19,8 +19,8 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  RemoveProfilesFromCohortRequest,
                                  RemoveProfilesFromCohortResponse,
                                  UpdateCohortRequest, UpdateCohortResponse)
+from app.services.cohort_service import get_cohort_service
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/cohorts", tags=["cohorts"])
 
@@ -32,8 +32,8 @@ async def get_cohorts_list(
 ) -> CohortsListResponse:
     """Get cohorts list with permissions and relationships."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.get_cohorts_list(filters)
+        service = get_cohort_service(conn)
+        return await service.get_cohorts_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,8 +45,8 @@ async def get_cohort_detail(
 ) -> CohortDetailResponse:
     """Get detailed cohort information."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.get_cohort_detail(request)
+        service = get_cohort_service(conn)
+        return await service.get_cohort_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -60,8 +60,8 @@ async def get_cohort_detail_default(
 ) -> CohortDetailResponse:
     """Get default cohort details for a profile."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.get_cohort_detail_default(request)
+        service = get_cohort_service(conn)
+        return await service.get_cohort_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -75,8 +75,8 @@ async def get_cohort_detail_with_profiles(
 ) -> CohortDetailWithProfilesResponse:
     """Get cohort detail with available profiles in one call."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.get_cohort_detail_with_profiles(request)
+        service = get_cohort_service(conn)
+        return await service.get_cohort_detail_with_profiles(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -90,8 +90,8 @@ async def create_cohort(
 ) -> CreateCohortResponse:
     """Create a new cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.create_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.create_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -105,8 +105,8 @@ async def update_cohort(
 ) -> UpdateCohortResponse:
     """Update an existing cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.update_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.update_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -120,8 +120,8 @@ async def duplicate_cohort(
 ) -> DuplicateCohortResponse:
     """Duplicate a cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.duplicate_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.duplicate_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -135,8 +135,8 @@ async def delete_cohort(
 ) -> DeleteCohortResponse:
     """Delete a cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.delete_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.delete_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -150,8 +150,8 @@ async def leave_cohort(
 ) -> LeaveCohortResponse:
     """Leave a cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.leave_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.leave_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -165,8 +165,8 @@ async def add_profiles_to_cohort(
 ) -> AddProfilesToCohortResponse:
     """Add profiles to a cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.add_profiles_to_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.add_profiles_to_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -180,8 +180,8 @@ async def remove_profiles_from_cohort(
 ) -> RemoveProfilesFromCohortResponse:
     """Remove profiles from a cohort."""
     try:
-        repo = get_cohort_repository(conn)
-        return await repo.remove_profiles_from_cohort(request)
+        service = get_cohort_service(conn)
+        return await service.remove_profiles_from_cohort(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

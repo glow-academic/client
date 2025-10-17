@@ -4,7 +4,6 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.parameter_repository import get_parameter_repository
 from app.schemas.parameters import (CreateParameterItemRequest,
                                     CreateParameterItemResponse,
                                     CreateParameterRequest,
@@ -19,6 +18,7 @@ from app.schemas.parameters import (CreateParameterItemRequest,
                                     ParametersListResponse,
                                     UpdateParameterRequest,
                                     UpdateParameterResponse)
+from app.services.parameter_service import get_parameter_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/parameters", tags=["parameters"])
@@ -31,8 +31,8 @@ async def get_parameters_list(
 ) -> ParametersListResponse:
     """Get parameters list with item counts and permissions."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.get_parameters_list(filters)
+        service = get_parameter_service(conn)
+        return await service.get_parameters_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -44,8 +44,8 @@ async def get_parameter_detail(
 ) -> ParameterDetailResponse:
     """Get detailed parameter information with nested items."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.get_parameter_detail(request)
+        service = get_parameter_service(conn)
+        return await service.get_parameter_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -59,8 +59,8 @@ async def get_parameter_detail_default(
 ) -> ParameterDetailResponse:
     """Get default parameter details for a profile."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.get_parameter_detail_default(request)
+        service = get_parameter_service(conn)
+        return await service.get_parameter_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -74,8 +74,8 @@ async def create_parameter(
 ) -> CreateParameterResponse:
     """Create a new parameter with nested items."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.create_parameter(request)
+        service = get_parameter_service(conn)
+        return await service.create_parameter(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -89,8 +89,8 @@ async def update_parameter(
 ) -> UpdateParameterResponse:
     """Update an existing parameter (replaces all items)."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.update_parameter(request)
+        service = get_parameter_service(conn)
+        return await service.update_parameter(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -104,8 +104,8 @@ async def duplicate_parameter(
 ) -> DuplicateParameterResponse:
     """Duplicate a parameter with all items."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.duplicate_parameter(request)
+        service = get_parameter_service(conn)
+        return await service.duplicate_parameter(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -119,8 +119,8 @@ async def delete_parameter(
 ) -> DeleteParameterResponse:
     """Delete a parameter."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.delete_parameter(request)
+        service = get_parameter_service(conn)
+        return await service.delete_parameter(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -139,8 +139,8 @@ async def create_parameter_item(
 ) -> CreateParameterItemResponse:
     """Create a single parameter item (for inline creation from pickers)."""
     try:
-        repo = get_parameter_repository(conn)
-        return await repo.create_parameter_item(request)
+        service = get_parameter_service(conn)
+        return await service.create_parameter_item(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

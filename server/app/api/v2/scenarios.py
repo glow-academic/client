@@ -4,7 +4,6 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.scenario_repository import get_scenario_repository
 from app.schemas.scenarios import (CreateScenarioRequest,
                                    CreateScenarioResponse,
                                    DeleteScenarioRequest,
@@ -21,6 +20,7 @@ from app.schemas.scenarios import (CreateScenarioRequest,
                                    ScenariosListResponse,
                                    UpdateScenarioRequest,
                                    UpdateScenarioResponse)
+from app.services.scenario_service import get_scenario_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -33,8 +33,8 @@ async def get_scenarios_list(
 ) -> ScenariosListResponse:
     """Get scenarios list with all relationships."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.get_scenarios_list(filters)
+        service = get_scenario_service(conn)
+        return await service.get_scenarios_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -46,8 +46,8 @@ async def get_scenario_detail(
 ) -> ScenarioDetailResponse:
     """Get detailed scenario information."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.get_scenario_detail(request)
+        service = get_scenario_service(conn)
+        return await service.get_scenario_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -61,8 +61,8 @@ async def get_scenario_detail_default(
 ) -> ScenarioDetailResponse:
     """Get default scenario detail based on profile."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.get_scenario_detail_default(request)
+        service = get_scenario_service(conn)
+        return await service.get_scenario_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -76,8 +76,8 @@ async def create_scenario(
 ) -> CreateScenarioResponse:
     """Create a new scenario."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.create_scenario(request)
+        service = get_scenario_service(conn)
+        return await service.create_scenario(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -91,8 +91,8 @@ async def update_scenario(
 ) -> UpdateScenarioResponse:
     """Update an existing scenario."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.update_scenario(request)
+        service = get_scenario_service(conn)
+        return await service.update_scenario(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -106,8 +106,8 @@ async def duplicate_scenario(
 ) -> DuplicateScenarioResponse:
     """Duplicate a scenario."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.duplicate_scenario(request)
+        service = get_scenario_service(conn)
+        return await service.duplicate_scenario(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -121,8 +121,8 @@ async def delete_scenario(
 ) -> DeleteScenarioResponse:
     """Delete a scenario."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.delete_scenario(request)
+        service = get_scenario_service(conn)
+        return await service.delete_scenario(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -140,8 +140,8 @@ async def generate_scenario_ai(
 ) -> GenerateScenarioAIResponse:
     """Generate AI scenario content (title, description, objectives)."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.generate_scenario_ai(request)
+        service = get_scenario_service(conn)
+        return await service.generate_scenario_ai(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -155,8 +155,8 @@ async def randomize_scenario(
 ) -> RandomizeScenarioResponse:
     """Suggest randomized scenario sections."""
     try:
-        repo = get_scenario_repository(conn)
-        return await repo.randomize_scenario_sections(request)
+        service = get_scenario_service(conn)
+        return await service.randomize_scenario_sections(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

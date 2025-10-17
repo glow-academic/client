@@ -4,7 +4,6 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.rubric_repository import get_rubric_repository
 from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  DeleteRubricRequest, DeleteRubricResponse,
                                  DuplicateRubricRequest,
@@ -13,6 +12,7 @@ from app.schemas.rubrics import (CreateRubricRequest, CreateRubricResponse,
                                  RubricDetailRequest, RubricDetailResponse,
                                  RubricsFilters, RubricsListResponse,
                                  UpdateRubricRequest, UpdateRubricResponse)
+from app.services.rubric_service import get_rubric_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/rubrics", tags=["rubrics"])
@@ -25,8 +25,8 @@ async def get_rubrics_list(
 ) -> RubricsListResponse:
     """Get rubrics list with hierarchical structure and permissions."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.get_rubrics_list(filters)
+        service = get_rubric_service(conn)
+        return await service.get_rubrics_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -38,8 +38,8 @@ async def get_rubric_detail(
 ) -> RubricDetailResponse:
     """Get detailed rubric information."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.get_rubric_detail(request)
+        service = get_rubric_service(conn)
+        return await service.get_rubric_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -53,8 +53,8 @@ async def get_rubric_detail_default(
 ) -> RubricDetailResponse:
     """Get default rubric details for a profile."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.get_rubric_detail_default(request)
+        service = get_rubric_service(conn)
+        return await service.get_rubric_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -68,8 +68,8 @@ async def create_rubric(
 ) -> CreateRubricResponse:
     """Create a new rubric with nested structure."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.create_rubric(request)
+        service = get_rubric_service(conn)
+        return await service.create_rubric(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -83,8 +83,8 @@ async def update_rubric(
 ) -> UpdateRubricResponse:
     """Update an existing rubric (replaces entire hierarchy)."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.update_rubric(request)
+        service = get_rubric_service(conn)
+        return await service.update_rubric(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -98,8 +98,8 @@ async def duplicate_rubric(
 ) -> DuplicateRubricResponse:
     """Duplicate a rubric with entire hierarchy."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.duplicate_rubric(request)
+        service = get_rubric_service(conn)
+        return await service.duplicate_rubric(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -113,8 +113,8 @@ async def delete_rubric(
 ) -> DeleteRubricResponse:
     """Delete a rubric."""
     try:
-        repo = get_rubric_repository(conn)
-        return await repo.delete_rubric(request)
+        service = get_rubric_service(conn)
+        return await service.delete_rubric(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

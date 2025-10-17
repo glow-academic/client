@@ -4,7 +4,7 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.analytics_repository import get_analytics_repository
+from app.services.analytics_service import get_analytics_service
 from app.schemas.analytics import (AnalyticsFilters, DashboardBundleResponse,
                                    LeaderboardBundleResponse,
                                    ReportsBundleResponse)
@@ -20,8 +20,8 @@ async def get_leaderboard_bundle(
 ) -> LeaderboardBundleResponse:
     """Get leaderboard bundle analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_leaderboard_bundle(filters)
+        service = get_analytics_service(conn)
+        return await service.get_leaderboard_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -33,8 +33,8 @@ async def get_reports_bundle(
 ) -> ReportsBundleResponse:
     """Get reports bundle analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_reports_bundle(filters)
+        service = get_analytics_service(conn)
+        return await service.get_reports_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -46,8 +46,8 @@ async def get_dashboard_bundle(
 ) -> DashboardBundleResponse:
     """Get complete dashboard bundle analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_dashboard_bundle(filters)
+        service = get_analytics_service(conn)
+        return await service.get_dashboard_bundle(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

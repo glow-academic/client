@@ -31,3 +31,7 @@ class SchemaService:
         except Exception as e:
             return f"Error retrieving schema: {str(e)}"
 
+
+def get_schema_service(conn: asyncpg.Connection) -> SchemaService:
+    """Get schema service instance."""
+    return SchemaService(conn)

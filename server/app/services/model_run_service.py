@@ -193,3 +193,7 @@ class ModelRunService:
         query, params = self.queries.create_debug_info(model_run_id_str, content)
         await self.conn.execute(query, *params)
 
+
+def get_model_run_service(conn: asyncpg.Connection) -> ModelRunService:
+    """Get model run service instance."""
+    return ModelRunService(conn)

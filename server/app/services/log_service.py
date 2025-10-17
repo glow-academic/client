@@ -164,3 +164,8 @@ class LogService:
             }
             for row in rows
         ]
+
+
+def get_log_service(conn: asyncpg.Connection) -> LogService:
+    """Get log service instance."""
+    return LogService(conn)

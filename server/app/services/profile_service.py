@@ -909,3 +909,8 @@ class ProfileService:
 
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
+
+
+def get_profile_service(conn: asyncpg.Connection) -> ProfileService:
+    """Get profile service instance."""
+    return ProfileService(conn)

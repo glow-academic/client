@@ -5,8 +5,8 @@ import os
 import urllib.parse
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.document_repository import get_document_repository
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    BulkUpdateDocumentsRequest,
                                    DeleteDocumentRequest,
@@ -21,10 +21,9 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    GenerateCertificateRequest,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
-from app.services.document_service import DocumentService
+from app.services.document_service import DocumentService, get_document_service
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, Response
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -36,8 +35,8 @@ async def get_documents_list(
 ) -> DocumentsListResponse:
     """Get documents list with tags and scenarios."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.get_documents_list(filters)
+        service = get_document_service(conn)
+        return await service.get_documents_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -49,8 +48,8 @@ async def get_document_detail(
 ) -> DocumentDetailResponse:
     """Get detailed document information."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.get_document_detail(request)
+        service = get_document_service(conn)
+        return await service.get_document_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -64,8 +63,8 @@ async def get_document_detail_bulk(
 ) -> DocumentDetailBulkResponse:
     """Get bulk document detail information."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.get_document_detail_bulk(request)
+        service = get_document_service(conn)
+        return await service.get_document_detail_bulk(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -79,8 +78,8 @@ async def update_document(
 ) -> UpdateDocumentResponse:
     """Update a document."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.update_document(request)
+        service = get_document_service(conn)
+        return await service.update_document(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -94,8 +93,8 @@ async def bulk_update_documents(
 ) -> UpdateDocumentResponse:
     """Bulk update documents."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.bulk_update_documents(request)
+        service = get_document_service(conn)
+        return await service.bulk_update_documents(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -109,8 +108,8 @@ async def delete_document(
 ) -> DeleteDocumentResponse:
     """Delete a document."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.delete_document(request)
+        service = get_document_service(conn)
+        return await service.delete_document(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -124,8 +123,8 @@ async def bulk_delete_documents(
 ) -> DeleteDocumentResponse:
     """Bulk delete documents."""
     try:
-        repo = get_document_repository(conn)
-        return await repo.bulk_delete_documents(request)
+        service = get_document_service(conn)
+        return await service.bulk_delete_documents(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

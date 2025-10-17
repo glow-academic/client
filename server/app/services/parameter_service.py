@@ -354,3 +354,8 @@ class ParameterService:
             parameterItemId=str(result['id']),
             message=f"Parameter item '{request.name}' created successfully",
         )
+
+
+def get_parameter_service(conn: asyncpg.Connection) -> ParameterService:
+    """Get parameter service instance."""
+    return ParameterService(conn)

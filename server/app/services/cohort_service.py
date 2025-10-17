@@ -889,3 +889,7 @@ class CohortService:
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
 
+
+def get_cohort_service(conn: asyncpg.Connection) -> CohortService:
+    """Get cohort service instance."""
+    return CohortService(conn)

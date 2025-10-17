@@ -4,7 +4,6 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.provider_repository import get_provider_repository
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    CreateProviderRequest,
                                    CreateProviderResponse,
@@ -18,6 +17,7 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    ProvidersListResponse, UpdateModelRequest,
                                    UpdateModelResponse, UpdateProviderRequest,
                                    UpdateProviderResponse)
+from app.services.provider_service import get_provider_service
 from app.utils.auth import decrypt_api_key
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -36,8 +36,8 @@ async def get_providers_list(
 ) -> ProvidersListResponse:
     """Get providers list with nested models (hierarchical)."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.get_providers_list(filters)
+        service = get_provider_service(conn)
+        return await service.get_providers_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -49,8 +49,8 @@ async def get_provider_detail(
 ) -> ProviderDetailResponse:
     """Get detailed provider information."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.get_provider_detail(request)
+        service = get_provider_service(conn)
+        return await service.get_provider_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -64,8 +64,8 @@ async def create_provider(
 ) -> CreateProviderResponse:
     """Create a new provider."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.create_provider(request)
+        service = get_provider_service(conn)
+        return await service.create_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -79,8 +79,8 @@ async def update_provider(
 ) -> UpdateProviderResponse:
     """Update an existing provider."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.update_provider(request)
+        service = get_provider_service(conn)
+        return await service.update_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -94,8 +94,8 @@ async def delete_provider(
 ) -> DeleteProviderResponse:
     """Delete a provider."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.delete_provider(request)
+        service = get_provider_service(conn)
+        return await service.delete_provider(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -109,14 +109,14 @@ async def decrypt_provider_key(
 ) -> DecryptProviderKeyResponse:
     """Decrypt provider API key for authorized users."""
     try:
-        repo = get_provider_repository(conn)
+        service = get_provider_service(conn)
         
         # Get provider detail to verify access and get encrypted key
         provider_detail_request = ProviderDetailRequest(
             providerId=request.providerId,
             profileId=request.profileId
         )
-        provider_detail = await repo.get_provider_detail(provider_detail_request)
+        provider_detail = await service.get_provider_detail(provider_detail_request)
         
         # Decrypt the API key
         decrypted_key = decrypt_api_key(provider_detail.api_key)
@@ -140,8 +140,8 @@ async def get_model_detail(
 ) -> ModelDetailResponse:
     """Get detailed model information."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.get_model_detail(request)
+        service = get_provider_service(conn)
+        return await service.get_model_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -155,8 +155,8 @@ async def create_model(
 ) -> CreateModelResponse:
     """Create a new model."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.create_model(request)
+        service = get_provider_service(conn)
+        return await service.create_model(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -170,8 +170,8 @@ async def update_model(
 ) -> UpdateModelResponse:
     """Update an existing model."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.update_model(request)
+        service = get_provider_service(conn)
+        return await service.update_model(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -185,8 +185,8 @@ async def delete_model(
 ) -> DeleteModelResponse:
     """Delete a model."""
     try:
-        repo = get_provider_repository(conn)
-        return await repo.delete_model(request)
+        service = get_provider_service(conn)
+        return await service.delete_model(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

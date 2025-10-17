@@ -848,3 +848,8 @@ class AgentService:
             'chat_title': context_row['chat_title'],
             'trace_id': context_row['trace_id'],
         }
+
+
+def get_agent_service(conn: asyncpg.Connection) -> AgentService:
+    """Get agent service instance."""
+    return AgentService(conn)

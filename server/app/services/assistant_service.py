@@ -437,3 +437,7 @@ class AssistantService:
             "tool_usage": tool_usage_list,
         }
 
+
+def get_assistant_service(conn: asyncpg.Connection) -> AssistantService:
+    """Get assistant service instance."""
+    return AssistantService(conn)

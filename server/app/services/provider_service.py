@@ -378,3 +378,8 @@ class ProviderService:
         return DeleteModelResponse(
             success=True, message=f"Model '{model['name']}' deleted successfully"
         )
+
+
+def get_provider_service(conn: asyncpg.Connection) -> ProviderService:
+    """Get provider service instance."""
+    return ProviderService(conn)

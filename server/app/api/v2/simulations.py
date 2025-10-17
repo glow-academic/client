@@ -2,8 +2,8 @@
 
 from typing import Annotated
 
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.simulation_repository import get_simulation_repository
 from app.schemas.simulations import (CreateSimulationRequest,
                                      CreateSimulationResponse,
                                      DeleteSimulationRequest,
@@ -17,8 +17,8 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      SimulationsListResponse,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
+from app.services.simulation_service import get_simulation_service
 from fastapi import APIRouter, Depends, HTTPException
-import asyncpg  # type: ignore
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
@@ -30,8 +30,8 @@ async def get_simulations_list(
 ) -> SimulationsListResponse:
     """Get simulations list with permissions and relationships."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.get_simulations_list(filters)
+        service = get_simulation_service(conn)
+        return await service.get_simulations_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -43,8 +43,8 @@ async def get_simulation_detail(
 ) -> SimulationDetailResponse:
     """Get detailed simulation information."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.get_simulation_detail(request)
+        service = get_simulation_service(conn)
+        return await service.get_simulation_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -58,8 +58,8 @@ async def get_simulation_detail_default(
 ) -> SimulationDetailResponse:
     """Get default simulation details for a profile."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.get_simulation_detail_default(request)
+        service = get_simulation_service(conn)
+        return await service.get_simulation_detail_default(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -73,8 +73,8 @@ async def create_simulation(
 ) -> CreateSimulationResponse:
     """Create a new simulation."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.create_simulation(request)
+        service = get_simulation_service(conn)
+        return await service.create_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -88,8 +88,8 @@ async def update_simulation(
 ) -> UpdateSimulationResponse:
     """Update an existing simulation."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.update_simulation(request)
+        service = get_simulation_service(conn)
+        return await service.update_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -103,8 +103,8 @@ async def duplicate_simulation(
 ) -> DuplicateSimulationResponse:
     """Duplicate a simulation."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.duplicate_simulation(request)
+        service = get_simulation_service(conn)
+        return await service.duplicate_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -118,8 +118,8 @@ async def delete_simulation(
 ) -> DeleteSimulationResponse:
     """Delete a simulation."""
     try:
-        repo = get_simulation_repository(conn)
-        return await repo.delete_simulation(request)
+        service = get_simulation_service(conn)
+        return await service.delete_simulation(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

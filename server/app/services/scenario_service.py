@@ -1570,3 +1570,7 @@ class ScenarioService:
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
 
+
+def get_scenario_service(conn: asyncpg.Connection) -> ScenarioService:
+    """Get scenario service instance."""
+    return ScenarioService(conn)

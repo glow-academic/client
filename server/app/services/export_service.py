@@ -75,3 +75,7 @@ class ExportService:
         except Exception as e:
             return f"Error: {e}"
 
+
+def get_export_service(conn: asyncpg.Connection) -> ExportService:
+    """Get export service instance."""
+    return ExportService(conn)

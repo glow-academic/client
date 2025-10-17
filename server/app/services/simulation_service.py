@@ -1137,3 +1137,7 @@ class SimulationService:
 
         return score
 
+
+def get_simulation_service(conn: asyncpg.Connection) -> SimulationService:
+    """Get simulation service instance."""
+    return SimulationService(conn)

@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from app.db import get_db
-from app.repositories.analytics_repository import get_analytics_repository
-from app.schemas.analytics import RefreshResponse
-from fastapi import APIRouter, Depends, HTTPException
 import asyncpg  # type: ignore
+from app.db import get_db
+from app.schemas.analytics import RefreshResponse
+from app.services.analytics_service import get_analytics_service
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(tags=["analytics-utility"])
 
@@ -17,8 +17,8 @@ async def refresh_analytics_view(
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
     try:
-        repo = get_analytics_repository(conn)
-        await repo.refresh_materialized_view()
+        service = get_analytics_service(conn)
+        await service.refresh_materialized_view()
         return RefreshResponse(
             success=True,
             message="Analytics data refreshed successfully",

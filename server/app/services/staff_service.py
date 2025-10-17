@@ -464,3 +464,7 @@ class StaffService:
 
         return BulkDeleteStaffResponse(success=True, message=message)
 
+
+def get_staff_service(conn: asyncpg.Connection) -> StaffService:
+    """Get staff service instance."""
+    return StaffService(conn)

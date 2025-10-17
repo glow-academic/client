@@ -4,7 +4,7 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.analytics_repository import get_analytics_repository
+from app.services.analytics_service import get_analytics_service
 from app.schemas.analytics import (AnalyticsFilters, GrowthDataResponse,
                                    PersonaPerformanceResponse,
                                    RubricHeatmapResponse)
@@ -20,8 +20,8 @@ async def get_growth_data(
 ) -> GrowthDataResponse:
     """Get growth data analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_growth_data(filters)
+        service = get_analytics_service(conn)
+        return await service.get_growth_data(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -33,8 +33,8 @@ async def get_persona_performance(
 ) -> PersonaPerformanceResponse:
     """Get persona performance analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_persona_performance(filters)
+        service = get_analytics_service(conn)
+        return await service.get_persona_performance(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -46,8 +46,8 @@ async def get_rubric_heatmap(
 ) -> RubricHeatmapResponse:
     """Get rubric heatmap analytics."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_rubric_heatmap(filters)
+        service = get_analytics_service(conn)
+        return await service.get_rubric_heatmap(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

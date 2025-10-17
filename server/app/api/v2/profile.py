@@ -2,10 +2,8 @@
 
 from typing import Annotated
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.profile_repository import ProfileRepository
-from app.repositories.staff_repository import get_staff_repository
 from app.schemas.profile import (AuthorizeEmulationRequest,
                                  AuthorizeEmulationResponse,
                                  CreateUserProfileRequest,
@@ -28,6 +26,8 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffDetailRequest, StaffDetailResponse,
                                StaffFilters, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
+from app.services.profile_service import ProfileService
+from app.services.staff_service import get_staff_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -45,8 +45,8 @@ async def get_profile_list(
 ) -> StaffListResponse:
     """Get profile/staff list with permissions and relationships."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.get_staff_list(filters)
+        service = get_staff_service(conn)
+        return await service.get_staff_list(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -58,8 +58,8 @@ async def get_profile_detail_staff(
 ) -> StaffDetailResponse:
     """Get detailed profile information (staff version with permissions)."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.get_staff_detail(request)
+        service = get_staff_service(conn)
+        return await service.get_staff_detail(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -73,8 +73,8 @@ async def get_profile_detail_bulk(
 ) -> StaffDetailBulkResponse:
     """Get bulk profile detail information."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.get_staff_detail_bulk(request)
+        service = get_staff_service(conn)
+        return await service.get_staff_detail_bulk(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -93,8 +93,8 @@ async def create_profile(
 ) -> CreateStaffResponse:
     """Create a new profile."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.create_staff(request)
+        service = get_staff_service(conn)
+        return await service.create_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -108,8 +108,8 @@ async def bulk_create_profile(
 ) -> BulkCreateStaffResponse:
     """Bulk create profiles."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.bulk_create_staff(request)
+        service = get_staff_service(conn)
+        return await service.bulk_create_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -128,8 +128,8 @@ async def update_profile(
 ) -> UpdateStaffResponse:
     """Update a profile."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.update_staff(request)
+        service = get_staff_service(conn)
+        return await service.update_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -143,8 +143,8 @@ async def bulk_update_profile(
 ) -> BulkUpdateStaffResponse:
     """Bulk update profiles."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.bulk_update_staff(request)
+        service = get_staff_service(conn)
+        return await service.bulk_update_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -163,8 +163,8 @@ async def delete_profile(
 ) -> DeleteStaffResponse:
     """Delete a profile."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.delete_staff(request)
+        service = get_staff_service(conn)
+        return await service.delete_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -178,8 +178,8 @@ async def bulk_delete_profile(
 ) -> BulkDeleteStaffResponse:
     """Bulk delete profiles."""
     try:
-        repo = get_staff_repository(conn)
-        return await repo.bulk_delete_staff(request)
+        service = get_staff_service(conn)
+        return await service.bulk_delete_staff(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -198,8 +198,8 @@ async def get_profile_detail_simple(
 ) -> ProfileDetailResponse:
     """Get simple profile by ID (auth version without permissions)."""
     try:
-        repo = ProfileRepository(conn)
-        profile = await repo.get_profile(request.profileId)
+        service = ProfileService(conn)
+        profile = await service.get_profile(request.profileId)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -218,12 +218,12 @@ async def update_profile_simple(
 ) -> UpdateProfileResponse:
     """Update profile fields (simple auth version)."""
     try:
-        repo = ProfileRepository(conn)
+        service = ProfileService(conn)
 
         # Extract updates from request, excluding profileId and None values
         updates = request.model_dump(exclude={"profileId"}, exclude_none=True)
 
-        profile = await repo.update_profile(request.profileId, updates)
+        profile = await service.update_profile(request.profileId, updates)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -247,8 +247,8 @@ async def authorize_emulation(
 ) -> AuthorizeEmulationResponse:
     """Check if emulation is authorized."""
     try:
-        repo = ProfileRepository(conn)
-        allowed, reason = await repo.authorize_emulation(
+        service = ProfileService(conn)
+        allowed, reason = await service.authorize_emulation(
             request.requesterProfileId,
             request.targetProfileId,
             request.departmentIds,
@@ -271,8 +271,8 @@ async def get_profile_context(
 ) -> ProfileContextResponse:
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     try:
-        repo = ProfileRepository(conn)
-        return await repo.get_profile_context(request)
+        service = ProfileService(conn)
+        return await service.get_profile_context(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -291,8 +291,8 @@ async def mark_intro_complete(
 ) -> MarkTourStepResponse:
     """Mark intro tour step as complete."""
     try:
-        repo = ProfileRepository(conn)
-        success = await repo.mark_intro_complete(request.profileId)
+        service = ProfileService(conn)
+        success = await service.mark_intro_complete(request.profileId)
 
         if not success:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -314,8 +314,8 @@ async def mark_chat_complete(
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
     try:
-        repo = ProfileRepository(conn)
-        success = await repo.mark_chat_complete(request.profileId)
+        service = ProfileService(conn)
+        success = await service.mark_chat_complete(request.profileId)
 
         if not success:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -342,8 +342,8 @@ async def get_profile_by_alias(
 ) -> ProfileDetailResponse:
     """Get profile by alias (for auth operations)."""
     try:
-        repo = ProfileRepository(conn)
-        profile = await repo.get_profile_by_alias(request.alias)
+        service = ProfileService(conn)
+        profile = await service.get_profile_by_alias(request.alias)
 
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
@@ -367,8 +367,8 @@ async def list_user_profiles_by_user(
 ) -> UserProfilesListResponse:
     """List user_profiles by user ID."""
     try:
-        repo = ProfileRepository(conn)
-        user_profiles = await repo.list_user_profiles_by_user(request.userId)
+        service = ProfileService(conn)
+        user_profiles = await service.list_user_profiles_by_user(request.userId)
 
         return UserProfilesListResponse(userProfiles=user_profiles)
     except Exception as e:
@@ -384,8 +384,8 @@ async def list_user_profiles_by_profile(
 ) -> UserProfilesListResponse:
     """List user_profiles by profile ID."""
     try:
-        repo = ProfileRepository(conn)
-        user_profiles = await repo.list_user_profiles_by_profile(request.profileId)
+        service = ProfileService(conn)
+        user_profiles = await service.list_user_profiles_by_profile(request.profileId)
 
         return UserProfilesListResponse(userProfiles=user_profiles)
     except Exception as e:
@@ -399,8 +399,8 @@ async def create_user_profile(
 ) -> CreateUserProfileResponse:
     """Create a user_profile link."""
     try:
-        repo = ProfileRepository(conn)
-        user_profile = await repo.create_user_profile(
+        service = ProfileService(conn)
+        user_profile = await service.create_user_profile(
             request.userId, request.profileId, request.isPrimary, request.active
         )
 

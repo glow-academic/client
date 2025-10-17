@@ -1037,3 +1037,7 @@ class DocumentService:
 
             return "\n".join(text_content).encode('utf-8'), "text/plain", headers
 
+
+def get_document_service(conn: asyncpg.Connection) -> DocumentService:
+    """Get document service instance."""
+    return DocumentService(conn)

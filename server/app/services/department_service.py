@@ -389,3 +389,8 @@ class DepartmentService:
         return DeleteDepartmentResponse(
             success=True, message="Department deleted successfully"
         )
+
+
+def get_department_service(conn: asyncpg.Connection) -> DepartmentService:
+    """Get department service instance."""
+    return DepartmentService(conn)

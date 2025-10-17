@@ -114,3 +114,7 @@ class GradingService:
 
         return grade_id
 
+
+def get_grading_service(conn: asyncpg.Connection) -> GradingService:
+    """Get grading service instance."""
+    return GradingService(conn)

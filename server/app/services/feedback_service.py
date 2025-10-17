@@ -2,7 +2,7 @@
 
 from typing import List
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.queries.feedback_queries import FeedbackQueries
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackItem,
@@ -90,3 +90,8 @@ class FeedbackService:
             success=True,
             message="Feedback created successfully",
         )
+
+
+def get_feedback_service(conn: asyncpg.Connection) -> FeedbackService:
+    """Get feedback service instance."""
+    return FeedbackService(conn)

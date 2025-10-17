@@ -2,12 +2,12 @@
 
 from typing import Annotated
 
-import asyncpg # type: ignore
+import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.feedback_repository import get_feedback_repository
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackListRequest,
                                   FeedbackListResponse)
+from app.services.feedback_service import get_feedback_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter()
@@ -19,8 +19,8 @@ async def list_feedback(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FeedbackListResponse:
     """Get list of feedback with author information."""
-    repo = get_feedback_repository(conn)
-    return await repo.get_feedback_list(request)
+    service = get_feedback_service(conn)
+    return await service.get_feedback_list(request)
 
 
 @router.post("/create", response_model=CreateFeedbackResponse)
@@ -30,8 +30,8 @@ async def create_feedback(
 ) -> CreateFeedbackResponse:
     """Create new app feedback entry."""
     try:
-        repo = get_feedback_repository(conn)
-        return await repo.create_feedback(request)
+        service = get_feedback_service(conn)
+        return await service.create_feedback(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

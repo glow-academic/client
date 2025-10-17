@@ -4,7 +4,7 @@ from typing import Annotated
 
 import asyncpg  # type: ignore
 from app.db import get_db
-from app.repositories.analytics_repository import get_analytics_repository
+from app.services.analytics_service import get_analytics_service
 from app.schemas.analytics import AnalyticsFilters, PricingAnalyticsResponse
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -18,8 +18,8 @@ async def get_pricing_analytics(
 ) -> PricingAnalyticsResponse:
     """Get pricing analytics for model runs."""
     try:
-        repo = get_analytics_repository(conn)
-        return await repo.get_pricing_analytics(filters)
+        service = get_analytics_service(conn)
+        return await service.get_pricing_analytics(filters)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

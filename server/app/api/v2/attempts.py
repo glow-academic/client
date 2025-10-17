@@ -6,12 +6,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from app.db import get_db
 from app.queries.simulation_queries import get_attempt_full_data
-from app.repositories.attempts_repository import get_attempts_repository
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse,
                                   UpdateChatCompletedAtRequest,
                                   UpdateChatCreatedAtRequest,
                                   UpdateChatTimestampResponse)
+from app.services.attempts_service import get_attempts_service
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
@@ -38,8 +38,8 @@ async def bulk_archive_attempts(
 ) -> BulkArchiveAttemptsResponse:
     """Bulk archive or unarchive simulation attempts."""
     try:
-        repo = get_attempts_repository(conn)
-        return await repo.bulk_archive_attempts(request)
+        service = get_attempts_service(conn)
+        return await service.bulk_archive_attempts(request)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -53,8 +53,8 @@ async def update_chat_created_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat createdAt timestamp."""
     try:
-        repo = get_attempts_repository(conn)
-        return await repo.update_chat_created_at(request)
+        service = get_attempts_service(conn)
+        return await service.update_chat_created_at(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -68,8 +68,8 @@ async def update_chat_completed_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat completedAt timestamp."""
     try:
-        repo = get_attempts_repository(conn)
-        return await repo.update_chat_completed_at(request)
+        service = get_attempts_service(conn)
+        return await service.update_chat_completed_at(request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

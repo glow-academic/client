@@ -513,3 +513,8 @@ class RubricService:
         return DeleteRubricResponse(
             success=True, message=f"Rubric '{rubric['name']}' deleted successfully"
         )
+
+
+def get_rubric_service(conn: asyncpg.Connection) -> RubricService:
+    """Get rubric service instance."""
+    return RubricService(conn)

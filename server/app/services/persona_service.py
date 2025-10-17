@@ -658,3 +658,7 @@ class PersonaService:
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
 
+
+def get_persona_service(conn: asyncpg.Connection) -> PersonaService:
+    """Get persona service instance."""
+    return PersonaService(conn)
