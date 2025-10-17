@@ -1,6 +1,7 @@
 import { getApiBase } from "@/lib/api-base";
 import { UpdateSimulationRequestSchema } from "@/lib/api/v2/schemas/simulations";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

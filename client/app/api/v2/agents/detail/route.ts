@@ -1,6 +1,7 @@
 import { AgentDetailRequestSchema } from "@/lib/api/v2/schemas/agents";
 import { fetchAgentDetail } from "@/lib/api/v2/server/agents";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

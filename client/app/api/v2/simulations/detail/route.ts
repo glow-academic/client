@@ -1,6 +1,7 @@
 import { SimulationDetailRequestSchema } from "@/lib/api/v2/schemas/simulations";
 import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

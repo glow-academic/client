@@ -1,6 +1,7 @@
 import { getApiBase } from "@/lib/api-base";
 import { AuthorizeEmulationRequestSchema } from "@/lib/api/v2/schemas/profile";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

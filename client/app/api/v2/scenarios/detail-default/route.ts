@@ -1,6 +1,7 @@
 import { ScenarioDetailDefaultRequestSchema } from "@/lib/api/v2/schemas/scenarios";
 import { fetchScenarioDetailDefault } from "@/lib/api/v2/server/scenarios";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

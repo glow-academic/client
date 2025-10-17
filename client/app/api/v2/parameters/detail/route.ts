@@ -1,6 +1,7 @@
 import { ParameterDetailRequestSchema } from "@/lib/api/v2/schemas/parameters";
 import { fetchParameterDetail } from "@/lib/api/v2/server/parameters";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {

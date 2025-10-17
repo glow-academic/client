@@ -1,6 +1,7 @@
 import { RubricDetailDefaultRequestSchema } from "@/lib/api/v2/schemas/rubrics";
 import { fetchRubricDetailDefault } from "@/lib/api/v2/server/rubrics";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/api/v2/server/logs";
 
 export async function POST(req: NextRequest) {
   try {
