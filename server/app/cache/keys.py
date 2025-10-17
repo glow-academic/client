@@ -18,7 +18,9 @@ NS_DEPARTMENT = "department"
 NS_COHORT = "cohort"
 NS_DOCUMENT = "document"
 NS_ASSISTANT = "assistant"
+NS_LOG = "log"
 NS_MODEL_RUN = "model_run"
+NS_PARAMETER = "parameter"
 
 
 def _stable_json(obj: Any) -> str:
@@ -128,6 +130,11 @@ def _extract_primary_id(ns: str, name: str, params: Any) -> Any | None:
     if ns == NS_ASSISTANT:
         if name == "run_context":
             return params.get("chat_id")
+
+    # Parameter namespace
+    if ns == NS_PARAMETER:
+        if name in ("by_id", "detail"):
+            return params.get("parameter_id")
 
     return None
 
@@ -757,6 +764,41 @@ def agent_title_context(chat_id: str, department_id: str, *, v: int = GLOBAL_CAC
 
 
 # ============================================================================
+# PARAMETER KEY FACTORIES
+# ============================================================================
+
+
+def parameter_list(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for parameters list query."""
+    return Key(
+        ns=NS_PARAMETER,
+        name="list",
+        params={"filters": _serialize_filters(filters)},
+        v=v,
+    )
+
+
+def parameter_by_id(parameter_id: str, profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for parameter detail by ID query."""
+    return Key(
+        ns=NS_PARAMETER,
+        name="by_id",
+        params={"parameter_id": parameter_id, "profile_id": profile_id},
+        v=v,
+    )
+
+
+def parameter_detail_default(profile_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for default parameter detail query."""
+    return Key(
+        ns=NS_PARAMETER,
+        name="detail_default",
+        params={"profile_id": profile_id},
+        v=v,
+    )
+
+
+# ============================================================================
 # TAG HELPERS
 # ============================================================================
 
@@ -834,6 +876,41 @@ def tag_assistant_all() -> str:
 def tag_assistant_by_chat_id(chat_id: str) -> str:
     """Fine tag to invalidate specific assistant chat caches."""
     return f"{NS_ASSISTANT}:{chat_id}"
+
+
+def tag_parameter_all() -> str:
+    """Coarse tag to invalidate all parameter caches."""
+    return f"{NS_PARAMETER}:*"
+
+
+def tag_parameter_by_id(parameter_id: str) -> str:
+    """Fine tag to invalidate specific parameter caches."""
+    return f"{NS_PARAMETER}:{parameter_id}"
+
+
+# ============================================================================
+# LOG KEY FACTORIES
+# ============================================================================
+
+
+def log_list(*, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for logs list query."""
+    return Key(ns=NS_LOG, name="list", params=None, v=v)
+
+
+def log_recent(level: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for recent logs query."""
+    return Key(
+        ns=NS_LOG,
+        name="recent",
+        params={"level": level, "limit": limit},
+        v=v
+    )
+
+
+def tag_log_all() -> str:
+    """Coarse tag to invalidate all log caches."""
+    return f"{NS_LOG}:*"
 
 
 def tag_model_run_all() -> str:

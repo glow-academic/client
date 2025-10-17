@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from app.cache import keys
+from app.extensions import get_query_client
 from app.queries.grading_queries import GradingQueries
 
 
@@ -111,6 +113,11 @@ class GradingService:
         # 3. Mark chat as completed
         query, params = self.queries.mark_chat_completed(str(simulation_chat_id))
         await self.conn.execute(query, *params)
+
+        # Invalidate affected caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_analytics_all()])
 
         return grade_id
 
