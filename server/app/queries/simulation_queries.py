@@ -351,6 +351,212 @@ class SimulationQueries:
         query = "DELETE FROM simulations WHERE id = $1"
         return (query, [simulation_id])
 
+    # ===== WebSocket Simulation Attempt Queries =====
+
+    def create_attempt(self) -> str:
+        """Build query to create simulation attempt.
+        
+        Params order: simulation_id, infinite_mode, infinite_mode_time_limit
+        """
+        return """
+        INSERT INTO simulation_attempts (simulation_id, infinite_mode, infinite_mode_time_limit)
+        VALUES ($1, $2, $3)
+        RETURNING *
+        """
+
+    def create_attempt_profile(self) -> str:
+        """Build query to create attempt_profiles junction record.
+        
+        Params order: attempt_id, profile_id, active
+        """
+        return """
+        INSERT INTO attempt_profiles (attempt_id, profile_id, active)
+        VALUES ($1, $2, $3)
+        """
+
+    def get_scenario_by_id(self, scenario_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get scenario by ID."""
+        query = "SELECT * FROM scenarios WHERE id = $1"
+        return (query, [scenario_id])
+
+    def get_all_scenarios_minimal(self) -> Tuple[str, List[Any]]:
+        """Build query to get all scenario IDs (for random selection)."""
+        query = "SELECT id FROM scenarios"
+        return (query, [])
+
+    def get_scenario_full_metadata(self, scenario_id: str) -> Tuple[str, List[Any]]:
+        """Build optimized query to get scenario with all related data in single query.
+        
+        Returns scenario data plus:
+        - document_ids: array of document IDs
+        - parameter_item_ids: array of parameter item IDs
+        - persona_id: active persona ID (or null)
+        
+        This prevents N+1 queries by using LEFT JOINs and ARRAY_AGG.
+        """
+        query = """
+        SELECT 
+            s.*,
+            COALESCE(ARRAY_AGG(DISTINCT sd.document_id) FILTER (WHERE sd.document_id IS NOT NULL), ARRAY[]::uuid[]) as document_ids,
+            COALESCE(ARRAY_AGG(DISTINCT spi.parameter_item_id) FILTER (WHERE spi.parameter_item_id IS NOT NULL), ARRAY[]::uuid[]) as parameter_item_ids,
+            (SELECT persona_id FROM scenario_personas WHERE scenario_id = s.id AND active = true LIMIT 1) as persona_id
+        FROM scenarios s
+        LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
+        LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
+        WHERE s.id = $1
+        GROUP BY s.id
+        """
+        return (query, [scenario_id])
+
+    def get_simulation_scenarios_ordered(self, simulation_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get simulation's scenarios with position ordering."""
+        query = """
+        SELECT scenario_id, position 
+        FROM simulation_scenarios 
+        WHERE simulation_id = $1
+        ORDER BY position
+        """
+        return (query, [simulation_id])
+
+    def get_attempt_by_id(self, attempt_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get attempt by ID."""
+        query = "SELECT * FROM simulation_attempts WHERE id = $1"
+        return (query, [attempt_id])
+
+    def get_attempt_with_profile(self, attempt_id: str) -> Tuple[str, List[Any]]:
+        """Build optimized query to get attempt with active profile in single query."""
+        query = """
+        SELECT 
+            sa.*,
+            (SELECT profile_id FROM attempt_profiles WHERE attempt_id = sa.id AND active = true LIMIT 1) as profile_id
+        FROM simulation_attempts sa
+        WHERE sa.id = $1
+        """
+        return (query, [attempt_id])
+
+    def create_simulation_chat(self) -> str:
+        """Build query to create simulation chat.
+        
+        Params order: created_at, title, scenario_id, attempt_id, completed, trace_id
+        """
+        return """
+        INSERT INTO simulation_chats (created_at, title, scenario_id, attempt_id, completed, trace_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+        """
+
+    def get_chat_by_id(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get chat by ID."""
+        query = "SELECT * FROM simulation_chats WHERE id = $1"
+        return (query, [chat_id])
+
+    def get_chat_basic(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get basic chat info."""
+        query = "SELECT id, completed FROM simulation_chats WHERE id = $1"
+        return (query, [chat_id])
+
+    def update_chat_completed(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """Build query to mark chat as completed."""
+        query = "UPDATE simulation_chats SET completed = true WHERE id = $1"
+        return (query, [chat_id])
+
+    def get_existing_chats_for_attempt(self, attempt_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get all chats for an attempt."""
+        query = """
+        SELECT id, completed, scenario_id
+        FROM simulation_chats 
+        WHERE attempt_id = $1
+        ORDER BY created_at
+        """
+        return (query, [attempt_id])
+
+    def get_simulation_metadata_for_chat(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """Build optimized query to get simulation metadata from chat in single JOIN.
+        
+        Returns simulation_id, attempt_id, practice_simulation via 3-table JOIN.
+        """
+        query = """
+        SELECT 
+            s.id as simulation_id,
+            s.practice_simulation,
+            sa.id as attempt_id
+        FROM simulation_chats sc
+        JOIN simulation_attempts sa ON sa.id = sc.attempt_id
+        JOIN simulations s ON s.id = sa.simulation_id
+        WHERE sc.id = $1
+        """
+        return (query, [chat_id])
+
+    # ===== Message Queries =====
+
+    def create_message(self) -> str:
+        """Build query to create simulation message.
+        
+        Params order: chat_id, type, content, completed
+        """
+        return """
+        INSERT INTO simulation_messages (chat_id, type, content, completed, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        RETURNING id, created_at
+        """
+
+    def update_message_content(self) -> str:
+        """Build query to update message content.
+        
+        Params order: content, message_id
+        """
+        return """
+        UPDATE simulation_messages 
+        SET content = $1 
+        WHERE id = $2
+        """
+
+    def update_message_completed(self) -> str:
+        """Build query to mark message as completed.
+        
+        Params order: message_id
+        """
+        return """
+        UPDATE simulation_messages 
+        SET completed = true 
+        WHERE id = $1
+        """
+
+    def update_message_content_and_completed(self) -> str:
+        """Build query to update message content and mark completed.
+        
+        Params order: content, message_id
+        """
+        return """
+        UPDATE simulation_messages 
+        SET content = $1, completed = true 
+        WHERE id = $2
+        """
+
+    def get_incomplete_messages_for_chat(self, chat_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get incomplete response messages for a chat."""
+        query = """
+        SELECT id, content, completed, created_at
+        FROM simulation_messages
+        WHERE chat_id = $1 AND type = 'response' AND completed = false
+        ORDER BY created_at DESC
+        """
+        return (query, [chat_id])
+
+    def get_messages_count_by_chat_ids(self, chat_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build optimized batch query to get message counts for multiple chats.
+        
+        This prevents N+1 queries when checking message counts for multiple chats.
+        Returns: chat_id, message_count
+        """
+        query = """
+        SELECT chat_id, COUNT(*) as message_count
+        FROM simulation_messages
+        WHERE chat_id = ANY($1::uuid[])
+        GROUP BY chat_id
+        """
+        return (query, [chat_ids])
+
 
 async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""

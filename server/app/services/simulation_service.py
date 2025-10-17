@@ -502,3 +502,426 @@ class SimulationService:
                 success=True, message=f"Simulation '{simulation['title']}' deleted successfully"
             )
 
+    # ===== WebSocket Simulation Attempt Operations =====
+
+    async def start_simulation_attempt(
+        self,
+        simulation_id: str,
+        profile_id: str | None,
+        scenario_id_override: str | None,
+        infinite: bool,
+        infinite_time_limit: int | None,
+        department_id: str,
+    ) -> Dict[str, Any]:
+        """Create simulation attempt with all related entities.
+        
+        Returns:
+            {
+                "attempt_id": UUID,
+                "chat_id": UUID,
+                "chat_title": str,
+                "scenario": Dict
+            }
+        """
+        import random
+        from datetime import datetime, timezone
+
+        from agents import gen_trace_id
+        from app.agents.collection.scenario import run_scenario_agent
+        from app.utils.scenario import randomly_fill_scenario_attributes
+
+        # Get the simulation
+        query, params = self.queries.get_simulation_by_id(simulation_id)
+        simulation = await self.conn.fetchrow(query, *params)
+        if not simulation:
+            raise ValueError(f"Simulation {simulation_id} not found")
+
+        # Create the attempt
+        query = self.queries.create_attempt()
+        new_attempt = await self.conn.fetchrow(
+            query,
+            simulation_id,
+            infinite,
+            infinite_time_limit
+        )
+        attempt_id = new_attempt['id']
+
+        # Create attempt_profiles junction record if profile exists
+        if profile_id:
+            query = self.queries.create_attempt_profile()
+            await self.conn.execute(query, attempt_id, profile_id, True)
+
+        # Load scenarios for this simulation from junction table
+        query, params = self.queries.get_simulation_scenarios_ordered(simulation_id)
+        scenario_links = await self.conn.fetch(query, *params)
+
+        # Determine which scenario to use
+        if scenario_id_override:
+            query, params = self.queries.get_scenario_by_id(scenario_id_override)
+            old_scenario = await self.conn.fetchrow(query, *params)
+            if not old_scenario:
+                raise ValueError(f"Scenario {scenario_id_override} not found")
+            chosen_scenario_id = old_scenario['id']
+        elif not scenario_links:
+            # No scenarios configured, select random scenario
+            query, params = self.queries.get_all_scenarios_minimal()
+            all_scenarios = await self.conn.fetch(query, *params)
+            if not all_scenarios:
+                raise ValueError("No scenarios available in the system")
+            random_scenario = random.choice(all_scenarios)
+            chosen_scenario_id = random_scenario['id']
+        else:
+            chosen_scenario_id = scenario_links[0]['scenario_id']
+
+        query, params = self.queries.get_scenario_by_id(str(chosen_scenario_id))
+        old_scenario = await self.conn.fetchrow(query, *params)
+        if not old_scenario:
+            raise ValueError(f"Scenario {chosen_scenario_id} not found")
+
+        # Randomly fill any null attributes in the scenario
+        import uuid as uuid_module
+        scenario = await randomly_fill_scenario_attributes(dict(old_scenario), self.conn, uuid_module.UUID(department_id))
+
+        # Generate scenario problem_statement if empty
+        if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
+            # Use optimized query to get all scenario metadata in one query
+            query, params = self.queries.get_scenario_full_metadata(str(scenario['id']))
+            scenario_metadata = await self.conn.fetchrow(query, *params)
+            
+            doc_ids = list(scenario_metadata['document_ids']) if scenario_metadata['document_ids'] else []
+            param_ids = list(scenario_metadata['parameter_item_ids']) if scenario_metadata['parameter_item_ids'] else []
+            scenario_persona_id = scenario_metadata['persona_id']
+
+            # Get profile from attempt with optimized query
+            query, params = self.queries.get_attempt_with_profile(str(attempt_id))
+            attempt_with_profile = await self.conn.fetchrow(query, *params)
+            attempt_profile_id = attempt_with_profile['profile_id'] if attempt_with_profile else None
+
+            name, description, objectives, trace_id = await run_scenario_agent(
+                department_id=uuid_module.UUID(department_id),
+                persona_id=scenario_persona_id,
+                document_ids=doc_ids,
+                parameter_item_ids=param_ids,
+                group_id=uuid_module.UUID(str(attempt_id)),
+                conn=self.conn,
+                profile_id=attempt_profile_id,
+            )
+            scenario['name'] = name
+            scenario['problem_statement'] = description
+            chat_title = scenario['name']
+        else:
+            chat_title = scenario['name']
+            trace_id = gen_trace_id()
+
+        # Create the chat
+        query = self.queries.create_simulation_chat()
+        chat = await self.conn.fetchrow(
+            query,
+            datetime.now(timezone.utc),
+            chat_title,
+            scenario['id'],
+            attempt_id,
+            False,
+            trace_id
+        )
+
+        return {
+            "attempt_id": attempt_id,
+            "chat_id": chat['id'],
+            "chat_title": chat_title,
+            "scenario": scenario
+        }
+
+    async def stop_simulation_run(self, chat_id: str) -> Dict[str, Any]:
+        """Stop active simulation run and mark incomplete message complete.
+        
+        Returns:
+            {
+                "success": bool,
+                "cancelled_message_id": Optional[UUID],
+                "final_content": str
+            }
+        """
+        # Verify the chat exists
+        query, params = self.queries.get_chat_by_id(chat_id)
+        chat = await self.conn.fetchrow(query, *params)
+        if not chat:
+            raise ValueError("Chat not found")
+
+        # Get incomplete response messages
+        query, params = self.queries.get_incomplete_messages_for_chat(chat_id)
+        assistant_msgs = await self.conn.fetch(query, *params)
+        
+        assistant_msg = assistant_msgs[0] if assistant_msgs else None
+
+        if assistant_msg:
+            # Mark as completed
+            query = self.queries.update_message_completed()
+            await self.conn.execute(query, assistant_msg['id'])
+
+            return {
+                "success": True,
+                "cancelled_message_id": assistant_msg['id'],
+                "final_content": assistant_msg['content'] or "",
+            }
+        else:
+            return {
+                "success": False,
+                "cancelled_message_id": None,
+                "final_content": "",
+            }
+
+    async def continue_simulation_attempt(
+        self,
+        chat_id: str,
+        attempt_id: str,
+        department_id: str,
+        end_all: bool,
+        sio_instance: Any = None,
+    ) -> Dict[str, Any]:
+        """Complete current chat, create next chat, handle grading.
+        
+        Returns:
+            {
+                "completed_chat_id": UUID,
+                "next_chat_id": Optional[UUID],
+                "is_attempt_finished": bool,
+                "simulation_grade_id": Optional[UUID],
+                "created_chats_count": int
+            }
+        """
+        from app.agents.collection.grade import run_grade_agent
+
+        # Get the chat
+        query, params = self.queries.get_chat_basic(chat_id)
+        chat = await self.conn.fetchrow(query, *params)
+        if not chat:
+            raise ValueError("Chat not found")
+
+        # Get the attempt
+        query, params = self.queries.get_attempt_by_id(attempt_id)
+        simulation_attempt = await self.conn.fetchrow(query, *params)
+        if not simulation_attempt:
+            raise ValueError("Attempt not found")
+
+        # Get the simulation
+        query, params = self.queries.get_simulation_by_id(str(simulation_attempt['simulation_id']))
+        simulation = await self.conn.fetchrow(query, *params)
+        if not simulation:
+            raise ValueError("Simulation not found")
+
+        # Load scenarios for this simulation from junction table
+        query, params = self.queries.get_simulation_scenarios_ordered(str(simulation['id']))
+        scenario_links = await self.conn.fetch(query, *params)
+        is_infinite_mode = bool(simulation_attempt['infinite_mode'])
+
+        # Get existing chats for this attempt
+        query, params = self.queries.get_existing_chats_for_attempt(attempt_id)
+        existing_chats = await self.conn.fetch(query, *params)
+        next_index = len(existing_chats)
+
+        # Create next chat if not end_all
+        next_chat_id = chat_id
+        if not end_all and scenario_links:
+            next_scenario_id = None
+            if is_infinite_mode:
+                # Cycle through the configured scenarios indefinitely
+                num_scenarios = len(scenario_links)
+                if num_scenarios > 0:
+                    cycling_index = next_index % num_scenarios
+                    next_scenario_id = scenario_links[cycling_index]['scenario_id']
+            elif next_index < len(scenario_links):
+                next_scenario_id = scenario_links[next_index]['scenario_id']
+
+            if next_scenario_id is not None:
+                created_next_chat = await self._create_chat_for_scenario(
+                    str(next_scenario_id),
+                    attempt_id,
+                    department_id,
+                    mark_completed=False
+                )
+                if created_next_chat is None:
+                    raise ValueError("Next scenario not found")
+                next_chat_id = created_next_chat['id']
+
+        # Grade the just-completed chat if it has at least 2 messages
+        # Use optimized batch query to get message counts
+        existing_chat_ids = [str(c['id']) for c in existing_chats]
+        query, params = self.queries.get_messages_count_by_chat_ids(existing_chat_ids)
+        message_counts = await self.conn.fetch(query, *params)
+        message_count_map = {str(row['chat_id']): row['message_count'] for row in message_counts}
+        
+        simulation_grade_id = None
+        chat_message_count = message_count_map.get(chat_id, 0)
+        if chat_message_count >= 2:
+            simulation_grade_id = await run_grade_agent(chat_id, department_id, self.conn, sio_instance)  # type: ignore
+
+        # Mark the current chat as completed
+        query, params = self.queries.update_chat_completed(chat_id)
+        await self.conn.execute(query, *params)
+
+        created_chats_count = 0
+        if end_all:
+            # End any other incomplete chats for this attempt
+            for existing_chat in existing_chats:
+                if not existing_chat['completed'] and existing_chat['id'] != chat_id:
+                    other_message_count = message_count_map.get(str(existing_chat['id']), 0)
+                    if other_message_count >= 2:
+                        await run_grade_agent(existing_chat['id'], department_id, self.conn, sio_instance)  # type: ignore
+                    query, params = self.queries.update_chat_completed(str(existing_chat['id']))
+                    await self.conn.execute(query, *params)
+
+            # Calculate and create remaining chats in order
+            start_index = len(existing_chats)
+            total_needed = max(0, len(scenario_links) - start_index)
+
+            for offset in range(total_needed):
+                next_id = scenario_links[start_index + offset]['scenario_id']
+                created = await self._create_chat_for_scenario(
+                    str(next_id),
+                    attempt_id,
+                    department_id,
+                    mark_completed=True
+                )
+                if created is None:
+                    break
+                created_chats_count += 1
+
+        is_attempt_finished = next_chat_id == chat_id
+
+        return {
+            "completed_chat_id": chat_id,
+            "next_chat_id": next_chat_id,
+            "is_attempt_finished": is_attempt_finished,
+            "simulation_grade_id": simulation_grade_id,
+            "created_chats_count": created_chats_count,
+        }
+
+    # ===== Message Operations =====
+
+    async def create_user_message(self, chat_id: str, content: str) -> Dict[str, Any]:
+        """Create user message in chat.
+        
+        Returns: {"id": UUID, "created_at": datetime}
+        """
+        query = self.queries.create_message()
+        result = await self.conn.fetchrow(query, chat_id, "query", content, True)
+        return {"id": result['id'], "created_at": result['created_at']}
+
+    async def create_assistant_message_placeholder(self, chat_id: str) -> Dict[str, Any]:
+        """Create empty assistant message for streaming.
+        
+        Returns: {"id": UUID, "created_at": datetime}
+        """
+        query = self.queries.create_message()
+        result = await self.conn.fetchrow(query, chat_id, "response", "", False)
+        return {"id": result['id'], "created_at": result['created_at']}
+
+    async def update_message_content(self, message_id: str, content: str) -> None:
+        """Update message content during streaming."""
+        query = self.queries.update_message_content()
+        await self.conn.execute(query, content, message_id)
+
+    async def complete_message(self, message_id: str, final_content: str | None = None) -> None:
+        """Mark message as completed, optionally updating content."""
+        if final_content is not None:
+            query = self.queries.update_message_content_and_completed()
+            await self.conn.execute(query, final_content, message_id)
+        else:
+            query = self.queries.update_message_completed()
+            await self.conn.execute(query, message_id)
+
+    async def get_simulation_for_chat(self, chat_id: str) -> Dict[str, Any]:
+        """Get simulation metadata from chat (optimized single JOIN query).
+        
+        Returns:
+            {
+                "simulation_id": UUID,
+                "attempt_id": UUID,
+                "practice_simulation": bool
+            }
+        """
+        query, params = self.queries.get_simulation_metadata_for_chat(chat_id)
+        result = await self.conn.fetchrow(query, *params)
+        if not result:
+            raise ValueError(f"Chat {chat_id} not found")
+        
+        return {
+            "simulation_id": result['simulation_id'],
+            "attempt_id": result['attempt_id'],
+            "practice_simulation": result['practice_simulation'],
+        }
+
+    # ===== Private Helper Methods =====
+
+    async def _create_chat_for_scenario(
+        self,
+        scenario_id: str,
+        attempt_id: str,
+        department_id: str,
+        mark_completed: bool,
+    ) -> Dict[str, Any] | None:
+        """Create chat for a scenario with full scenario preparation.
+        
+        This is a private helper used by continue_simulation_attempt.
+        """
+        from datetime import datetime, timezone
+
+        from agents import gen_trace_id
+        from app.agents.collection.scenario import run_scenario_agent
+        from app.utils.scenario import randomly_fill_scenario_attributes
+
+        query, params = self.queries.get_scenario_by_id(scenario_id)
+        old_scenario = await self.conn.fetchrow(query, *params)
+        if not old_scenario:
+            return None
+
+        # Randomly fill any null attributes
+        import uuid as uuid_module
+        scenario = await randomly_fill_scenario_attributes(dict(old_scenario), self.conn, uuid_module.UUID(department_id))
+
+        # Generate scenario problem_statement if empty
+        if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
+            # Use optimized query to get all scenario metadata in one query
+            query, params = self.queries.get_scenario_full_metadata(str(scenario['id']))
+            scenario_metadata = await self.conn.fetchrow(query, *params)
+            
+            doc_ids = list(scenario_metadata['document_ids']) if scenario_metadata['document_ids'] else []
+            param_ids = list(scenario_metadata['parameter_item_ids']) if scenario_metadata['parameter_item_ids'] else []
+            scenario_persona_id = scenario_metadata['persona_id']
+
+            # Get profile from attempt with optimized query
+            query, params = self.queries.get_attempt_with_profile(attempt_id)
+            attempt_with_profile = await self.conn.fetchrow(query, *params)
+            attempt_profile_id = attempt_with_profile['profile_id'] if attempt_with_profile else None
+
+            name, description, objectives, trace_id = await run_scenario_agent(
+                department_id=scenario['department_id'],
+                persona_id=scenario_persona_id,
+                document_ids=doc_ids,
+                parameter_item_ids=param_ids,
+                group_id=uuid_module.UUID(attempt_id) if attempt_id else None,
+                conn=self.conn,
+                profile_id=attempt_profile_id,
+            )
+            scenario['name'] = name
+            scenario['problem_statement'] = description
+            chat_title = scenario['name']
+        else:
+            chat_title = scenario['name']
+            trace_id = gen_trace_id()
+
+        # Create chat
+        query = self.queries.create_simulation_chat()
+        chat = await self.conn.fetchrow(
+            query,
+            datetime.now(timezone.utc),
+            chat_title,
+            scenario['id'],
+            attempt_id,
+            mark_completed,
+            trace_id
+        )
+
+        return dict(chat) if chat else None
+

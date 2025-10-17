@@ -91,159 +91,33 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                         "No default guest profile found; proceeding without profile_id (will create ghost attempt)"
                     )
 
-            # Get the simulation
-            simulation = await conn.fetchrow(
-                "SELECT * FROM simulations WHERE id = $1",
-                simulation_id
-            )
-            if not simulation:
-                await emit_error(sid, "Simulation not found")
-                return
-
-            # Create the attempt
+            # Parse infinite_time_limit
             infinite_time_limit_value = (
                 int(infinite_time_limit)
                 if isinstance(infinite_time_limit, (int, str)) and str(infinite_time_limit).isdigit()
                 else None
             )
             
-            new_attempt = await conn.fetchrow("""
-                INSERT INTO simulation_attempts (simulation_id, infinite_mode, infinite_mode_time_limit)
-                VALUES ($1, $2, $3)
-                RETURNING *
-            """, simulation_id, infinite, infinite_time_limit_value)
-
-            attempt_id = new_attempt['id']
-
-            # Create attempt_profiles junction record if profile exists
-            if profile_id:
-                await conn.execute("""
-                    INSERT INTO attempt_profiles (attempt_id, profile_id, active)
-                    VALUES ($1, $2, $3)
-                """, attempt_id, profile_id, True)
+            # Use service layer to create attempt and chat
+            from app.services.simulation_service import SimulationService
+            service = SimulationService(conn)
+            
+            result = await service.start_simulation_attempt(
+                simulation_id=simulation_id,
+                profile_id=str(profile_id) if profile_id else None,
+                scenario_id_override=scenario_id_override,
+                infinite=infinite,
+                infinite_time_limit=infinite_time_limit_value,
+                department_id=department_id,
+            )
 
             logger.info(
-                f"Created attempt {attempt_id} for simulation {simulation_id}"
+                f"Created attempt {result['attempt_id']} for simulation {simulation_id}"
             )
-
-            # Load scenarios for this simulation from junction table
-            scenario_links = await conn.fetch("""
-                SELECT scenario_id
-                FROM simulation_scenarios
-                WHERE simulation_id = $1
-                ORDER BY position
-            """, simulation['id'])
-
-            # Determine which scenario to use
-            if scenario_id_override:
-                old_scenario = await conn.fetchrow(
-                    "SELECT * FROM scenarios WHERE id = $1",
-                    scenario_id_override
-                )
-                if not old_scenario:
-                    await emit_error(sid, f"Scenario {scenario_id_override} not found")
-                    return
-                chosen_scenario_id = old_scenario['id']
-            elif not scenario_links:
-                logger.info(
-                    f"No scenarios configured for simulation {simulation_id}, selecting random scenario"
-                )
-                all_scenarios = await conn.fetch("SELECT id FROM scenarios")
-                if not all_scenarios:
-                    await emit_error(sid, "No scenarios available in the system")
-                    return
-
-                import random
-
-                random_scenario = random.choice(all_scenarios)
-                chosen_scenario_id = random_scenario['id']
-                logger.info(
-                    f"Selected random scenario {chosen_scenario_id} for simulation {simulation_id}"
-                )
-            else:
-                chosen_scenario_id = scenario_links[0]['scenario_id']
-
-            old_scenario = await conn.fetchrow(
-                "SELECT * FROM scenarios WHERE id = $1",
-                chosen_scenario_id
-            )
-
-            if not old_scenario:
-                await emit_error(sid, f"Scenario {chosen_scenario_id} not found")
-                return
-
-            # Randomly fill any null attributes in the scenario
-            scenario = await randomly_fill_scenario_attributes(dict(old_scenario), conn, department_id)
-
-            # Check if we got a new scenario or the original one
-            is_new_scenario = scenario['id'] != old_scenario['id']
-
-            # Generate scenario problem_statement if empty
-            if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
-                # Load documents and parameters from junction tables
-                doc_links = await conn.fetch(
-                    "SELECT document_id FROM scenario_documents WHERE scenario_id = $1",
-                    scenario['id']
-                )
-                doc_ids = [link['document_id'] for link in doc_links]
-                
-                param_links = await conn.fetch(
-                    "SELECT parameter_item_id FROM scenario_parameter_items WHERE scenario_id = $1",
-                    scenario['id']
-                )
-                param_ids = [link['parameter_item_id'] for link in param_links]
-                
-                # Get persona from junction
-                persona_link = await conn.fetchrow("""
-                    SELECT persona_id
-                    FROM scenario_personas
-                    WHERE scenario_id = $1 AND active = true
-                    LIMIT 1
-                """, scenario['id'])
-                scenario_persona_id = persona_link['persona_id'] if persona_link else None
-                
-                # Get profile from attempt_profiles junction
-                attempt_profile_link = await conn.fetchrow("""
-                    SELECT profile_id
-                    FROM attempt_profiles
-                    WHERE attempt_id = $1 AND active = true
-                    LIMIT 1
-                """, new_attempt['id'])
-                attempt_profile_id = attempt_profile_link['profile_id'] if attempt_profile_link else None
-                
-                name, description, objectives, trace_id = await run_scenario_agent(
-                    department_id=department_id,
-                    persona_id=scenario_persona_id,
-                    document_ids=doc_ids,
-                    parameter_item_ids=param_ids,
-                    group_id=new_attempt['id'],
-                    conn=conn,
-                    profile_id=attempt_profile_id,
-                )
-                scenario['name'] = name
-                scenario['problem_statement'] = description
-                # Note: objectives would need to be saved via scenario_objectives junction
-                # but for now we skip that as client handles it
-                chat_title = scenario['name']
-            else:
-                chat_title = scenario['name']
-                trace_id = gen_trace_id()
-
-            # Only add to database if it's a new scenario
-            if is_new_scenario:
-                # Insert the new scenario (already inserted by randomly_fill_scenario_attributes)
-                pass
-
-            # Create the chat
-            chat = await conn.fetchrow("""
-                INSERT INTO simulation_chats (created_at, title, scenario_id, attempt_id, completed, trace_id)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING *
-            """, datetime.now(timezone.utc), chat_title, scenario['id'], new_attempt['id'], False, trace_id)
 
             # Join the client to the simulation room for real-time updates
             sio_instance = get_sio_instance()
-            simulation_room = f"simulation_{chat['id']}"
+            simulation_room = f"simulation_{result['chat_id']}"
             await sio_instance.enter_room(sid, simulation_room)
             logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
@@ -253,14 +127,14 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 {
                     "success": True,
                     "message": "Simulation started successfully",
-                    "attempt_id": str(new_attempt['id']),
-                    "chat_id": str(chat['id']),
+                    "attempt_id": str(result['attempt_id']),
+                    "chat_id": str(result['chat_id']),
                 },
                 room=sid,
             )
 
             logger.info(
-                f"Simulation started successfully for {sid}: attempt={new_attempt['id']}, chat={chat['id']}"
+                f"Simulation started successfully for {sid}: attempt={result['attempt_id']}, chat={result['chat_id']}"
             )
 
     except Exception as e:
@@ -287,57 +161,36 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Verify the chat exists
-            chat = await conn.fetchrow(
-                "SELECT id FROM simulation_chats WHERE id = $1",
-                chat_id
-            )
-            if not chat:
-                await emit_error(sid, "Chat not found")
-                return
-
             # Attempt to cancel the simulation run and the in-process Runner immediately
             from app.main import cancel_active_result
+            from app.services.simulation_service import SimulationService
 
             # Try immediate in-process cancel first
             immediate = await cancel_active_result(str(chat_id))
             # Then set cooperative cancel flag (Redis)
             success = await cancel_simulation_run(chat_id)
 
+            # Use service layer to stop simulation and mark message complete
+            service = SimulationService(conn)
+            result = await service.stop_simulation_run(str(chat_id))
+
             sio_instance = get_sio_instance()
 
-            if success:
+            if result["success"] and result["cancelled_message_id"]:
                 logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
 
-                # Mark the most recent unfinished assistant message complete
-                # Get all response messages for this chat, ordered by created_at desc
-                assistant_msgs = await conn.fetch("""
-                    SELECT id, content, completed, created_at
-                    FROM simulation_messages
-                    WHERE chat_id = $1 AND type = 'response'
-                    ORDER BY created_at DESC
-                """, chat_id)
-                
-                assistant_msg = assistant_msgs[0] if assistant_msgs else None
+                # Emit a cancellation / final content event so clients update UI
+                await sio_instance.emit(
+                    "simulation_message_cancelled",
+                    {
+                        "message_id": str(result["cancelled_message_id"]),
+                        "chat_id": str(chat_id),
+                        "final_content": result["final_content"],
+                    },
+                    room=f"simulation_{chat_id}",
+                )
 
-                if assistant_msg and not assistant_msg['completed']:
-                    await conn.execute(
-                        "UPDATE simulation_messages SET completed = true WHERE id = $1",
-                        assistant_msg['id']
-                    )
-
-                    # Emit a cancellation / final content event so clients update UI
-                    await sio_instance.emit(
-                        "simulation_message_cancelled",
-                        {
-                            "message_id": str(assistant_msg['id']),
-                            "chat_id": str(chat_id),
-                            "final_content": assistant_msg['content'] or "",
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
-
-                # Emit stop signal (even if message was empty)
+                # Emit stop signal
                 await sio_instance.emit(
                     "simulation_stopped",
                     {
@@ -391,221 +244,25 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Local helpers to reduce duplication
-            async def prepare_and_persist_scenario(
-                old_scenario: Dict[str, Any],
-                department_id: uuid.UUID,
-            ) -> Tuple[Dict[str, Any], str, str]:
-                scenario = await randomly_fill_scenario_attributes(old_scenario, conn, department_id)
-                
-                # Check if we got a new scenario or the original one
-                is_new_scenario = scenario['id'] != old_scenario['id']
-                
-                if not scenario.get('problem_statement') or scenario.get('problem_statement') == "":
-                    # Load documents and parameters from junction tables
-                    doc_links = await conn.fetch(
-                        "SELECT document_id FROM scenario_documents WHERE scenario_id = $1",
-                        scenario['id']
-                    )
-                    doc_ids = [link['document_id'] for link in doc_links]
-                    
-                    param_links = await conn.fetch(
-                        "SELECT parameter_item_id FROM scenario_parameter_items WHERE scenario_id = $1",
-                        scenario['id']
-                    )
-                    param_ids = [link['parameter_item_id'] for link in param_links]
-                    
-                    # Get persona from junction
-                    persona_link = await conn.fetchrow("""
-                        SELECT persona_id
-                        FROM scenario_personas
-                        WHERE scenario_id = $1 AND active = true
-                        LIMIT 1
-                    """, scenario['id'])
-                    scenario_persona_id = persona_link['persona_id'] if persona_link else None
-                    
-                    # Get profile from attempt_profiles junction
-                    attempt_profile_link = await conn.fetchrow("""
-                        SELECT profile_id
-                        FROM attempt_profiles
-                        WHERE attempt_id = $1 AND active = true
-                        LIMIT 1
-                    """, attempt_id)
-                    attempt_profile_id = attempt_profile_link['profile_id'] if attempt_profile_link else None
-                    
-                    name, description, objectives, trace_id = await run_scenario_agent(
-                        department_id=scenario['department_id'],
-                        persona_id=scenario_persona_id,
-                        document_ids=doc_ids,
-                        parameter_item_ids=param_ids,
-                        group_id=attempt_id,
-                        conn=conn,
-                        profile_id=attempt_profile_id,
-                    )
-                    scenario['name'] = name
-                    scenario['problem_statement'] = description
-                    # Note: objectives would need to be saved via scenario_objectives junction
-                    chat_title = scenario['name']
-                else:
-                    chat_title = scenario['name']
-                    trace_id = gen_trace_id()
+            # Use service layer to continue simulation
+            from app.services.simulation_service import SimulationService
+            service = SimulationService(conn)
 
-                # Scenario is already persisted by randomly_fill_scenario_attributes if it's new
-                return scenario, chat_title, trace_id
-
-            async def create_chat_for_scenario_id(
-                next_scenario_id: uuid.UUID, mark_completed: bool
-            ) -> Optional[Dict[str, Any]]:
-                old_next_scenario = await conn.fetchrow(
-                    "SELECT * FROM scenarios WHERE id = $1",
-                    next_scenario_id
-                )
-                if not old_next_scenario:
-                    return None
-
-                scenario, chat_title, trace_id = await prepare_and_persist_scenario(dict(old_next_scenario), department_id)
-
-                next_chat = await conn.fetchrow("""
-                    INSERT INTO simulation_chats (created_at, title, scenario_id, attempt_id, completed, trace_id)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    RETURNING *
-                """, datetime.now(timezone.utc), chat_title, scenario['id'], attempt_id, mark_completed, trace_id)
-                
-                return dict(next_chat) if next_chat else None
-
-            # Get the chat
-            chat = await conn.fetchrow(
-                "SELECT id, completed FROM simulation_chats WHERE id = $1",
-                chat_id
-            )
-            if not chat:
-                await emit_error(sid, "Chat not found")
-                return
-
-            # Get the attempt
-            simulation_attempt = await conn.fetchrow(
-                "SELECT id, simulation_id, infinite_mode FROM simulation_attempts WHERE id = $1",
-                attempt_id
-            )
-            if not simulation_attempt:
-                await emit_error(sid, "Attempt not found")
-                return
-
-            # Get the simulation
-            simulation = await conn.fetchrow(
-                "SELECT id FROM simulations WHERE id = $1",
-                simulation_attempt['simulation_id']
-            )
-            if not simulation:
-                await emit_error(sid, "Simulation not found")
-                return
-
-            # Load scenarios for this simulation from junction table
-            scenario_links = await conn.fetch("""
-                SELECT scenario_id, position
-                FROM simulation_scenarios
-                WHERE simulation_id = $1
-                ORDER BY position
-            """, simulation['id'])
-            is_infinite_mode = bool(simulation_attempt['infinite_mode'])
-
-            # Determine how many chats already exist for this attempt
-            existing_chats = await conn.fetch(
-                "SELECT id, completed FROM simulation_chats WHERE attempt_id = $1",
-                attempt_id
-            )
-            next_index = len(existing_chats)
-
-            # If not processing end_all, create the next chat
-            # - Normal mode: create next chat only if we haven't exhausted scenarios
-            # - Infinite mode: always create next chat by cycling through scenarios
-            next_chat_id = chat_id
-            if not end_all and scenario_links:
-                next_scenario_id: Optional[uuid.UUID] = None
-                if is_infinite_mode:
-                    # Cycle through the configured scenarios indefinitely
-                    num_scenarios = len(scenario_links)
-                    if num_scenarios > 0:
-                        cycling_index = next_index % num_scenarios
-                        next_scenario_id = scenario_links[cycling_index]['scenario_id']
-                elif next_index < len(scenario_links):
-                    next_scenario_id = scenario_links[next_index]['scenario_id']
-
-                if next_scenario_id is not None:
-                    created_next_chat = await create_chat_for_scenario_id(
-                        next_scenario_id, mark_completed=False
-                    )
-                    if created_next_chat is None:
-                        await emit_error(sid, "Next scenario not found")
-                        return
-                    next_chat_id = created_next_chat['id']
-
-            # Grade the just-completed chat if it has at least 2 messages
-            messages = await conn.fetch(
-                "SELECT id FROM simulation_messages WHERE chat_id = $1",
-                chat_id
-            )
-            simulation_grade_id = None
-            if len(messages) >= 2:
-                sio_instance = get_sio_instance()
-                simulation_grade_id = await run_grade_agent(chat_id, department_id, conn, sio_instance)  # type: ignore[arg-type]
-
-            # Mark the current chat as completed
-            await conn.execute(
-                "UPDATE simulation_chats SET completed = true WHERE id = $1",
-                chat_id
+            sio_instance = get_sio_instance()
+            result = await service.continue_simulation_attempt(
+                chat_id=str(chat_id),
+                attempt_id=str(attempt_id),
+                department_id=str(department_id),
+                end_all=end_all,
+                sio_instance=sio_instance,
             )
 
             if end_all:
                 logger.info(
-                    f"End all: Starting to create remaining chats for attempt {attempt_id}"
-                )
-
-                # End any other incomplete chats for this attempt (excluding the current one we just completed)
-                incomplete_chats_processed = 0
-                for existing_chat in existing_chats:
-                    if not existing_chat['completed'] and existing_chat['id'] != chat_id:
-                        other_messages = await conn.fetch(
-                            "SELECT id FROM simulation_messages WHERE chat_id = $1",
-                            existing_chat['id']
-                        )
-                        if len(other_messages) >= 2:
-                            logger.info(
-                                f"End all: Running grading for chat {str(existing_chat['id'])}"
-                            )
-                            sio_instance = get_sio_instance()
-                            await run_grade_agent(existing_chat['id'], department_id, conn, sio_instance)  # type: ignore[arg-type]
-                        await conn.execute(
-                            "UPDATE simulation_chats SET completed = true WHERE id = $1",
-                            existing_chat['id']
-                        )
-                        incomplete_chats_processed += 1
-
-                # Calculate and create remaining chats in order
-                created_count = 0
-                start_index = len(existing_chats)
-                total_needed = max(0, len(scenario_links) - start_index)
-                logger.info(
-                    f"End all: Need to create {total_needed} more chats"
-                )
-
-                for offset in range(total_needed):
-                    next_id = scenario_links[start_index + offset]['scenario_id']
-                    created = await create_chat_for_scenario_id(
-                        next_id, mark_completed=True
-                    )
-                    if created is None:
-                        logger.error(
-                            f"End all: Next scenario not found: {next_id}"
-                        )
-                        break
-                    created_count += 1
-                    logger.info(
-                        f"End all: Created chat {created['id']} for scenario {start_index + offset + 1}"
+                    f"End all completed for attempt {attempt_id}: created {result['created_chats_count']} new chats"
                     )
 
                 # Emit end all completed event
-                sio_instance = get_sio_instance()
                 payload = {
                     "success": True,
                     "message": f"Ended all chats for this attempt",
@@ -623,24 +280,15 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     payload,
                     room=f"simulation_{chat_id}",
                 )
-
-                logger.info(
-                    f"End all completed for attempt {attempt_id}: processed {incomplete_chats_processed} incomplete chats, created {created_count} new chats"
-                )
             else:
                 # Emit the new, more descriptive success response for single chat
-                completed_chat_id = chat_id
-                new_chat_id = next_chat_id
-                is_attempt_finished = new_chat_id == completed_chat_id
-
-                sio_instance = get_sio_instance()
                 payload = {
                     "success": True,
                     "message": "Simulation continued successfully",
-                    "completed_chat_id": str(completed_chat_id),
-                    "next_chat_id": str(new_chat_id),
-                    "is_attempt_finished": is_attempt_finished,
-                    "simulation_grade_id": simulation_grade_id,
+                    "completed_chat_id": str(result["completed_chat_id"]),
+                    "next_chat_id": str(result["next_chat_id"]),
+                    "is_attempt_finished": result["is_attempt_finished"],
+                    "simulation_grade_id": result["simulation_grade_id"],
                 }
                 # Emit to requester
                 await sio_instance.emit(
@@ -656,7 +304,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                 )
 
                 logger.info(
-                    f"Simulation continued successfully: completed_chat={completed_chat_id}, next_chat={new_chat_id}"
+                    f"Simulation continued successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"
                 )
 
     except Exception as e:
@@ -715,23 +363,14 @@ async def process_simulation_message_websocket(
 
     async with pool.acquire() as conn:
         try:
-            # get the chat
-            chat = await conn.fetchrow(
-                "SELECT id, attempt_id FROM simulation_chats WHERE id = $1",
-                chat_id
-            )
-            if not chat:
-                raise ValueError(f"Chat {chat_id} not found")
+            # Use service layer for database operations
+            from app.services.simulation_service import SimulationService
+            service = SimulationService(conn)
 
-            # Keep existing TEXT_TEXT flow unchanged
             # 1. Add the user message to the chat (skip if this is a retry)
             sio_instance = get_sio_instance()
             if message and message.strip() != "" and not is_retry:
-                user_message = await conn.fetchrow("""
-                    INSERT INTO simulation_messages (chat_id, type, content, completed, created_at)
-                    VALUES ($1, $2, $3, $4, NOW())
-                    RETURNING id, created_at
-                """, chat_id, "query", message, True)
+                user_message = await service.create_user_message(str(chat_id), message)
 
                 # 2. Emit user message to connected clients
                 logger.info(f"Emitting user message to room simulation_{chat_id}")
@@ -751,11 +390,7 @@ async def process_simulation_message_websocket(
                 logger.info(f"Skipping user message creation for retry in chat {chat_id}")
 
             # 3. Create placeholder assistant message
-            assistant_message = await conn.fetchrow("""
-                INSERT INTO simulation_messages (chat_id, type, content, completed, created_at)
-                VALUES ($1, $2, $3, $4, NOW())
-                RETURNING id, created_at
-            """, chat_id, "response", "", False)
+            assistant_message = await service.create_assistant_message_placeholder(str(chat_id))
 
             # 4. Emit placeholder assistant message
             logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
@@ -789,10 +424,7 @@ async def process_simulation_message_websocket(
                         run_id = await get_active_run(str(chat_id))
                         if run_id and await is_run_cancelled(run_id):
                             cancelled = True
-                            await conn.execute(
-                                "UPDATE simulation_messages SET completed = true WHERE id = $1",
-                                assistant_message['id']
-                            )
+                            await service.complete_message(str(assistant_message['id']))
                             break
                     except Exception:
                         pass
@@ -801,10 +433,7 @@ async def process_simulation_message_websocket(
                     accumulated_content += token
 
                     # Update the database with accumulated content
-                    await conn.execute(
-                        "UPDATE simulation_messages SET content = $1 WHERE id = $2",
-                        accumulated_content, assistant_message['id']
-                    )
+                    await service.update_message_content(str(assistant_message['id']), accumulated_content)
 
                     logger.info(
                         f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
@@ -838,11 +467,7 @@ async def process_simulation_message_websocket(
                 )
 
                 # Persist error onto the assistant message and emit completion + error
-                await conn.execute("""
-                    UPDATE simulation_messages 
-                    SET content = $1, completed = true 
-                    WHERE id = $2
-                """, error_text, assistant_message['id'])
+                await service.complete_message(str(assistant_message['id']), error_text)
 
                 sio_instance = get_sio_instance()
                 await sio_instance.emit(
@@ -872,11 +497,7 @@ async def process_simulation_message_websocket(
 
                     # Keep content as-is, don't add cancellation notice
                     # Mark message as completed when cancelled
-                    await conn.execute("""
-                        UPDATE simulation_messages 
-                        SET content = $1, completed = true 
-                        WHERE id = $2
-                    """, accumulated_content, assistant_message['id'])
+                    await service.complete_message(str(assistant_message['id']), accumulated_content)
 
                     # Emit cancellation signal
                     logger.info(f"Emitting cancellation to room simulation_{chat_id}")
@@ -894,10 +515,7 @@ async def process_simulation_message_websocket(
                     raise e
 
             # 6. Mark as completed
-            await conn.execute(
-                "UPDATE simulation_messages SET completed = true WHERE id = $1",
-                assistant_message['id']
-            )
+            await service.complete_message(str(assistant_message['id']))
 
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
@@ -913,30 +531,21 @@ async def process_simulation_message_websocket(
                 )
                 
                 # 8. Trigger hint generation for practice simulations only (fire and forget)
-                # Get the simulation via attempt to check if it's a practice simulation
-                attempt = await conn.fetchrow(
-                    "SELECT simulation_id FROM simulation_attempts WHERE id = $1",
-                    chat['attempt_id']
-                )
+                # Use optimized query to get simulation metadata
+                sim_metadata = await service.get_simulation_for_chat(str(chat_id))
                 
-                if attempt:
-                    simulation = await conn.fetchrow(
-                        "SELECT practice_simulation FROM simulations WHERE id = $1",
-                        attempt['simulation_id']
-                    )
-                    
-                    if simulation and simulation['practice_simulation']:
-                        logger.info(f"Triggering hint generation for practice message {assistant_message['id']}")
-                        asyncio.create_task(
-                            _generate_hints_background(
-                                chat_id=chat_id,
-                                message_id=assistant_message['id'],
-                                department_id=department_id,
-                                sio_instance=sio_instance
-                            )
+                if sim_metadata['practice_simulation']:
+                    logger.info(f"Triggering hint generation for practice message {assistant_message['id']}")
+                    asyncio.create_task(
+                        _generate_hints_background(
+                            chat_id=chat_id,
+                            message_id=assistant_message['id'],
+                            department_id=department_id,
+                            sio_instance=sio_instance
                         )
-                    else:
-                        logger.debug(f"Skipping hint generation for non-practice simulation")
+                    )
+                else:
+                    logger.debug(f"Skipping hint generation for non-practice simulation")
 
         except Exception as e:
             logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
@@ -947,11 +556,7 @@ async def process_simulation_message_websocket(
             try:
                 error_text = f"Error: {str(e)}"
                 if "assistant_message" in locals() and assistant_message is not None:
-                    await conn.execute("""
-                        UPDATE simulation_messages 
-                        SET content = $1, completed = true 
-                        WHERE id = $2
-                    """, error_text, assistant_message['id'])
+                    await service.complete_message(str(assistant_message['id']), error_text)
 
                     # Emit a completion update using the same message so the client updates content
                     await sio_instance.emit(
