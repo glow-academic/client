@@ -19,14 +19,19 @@
 -- 13. Removes simulation tag tables
 -- ============================================================================
 
-BEGIN;
-
 -- ============================================================================
 -- SECTION 1: Update reasoning_effort enum to include "none"
 -- ============================================================================
+-- NOTE: Enum value must be added in a separate transaction and committed
+-- before it can be used in UPDATE statements
 
--- Add "none" value to reasoning_effort enum
 ALTER TYPE reasoning_effort ADD VALUE IF NOT EXISTS 'none';
+
+-- ============================================================================
+-- Main migration transaction starts here
+-- ============================================================================
+
+BEGIN;
 
 -- ============================================================================
 -- SECTION 2: Create Junction Tables
@@ -162,7 +167,10 @@ UPDATE agents
 SET reasoning = 'medium'
 WHERE reasoning IS NULL;
 
--- Skip backfilling documents.file_id - let it fail if NULL values exist
+-- Backfill documents.file_id (50% NULL) - set to 'unassigned' for documents without file_id
+UPDATE documents
+SET file_id = 'unassigned'
+WHERE file_id IS NULL;
 
 -- Backfill cohorts.description (0% NULL, but good to have default)
 UPDATE cohorts
@@ -193,6 +201,9 @@ WHERE feedback IS NULL;
 -- ============================================================================
 -- SECTION 6: Drop columns being replaced by junction tables or removed
 -- ============================================================================
+
+-- Drop analytics materialized view first (depends on completed_at)
+DROP MATERIALIZED VIEW IF EXISTS analytics CASCADE;
 
 -- Drop metrics column from app_logs (100% NULL, never used)
 ALTER TABLE app_logs DROP COLUMN IF EXISTS metrics;
@@ -434,6 +445,14 @@ DROP TABLE IF EXISTS simulation_tags CASCADE;
 -- Drop the associated views if they exist
 DROP VIEW IF EXISTS v_tagged_documents CASCADE;
 DROP VIEW IF EXISTS v_tagged_parameter_items CASCADE;
+
+-- ============================================================================
+-- SECTION 15: Recreate analytics materialized view (updated for new schema)
+-- ============================================================================
+
+-- Recreate analytics MV without completed_at column
+-- Source: database/app/analytics/init.sql (already updated for BCNF schema)
+\i database/app/analytics/init.sql
 
 COMMIT;
 
