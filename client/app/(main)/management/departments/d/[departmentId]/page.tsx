@@ -9,7 +9,6 @@ import { auth } from "@/auth";
 import Department from "@/components/common/department/Department";
 import { departmentsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchDepartmentDetail } from "@/lib/api/v2/server/departments";
-import { departmentRepo } from "@/lib/repos/departmentRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -19,11 +18,21 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { departmentId } = await params;
-  const department = await departmentRepo.find(departmentId);
-  return {
-    title: `${department?.title || "Department"} Department`,
-    description: `${department?.title + " " + department?.description || "Department"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  try {
+    const department = await fetchDepartmentDetail(departmentId, profileId);
+    return {
+      title: `${department?.title || "Department"} Department`,
+      description: `${department?.title + " " + department?.description || "Department"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Department",
+      description: `Department in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function DepartmentEditPage({

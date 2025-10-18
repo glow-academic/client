@@ -10,7 +10,6 @@ import RubricEdit from "@/components/management/rubrics/RubricEdit";
 import { auth } from "@/auth";
 import { rubricsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchRubricDetail } from "@/lib/api/v2/server/rubrics";
-import { rubricRepo } from "@/lib/repos/rubricRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -20,12 +19,21 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { rubricId } = await params;
-  const rubric = await rubricRepo.find(rubricId);
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  return {
-    title: `${rubric?.name || "Rubric"}`,
-    description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const rubric = await fetchRubricDetail(rubricId, profileId);
+    return {
+      title: `${rubric?.name || "Rubric"}`,
+      description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Rubric",
+      description: `Rubric in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function EditRubricPage({

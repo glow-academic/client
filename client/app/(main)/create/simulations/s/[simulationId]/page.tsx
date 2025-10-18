@@ -10,7 +10,6 @@ import SimulationEdit from "@/components/create/simulations/SimulationEdit";
 import { auth } from "@/auth";
 import { simulationsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchSimulationDetail } from "@/lib/api/v2/server/simulations";
-import { simulationRepo } from "@/lib/repos/simulationRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -20,12 +19,21 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { simulationId } = await params;
-  const simulation = await simulationRepo.find(simulationId);
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  return {
-    title: `${simulation?.title || "Simulation"}`,
-    description: `${simulation?.title || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const simulation = await fetchSimulationDetail(simulationId, profileId);
+    return {
+      title: `${simulation?.name || "Simulation"}`,
+      description: `${simulation?.name || "Simulation"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Simulation",
+      description: `Simulation in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function EditSimulationPage({

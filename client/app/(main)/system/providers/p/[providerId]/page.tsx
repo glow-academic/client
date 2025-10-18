@@ -9,7 +9,6 @@ import { auth } from "@/auth";
 import ProviderEdit from "@/components/system/providers/ProviderEdit";
 import { providersDetailKeys } from "@/lib/api/v2/keys";
 import { fetchProviderDetail } from "@/lib/api/v2/server/providers";
-import { providerRepo } from "@/lib/repos/providerRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -20,15 +19,23 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   // read route params
   const { providerId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  const provider = await providerRepo.find(providerId);
-
-  return {
-    title: `${provider?.name || "Provider"}`,
-    description:
-      provider?.description ||
-      `Manage individual AI providers in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const provider = await fetchProviderDetail(providerId, profileId);
+    return {
+      title: `${provider?.name || "Provider"}`,
+      description:
+        provider?.description ||
+        `Manage individual AI providers in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Provider",
+      description: `Manage individual AI providers in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function ProviderEditPage({

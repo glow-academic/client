@@ -10,7 +10,6 @@ import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
 import { auth } from "@/auth";
 import { scenariosDetailKeys } from "@/lib/api/v2/keys";
 import { fetchScenarioDetail } from "@/lib/api/v2/server/scenarios";
-import { scenarioRepo } from "@/lib/repos/scenarioRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -20,12 +19,21 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { scenarioId } = await params;
-  const scenario = await scenarioRepo.find(scenarioId);
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  return {
-    title: `${scenario?.name || "Scenario"}`,
-    description: `${scenario?.name + " " + scenario?.problemStatement || "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const scenario = await fetchScenarioDetail(scenarioId, profileId);
+    return {
+      title: `${scenario?.name || "Scenario"}`,
+      description: `${scenario?.name + " " + scenario?.problem_statement || "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Scenario",
+      description: `Scenario in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function EditScenarioPage({

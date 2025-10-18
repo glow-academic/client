@@ -10,7 +10,6 @@ import CohortEdit from "@/components/cohorts/CohortEdit";
 import { auth } from "@/auth";
 import { cohortsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchCohortDetail } from "@/lib/api/v2/server/cohorts";
-import { cohortRepo } from "@/lib/repos/cohortRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -21,13 +20,21 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   // read route params
   const { cohortId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  const cohort = await cohortRepo.find(cohortId);
-
-  return {
-    title: `${cohort?.title || "Cohort"} Edit`,
-    description: `${cohort ? `${cohort.title} ${cohort.description}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const cohort = await fetchCohortDetail(cohortId, profileId);
+    return {
+      title: `${cohort?.title || "Cohort"} Edit`,
+      description: `${cohort ? `${cohort.title} ${cohort.description}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Cohort Edit",
+      description: `Cohort in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function CohortEditPage({

@@ -10,7 +10,6 @@ import PersonaEdit from "@/components/create/personas/PersonaEdit";
 import { auth } from "@/auth";
 import { personasDetailKeys } from "@/lib/api/v2/keys";
 import { fetchPersonaDetail } from "@/lib/api/v2/server/personas";
-import { personaRepo } from "@/lib/repos/personaRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -20,11 +19,21 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { personaId } = await params;
-  const persona = await personaRepo.find(personaId);
-  return {
-    title: `${persona?.name || "Persona"} Persona`,
-    description: `${persona?.name + " " + persona?.description || "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
+
+  try {
+    const persona = await fetchPersonaDetail(personaId, profileId);
+    return {
+      title: `${persona?.name || "Persona"} Persona`,
+      description: `${persona?.name + " " + persona?.description || "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Persona",
+      description: `Persona in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function PersonaEditPage({

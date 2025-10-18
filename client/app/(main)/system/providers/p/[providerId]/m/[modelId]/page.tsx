@@ -9,26 +9,33 @@ import { auth } from "@/auth";
 import ModelEdit from "@/components/system/providers/ModelEdit";
 import { modelsDetailKeys } from "@/lib/api/v2/keys";
 import { fetchModelDetail } from "@/lib/api/v2/server/models";
-import { modelRepo } from "@/lib/repos/modelRepo";
 import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ modelId: string }> },
+  { params }: { params: Promise<{ modelId: string; providerId: string }> },
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
-  const { modelId } = await params;
+  const { modelId, providerId } = await params;
+  const session = await auth();
+  const profileId = session?.effectiveProfileId || "";
 
-  const model = await modelRepo.find(modelId);
-
-  return {
-    title: `${model?.name || "Model"}`,
-    description:
-      model?.description ||
-      `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
+  try {
+    const model = await fetchModelDetail(modelId, providerId, profileId);
+    return {
+      title: `${model?.name || "Model"}`,
+      description:
+        model?.description ||
+        `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Model",
+      description: `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
 }
 
 export default async function ModelEditPage({
