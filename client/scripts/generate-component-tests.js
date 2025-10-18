@@ -28,6 +28,7 @@ const EXCLUDE_DIRECTORIES = [
   "drizzle",
   "api",
   "auth",
+  "components/ui",
   "breadcrumb-utils.ts",
   "logger.ts",
   "navigation-utils.ts",
@@ -49,13 +50,23 @@ const project = new Project({
 /**
  * Check if a path should be excluded
  */
-function shouldExcludePath(relativePath) {
+function shouldExcludePath(relativePath, sourceName = "") {
   const pathParts = relativePath.split(path.sep);
+  const fullPath = sourceName ? `${sourceName}/${relativePath}` : relativePath;
 
   return EXCLUDE_DIRECTORIES.some((exclude) => {
     // Handle file exclusions (ends with .ts)
     if (exclude.endsWith(".ts")) {
       return pathParts.some((part) => part === exclude);
+    }
+
+    // Handle path patterns like "components/ui"
+    if (exclude.includes("/")) {
+      return (
+        fullPath.startsWith(exclude) ||
+        fullPath.includes(`/${exclude}/`) ||
+        fullPath.includes(`/${exclude}`)
+      );
     }
 
     // Handle directory exclusions
@@ -79,8 +90,10 @@ function scanComponentFiles(dir, relativePath = "", sourceName = "") {
 
       if (stat.isDirectory()) {
         // Skip excluded directories
-        if (shouldExcludePath(itemRelativePath)) {
-          console.log(`🚫 Excluding directory: ${itemRelativePath}`);
+        if (shouldExcludePath(itemRelativePath, sourceName)) {
+          console.log(
+            `🚫 Excluding directory: ${sourceName}/${itemRelativePath}`
+          );
           continue;
         }
 
