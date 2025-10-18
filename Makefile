@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client start-db migrate-db connect-db fresh-db
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -112,6 +112,18 @@ test-client-cov:
 	@echo "Running client tests with coverage..."
 	@cd client && yarn test:coverage
 	@echo "✅ Client coverage report generated"
+
+# Run client typecheck
+typecheck-client:
+	@echo "Running client typecheck..."
+	@cd client && yarn typecheck
+	@echo "✅ Client typecheck complete"
+
+# Build client for production
+build-client:
+	@echo "Building client for production..."
+	@cd client && yarn build
+	@echo "✅ Client build complete"
 
 
 # Start all services in foreground with combined logs
@@ -229,12 +241,16 @@ help:
 	@echo "  format       - Format code with Ruff"
 	@echo "  lint         - Run linter checks"
 	@echo "  typecheck    - Run MyPy for static type checking"
+	@echo "  typecheck-client - Run TypeScript type checking for client"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test         - Run server unit tests (pytest)"
 	@echo "  test-cov     - Run server tests with coverage"
 	@echo "  test-client  - Run client unit tests (vitest)"
 	@echo "  test-client-cov - Run client tests with coverage"
+	@echo ""
+	@echo "Build:"
+	@echo "  build-client - Build client for production"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  cleanup      - Clean up generated files and cache"
