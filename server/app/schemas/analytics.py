@@ -79,6 +79,7 @@ class MetricResponse(BaseModel):
     hasData: bool
     method: Method
     currentValue: int
+    trendAnalysis: Optional[str] = None
     valueField: Optional[str] = None
     keyField: Optional[str] = None
     trendData: List[TrendData]
@@ -886,6 +887,14 @@ class DashboardInsights(BaseModel):
     simulation_composition: Optional[str] = None
 
 
+class Thresholds(BaseModel):
+    """Performance thresholds for analytics metrics."""
+    
+    danger: int
+    warning: int
+    success: int
+
+
 class DashboardBundleResponse(BaseModel):
     """Complete dashboard bundle with all metrics, history, insights, and mappings."""
 
@@ -895,6 +904,7 @@ class DashboardBundleResponse(BaseModel):
     footer: DashboardFooterMetrics
     history: AttemptHistoryResponse
     insights: DashboardInsights
+    thresholds: Thresholds
 
     # Normalized entity mappings (from base.py)
     simulation_mapping: SimulationMapping

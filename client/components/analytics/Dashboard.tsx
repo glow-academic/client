@@ -13,7 +13,6 @@ import { useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDashboardBundle } from "@/lib/api/v2/hooks/analytics";
-import { computeTrendAnalysis } from "@/utils/analytics-utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import ScenarioPerformance from "../common/analytics/footer/ScenarioPerformance";
@@ -53,16 +52,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-
-  // Threshold data
-  const thresholds = useMemo(
-    () => ({
-      danger: 60,
-      warning: 75,
-      success: 85,
-    }),
-    []
-  );
 
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
@@ -117,7 +106,13 @@ export default function Dashboard({ profileId }: DashboardProps) {
     error,
   } = useDashboardBundle(filters, rqOpts);
 
-  // Compute trend analysis for header metrics (client-side only as needed for sparklines)
+  // Get thresholds from server (or use defaults if not available)
+  const thresholds = useMemo(
+    () => bundle?.thresholds ?? { danger: 60, warning: 75, success: 85 },
+    [bundle?.thresholds]
+  );
+
+  // Get trend analysis from server (computed server-side)
   const trendAnalysis = useMemo(() => {
     if (!bundle) {
       return {
@@ -135,56 +130,16 @@ export default function Dashboard({ profileId }: DashboardProps) {
     }
 
     return {
-      averageScore:
-        computeTrendAnalysis(
-          bundle.header.average_score.trendData,
-          "Average score"
-        ) ?? null,
-      completion:
-        computeTrendAnalysis(
-          bundle.header.completion_percentage.trendData,
-          "Completion percentage"
-        ) ?? null,
-      passRate:
-        computeTrendAnalysis(
-          bundle.header.first_attempt_pass_rate.trendData,
-          "First attempt pass rate"
-        ) ?? null,
-      highestScore:
-        computeTrendAnalysis(
-          bundle.header.highest_score.trendData,
-          "Highest score"
-        ) ?? null,
-      messages:
-        computeTrendAnalysis(
-          bundle.header.messages_per_session.trendData,
-          "Messages per session"
-        ) ?? null,
-      responseTime:
-        computeTrendAnalysis(
-          bundle.header.persona_response_times.trendData,
-          "Response time"
-        ) ?? null,
-      sessionEfficiency:
-        computeTrendAnalysis(
-          bundle.header.session_efficiency.trendData,
-          "Session efficiency"
-        ) ?? null,
-      stagnationRate:
-        computeTrendAnalysis(
-          bundle.header.stagnation_rate.trendData,
-          "Stagnation rate"
-        ) ?? null,
-      timeSpent:
-        computeTrendAnalysis(
-          bundle.header.time_spent.trendData,
-          "Time spent"
-        ) ?? null,
-      totalAttempts:
-        computeTrendAnalysis(
-          bundle.header.total_attempts.trendData,
-          "Total attempts"
-        ) ?? null,
+      averageScore: bundle.header.average_score.trendAnalysis ?? null,
+      completion: bundle.header.completion_percentage.trendAnalysis ?? null,
+      passRate: bundle.header.first_attempt_pass_rate.trendAnalysis ?? null,
+      highestScore: bundle.header.highest_score.trendAnalysis ?? null,
+      messages: bundle.header.messages_per_session.trendAnalysis ?? null,
+      responseTime: bundle.header.persona_response_times.trendAnalysis ?? null,
+      sessionEfficiency: bundle.header.session_efficiency.trendAnalysis ?? null,
+      stagnationRate: bundle.header.stagnation_rate.trendAnalysis ?? null,
+      timeSpent: bundle.header.time_spent.trendAnalysis ?? null,
+      totalAttempts: bundle.header.total_attempts.trendAnalysis ?? null,
     };
   }, [bundle]);
 

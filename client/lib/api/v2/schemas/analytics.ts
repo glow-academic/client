@@ -69,6 +69,7 @@ export const MetricResponseSchema = z.object({
   hasData: z.boolean(),
   method: MethodSchema,
   currentValue: z.number(),
+  trendAnalysis: z.string().nullable().optional(),
   valueField: z.string().nullish(),
   keyField: z.string().nullish(),
   trendData: z.array(TrendDataSchema),
@@ -778,6 +779,12 @@ export const DashboardInsightsSchema = z.object({
   simulation_composition: z.string().nullable(),
 });
 
+export const ThresholdsSchema = z.object({
+  danger: z.number(),
+  warning: z.number(),
+  success: z.number(),
+});
+
 export const DashboardBundleResponseSchema = z.object({
   header: DashboardHeaderMetricsSchema,
   primary: DashboardPrimaryMetricsSchema,
@@ -785,6 +792,7 @@ export const DashboardBundleResponseSchema = z.object({
   footer: DashboardFooterMetricsSchema,
   history: AttemptHistoryResponseSchema,
   insights: DashboardInsightsSchema,
+  thresholds: ThresholdsSchema,
   simulation_mapping: SimulationMappingSchema,
   rubric_mapping: RubricMappingSchema,
   parameter_mapping: ParameterMappingSchema,
@@ -804,6 +812,7 @@ export type DashboardFooterMetrics = z.infer<
   typeof DashboardFooterMetricsSchema
 >;
 export type DashboardInsights = z.infer<typeof DashboardInsightsSchema>;
+export type Thresholds = z.infer<typeof ThresholdsSchema>;
 export type DashboardBundleResponse = z.infer<
   typeof DashboardBundleResponseSchema
 >;

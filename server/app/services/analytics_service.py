@@ -37,7 +37,7 @@ from app.schemas.analytics import (AnalyticsFilters, AttemptHistoryResponse,
                                    ScenarioStatsResponse,
                                    SimulationCompositionResponse,
                                    SimulationPerformanceResponse,
-                                   SkillPerformanceResponse)
+                                   SkillPerformanceResponse, Thresholds)
 from app.schemas.base import (ParameterItemMapping, ParameterItemMappingItem,
                               ParameterMapping, ParameterMappingItem,
                               PersonaMapping, PersonaMappingItem,
@@ -92,7 +92,7 @@ class AnalyticsService:
         
         return fetcher
 
-    def _create_pool_metric_fetcher(self, query_func: Callable[[], Tuple[str, List[Any]]]) -> Callable[[], Awaitable[MetricResponse]]:
+    def _create_pool_metric_fetcher(self, query_func: Callable[[], Tuple[str, List[Any]]], metric_name: str = "Metric") -> Callable[[], Awaitable[MetricResponse]]:
         """
         Create a metric fetcher function that acquires its own database connection.
         
@@ -101,6 +101,7 @@ class AnalyticsService:
         
         Args:
             query_func: Function that returns (query, params) tuple
+            metric_name: Name of the metric for trend analysis text
             
         Returns:
             Async function that acquires a connection, runs the query, and returns MetricResponse
@@ -120,6 +121,7 @@ class AnalyticsService:
                         hasData=False,
                         method=Method.AVG,
                         currentValue=0,
+                        trendAnalysis=None,
                         trendData=[],
                         dataPoints=[],
                     )
@@ -132,9 +134,54 @@ class AnalyticsService:
                     "trendData": result.get("trend_data"),
                     "dataPoints": result.get("data_points"),
                 })
+                
+                # Compute trend analysis
+                trend_data = parsed_result.get("trendData", [])
+                trend_analysis = self._compute_trend_analysis(trend_data, metric_name) if trend_data else None
+                parsed_result["trendAnalysis"] = trend_analysis
+                
                 return MetricResponse.model_validate(parsed_result)
         
         return fetcher
+
+    def _compute_trend_analysis(self, trend_data: List[Any], metric_name: str) -> Optional[str]:
+        """
+        Compute trend analysis text from trend data.
+        
+        Replicates client-side computeTrendAnalysis logic:
+        - Compares recent 3 data points vs first 3 data points
+        - Calculates percent change
+        - Returns descriptive text or None
+        """
+        if not trend_data or len(trend_data) < 2:
+            return None
+        
+        recent_data = trend_data[-3:]
+        earlier_data = trend_data[:3]
+        
+        if not recent_data or not earlier_data:
+            return None
+        
+        recent_avg = sum(d.get('value', 0) for d in recent_data) / len(recent_data)
+        earlier_avg = sum(d.get('value', 0) for d in earlier_data) / len(earlier_data)
+        
+        change = recent_avg - earlier_avg
+        change_percent = round((change / earlier_avg) * 100) if earlier_avg > 0 else 0
+        
+        if abs(change_percent) < 1:
+            return None
+        
+        # Determine period based on data length
+        if len(trend_data) <= 7:
+            period = "3 days"
+        elif len(trend_data) <= 14:
+            period = "1 week"
+        else:
+            period = "1 month"
+        
+        direction = "increased" if change_percent > 0 else "decreased"
+        
+        return f"{metric_name} {direction} {abs(change_percent)}% over the past {period}"
 
     def _parse_json_strings_recursive(self, obj: Any) -> Any:
         """Recursively parse JSON strings in nested structures.
@@ -158,7 +205,7 @@ class AnalyticsService:
             return obj
 
     async def _execute_metric_query(
-        self, query: str, params: List[Any]
+        self, query: str, params: List[Any], metric_name: str = "Metric"
     ) -> MetricResponse:
         """Execute a metric query and parse the result."""
         result = await self.conn.fetchrow(query, *params)
@@ -182,11 +229,15 @@ class AnalyticsService:
         if isinstance(data_points, str):
             data_points = json.loads(data_points) if data_points else []
 
+        # Compute trend analysis from trend data
+        trend_analysis = self._compute_trend_analysis(trend_data, metric_name) if trend_data else None
+        
         # Parse the result into MetricResponse
         return MetricResponse(
             hasData=result['has_data'],
             method=result['method'],
             currentValue=result['current_value'],
+            trendAnalysis=trend_analysis,
             valueField=result['value_field'],
             keyField=result['key_field'],
             trendData=trend_data or [],
@@ -208,7 +259,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Average score")
         
         key = keys.analytics_average_score(filters)
         
@@ -224,7 +275,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Average score")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -243,7 +294,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Completion percentage")
         
         key = keys.analytics_completion_percentage(filters)
         
@@ -259,7 +310,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Completion percentage")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -278,7 +329,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "First attempt pass rate")
         
         key = keys.analytics_first_attempt_pass_rate(filters)
         
@@ -294,7 +345,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "First attempt pass rate")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -311,7 +362,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Highest score")
         
         key = keys.analytics_highest_score(filters)
         
@@ -327,7 +378,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Highest score")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -346,7 +397,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Messages per session")
         
         key = keys.analytics_messages_per_session(filters)
         
@@ -362,7 +413,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Messages per session")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -381,7 +432,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Response time")
         
         key = keys.analytics_persona_response_times(filters)
         
@@ -397,7 +448,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Response time")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -416,7 +467,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Session efficiency")
         
         key = keys.analytics_session_efficiency(filters)
         
@@ -432,7 +483,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Session efficiency")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -449,7 +500,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Stagnation rate")
         
         key = keys.analytics_stagnation_rate(filters)
         
@@ -465,7 +516,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Stagnation rate")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -482,7 +533,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Time spent")
         
         key = keys.analytics_time_spent(filters)
         
@@ -498,7 +549,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Time spent")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -515,7 +566,7 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
+            return await self._execute_metric_query(query, params, "Total attempts")
         
         key = keys.analytics_total_attempts(filters)
         
@@ -531,7 +582,7 @@ class AnalyticsService:
                 department_ids=filters.departmentIds,
             )
         
-        fetcher = self._create_pool_metric_fetcher(query_func)
+        fetcher = self._create_pool_metric_fetcher(query_func, "Total attempts")
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -1008,7 +1059,7 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return await self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params, "Improvement per day")
 
     async def get_perfect_scores(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get perfect scores metric."""
@@ -1021,7 +1072,7 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return await self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params, "Perfect scores")
 
     async def get_quickest_pass(self, filters: AnalyticsFilters) -> MetricResponse:
         """Get quickest pass metric."""
@@ -1034,7 +1085,7 @@ class AnalyticsService:
             profile_id=filters.profileId,
             department_ids=filters.departmentIds,
         )
-        return await self._execute_metric_query(query, params)
+        return await self._execute_metric_query(query, params, "Quickest pass")
 
     # Utility
     async def get_dashboard_bundle(
@@ -1147,6 +1198,13 @@ class AnalyticsService:
             ),
         )
 
+        # Standard thresholds for all metrics
+        thresholds = Thresholds(
+            danger=60,
+            warning=75,
+            success=85,
+        )
+        
         return DashboardBundleResponse(
             header=header,
             primary=primary,
@@ -1154,6 +1212,7 @@ class AnalyticsService:
             footer=footer,
             history=history,
             insights=insights,
+            thresholds=thresholds,
             simulation_mapping=simulation_mapping,
             rubric_mapping=rubric_mapping,
             parameter_mapping=parameter_mapping,
