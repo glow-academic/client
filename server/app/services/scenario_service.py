@@ -737,9 +737,7 @@ class ScenarioService:
                     )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_scenario_all(),
                     keys.tag_analytics_all(),
                 ])
@@ -831,9 +829,7 @@ class ScenarioService:
                     )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_scenario_by_id(request.scenarioId),
                     keys.tag_scenario_all(),
                     keys.tag_analytics_all(),
@@ -903,9 +899,7 @@ class ScenarioService:
             )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_scenario_all(),
                     keys.tag_analytics_all(),
                 ])
@@ -944,9 +938,7 @@ class ScenarioService:
             await self.conn.execute(query, *params)
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_scenario_by_id(request.scenarioId),
                     keys.tag_scenario_all(),
                     keys.tag_analytics_all(),

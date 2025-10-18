@@ -26,35 +26,24 @@ from app.schemas.simulations import (CreateSimulationRequest,
                                      SimulationsListResponse,
                                      UpdateSimulationRequest,
                                      UpdateSimulationResponse)
-from app.services.scenario_service import ScenarioService
+from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 
-class SimulationService:
+class SimulationService(BaseService):
     """Service layer for simulation operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = SimulationQueries()
-        self.scenario_service = ScenarioService(conn)
 
+    @with_cache(lambda self, filters: keys.simulation_list(filters))
     async def get_simulations_list(
         self, filters: SimulationsFilters
     ) -> SimulationsListResponse:
         """Get simulations list with permissions using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_simulations_list(filters)
-        
-        key = keys.simulation_list(filters)
-        
-        async def fetcher() -> SimulationsListResponse:
-            return await self._execute_get_simulations_list(filters)
-        
-        result: SimulationsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_simulations_list(filters)
 
     async def _execute_get_simulations_list(
         self, filters: SimulationsFilters
@@ -98,7 +87,10 @@ class SimulationService:
         if scenario_ids_to_fetch := list(
             set([sid for s in simulations for sid in s.scenario_ids])
         ):
-            scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(
+            # Create scenario service locally to avoid storing service dependencies
+            from app.services.scenario_service import ScenarioService
+            scenario_service = ScenarioService(self.conn)
+            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
             )
 
@@ -121,21 +113,12 @@ class SimulationService:
             rubric_mapping=rubric_mapping,
         )
 
+    @with_cache(lambda self, request: keys.simulation_by_id(request.simulationId, request.profileId))
     async def get_simulation_detail(
         self, request: SimulationDetailRequest
     ) -> SimulationDetailResponse:
         """Get detailed simulation information using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_get_simulation_detail(request)
-        
-        key = keys.simulation_by_id(request.simulationId, request.profileId)
-        
-        async def fetcher() -> SimulationDetailResponse:
-            return await self._execute_get_simulation_detail(request)
-        
-        result: SimulationDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_simulation_detail(request)
 
     async def _execute_get_simulation_detail(
         self, request: SimulationDetailRequest
@@ -221,7 +204,13 @@ class SimulationService:
         }
 
         # Get scenario mapping with enhanced data
-        scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(scenario_ids) if scenario_ids else {}
+        if scenario_ids:
+            # Create scenario service locally to avoid storing service dependencies
+            from app.services.scenario_service import ScenarioService
+            scenario_service = ScenarioService(self.conn)
+            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(scenario_ids)
+        else:
+            scenario_mapping = {}
 
         # Get department mapping
         department_mapping = {
@@ -375,9 +364,7 @@ class SimulationService:
                 )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_simulation_all(),
                     keys.tag_analytics_all(),
                 ])
@@ -434,9 +421,7 @@ class SimulationService:
                 )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_simulation_by_id(request.simulationId),
                     keys.tag_simulation_all(),
                     keys.tag_analytics_all(),
@@ -488,9 +473,7 @@ class SimulationService:
             )
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_simulation_all(),
                     keys.tag_analytics_all(),
                 ])
@@ -529,9 +512,7 @@ class SimulationService:
             await self.conn.execute(query, *params)
 
             # Invalidate affected caches
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
+            await self._invalidate_cache([
                     keys.tag_simulation_by_id(request.simulationId),
                     keys.tag_simulation_all(),
                     keys.tag_analytics_all(),
@@ -618,7 +599,11 @@ class SimulationService:
 
         # Randomly fill any null attributes in the scenario
         import uuid as uuid_module
-        scenario = await self.scenario_service.randomly_fill_scenario_attributes(
+
+        # Create scenario service locally to avoid storing service dependencies
+        from app.services.scenario_service import ScenarioService
+        scenario_service = ScenarioService(self.conn)
+        scenario = await scenario_service.randomly_fill_scenario_attributes(
             dict(old_scenario), uuid_module.UUID(department_id)
         )
 
@@ -830,9 +815,7 @@ class SimulationService:
         is_attempt_finished = next_chat_id == chat_id
 
         # Invalidate analytics caches (grades affect analytics)
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_analytics_all(),
             ])
 
@@ -878,6 +861,7 @@ class SimulationService:
             query = self.queries.update_message_completed()
             await self.conn.execute(query, message_id)
 
+    @with_cache(lambda self, chat_id: keys.simulation_for_chat(chat_id), fresh_ttl=10, stale_ttl=60)
     async def get_simulation_for_chat(self, chat_id: str) -> Dict[str, Any]:
         """Get simulation metadata from chat (optimized single JOIN query).
         
@@ -924,7 +908,11 @@ class SimulationService:
 
         # Randomly fill any null attributes
         import uuid as uuid_module
-        scenario = await self.scenario_service.randomly_fill_scenario_attributes(
+
+        # Create scenario service locally to avoid storing service dependencies
+        from app.services.scenario_service import ScenarioService
+        scenario_service = ScenarioService(self.conn)
+        scenario = await scenario_service.randomly_fill_scenario_attributes(
             dict(old_scenario), uuid_module.UUID(department_id)
         )
 
@@ -995,17 +983,14 @@ class SimulationService:
         except ValueError:
             return [{"error": f"Invalid sim_id format: {sim_id}"}]
         
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_get_simulation_attempts(str(simulation_uuid), limit)
-        
-        key = keys.simulation_attempts_list(str(simulation_uuid), limit)
-        
-        async def fetcher() -> List[Dict[str, Any]]:
-            return await self._execute_get_simulation_attempts(str(simulation_uuid), limit)
-        
-        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._get_simulation_attempts_cached(str(simulation_uuid), limit)
+
+    @with_cache(lambda self, sim_id, limit: keys.simulation_attempts_list(sim_id, limit))
+    async def _get_simulation_attempts_cached(
+        self, sim_id: str, limit: int
+    ) -> List[Dict[str, Any]]:
+        """Get simulation attempts with caching."""
+        return await self._execute_get_simulation_attempts(sim_id, limit)
 
     async def _execute_get_simulation_attempts(
         self, sim_id: str, limit: int
@@ -1073,17 +1058,12 @@ class SimulationService:
         except ValueError:
             return {"error": f"Invalid sim_id format: {sim_id}"}
         
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_get_simulation_overview(str(simulation_uuid))
-        
-        key = keys.simulation_overview(str(simulation_uuid))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._execute_get_simulation_overview(str(simulation_uuid))
-        
-        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._get_simulation_overview_cached(str(simulation_uuid))
+
+    @with_cache(lambda self, sim_id: keys.simulation_overview(sim_id))
+    async def _get_simulation_overview_cached(self, sim_id: str) -> Dict[str, Any]:
+        """Get simulation overview with caching."""
+        return await self._execute_get_simulation_overview(sim_id)
 
     async def _execute_get_simulation_overview(self, sim_id: str) -> Dict[str, Any]:
         """Execute simulation overview query (extracted for caching)."""
@@ -1169,17 +1149,14 @@ class SimulationService:
         Returns:
             List of simulation dictionaries with scores
         """
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_search_simulations(query, limit)
-        
-        key = keys.simulation_search(query, limit)
-        
-        async def fetcher() -> List[Dict[str, Any]]:
-            return await self._execute_search_simulations(query, limit)
-        
-        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._search_simulations_cached(query, limit)
+
+    @with_cache(lambda self, query, limit: keys.simulation_search(query, limit))
+    async def _search_simulations_cached(
+        self, query: str, limit: int
+    ) -> List[Dict[str, Any]]:
+        """Search simulations with caching."""
+        return await self._execute_search_simulations(query, limit)
 
     async def _execute_search_simulations(
         self, query: str, limit: int

@@ -326,9 +326,7 @@ class DepartmentService:
                 await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_department_all(),
                 keys.tag_profile_all(),
             ])
@@ -388,9 +386,7 @@ class DepartmentService:
                 await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_department_by_id(request.departmentId),
                 keys.tag_department_all(),
                 keys.tag_profile_all(),
@@ -440,9 +436,7 @@ class DepartmentService:
             await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_department_all(),
                 keys.tag_profile_all(),
             ])
@@ -491,9 +485,7 @@ class DepartmentService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_department_by_id(request.departmentId),
                 keys.tag_department_all(),
                 keys.tag_profile_all(),

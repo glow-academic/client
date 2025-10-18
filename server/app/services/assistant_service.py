@@ -9,14 +9,15 @@ from app.cache import keys
 from app.extensions import get_query_client
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
+from app.services.base import BaseService
 
 
-class AssistantService:
+class AssistantService(BaseService):
     """Service layer for assistant agent operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = AssistantQueries()
 
     async def get_assistant_run_context(
@@ -134,9 +135,7 @@ class AssistantService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
             ])
@@ -196,9 +195,7 @@ class AssistantService:
         chat_id_str = str(result["id"])
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
             ])
@@ -228,9 +225,7 @@ class AssistantService:
         result = await self.conn.fetchrow(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
             ])
@@ -260,9 +255,7 @@ class AssistantService:
         result = await self.conn.fetchrow(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
             ])
@@ -285,9 +278,7 @@ class AssistantService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches (coarse-grained since we don't have chat_id)
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_assistant_all()])
+        await self._invalidate_cache([keys.tag_assistant_all()])
 
     async def complete_message(self, message_id: UUID, content: str) -> None:
         """
@@ -302,9 +293,7 @@ class AssistantService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches (coarse-grained since we don't have chat_id)
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_assistant_all()])
+        await self._invalidate_cache([keys.tag_assistant_all()])
 
     async def create_tool_call(
         self,
@@ -337,9 +326,7 @@ class AssistantService:
         result = await self.conn.fetchrow(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_assistant_by_chat_id(chat_id_str),
                 keys.tag_assistant_all(),
             ])
@@ -366,9 +353,7 @@ class AssistantService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches (coarse-grained since we don't have chat_id)
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_assistant_all()])
+        await self._invalidate_cache([keys.tag_assistant_all()])
 
     async def get_usage_stats(self, days: int = 7) -> Dict[str, Any]:
         """

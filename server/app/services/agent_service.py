@@ -2,12 +2,13 @@
 
 import json
 import uuid
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.extensions import get_query_client
 from app.queries.agent_queries import AgentQueries
+from app.queries.profile_queries import ProfileQueries
 from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 AgentItem, AgentsListRequest,
                                 AgentsListResponse, CreateAgentRequest,
@@ -16,16 +17,27 @@ from app.schemas.agents import (AgentDetailRequest, AgentDetailResponse,
                                 DuplicateAgentRequest, DuplicateAgentResponse,
                                 UpdateAgentRequest, UpdateAgentResponse)
 from app.schemas.base import ModelMapping, ModelMappingItem
+from app.services.base import BaseService, with_cache
 
 
-class AgentService:
+class AgentService(BaseService):
     """Service for agent operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = AgentQueries()
+        self.profile_queries = ProfileQueries()
 
+    async def _get_default_guest_profile_id(self) -> Optional[uuid.UUID]:
+        """Get default guest profile ID using queries directly."""
+        query, params = self.profile_queries.get_default_guest_profile()
+        result = await self.conn.fetchrow(query, *params)
+        if result:
+            return uuid.UUID(str(result['id']))
+        return None
+
+    @with_cache(lambda self, request: keys.agent_list(request.profileId))
     async def get_agents_list(
         self, request: AgentsListRequest
     ) -> AgentsListResponse:
@@ -38,26 +50,7 @@ class AgentService:
         Returns:
             AgentsListResponse
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_agents_list_direct(request)
-        
-        key = keys.agent_list(request.profileId)
-        
-        async def fetcher() -> AgentsListResponse:
-            return await self._get_agents_list_direct(request)
-        
-        return cast(
-            AgentsListResponse,
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_agents_list_direct(request)
     
     async def _get_agents_list_direct(
         self, request: AgentsListRequest
@@ -101,6 +94,7 @@ class AgentService:
 
         return AgentsListResponse(agents=agents, model_mapping=model_mapping)
 
+    @with_cache(lambda self, request: keys.agent_by_id(request.agentId))
     async def get_agent_detail(
         self, request: AgentDetailRequest
     ) -> AgentDetailResponse:
@@ -113,26 +107,7 @@ class AgentService:
         Returns:
             AgentDetailResponse
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_agent_detail_direct(request)
-        
-        key = keys.agent_by_id(request.agentId)
-        
-        async def fetcher() -> AgentDetailResponse:
-            return await self._get_agent_detail_direct(request)
-        
-        return cast(
-            AgentDetailResponse,
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_agent_detail_direct(request)
     
     async def _get_agent_detail_direct(
         self, request: AgentDetailRequest
@@ -236,9 +211,7 @@ class AgentService:
             raise ValueError("Failed to create agent")
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_agent_all()])
+        await self._invalidate_cache([keys.tag_agent_all()])
 
         return CreateAgentResponse(
             success=True,
@@ -270,9 +243,7 @@ class AgentService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_agent_by_id(request.agentId),
                 keys.tag_agent_all(),
                 keys.tag_department_all(),  # Departments reference agents
@@ -302,9 +273,7 @@ class AgentService:
             raise ValueError("Failed to duplicate agent")
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_agent_all()])
+        await self._invalidate_cache([keys.tag_agent_all()])
 
         return DuplicateAgentResponse(
             success=True,
@@ -329,9 +298,7 @@ class AgentService:
         await self.conn.execute(query, *params)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_agent_by_id(request.agentId),
                 keys.tag_agent_all(),
                 keys.tag_department_all(),
@@ -339,6 +306,7 @@ class AgentService:
 
         return DeleteAgentResponse(success=True, message="Agent deleted successfully")
 
+    @with_cache(lambda self, document_ids, department_id: keys.agent_classification_context([str(d) for d in document_ids], str(department_id)))
     async def get_classification_run_context(
         self, document_ids: list[uuid.UUID], department_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -357,26 +325,7 @@ class AgentService:
         Raises:
             ValueError: If no classify agent configured for department
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_classification_run_context_direct(document_ids, department_id)
-        
-        key = keys.agent_classification_context([str(d) for d in document_ids], str(department_id))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_classification_run_context_direct(document_ids, department_id)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_classification_run_context_direct(document_ids, department_id)
     
     async def _get_classification_run_context_direct(
         self, document_ids: list[uuid.UUID], department_id: uuid.UUID
@@ -445,12 +394,16 @@ class AgentService:
         count = int(result.split()[-1]) if result else 0
         
         # Invalidate affected caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_agent_all()])
+        await self._invalidate_cache([keys.tag_agent_all()])
         
         return count
 
+    @with_cache(lambda self, department_id, persona_id=None, document_ids=None, parameter_item_ids=None: keys.agent_scenario_context(
+        str(department_id),
+        str(persona_id) if persona_id else None,
+        [str(d) for d in document_ids] if document_ids else None,
+        [str(p) for p in parameter_item_ids] if parameter_item_ids else None
+    ))
     async def get_scenario_run_context(
         self,
         department_id: uuid.UUID,
@@ -476,34 +429,8 @@ class AgentService:
         Raises:
             ValueError: If no scenario agent configured for department
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_scenario_run_context_direct(
-                department_id, persona_id, document_ids, parameter_item_ids
-            )
-        
-        key = keys.agent_scenario_context(
-            str(department_id),
-            str(persona_id) if persona_id else None,
-            [str(d) for d in document_ids] if document_ids else None,
-            [str(p) for p in parameter_item_ids] if parameter_item_ids else None
-        )
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_scenario_run_context_direct(
-                department_id, persona_id, document_ids, parameter_item_ids
-            )
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
+        return await self._get_scenario_run_context_direct(
+            department_id, persona_id, document_ids, parameter_item_ids
         )
     
     async def _get_scenario_run_context_direct(
@@ -568,6 +495,7 @@ class AgentService:
             'default_guest_profile_id': context_row['guest_profile_id'],
         }
 
+    @with_cache(lambda self, chat_id: keys.agent_simulation_context(str(chat_id)))
     async def get_simulation_run_context(
         self, chat_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -586,26 +514,7 @@ class AgentService:
         Raises:
             ValueError: If chat not found or missing required data
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_simulation_run_context_direct(chat_id)
-        
-        key = keys.agent_simulation_context(str(chat_id))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_simulation_run_context_direct(chat_id)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_simulation_run_context_direct(chat_id)
     
     async def _get_simulation_run_context_direct(
         self, chat_id: uuid.UUID
@@ -628,9 +537,7 @@ class AgentService:
         # Resolve guest profile if needed
         profile_id = context_row['profile_id']
         if not profile_id:
-            from app.services.profile_service import ProfileService
-            profile_service = ProfileService(self.conn)
-            profile_id = await profile_service.get_default_guest_profile_id()
+            profile_id = await self._get_default_guest_profile_id()
         
         return {
             # Chat data
@@ -668,6 +575,7 @@ class AgentService:
             'documents': documents,
         }
 
+    @with_cache(lambda self, simulation_chat_id, department_id: keys.agent_grading_context(str(simulation_chat_id), str(department_id)))
     async def get_grading_run_context(
         self, simulation_chat_id: uuid.UUID, department_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -687,26 +595,7 @@ class AgentService:
         Raises:
             ValueError: If chat not found or no grade agent configured for department
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_grading_run_context_direct(simulation_chat_id, department_id)
-        
-        key = keys.agent_grading_context(str(simulation_chat_id), str(department_id))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_grading_run_context_direct(simulation_chat_id, department_id)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_grading_run_context_direct(simulation_chat_id, department_id)
     
     async def _get_grading_run_context_direct(
         self, simulation_chat_id: uuid.UUID, department_id: uuid.UUID
@@ -734,9 +623,7 @@ class AgentService:
         # Resolve guest profile if needed
         profile_id = context_row['profile_id']
         if not profile_id:
-            from app.services.profile_service import ProfileService
-            profile_service = ProfileService(self.conn)
-            profile_id = await profile_service.get_default_guest_profile_id()
+            profile_id = await self._get_default_guest_profile_id()
         
         return {
             # Chat data
@@ -790,6 +677,7 @@ class AgentService:
             'profile_id': profile_id,
         }
 
+    @with_cache(lambda self, simulation_chat_id: keys.agent_simulation_messages(str(simulation_chat_id)), fresh_ttl=10, stale_ttl=60)
     async def get_simulation_messages(
         self, simulation_chat_id: uuid.UUID
     ) -> List[Dict[str, Any]]:
@@ -802,26 +690,7 @@ class AgentService:
         Returns:
             List of message dicts
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_simulation_messages_direct(simulation_chat_id)
-        
-        key = keys.agent_simulation_messages(str(simulation_chat_id))
-        
-        async def fetcher() -> List[Dict[str, Any]]:
-            return await self._get_simulation_messages_direct(simulation_chat_id)
-        
-        return cast(
-            List[Dict[str, Any]],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=10,  # Shorter TTL since messages change during simulation
-                stale_ttl=60
-            )
-        )
+        return await self._get_simulation_messages_direct(simulation_chat_id)
     
     async def _get_simulation_messages_direct(
         self, simulation_chat_id: uuid.UUID
@@ -853,12 +722,11 @@ class AgentService:
         result = await self.conn.fetchval(query, *params)
         
         # Invalidate simulation messages cache
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_agent_all()])
+        await self._invalidate_cache([keys.tag_agent_all()])
         
         return uuid.UUID(result)
 
+    @with_cache(lambda self, message_id, chat_id, department_id: keys.agent_hint_context(str(message_id), str(chat_id), str(department_id)))
     async def get_hint_run_context(
         self, message_id: uuid.UUID, chat_id: uuid.UUID, department_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -880,26 +748,7 @@ class AgentService:
         Raises:
             ValueError: If message/chat not found or no hint agent configured for department
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_hint_run_context_direct(message_id, chat_id, department_id)
-        
-        key = keys.agent_hint_context(str(message_id), str(chat_id), str(department_id))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_hint_run_context_direct(message_id, chat_id, department_id)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_hint_run_context_direct(message_id, chat_id, department_id)
     
     async def _get_hint_run_context_direct(
         self, message_id: uuid.UUID, chat_id: uuid.UUID, department_id: uuid.UUID
@@ -927,9 +776,7 @@ class AgentService:
         # Resolve guest profile if needed
         profile_id = context_row['profile_id']
         if not profile_id:
-            from app.services.profile_service import ProfileService
-            profile_service = ProfileService(self.conn)
-            profile_id = await profile_service.get_default_guest_profile_id()
+            profile_id = await self._get_default_guest_profile_id()
         
         return {
             # Message data
@@ -966,6 +813,7 @@ class AgentService:
             'documents': documents,
         }
 
+    @with_cache(lambda self, chat_id, department_id, guardrail_type: keys.agent_guardrail_context(str(chat_id), str(department_id), guardrail_type))
     async def get_guardrail_run_context(
         self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
     ) -> Dict[str, Any]:
@@ -990,26 +838,7 @@ class AgentService:
                 f"Invalid guardrail_type: {guardrail_type}. Must be 'input' or 'output'"
             )
         
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_guardrail_run_context_direct(chat_id, department_id, guardrail_type)
-        
-        key = keys.agent_guardrail_context(str(chat_id), str(department_id), guardrail_type)
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_guardrail_run_context_direct(chat_id, department_id, guardrail_type)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_guardrail_run_context_direct(chat_id, department_id, guardrail_type)
     
     async def _get_guardrail_run_context_direct(
         self, chat_id: uuid.UUID, department_id: uuid.UUID, guardrail_type: str
@@ -1033,9 +862,7 @@ class AgentService:
         # Resolve guest profile if needed
         profile_id = context_row['profile_id']
         if not profile_id:
-            from app.services.profile_service import ProfileService
-            profile_service = ProfileService(self.conn)
-            profile_id = await profile_service.get_default_guest_profile_id()
+            profile_id = await self._get_default_guest_profile_id()
         
         return {
             # Agent data
@@ -1065,6 +892,7 @@ class AgentService:
         }
 
 
+    @with_cache(lambda self, chat_id, department_id: keys.agent_title_context(str(chat_id), str(department_id)))
     async def get_title_run_context(
         self, chat_id: uuid.UUID, department_id: uuid.UUID
     ) -> Dict[str, Any]:
@@ -1083,26 +911,7 @@ class AgentService:
         Raises:
             ValueError: If no title agent configured for department or chat not found
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._get_title_run_context_direct(chat_id, department_id)
-        
-        key = keys.agent_title_context(str(chat_id), str(department_id))
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._get_title_run_context_direct(chat_id, department_id)
-        
-        return cast(
-            Dict[str, Any],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        return await self._get_title_run_context_direct(chat_id, department_id)
     
     async def _get_title_run_context_direct(
         self, chat_id: uuid.UUID, department_id: uuid.UUID
@@ -1126,9 +935,7 @@ class AgentService:
         # Resolve guest profile if needed
         profile_id = context_row['profile_id']
         if not profile_id:
-            from app.services.profile_service import ProfileService
-            profile_service = ProfileService(self.conn)
-            profile_id = await profile_service.get_default_guest_profile_id()
+            profile_id = await self._get_default_guest_profile_id()
         
         return {
             # Agent data

@@ -450,6 +450,42 @@ def analytics_leaderboard_bundle(
     )
 
 
+def analytics_improvement_per_day(
+    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
+    """Key for improvement per day metric."""
+    return Key(
+        ns=NS_ANALYTICS,
+        name="improvement_per_day",
+        params={"category": "leaderboard", "filters": _serialize_filters(filters)},
+        v=v,
+    )
+
+
+def analytics_perfect_scores(
+    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
+    """Key for perfect scores metric."""
+    return Key(
+        ns=NS_ANALYTICS,
+        name="perfect_scores",
+        params={"category": "leaderboard", "filters": _serialize_filters(filters)},
+        v=v,
+    )
+
+
+def analytics_quickest_pass(
+    filters: Any, *, v: int = GLOBAL_CACHE_VERSION
+) -> Key:
+    """Key for quickest pass metric."""
+    return Key(
+        ns=NS_ANALYTICS,
+        name="quickest_pass",
+        params={"category": "leaderboard", "filters": _serialize_filters(filters)},
+        v=v,
+    )
+
+
 def analytics_reports_bundle(filters: Any, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
     """Key for reports bundle data."""
     return Key(
@@ -1140,6 +1176,16 @@ def simulation_search(query: str, limit: int, *, v: int = GLOBAL_CACHE_VERSION) 
         ns=NS_SIMULATION,
         name="search",
         params={"query": query, "limit": limit},
+        v=v,
+    )
+
+
+def simulation_for_chat(chat_id: str, *, v: int = GLOBAL_CACHE_VERSION) -> Key:
+    """Key for simulation metadata from chat."""
+    return Key(
+        ns=NS_SIMULATION,
+        name="for_chat",
+        params={"chat_id": chat_id},
         v=v,
     )
 

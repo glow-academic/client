@@ -311,9 +311,7 @@ class StaffService:
                 )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
@@ -377,9 +375,7 @@ class StaffService:
         # Transaction handled by context manager
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
@@ -424,9 +420,7 @@ class StaffService:
         # Transaction handled by context manager
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_by_id(request.profileId),
                 keys.tag_staff_all(),
                 keys.tag_profile_by_id(request.profileId),
@@ -477,9 +471,7 @@ class StaffService:
         # Transaction handled by context manager
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
@@ -515,9 +507,7 @@ class StaffService:
         # Transaction handled by context manager
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_by_id(request.profileId),
                 keys.tag_staff_all(),
                 keys.tag_profile_by_id(request.profileId),
@@ -552,9 +542,7 @@ class StaffService:
         # Transaction handled by context manager
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_staff_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),

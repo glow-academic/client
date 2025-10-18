@@ -8,14 +8,15 @@ import asyncpg  # type: ignore
 from app.cache import keys
 from app.extensions import get_query_client
 from app.queries.model_run_queries import ModelRunQueries
+from app.services.base import BaseService
 
 
-class ModelRunService:
+class ModelRunService(BaseService):
     """Service layer for model run operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = ModelRunQueries()
 
     async def create_model_run(
@@ -86,23 +87,21 @@ class ModelRunService:
             await self.conn.execute(query, *params)
 
         # Invalidate affected caches
-        qc = get_query_client()
-        if qc:
-            tags_to_invalidate = []
-            # Profile cache (rate limit queries depend on model run counts)
-            if profile_id is not None:
-                tags_to_invalidate.append(keys.tag_profile_by_id(profile_id_str))
-            tags_to_invalidate.append(keys.tag_profile_all())
-            
-            # Agent or assistant cache (model runs are linked)
-            if entity_type == "agent":
-                tags_to_invalidate.append(keys.tag_agent_by_id(entity_id_str))
-                tags_to_invalidate.append(keys.tag_agent_all())
-            else:
-                # For personas, invalidate assistant caches as they're closely related
-                tags_to_invalidate.append(keys.tag_assistant_all())
-            
-            await qc.invalidate(tags=tags_to_invalidate)
+        tags_to_invalidate = []
+        # Profile cache (rate limit queries depend on model run counts)
+        if profile_id is not None:
+            tags_to_invalidate.append(keys.tag_profile_by_id(profile_id_str))
+        tags_to_invalidate.append(keys.tag_profile_all())
+        
+        # Agent or assistant cache (model runs are linked)
+        if entity_type == "agent":
+            tags_to_invalidate.append(keys.tag_agent_by_id(entity_id_str))
+            tags_to_invalidate.append(keys.tag_agent_all())
+        else:
+            # For personas, invalidate assistant caches as they're closely related
+            tags_to_invalidate.append(keys.tag_assistant_all())
+        
+        await self._invalidate_cache(tags_to_invalidate)
 
         return UUID(model_run_id_str)
 

@@ -326,9 +326,7 @@ class RubricService:
                 )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_rubric_all(),      # Coarse-grained
                 keys.tag_analytics_all(),   # Related caches
             ])
@@ -419,9 +417,7 @@ class RubricService:
             )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
                 keys.tag_rubric_all(),                     # Coarse-grained
                 keys.tag_analytics_all(),                  # Related caches
@@ -546,9 +542,7 @@ class RubricService:
                     )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_rubric_all(),      # Coarse-grained
                 keys.tag_analytics_all(),   # Related caches
             ])
@@ -584,9 +578,7 @@ class RubricService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_rubric_by_id(request.rubricId),  # Fine-grained
                 keys.tag_rubric_all(),                     # Coarse-grained
                 keys.tag_analytics_all(),                  # Related caches

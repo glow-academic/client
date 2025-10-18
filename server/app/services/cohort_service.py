@@ -29,35 +29,26 @@ from app.schemas.cohorts import (AddProfilesToCohortRequest,
                                  RemoveProfilesFromCohortResponse,
                                  UpdateCohortRequest, UpdateCohortResponse)
 from app.schemas.staff import StaffItem
+from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-class CohortService:
+class CohortService(BaseService):
     """Service layer for cohort operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = CohortQueries()
         self.staff_queries = StaffQueries()
 
+    @with_cache(lambda self, filters: keys.cohort_list(filters))
     async def get_cohorts_list(self, filters: CohortsFilters) -> CohortsListResponse:
         """Get cohorts list with permissions and relationships."""
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohorts_list(filters)
-        
-        key = keys.cohort_list(filters)
-        
-        async def fetcher() -> CohortsListResponse:
-            return await self._execute_get_cohorts_list(filters)
-        
-        result: CohortsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohorts_list(filters)
 
     async def _execute_get_cohorts_list(self, filters: CohortsFilters) -> CohortsListResponse:
         """Execute the actual cohorts list query."""
@@ -132,22 +123,12 @@ class CohortService:
             simulation_mapping=simulation_mapping,
         )
 
+    @with_cache(lambda self, request: keys.cohort_by_id(request.cohortId, request.profileId))
     async def get_cohort_detail(
         self, request: CohortDetailRequest
     ) -> CohortDetailResponse:
         """Get detailed cohort information using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohort_detail(request)
-        
-        key = keys.cohort_by_id(request.cohortId, request.profileId)
-        
-        async def fetcher() -> CohortDetailResponse:
-            return await self._execute_get_cohort_detail(request)
-        
-        result: CohortDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohort_detail(request)
 
     async def _execute_get_cohort_detail(
         self, request: CohortDetailRequest
@@ -238,22 +219,12 @@ class CohortService:
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.cohort_default(request.profileId))
     async def get_cohort_detail_default(
         self, request: CohortDetailDefaultRequest
     ) -> CohortDetailResponse:
         """Get default cohort details based on profile."""
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohort_detail_default(request)
-        
-        key = keys.cohort_default(request.profileId)
-        
-        async def fetcher() -> CohortDetailResponse:
-            return await self._execute_get_cohort_detail_default(request)
-        
-        result: CohortDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohort_detail_default(request)
 
     async def _execute_get_cohort_detail_default(
         self, request: CohortDetailDefaultRequest
@@ -273,22 +244,12 @@ class CohortService:
 
         return await self.get_cohort_detail(detail_request)
 
+    @with_cache(lambda self, request: keys.cohort_with_profiles(request.cohortId, request.departmentIds, request.currentProfileId))
     async def get_cohort_detail_with_profiles(
         self, request: CohortDetailWithProfilesRequest
     ) -> CohortDetailWithProfilesResponse:
         """Get cohort detail with available profiles in one call."""
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohort_detail_with_profiles(request)
-        
-        key = keys.cohort_with_profiles(request.cohortId, request.departmentIds, request.currentProfileId)
-        
-        async def fetcher() -> CohortDetailWithProfilesResponse:
-            return await self._execute_get_cohort_detail_with_profiles(request)
-        
-        result: CohortDetailWithProfilesResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohort_detail_with_profiles(request)
 
     async def _execute_get_cohort_detail_with_profiles(
         self, request: CohortDetailWithProfilesRequest
@@ -408,9 +369,7 @@ class CohortService:
                 await self.conn.execute(query, cohort_id, simulation_id)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),  # Affects profile cohort lists
                 keys.tag_analytics_all(),  # May affect analytics
@@ -462,9 +421,7 @@ class CohortService:
                 await self.conn.execute(query, request.cohortId, simulation_id)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
@@ -508,9 +465,7 @@ class CohortService:
             await self.conn.execute(copy_simulations_query, new_cohort['id'], request.cohortId)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),
@@ -550,9 +505,7 @@ class CohortService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
@@ -579,9 +532,7 @@ class CohortService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
@@ -653,9 +604,7 @@ class CohortService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
@@ -691,9 +640,7 @@ class CohortService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_cohort_by_id(request.cohortId),
                 keys.tag_cohort_all(),
                 keys.tag_profile_all(),
@@ -705,6 +652,7 @@ class CohortService:
             message=f"Removed {len(request.profileIds)} profile(s) from cohort '{cohort['title']}' successfully",
         )
 
+    @with_cache(lambda self, query, limit: keys.cohort_search(query, limit))
     async def search_cohorts(
         self, query: str, limit: int = 10
     ) -> List[Dict[str, Any]]:
@@ -719,18 +667,7 @@ class CohortService:
         Returns:
             List of cohort dictionaries with scores
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_search_cohorts(query, limit)
-        
-        key = keys.cohort_search(query, limit)
-        
-        async def fetcher() -> List[Dict[str, Any]]:
-            return await self._execute_search_cohorts(query, limit)
-        
-        result: List[Dict[str, Any]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_search_cohorts(query, limit)
 
     async def _execute_search_cohorts(
         self, query: str, limit: int = 10
@@ -840,6 +777,7 @@ class CohortService:
 
     # ===== Overview Methods for MCP Tools =====
 
+    @with_cache(lambda self, cohort_id: keys.cohort_overview(cohort_id))
     async def get_cohort_overview(self, cohort_id: str) -> Dict[str, Any]:
         """Get cohort overview with all related data in ONE optimized query.
         
@@ -851,18 +789,7 @@ class CohortService:
         Returns:
             Dict with cohort overview data or {"error": "..."}
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohort_overview(cohort_id)
-        
-        key = keys.cohort_overview(cohort_id)
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._execute_get_cohort_overview(cohort_id)
-        
-        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohort_overview(cohort_id)
 
     async def _execute_get_cohort_overview(self, cohort_id: str) -> Dict[str, Any]:
         """Execute the actual cohort overview query."""
@@ -922,6 +849,7 @@ class CohortService:
         except Exception as e:
             return {"error": f"Database error: {str(e)}"}
 
+    @with_cache(lambda self, cohort_id: keys.cohort_pass_matrix(cohort_id))
     async def get_cohort_pass_matrix(self, cohort_id: str) -> Dict[str, Any]:
         """Get cohort pass/fail matrix across simulations.
         
@@ -934,18 +862,7 @@ class CohortService:
             Dict with structure: {"cohort": {...}, "matrix": [...], "summary": {...}, "simulations": [...]}
             or {"error": "..."}
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_cohort_pass_matrix(cohort_id)
-        
-        key = keys.cohort_pass_matrix(cohort_id)
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._execute_get_cohort_pass_matrix(cohort_id)
-        
-        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
+        return await self._execute_get_cohort_pass_matrix(cohort_id)
 
     async def _execute_get_cohort_pass_matrix(self, cohort_id: str) -> Dict[str, Any]:
         """Execute the actual cohort pass matrix query."""

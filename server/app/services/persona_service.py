@@ -143,9 +143,7 @@ class PersonaService:
             raise ValueError("Failed to create duplicate persona")
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),
             ])
@@ -181,9 +179,7 @@ class PersonaService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_persona_by_id(request.personaId),
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),
@@ -446,9 +442,7 @@ class PersonaService:
             raise ValueError("Failed to create persona")
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),  # Personas affect persona performance metrics
             ])
@@ -488,9 +482,7 @@ class PersonaService:
         )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_persona_by_id(request.personaId),
                 keys.tag_persona_all(),
                 keys.tag_analytics_all(),  # Persona changes affect analytics

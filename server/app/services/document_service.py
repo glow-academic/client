@@ -17,6 +17,7 @@ from app.cache import keys
 from app.db import transaction
 from app.extensions import CSV_FOLDER, UPLOAD_FOLDER, get_query_client
 from app.queries.document_queries import DocumentQueries
+from app.services.base import BaseService
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMappingItem, ScenarioMappingItem)
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
@@ -33,7 +34,6 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    GenerateCertificateRequest,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
-from app.services.scenario_service import ScenarioService
 from app.utils.mime_utils import get_content_type
 
 logger = logging.getLogger(__name__)
@@ -43,14 +43,13 @@ TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")
 os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 
 
-class DocumentService:
+class DocumentService(BaseService):
     """Service layer for document operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = DocumentQueries()
-        self.scenario_service = ScenarioService(conn)
 
     async def get_documents_list(
         self, filters: DocumentsFilters
@@ -364,9 +363,7 @@ class DocumentService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_document_by_id(request.documentId),
                 keys.tag_document_all(),
             ])
@@ -397,12 +394,10 @@ class DocumentService:
         # Transaction handled
 
         # Invalidate caches for all affected documents
-        qc = get_query_client()
-        if qc:
-            tags = [keys.tag_document_all()]
-            for doc_id in request.documentIds:
-                tags.append(keys.tag_document_by_id(doc_id))
-            await qc.invalidate(tags=tags)
+        tags = [keys.tag_document_all()]
+        for doc_id in request.documentIds:
+            tags.append(keys.tag_document_by_id(doc_id))
+        await self._invalidate_cache(tags)
 
         return UpdateDocumentResponse(
             success=True,
@@ -438,9 +433,7 @@ class DocumentService:
         # Transaction handled
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_document_by_id(request.documentId),
                 keys.tag_document_all(),
             ])
@@ -481,12 +474,10 @@ class DocumentService:
         # Transaction handled
 
         # Invalidate caches for all deleted documents
-        qc = get_query_client()
-        if qc:
-            tags = [keys.tag_document_all()]
-            for doc_id in request.documentIds:
-                tags.append(keys.tag_document_by_id(doc_id))
-            await qc.invalidate(tags=tags)
+        tags = [keys.tag_document_all()]
+        for doc_id in request.documentIds:
+            tags.append(keys.tag_document_by_id(doc_id))
+        await self._invalidate_cache(tags)
 
         return DeleteDocumentResponse(
             success=True,
@@ -699,9 +690,7 @@ class DocumentService:
                 # Transaction handled
                 
                 # Invalidate document list cache after bulk upload
-                qc = get_query_client()
-                if qc:
-                    await qc.invalidate(tags=[keys.tag_document_all()])
+                await self._invalidate_cache([keys.tag_document_all()])
                 
                 return FinalizeUploadResponse(
                     success=True,
@@ -747,12 +736,10 @@ class DocumentService:
             # Transaction handled
 
             # Invalidate document list cache after upload
-            qc = get_query_client()
-            if qc:
-                await qc.invalidate(tags=[
-                    keys.tag_document_by_id(str(document_id)),
-                    keys.tag_document_all(),
-                ])
+            await self._invalidate_cache([
+                keys.tag_document_by_id(str(document_id)),
+                keys.tag_document_all(),
+            ])
 
             # Auto-classify if requested
             if request.autoClassify:

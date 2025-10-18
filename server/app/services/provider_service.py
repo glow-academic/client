@@ -263,9 +263,7 @@ class ProviderService:
             raise ValueError("Failed to create provider")
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_provider_all(),
             ])
 
@@ -309,9 +307,7 @@ class ProviderService:
             )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_provider_by_id(request.providerId),
                 keys.tag_provider_all(),
             ])
@@ -360,9 +356,7 @@ class ProviderService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_provider_by_id(request.providerId),
                 keys.tag_provider_all(),
             ])
@@ -390,9 +384,7 @@ class ProviderService:
             raise ValueError("Failed to create model")
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_provider_all(),  # List queries include models
             ])
 
@@ -426,9 +418,7 @@ class ProviderService:
         )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_model_by_id(request.modelId),
                 keys.tag_provider_all(),
             ])
@@ -466,9 +456,7 @@ class ProviderService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_model_by_id(request.modelId),
                 keys.tag_provider_all(),
             ])

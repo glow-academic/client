@@ -164,9 +164,7 @@ class LogService:
         log_id = result['id'] if result else None
 
         # Invalidate log caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_log_all(),
             ])
 
@@ -267,9 +265,7 @@ class LogService:
         deleted_count = len(deleted_rows)
 
         # Invalidate log caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_log_all(),
             ])
 

@@ -81,9 +81,7 @@ class ProfileService:
         profile_item = self._row_to_profile_item(result)
         
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_profile_by_id(profile_id),
                 keys.tag_profile_all(),
                 keys.tag_analytics_all(),  # Profile changes may affect analytics

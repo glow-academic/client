@@ -239,9 +239,7 @@ class ParameterService:
                 )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_parameter_all(),
                 keys.tag_agent_all(),  # Parameters used in scenario generation
             ])
@@ -295,9 +293,7 @@ class ParameterService:
                 )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_parameter_by_id(request.parameterId),
                 keys.tag_parameter_all(),
                 keys.tag_agent_all(),  # Parameters used in scenario context
@@ -354,9 +350,7 @@ class ParameterService:
                 )
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_parameter_all(),
             ])
 
@@ -395,9 +389,7 @@ class ParameterService:
         await self.conn.execute(query, *params)
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_parameter_by_id(request.parameterId),
                 keys.tag_parameter_all(),
             ])
@@ -433,9 +425,7 @@ class ParameterService:
             raise ValueError("Failed to create parameter item")
 
         # Invalidate caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[
+        await self._invalidate_cache([
                 keys.tag_parameter_by_id(request.parameterId),
                 keys.tag_parameter_all(),
                 keys.tag_agent_all(),  # Parameter items used in scenario context

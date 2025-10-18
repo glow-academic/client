@@ -115,9 +115,7 @@ class GradingService:
         await self.conn.execute(query, *params)
 
         # Invalidate affected caches
-        qc = get_query_client()
-        if qc:
-            await qc.invalidate(tags=[keys.tag_analytics_all()])
+        await self._invalidate_cache([keys.tag_analytics_all()])
 
         return grade_id
 
