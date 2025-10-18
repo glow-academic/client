@@ -32,6 +32,7 @@ class ProfileItem(BaseModel):
     lastActive: Optional[str]  # ISO datetime
     createdAt: str  # ISO datetime
     updatedAt: str  # ISO datetime
+    primaryDepartmentId: Optional[str]  # UUID of primary department
 
 
 class ProfileDetailResponse(BaseModel):

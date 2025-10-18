@@ -36,11 +36,11 @@ import {
   useUpdateCohort,
 } from "@/lib/api/v2/hooks/cohorts";
 import { ProfileRole } from "@/lib/api/v2/schemas/base";
-import { CohortItem } from "@/lib/api/v2/schemas/cohorts";
 import { GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SimulationPicker } from "./SimulationPicker";
 import CohortStaff from "./staff/CohortStaff";
+import { ProfileItem } from "@/lib/api/v2/schemas/profile";
 
 export interface CohortProps {
   cohortId?: string;
@@ -52,19 +52,26 @@ interface FormErrors {
 
 // A new type to represent a profile that is either saved or new
 type EditableProfile =
-  | Profile
+  | ProfileItem
   | {
       isNew: true;
       id: string; // A temporary client-side ID
       firstName: string;
       lastName: string;
       alias: string;
-      role: Profile["role"];
+      role: ProfileRole;
     };
 
+interface FormData {
+  title: string;
+  description: string;
+  active: boolean;
+  defaultCohort: boolean;
+  departmentId: string;
+}
 export default function Cohort({ cohortId }: CohortProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -75,7 +82,7 @@ export default function Cohort({ cohortId }: CohortProps) {
 
   const isEditMode = !!cohortId;
 
-  const initialFormData: Partial<CohortItem> = {
+  const initialFormData: FormData = {
     title: "",
     description: "",
     active: true,
@@ -84,9 +91,9 @@ export default function Cohort({ cohortId }: CohortProps) {
   };
 
   const [formData, setFormData] =
-    useState<Partial<CohortItem>>(initialFormData);
+    useState<FormData>(initialFormData);
   const [originalFormData, setOriginalFormData] =
-    useState<Partial<CohortItem>>(initialFormData);
+    useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Staff management state
@@ -203,7 +210,7 @@ export default function Cohort({ cohortId }: CohortProps) {
             lastName: "",
             alias: profileInfo?.name || "",
             role: "student" as ProfileRole,
-          } as Profile;
+          } as ProfileItem;
         }
       );
 
@@ -230,13 +237,13 @@ export default function Cohort({ cohortId }: CohortProps) {
       // Create profile from cohortData mapping if user is in valid list
       if (cohortData.valid_profile_ids.includes(effectiveProfile.id)) {
         const profileInfo = cohortData.profile_mapping[effectiveProfile.id];
-        const currentUserProfile: Profile = {
+        const currentUserProfile: ProfileItem = {
           id: effectiveProfile.id,
           firstName: profileInfo?.name || "",
           lastName: "",
           alias: profileInfo?.name || "",
           role: effectiveProfile.role,
-        } as Profile;
+        } as ProfileItem;
         setStaffProfiles([currentUserProfile]);
       }
     }
@@ -283,7 +290,7 @@ export default function Cohort({ cohortId }: CohortProps) {
   ]);
 
   const handleInputChange = (
-    field: keyof Partial<CohortItem>,
+    field: keyof FormData,
     value: string | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -386,9 +393,9 @@ export default function Cohort({ cohortId }: CohortProps) {
           title: formData.title || "",
           description: formData.description || "",
           department_id:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
+            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           active: formData.active ?? true,
-          default_cohort: formData.default_cohort ?? false,
+          default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
         });
@@ -400,7 +407,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           title: formData.title || "",
           description: formData.description || "",
           department_id:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
+            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           active: formData.active || true,
           default_cohort: formData.defaultCohort ?? false,
           simulation_ids: currentSimulationIds,

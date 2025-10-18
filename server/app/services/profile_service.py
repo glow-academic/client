@@ -447,6 +447,7 @@ class ProfileService:
             lastActive=row['last_active'].isoformat() if row['last_active'] else "",
             createdAt=row['created_at'].isoformat() if row['created_at'] else "",
             updatedAt=row['updated_at'].isoformat() if row['updated_at'] else "",
+            primaryDepartmentId=str(row['primary_department_id']) if row.get('primary_department_id') else None,
         )
 
     def _parse_breadcrumbs(self, pathname: str) -> List[BreadcrumbItem]:

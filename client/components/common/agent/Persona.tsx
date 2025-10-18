@@ -87,7 +87,7 @@ export default function Persona({
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -101,12 +101,9 @@ export default function Persona({
       icon: "Zap",
       active: true,
       defaultPersona: false,
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? null
-          : departmentIds[0] || null,
+      departmentId: effectiveProfile?.primaryDepartmentId || "",
     }),
-    [effectiveProfile?.role, departmentIds]
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -239,7 +236,7 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || departmentIds[0] || "",
+              formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           },
           {
             onSuccess: () => {
@@ -267,7 +264,7 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || departmentIds[0] || "",
+              formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           },
           {
             onSuccess: () => {

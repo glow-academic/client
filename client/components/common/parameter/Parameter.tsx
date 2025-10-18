@@ -71,7 +71,7 @@ export default function Parameter({
 }: ParameterProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -80,12 +80,9 @@ export default function Parameter({
       numerical: false,
       active: false,
       defaultParameter: false,
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? ""
-          : departmentIds[0] || "",
+      departmentId: effectiveProfile?.primaryDepartmentId || "",
     }),
-    [effectiveProfile?.role, departmentIds]
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -238,7 +235,7 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || departmentIds[0] || "",
+            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           parameter_items,
         });
 
@@ -252,7 +249,7 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || departmentIds[0] || "",
+            formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
           parameter_items,
         });
 

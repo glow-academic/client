@@ -24,6 +24,7 @@ export const ProfileItemSchema = z.object({
   lastActive: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  primaryDepartmentId: z.string().nullable(),
 });
 
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;

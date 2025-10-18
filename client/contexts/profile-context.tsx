@@ -111,6 +111,7 @@ const GUEST_PROFILE: ProfileItem = {
   lastActive: new Date().toISOString(),
   defaultProfile: false,
   reqPerDay: null,
+  primaryDepartmentId: null,
 };
 
 interface ProfileContextType {

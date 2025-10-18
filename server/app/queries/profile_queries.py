@@ -10,22 +10,24 @@ class ProfileQueries:
         """Build query to get profile by ID."""
         query = """
         SELECT 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at
-        FROM profiles
-        WHERE id = $1
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            p.req_per_day,
+            p.last_login,
+            p.last_active,
+            p.created_at,
+            p.updated_at,
+            pd.department_id as primary_department_id
+        FROM profiles p
+        LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        WHERE p.id = $1
         """
         return (query, [profile_id])
 
@@ -84,7 +86,8 @@ class ProfileQueries:
             last_login,
             last_active,
             created_at,
-            updated_at
+            updated_at,
+            (SELECT department_id FROM profile_departments WHERE profile_id = id AND is_primary = TRUE LIMIT 1) as primary_department_id
         """
         return (query, params)
 
@@ -94,23 +97,25 @@ class ProfileQueries:
         """Build query to get all profiles except self (for superadmin)."""
         query = """
         SELECT 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at
-        FROM profiles
-        WHERE id != $1
-        ORDER BY first_name, last_name
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            p.req_per_day,
+            p.last_login,
+            p.last_active,
+            p.created_at,
+            p.updated_at,
+            pd.department_id as primary_department_id
+        FROM profiles p
+        LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        WHERE p.id != $1
+        ORDER BY p.first_name, p.last_name
         """
         return (query, [profile_id])
 
@@ -120,24 +125,26 @@ class ProfileQueries:
         """Build query to get instructional/ta/guest profiles (for admin)."""
         query = """
         SELECT 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at
-        FROM profiles
-        WHERE id != $1
-          AND role IN ('instructional', 'ta', 'guest')
-        ORDER BY first_name, last_name
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            p.req_per_day,
+            p.last_login,
+            p.last_active,
+            p.created_at,
+            p.updated_at,
+            pd.department_id as primary_department_id
+        FROM profiles p
+        LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        WHERE p.id != $1
+          AND p.role IN ('instructional', 'ta', 'guest')
+        ORDER BY p.first_name, p.last_name
         """
         return (query, [profile_id])
 
@@ -147,24 +154,26 @@ class ProfileQueries:
         """Build query to get ta/guest profiles (for instructional)."""
         query = """
         SELECT 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at
-        FROM profiles
-        WHERE id != $1
-          AND role IN ('ta', 'guest')
-        ORDER BY first_name, last_name
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            p.req_per_day,
+            p.last_login,
+            p.last_active,
+            p.created_at,
+            p.updated_at,
+            pd.department_id as primary_department_id
+        FROM profiles p
+        LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        WHERE p.id != $1
+          AND p.role IN ('ta', 'guest')
+        ORDER BY p.first_name, p.last_name
         """
         return (query, [profile_id])
 
@@ -181,22 +190,24 @@ class ProfileQueries:
         """Build query to get profile by alias."""
         query = """
         SELECT 
-            id,
-            first_name,
-            last_name,
-            alias,
-            role,
-            active,
-            viewed_intro,
-            viewed_chat,
-            default_profile,
-            req_per_day,
-            last_login,
-            last_active,
-            created_at,
-            updated_at
-        FROM profiles
-        WHERE alias = $1
+            p.id,
+            p.first_name,
+            p.last_name,
+            p.alias,
+            p.role,
+            p.active,
+            p.viewed_intro,
+            p.viewed_chat,
+            p.default_profile,
+            p.req_per_day,
+            p.last_login,
+            p.last_active,
+            p.created_at,
+            p.updated_at,
+            pd.department_id as primary_department_id
+        FROM profiles p
+        LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        WHERE p.alias = $1
         """
         return (query, [alias])
 

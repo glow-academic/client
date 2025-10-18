@@ -83,7 +83,7 @@ export default function Scenario({
   scenarioId,
 }: ScenarioProps) {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile } = useProfile();
   const isEditMode = mode === "edit" && !!scenarioId;
   const log = useLogger();
   // V2 API hooks - single hook for all data
@@ -115,12 +115,9 @@ export default function Scenario({
       name: "",
       problemStatement: "",
       defaultScenario: false,
-      departmentId:
-        effectiveProfile?.role === "superadmin"
-          ? scenarioData?.department_id || ""
-          : departmentIds[0] || "",
+      departmentId: effectiveProfile?.primaryDepartmentId || "",
     }),
-    [effectiveProfile?.role, scenarioData?.department_id, departmentIds]
+    [effectiveProfile?.primaryDepartmentId]
   );
 
   const [formData, setFormData] = useState(initialFormData);
@@ -490,7 +487,7 @@ export default function Scenario({
 
     try {
       // Get department ID from first valid department
-      const departmentId = effectiveDepartmentIds?.[0] || "";
+      const departmentId = effectiveProfile?.primaryDepartmentId || "";
       if (!departmentId) {
         throw new Error("No valid department found");
       }
@@ -549,7 +546,7 @@ export default function Scenario({
       const payload = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
-        department_id: formData.departmentId || effectiveDepartmentIds[0] || "",
+        department_id: formData.departmentId || effectiveProfile?.primaryDepartmentId || "",
         active: true,
         default_scenario: formData.defaultScenario || false,
         persona_id: selectedPersonaId,

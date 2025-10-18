@@ -97,16 +97,16 @@ export default function Cohorts() {
 
   // Create filter options from mappings
   const profileOptions = useMemo(() => {
-    return Object.entries(profileMapping).map(([id, name]) => ({
+    return Object.entries(profileMapping).map(([id, profile]) => ({
       value: id,
-      label: name,
+      label: profile.name,
     }));
   }, [profileMapping]);
 
   const simulationOptions = useMemo(() => {
-    return Object.entries(simulationMapping).map(([id, name]) => ({
+    return Object.entries(simulationMapping).map(([id, simulation]) => ({
       value: id,
-      label: name,
+      label: simulation.name,
     }));
   }, [simulationMapping]);
 
