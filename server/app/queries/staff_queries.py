@@ -72,7 +72,7 @@ class StaffQueries:
         self, cohort_ids: List[str]
     ) -> Tuple[str, List[Any]]:
         """Build query for cohort mapping."""
-        query = "SELECT id, name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
+        query = "SELECT id, title as name, COALESCE(description, '') as description FROM cohorts WHERE id = ANY($1)"
         return (query, [cohort_ids])
 
     def get_department_mapping(

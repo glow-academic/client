@@ -115,7 +115,7 @@ class DocumentQueries:
         FROM departments d
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = $1 AND d.active = true
-        ORDER BY d.name
+        ORDER BY d.title
         """
         return (query, [profile_id])
 
@@ -161,10 +161,10 @@ class DocumentQueries:
     ) -> Tuple[str, List[Any]]:
         """Build query for departments mapping."""
         query = """
-        SELECT id, name, description 
+        SELECT id, title as name, description 
         FROM departments 
         WHERE id = ANY($1)
-        ORDER BY name
+        ORDER BY title
         """
         return (query, [dept_ids])
 
