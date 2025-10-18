@@ -26,6 +26,8 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
+import { SimulationItem } from "@/lib/api/v2/schemas/simulations";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -213,8 +215,9 @@ export function SimulationProvider({
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
   const onSimulationFinishedRef = useRef(onSimulationFinished);
-  const simulationRef = useRef<Simulation | null>(null);
+  const simulationRef = useRef<SimulationItem | null>(null);
   const pendingNextChatIdRef = useRef<string | null>(null);
+  const log = useLogger();
 
   // Use the global WebSocket context
   const {
@@ -276,9 +279,9 @@ export function SimulationProvider({
   // Scenarios map from v2 - map chatId -> scenario for all chats
   const scenariosByChatId = useMemo(() => {
     if (!attemptData?.chats) return {};
-    const map: Record<string, Scenario | null> = {};
+    const map: Record<string, ScenarioItem | null> = {};
     attemptData.chats.forEach((chatData) => {
-      map[chatData.chat.id] = chatData.scenario;
+      map[chatData.chat.id] = chatData.scenario as ScenarioItem | null;
     });
     return map;
   }, [attemptData]);
@@ -355,7 +358,7 @@ export function SimulationProvider({
 
   // Update simulation ref when simulation changes
   useEffect(() => {
-    simulationRef.current = (simulation as Simulation) || null;
+    simulationRef.current = (simulation as unknown as SimulationItem) || null;
   }, [simulation]);
 
   // Check if timer expired and finish simulation
@@ -481,7 +484,7 @@ export function SimulationProvider({
         currentChatIdRef.current = null;
       }
     };
-  }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
+  }, [currentChat?.id, isConnected, joinRoom, leaveRoom, log]);
 
   // Update the ref whenever currentChat changes
   useEffect(() => {
@@ -594,6 +597,7 @@ export function SimulationProvider({
       readOnly,
       queryClient,
       updateChatCompletedAt,
+      log,
     ]
   );
 
@@ -658,6 +662,7 @@ export function SimulationProvider({
     queryClient,
     chats,
     updateChatCompletedAt,
+    log,
   ]);
 
   // Listen for WebSocket loading state changes
@@ -885,6 +890,7 @@ export function SimulationProvider({
     attemptId,
     onSimulationFinished,
     handleSimulationCompletion,
+    log,
   ]); // Add queryClient, attemptId, onSimulationFinished, and handleSimulationCompletion to the dependency array
 
   // Listen for grading progress events
@@ -933,7 +939,7 @@ export function SimulationProvider({
         handleGradingProgress
       );
     };
-  }, [currentChat?.id]);
+  }, [currentChat?.id, log]);
 
   // After chats refresh, jump to the next chat if one was provided by the server
   useEffect(() => {
@@ -950,29 +956,46 @@ export function SimulationProvider({
       setCurrentChatIndex(idx);
       pendingNextChatIdRef.current = null;
     }
-  }, [chats]);
+  }, [chats, log]);
 
   const value: SimulationContextType = {
     // Data (from v2)
     attemptId,
     attempt: attempt,
     simulation: simulation,
-    scenario: scenario as any,
-    documents: documents as any,
-    scenarioDocuments: scenarioDocuments as any,
+    scenario: scenario as ScenarioItem | null,
+    documents: documents as DocumentItem[] | [],
+    scenarioDocuments: scenarioDocuments as DocumentItem[] | [],
 
     // Attempt profiles (from v2)
     attemptProfiles,
     attemptProfileId,
 
     // Scenarios map (from v2)
-    scenariosByChatId: scenariosByChatId as any,
+    scenariosByChatId: scenariosByChatId as Record<string, ScenarioItem | null>,
 
     // Rubric structure (from v2)
-    rubricStructure: rubricStructure as any,
+    rubricStructure: rubricStructure as {
+      standardGroups: Record<string, string[]>;
+      standardGroupsMapping: Record<string, {
+        name: string;
+        description: string;
+        points: number;
+        passPoints: number;
+      }>;
+      standardsMapping: Record<string, {
+        name: string;
+        description: string;
+        points: number;
+      }>;
+    },
 
     // Grading states (from v2)
-    gradingStatesByChatId: gradingStatesByChatId as any,
+    gradingStatesByChatId: gradingStatesByChatId as Record<string, {
+      achievedStandards: Record<string, boolean>;
+      passedStandards: Record<string, boolean>;
+      gradeDescription?: string;
+    }>,
 
     // Current chat management
     currentChatIndex,
@@ -982,7 +1005,7 @@ export function SimulationProvider({
     isLoadingChats,
 
     // Messages and hints (from v2)
-    currentMessages: currentMessages as any,
+    currentMessages: currentMessages as AttemptFullResponse["chats"][number]["messages"],
     currentChatHints,
 
     // Results and grading (from v2 server-side computations)
