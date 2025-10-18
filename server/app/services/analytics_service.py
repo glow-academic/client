@@ -1250,9 +1250,14 @@ class AnalyticsService:
         }
 
     async def refresh_materialized_view(self) -> None:
-        """Refresh the analytics materialized view."""
+        """Refresh the analytics materialized view and invalidate all analytics caches."""
         query = self.query_builder.refresh_materialized_view()
         await self.conn.execute(query)
+        
+        # Invalidate all analytics caches since the materialized view data has changed
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[keys.tag_analytics_all()])
 
 
 def get_analytics_service(conn: asyncpg.Connection) -> AnalyticsService:
