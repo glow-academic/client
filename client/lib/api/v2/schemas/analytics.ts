@@ -627,7 +627,8 @@ export type ReportsBundleResponse = z.infer<typeof ReportsBundleResponseSchema>;
 export const LeaderboardMetricSchema = z.object({
   hasData: z.boolean(),
   method: z.string(),
-  keyField: z.string().optional(),
+  currentValue: z.number(),
+  keyField: z.string().nullish(),
   trendData: z.array(z.any()),
   dataPoints: z.array(z.any()),
   hover: z.record(z.string(), z.any()),

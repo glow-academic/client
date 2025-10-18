@@ -5,6 +5,7 @@
  */
 
 import { api } from "@/lib/api/fetcher";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   analyticsAttemptHistoryKeys,
   analyticsAttemptImprovementKeys,
@@ -61,7 +62,6 @@ import {
   SkillPerformanceResponseSchema,
 } from "@/lib/api/v2/schemas/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {useLogger} from "@/lib/api/v2/hooks/logs";
 
 // Type for analytics hook options
 type AnalyticsHookOptions = {

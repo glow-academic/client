@@ -4,11 +4,33 @@
  */
 
 import { useProfile } from "@/contexts/profile-context";
-import { log as baseLog } from "@/lib/api/v2/server/logs";
-import { logsListKeys } from "../keys";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../fetcher";
+import { logsListKeys } from "../keys";
 import { LogsListResponseSchema } from "../schemas/logs";
+
+/**
+ * Create log mutation hook
+ * Use this to send logs to the BFF endpoint
+ */
+export function useCreateLog() {
+  return useMutation({
+    mutationFn: async (entry: {
+      event: string;
+      level: "debug" | "info" | "warn" | "error";
+      message?: string;
+      actor?: { userId?: string; profileId?: string };
+      subject?: { entityType?: string; entityId?: string };
+      context?: Record<string, unknown>;
+      error?: unknown;
+    }) => {
+      await api("/api/v2/logs/create", {
+        method: "POST",
+        body: JSON.stringify(entry),
+      });
+    },
+  });
+}
 
 /**
  * Logger hook that automatically includes the current profile as actor
@@ -16,37 +38,63 @@ import { LogsListResponseSchema } from "../schemas/logs";
  */
 export function useLogger() {
   const { effectiveProfile } = useProfile();
+  const createLog = useCreateLog();
 
   return {
     info: (
       event: string,
-      rest: Omit<Parameters<typeof baseLog.info>[1], "actor">
+      rest: {
+        message?: string;
+        subject?: { entityType?: string; entityId?: string };
+        context?: Record<string, unknown>;
+      }
     ) =>
-      baseLog.info(event, {
+      createLog.mutate({
+        event,
+        level: "info",
         actor: { profileId: effectiveProfile?.id || "" },
         ...rest,
       }),
     warn: (
       event: string,
-      rest: Omit<Parameters<typeof baseLog.warn>[1], "actor">
+      rest: {
+        message?: string;
+        subject?: { entityType?: string; entityId?: string };
+        context?: Record<string, unknown>;
+      }
     ) =>
-      baseLog.warn(event, {
+      createLog.mutate({
+        event,
+        level: "warn",
         actor: { profileId: effectiveProfile?.id || "" },
         ...rest,
       }),
     error: (
       event: string,
-      rest: Omit<Parameters<typeof baseLog.error>[1], "actor">
+      rest: {
+        message?: string;
+        subject?: { entityType?: string; entityId?: string };
+        context?: Record<string, unknown>;
+        error?: unknown;
+      }
     ) =>
-      baseLog.error(event, {
+      createLog.mutate({
+        event,
+        level: "error",
         actor: { profileId: effectiveProfile?.id || "" },
         ...rest,
       }),
     debug: (
       event: string,
-      rest: Omit<Parameters<typeof baseLog.debug>[1], "actor">
+      rest: {
+        message?: string;
+        subject?: { entityType?: string; entityId?: string };
+        context?: Record<string, unknown>;
+      }
     ) =>
-      baseLog.debug(event, {
+      createLog.mutate({
+        event,
+        level: "debug",
         actor: { profileId: effectiveProfile?.id || "" },
         ...rest,
       }),
