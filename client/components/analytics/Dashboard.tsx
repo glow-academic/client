@@ -117,26 +117,6 @@ export default function Dashboard({ profileId }: DashboardProps) {
     error,
   } = useDashboardBundle(filters, rqOpts);
 
-  // Helper to compute current value from MetricResponse
-  const computeCurrent = (metric: any) => {
-    if (!metric?.dataPoints?.length) return 0;
-    const values = metric.dataPoints.map((p: any) => p.value ?? 0);
-
-    switch (metric.method) {
-      case "avg":
-      case "rate":
-        return (
-          values.reduce((a: number, b: number) => a + b, 0) / values.length
-        );
-      case "max":
-        return Math.max(...values);
-      case "sum":
-        return values.reduce((a: number, b: number) => a + b, 0);
-      default:
-        return 0;
-    }
-  };
-
   // Compute trend analysis for header metrics (client-side only as needed for sparklines)
   const trendAnalysis = useMemo(() => {
     if (!bundle) {
@@ -215,7 +195,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     return [
       <AverageScore
         key="average-score"
-        averageScore={computeCurrent(bundle.header.average_score)}
+        averageScore={bundle.header.average_score.currentValue}
         scoreTrend={bundle.header.average_score.trendData}
         hasDataAvailable={bundle.header.average_score.hasData}
         trendAnalysis={trendAnalysis.averageScore}
@@ -225,9 +205,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <CompletionPercentage
         key="completion-percentage"
-        completionPercentage={computeCurrent(
-          bundle.header.completion_percentage
-        )}
+        completionPercentage={bundle.header.completion_percentage.currentValue}
         completionTrend={bundle.header.completion_percentage.trendData}
         hasDataAvailable={bundle.header.completion_percentage.hasData}
         trendAnalysis={trendAnalysis.completion}
@@ -237,9 +215,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
-        firstAttemptPassRate={computeCurrent(
-          bundle.header.first_attempt_pass_rate
-        )}
+        firstAttemptPassRate={
+          bundle.header.first_attempt_pass_rate.currentValue
+        }
         passRateTrend={bundle.header.first_attempt_pass_rate.trendData}
         hasDataAvailable={bundle.header.first_attempt_pass_rate.hasData}
         trendAnalysis={trendAnalysis.passRate}
@@ -249,7 +227,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <HighestScore
         key="highest-score"
-        highestScore={computeCurrent(bundle.header.highest_score)}
+        highestScore={bundle.header.highest_score.currentValue}
         scoreTrend={bundle.header.highest_score.trendData}
         hasDataAvailable={bundle.header.highest_score.hasData}
         trendAnalysis={trendAnalysis.highestScore}
@@ -259,9 +237,9 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <MessagesPerSession
         key="messages-per-session"
-        averageMessagesPerSession={Math.round(
-          computeCurrent(bundle.header.messages_per_session)
-        )}
+        averageMessagesPerSession={
+          bundle.header.messages_per_session.currentValue
+        }
         messagesTrend={bundle.header.messages_per_session.trendData}
         hasDataAvailable={bundle.header.messages_per_session.hasData}
         trendAnalysis={trendAnalysis.messages}
@@ -271,9 +249,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <PersonaResponseTimes
         key="persona-response-times"
-        averageResponseTime={Math.round(
-          computeCurrent(bundle.header.persona_response_times)
-        )}
+        averageResponseTime={bundle.header.persona_response_times.currentValue}
         responseTimeTrend={bundle.header.persona_response_times.trendData}
         hasDataAvailable={bundle.header.persona_response_times.hasData}
         trendAnalysis={trendAnalysis.responseTime}
@@ -283,7 +259,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <SessionEfficiency
         key="session-efficiency"
-        sessionEfficiency={computeCurrent(bundle.header.session_efficiency)}
+        sessionEfficiency={bundle.header.session_efficiency.currentValue}
         efficiencyTrend={bundle.header.session_efficiency.trendData}
         hasDataAvailable={bundle.header.session_efficiency.hasData}
         trendAnalysis={trendAnalysis.sessionEfficiency}
@@ -293,7 +269,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <StagnationRate
         key="stagnation-rate"
-        stagnationRate={computeCurrent(bundle.header.stagnation_rate)}
+        stagnationRate={bundle.header.stagnation_rate.currentValue}
         stagnationTrend={bundle.header.stagnation_rate.trendData}
         hasDataAvailable={bundle.header.stagnation_rate.hasData}
         trendAnalysis={trendAnalysis.stagnationRate}
@@ -303,9 +279,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <TimeSpent
         key="time-spent"
-        totalTimeSpent={Math.round(
-          computeCurrent(bundle.header.time_spent) * 60
-        )}
+        totalTimeSpent={bundle.header.time_spent.currentValue * 60}
         timeSpentTrend={bundle.header.time_spent.trendData.map((t) => ({
           ...t,
           value: Math.round(t.value * 60),
@@ -318,7 +292,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       />,
       <TotalAttempts
         key="total-attempts"
-        totalAttempts={Math.round(computeCurrent(bundle.header.total_attempts))}
+        totalAttempts={bundle.header.total_attempts.currentValue}
         attemptsTrend={bundle.header.total_attempts.trendData}
         hasDataAvailable={bundle.header.total_attempts.hasData}
         trendAnalysis={trendAnalysis.totalAttempts}

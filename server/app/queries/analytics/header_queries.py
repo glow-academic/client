@@ -103,6 +103,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM with_pct) AS has_data,
                 'rate' AS method,
+                COALESCE((SELECT ROUND(AVG(completion_pct))::int FROM with_pct), 0) AS current_value,
                 NULL AS value_field,
                 NULL AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(
@@ -178,6 +179,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM first_attempts) AS has_data,
                 'rate' AS method,
+                COALESCE((SELECT ROUND((100.0 * COUNT(*) FILTER (WHERE passed) / NULLIF(COUNT(*), 0)))::int FROM first_attempts), 0) AS current_value,
                 NULL AS value_field,
                 NULL AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(
@@ -299,6 +301,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM with_deltas) AS has_data,
                 'avg' AS method,
+                COALESCE((SELECT ROUND(AVG(delta_sec))::int FROM with_deltas), 0) AS current_value,
                 NULL AS value_field,
                 NULL AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(
@@ -373,6 +376,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM with_eff) AS has_data,
                 'avg' AS method,
+                COALESCE((SELECT ROUND(AVG(efficiency))::int FROM with_eff), 0) AS current_value,
                 NULL AS value_field,
                 NULL AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(
@@ -460,6 +464,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM stagnant_attempts) AS has_data,
                 'rate' AS method,
+                COALESCE((SELECT ROUND((100.0 * SUM(is_stagnant) / NULLIF(COUNT(*), 0)))::int FROM stagnant_attempts), 0) AS current_value,
                 NULL AS value_field,
                 NULL AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(
@@ -557,6 +562,7 @@ class HeaderQueries:
             SELECT
                 (SELECT COUNT(*) > 0 FROM distinct_attempts) AS has_data,
                 'countDistinct' AS method,
+                COALESCE((SELECT COUNT(DISTINCT attempt_id)::int FROM distinct_attempts), 0) AS current_value,
                 NULL AS value_field,
                 'attemptId' AS key_field,
                 COALESCE((SELECT json_agg(json_build_object(

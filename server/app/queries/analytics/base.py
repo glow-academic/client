@@ -281,6 +281,7 @@ class AnalyticsQueryBuilder:
                 SELECT
                     COALESCE((SELECT has_data FROM cur), FALSE) AS has_data,
                     '{method}' AS method,
+                    COALESCE((SELECT current_value FROM cur), 0) AS current_value,
                     {f"'{value_field}'" if value_field else 'NULL'} AS value_field,
                     {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(
@@ -322,6 +323,7 @@ class AnalyticsQueryBuilder:
                 SELECT
                     COALESCE((SELECT has_data FROM cur), FALSE) AS has_data,
                     '{method}' AS method,
+                    COALESCE((SELECT current_value FROM cur), 0) AS current_value,
                     {f"'{value_field}'" if value_field else 'NULL'} AS value_field,
                     {f"'{key_field}'" if key_field else 'NULL'} AS key_field,
                     COALESCE((SELECT json_agg(json_build_object(

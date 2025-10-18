@@ -119,6 +119,7 @@ class AnalyticsService:
                     return MetricResponse(
                         hasData=False,
                         method=Method.AVG,
+                        currentValue=0,
                         trendData=[],
                         dataPoints=[],
                     )
@@ -127,6 +128,7 @@ class AnalyticsService:
                 parsed_result = self._parse_json_strings_recursive({
                     "hasData": result.get("has_data"),
                     "method": result.get("method"),
+                    "currentValue": result.get("current_value"),
                     "trendData": result.get("trend_data"),
                     "dataPoints": result.get("data_points"),
                 })
@@ -165,6 +167,7 @@ class AnalyticsService:
             return MetricResponse(
                 hasData=False,
                 method=Method.AVG,
+                currentValue=0,
                 trendData=[],
                 dataPoints=[],
             )
@@ -183,6 +186,7 @@ class AnalyticsService:
         return MetricResponse(
             hasData=result['has_data'],
             method=result['method'],
+            currentValue=result['current_value'],
             valueField=result['value_field'],
             keyField=result['key_field'],
             trendData=trend_data or [],

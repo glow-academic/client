@@ -78,6 +78,7 @@ class MetricResponse(BaseModel):
 
     hasData: bool
     method: Method
+    currentValue: int
     valueField: Optional[str] = None
     keyField: Optional[str] = None
     trendData: List[TrendData]

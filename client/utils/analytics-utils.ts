@@ -6,9 +6,7 @@
 import type {
   AttemptImprovementData,
   CohortData,
-  DataPoint,
   GrowthWindowAverages,
-  Method,
   NumericAttemptFact,
   PersonaPerformanceData,
   PersonaTrendData,
@@ -24,65 +22,8 @@ import type {
 type ValueField = "value" | "count";
 export type KeyField = "attemptId" | "simulationId" | "profileId" | "date";
 
-// Utility function to compute current value from data points
-export function computeCurrent(
-  method: Method,
-  rows: DataPoint[],
-  valueField: ValueField = "value",
-  keyField?: KeyField
-): number {
-  if (!rows.length) return 0;
-
-  switch (method) {
-    case "avg":
-    case "rate": {
-      const sum = rows.reduce((s, r) => s + Number(r[valueField] ?? 0), 0);
-      const mean = sum / rows.length;
-      return method === "rate" ? Math.round(mean * 100) : Math.round(mean);
-    }
-    case "max":
-      return Math.round(
-        Math.max(...rows.map((r) => Number(r[valueField] ?? 0)))
-      );
-    case "sum":
-      return Math.round(
-        rows.reduce((s, r) => s + Number(r[valueField] ?? 0), 0)
-      );
-    case "countDistinct": {
-      if (!keyField) return 0;
-      const keys = new Set(rows.map((r) => String(r[keyField] ?? "")));
-      return keys.size;
-    }
-    case "min": {
-      const values = rows.map((r) => Number(r[valueField] ?? Infinity));
-      return values.length > 0 ? Math.round(Math.min(...values)) : 0;
-    }
-    case "slope": {
-      // Simple slope: (last - first) / days
-      const sorted = rows
-        .filter(
-          (r): r is DataPoint & { date: string } => typeof r.date === "string"
-        )
-        .sort((a, b) => a.date.localeCompare(b.date));
-      if (sorted.length < 2) return 0;
-
-      const first = Number(sorted[0]?.[valueField] ?? 0);
-      const last = Number(sorted[sorted.length - 1]?.[valueField] ?? 0);
-      const firstDate = sorted[0]?.date;
-      const lastDate = sorted[sorted.length - 1]?.date;
-      if (!firstDate || !lastDate) return 0;
-
-      const days = Math.max(
-        1,
-        (new Date(lastDate).getTime() - new Date(firstDate).getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
-      return Math.round(((last - first) / days) * 100) / 100;
-    }
-    default:
-      return 0;
-  }
-}
+// NOTE: computeCurrent() has been deprecated - use metric.currentValue from server instead
+// All metrics now return currentValue computed server-side for accuracy and performance
 
 // Utility function to compute trend analysis
 export function computeTrendAnalysis(

@@ -68,6 +68,7 @@ export const DataPointSchema = z.object({
 export const MetricResponseSchema = z.object({
   hasData: z.boolean(),
   method: MethodSchema,
+  currentValue: z.number(),
   valueField: z.string().nullish(),
   keyField: z.string().nullish(),
   trendData: z.array(TrendDataSchema),

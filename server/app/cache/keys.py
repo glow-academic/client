@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 1
+GLOBAL_CACHE_VERSION = 2  # Bumped: Added currentValue to MetricResponse
 
 # Namespaces
 NS_ANALYTICS = "analytics"
