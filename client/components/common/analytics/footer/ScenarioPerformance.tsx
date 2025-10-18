@@ -119,21 +119,6 @@ function CustomPieTooltip({
   );
 }
 
-type Parameter = {
-  id: string;
-  name: string;
-  numerical: boolean;
-  active: boolean;
-  description?: string | null;
-};
-type ParameterItem = {
-  id: string;
-  parameterId: string;
-  name: string;
-  description?: string | null;
-  value?: string | null;
-};
-
 type AttributeElement = {
   id: string;
   name: string;

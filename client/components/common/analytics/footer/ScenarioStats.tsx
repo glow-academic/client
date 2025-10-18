@@ -104,12 +104,6 @@ function CustomBarTooltip({
   );
 }
 
-type Parameter = {
-  id: string;
-  name: string;
-  numerical: boolean;
-  active: boolean;
-};
 
 export interface ScenarioStatsProps {
   numericAttemptFacts: NumericAttemptFact[];

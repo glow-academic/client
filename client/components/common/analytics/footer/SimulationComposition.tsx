@@ -35,7 +35,6 @@ import type {
   SimulationParameterFactCategorical,
   SimulationParameterFactNumeric,
 } from "@/lib/api/v2/schemas/analytics";
-import { ParameterItem } from "@/lib/api/v2/schemas/parameters";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import SimulationCompositionPicker, {
@@ -49,6 +48,20 @@ type HighLowPerforming = {
   color: string;
   description: string;
   significance: "high" | "medium" | "low" | "none";
+};
+
+// Local types for this component's internal use
+type LocalParameter = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+type LocalParameterItem = {
+  id: string;
+  name: string;
+  description: string;
+  parameterId: string;
 };
 
 export interface SimulationCompositionProps {
@@ -96,32 +109,22 @@ export default function SimulationComposition({
 }: SimulationCompositionProps) {
   // Build entities from mappings
   const allParameters = useMemo(
-    () =>
+    (): LocalParameter[] =>
       Object.entries(parameterMapping).map(([id, param]) => ({
         id,
         name: param.name,
         description: param.description || "",
-        numerical: false,
-        active: true,
-        departmentId: "",
-        createdAt: "",
-        updatedAt: "",
-        defaultParameter: false,
       })),
     [parameterMapping]
   );
 
   const allParameterItems = useMemo(
-    () =>
+    (): LocalParameterItem[] =>
       Object.entries(parameterItemMapping).map(([id, item]) => ({
         id,
         name: item.name,
         description: item.description || "",
         parameterId: item.parameter_id,
-        createdAt: "",
-        updatedAt: "",
-        value: item.name,
-        defaultItem: false,
       })),
     [parameterItemMapping]
   );
@@ -732,8 +735,8 @@ function buildParameterComposition(
   simulations: SimulationFact[],
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
-  allParameters: Parameter[],
-  allParameterItems: ParameterItem[],
+  allParameters: LocalParameter[],
+  allParameterItems: LocalParameterItem[],
   parameterItemColorMap: Map<string, string>
 ): HighLowPerforming[] {
   const parameterCounts = new Map<
@@ -827,8 +830,8 @@ function buildParameterBreakdown(
   simulationId: string,
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
-  allParameters: Parameter[],
-  allParameterItems: ParameterItem[]
+  allParameters: LocalParameter[],
+  allParameterItems: LocalParameterItem[]
 ): { parameterName: string; parameterValue: string; isNumerical: boolean }[] {
   const breakdown: {
     parameterName: string;
