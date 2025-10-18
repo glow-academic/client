@@ -1,11 +1,12 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import ChatStarterPrompts, { ChatStarterPromptsProps } from '@/components/common/home/ChatStarterPrompts';
-
-
+import ChatStarterPrompts, {
+  ChatStarterPromptsProps,
+} from "@/components/common/home/ChatStarterPrompts";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
@@ -14,104 +15,147 @@ const mockProps: ChatStarterPromptsProps = {
   // variant: 'expanded', /* optional */
 };
 // ------------------------------------------------------------------
-describe('ChatStarterPrompts', () => {
-  
-
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+describe("ChatStarterPrompts", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<ChatStarterPrompts {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+
+      // Should render starter prompts (expanded variant shows 4 prompts by default)
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ChatStarterPromptsProps
-      
-      // TODO add props assertions
+    it("should render with props", async () => {
+      // Test with different variant
+      const propsWithVariant: ChatStarterPromptsProps = {
+        onPromptClick: vi.fn(),
+        variant: "minimized",
+      };
+
+      render(<ChatStarterPrompts {...propsWithVariant} />);
+
+      await waitFor(() => {
+        // Minimized variant shows 2 prompts
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(2);
+      });
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", async () => {
+      render(<ChatStarterPrompts {...mockProps} />);
 
+      await waitFor(() => {
+        // Check for clickable prompt cards
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBeGreaterThan(0);
+
+        // Each card should have proper accessibility attributes
+        promptCards.forEach((card) => {
+          expect(card).toHaveAttribute("aria-label");
+          expect(card).toHaveAttribute("tabIndex", "0");
+        });
+      });
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
+  describe("User Interactions", () => {
+    it("should handle prompt clicks", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+      const onPromptClick = vi.fn();
+
+      render(
+        <ChatStarterPrompts {...mockProps} onPromptClick={onPromptClick} />,
+      );
+
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
+
+      // Click on a prompt card
+      const promptCard = screen.getAllByRole("article")[0];
+      if (promptCard) {
+        await user.click(promptCard);
+      }
+
+      // onPromptClick should be called with the prompt text
+      expect(onPromptClick).toHaveBeenCalledWith(expect.any(String));
     });
 
-    it.skip('should handle user events', async () => {
+    it("should handle state changes", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+      render(<ChatStarterPrompts {...mockProps} />);
 
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
+
+      // Test that prompts are interactive
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
+
+      // Click on a prompt
+      if (promptCards[0]) {
+        await user.click(promptCards[0]);
+        expect(mockProps.onPromptClick).toHaveBeenCalledWith(
+          expect.any(String),
+        );
+      }
+    });
+
+    it("should handle user events", async () => {
+      const user = userEvent.setup();
+      render(<ChatStarterPrompts {...mockProps} />);
+
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
+
+      // Test keyboard navigation
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
+
+      // Focus and press Enter on a prompt
+      if (promptCards[0]) {
+        promptCards[0].focus();
+        await user.keyboard("{Enter}");
+        expect(mockProps.onPromptClick).toHaveBeenCalledWith(
+          expect.any(String),
+        );
+      }
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      render(<ChatStarterPrompts {...mockProps} />);
 
-  
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should render properly even with minimal props
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", async () => {
+      // Test with no onPromptClick
+      render(<ChatStarterPrompts onPromptClick={vi.fn()} />);
+
+      await waitFor(() => {
+        const promptCards = screen.getAllByRole("article");
+        expect(promptCards.length).toBe(4);
+      });
+
+      // Should still render with default props
+      const promptCards = screen.getAllByRole("article");
+      expect(promptCards.length).toBeGreaterThan(0);
     });
   });
 });
-
-/*
- * Component Analysis for ChatStarterPrompts:
- * Path: common/home/ChatStarterPrompts.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: ChatStarterPromptsProps
- * - Has props: true
- * - Props interface: ChatStarterPromptsProps
- * - Client component: true
- * - Uses hooks: useEffect, useState
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<ChatStarterPrompts {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<ChatStarterPrompts {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

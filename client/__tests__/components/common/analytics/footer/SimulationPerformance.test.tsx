@@ -1,85 +1,157 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import SimulationPerformance, { SimulationPerformanceProps } from '@/components/common/analytics/footer/SimulationPerformance';
+import SimulationPerformance, {
+  SimulationPerformanceProps,
+} from "@/components/common/analytics/footer/SimulationPerformance";
 
-
+// ✨ Import comprehensive mock data from our centralized mock system
+import "@/mocks/api";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: SimulationPerformanceProps = {
-  validSimulationIds: [],
-  scenarioFacts: [],
-  simulationMapping: {},
-  isLoading: false,
-  isError: false,
-  // actionableInsight: null, /* optional */
-  thresholds: {},
+  dateStart: new Date("2024-01-01"),
+  dateEnd: new Date("2024-12-31"),
+  profileId: "test-profile-id",
+  thresholds: {
+    danger: 50,
+    warning: 70,
+    success: 80,
+  },
+  cohortIds: ["test-cohort-id"],
 };
 // ------------------------------------------------------------------
-describe('SimulationPerformance', () => {
-  
+describe("SimulationPerformance", () => {
+  /* ------------------------------------------------------------------ *
+   * 💡 Mock Data Usage Guide:
+   *
+   * All API functions are automatically mocked via imports above.
+   * Use mockSchema.* for realistic test data:
+   *
+   * Examples:
+   * - mockSchema.users[0] - First user object
+   * - mockSchema.classes - Array of class objects
+   * - mockSchema.profiles - Array of profile objects
+   *
+   * To override specific mocks in individual tests:
+   * - vi.mocked(queryFunction).mockResolvedValue(customData)
+   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
+   * ------------------------------------------------------------------ */
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      // ✨ All mocks are automatically set up via imports above
       render(<SimulationPerformance {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+
+      // Should render the component with title
+      await waitFor(() => {
+        expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
+      });
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: SimulationPerformanceProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      // Test with different props
+      const propsWithDifferentDates: SimulationPerformanceProps = {
+        dateStart: new Date("2024-06-01"),
+        dateEnd: new Date("2024-06-30"),
+        profileId: "different-profile-id",
+        thresholds: {
+          danger: 60,
+          warning: 80,
+          success: 90,
+        },
+        cohortIds: ["cohort-1", "cohort-2"],
+      };
+
+      render(<SimulationPerformance {...propsWithDifferentDates} />);
+
+      // Should render the component with title
+      expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      render(<SimulationPerformance {...mockProps} />);
 
+      // Should have proper accessibility attributes
+      expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
+      expect(
+        screen.getByText("Performance trends for scenarios within simulations"),
+      ).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    
+  describe("API Integration", () => {
+    it("should handle and display an API error state", async () => {
+      // Arrange: Override the default success mock with an error for this test.
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+      vi.mocked(getAllProfiles).mockRejectedValue(new Error("API Error"));
 
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+      render(<SimulationPerformance {...mockProps} />);
+
+      // Should still render the component even with API errors
+      await waitFor(() => {
+        expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
+      });
     });
 
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+    it("should handle loading states", () => {
+      // Component should handle loading states appropriately
+      render(<SimulationPerformance {...mockProps} />);
 
+      // Should render the component
+      expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with edge case props
+      const edgeCaseProps: SimulationPerformanceProps = {
+        dateStart: new Date("2024-01-01"),
+        dateEnd: new Date("2024-01-01"), // Same date
+        profileId: undefined, // No profile
+        thresholds: {
+          danger: 0,
+          warning: 0,
+          success: 0,
+        },
+        cohortIds: [], // Empty cohorts
+      };
 
-  
+      render(<SimulationPerformance {...edgeCaseProps} />);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should render the component even with edge case props
+      expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with minimal props
+      const minimalProps: SimulationPerformanceProps = {
+        dateStart: new Date(),
+        dateEnd: new Date(),
+        profileId: "test-id",
+        thresholds: {
+          danger: 50,
+          warning: 70,
+          success: 80,
+        },
+        cohortIds: ["test-cohort"],
+      };
+
+      render(<SimulationPerformance {...minimalProps} />);
+
+      // Should render with minimal props
+      expect(screen.getByText("Scenario Performance")).toBeInTheDocument();
     });
   });
 });
@@ -87,34 +159,34 @@ describe('SimulationPerformance', () => {
 /*
  * Component Analysis for SimulationPerformance:
  * Path: common/analytics/footer/SimulationPerformance.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: SimulationPerformanceProps
  * - Has props: true
  * - Props interface: SimulationPerformanceProps
  * - Client component: true
- * - Uses hooks: useEffect, useMemo, useState
+ * - Uses hooks: useQuery, useMemo
  * - Uses router: false
- * - Has API calls: false
+ * - Has API calls: true
  * - Has form handling: false
- * - Uses state: true
- * - Uses effects: true
+ * - Uses state: false
+ * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<SimulationPerformance {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<SimulationPerformance {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

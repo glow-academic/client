@@ -1,122 +1,198 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import { render } from "@/test/custom-render";
+import { screen, waitFor } from "@/test/custom-render";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import PracticeZone from '@/components/practice/PracticeZone';
+import PracticeZone from "@/components/practice/PracticeZone";
+import type { Persona, Profile, Scenario, Simulation } from "@/types";
 
-
+// Import mocks
+import "@/mocks/api";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
-import type { PracticeZoneProps } from '@/components/practice/PracticeZone';
-const mockProps: PracticeZoneProps = {
-  simulations: [],
-  standardGroupsMapping: /* TODO <StandardGroupsMapping> */ undefined!,
-  standardsMapping: /* TODO <StandardsMapping> */ undefined!,
-  profile: /* TODO <any> */ undefined!,
+const mockProps = {
+  simulations: [
+    {
+      id: "sim-1",
+      title: "Math Practice",
+      timeLimit: 30,
+      active: true,
+      scenarioIds: ["scenario-1"],
+      rubricId: "rubric-1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      defaultSimulation: false,
+      practiceSimulation: true,
+    } as Simulation,
+  ],
+  profile: {
+    id: "profile-1",
+    userId: 1,
+    firstName: "Test",
+    lastName: "User",
+    alias: "testuser",
+    role: "superadmin" as const,
+    active: true,
+    viewedIntro: false,
+    viewedChat: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+    defaultProfile: false,
+  } as Profile,
   onStartSimulation: vi.fn(),
-  loadingSimulation: null,
+  loadingSimulation: null as string | null,
+  scenarios: [
+    {
+      id: "scenario-1",
+      name: "Algebra Problem",
+      description: "Solve algebra problems",
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      generated: false,
+      personaId: null,
+      parameterItemIds: null,
+      documentIds: null,
+      defaultScenario: false,
+      practiceScenario: true,
+      parentId: null,
+    } as Scenario,
+  ],
+  personas: [
+    {
+      id: "persona-1",
+      name: "Math Tutor",
+      description: "Helps with math",
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Persona,
+  ],
 };
 // ------------------------------------------------------------------
-describe('PracticeZone', () => {
-  
+describe("PracticeZone", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<PracticeZone {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+
+      // Should render the practice zone
+      await waitFor(() => {
+        expect(screen.getByText("Math Practice")).toBeInTheDocument();
+      });
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: PracticeZoneProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      render(<PracticeZone {...mockProps} />);
+
+      // Should render simulation cards
+      expect(screen.getByText("Math Practice")).toBeInTheDocument();
+
+      // Should render profile information - the component doesn't display profile name directly
+      expect(screen.getByTestId("simulation-title")).toBeInTheDocument();
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      render(<PracticeZone {...mockProps} />);
 
-    });
-  });
+      // Should have proper heading structure - the component uses h3, not h1
+      expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
-
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
-
+      // Should have interactive elements
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBeGreaterThan(0);
     });
   });
 
-  
+  describe("User Interactions", () => {
+    it("should handle simulation start", async () => {
+      const user = userEvent.setup();
+      render(<PracticeZone {...mockProps} />);
 
-  
+      // Find and click start simulation button
+      const startButton = screen.getByText("Start Simulation");
+      await user.click(startButton);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should call the onStartSimulation callback
+      expect(mockProps.onStartSimulation).toHaveBeenCalledWith("sim-1");
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle loading state", async () => {
+      const loadingProps = {
+        ...mockProps,
+        loadingSimulation: "sim-1",
+      };
+
+      render(<PracticeZone {...loadingProps} />);
+
+      // Should show loading state - the button text changes to "Starting..."
+      expect(screen.getByText("Starting...")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with empty simulations
+      const emptyProps = {
+        ...mockProps,
+        simulations: [],
+      };
+
+      render(<PracticeZone {...emptyProps} />);
+
+      // Should show no simulations message - the component returns null when no simulations
+      expect(
+        screen.queryByText("No simulations available"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should handle missing or invalid props", () => {
+      // Test with minimal props
+      const minimalProps = {
+        simulations: [],
+        profile: mockProps.profile,
+        onStartSimulation: vi.fn(),
+        loadingSimulation: null,
+        scenarios: [],
+        personas: [],
+      };
+
+      render(<PracticeZone {...minimalProps} />);
+
+      // Should still render without crashing - component returns null when no simulations
+      expect(screen.queryByText("Practice Zone")).not.toBeInTheDocument();
+    });
+
+    it("should handle inactive simulations", () => {
+      const inactiveProps = {
+        ...mockProps,
+        simulations: [
+          {
+            id: "sim-1",
+            title: "Math Practice",
+            timeLimit: 30,
+            active: false,
+            scenarioIds: ["scenario-1"],
+            rubricId: "rubric-1",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            defaultSimulation: false,
+            practiceSimulation: true,
+          } satisfies Simulation,
+        ],
+      };
+
+      render(<PracticeZone {...inactiveProps} />);
+
+      // The component doesn't filter by active status, so inactive simulations are still shown
+      expect(screen.getByText("Math Practice")).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for PracticeZone:
- * Path: practice/PracticeZone.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: true
- * - Props interface: PracticeZoneProps
- * - Client component: false
- * - Uses hooks: useCallback, useState
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<PracticeZone {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<PracticeZone {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

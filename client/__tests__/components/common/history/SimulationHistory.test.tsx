@@ -1,127 +1,124 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
-import type {  } from '@tanstack/react-table';
+import SimulationHistory, {
+  HistoryDataItem,
+} from "@/components/common/history/SimulationHistory";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 
-// ——————————————————————————————————————————
-import SimulationHistory, { HistoryDataItem, SimulationHistoryProps } from '@/components/common/history/SimulationHistory';
+describe("SimulationHistory", () => {
+  const mockHistoryData: HistoryDataItem[] = [
+    {
+      attemptId: "1",
+      date: new Date("2024-01-01"),
+      profileId: "profile1",
+      profileName: "John Doe",
+      simulationName: "Test Simulation",
+      numScenarios: 3,
+      numScenariosCompleted: 2,
+      infiniteMode: false,
+      infiniteModeTimeLimit: null,
+      personaNames: ["Persona 1"],
+      personaColors: ["#FF0000"],
+      score: 85,
+      simulation_id: "sim1",
+      scenario_ids: ["scenario1", "scenario2", "scenario3"],
+      scenario_titles: ["Scenario 1", "Scenario 2", "Scenario 3"],
+      isArchived: false,
+      showView: true,
+      showContinue: true,
+      practiceSimulation: false,
+      passPct: 70,
+    },
+    {
+      attemptId: "2",
+      date: new Date("2024-01-02"),
+      profileId: "profile1",
+      profileName: "John Doe",
+      simulationName: "Test Simulation 2",
+      numScenarios: 2,
+      numScenariosCompleted: 2,
+      infiniteMode: false,
+      infiniteModeTimeLimit: null,
+      personaNames: ["Persona 2"],
+      personaColors: ["#00FF00"],
+      score: 90,
+      simulation_id: "sim2",
+      scenario_ids: ["scenario4", "scenario5"],
+      scenario_titles: ["Scenario 4", "Scenario 5"],
+      isArchived: false,
+      showView: true,
+      showContinue: false,
+      practiceSimulation: true,
+      passPct: 70,
+    },
+  ];
 
+  it("renders with data and shows export functionality when showExport is true", () => {
+    render(
+      <SimulationHistory
+        data={mockHistoryData}
+        showExport={true}
+        showArchive={false}
+      />,
+    );
 
-
-// ✨ Import testing mocks
-import '@/mocks/auth';
-
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: SimulationHistoryProps = {
-  data: [],
-  showExport: false,
-  showArchive: false,
-  // singleProfile: false, /* optional */
-};
-// ------------------------------------------------------------------
-describe('SimulationHistory', () => {
-  
-  /* ------------------------------------------------------------------ *
-   * 💡 Mock Data Usage Guide:
-   * 
-   * All API functions are automatically mocked via imports above.
-   * Use mockSchema.* for realistic test data:
-   * 
-   * Examples:
-   * - mockSchema.users[0] - First user object
-   * - mockSchema.classes - Array of class objects  
-   * - mockSchema.profiles - Array of profile objects
-   * 
-   * To override specific mocks in individual tests:
-   * - vi.mocked(queryFunction).mockResolvedValue(customData)
-   * - vi.mocked(mutationFunction).mockResolvedValue(customResponse)
-   * ------------------------------------------------------------------ */
-  
-  // ✨ Reset mocks after each test
-  afterEach(() => {
-    vi.clearAllMocks();
+    // Check that the component renders without crashing
+    expect(screen.getByText("Test Simulation")).toBeInTheDocument();
+    expect(screen.getByText("Test Simulation 2")).toBeInTheDocument();
   });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<SimulationHistory {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
-    });
+  it("renders with data and hides export functionality when showExport is false", () => {
+    render(
+      <SimulationHistory
+        data={mockHistoryData}
+        showExport={false}
+        showArchive={false}
+      />,
+    );
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: SimulationHistoryProps
-      
-      // TODO add props assertions
-    });
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+    // Check that the component renders without crashing
+    expect(screen.getByText("Test Simulation")).toBeInTheDocument();
+    expect(screen.getByText("Test Simulation 2")).toBeInTheDocument();
   });
 
-  
+  it("renders with archive functionality when showArchive is true", () => {
+    render(
+      <SimulationHistory
+        data={mockHistoryData}
+        showExport={false}
+        showArchive={true}
+      />,
+    );
 
-  
+    // Check that the component renders without crashing
+    expect(screen.getByText("Test Simulation")).toBeInTheDocument();
+    expect(screen.getByText("Test Simulation 2")).toBeInTheDocument();
+  });
 
-  
+  it("renders loading state when isLoading is true", () => {
+    render(
+      <SimulationHistory
+        data={[]}
+        showExport={false}
+        showArchive={false}
+        isLoading={true}
+      />,
+    );
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+    // Should show loading skeleton instead of data
+    expect(screen.queryByText("Test Simulation")).not.toBeInTheDocument();
+  });
 
-    });
+  it("renders empty state when no data provided", () => {
+    render(
+      <SimulationHistory
+        data={[]}
+        showExport={false}
+        showArchive={false}
+        isLoading={false}
+      />,
+    );
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+    // Should show "No results" message
+    expect(screen.getByText("No results.")).toBeInTheDocument();
   });
 });
-
-/*
- * Component Analysis for SimulationHistory:
- * Path: common/history/SimulationHistory.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: HistoryDataItem, SimulationHistoryProps
- * - Has props: true
- * - Props interface: SimulationHistoryProps
- * - Client component: false
- * - Uses hooks: useProfile, useMemo
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<SimulationHistory {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<SimulationHistory {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

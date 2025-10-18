@@ -32,7 +32,7 @@ const mockProfile = {
 
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={queryClient}>
-    <ProfileProvider activeProfile={mockProfile}>
+    <ProfileProvider>
       <AnalyticsProvider>
         <AssistantProvider>
           <WebSocketProvider profileId={mockProfile.id}>

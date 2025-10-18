@@ -265,3 +265,21 @@ class TestScore_Item:
         # TODO: Implement error test for score_item
         assert False, "IMPLEMENT: Error test for score_item"
 
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `format_parameter_item_info`")
+class TestFormat_Parameter_Item_Info:
+    """Tests for format_parameter_item_info function."""
+
+    def test_format_parameter_item_info_success(self):
+        """Test successful format_parameter_item_info execution."""
+        # TODO: Implement test for format_parameter_item_info
+        assert False, "IMPLEMENT: Test for format_parameter_item_info"
+
+    def test_format_parameter_item_info_error(self):
+        """Test format_parameter_item_info error handling."""
+        # TODO: Implement error test for format_parameter_item_info
+        assert False, "IMPLEMENT: Error test for format_parameter_item_info"
+

@@ -1,82 +1,57 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Progress } from "@/components/ui/progress";
+import { render } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Progress } from '@/components/ui/progress';
 
-describe('progress', () => {
-  
+describe("Progress", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Progress value={50} />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<progress  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(
+        document.querySelector('[data-slot="progress"]'),
+      ).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Progress value={75} aria-label="Test Progress" />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const progress = document.querySelector('[data-slot="progress"]');
+      expect(progress).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with value prop", () => {
+      render(<Progress value={25} />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const progress = document.querySelector('[data-slot="progress"]');
+      expect(progress).toBeInTheDocument();
     });
 
-    
+    it("should render with max value", () => {
+      render(<Progress value={50} max={100} />);
+
+      const progress = document.querySelector('[data-slot="progress"]');
+      expect(progress).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with zero value
+      render(<Progress value={0} />);
+
+      const progress = document.querySelector('[data-slot="progress"]');
+      expect(progress).toBeInTheDocument();
+    });
+
+    it("should handle maximum value", () => {
+      render(<Progress value={100} />);
+
+      const progress = document.querySelector('[data-slot="progress"]');
+      expect(progress).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for progress:
- * Path: ui/progress.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Progress
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<progress />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<progress {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

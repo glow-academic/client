@@ -1,82 +1,99 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis } from '@/components/ui/breadcrumb';
 
-describe('breadcrumb', () => {
-  
+describe("Breadcrumb", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Current</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<breadcrumb  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Home")).toBeInTheDocument();
+      expect(screen.getByText("Current")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Current</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const link = screen.getByRole("link", { name: "Home" });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "/");
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render breadcrumb navigation correctly", () => {
+      render(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/docs">Docs</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Current</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Home")).toBeInTheDocument();
+      expect(screen.getByText("Docs")).toBeInTheDocument();
+      expect(screen.getByText("Current")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal breadcrumb
+      render(
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>Single Page</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>,
+      );
+
+      expect(screen.getByText("Single Page")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for breadcrumb:
- * Path: ui/breadcrumb.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<breadcrumb />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<breadcrumb {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

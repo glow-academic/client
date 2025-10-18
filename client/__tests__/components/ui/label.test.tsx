@@ -1,82 +1,50 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Label } from "@/components/ui/label";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Label } from '@/components/ui/label';
 
-describe('label', () => {
-  
+describe("Label", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Label>Test Label</Label>);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<label  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Test Label")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Label htmlFor="test-input">Accessible Label</Label>);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const label = screen.getByText("Accessible Label");
+      expect(label).toBeInTheDocument();
+      expect(label).toHaveAttribute("for", "test-input");
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with htmlFor attribute", () => {
+      render(<Label htmlFor="input-id">Form Label</Label>);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const label = screen.getByText("Form Label");
+      expect(label).toHaveAttribute("for", "input-id");
     });
 
-    
+    it("should render with custom className", () => {
+      render(<Label className="custom-class">Custom Label</Label>);
+
+      const label = screen.getByText("Custom Label");
+      expect(label).toHaveClass("custom-class");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with empty content
+      render(<Label></Label>);
+
+      const label = document.querySelector('[data-slot="label"]');
+      expect(label).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for label:
- * Path: ui/label.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Label
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<label />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<label {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -1,82 +1,68 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
 
-describe('popover', () => {
-  
+describe("Popover", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Popover>
+          <PopoverTrigger>Open Popover</PopoverTrigger>
+          <PopoverContent>Popover Content</PopoverContent>
+        </Popover>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<popover  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Open Popover")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Popover>
+          <PopoverTrigger>Open Popover</PopoverTrigger>
+          <PopoverContent>Accessible Content</PopoverContent>
+        </Popover>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const trigger = screen.getByText("Open Popover");
+      expect(trigger).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render popover trigger correctly", () => {
+      render(
+        <Popover>
+          <PopoverTrigger>Trigger</PopoverTrigger>
+          <PopoverContent>
+            <div>Content</div>
+            <div>More Content</div>
+          </PopoverContent>
+        </Popover>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Only the trigger should be visible when popover is closed
+      expect(screen.getByText("Trigger")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal popover
+      render(
+        <Popover>
+          <PopoverTrigger>Minimal</PopoverTrigger>
+          <PopoverContent>Content</PopoverContent>
+        </Popover>,
+      );
+
+      expect(screen.getByText("Minimal")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for popover:
- * Path: ui/popover.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Popover, PopoverTrigger, PopoverContent, PopoverAnchor
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<popover />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<popover {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

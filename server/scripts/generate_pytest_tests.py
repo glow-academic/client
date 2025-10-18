@@ -235,69 +235,21 @@ def main():
     """Main function to generate/update tests and remove orphans."""
     app_dir = Path("app")
     tests_dir = Path("tests")
-    print("🚀 Generating pytest tests for FastAPI application...")
+    print("🚀 Generating pytest tests for services and utils...")
     print(f"📁 Working directory: {Path.cwd()}")
 
     tests_dir.mkdir(exist_ok=True)
-    (tests_dir / "routes").mkdir(exist_ok=True)
     (tests_dir / "services").mkdir(exist_ok=True)
     (tests_dir / "utils").mkdir(exist_ok=True)
-    (tests_dir / "web").mkdir(exist_ok=True)
 
     stats = {
-        "routes": 0,
         "services": 0,
         "utils": 0,
-        "web": 0,
-        "main": 0,
         "created": 0,
         "updated": 0,
         "deleted": 0,
     }
     expected_test_files = set()
-
-    # --- Process Routes ---
-    routes_dir = app_dir / "routes"
-    if routes_dir.exists():
-        print("\n📁 Processing routes...")
-        for py_file in routes_dir.glob("*.py"):
-            if py_file.name.startswith("__"):
-                continue
-
-            test_file = tests_dir / "routes" / f"test_{py_file.stem}.py"
-            expected_test_files.add(test_file.resolve())
-            print(f"  📄 Syncing tests for {py_file.name}...")
-
-            source_functions = analyze_route_file(str(py_file))
-            if not source_functions:
-                continue
-
-            if not test_file.exists():
-                test_content = generate_route_test(py_file.stem, source_functions)
-                test_file.write_text(test_content)
-                stats["created"] += 1
-                print(f"    ✨ Created new test file: {test_file}")
-            else:
-                existing_classes = analyze_test_file(str(test_file))
-                missing_functions = [
-                    f
-                    for f in source_functions
-                    if f"Test{f.title()}" not in existing_classes
-                ]
-                if missing_functions:
-                    content_to_append = ""
-                    for func_name in missing_functions:
-                        content_to_append += generate_single_route_test_class(func_name)
-
-                    with test_file.open("a") as f:
-                        f.write(content_to_append + "\n")
-                    stats["updated"] += 1
-                    print(
-                        f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}"
-                    )
-                else:
-                    print("    ✅ All tests are present.")
-            stats["routes"] += 1
 
     # --- Process Services ---
     services_dir = app_dir / "services"
@@ -413,112 +365,11 @@ def main():
                     print("    ✅ All tests are present.")
             stats["utils"] += 1
 
-    # --- Process Web ---
-    web_dir = app_dir / "web"
-    if web_dir.exists():
-        print("\n📁 Processing web...")
-        for py_file in web_dir.rglob("*.py"):
-            if py_file.name.startswith("__"):
-                continue
-
-            rel_path = py_file.relative_to(web_dir)
-            test_dir = tests_dir / "web" / rel_path.parent
-            # Make the test filename unique to avoid import conflicts
-            test_filename = (
-                f"test_{rel_path.parent.name.lower()}_{rel_path.stem}.py"
-                if rel_path.parent.name
-                else f"test_{rel_path.stem}.py"
-            )
-            test_file = test_dir / test_filename
-            expected_test_files.add(test_file.resolve())
-
-            print(f"  📄 Syncing tests for {rel_path}...")
-            source_functions = analyze_service_file(str(py_file))
-            if not source_functions:
-                continue
-
-            test_dir.mkdir(parents=True, exist_ok=True)
-            if not test_file.exists():
-                module_path = str(rel_path.with_suffix("")).replace("/", ".")
-                test_content = generate_service_test(
-                    f"web.{module_path}", source_functions
-                )
-                test_file.write_text(test_content)
-                stats["created"] += 1
-                print(f"    ✨ Created new test file: {test_file}")
-            else:
-                existing_classes = analyze_test_file(str(test_file))
-                missing_functions = [
-                    f
-                    for f in source_functions
-                    if f"Test{f.title()}" not in existing_classes
-                ]
-                if missing_functions:
-                    content_to_append = ""
-                    for func_name in missing_functions:
-                        content_to_append += generate_single_service_test_class(
-                            func_name
-                        )
-
-                    with test_file.open("a") as f:
-                        f.write(content_to_append + "\n")
-                    stats["updated"] += 1
-                    print(
-                        f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}"
-                    )
-                else:
-                    print("    ✅ All tests are present.")
-            stats["web"] += 1
-
-    # --- Process Main ---
-    main_file = app_dir / "main.py"
-    if main_file.exists():
-        print("\n📁 Processing main.py...")
-        test_file = tests_dir / "test_main.py"
-        expected_test_files.add(test_file.resolve())
-
-        print("  📄 Syncing tests for main.py...")
-        source_functions = analyze_service_file(str(main_file))
-        if not source_functions:
-            print("    ⚠️  No functions found in main.py")
-        else:
-            if not test_file.exists():
-                test_content = generate_service_test("main", source_functions)
-                test_file.write_text(test_content)
-                stats["created"] += 1
-                print(f"    ✨ Created new test file: {test_file}")
-            else:
-                existing_classes = analyze_test_file(str(test_file))
-                missing_functions = [
-                    f
-                    for f in source_functions
-                    if f"Test{f.title()}" not in existing_classes
-                ]
-                if missing_functions:
-                    content_to_append = ""
-                    for func_name in missing_functions:
-                        content_to_append += generate_single_service_test_class(
-                            func_name
-                        )
-
-                    with test_file.open("a") as f:
-                        f.write(content_to_append + "\n")
-                    stats["updated"] += 1
-                    print(
-                        f"    🔄 Appended {len(missing_functions)} missing test class(es) to {test_file}"
-                    )
-                else:
-                    print("    ✅ All tests are present.")
-        stats["main"] += 1
-
     # --- Clean up orphan test files ---
     print("\n🗑️  Cleaning up orphan test files...")
     test_search_paths = [
-        tests_dir / "routes",
         tests_dir / "services",
         tests_dir / "utils",
-        tests_dir / "web",
-        tests_dir,
     ]
     for path in test_search_paths:
         if path.exists():
@@ -542,7 +393,7 @@ def main():
     # --- Summary ---
     print("\n📊 Summary:")
     print(
-        f"  Processed: {stats['routes']} routes, {stats['services']} services, {stats['utils']} utils, {stats['web']} web, {stats['main']} main"
+        f"  Processed: {stats['services']} services, {stats['utils']} utils"
     )
     print(
         f"  ✨ Created: {stats['created']} | 🔄 Updated: {stats['updated']} | 🔥 Deleted: {stats['deleted']}"

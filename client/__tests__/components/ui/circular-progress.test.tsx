@@ -1,102 +1,69 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { CircularProgress } from "@/components/ui/circular-progress";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { CircularProgress } from '@/components/ui/circular-progress';
 
+describe("CircularProgress", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<CircularProgress progress={50} />);
 
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-import type { CircularProgressProps } from '@/components/ui/circular-progress';
-const mockProps: CircularProgressProps = {
-  progress: 0,
-  // size: 0, /* optional */
-  // strokeWidth: 0, /* optional */
-};
-// ------------------------------------------------------------------
-describe('circular-progress', () => {
-  
-
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<circularprogress {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("50%")).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: CircularProgressProps
-      
-      // TODO add props assertions
-    });
+    it("should have correct accessibility attributes", () => {
+      render(<CircularProgress progress={75} />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      expect(screen.getByText("75%")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with different progress values", () => {
+      render(<CircularProgress progress={25} />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("25%")).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should render with custom size", () => {
+      render(<CircularProgress progress={50} size={60} />);
+
+      expect(screen.getByText("50%")).toBeInTheDocument();
+    });
+
+    it("should render with custom stroke width", () => {
+      render(<CircularProgress progress={50} strokeWidth={6} />);
+
+      expect(screen.getByText("50%")).toBeInTheDocument();
+    });
+
+    it("should handle progress at 0%", () => {
+      render(<CircularProgress progress={0} />);
+
+      expect(screen.getByText("0%")).toBeInTheDocument();
+    });
+
+    it("should handle progress at 100%", () => {
+      render(<CircularProgress progress={100} />);
+
+      expect(screen.getByText("100%")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with negative progress (component displays the actual value)
+      render(<CircularProgress progress={-10} />);
+
+      expect(screen.getByText("-10%")).toBeInTheDocument();
+    });
+
+    it("should handle progress over 100% (component displays the actual value)", () => {
+      render(<CircularProgress progress={150} />);
+
+      expect(screen.getByText("150%")).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for circular-progress:
- * Path: ui/circular-progress.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: CircularProgress
- * - Has props: true
- * - Props interface: CircularProgressProps
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<circularprogress {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<circular-progress {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

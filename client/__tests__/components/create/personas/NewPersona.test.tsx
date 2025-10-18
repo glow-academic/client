@@ -1,82 +1,48 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import NewPersona from '@/components/create/personas/NewPersona';
+import NewPersona from "@/components/create/personas/NewPersona";
 
-describe('NewPersona', () => {
-  
+// Mock the Persona component
+vi.mock("@/components/common/agent/Persona", () => ({
+  default: ({ mode }: { mode: string }) => (
+    <div data-testid="persona-component" data-mode={mode}>
+      Persona Component (Mode: {mode})
+    </div>
+  ),
+}));
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<NewPersona  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+describe("NewPersona", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<NewPersona />);
+
+      // Check that the Persona component is rendered with create mode
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-mode",
+        "create",
+      );
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<NewPersona />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      // Check that the Persona component is accessible
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // This component is very simple, just rendering the Persona component
+      // with create mode, so there aren't many edge cases to test
+      render(<NewPersona />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Component should render without crashing
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
     });
-
-    
   });
 });
-
-/*
- * Component Analysis for NewPersona:
- * Path: create/personas/NewPersona.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<NewPersona />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<NewPersona {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

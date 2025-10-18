@@ -57,3 +57,21 @@ class TestGet_Document_Info:
             get_document_info(document_ids, mock_session)
 
         mock_session.exec.assert_called_once()
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `format_document_info`")
+class TestFormat_Document_Info:
+    """Tests for format_document_info function."""
+
+    def test_format_document_info_success(self):
+        """Test successful format_document_info execution."""
+        # TODO: Implement test for format_document_info
+        assert False, "IMPLEMENT: Test for format_document_info"
+
+    def test_format_document_info_error(self):
+        """Test format_document_info error handling."""
+        # TODO: Implement error test for format_document_info
+        assert False, "IMPLEMENT: Error test for format_document_info"
+

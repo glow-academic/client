@@ -1,82 +1,88 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
-describe('resizable', () => {
-  
+describe("Resizable", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={50}>Panel 1</ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={50}>Panel 2</ResizablePanel>
+        </ResizablePanelGroup>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<resizable  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]',
+      );
+      expect(panelGroup).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={50}>Accessible Panel</ResizablePanel>
+          <ResizableHandle />
+          <ResizablePanel defaultSize={50}>Another Panel</ResizablePanel>
+        </ResizablePanelGroup>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]',
+      );
+      expect(panelGroup).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render resizable panels with handle", () => {
+      render(
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={50}>Left Panel</ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={50}>Right Panel</ResizablePanel>
+        </ResizablePanelGroup>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Left Panel")).toBeInTheDocument();
+      expect(screen.getByText("Right Panel")).toBeInTheDocument();
     });
 
-    
+    it("should render with custom className", () => {
+      render(
+        <ResizablePanelGroup direction="horizontal" className="custom-class">
+          <ResizablePanel defaultSize={100}>Panel</ResizablePanel>
+        </ResizablePanelGroup>,
+      );
+
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]',
+      );
+      expect(panelGroup).toHaveClass("custom-class");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal content
+      render(
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel defaultSize={100} />
+        </ResizablePanelGroup>,
+      );
+
+      const panelGroup = document.querySelector(
+        '[data-slot="resizable-panel-group"]',
+      );
+      expect(panelGroup).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for resizable:
- * Path: ui/resizable.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: ResizablePanelGroup, ResizablePanel, ResizableHandle
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<resizable />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<resizable {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

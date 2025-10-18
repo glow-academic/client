@@ -1,75 +1,119 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import type { Table } from '@tanstack/react-table';
+import { render } from "@/test/custom-render";
+import type { Table } from "@tanstack/react-table";
+import { screen } from "@/test/custom-render";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import { StaffDataTableToolbar, StaffDataTableToolbarProps } from '@/components/management/staff/StaffDataTableToolbar';
-
-
+import {
+  StaffDataTableToolbar,
+  StaffDataTableToolbarProps,
+} from "@/components/management/staff/StaffDataTableToolbar";
+import { StaffData } from "@/hooks/use-staff-columns";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: StaffDataTableToolbarProps = {
-  table: {} as unknown as Table<{ profile_id: string; first_name: string; last_name: string; alias: string; name: string; role: string; email: string; initials: string; active: boolean; lastActive: string | null; cohort_ids: string[]; ... 4 more ...; can_delete: boolean; }>,
+  table: {
+    getState: () => ({ columnFilters: [] }),
+    getColumn: vi.fn(),
+    getAllColumns: () => [],
+    resetColumnFilters: vi.fn(),
+  } as unknown as Table<StaffData>,
   roleOptions: [],
   cohortOptions: [],
   activityOptions: [],
   lastActiveOptions: [],
   isRefreshing: false,
   onRefresh: vi.fn(),
-  selectedCount: 0,
-  onBulkEdit: vi.fn(),
-  onBulkDelete: vi.fn(),
-  onCreate: vi.fn(),
-  // deletableCount: 0, /* optional */
-  // editableCount: 0, /* optional */
 };
 // ------------------------------------------------------------------
-describe('StaffDataTableToolbar', () => {
-  
+describe("StaffDataTableToolbar", () => {
+  // ✨ Reset mocks after each test
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<StaffDataTableToolbar {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+
+      // Should render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias..."),
+      ).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: StaffDataTableToolbarProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      // Test with different props
+      const propsWithOptions: StaffDataTableToolbarProps = {
+        ...mockProps,
+        roleOptions: [{ value: "admin", label: "Admin" }],
+        cohortOptions: [{ value: "cohort1", label: "Cohort 1" }],
+        activityOptions: [{ value: "active", label: "Active" }],
+        lastActiveOptions: [{ value: "today", label: "Today" }],
+      };
+
+      render(<StaffDataTableToolbar {...propsWithOptions} />);
+
+      // Should render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias..."),
+      ).toBeInTheDocument();
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      render(<StaffDataTableToolbar {...mockProps} />);
 
+      // Should have search input with proper accessibility
+      const searchInput = screen.getByPlaceholderText(
+        "Search staff by name or alias...",
+      );
+      expect(searchInput).toBeInTheDocument();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with empty options
+      const propsWithEmptyOptions: StaffDataTableToolbarProps = {
+        ...mockProps,
+        roleOptions: [],
+        cohortOptions: [],
+        activityOptions: [],
+        lastActiveOptions: [],
+      };
 
-  
+      render(<StaffDataTableToolbar {...propsWithEmptyOptions} />);
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Should still render the search input
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias..."),
+      ).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with minimal props
+      const minimalProps: StaffDataTableToolbarProps = {
+        table: {
+          getState: () => ({ columnFilters: [] }),
+          getColumn: vi.fn(),
+          getAllColumns: () => [],
+          resetColumnFilters: vi.fn(),
+        } as unknown as Table<StaffData>,
+        roleOptions: [],
+        cohortOptions: [],
+        activityOptions: [],
+        lastActiveOptions: [],
+        isRefreshing: false,
+        onRefresh: vi.fn(),
+      };
+
+      render(<StaffDataTableToolbar {...minimalProps} />);
+
+      // Should render with minimal props
+      expect(
+        screen.getByPlaceholderText("Search staff by name or alias..."),
+      ).toBeInTheDocument();
     });
   });
 });
@@ -77,7 +121,7 @@ describe('StaffDataTableToolbar', () => {
 /*
  * Component Analysis for StaffDataTableToolbar:
  * Path: management/staff/StaffDataTableToolbar.tsx
- * 
+ *
  * Features detected:
  * - Default export: false
  * - Named exports: StaffDataTableToolbar, StaffDataTableToolbarProps
@@ -91,20 +135,20 @@ describe('StaffDataTableToolbar', () => {
  * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<StaffDataTableToolbar {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<StaffDataTableToolbar {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

@@ -1,99 +1,68 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import EditAgent, { EditSystemAgentProps } from '@/components/system/agents/EditAgent';
-
-
+import EditAgent, {
+  EditSystemAgentProps,
+} from "@/components/system/agents/EditAgent";
 
 // ------------------------------------------------------------------
 // Minimal props factory – edit values as needed
 const mockProps: EditSystemAgentProps = {
-  agentId: 'test-agentId',
+  agentId: "test-agentId",
 };
+
 // ------------------------------------------------------------------
-describe('EditAgent', () => {
-  
-
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
+describe("EditAgent", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
       render(<EditAgent {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+
+      // Check that the component renders with form elements
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("Description *")).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: EditSystemAgentProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      render(<EditAgent {...mockProps} />);
+
+      // Check that form elements are rendered
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("System Prompt *")).toBeInTheDocument();
+      expect(screen.getByText("Update Agent")).toBeInTheDocument();
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      render(<EditAgent {...mockProps} />);
 
+      // Check that the component is accessible
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
+      expect(screen.getByText("Update Agent")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      const edgeCaseProps = {
+        agentId: "invalid-id",
+      };
 
-  
+      render(<EditAgent {...edgeCaseProps} />);
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Component should still render
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      const minimalProps = {
+        agentId: "",
+      };
+
+      render(<EditAgent {...minimalProps} />);
+
+      // Component should still render
+      expect(screen.getByText("Agent Name *")).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for EditAgent:
- * Path: system/agents/EditAgent.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: EditSystemAgentProps
- * - Has props: true
- * - Props interface: EditSystemAgentProps
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<EditAgent {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<EditAgent {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

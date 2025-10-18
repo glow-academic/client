@@ -1,99 +1,95 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import PersonaEdit, { PersonaEditProps } from '@/components/create/personas/PersonaEdit';
+import PersonaEdit, {
+  PersonaEditProps,
+} from "@/components/create/personas/PersonaEdit";
 
+// Mock the Persona component
+vi.mock("@/components/common/agent/Persona", () => ({
+  default: ({ personaId, mode }: { personaId: string; mode: string }) => (
+    <div
+      data-testid="persona-component"
+      data-persona-id={personaId}
+      data-mode={mode}
+    >
+      Persona Component (ID: {personaId}, Mode: {mode})
+    </div>
+  ),
+}));
 
+describe("PersonaEdit", () => {
+  const defaultProps: PersonaEditProps = {
+    personaId: "test-persona-id",
+  };
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: PersonaEditProps = {
-  personaId: 'test-personaId',
-};
-// ------------------------------------------------------------------
-describe('PersonaEdit', () => {
-  
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<PersonaEdit {...defaultProps} />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<PersonaEdit {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      // Check that the Persona component is rendered with edit mode
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-mode",
+        "edit",
+      );
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-persona-id",
+        "test-persona-id",
+      );
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: PersonaEditProps
-      
-      // TODO add props assertions
+    it("should render with props", () => {
+      render(<PersonaEdit {...defaultProps} />);
+
+      // Check that the Persona component is rendered with correct props
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-persona-id",
+        "test-persona-id",
+      );
     });
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+    it("should have correct accessibility attributes", () => {
+      render(<PersonaEdit {...defaultProps} />);
 
+      // Check that the Persona component is accessible
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with different persona IDs
+      const propsWithDifferentId = {
+        personaId: "different-persona-id",
+      };
 
-  
+      render(<PersonaEdit {...propsWithDifferentId} />);
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Component should render with the new persona ID
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-persona-id",
+        "different-persona-id",
+      );
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle missing or invalid props", () => {
+      // Test with empty persona ID
+      const propsWithEmptyId = {
+        personaId: "",
+      };
+
+      render(<PersonaEdit {...propsWithEmptyId} />);
+
+      // Component should still render
+      expect(screen.getByTestId("persona-component")).toBeInTheDocument();
+      expect(screen.getByTestId("persona-component")).toHaveAttribute(
+        "data-persona-id",
+        "",
+      );
     });
   });
 });
-
-/*
- * Component Analysis for PersonaEdit:
- * Path: create/personas/PersonaEdit.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: PersonaEditProps
- * - Has props: true
- * - Props interface: PersonaEditProps
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<PersonaEdit {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<PersonaEdit {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

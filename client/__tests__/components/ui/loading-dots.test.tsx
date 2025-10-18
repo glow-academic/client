@@ -1,82 +1,57 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { LoadingDots } from "@/components/ui/loading-dots";
+import { render } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { LoadingDots } from '@/components/ui/loading-dots';
 
-describe('loading-dots', () => {
-  
+describe("LoadingDots", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<LoadingDots />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<loadingdots  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      // LoadingDots should render three dots
+      const dots = document.querySelectorAll(
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
+      );
+      expect(dots).toHaveLength(3);
     });
 
-    
+    it("should have correct structure", () => {
+      render(<LoadingDots />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      const container = document.querySelector(".flex.space-x-1");
+      expect(container).toBeInTheDocument();
 
+      const dots = document.querySelectorAll(
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
+      );
+      expect(dots).toHaveLength(3);
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render three animated dots", () => {
+      render(<LoadingDots />);
 
-  
+      const dots = document.querySelectorAll(
+        ".w-2.h-2.bg-current.rounded-full.animate-pulse",
+      );
+      expect(dots).toHaveLength(3);
 
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Check that each dot has the correct styling
+      dots.forEach((dot, index) => {
+        expect(dot).toHaveStyle({ animationDelay: `${index * 0.2}s` });
+      });
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props (no props)
+      render(<LoadingDots />);
+
+      const container = document.querySelector(".flex.space-x-1");
+      expect(container).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for loading-dots:
- * Path: ui/loading-dots.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: LoadingDots
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<loadingdots />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<loading-dots {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -1,82 +1,89 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent } from '@/components/ui/card';
 
-describe('card', () => {
-  
+describe("Card", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Card>
+          <CardHeader>
+            <CardTitle>Test Card</CardTitle>
+            <CardDescription>Test Description</CardDescription>
+          </CardHeader>
+          <CardContent>Test Content</CardContent>
+          <CardFooter>Test Footer</CardFooter>
+        </Card>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<card  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Test Card")).toBeInTheDocument();
+      expect(screen.getByText("Test Description")).toBeInTheDocument();
+      expect(screen.getByText("Test Content")).toBeInTheDocument();
+      expect(screen.getByText("Test Footer")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Card>
+          <CardHeader>
+            <CardTitle>Accessible Card</CardTitle>
+          </CardHeader>
+          <CardContent>Content</CardContent>
+        </Card>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const title = screen.getByText("Accessible Card");
+      expect(title).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render card with all sections", () => {
+      render(
+        <Card>
+          <CardHeader>
+            <CardTitle>Full Card</CardTitle>
+            <CardDescription>Description</CardDescription>
+          </CardHeader>
+          <CardContent>Main Content</CardContent>
+          <CardFooter>Footer Content</CardFooter>
+        </Card>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Full Card")).toBeInTheDocument();
+      expect(screen.getByText("Description")).toBeInTheDocument();
+      expect(screen.getByText("Main Content")).toBeInTheDocument();
+      expect(screen.getByText("Footer Content")).toBeInTheDocument();
     });
 
-    
+    it("should render minimal card", () => {
+      render(
+        <Card>
+          <CardContent>Minimal Content</CardContent>
+        </Card>,
+      );
+
+      expect(screen.getByText("Minimal Content")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with empty card
+      render(<Card></Card>);
+
+      const card = document.querySelector('[data-slot="card"]');
+      expect(card).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for card:
- * Path: ui/card.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<card />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<card {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

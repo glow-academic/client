@@ -1,117 +1,175 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import { ParametersDataTable } from "@/components/management/parameters/ParametersDataTable";
+import { render } from "@/test/custom-render";
+import { Parameter } from "@/types";
+import type { ColumnDef } from "@tanstack/react-table";
+import { describe, expect, it, vi } from "vitest";
 
-// ——————————————————————————————————————————
-import { ParametersDataTable, ParametersDataTableProps } from '@/components/management/parameters/ParametersDataTable';
+// Mock the toolbar component
+vi.mock(
+  "@/components/management/parameters/ParametersDataTableToolbar",
+  () => ({
+    ParametersDataTableToolbar: () => (
+      <div data-testid="parameters-toolbar">Toolbar</div>
+    ),
+  }),
+);
 
+// Mock the pagination component
+vi.mock("@/components/common/history/DataTablePagination", () => ({
+  DataTablePagination: () => (
+    <div data-testid="parameters-pagination">Pagination</div>
+  ),
+}));
 
+const mockParameters: Parameter[] = [
+  {
+    id: "param-1",
+    name: "Test Parameter 1",
+    description: "Test description 1",
+    numerical: true,
+    active: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "param-2",
+    name: "Test Parameter 2",
+    description: "Test description 2",
+    numerical: false,
+    active: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+  },
+];
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: ParametersDataTableProps = {
-  parameters: [],
-  renderParameterCard: vi.fn(),
+const mockColumns: ColumnDef<Parameter>[] = [
+  {
+    id: "name",
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => <div>{row.getValue("name")}</div>,
+  },
+  {
+    id: "numerical",
+    accessorKey: "numerical",
+    header: "Type",
+    cell: ({ row }) => <div>{row.getValue("numerical")}</div>,
+  },
+  {
+    id: "itemCount",
+    accessorKey: "itemCount",
+    header: "Items",
+    cell: ({ row }) => <div>{row.getValue("itemCount")}</div>,
+  },
+  {
+    id: "active",
+    accessorKey: "active",
+    header: "Status",
+    cell: ({ row }) => <div>{row.getValue("active")}</div>,
+  },
+  {
+    id: "scenarioIds",
+    accessorKey: "scenarioIds",
+    header: "Scenarios",
+    cell: ({ row }) => <div>{row.getValue("scenarioIds")}</div>,
+  },
+  {
+    id: "updatedAt",
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => <div>{row.getValue("updatedAt")}</div>,
+  },
+];
+
+const mockOptions = {
+  typeOptions: [
+    { value: "numerical", label: "Numerical" },
+    { value: "text", label: "Text" },
+  ],
+  itemCountOptions: [
+    { value: "0", label: "0 items" },
+    { value: "1-3", label: "1-3 items" },
+  ],
+  statusOptions: [
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+  ],
+  scenarioOptions: [
+    { value: "scenario-1", label: "Scenario 1" },
+    { value: "scenario-2", label: "Scenario 2" },
+  ],
 };
-// ------------------------------------------------------------------
-describe('ParametersDataTable', () => {
-  
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<ParametersDataTable {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
-    });
+const mockRenderParameterCard = (parameter: Parameter) => (
+  <div key={parameter.id} data-testid={`parameter-card-${parameter.id}`}>
+    {parameter.name}
+  </div>
+);
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ParametersDataTableProps
-      
-      // TODO add props assertions
-    });
-
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
-    });
+describe("ParametersDataTable", () => {
+  it("renders without crashing", () => {
+    render(
+      <ParametersDataTable
+        columns={mockColumns}
+        data={mockParameters}
+        typeOptions={mockOptions.typeOptions}
+        itemCountOptions={mockOptions.itemCountOptions}
+        statusOptions={mockOptions.statusOptions}
+        scenarioOptions={mockOptions.scenarioOptions}
+        renderParameterCard={mockRenderParameterCard}
+      />,
+    );
   });
 
-  describe('User Interactions', () => {
-    
+  it("renders toolbar and pagination components", () => {
+    const { getByTestId } = render(
+      <ParametersDataTable
+        columns={mockColumns}
+        data={mockParameters}
+        typeOptions={mockOptions.typeOptions}
+        itemCountOptions={mockOptions.itemCountOptions}
+        statusOptions={mockOptions.statusOptions}
+        scenarioOptions={mockOptions.scenarioOptions}
+        renderParameterCard={mockRenderParameterCard}
+      />,
+    );
 
-    it.skip('should handle state changes', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
-    });
-
-    it.skip('should handle user events', async () => {
-      const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
-
-    });
+    expect(getByTestId("parameters-toolbar")).toBeInTheDocument();
+    expect(getByTestId("parameters-pagination")).toBeInTheDocument();
   });
 
-  
+  it("renders parameter cards for each parameter", () => {
+    const { getByTestId } = render(
+      <ParametersDataTable
+        columns={mockColumns}
+        data={mockParameters}
+        typeOptions={mockOptions.typeOptions}
+        itemCountOptions={mockOptions.itemCountOptions}
+        statusOptions={mockOptions.statusOptions}
+        scenarioOptions={mockOptions.scenarioOptions}
+        renderParameterCard={mockRenderParameterCard}
+      />,
+    );
 
-  
+    expect(getByTestId("parameter-card-param-1")).toBeInTheDocument();
+    expect(getByTestId("parameter-card-param-2")).toBeInTheDocument();
+  });
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+  it("shows empty state when no parameters match filters", () => {
+    const { getByText } = render(
+      <ParametersDataTable
+        columns={mockColumns}
+        data={[]}
+        typeOptions={mockOptions.typeOptions}
+        itemCountOptions={mockOptions.itemCountOptions}
+        statusOptions={mockOptions.statusOptions}
+        scenarioOptions={mockOptions.scenarioOptions}
+        renderParameterCard={mockRenderParameterCard}
+      />,
+    );
 
-    });
-
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
-    });
+    expect(
+      getByText("No parameters match the current filters."),
+    ).toBeInTheDocument();
   });
 });
-
-/*
- * Component Analysis for ParametersDataTable:
- * Path: management/parameters/ParametersDataTable.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: ParametersDataTable, ParametersDataTableProps
- * - Has props: true
- * - Props interface: ParametersDataTableProps
- * - Client component: true
- * - Uses hooks: useState, useMemo
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<ParametersDataTable {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<ParametersDataTable {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

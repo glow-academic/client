@@ -1,82 +1,64 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Badge } from "@/components/ui/badge";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Badge, badgeVariants } from '@/components/ui/badge';
 
-describe('badge', () => {
-  
+describe("Badge", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Badge>Test Badge</Badge>);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<badge  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Test Badge")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Badge>Accessible Badge</Badge>);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const badge = screen.getByText("Accessible Badge");
+      expect(badge).toBeInTheDocument();
+      expect(badge).toHaveClass("inline-flex");
     });
   });
 
-  
+  describe("Component Variants", () => {
+    it("should render with default variant", () => {
+      render(<Badge>Default Badge</Badge>);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const badge = screen.getByText("Default Badge");
+      expect(badge).toBeInTheDocument();
     });
 
-    
+    it("should render with secondary variant", () => {
+      render(<Badge variant="secondary">Secondary Badge</Badge>);
+
+      const badge = screen.getByText("Secondary Badge");
+      expect(badge).toBeInTheDocument();
+    });
+
+    it("should render with destructive variant", () => {
+      render(<Badge variant="destructive">Destructive Badge</Badge>);
+
+      const badge = screen.getByText("Destructive Badge");
+      expect(badge).toBeInTheDocument();
+    });
+
+    it("should render with outline variant", () => {
+      render(<Badge variant="outline">Outline Badge</Badge>);
+
+      const badge = screen.getByText("Outline Badge");
+      expect(badge).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with empty content
+      render(<Badge></Badge>);
+
+      const badge = document.querySelector('[data-slot="badge"]');
+      expect(badge).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for badge:
- * Path: ui/badge.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Badge, badgeVariants
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<badge />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<badge {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

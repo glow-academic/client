@@ -1,110 +1,63 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Textarea } from "@/components/ui/textarea";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { TextareaProps, Textarea } from '@/components/ui/textarea';
 
+describe("Textarea", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Textarea />);
 
-
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: TextareaProps = {
-  // value: 'test-value', /* optional */
-  // cols: null, /* optional */
-  // disabled: null, /* optional */
-  // form: null, /* optional */
-  // maxLength: null, /* optional */
-  // minLength: null, /* optional */
-  // name: null, /* optional */
-  // placeholder: null, /* optional */
-  // readOnly: null, /* optional */
-  // required: null, /* optional */
-  // rows: null, /* optional */
-  // wrap: null, /* optional */
-};
-// ------------------------------------------------------------------
-describe('textarea', () => {
-  
-
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<textarea {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByRole("textbox")).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: TextareaProps
-      
-      // TODO add props assertions
-    });
+    it("should have correct accessibility attributes", () => {
+      render(<Textarea aria-label="Test Textarea" />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const textarea = screen.getByRole("textbox", { name: "Test Textarea" });
+      expect(textarea).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with placeholder", () => {
+      render(<Textarea placeholder="Enter text..." />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const textarea = screen.getByPlaceholderText("Enter text...");
+      expect(textarea).toBeInTheDocument();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should render with value", () => {
+      render(<Textarea value="test value" readOnly />);
+
+      const textarea = screen.getByDisplayValue("test value");
+      expect(textarea).toBeInTheDocument();
+    });
+
+    it("should render disabled when disabled prop is true", () => {
+      render(<Textarea disabled />);
+
+      const textarea = screen.getByRole("textbox");
+      expect(textarea).toBeDisabled();
+    });
+
+    it("should render with custom className", () => {
+      render(<Textarea className="custom-class" />);
+
+      const textarea = screen.getByRole("textbox");
+      expect(textarea).toHaveClass("custom-class");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props
+      render(<Textarea />);
+
+      const textarea = screen.getByRole("textbox");
+      expect(textarea).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for textarea:
- * Path: ui/textarea.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: TextareaProps, Textarea
- * - Has props: true
- * - Props interface: TextareaProps
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<textarea {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<textarea {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

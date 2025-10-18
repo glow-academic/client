@@ -1,116 +1,202 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
-import userEvent from '@testing-library/user-event';
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ——————————————————————————————————————————
-import AttemptInput, { AttemptInputProps } from '@/components/common/chat/attempt/AttemptInput';
+import AttemptInput from "@/components/common/chat/attempt/AttemptInput";
 
+// Mock the contexts
+const mockSendMessage = vi.fn();
+const mockStopMessage = vi.fn();
 
+vi.mock("@/contexts/simulation-context", () => ({
+  useSimulation: vi.fn(() => ({
+    currentChat: { id: "test-chat-id", completed: false },
+    simulation: { timeLimit: null },
+    isActive: true,
+    isSendingMessage: false,
+    isStoppingMessage: false,
+    sendMessage: mockSendMessage,
+    stopMessage: mockStopMessage,
+  })),
+}));
 
-// ------------------------------------------------------------------
-// Minimal props factory – edit values as needed
-const mockProps: AttemptInputProps = {
+vi.mock("@/contexts/websocket-context", () => ({
+  useWebSocket: vi.fn(() => ({
+    isConnected: true,
+  })),
+  WebSocketProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
 
-};
-// ------------------------------------------------------------------
-describe('AttemptInput', () => {
-  
+describe("AttemptInput", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<AttemptInput {...mockProps} />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<AttemptInput />);
+
+      expect(
+        screen.getByPlaceholderText("Type your message..."),
+      ).toBeInTheDocument();
+
+      // Look for the send button by its type attribute
+      const sendButton = document.querySelector('button[type="submit"]');
+      expect(sendButton).toBeInTheDocument();
     });
 
-    it.skip('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: AttemptInputProps
-      
-      // TODO add props assertions
-    });
+    it("should have correct accessibility attributes", () => {
+      render(<AttemptInput />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
+      const textarea = screen.getByPlaceholderText("Type your message...");
 
+      // Check accessibility attributes
+      expect(textarea).toHaveAttribute("placeholder", "Type your message...");
+
+      // The button should be disabled when no text (we'll test this in user interactions)
+      const sendButton = document.querySelector('button[type="submit"]');
+      expect(sendButton).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it.skip('should handle state changes', async () => {
+  describe("User Interactions", () => {
+    it("should handle state changes", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: state management assertions
-      // Mock data is available from @/mocks/schema for realistic testing
+      render(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
+
+      // Initially button should be disabled (no text)
+      expect(sendButton).toBeDisabled();
+
+      // Type some text
+      await user.type(textarea, "Hello world");
+
+      // Button should now be enabled
+      expect(sendButton).toBeEnabled();
     });
 
-    it.skip('should handle user events', async () => {
+    it("should handle user events", async () => {
       const user = userEvent.setup();
-      void user;
-      // TODO: interaction assertions
+      render(<AttemptInput />);
 
+      const textarea = screen.getByPlaceholderText("Type your message...");
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
+
+      // Type a message
+      await user.type(textarea, "Test message");
+
+      // Click send button
+      await user.click(sendButton);
+
+      // Should call sendMessage
+      expect(mockSendMessage).toHaveBeenCalledWith("Test message");
+
+      // Textarea should be cleared
+      expect(textarea).toHaveValue("");
+    });
+
+    it("should handle Enter key submission", async () => {
+      const user = userEvent.setup();
+      render(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+
+      // Type a message and press Enter
+      await user.type(textarea, "Test message{enter}");
+
+      // Should call sendMessage
+      expect(mockSendMessage).toHaveBeenCalledWith("Test message");
+
+      // Textarea should be cleared
+      expect(textarea).toHaveValue("");
+    });
+
+    it("should not submit on Shift+Enter", async () => {
+      const user = userEvent.setup();
+      render(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+
+      // Type a message
+      await user.type(textarea, "Test message");
+
+      // Press Shift+Enter (this should not submit)
+      await user.keyboard("{Shift>}{Enter}{/Shift}");
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
+
+      // Textarea should still have the text (Shift+Enter should add a newline)
+      expect(textarea).toHaveValue("Test message\n");
     });
   });
 
-  
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", async () => {
+      const user = userEvent.setup();
 
-  
+      // Test with empty message (button should be disabled)
+      render(<AttemptInput />);
 
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
 
+      // Button should be disabled when no text
+      expect(sendButton).toBeDisabled();
+
+      // Type only whitespace
+      await user.type(
+        screen.getByPlaceholderText("Type your message..."),
+        "   ",
+      );
+
+      // Button should still be disabled
+      expect(sendButton).toBeDisabled();
     });
 
-    it.skip('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // TODO: invalid props assertions
+    it("should handle empty message submission", async () => {
+      const user = userEvent.setup();
+      render(<AttemptInput />);
+
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
+
+      // Try to submit empty message
+      await user.click(sendButton);
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it("should handle whitespace-only message", async () => {
+      const user = userEvent.setup();
+      render(<AttemptInput />);
+
+      const textarea = screen.getByPlaceholderText("Type your message...");
+      const sendButton = document.querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement;
+
+      // Type only whitespace
+      await user.type(textarea, "   ");
+
+      // Try to submit
+      await user.click(sendButton);
+
+      // Should not call sendMessage
+      expect(mockSendMessage).not.toHaveBeenCalled();
     });
   });
 });
-
-/*
- * Component Analysis for AttemptInput:
- * Path: common/chat/attempt/AttemptInput.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: AttemptInputProps
- * - Has props: true
- * - Props interface: AttemptInputProps
- * - Client component: true
- * - Uses hooks: useEffect, useRef, useState, useSimulation, useWebSocket, useNoPasteTextarea, useQueryClient, useMemo
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<AttemptInput {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<AttemptInput {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

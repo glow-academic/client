@@ -1,82 +1,90 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-describe('dialog', () => {
-  
+describe("Dialog", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Dialog>
+          <DialogTrigger>Open Dialog</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Test Dialog</DialogTitle>
+              <DialogDescription>Test Description</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>Test Footer</DialogFooter>
+          </DialogContent>
+        </Dialog>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<dialog  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Open Dialog")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Dialog>
+          <DialogTrigger>Open Dialog</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Accessible Dialog</DialogTitle>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const trigger = screen.getByRole("button", { name: "Open Dialog" });
+      expect(trigger).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render dialog trigger correctly", () => {
+      render(
+        <Dialog>
+          <DialogTrigger>Open</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Full Dialog</DialogTitle>
+              <DialogDescription>Description</DialogDescription>
+            </DialogHeader>
+            <div>Content</div>
+            <DialogFooter>Footer</DialogFooter>
+          </DialogContent>
+        </Dialog>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // Only the trigger should be visible when dialog is closed
+      expect(screen.getByText("Open")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal dialog
+      render(
+        <Dialog>
+          <DialogTrigger>Open</DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Minimal</DialogTitle>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>,
+      );
+
+      expect(screen.getByText("Open")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for dialog:
- * Path: ui/dialog.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<dialog />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<dialog {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

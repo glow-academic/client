@@ -49,3 +49,21 @@ class TestGet_Persona_Info:
             get_persona_info(persona_id, mock_session)
 
         mock_session.exec.assert_called_once()
+
+
+import pytest
+
+@pytest.mark.skip(reason="TODO: implement tests for `format_persona_info`")
+class TestFormat_Persona_Info:
+    """Tests for format_persona_info function."""
+
+    def test_format_persona_info_success(self):
+        """Test successful format_persona_info execution."""
+        # TODO: Implement test for format_persona_info
+        assert False, "IMPLEMENT: Test for format_persona_info"
+
+    def test_format_persona_info_error(self):
+        """Test format_persona_info error handling."""
+        # TODO: Implement error test for format_persona_info
+        assert False, "IMPLEMENT: Error test for format_persona_info"
+

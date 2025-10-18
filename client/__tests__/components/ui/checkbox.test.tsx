@@ -1,82 +1,56 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Checkbox } from "@/components/ui/checkbox";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Checkbox } from '@/components/ui/checkbox';
 
-describe('checkbox', () => {
-  
+describe("Checkbox", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Checkbox />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<checkbox  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByRole("checkbox")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Checkbox aria-label="Test Checkbox" />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const checkbox = screen.getByRole("checkbox", { name: "Test Checkbox" });
+      expect(checkbox).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component States", () => {
+    it("should render unchecked by default", () => {
+      render(<Checkbox />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const checkbox = screen.getByRole("checkbox");
+      expect(checkbox).not.toBeChecked();
     });
 
-    
+    it("should render checked when checked prop is true", () => {
+      render(<Checkbox checked />);
+
+      const checkbox = screen.getByRole("checkbox");
+      expect(checkbox).toBeChecked();
+    });
+
+    it("should render disabled when disabled prop is true", () => {
+      render(<Checkbox disabled />);
+
+      const checkbox = screen.getByRole("checkbox");
+      expect(checkbox).toBeDisabled();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props
+      render(<Checkbox />);
+
+      const checkbox = screen.getByRole("checkbox");
+      expect(checkbox).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for checkbox:
- * Path: ui/checkbox.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Checkbox
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<checkbox />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<checkbox {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -12,21 +12,13 @@ const __dirname = path.dirname(__filename);
 // Path configurations - updated to include more directories
 const ROOT_DIR = path.join(__dirname, "..");
 const COMPONENTS_DIR = path.join(ROOT_DIR, "components");
-const APP_DIR = path.join(ROOT_DIR, "app");
 const UTILS_DIR = path.join(ROOT_DIR, "utils");
-const HOOKS_DIR = path.join(ROOT_DIR, "hooks");
-const LIB_DIR = path.join(ROOT_DIR, "lib");
-const CONTEXTS_DIR = path.join(ROOT_DIR, "contexts");
 const TESTS_DIR = path.join(ROOT_DIR, "__tests__");
 
-// Directories to scan for .tsx files
+// Directories to scan for .tsx/.ts files
 const SCAN_DIRECTORIES = [
   { dir: COMPONENTS_DIR, name: "components" },
-  { dir: APP_DIR, name: "app" },
   { dir: UTILS_DIR, name: "utils" },
-  { dir: HOOKS_DIR, name: "hooks" },
-  { dir: LIB_DIR, name: "lib" },
-  { dir: CONTEXTS_DIR, name: "contexts" },
 ];
 
 // Directories to exclude from scanning
@@ -72,7 +64,7 @@ function shouldExcludePath(relativePath) {
 }
 
 /**
- * Recursively scan directory for .tsx files
+ * Recursively scan directory for .tsx and .ts files
  */
 function scanComponentFiles(dir, relativePath = "", sourceName = "") {
   const components = [];
@@ -98,9 +90,18 @@ function scanComponentFiles(dir, relativePath = "", sourceName = "") {
           sourceName
         );
         components.push(...subComponents);
-      } else if (stat.isFile() && item.endsWith(".tsx")) {
-        const componentName = item.replace(".tsx", "");
-        const testFileName = `${componentName}.test.tsx`;
+      } else if (
+        stat.isFile() &&
+        (item.endsWith(".tsx") || item.endsWith(".ts"))
+      ) {
+        // Skip .d.ts files
+        if (item.endsWith(".d.ts")) {
+          continue;
+        }
+
+        const extension = item.endsWith(".tsx") ? ".tsx" : ".ts";
+        const componentName = item.replace(extension, "");
+        const testFileName = `${componentName}.test${extension}`;
 
         // Create test directory structure that mirrors the source structure
         const testDir = path.join(TESTS_DIR, sourceName, relativePath);
@@ -116,6 +117,7 @@ function scanComponentFiles(dir, relativePath = "", sourceName = "") {
           testFilePath,
           relativePath,
           sourceName, // Track which source directory this came from
+          extension, // Track the file extension
         });
       }
     }
@@ -166,10 +168,15 @@ function analyzeComponent(componentPath) {
 
     const propsInterface = propsDecl?.getName() ?? null;
 
-    // Extract imports
+    // Extract imports (excluding queries and mutations)
     const imports = source
       .getImportDeclarations()
-      .map((i) => i.getModuleSpecifierValue());
+      .map((i) => i.getModuleSpecifierValue())
+      .filter(
+        (specifier) =>
+          !specifier.startsWith("@/utils/queries") &&
+          !specifier.startsWith("@/utils/mutations")
+      );
 
     // ✨ NEW: Add logic to find API function names using TypeScript AST
     const queryNames = new Set();
@@ -268,25 +275,95 @@ function analyzeComponent(componentPath) {
 }
 
 /**
+ * Generate test template for utility files (.ts)
+ */
+function generateUtilityTestTemplate(component, analysis, importPath) {
+  const { componentName, componentPath } = component;
+  const { namedExports } = analysis;
+
+  let template = `import { describe, it, expect } from 'vitest';
+
+// ——————————————————————————————————————————
+`;
+
+  // Import all named exports
+  if (namedExports.length > 0) {
+    template += `import { ${namedExports.join(", ")} } from '${importPath}';\n`;
+  } else {
+    template += `import * as ${componentName} from '${importPath}';\n`;
+  }
+
+  template += `
+describe('${componentName}', () => {
+  describe('exports', () => {
+    it('should export expected functions/constants', () => {
+      // TODO: Verify expected exports exist
+      ${namedExports.length > 0 ? `// Available exports: ${namedExports.join(", ")}` : `// TODO: Check exported values`}
+    });
+  });
+
+  ${namedExports
+    .map(
+      (exportName) => `
+  describe('${exportName}', () => {
+    it.skip('should work correctly', () => {
+      // TODO: Test ${exportName} functionality
+    });
+
+    it.skip('should handle edge cases', () => {
+      // TODO: Test ${exportName} edge cases
+    });
+  });`
+    )
+    .join("\n")}
+});
+
+/*
+ * Utility Analysis for ${componentName}:
+ * Path: ${componentPath}
+ * 
+ * Exported functions/constants: ${namedExports.join(", ") || "None detected"}
+ * 
+ * TODO: Implement tests for each exported function
+ * Focus on:
+ * - Happy path scenarios
+ * - Edge cases
+ * - Error handling
+ * - Input validation
+ */
+`;
+
+  return template;
+}
+
+/**
  * Generate **ready-to-implement** Vitest spec
  * every spec imports the shared helper `@/tests/renderWithMocks`
  */
 function generateTestTemplate(component, analysis) {
-  const { componentName, componentPath, sourceName } = component;
+  const { componentName, componentPath, sourceName, extension } = component;
   const { queryNames, mutationNames } = analysis; // Get the function names from analysis
+
+  // Check if this is a utility file (.ts) vs component (.tsx)
+  const isUtilityFile = extension === ".ts";
 
   // Generate import path based on source directory
   let importPath;
   if (sourceName === "components") {
     importPath = `@/components/${componentPath.replace(/\\/g, "/")}`.replace(
-      ".tsx",
+      extension,
       ""
     );
   } else {
     importPath = `@/${sourceName}/${componentPath.replace(/\\/g, "/")}`.replace(
-      ".tsx",
+      extension,
       ""
     );
+  }
+
+  // For utility files, generate a different test template
+  if (isUtilityFile) {
+    return generateUtilityTestTemplate(component, analysis, importPath);
   }
 
   /* ──────────────────────────────────────────────────────────

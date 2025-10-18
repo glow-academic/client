@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
 ## Summary
-- **Total Components**: 296
-- **Tests Created**: 296
+- **Total Components**: 231
+- **Tests Created**: 12
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 0
+- **Tests Skipped** (already implemented): 219
 
 ## Component Coverage
 
@@ -229,83 +229,18 @@
 | tabs | components/ui/tabs.tsx | tabs.test.tsx | ✅ Implemented |
 | textarea | components/ui/textarea.tsx | textarea.test.tsx | ✅ Implemented |
 | tooltip | components/ui/tooltip.tsx | tooltip.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/dashboard/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/leaderboard/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/pricing/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/reports/p/[profileId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/reports/p/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/analytics/reports/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/c/[cohortId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/c/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/e/[cohortId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/e/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/cohorts/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/documents/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/personas/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/personas/p/[personaId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/personas/p/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/personas/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/scenarios/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/scenarios/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/scenarios/s/[scenarioId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/scenarios/s/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/simulations/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/simulations/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/simulations/s/[simulationId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/create/simulations/s/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/home/a/[attemptId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/home/a/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/home/page.tsx | page.test.tsx | ✅ Implemented |
-| layout | app/(main)/layout.tsx | layout.test.tsx | ✅ Implemented |
-| page | app/(main)/management/departments/d/[departmentId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/departments/d/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/departments/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/departments/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/parameters/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/parameters/p/[parameterId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/parameters/p/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/parameters/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/rubrics/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/rubrics/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/rubrics/r/[rubricId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/rubrics/r/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/staff/p/[profileId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/staff/p/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/management/staff/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/practice/a/[attemptId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/practice/a/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/practice/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/profile/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/agents/a/[agentId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/agents/a/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/agents/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/agents/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/feedback/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/logs/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/p/[providerId]/m/[modelId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/p/[providerId]/m/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/p/[providerId]/new/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/p/[providerId]/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/p/page.tsx | page.test.tsx | ✅ Implemented |
-| page | app/(main)/system/providers/page.tsx | page.test.tsx | ✅ Implemented |
-| error | app/error.tsx | error.test.tsx | ✅ Implemented |
-| layout | app/layout.tsx | layout.test.tsx | ✅ Implemented |
-| not-found | app/not-found.tsx | not-found.test.tsx | ✅ Implemented |
-| page | app/page.tsx | page.test.tsx | ✅ Implemented |
-| providers | app/providers.tsx | providers.test.tsx | ✅ Implemented |
-| analytics-context | contexts/analytics-context.tsx | analytics-context.test.tsx | ✅ Implemented |
-| assistant-context | contexts/assistant-context.tsx | assistant-context.test.tsx | ✅ Implemented |
-| departments-context | contexts/departments-context.tsx | departments-context.test.tsx | ✅ Implemented |
-| profile-context | contexts/profile-context.tsx | profile-context.test.tsx | ✅ Implemented |
-| simulation-context | contexts/simulation-context.tsx | simulation-context.test.tsx | ✅ Implemented |
-| tour-context | contexts/tour-context.tsx | tour-context.test.tsx | ✅ Implemented |
-| websocket-context | contexts/websocket-context.tsx | websocket-context.test.tsx | ✅ Implemented |
+| analytics-adapters | utils/analytics-adapters.ts | analytics-adapters.test.ts | ✅ Implemented |
+| breadcrumb-utils | utils/breadcrumb-utils.ts | breadcrumb-utils.test.ts | ✅ Implemented |
+| mime-map | utils/mime-map.ts | mime-map.test.ts | ✅ Implemented |
+| model-utils | utils/model-utils.ts | model-utils.test.ts | ✅ Implemented |
+| navigation-utils | utils/navigation-utils.ts | navigation-utils.test.ts | ✅ Implemented |
+| persona-icons | utils/persona-icons.ts | persona-icons.test.ts | ✅ Implemented |
+| queryClient | utils/queryClient.ts | queryClient.test.ts | ✅ Implemented |
+| route-permissions | utils/route-permissions.ts | route-permissions.test.ts | ✅ Implemented |
+| scenario-helpers | utils/scenario-helpers.ts | scenario-helpers.test.ts | ✅ Implemented |
+| search-tags | utils/search-tags.ts | search-tags.test.ts | ✅ Implemented |
+| time | utils/time.ts | time.test.ts | ✅ Implemented |
+| tour-steps | utils/tour-steps.ts | tour-steps.test.ts | ✅ Implemented |
 
 ## Directory Structure
 
@@ -583,150 +518,19 @@ __tests__/
 │   │   ├── tabs.test.tsx
 │   │   ├── textarea.test.tsx
 │   │   ├── tooltip.test.tsx
-├── app/
-│   ├── (main)/
-│   │   ├── analytics/
-│   │   │   ├── dashboard/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── leaderboard/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   │   ├── pricing/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── reports/
-│   │   │   │   ├── p/
-│   │   │   │   │   ├── [profileId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   ├── cohorts/
-│   │   │   ├── c/
-│   │   │   │   ├── [cohortId]/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── e/
-│   │   │   │   ├── [cohortId]/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── new/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   ├── create/
-│   │   │   ├── documents/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   │   ├── personas/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── p/
-│   │   │   │   │   ├── [personaId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── scenarios/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── s/
-│   │   │   │   │   ├── [scenarioId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   ├── simulations/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── s/
-│   │   │   │   │   ├── [simulationId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   ├── home/
-│   │   │   ├── a/
-│   │   │   │   ├── [attemptId]/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   ├── layout.test.tsx
-│   │   ├── management/
-│   │   │   ├── departments/
-│   │   │   │   ├── d/
-│   │   │   │   │   ├── [departmentId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   │   ├── parameters/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── p/
-│   │   │   │   │   ├── [parameterId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── rubrics/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── r/
-│   │   │   │   │   ├── [rubricId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   ├── staff/
-│   │   │   │   ├── p/
-│   │   │   │   │   ├── [profileId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   ├── practice/
-│   │   │   ├── a/
-│   │   │   │   ├── [attemptId]/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   ├── profile/
-│   │   │   ├── page.test.tsx
-│   │   ├── system/
-│   │   │   ├── agents/
-│   │   │   │   ├── a/
-│   │   │   │   │   ├── [agentId]/
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── feedback/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── logs/
-│   │   │   │   ├── page.test.tsx
-│   │   │   ├── page.test.tsx
-│   │   │   ├── providers/
-│   │   │   │   ├── new/
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── p/
-│   │   │   │   │   ├── [providerId]/
-│   │   │   │   │   │   ├── m/
-│   │   │   │   │   │   │   ├── [modelId]/
-│   │   │   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   │   ├── new/
-│   │   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   │   ├── page.test.tsx
-│   │   │   │   │   ├── page.test.tsx
-│   │   │   │   ├── page.test.tsx
-│   ├── error.test.tsx
-│   ├── layout.test.tsx
-│   ├── not-found.test.tsx
-│   ├── page.test.tsx
-│   ├── providers.test.tsx
-├── contexts/
-│   ├── analytics-context.test.tsx
-│   ├── assistant-context.test.tsx
-│   ├── departments-context.test.tsx
-│   ├── profile-context.test.tsx
-│   ├── simulation-context.test.tsx
-│   ├── tour-context.test.tsx
-│   ├── websocket-context.test.tsx
+├── utils/
+│   ├── analytics-adapters.test.ts
+│   ├── breadcrumb-utils.test.ts
+│   ├── mime-map.test.ts
+│   ├── model-utils.test.ts
+│   ├── navigation-utils.test.ts
+│   ├── persona-icons.test.ts
+│   ├── queryClient.test.ts
+│   ├── route-permissions.test.ts
+│   ├── scenario-helpers.test.ts
+│   ├── search-tags.test.ts
+│   ├── time.test.ts
+│   ├── tour-steps.test.ts
 
 ```
 

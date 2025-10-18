@@ -1,82 +1,75 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-describe('tabs', () => {
-  
+describe("Tabs", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Tabs defaultValue="tab1">
+          <TabsList>
+            <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+            <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tab1">Content 1</TabsContent>
+          <TabsContent value="tab2">Content 2</TabsContent>
+        </Tabs>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<tabs  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Tab 1")).toBeInTheDocument();
+      expect(screen.getByText("Tab 2")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Tabs defaultValue="tab1">
+          <TabsList>
+            <TabsTrigger value="tab1">Accessible Tab</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tab1">Accessible Content</TabsContent>
+        </Tabs>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const tab = screen.getByRole("tab", { name: "Accessible Tab" });
+      expect(tab).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render tabs with triggers and content", () => {
+      render(
+        <Tabs defaultValue="tab1">
+          <TabsList>
+            <TabsTrigger value="tab1">First Tab</TabsTrigger>
+            <TabsTrigger value="tab2">Second Tab</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tab1">First Content</TabsContent>
+          <TabsContent value="tab2">Second Content</TabsContent>
+        </Tabs>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("First Tab")).toBeInTheDocument();
+      expect(screen.getByText("Second Tab")).toBeInTheDocument();
+      expect(screen.getByText("First Content")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal tabs
+      render(
+        <Tabs>
+          <TabsList>
+            <TabsTrigger value="tab1">Minimal</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tab1">Content</TabsContent>
+        </Tabs>,
+      );
+
+      expect(screen.getByText("Minimal")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for tabs:
- * Path: ui/tabs.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Tabs, TabsList, TabsTrigger, TabsContent
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<tabs />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<tabs {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

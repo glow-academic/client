@@ -1,82 +1,71 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-describe('avatar', () => {
-  
+describe("Avatar", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <Avatar>
+          <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
+          <AvatarFallback>TA</AvatarFallback>
+        </Avatar>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<avatar  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("TA")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <Avatar>
+          <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
+          <AvatarFallback>TA</AvatarFallback>
+        </Avatar>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      // In tests, the fallback is shown since the image won't load
+      const fallback = screen.getByText("TA");
+      expect(fallback).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render with fallback when image is provided", () => {
+      render(
+        <Avatar>
+          <AvatarImage src="/test-image.jpg" alt="Test Avatar" />
+          <AvatarFallback>TA</AvatarFallback>
+        </Avatar>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      // The fallback should be visible since the image won't load in tests
+      expect(screen.getByText("TA")).toBeInTheDocument();
     });
 
-    
+    it("should render with fallback only", () => {
+      render(
+        <Avatar>
+          <AvatarFallback>FB</AvatarFallback>
+        </Avatar>,
+      );
+
+      expect(screen.getByText("FB")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props
+      render(
+        <Avatar>
+          <AvatarFallback>M</AvatarFallback>
+        </Avatar>,
+      );
+
+      expect(screen.getByText("M")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for avatar:
- * Path: ui/avatar.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Avatar, AvatarImage, AvatarFallback
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<avatar />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<avatar {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -62,6 +62,31 @@ vi.mock("@/contexts/profile-context", () => ({
   ProfileProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+// --- WebSocket Context Mocks ---
+vi.mock("@/contexts/websocket-context", () => ({
+  useWebSocket: vi.fn(() => ({
+    isConnected: true,
+    socket: null,
+    startingSimulationId: null,
+    isSendingSimulationMessage: false,
+    isStoppingSimulation: false,
+    isContinuingSimulation: false,
+    isStartingAssistant: false,
+    isSendingAssistantMessage: false,
+    isStoppingAssistant: false,
+    joinRoom: vi.fn(),
+    leaveRoom: vi.fn(),
+    emitStartSimulation: vi.fn(),
+    emitSendSimulationMessage: vi.fn(),
+    emitStopSimulation: vi.fn(),
+    emitContinueSimulation: vi.fn(),
+    emitStartAssistant: vi.fn(),
+    emitSendAssistantMessage: vi.fn(),
+    emitStopAssistant: vi.fn(),
+  })),
+  WebSocketProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 // --- Authentication Utility Mocks ---
 vi.mock("@/utils/auth/get-profile-by-alias", () => ({
   getProfileByAlias: vi.fn().mockResolvedValue(mockProfile),

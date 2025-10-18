@@ -1,82 +1,51 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Calendar } from "@/components/ui/calendar";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Calendar } from '@/components/ui/calendar';
 
-describe('calendar', () => {
-  
+describe("Calendar", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Calendar />);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<calendar  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      // Calendar should render some content - look for month/year text
+      expect(screen.getByRole("grid")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Calendar />);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const calendar = screen.getByRole("grid");
+      expect(calendar).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Props", () => {
+    it("should render with mode prop", () => {
+      render(<Calendar mode="single" />);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const calendar = screen.getByRole("grid");
+      expect(calendar).toBeInTheDocument();
     });
 
-    
+    it("should render with selected date", () => {
+      const selectedDate = new Date("2024-01-15");
+      render(<Calendar selected={selectedDate} />);
+
+      const calendar = screen.getByRole("grid");
+      expect(calendar).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal props
+      render(<Calendar />);
+
+      const calendar = screen.getByRole("grid");
+      expect(calendar).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for calendar:
- * Path: ui/calendar.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Calendar
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<calendar />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<calendar {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

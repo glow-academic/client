@@ -1,82 +1,123 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import { Button } from "@/components/ui/button";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Button, buttonVariants } from '@/components/ui/button';
 
-describe('button', () => {
-  
+describe("Button", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(<Button>Test Button</Button>);
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<button  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(
+        screen.getByRole("button", { name: "Test Button" }),
+      ).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(<Button>Accessible Button</Button>);
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const button = screen.getByRole("button", { name: "Accessible Button" });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveAttribute("data-slot", "button");
     });
   });
 
-  
+  describe("Component Variants", () => {
+    it("should render with default variant", () => {
+      render(<Button>Default Button</Button>);
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      const button = screen.getByRole("button", { name: "Default Button" });
+      expect(button).toBeInTheDocument();
     });
 
-    
+    it("should render with secondary variant", () => {
+      render(<Button variant="secondary">Secondary Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Secondary Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with destructive variant", () => {
+      render(<Button variant="destructive">Destructive Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Destructive Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with outline variant", () => {
+      render(<Button variant="outline">Outline Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Outline Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with ghost variant", () => {
+      render(<Button variant="ghost">Ghost Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Ghost Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with link variant", () => {
+      render(<Button variant="link">Link Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Link Button" });
+      expect(button).toBeInTheDocument();
+    });
+  });
+
+  describe("Component Sizes", () => {
+    it("should render with default size", () => {
+      render(<Button>Default Size</Button>);
+
+      const button = screen.getByRole("button", { name: "Default Size" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with small size", () => {
+      render(<Button size="sm">Small Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Small Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with large size", () => {
+      render(<Button size="lg">Large Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Large Button" });
+      expect(button).toBeInTheDocument();
+    });
+
+    it("should render with icon size", () => {
+      render(<Button size="icon">Icon Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Icon Button" });
+      expect(button).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with disabled state
+      render(<Button disabled>Disabled Button</Button>);
+
+      const button = screen.getByRole("button", { name: "Disabled Button" });
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+    });
+
+    it("should handle asChild prop", () => {
+      render(
+        <Button asChild>
+          <a href="/test">Link Button</a>
+        </Button>,
+      );
+
+      const link = screen.getByRole("link", { name: "Link Button" });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "/test");
+    });
   });
 });
-
-/*
- * Component Analysis for button:
- * Path: ui/button.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Button, buttonVariants
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<button />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<button {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

@@ -1,82 +1,76 @@
-import { render, screen, waitFor } from '@/test/custom-render';
-import { describe, it, expect } from 'vitest';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { render } from "@/test/custom-render";
+import { screen } from "@/test/custom-render";
+import { describe, expect, it } from "vitest";
 
 // ——————————————————————————————————————————
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
-describe('tooltip', () => {
-  
+describe("Tooltip", () => {
+  describe("basic render smoke-test", () => {
+    it("renders without crashing", async () => {
+      render(
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>Hover Me</TooltipTrigger>
+            <TooltipContent>Tooltip Content</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>,
+      );
 
-  describe('basic render smoke-test', () => {
-    it('renders without crashing', async () => {
-      
-      render(<tooltip  />);
-      
-      // TODO: Add meaningful assertions based on your component
-      // Example: await waitFor(() => expect(screen.getByText('Expected Text')).toBeInTheDocument());
+      expect(screen.getByText("Hover Me")).toBeInTheDocument();
     });
 
-    
+    it("should have correct accessibility attributes", () => {
+      render(
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>Accessible Trigger</TooltipTrigger>
+            <TooltipContent>Accessible Content</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>,
+      );
 
-    it.skip('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // TODO add accessibility assertions
-
+      const trigger = screen.getByText("Accessible Trigger");
+      expect(trigger).toBeInTheDocument();
     });
   });
 
-  
+  describe("Component Structure", () => {
+    it("should render tooltip with trigger and content", () => {
+      render(
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>Trigger</TooltipTrigger>
+            <TooltipContent>
+              <div>Tooltip Content</div>
+              <div>More Content</div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>,
+      );
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it.skip('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // TODO: edge-case assertions
-
+      expect(screen.getByText("Trigger")).toBeInTheDocument();
     });
+  });
 
-    
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
+      // Test with minimal tooltip
+      render(
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>Minimal</TooltipTrigger>
+            <TooltipContent>Content</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>,
+      );
+
+      expect(screen.getByText("Minimal")).toBeInTheDocument();
+    });
   });
 });
-
-/*
- * Component Analysis for tooltip:
- * Path: ui/tooltip.tsx
- * 
- * Features detected:
- * - Default export: false
- * - Named exports: Tooltip, TooltipTrigger, TooltipContent, TooltipProvider
- * - Has props: false
- * - Props interface: None detected
- * - Client component: true
- * - Uses hooks: None
- * - Uses router: false
- * - Has API calls: false
- * - Has form handling: false
- * - Uses state: false
- * - Uses effects: false
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<tooltip />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<tooltip {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
