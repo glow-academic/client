@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests generate-test-schema stop install-client start-db migrate-db connect-db fresh-db typecheck-client build-client
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -84,6 +84,12 @@ generate-tests: check-venv
 	@echo "Generating pytest tests..."
 	@$(VENV_PYTHON) server/scripts/generate_pytest_tests.py
 	@echo "✅ Tests generated"
+
+# Generate consolidated test schema SQL file
+generate-test-schema:
+	@echo "Generating test schema with seed data..."
+	@cd database && yarn generate-test-schema
+	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
 # Run all tests
 test: check-venv

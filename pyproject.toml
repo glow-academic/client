@@ -39,17 +39,17 @@ dependencies = [
     "textdistance==4.6.2",
     "pymupdf==1.24.10",
     # Async testing
-    "pytest-asyncio==0.23.7",
+    "pytest-asyncio==0.24.0",
     # Dev/test tooling
     "ruff",
     "mypy",
     "respx",
     # Testing
     "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
     "httpx>=0.24.0",
+    "testcontainers[postgresql]==4.0.0",
 ]
 
 [project.scripts]
@@ -123,8 +123,9 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["server/tests"]
 python_files = "test_*.py"
-# Be explicit about asyncio mode for pytest-asyncio >= 0.23
-asyncio_mode = "auto"
+# Be explicit about asyncio mode for pytest-asyncio >= 0.24
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "session"
 addopts = [
     "--strict-markers",
     "--tb=short",
