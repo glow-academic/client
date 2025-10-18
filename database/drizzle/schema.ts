@@ -205,7 +205,7 @@ export const assistantChats = pgTable("assistant_chats", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
 	profileId: uuid("profile_id").notNull(),
-	traceId: text("trace_id"),
+	traceId: text("trace_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.profileId],
@@ -218,7 +218,6 @@ export const assistantMessages = pgTable("assistant_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	chatId: uuid("chat_id").notNull(),
 	role: assistantMessageType().notNull(),
 	content: text().notNull(),
@@ -235,7 +234,6 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	chatId: uuid("chat_id").notNull(),
 	toolName: text("tool_name").notNull(),
 	toolType: assistantToolType("tool_type").notNull(),

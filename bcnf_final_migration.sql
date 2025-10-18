@@ -6,15 +6,17 @@
 -- 2. Backfills and makes all app_logs columns NOT NULL
 -- 3. Drops unused metrics column from app_logs
 -- 4. Creates junction table for profile requests per day
--- 5. Drops simulation_chats.completed_at
--- 6. Creates junction table for time limits (simulations only, no record = infinite)
--- 7. Creates junction table for provider base URLs
--- 8. Updates personas reasoning to use enum with "none" value
--- 9. Normalizes scenario_objectives and simulation_hints to same pattern
---    (composite PK with idx, created_at only, no id/active/updated_at)
--- 10. Creates junction table for document_parameter_items
--- 11. Removes analytics stored procedures
--- 12. Removes simulation tag tables
+-- 5. Drops completed_at from simulation_chats, assistant_messages, assistant_tool_calls
+--    (use completed boolean + updated_at as source of truth)
+-- 6. Makes trace_id NOT NULL in simulation_chats and assistant_chats
+-- 7. Creates junction table for time limits (simulations only, no record = infinite)
+-- 8. Creates junction table for provider base URLs
+-- 9. Updates personas reasoning to use enum with "none" value
+-- 10. Normalizes scenario_objectives and simulation_hints to same pattern
+--     (composite PK with idx, created_at only, no id/active/updated_at)
+-- 11. Creates junction table for document_parameter_items
+-- 12. Removes analytics stored procedures
+-- 13. Removes simulation tag tables
 -- ============================================================================
 
 BEGIN;
@@ -176,6 +178,8 @@ WHERE reasoning IS NULL;
 
 -- Skip backfilling simulation_chats.trace_id - let it fail if NULL values exist
 
+-- Skip backfilling assistant_chats.trace_id - let it fail if NULL values exist
+
 -- Backfill app_feedback.message (0% NULL, already fine)
 UPDATE app_feedback
 SET message = 'No message provided'
@@ -193,8 +197,14 @@ WHERE feedback IS NULL;
 -- Drop metrics column from app_logs (100% NULL, never used)
 ALTER TABLE app_logs DROP COLUMN IF EXISTS metrics;
 
--- Drop completed_at from simulation_chats (using grades.time_taken instead)
+-- Drop completed_at columns (redundant with completed boolean + updated_at)
+-- These columns are redundant since we have:
+-- 1. completed BOOLEAN to track completion status
+-- 2. updated_at to track when the last update occurred
+-- For simulation_chats specifically, we use simulation_chat_grades.time_taken as source of truth
 ALTER TABLE simulation_chats DROP COLUMN IF EXISTS completed_at;
+ALTER TABLE assistant_messages DROP COLUMN IF EXISTS completed_at;
+ALTER TABLE assistant_tool_calls DROP COLUMN IF EXISTS completed_at;
 
 -- Drop time_limit from simulations (moved to junction table)
 ALTER TABLE simulations DROP COLUMN IF EXISTS time_limit;
@@ -218,6 +228,9 @@ ALTER TABLE app_feedback ALTER COLUMN message SET NOT NULL;
 ALTER TABLE cohorts ALTER COLUMN description SET NOT NULL;
 ALTER TABLE simulation_chat_feedbacks ALTER COLUMN feedback SET NOT NULL;
 ALTER TABLE simulation_chats ALTER COLUMN trace_id SET NOT NULL;
+
+-- Assistant chats trace_id
+ALTER TABLE assistant_chats ALTER COLUMN trace_id SET NOT NULL;
 
 -- app_logs columns (now backfilled)
 ALTER TABLE app_logs ALTER COLUMN message SET NOT NULL;
@@ -298,6 +311,8 @@ COMMENT ON TABLE provider_endpoints IS 'Stores base URLs for providers. One row 
 -- -- Verify dropped columns are gone
 -- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'app_logs' AND column_name = 'metrics';
 -- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'simulation_chats' AND column_name = 'completed_at';
+-- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'assistant_messages' AND column_name = 'completed_at';
+-- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'assistant_tool_calls' AND column_name = 'completed_at';
 -- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'simulations' AND column_name = 'time_limit';
 -- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'simulation_attempts' AND column_name = 'infinite_mode_time_limit';
 -- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'req_per_day';
@@ -431,6 +446,8 @@ BEGIN;
 -- Restore dropped columns
 ALTER TABLE app_logs ADD COLUMN IF NOT EXISTS metrics JSONB;
 ALTER TABLE simulation_chats ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE assistant_messages ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE assistant_tool_calls ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE simulations ADD COLUMN IF NOT EXISTS time_limit INTEGER;
 ALTER TABLE simulation_attempts ADD COLUMN IF NOT EXISTS infinite_mode_time_limit INTEGER;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS req_per_day INTEGER;
@@ -452,6 +469,7 @@ ALTER TABLE profiles ALTER COLUMN last_active DROP NOT NULL;
 ALTER TABLE agents ALTER COLUMN reasoning DROP NOT NULL;
 ALTER TABLE documents ALTER COLUMN file_id DROP NOT NULL;
 ALTER TABLE personas ALTER COLUMN reasoning DROP NOT NULL;
+ALTER TABLE assistant_chats ALTER COLUMN trace_id DROP NOT NULL;
 
 -- Migrate data back from junction tables
 UPDATE profiles p
