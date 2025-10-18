@@ -1,28 +1,14 @@
-import { getApiBase } from "@/lib/api-base";
 import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/analytics";
-import { NextRequest, NextResponse } from "next/server";
+import { fetchAnalyticsPricing } from "@/lib/api/v2/server/analytics";
 import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const filters = AnalyticsFiltersSchema.parse(body);
 
-    const response = await fetch(`${getApiBase()}/api/v2/analytics/pricing`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(filters),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.detail || error.message || "Server request failed");
-    }
-
-    const result = await response.json();
+    const result = await fetchAnalyticsPricing(filters);
     return NextResponse.json(result);
   } catch (error) {
     const errorMessage =

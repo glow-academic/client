@@ -1,7 +1,24 @@
-import { createAnalyticsBFFRoute } from "@/lib/api/v2/analytics-route-factory";
+import { AnalyticsFiltersSchema } from "@/lib/api/v2/schemas/analytics";
+import { fetchAnalyticsHome } from "@/lib/api/v2/server/analytics";
+import { log } from "@/lib/api/v2/server/logs";
+import { NextRequest, NextResponse } from "next/server";
 
-export const POST = createAnalyticsBFFRoute(
-  "/home",
-  "analytics.v2.home.error",
-);
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const filters = AnalyticsFiltersSchema.parse(body);
+
+    const result = await fetchAnalyticsHome(filters);
+    return NextResponse.json(result);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.error("analytics.v2.home.error", {
+      message: errorMessage,
+      error,
+    });
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
 
