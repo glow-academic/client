@@ -42,6 +42,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 interface HealthCheck {
   id: string;
@@ -63,7 +64,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
   const { isConnected } = useWebSocket();
   const { data: session, status: authStatus } = useSession();
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
-
+  const log = useLogger();
   // Initialize health checks
   useEffect(() => {
     const initialChecks: HealthCheck[] = [
@@ -316,7 +317,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
         };
       }
     },
-    []
+    [log]
   );
 
   const runAllHealthChecks = useCallback(async () => {
@@ -355,7 +356,7 @@ export function HealthModal({ open, onOpenChange }: HealthModalProps) {
         `Health checks completed with issues (${healthyCount}/${totalCount} healthy)`
       );
     }
-  }, [runHealthCheck]);
+  }, [runHealthCheck, log]);
 
   // Run health checks when modal opens
   useEffect(() => {
