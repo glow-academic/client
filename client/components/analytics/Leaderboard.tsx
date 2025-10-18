@@ -41,7 +41,11 @@ export interface LeaderboardProps {
 }
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
-  const { effectiveProfile, isLoading: isProfileLoading, effectiveDepartmentIds } = useProfile();
+  const {
+    effectiveProfile,
+    isLoading: isProfileLoading,
+    effectiveDepartmentIds,
+  } = useProfile();
   const {
     startDate,
     endDate,

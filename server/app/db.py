@@ -36,10 +36,18 @@ async def init_db_pool() -> None:
     print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
     
     pool_config = {
-        "min_size": 5,
-        "max_size": 20,
-        "command_timeout": 60,
+        "min_size": 10,
+        "max_size": 100,  # High capacity for concurrent analytics + background refresh
+        "command_timeout": 60,  # Allow time for complex analytics queries (cold cache)
+        "max_queries": 50000,  # Limit queries per connection before recycling
+        "max_inactive_connection_lifetime": 300,  # 5 minutes
     }
+    
+    # Note: When using PgBouncer in production:
+    # - Set PgBouncer pool_mode=transaction (recommended for FastAPI)
+    # - Configure PgBouncer: default_pool_size=25, max_client_conn=200
+    # - This gives you: 100 app connections -> PgBouncer -> 25 DB connections
+    # - Reduces DB connection overhead while maintaining app concurrency
     
     # Disable prepared statements for PgBouncer transaction mode
     if using_pgbouncer:

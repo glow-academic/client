@@ -50,7 +50,7 @@ class QueryClient:
         *,
         local_maxsize: int = 2048,
         channel: str = "qc:invalidate",
-        max_concurrent_refreshes: int = 5,
+        max_concurrent_refreshes: int = 20,  # Match increased pool capacity
     ):
         """
         Initialize query client.
