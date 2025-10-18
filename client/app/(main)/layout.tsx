@@ -102,9 +102,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   const canShowDepartmentsFilters = useMemo(() => {
     return (
-      effectiveProfile?.role === "superadmin" && !isSystemPage && !isChatPage
+      effectiveProfile?.role === "superadmin" && !isSystemPage && !isChatPage && shouldShowChatComponents
     );
-  }, [effectiveProfile?.role, isSystemPage, isChatPage]);
+  }, [effectiveProfile?.role, isSystemPage, isChatPage, shouldShowChatComponents]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
