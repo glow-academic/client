@@ -22,7 +22,7 @@ export default function ReportsPage() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-  const { departmentIds } = useProfile();
+  const { effectiveDepartmentIds } = useProfile();
 
   const filters = useMemo(
     () => ({
@@ -31,7 +31,7 @@ export default function ReportsPage() {
       cohortIds: selectedCohortIds,
       roles: selectedRoles,
       simulationFilters,
-      departmentIds,
+      departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
@@ -39,7 +39,7 @@ export default function ReportsPage() {
       selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      departmentIds,
+      effectiveDepartmentIds,
     ]
   );
 

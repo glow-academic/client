@@ -58,15 +58,15 @@ export default function Staff() {
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
     ProfileListItem[]
   >([]);
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
   // V2 API hooks
   const filters = React.useMemo(
     () => ({
-      departmentIds: departmentIds,
+      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [departmentIds, effectiveProfile?.id]
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
   const { data: staffData, isLoading } = useProfileList(

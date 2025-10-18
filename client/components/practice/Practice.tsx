@@ -31,7 +31,7 @@ import PracticeZone from "./PracticeZone";
 
 export default function Practice() {
   const router = useRouter();
-  const { departmentIds } = useProfile();
+  const { effectiveDepartmentIds } = useProfile();
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -65,9 +65,9 @@ export default function Practice() {
     simulationFilters,
   } = useAnalytics();
 
-  // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isPracticeOverviewLoading } =
-    useAnalyticsPracticeOverview({
+  // Memoized filters for practice overview query
+  const filters = useMemo(
+    () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: selectedCohortIds,
@@ -79,8 +79,22 @@ export default function Practice() {
       )[],
       // Always pass profileId for practice (personal view)
       profileId: effectiveProfile?.id,
-      departmentIds: departmentIds,
-    });
+      departmentIds: effectiveDepartmentIds,
+    }),
+    [
+      startDate,
+      endDate,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+      effectiveProfile?.id,
+      effectiveDepartmentIds,
+    ]
+  );
+
+  // Single optimized bundle call with items, history, and mappings
+  const { data: bundle, isLoading: isPracticeOverviewLoading } =
+    useAnalyticsPracticeOverview(filters);
 
   // Extract data from bundle
   const practiceOverview = bundle;
@@ -116,9 +130,9 @@ export default function Practice() {
         id,
         title: sim.name,
         description: sim.description,
-        departmentId: departmentIds[0] || "", // Use first department
+        departmentId: effectiveDepartmentIds[0] || "", // Use first department
       })),
-    [simulationMapping, departmentIds]
+    [simulationMapping, effectiveDepartmentIds]
   );
 
   // Use data directly from the hook
@@ -196,7 +210,7 @@ export default function Practice() {
         }
 
         // Validate department_id is available
-        if (departmentIds.length === 0 || !departmentIds[0]) {
+        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
           toast.error("No department found. Please contact support.");
           return;
         }
@@ -293,7 +307,7 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-      departmentIds,
+      effectiveDepartmentIds,
       simulations,
       info,
       error,

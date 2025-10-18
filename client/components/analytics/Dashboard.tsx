@@ -41,7 +41,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ profileId }: DashboardProps) {
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
   const {
     startDate,
@@ -74,7 +74,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       roles: selectedRoles,
       simulationFilters,
       profileId,
-      departmentIds,
+      departmentIds: effectiveDepartmentIds,
     }),
     [
       startDate,
@@ -83,7 +83,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
-      departmentIds,
+      effectiveDepartmentIds,
     ]
   );
 

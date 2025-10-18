@@ -31,15 +31,15 @@ import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
   const router = useRouter();
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
 
   // V2 API: Single fetch with pre-calculated counts and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: departmentIds,
+      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [departmentIds, effectiveProfile?.id]
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
   const { data: parametersData, isLoading } = useParametersList(filters);

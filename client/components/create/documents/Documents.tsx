@@ -65,7 +65,7 @@ import { DocumentsDataTable } from "./DocumentsDataTable";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 export default function Documents() {
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
   const log = useLogger();
 
   // Mutation hooks
@@ -110,10 +110,10 @@ export default function Documents() {
   // V2 API: Build filters
   const filters = useMemo(
     () => ({
-      departmentIds: departmentIds,
+      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [departmentIds, effectiveProfile?.id]
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
   // V2 API: Fetch documents list
@@ -139,8 +139,8 @@ export default function Documents() {
 
   // Compute valid department IDs for upload dialog
   const validDepartmentIds = useMemo(
-    () => departmentIds,
-    [departmentIds]
+    () => effectiveDepartmentIds,
+    [effectiveDepartmentIds]
   );
 
   // V2 API: Fetch single document detail for editing

@@ -30,7 +30,8 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
-  const { effectiveProfile, activeProfile, cohortIds, departmentIds } = useProfile();
+  const { effectiveProfile, activeProfile, cohortIds, effectiveDepartmentIds } =
+    useProfile();
   const log = useLogger();
   const {
     startDate,
@@ -42,11 +43,11 @@ export default function Home() {
 
   // Use all user's cohorts if none specifically selected (same pattern as departments)
   const effectiveCohortIds =
-      selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds; 
+    selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds;
 
-  // Single optimized bundle call with items, history, and mappings
-  const { data: bundle, isLoading: isHomeOverviewLoading } =
-    useAnalyticsHomeOverview({
+  // Memoized filters for analytics query
+  const filters = useMemo(
+    () => ({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: effectiveCohortIds,
@@ -58,8 +59,22 @@ export default function Home() {
       )[],
       // Always send profileId - server will decide whether to use it based on role
       profileId: effectiveProfile?.id || undefined,
-      departmentIds: departmentIds,
-    });
+      departmentIds: effectiveDepartmentIds,
+    }),
+    [
+      startDate,
+      endDate,
+      effectiveCohortIds,
+      selectedRoles,
+      simulationFilters,
+      effectiveProfile?.id,
+      effectiveDepartmentIds,
+    ]
+  );
+
+  // Single optimized bundle call with items, history, and mappings
+  const { data: bundle, isLoading: isHomeOverviewLoading } =
+    useAnalyticsHomeOverview(filters);
 
   // Extract data from bundle
   const homeOverview = bundle;
@@ -73,9 +88,9 @@ export default function Home() {
         id,
         title: sim.name,
         description: sim.description,
-        departmentId: departmentIds[0] || "", // Use first department
+        departmentId: effectiveDepartmentIds[0] || "", // Use first department
       })),
-    [bundle?.simulation_mapping, departmentIds]
+    [bundle?.simulation_mapping, effectiveDepartmentIds]
   );
 
   // Extract rubric mappings from home overview data
@@ -160,7 +175,7 @@ export default function Home() {
         }
 
         // Validate department_id is available
-        if (departmentIds.length === 0 || !departmentIds[0]) {
+        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
           toast.error("No department found. Please contact support.");
           return;
         }
@@ -209,7 +224,7 @@ export default function Home() {
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: departmentIds[0] || "",
+          department_id: effectiveDepartmentIds[0] || "",
         });
 
         // timeout...
@@ -242,7 +257,7 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      departmentIds,
+      effectiveDepartmentIds,
       simulations,
       log,
     ]

@@ -65,15 +65,15 @@ export function Scenarios() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set()
   );
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
   const log = useLogger();
   // V2 API hooks - single fetch with all data
   const { data: scenariosData } = useScenariosList(
     {
-      departmentIds: departmentIds,
+      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     },
-    { enabled: !!effectiveProfile?.id && departmentIds.length > 0 }
+    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
   );
 
   // Mutation hooks
@@ -96,10 +96,6 @@ export function Scenarios() {
   const parameterItemMapping = useMemo(
     () => scenariosData?.parameter_item_mapping || {},
     [scenariosData?.parameter_item_mapping]
-  );
-  const _objectiveMapping = useMemo(
-    () => scenariosData?.objective_mapping || {},
-    [scenariosData?.objective_mapping]
   );
 
   // Group scenarios using parent_scenario_id from V2 API

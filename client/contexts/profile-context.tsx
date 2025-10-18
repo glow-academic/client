@@ -19,7 +19,13 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
-import React, { createContext, useCallback, useContext, useMemo } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { z } from "zod";
 
 // ============================================================================
@@ -129,6 +135,9 @@ interface ProfileContextType {
   // Layout data (from useLayoutContext)
   departments: DepartmentItem[];
   departmentIds: string[];
+  selectedDepartmentIds: string[];
+  setSelectedDepartmentIds: (ids: string[]) => void;
+  effectiveDepartmentIds: string[];
   cohorts: CohortItem[];
   cohortIds: string[];
   simulations: SimulationContextItem[];
@@ -162,6 +171,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Department filter state
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
+    []
+  );
+
   // Internal hook: Get ALL data from consolidated API (single source of truth!)
   const effectiveProfileId = session?.effectiveProfileId ?? "";
 
@@ -178,11 +192,21 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return LayoutContextResponseSchema.parse(res);
     },
     enabled: !!effectiveProfileId,
-    staleTime: 5 * 60 * 1000, // 5 minutes default
+    staleTime: 10 * 60 * 1000, // 10 minutes (up from 5)
+    structuralSharing: true, // Enable deep equality check
+    gcTime: 15 * 60 * 1000, // Cache for 15 minutes
   });
 
   const bootstrapProfile = layoutData?.actualProfile ?? null;
   const effectiveProfile = layoutData?.effectiveProfile ?? null;
+
+  // Compute effective department IDs (like cohorts in Home.tsx)
+  const effectiveDepartmentIds = useMemo(() => {
+    const allDepartmentIds = layoutData?.departmentIds ?? [];
+    return selectedDepartmentIds.length > 0
+      ? selectedDepartmentIds
+      : allDepartmentIds;
+  }, [selectedDepartmentIds, layoutData?.departmentIds]);
 
   // Determine if we're in full emulation mode (when "Emulate" button was pressed)
   const isFullEmulation = useMemo(() => {
@@ -270,6 +294,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     // Layout data (from useLayoutContext)
     departments: layoutData?.departments ?? [],
     departmentIds: layoutData?.departmentIds ?? [],
+    selectedDepartmentIds,
+    setSelectedDepartmentIds,
+    effectiveDepartmentIds,
     cohorts: layoutData?.cohorts.items ?? [],
     cohortIds: layoutData?.cohortIds ?? [],
     simulations: layoutData?.simulations.items ?? [],

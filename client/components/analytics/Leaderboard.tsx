@@ -41,8 +41,7 @@ export interface LeaderboardProps {
 }
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
-  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { departmentIds } = useProfile();
+  const { effectiveProfile, isLoading: isProfileLoading, effectiveDepartmentIds } = useProfile();
   const {
     startDate,
     endDate,
@@ -61,7 +60,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       cohortIds: cohortId ? [cohortId] : selectedCohortIds,
       roles: selectedRoles,
       simulationFilters,
-      departmentIds,
+      departmentIds: effectiveDepartmentIds,
       // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
     }),
     [
@@ -71,7 +70,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      departmentIds,
+      effectiveDepartmentIds,
     ]
   );
 

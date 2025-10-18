@@ -14,13 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
 import { useDepartmentsList } from "@/lib/api/v2/hooks/departments";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
 export default function Departments() {
   const router = useRouter();
   const { effectiveProfile, departmentIds } = useProfile();
-  const log = useLogger();
 
   // V2 API hook
   const filters = useMemo(

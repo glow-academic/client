@@ -9,15 +9,10 @@
 
 import { DepartmentSelector } from "@/components/common/analytics/DepartmentSelector";
 import { useProfile } from "@/contexts/profile-context";
-import { useState } from "react";
 
 export function DepartmentsFilters() {
-  // Local state for selected department IDs (filtering)
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
-  );
-
-  const { departments } = useProfile();
+  const { selectedDepartmentIds, setSelectedDepartmentIds, departments } =
+    useProfile();
 
   // Convert departments to the format expected by DepartmentPicker
   const departmentOptions = departments.map((department) => ({

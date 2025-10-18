@@ -32,6 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteRubric,
   useDuplicateRubric,
@@ -39,7 +40,6 @@ import {
 } from "@/lib/api/v2/hooks/rubrics";
 import type { RubricItem } from "@/lib/api/v2/schemas/rubrics";
 import { RubricsDataTable } from "./RubricsDataTable";
-import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export default function Rubrics() {
   const router = useRouter();
@@ -50,7 +50,7 @@ export default function Rubrics() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile, departmentIds } = useProfile();
+  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
   const log = useLogger();
 
   // Mutation hooks
@@ -60,10 +60,10 @@ export default function Rubrics() {
   // V2 API: Single fetch with hierarchical data and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: departmentIds,
+      departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [departmentIds, effectiveProfile?.id]
+    [effectiveDepartmentIds, effectiveProfile?.id]
   );
 
   const { data: rubricsData, isLoading } = useRubricsList(filters);

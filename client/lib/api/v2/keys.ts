@@ -5,181 +5,220 @@
 
 import { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
 
+// Ensure stable serialization of filter objects
+function serializeFilters(filters: AnalyticsFilters): string {
+  return JSON.stringify(filters, Object.keys(filters).sort());
+}
+
+// Generic stable serialization for other filter types
+function serializeGenericFilters<T extends Record<string, unknown>>(
+  filters: T
+): string {
+  return JSON.stringify(filters, Object.keys(filters).sort());
+}
+
 // Analytics Query Keys - v2 (server-side)
 
 // Header Analytics Keys (10 metrics)
 export const analyticsAverageScoreKeys = {
   all: ["analytics:v2:average-score"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsAverageScoreKeys.all, { filters }] as const,
+    [...analyticsAverageScoreKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsCompletionPercentageKeys = {
   all: ["analytics:v2:completion-percentage"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsCompletionPercentageKeys.all, { filters }] as const,
+    [
+      ...analyticsCompletionPercentageKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsFirstAttemptPassRateKeys = {
   all: ["analytics:v2:first-attempt-pass-rate"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsFirstAttemptPassRateKeys.all, { filters }] as const,
+    [
+      ...analyticsFirstAttemptPassRateKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsHighestScoreKeys = {
   all: ["analytics:v2:highest-score"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsHighestScoreKeys.all, { filters }] as const,
+    [...analyticsHighestScoreKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsMessagesPerSessionKeys = {
   all: ["analytics:v2:messages-per-session"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsMessagesPerSessionKeys.all, { filters }] as const,
+    [
+      ...analyticsMessagesPerSessionKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsPersonaResponseTimesKeys = {
   all: ["analytics:v2:persona-response-times"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsPersonaResponseTimesKeys.all, { filters }] as const,
+    [
+      ...analyticsPersonaResponseTimesKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsSessionEfficiencyKeys = {
   all: ["analytics:v2:session-efficiency"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsSessionEfficiencyKeys.all, { filters }] as const,
+    [...analyticsSessionEfficiencyKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsStagnationRateKeys = {
   all: ["analytics:v2:stagnation-rate"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsStagnationRateKeys.all, { filters }] as const,
+    [...analyticsStagnationRateKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsTimeSpentKeys = {
   all: ["analytics:v2:time-spent"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsTimeSpentKeys.all, { filters }] as const,
+    [...analyticsTimeSpentKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsTotalAttemptsKeys = {
   all: ["analytics:v2:total-attempts"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsTotalAttemptsKeys.all, { filters }] as const,
+    [...analyticsTotalAttemptsKeys.all, serializeFilters(filters)] as const,
 };
 
 // Primary Analytics Keys (3 metrics)
 export const analyticsRubricHeatmapKeys = {
   all: ["analytics:v2:rubric-heatmap"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsRubricHeatmapKeys.all, { filters }] as const,
+    [...analyticsRubricHeatmapKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsGrowthDataKeys = {
   all: ["analytics:v2:growth-data"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsGrowthDataKeys.all, { filters }] as const,
+    [...analyticsGrowthDataKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsPersonaPerformanceKeys = {
   all: ["analytics:v2:persona-performance"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsPersonaPerformanceKeys.all, { filters }] as const,
+    [
+      ...analyticsPersonaPerformanceKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 // Secondary Analytics Keys (3 metrics)
 export const analyticsAttemptImprovementKeys = {
   all: ["analytics:v2:attempt-improvement"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsAttemptImprovementKeys.all, { filters }] as const,
+    [
+      ...analyticsAttemptImprovementKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsCohortPerformanceKeys = {
   all: ["analytics:v2:cohort-performance"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsCohortPerformanceKeys.all, { filters }] as const,
+    [...analyticsCohortPerformanceKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsSkillPerformanceKeys = {
   all: ["analytics:v2:skill-performance"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsSkillPerformanceKeys.all, { filters }] as const,
+    [...analyticsSkillPerformanceKeys.all, serializeFilters(filters)] as const,
 };
 
 // Footer Analytics Keys (4 metrics)
 export const analyticsScenarioPerformanceKeys = {
   all: ["analytics:v2:scenario-performance"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsScenarioPerformanceKeys.all, { filters }] as const,
+    [
+      ...analyticsScenarioPerformanceKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsScenarioStatsKeys = {
   all: ["analytics:v2:scenario-stats"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsScenarioStatsKeys.all, { filters }] as const,
+    [...analyticsScenarioStatsKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsSimulationCompositionKeys = {
   all: ["analytics:v2:simulation-composition"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsSimulationCompositionKeys.all, { filters }] as const,
+    [
+      ...analyticsSimulationCompositionKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 export const analyticsSimulationPerformanceKeys = {
   all: ["analytics:v2:simulation-performance"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsSimulationPerformanceKeys.all, { filters }] as const,
+    [
+      ...analyticsSimulationPerformanceKeys.all,
+      serializeFilters(filters),
+    ] as const,
 };
 
 // Page-Specific Analytics Keys (3 metrics)
 export const analyticsHomeOverviewKeys = {
   all: ["analytics:v2:home-overview"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsHomeOverviewKeys.all, { filters }] as const,
+    [...analyticsHomeOverviewKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsAttemptHistoryKeys = {
   all: ["analytics:v2:attempt-history"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsAttemptHistoryKeys.all, { filters }] as const,
+    [...analyticsAttemptHistoryKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsPracticeOverviewKeys = {
   all: ["analytics:v2:practice-overview"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsPracticeOverviewKeys.all, { filters }] as const,
+    [...analyticsPracticeOverviewKeys.all, serializeFilters(filters)] as const,
 };
 
 // Bundle Analytics Keys (2 metrics)
 export const analyticsReportsBundleKeys = {
   all: ["analytics:v2:reports-bundle"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsReportsBundleKeys.all, { filters }] as const,
+    [...analyticsReportsBundleKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsLeaderboardBundleKeys = {
   all: ["analytics:v2:leaderboard-bundle"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsLeaderboardBundleKeys.all, { filters }] as const,
+    [...analyticsLeaderboardBundleKeys.all, serializeFilters(filters)] as const,
 };
 
 // Leaderboard-Specific Keys (3 metrics)
 export const analyticsImprovementPerDayKeys = {
   all: ["analytics:v2:improvement-per-day"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsImprovementPerDayKeys.all, { filters }] as const,
+    [...analyticsImprovementPerDayKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsPerfectScoresKeys = {
   all: ["analytics:v2:perfect-scores"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsPerfectScoresKeys.all, { filters }] as const,
+    [...analyticsPerfectScoresKeys.all, serializeFilters(filters)] as const,
 };
 
 export const analyticsQuickestPassKeys = {
   all: ["analytics:v2:quickest-pass"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsQuickestPassKeys.all, { filters }] as const,
+    [...analyticsQuickestPassKeys.all, serializeFilters(filters)] as const,
 };
 
 // Utility Keys
@@ -191,7 +230,7 @@ export const analyticsRefreshKeys = {
 export const analyticsPricingKeys = {
   all: ["analytics:v2:pricing"] as const,
   list: (filters: AnalyticsFilters) =>
-    [...analyticsPricingKeys.all, { filters }] as const,
+    [...analyticsPricingKeys.all, serializeFilters(filters)] as const,
 };
 
 // Dashboard Bundle Keys
@@ -206,7 +245,7 @@ export const analyticsDashboardBundleKeys = {
 export const personasListKeys = {
   all: ["personas:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...personasListKeys.all, { filters }] as const,
+    [...personasListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const personasDetailKeys = {
@@ -225,7 +264,7 @@ export const personasDetailDefaultKeys = {
 export const documentsListKeys = {
   all: ["documents:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...documentsListKeys.all, { filters }] as const,
+    [...documentsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const documentsDetailKeys = {
@@ -244,7 +283,7 @@ export const documentsDetailBulkKeys = {
 export const scenariosListKeys = {
   all: ["scenarios:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...scenariosListKeys.all, { filters }] as const,
+    [...scenariosListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const scenariosDetailKeys = {
@@ -263,7 +302,7 @@ export const scenariosDetailDefaultKeys = {
 export const simulationsListKeys = {
   all: ["simulations:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...simulationsListKeys.all, { filters }] as const,
+    [...simulationsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const simulationsDetailKeys = {
@@ -282,7 +321,7 @@ export const simulationsDetailDefaultKeys = {
 export const rubricsListKeys = {
   all: ["rubrics:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...rubricsListKeys.all, { filters }] as const,
+    [...rubricsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const rubricsDetailKeys = {
@@ -301,7 +340,7 @@ export const rubricsDetailDefaultKeys = {
 export const profileListKeys = {
   all: ["profile:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...profileListKeys.all, { filters }] as const,
+    [...profileListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const profileDetailKeys = {
@@ -329,7 +368,7 @@ export const profileContextKeys = {
 export const cohortsListKeys = {
   all: ["cohorts:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...cohortsListKeys.all, { filters }] as const,
+    [...cohortsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const cohortsDetailKeys = {
@@ -348,7 +387,7 @@ export const cohortsDetailDefaultKeys = {
 export const providersListKeys = {
   all: ["providers:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...providersListKeys.all, { filters }] as const,
+    [...providersListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const providersDetailKeys = {
@@ -368,7 +407,7 @@ export const modelsDetailKeys = {
 export const parametersListKeys = {
   all: ["parameters:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...parametersListKeys.all, { filters }] as const,
+    [...parametersListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const parametersDetailKeys = {
@@ -387,7 +426,7 @@ export const parametersDetailDefaultKeys = {
 export const departmentsListKeys = {
   all: ["departments:v2:list"] as const,
   list: (filters: { departmentIds: string[]; profileId: string }) =>
-    [...departmentsListKeys.all, { filters }] as const,
+    [...departmentsListKeys.all, serializeGenericFilters(filters)] as const,
 };
 
 export const departmentsDetailKeys = {
