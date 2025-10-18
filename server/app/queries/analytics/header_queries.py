@@ -113,7 +113,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -188,7 +188,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -309,7 +309,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -383,7 +383,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -470,7 +470,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -567,7 +567,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', value,
+                    'value', COALESCE(value, 0),
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points

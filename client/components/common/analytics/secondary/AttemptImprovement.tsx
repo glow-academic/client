@@ -24,9 +24,9 @@ import {
 
 type AttemptRow = {
   attempt: string;
-  "Average Score": number;
-  "Average Time": number;
-  "Pass Rate": number;
+  average_score: number;
+  average_time: number;
+  pass_rate: number;
 };
 type AttemptFact = {
   simulationId: string;
@@ -94,9 +94,9 @@ export default function AttemptImprovement({
       .sort(([a], [b]) => a - b)
       .map(([attemptNo, acc]) => ({
         attempt: `Attempt ${attemptNo}`,
-        "Average Score": Math.round(acc.gradeSum / Math.max(1, acc.n)),
-        "Average Time": Math.round(acc.minSum / Math.max(1, acc.n)),
-        "Pass Rate": Math.round(acc.passSum / Math.max(1, acc.n)),
+        average_score: Math.round(acc.gradeSum / Math.max(1, acc.n)),
+        average_time: Math.round(acc.minSum / Math.max(1, acc.n)),
+        pass_rate: Math.round(acc.passSum / Math.max(1, acc.n)),
       }));
   }, [selected, chartData, facts]);
 
@@ -109,8 +109,8 @@ export default function AttemptImprovement({
 
     if (!firstAttempt || !lastAttempt) return "neutral";
 
-    const firstScore = firstAttempt["Average Score"];
-    const lastScore = lastAttempt["Average Score"];
+    const firstScore = firstAttempt.average_score;
+    const lastScore = lastAttempt.average_score;
 
     if (typeof firstScore !== "number" || typeof lastScore !== "number")
       return "neutral";
@@ -236,20 +236,20 @@ export default function AttemptImprovement({
                 />
                 <Legend />
                 <Bar
-                  dataKey="Average Score"
+                  dataKey="average_score"
                   fill="hsl(120, 70%, 50%)"
                   name="Average Score"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
-                  dataKey="Pass Rate"
+                  dataKey="pass_rate"
                   fill="hsl(280, 70%, 50%)"
                   name="Pass Rate"
                   radius={[4, 4, 0, 0]}
                 />
                 <Line
                   type="monotone"
-                  dataKey="Average Time"
+                  dataKey="average_time"
                   stroke="hsl(200, 70%, 50%)"
                   strokeWidth={2}
                   dot={{ fill: "hsl(200, 70%, 50%)", strokeWidth: 2, r: 4 }}

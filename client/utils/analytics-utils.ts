@@ -275,8 +275,8 @@ export function computeAttemptImprovementStatus(
 
   if (!firstAttempt || !lastAttempt) return "neutral";
 
-  const firstScore = firstAttempt["Average Score"];
-  const lastScore = lastAttempt["Average Score"];
+  const firstScore = firstAttempt.average_score;
+  const lastScore = lastAttempt.average_score;
 
   if (typeof firstScore !== "number" || typeof lastScore !== "number")
     return "neutral";
@@ -298,8 +298,8 @@ export function computeAttemptImprovementActionableInsight(
 
   if (!firstAttempt || !lastAttempt) return null;
 
-  const firstScore = firstAttempt["Average Score"];
-  const lastScore = lastAttempt["Average Score"];
+  const firstScore = firstAttempt.average_score;
+  const lastScore = lastAttempt.average_score;
 
   if (typeof firstScore !== "number" || typeof lastScore !== "number")
     return null;

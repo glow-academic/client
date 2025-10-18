@@ -186,7 +186,7 @@ class PrimaryQueries:
                     persona_id,
                     COALESCE(json_agg(json_build_object(
                         'date', date,
-                        'score', ROUND(avg_score)::int,
+                        'score', ROUND(COALESCE(avg_score, 0))::int,
                         'timestamp', timestamp,
                         'simulationId', simulation_id::text
                     ) ORDER BY day), '[]'::json) AS trend_data
@@ -204,7 +204,7 @@ class PrimaryQueries:
                 'chartData', COALESCE((
                     SELECT json_agg(json_build_object(
                         'name', pd.persona_name,
-                        'score', ROUND(pd.avg_score)::int,
+                        'score', ROUND(COALESCE(pd.avg_score, 0))::int,
                         'sessions', pd.sessions,
                         'color', pd.persona_color,
                         'simulationIds', pd.simulation_ids,

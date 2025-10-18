@@ -106,7 +106,7 @@ class MetricQueryBuilder:
             return f"""
                 SELECT
                     to_char(a.attempt_created_at, 'YYYY-MM-DD') AS date,
-                    {aggregate_func}({metric_expression})::float AS value,
+                    COALESCE({aggregate_func}({metric_expression}), 0)::float AS value,
                     COUNT(*)::int AS count
                 FROM analytics a
                 WHERE {where_clause}
@@ -116,7 +116,7 @@ class MetricQueryBuilder:
         else:
             return f"""
                 SELECT
-                    {aggregate_func}({metric_expression})::float AS value,
+                    COALESCE({aggregate_func}({metric_expression}), 0)::float AS value,
                     COUNT(*)::int AS count
                 FROM analytics a
                 WHERE {where_clause}
@@ -133,7 +133,7 @@ class MetricQueryBuilder:
         fields = [
             "a.profile_id::text AS profile_id",
             "to_char(a.attempt_created_at, 'YYYY-MM-DD') AS date",
-            f"{metric_expression} AS value",
+            f"COALESCE({metric_expression}, 0) AS value",
         ]
 
         if include_simulation:
@@ -270,7 +270,7 @@ class AnalyticsQueryBuilder:
                     SELECT
                         f.profile_id::text AS profile_id,
                         to_char(an.attempt_created_at, 'YYYY-MM-DD') AS date,
-                        an.norm AS value,
+                        COALESCE(an.norm, 0) AS value,
                         f.simulation_id::text AS simulation_id,
                         f.scenario_id::text AS scenario_id
                     FROM attempt_norm an
@@ -291,7 +291,7 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT json_agg(json_build_object(
                         'profileId', profile_id,
                         'date', date,
-                        'value', value,
+                        'value', COALESCE(value, 0),
                         'simulationId', simulation_id,
                         'scenarioId', scenario_id
                     ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -311,7 +311,7 @@ class AnalyticsQueryBuilder:
                 ),
                 cur AS (
                     SELECT
-                        ROUND({aggregate_func}({metric_expression}))::int AS current_value,
+                        ROUND(COALESCE({aggregate_func}({metric_expression}), 0))::int AS current_value,
                         COUNT(*) > 0 AS has_data
                     FROM analytics a
                     WHERE {where_clause}
@@ -332,7 +332,7 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT json_agg(json_build_object(
                         'profileId', profile_id,
                         'date', date,
-                        'value', value,
+                        'value', COALESCE(value, 0),
                         'simulationId', simulation_id,
                         'scenarioId', scenario_id
                     ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points

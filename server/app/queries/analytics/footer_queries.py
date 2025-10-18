@@ -124,8 +124,8 @@ class FooterQueries:
                 'simulationFacts', COALESCE((SELECT json_agg(json_build_object(
                     'simulationId', simulation_id::text,
                     'title', simulation_title,
-                    'avgScore', ROUND(avg_score)::int,
-                    'completionRate', ROUND(completion_rate)::int,
+                    'avgScore', ROUND(COALESCE(avg_score, 0))::int,
+                    'completionRate', ROUND(COALESCE(completion_rate, 0))::int,
                     'totalAttempts', total_attempts,
                     'scenarioCount', scenario_count
                 )) FROM simulation_facts), '[]'::json),
@@ -184,8 +184,8 @@ class FooterQueries:
                     'simulationId', simulation_id::text,
                     'scenarioId', scenario_id::text,
                     'scenarioName', scenario_name,
-                    'avgScore', ROUND(avg_score)::int,
-                    'successRate', ROUND(success_rate)::int,
+                    'avgScore', ROUND(COALESCE(avg_score, 0))::int,
+                    'successRate', ROUND(COALESCE(success_rate, 0))::int,
                     'totalAttempts', total_attempts,
                     'completedAttempts', completed_attempts
                 )) FROM scenario_facts), '[]'::json)

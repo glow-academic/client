@@ -114,6 +114,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
     data: bundle,
     isLoading,
     isError,
+    error,
   } = useDashboardBundle(filters, rqOpts);
 
   // Helper to compute current value from MetricResponse
@@ -575,6 +576,35 @@ export default function Dashboard({ profileId }: DashboardProps) {
     effectiveProfile?.role === "instructional" ||
     effectiveProfile?.role === "admin" ||
     effectiveProfile?.role === "superadmin";
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading dashboard data...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-destructive">
+          Error loading dashboard: {error?.toString() || "Unknown error"}
+        </div>
+      </div>
+    );
+  }
+
+  // Show no data state
+  if (!bundle) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">No dashboard data available</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -57,19 +57,19 @@ export const TrendDataSchema = z.object({
 
 export const DataPointSchema = z.object({
   profileId: z.string(),
-  date: z.string().optional(),
-  value: z.number().optional(),
-  attemptId: z.string().optional(),
-  simulationId: z.string().optional(),
-  scenarioId: z.string().optional(),
-  count: z.number().optional(),
+  date: z.string().nullish(),
+  value: z.number().nullish(),
+  attemptId: z.string().nullish(),
+  simulationId: z.string().nullish(),
+  scenarioId: z.string().nullish(),
+  count: z.number().nullish(),
 });
 
 export const MetricResponseSchema = z.object({
   hasData: z.boolean(),
   method: MethodSchema,
-  valueField: z.string().optional(),
-  keyField: z.string().optional(),
+  valueField: z.string().nullish(),
+  keyField: z.string().nullish(),
   trendData: z.array(TrendDataSchema),
   dataPoints: z.array(DataPointSchema),
 });
@@ -202,9 +202,9 @@ export type PersonaPerformanceResponse = z.infer<
 // Attempt Improvement
 export const AttemptImprovementDataSchema = z.object({
   attempt: z.string(),
-  "Average Score": z.number(),
-  "Average Time": z.number(),
-  "Pass Rate": z.number(),
+  average_score: z.number(),
+  average_time: z.number(),
+  pass_rate: z.number(),
 });
 
 export const AttemptImprovementFactSchema = z.object({

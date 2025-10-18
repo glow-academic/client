@@ -36,48 +36,58 @@ class SecondaryQueries:
             WITH filt AS (
                 SELECT * FROM analytics a WHERE {where_clause}
             ),
-            attempt_numbers AS (
+            -- Compute attempt stats per simulation and attempt number
+            attempt_rows AS (
                 SELECT
-                    simulation_id,
-                    profile_id,
-                    attempt_id,
-                    attempt_created_at,
-                    grade_percent,
-                    (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0)) AS pass_percent,
-                    time_taken_seconds / 60.0 AS minutes,
-                    ROW_NUMBER() OVER (PARTITION BY simulation_id, profile_id ORDER BY attempt_created_at) AS attempt_no
-                FROM filt
-                WHERE grade_percent IS NOT NULL
+                    an.simulation_id,
+                    an.attempt_no,
+                    AVG(an.grade_percent)::float AS avg_grade,
+                    AVG(an.minutes)::float AS avg_time_minutes,
+                    MAX((CASE WHEN an.grade_percent >= an.pass_percent THEN 1 ELSE 0 END))::int AS passed_any
+                FROM (
+                    SELECT
+                        simulation_id,
+                        profile_id,
+                        attempt_id,
+                        attempt_created_at,
+                        grade_percent,
+                        (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0)) AS pass_percent,
+                        time_taken_seconds / 60.0 AS minutes,
+                        ROW_NUMBER() OVER (PARTITION BY simulation_id, profile_id ORDER BY attempt_created_at) AS attempt_no
+                    FROM filt
+                    WHERE grade_percent IS NOT NULL
+                ) an
+                GROUP BY an.simulation_id, an.attempt_no, an.attempt_id
             ),
+            -- Aggregate across all simulations for chart
             by_attempt AS (
                 SELECT
-                    simulation_id,
                     attempt_no,
-                    AVG(grade_percent)::float AS avg_grade,
-                    AVG(minutes)::float AS avg_minutes,
-                    (100.0 * COUNT(*) FILTER (WHERE grade_percent >= pass_percent) / NULLIF(COUNT(*), 0))::float AS pass_rate
-                FROM attempt_numbers
-                WHERE attempt_no <= 5  -- Limit to first 5 attempts
-                GROUP BY simulation_id, attempt_no
+                    AVG(avg_grade)::float AS avg_grade,
+                    AVG(avg_time_minutes)::float AS avg_time_minutes,
+                    (100.0 * AVG(passed_any))::float AS pass_rate
+                FROM attempt_rows
+                WHERE attempt_no <= 5
+                GROUP BY attempt_no
             ),
             chart_data AS (
                 SELECT
                     'Attempt ' || attempt_no AS attempt,
-                    ROUND(AVG(avg_grade))::int AS "Average Score",
-                    ROUND(AVG(avg_minutes))::int AS "Average Time",
-                    ROUND(AVG(pass_rate))::int AS "Pass Rate"
+                    ROUND(COALESCE(avg_grade, 0))::int AS average_score,
+                    ROUND(COALESCE(avg_time_minutes, 0))::int AS average_time,
+                    ROUND(COALESCE(pass_rate, 0))::int AS pass_rate
                 FROM by_attempt
-                GROUP BY attempt_no
                 ORDER BY attempt_no
             ),
             facts AS (
                 SELECT
                     simulation_id::text,
                     attempt_no::int,
-                    ROUND(avg_grade)::int AS avg_grade,
-                    ROUND(avg_minutes)::int AS avg_minutes,
-                    ROUND(pass_rate)::int AS pass_rate
-                FROM by_attempt
+                    ROUND(COALESCE(avg_grade, 0))::int AS avg_grade,
+                    ROUND(COALESCE(avg_time_minutes, 0))::int AS avg_minutes,
+                    ROUND(COALESCE(100.0 * passed_any, 0))::int AS pass_rate
+                FROM attempt_rows
+                WHERE attempt_no <= 5
             )
             SELECT json_build_object(
                 'chartData', COALESCE((SELECT json_agg(row_to_json(cd)) FROM chart_data cd), '[]'::json),
@@ -171,7 +181,7 @@ class SecondaryQueries:
                 )) FROM cohort_stats), '[]'::json),
                 'dailyData', COALESCE((SELECT json_agg(json_build_object(
                     'date', date,
-                    'avgScore', ROUND(avg_score)::int,
+                    'avgScore', ROUND(COALESCE(avg_score, 0))::int,
                     'cohortId', cohort_id
                 )) FROM daily_data), '[]'::json),
                 'cohortFacts', '[]'::json,
