@@ -16,7 +16,6 @@ import {
   useCohortDetailWithProfiles,
 } from "@/lib/api/v2/hooks/cohorts";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
-import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { Check, Download, Search, Upload, UserPlus, X } from "lucide-react";
 
 // Helper function to extract alias from email
@@ -116,28 +115,8 @@ export default function AddStaffToCohort({
     lastName?: string;
     alias?: string;
   }>({});
-  const [isValidatingAlias, setIsValidatingAlias] = useState(false);
 
   const csvInputRef = useRef<HTMLInputElement>(null);
-
-  // Alias validation
-  const validateAlias = useCallback(async (alias: string): Promise<boolean> => {
-    if (!alias.trim()) return false;
-    setIsValidatingAlias(true);
-    try {
-      const existing = await getProfileByAlias(alias.trim());
-      return !existing;
-    } catch (error) {
-      log.error("staff.alias.validate.failed", {
-        message: "Error validating alias",
-        error,
-        context: { component: "AddStaffToCohort", function: "validateAlias" },
-      });
-      return false;
-    } finally {
-      setIsValidatingAlias(false);
-    }
-  }, []);
 
   // Download template
   const downloadTemplate = useCallback(() => {
@@ -204,13 +183,6 @@ export default function AddStaffToCohort({
             } else {
               // New profile needed
               if (firstName && lastName) {
-                const ok = await validateAlias(alias);
-                if (!ok) {
-                  toast.error(
-                    `Row ${index + 1}: Alias "${alias}" already exists.`
-                  );
-                  continue;
-                }
                 newProfiles.push({ firstName, lastName, alias, role: "ta" });
               } else {
                 toast.warning(
@@ -236,7 +208,11 @@ export default function AddStaffToCohort({
                 `Successfully added ${total} profile(s) to cohort.`
               );
             } catch (error) {
-              toast.error("Failed to add profiles to cohort.");
+              const errorMessage =
+                error instanceof Error
+                  ? error.message
+                  : "Failed to add profiles to cohort.";
+              toast.error(errorMessage);
               log.error("cohort.add_profiles.failed", {
                 message: "Error adding profiles to cohort",
                 error,
@@ -260,10 +236,10 @@ export default function AddStaffToCohort({
     [
       allProfiles,
       cohortProfileIds,
-      validateAlias,
       addProfilesToCohortMutation,
       cohortId,
       departmentIds,
+      log,
     ]
   );
 
@@ -339,12 +315,6 @@ export default function AddStaffToCohort({
         toast.error("This profile already exists in the current cohort.");
       }
     } else {
-      const ok = await validateAlias(manualProfile.alias.trim());
-      if (!ok) {
-        toast.error("This alias already exists.");
-        return;
-      }
-
       // Add to selection (will be created when confirmed)
       const tempId = `new-${Date.now()}`;
       const np: SelectedProfile = {
@@ -367,7 +337,6 @@ export default function AddStaffToCohort({
     allProfiles,
     cohortProfileIds,
     selectedProfiles,
-    validateAlias,
     validateForm,
   ]);
 
@@ -456,7 +425,11 @@ export default function AddStaffToCohort({
       setActiveTab("csv");
       if (onDone) onDone();
     } catch (error) {
-      toast.error("Failed to add profiles to cohort.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to add profiles to cohort.";
+      toast.error(errorMessage);
       log.error("cohort.add_profiles.failed", {
         message: "Error adding profiles to cohort",
         error,
@@ -472,6 +445,7 @@ export default function AddStaffToCohort({
     departmentIds,
     addProfilesToCohortMutation,
     onDone,
+    log,
   ]);
 
   return (
@@ -658,11 +632,10 @@ export default function AddStaffToCohort({
             )}
             <Button
               onClick={addManualProfile}
-              disabled={isValidatingAlias}
               className="flex items-center gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              {isValidatingAlias ? "Validating..." : "Create GTA"}
+              Create GTA
             </Button>
           </div>
         </TabsContent>

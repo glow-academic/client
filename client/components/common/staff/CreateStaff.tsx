@@ -33,7 +33,6 @@ import {
   useBulkCreateProfile,
   useProfileList,
 } from "@/lib/api/v2/hooks/profile";
-import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { Download, Shield, Upload, User, UserPlus, X } from "lucide-react";
 
 // Helper to extract alias from email
@@ -193,7 +192,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
     role?: string;
     departmentId?: string;
   }>({});
-  const [isValidatingAlias, setIsValidatingAlias] = useState(false);
 
   const csvInputRef = useRef<HTMLInputElement>(null);
 
@@ -217,28 +215,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
     }
     return base;
   }, [isCurrentUserSuperAdmin]);
-
-  // Alias validation
-  const validateAlias = useCallback(
-    async (alias: string): Promise<boolean> => {
-      if (!alias.trim()) return false;
-      setIsValidatingAlias(true);
-      try {
-        const existing = await getProfileByAlias(alias.trim());
-        return !existing;
-      } catch (error) {
-        log.error("staff.alias.validate.failed", {
-          message: "Error validating alias",
-          error,
-          context: { component: "CreateStaff", function: "validateAlias" },
-        });
-        return false;
-      } finally {
-        setIsValidatingAlias(false);
-      }
-    },
-    [log]
-  );
 
   // Download template
   const downloadTemplate = useCallback(() => {
@@ -323,11 +299,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
               );
               continue;
             }
-            const ok = await validateAlias(alias);
-            if (!ok) {
-              toast.error(`Row ${index + 1}: Alias "${alias}" already exists.`);
-              continue;
-            }
 
             newProfiles.push({
               id: `new-${Date.now()}-${index}`,
@@ -355,7 +326,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       };
       reader.readAsText(file);
     },
-    [allProfiles, availableRoles, validateAlias]
+    [allProfiles, availableRoles]
   );
 
   const handleCsvInputChange = useCallback(
@@ -435,11 +406,6 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       toast.error("This alias is already in your preview list.");
       return;
     }
-    const ok = await validateAlias(manualProfile.alias.trim());
-    if (!ok) {
-      toast.error("This alias already exists.");
-      return;
-    }
 
     const tempId = `new-${Date.now()}`;
     const roleValue = manualProfile.role as RoleValue;
@@ -466,7 +432,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       role: "",
       departmentId: "",
     });
-  }, [manualProfile, allProfiles, csvPreview, validateAlias, validateForm]);
+  }, [manualProfile, allProfiles, csvPreview, validateForm]);
 
   // Submit
   const handleCreateSubmit = useCallback(async () => {
@@ -491,12 +457,16 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
       if (onDone) onDone();
       else router.push("/management/staff");
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to create some staff members.";
+      toast.error(errorMessage);
       log.error("staff.bulk_create.failed", {
         message: "Error creating staff members",
         error,
         context: { component: "CreateStaff", function: "handleCreateSubmit" },
       });
-      toast.error("Failed to create some staff members.");
     } finally {
       setIsSubmitting(false);
     }
@@ -731,11 +701,10 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
               )}
               <Button
                 onClick={addManualProfile}
-                disabled={isValidatingAlias}
                 className="flex items-center gap-2"
               >
                 <UserPlus className="h-4 w-4" />
-                {isValidatingAlias ? "Validating..." : "Add Staff"}
+                Add Staff
               </Button>
             </div>
           </div>
