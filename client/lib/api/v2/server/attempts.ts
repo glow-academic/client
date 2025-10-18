@@ -1,7 +1,7 @@
 /**
  * Server-side fetcher functions for attempts v2 API
  * Memoized with React cache to prevent duplicate requests
- * Used for server-side prefetching in Next.js pages
+ * Used for server-side prefetching in Next.js pages and BFF routes
  */
 
 import { getApiBase } from "@/lib/api-base";
