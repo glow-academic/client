@@ -133,7 +133,7 @@ class MetricQueryBuilder:
         fields = [
             "a.profile_id::text AS profile_id",
             "to_char(a.attempt_created_at, 'YYYY-MM-DD') AS date",
-            f"COALESCE({metric_expression}, 0) AS value",
+            f"ROUND(COALESCE({metric_expression}, 0))::int AS value",
         ]
 
         if include_simulation:
@@ -270,7 +270,7 @@ class AnalyticsQueryBuilder:
                     SELECT
                         f.profile_id::text AS profile_id,
                         to_char(an.attempt_created_at, 'YYYY-MM-DD') AS date,
-                        COALESCE(an.norm, 0) AS value,
+                        ROUND(COALESCE(an.norm, 0))::int AS value,
                         f.simulation_id::text AS simulation_id,
                         f.scenario_id::text AS scenario_id
                     FROM attempt_norm an
@@ -291,7 +291,7 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT json_agg(json_build_object(
                         'profileId', profile_id,
                         'date', date,
-                        'value', COALESCE(value, 0),
+                        'value', value,
                         'simulationId', simulation_id,
                         'scenarioId', scenario_id
                     ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -332,7 +332,7 @@ class AnalyticsQueryBuilder:
                     COALESCE((SELECT json_agg(json_build_object(
                         'profileId', profile_id,
                         'date', date,
-                        'value', COALESCE(value, 0),
+                        'value', value,
                         'simulationId', simulation_id,
                         'scenarioId', scenario_id
                     ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points

@@ -93,7 +93,7 @@ class HeaderQueries:
                 SELECT
                     f.profile_id::text AS profile_id,
                     to_char(wp.attempt_created_at, 'YYYY-MM-DD') AS date,
-                    wp.completion_pct AS value,
+                    ROUND(wp.completion_pct)::int AS value,
                     f.simulation_id::text AS simulation_id,
                     f.scenario_id::text AS scenario_id
                 FROM with_pct wp
@@ -113,7 +113,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -169,7 +169,7 @@ class HeaderQueries:
                 SELECT
                     profile_id::text,
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    CASE WHEN passed THEN 100.0 ELSE 0.0 END AS value,
+                    CASE WHEN passed THEN 100 ELSE 0 END AS value,
                     simulation_id::text,
                     attempt_id::text
                 FROM first_attempts
@@ -188,7 +188,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -290,7 +290,7 @@ class HeaderQueries:
                 SELECT
                     profile_id::text,
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    delta_sec AS value,
+                    ROUND(delta_sec)::int AS value,
                     simulation_id::text,
                     scenario_id::text
                 FROM with_deltas
@@ -309,7 +309,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -364,7 +364,7 @@ class HeaderQueries:
                 SELECT
                     profile_id::text,
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    efficiency AS value,
+                    ROUND(efficiency)::int AS value,
                     simulation_id::text,
                     scenario_id::text
                 FROM with_eff
@@ -383,7 +383,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'scenarioId', scenario_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -451,7 +451,7 @@ class HeaderQueries:
                 SELECT
                     profile_id::text,
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    (is_stagnant * 100.0) AS value,
+                    (is_stagnant * 100) AS value,
                     simulation_id::text,
                     attempt_created_at::text AS attempt_id
                 FROM stagnant_attempts
@@ -470,7 +470,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
@@ -548,7 +548,7 @@ class HeaderQueries:
                 SELECT
                     profile_id::text,
                     to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                    1.0 AS value,
+                    1 AS value,
                     simulation_id::text,
                     attempt_id::text
                 FROM distinct_attempts
@@ -567,7 +567,7 @@ class HeaderQueries:
                 COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id,
                     'date', date,
-                    'value', COALESCE(value, 0),
+                    'value', value,
                     'simulationId', simulation_id,
                     'attemptId', attempt_id
                 ) ORDER BY profile_id, date) FROM data_points), '[]'::json) AS data_points
