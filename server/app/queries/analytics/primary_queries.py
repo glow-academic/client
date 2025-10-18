@@ -248,47 +248,192 @@ class PrimaryQueries:
             WITH filt AS (
                 SELECT * FROM analytics a WHERE """ + where_clause + """
             ),
-            -- Get rubric IDs from filtered data
-            rubric_ids AS (
-                SELECT DISTINCT rubric_id
+            -- Get distinct chat IDs from filtered data
+            filtered_chats AS (
+                SELECT DISTINCT chat_id
                 FROM filt
-                WHERE rubric_id IS NOT NULL
+                WHERE chat_id IS NOT NULL
             ),
-            -- Get standard groups per rubric
-            standard_groups AS (
+            -- Get latest grade per chat
+            latest_grade_per_chat AS (
+                SELECT DISTINCT ON (scg.simulation_chat_id)
+                    scg.id,
+                    scg.simulation_chat_id AS chat_id,
+                    scg.rubric_id
+                FROM simulation_chat_grades scg
+                JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
+                ORDER BY scg.simulation_chat_id, scg.created_at DESC
+            ),
+            -- Aggregate feedback into per-(chat, rubric, group) percentages
+            per_grade_group AS (
                 SELECT
-                    sg.id,
-                    sg.name,
-                    sg.short_name,
-                    sg.rubric_id
-                FROM standard_groups sg
-                WHERE sg.rubric_id IN (SELECT rubric_id FROM rubric_ids)
+                    lg.chat_id,
+                    sg.rubric_id,
+                    sg.id AS group_id,
+                    sg.name AS group_name,
+                    (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
+                FROM latest_grade_per_chat lg
+                JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
+                JOIN standards s ON s.id = scf.standard_id
+                JOIN standard_groups sg ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
+                GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name
             ),
-            -- Build empty matrix structure
-            matrix_structure AS (
+            -- Compute upper triangle correlations
+            corrs_upper AS (
+                SELECT
+                    a.rubric_id,
+                    a.group_id AS g1,
+                    b.group_id AS g2,
+                    COUNT(*) FILTER (WHERE a.pct IS NOT NULL AND b.pct IS NOT NULL) AS n,
+                    corr(a.pct, b.pct) AS r
+                FROM per_grade_group a
+                JOIN per_grade_group b
+                    ON b.rubric_id = a.rubric_id
+                    AND b.chat_id = a.chat_id
+                    AND b.group_id >= a.group_id
+                GROUP BY a.rubric_id, a.group_id, b.group_id
+            ),
+            -- Mirror to create full symmetric matrix
+            corrs_full AS (
+                SELECT rubric_id, g1, g2, n, r FROM corrs_upper
+                UNION ALL
+                SELECT rubric_id, g2 AS g1, g1 AS g2, n, r
+                FROM corrs_upper
+                WHERE g1 != g2
+            ),
+            -- Get groups actually present in data
+            groups AS (
+                SELECT DISTINCT pgg.rubric_id, sg.id, sg.name, sg.short_name
+                FROM per_grade_group pgg
+                JOIN standard_groups sg ON sg.id = pgg.group_id
+            ),
+            valid_rubrics AS (
+                SELECT DISTINCT rubric_id FROM groups
+            ),
+            -- Enrich correlations with p-values, strength, and color
+            enriched AS (
+                SELECT
+                    c.rubric_id, c.g1, c.g2, c.n,
+                    CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END AS r,
+                    NULL AS p_value,
+                    CASE
+                        WHEN c.n IS NULL OR c.n < 3 THEN 'No Data'
+                        WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN 'Strong'
+                        WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN 'Moderate'
+                        WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) > 0.0 THEN 'Weak'
+                        ELSE 'No Data'
+                    END AS strength,
+                    CASE
+                        WHEN c.n IS NULL OR c.n < 3 THEN '#e5e7eb'
+                        WHEN (CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.0 THEN
+                            CASE
+                                WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#10b981'
+                                WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#34d399'
+                                ELSE '#a7f3d0'
+                            END
+                        ELSE
+                            CASE
+                                WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.7 THEN '#ef4444'
+                                WHEN ABS(CASE WHEN c.r = c.r THEN c.r ELSE 0.0 END) >= 0.4 THEN '#f87171'
+                                ELSE '#fecaca'
+                            END
+                    END AS color
+                FROM corrs_full c
+            ),
+            -- Build matrices per rubric
+            per_rubric_matrix AS (
+                SELECT
+                    g1.rubric_id,
+                    ROW_NUMBER() OVER (PARTITION BY g1.rubric_id ORDER BY g1.name) - 1 AS row_idx,
+                    json_agg(
+                        json_build_object(
+                            'rubricId', g1.rubric_id::text,
+                            'correlation', COALESCE(e.r, 0.0),
+                            'pValue', e.p_value,
+                            'color', COALESCE(e.color, '#e5e7eb'),
+                            'strength', COALESCE(e.strength, 'No Data'),
+                            'dataPoints', COALESCE(e.n, 0)
+                        )
+                        ORDER BY g2.name
+                    ) AS row_json
+                FROM groups g1
+                JOIN groups g2 ON g2.rubric_id = g1.rubric_id
+                LEFT JOIN enriched e
+                    ON e.rubric_id = g1.rubric_id AND e.g1 = g1.id AND e.g2 = g2.id
+                GROUP BY g1.rubric_id, g1.id, g1.name
+            ),
+            matrix_json AS (
+                SELECT rubric_id, json_agg(row_json ORDER BY row_idx) AS matrix
+                FROM per_rubric_matrix
+                GROUP BY rubric_id
+            ),
+            sg_json AS (
+                SELECT rubric_id,
+                    json_agg(json_build_object(
+                        'id', id::text,
+                        'name', name,
+                        'shortName', short_name,
+                        'rubricId', rubric_id::text
+                    ) ORDER BY name) AS standard_groups
+                FROM groups
+                GROUP BY rubric_id
+            ),
+            insights AS (
+                SELECT
+                    e.rubric_id,
+                    CASE
+                        WHEN COALESCE(SUM(CASE WHEN e.n >= 3 THEN 1 ELSE 0 END), 0) = 0 THEN NULL
+                        ELSE (
+                            SELECT 'Top pair: "' || g1.name || '" vs "' || g2.name ||
+                                   '" r=' || TO_CHAR(e2.r, 'FM0.00') ||
+                                   ' (n=' || e2.n || ')'
+                            FROM enriched e2
+                            JOIN groups g1 ON g1.id = e2.g1 AND g1.rubric_id = e2.rubric_id
+                            JOIN groups g2 ON g2.id = e2.g2 AND g2.rubric_id = e2.rubric_id
+                            WHERE e2.rubric_id = e.rubric_id AND e2.n >= 3
+                            ORDER BY ABS(e2.r) DESC, e2.n DESC
+                            LIMIT 1
+                        )
+                    END AS txt
+                FROM enriched e
+                GROUP BY e.rubric_id
+            ),
+            has_data AS (
+                SELECT rubric_id,
+                    (SUM(CASE WHEN n >= 3 THEN 1 ELSE 0 END) > 0) AS has_data
+                FROM enriched
+                GROUP BY rubric_id
+            ),
+            per_rubric AS (
                 SELECT
                     r.rubric_id,
-                    COALESCE(json_agg(json_build_object(
-                        'id', sg.id::text,
-                        'name', sg.name,
-                        'shortName', sg.short_name,
-                        'rubricId', sg.rubric_id::text
-                    ) ORDER BY sg.name), '[]'::json) AS standard_groups
-                FROM rubric_ids r
-                JOIN standard_groups sg ON sg.rubric_id = r.rubric_id
-                GROUP BY r.rubric_id
+                    COALESCE(m.matrix, '[]'::json) AS matrix,
+                    COALESCE(sg.standard_groups, '[]'::json) AS standard_groups,
+                    (SELECT txt FROM insights i WHERE i.rubric_id = r.rubric_id) AS insights,
+                    (SELECT h.has_data FROM has_data h WHERE h.rubric_id = r.rubric_id) AS has_data
+                FROM valid_rubrics r
+                LEFT JOIN matrix_json m ON m.rubric_id = r.rubric_id
+                LEFT JOIN sg_json sg ON sg.rubric_id = r.rubric_id
+            ),
+            valid_rubric_ids AS (
+                SELECT json_agg(rubric_id::text ORDER BY rubric_id::text) AS payload
+                FROM valid_rubrics
             )
             SELECT json_build_object(
-                'matrices', COALESCE((SELECT json_agg(json_build_object(
-                    'rubricId', rubric_id::text,
-                    'standardGroups', standard_groups,
-                    'matrix', '[]'::json,
-                    'insights', NULL,
-                    'hasData', false
-                )) FROM matrix_structure), '[]'::json),
-                'validRubricIds', COALESCE((
-                    SELECT json_agg(rubric_id::text) FROM rubric_ids
-                ), '[]'::json)
+                'matrices', COALESCE(
+                    (
+                        SELECT json_agg(json_build_object(
+                            'rubricId', pr.rubric_id::text,
+                            'standardGroups', pr.standard_groups,
+                            'matrix', pr.matrix,
+                            'insights', pr.insights,
+                            'hasData', COALESCE(pr.has_data, FALSE)
+                        ) ORDER BY pr.rubric_id::text)
+                        FROM per_rubric pr
+                    ),
+                    '[]'::json
+                ),
+                'validRubricIds', COALESCE((SELECT payload FROM valid_rubric_ids), '[]'::json)
             ) AS result
         """
 

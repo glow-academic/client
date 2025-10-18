@@ -66,6 +66,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
@@ -189,6 +190,7 @@ export function UnifiedSidebar({
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const log = useLogger();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
@@ -329,19 +331,16 @@ export function UnifiedSidebar({
           section: "reports",
         },
         {
+          title: "Pricing",
+          url: "#",
+          section: "pricing",
+        },
+        {
           title: "Leaderboard",
           url: "#",
           section: "leaderboard",
         },
       ];
-
-      if (availableSections.includes("pricing")) {
-        analyticsItems.push({
-          title: "Pricing",
-          url: "#",
-          section: "pricing",
-        });
-      }
 
       menu.push({
         title: "Analytics",
@@ -364,6 +363,16 @@ export function UnifiedSidebar({
         icon: Sparkles,
         items: [
           {
+            title: "Simulations",
+            url: "#",
+            section: "simulations",
+          },
+          {
+            title: "Scenarios",
+            url: "#",
+            section: "scenarios",
+          },
+          {
             title: "Personas",
             url: "#",
             section: "personas",
@@ -372,16 +381,6 @@ export function UnifiedSidebar({
             title: "Documents",
             url: "#",
             section: "documents",
-          },
-          {
-            title: "Scenarios",
-            url: "#",
-            section: "scenarios",
-          },
-          {
-            title: "Simulations",
-            url: "#",
-            section: "simulations",
           },
         ],
       });
@@ -402,6 +401,14 @@ export function UnifiedSidebar({
         icon: UserCogIcon,
         items: managementItems,
       });
+
+      if (availableSections.includes("departments")) {
+        managementItems.push({
+          title: "Departments",
+          url: "#",
+          section: "departments",
+        });
+      }
 
       if (availableSections.includes("staff")) {
         managementItems.push({
@@ -427,13 +434,7 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("departments")) {
-        managementItems.push({
-          title: "Departments",
-          url: "#",
-          section: "departments",
-        });
-      }
+
     }
 
     // System  - Available from admin level and up

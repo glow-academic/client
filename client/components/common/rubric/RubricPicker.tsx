@@ -62,10 +62,16 @@ export function RubricPicker<T extends MappingItem = MappingItem>({
 
   // Build rubrics from mapping
   const rubrics = React.useMemo(() => {
-    return validIds.map((id) => ({
-      id,
-      ...mapping[id],
-    }));
+    return validIds
+      .map((id) => {
+        const item = mapping[id];
+        if (!item) return null;
+        return {
+          id,
+          ...item,
+        } as { id: string } & T;
+      })
+      .filter((r): r is { id: string } & T => r !== null);
   }, [validIds, mapping]);
 
   const [peekedRubric, setPeekedRubric] = React.useState<

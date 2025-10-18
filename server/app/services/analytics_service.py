@@ -623,19 +623,114 @@ class AnalyticsService:
         return result_data
 
     async def get_growth_data(self, filters: AnalyticsFilters) -> GrowthDataResponse:
-        """Get growth data."""
-        query, params = self.primary_queries.growth_data(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
-            profile_id=filters.profileId,
-            department_ids=filters.departmentIds,
-        )
-        result = await self.conn.fetchval(query, *params)
-        parsed_result = self._parse_json_strings_recursive(result or {})
-        return GrowthDataResponse.model_validate(parsed_result)
+        """Get growth data by combining multiple header metrics."""
+        from collections import defaultdict
+        from datetime import datetime, timedelta
+
+        # Call all header metric functions
+        metric_calls = [
+            ('averageScore', self.header_queries.average_score),
+            ('passRate', self.header_queries.first_attempt_pass_rate),
+            ('completionRate', self.header_queries.completion_percentage),
+            ('messagesPerSession', self.header_queries.messages_per_session),
+            ('personaResponseTimes', self.header_queries.persona_response_times),
+            ('sessionEfficiency', self.header_queries.session_efficiency),
+            ('stagnationRate', self.header_queries.stagnation_rate),
+            ('timeSpent', self.header_queries.time_spent),
+            ('totalAttempts', self.header_queries.total_attempts),
+        ]
+        
+        # Collect all metric results
+        metric_results = {}
+        for metric_name, metric_func in metric_calls:
+            query, params = metric_func(
+                start_date=filters.startDate,
+                end_date=filters.endDate,
+                cohort_ids=filters.cohortIds,
+                roles=filters.roles,
+                sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+                profile_id=filters.profileId,
+                department_ids=filters.departmentIds,
+            )
+            row = await self.conn.fetchrow(query, *params)
+            if row:
+                trend_data = row['trend_data']
+                # Parse the JSON if it's a string
+                if isinstance(trend_data, str):
+                    import json
+                    trend_data = json.loads(trend_data)
+                metric_results[metric_name] = trend_data if trend_data else []
+            else:
+                metric_results[metric_name] = []
+        
+        # Combine all metrics by date
+        date_map: dict[str, dict[str, Any]] = defaultdict(dict)
+        for metric_name, trend_data in metric_results.items():
+            for point in trend_data:
+                date = point['date']
+                date_map[date][metric_name] = point['value']
+                if metric_name == 'passRate':
+                    # firstAttemptPassRate is synonym for passRate
+                    date_map[date]['firstAttemptPassRate'] = point['value']
+        
+        # Build chartData array
+        chart_data = []
+        for date in sorted(date_map.keys()):
+            values = date_map[date]
+            # Only include days where at least one metric has non-null data
+            if any(v is not None for v in values.values()):
+                chart_data.append({
+                    'date': date,
+                    **{k: v for k, v in values.items()}
+                })
+        
+        # Build availableMetrics
+        available_metrics = [
+            {'id': 'averageScore', 'name': 'Average Score', 'color': '#3b82f6', 'unit': '%', 'description': 'Average performance score', 'formatterId': 'percent'},
+            {'id': 'passRate', 'name': 'Pass Rate', 'color': '#10b981', 'unit': '%', 'description': 'Passes on first attempt', 'formatterId': 'percent'},
+            {'id': 'completionRate', 'name': 'Completion Rate', 'color': '#22c55e', 'unit': '%', 'description': 'Sessions completed', 'formatterId': 'percent'},
+            {'id': 'firstAttemptPassRate', 'name': 'First Attempt Pass', 'color': '#0ea5e9', 'unit': '%', 'description': 'First try pass rate', 'formatterId': 'percent'},
+            {'id': 'messagesPerSession', 'name': 'Messages/Session', 'color': '#f59e0b', 'unit': 'msgs', 'description': 'Average message count', 'formatterId': 'int'},
+            {'id': 'personaResponseTimes', 'name': 'Response Time', 'color': '#a855f7', 'unit': 'sec', 'description': 'Avg reply latency', 'formatterId': 'sec'},
+            {'id': 'sessionEfficiency', 'name': 'Efficiency', 'color': '#8b5cf6', 'unit': '%', 'description': 'Score per time proxy', 'formatterId': 'percent'},
+            {'id': 'stagnationRate', 'name': 'Stagnation', 'color': '#ef4444', 'unit': '%', 'description': 'Stalled sessions share', 'formatterId': 'percent'},
+            {'id': 'timeSpent', 'name': 'Time Spent', 'color': '#64748b', 'unit': 'min', 'description': 'Total time spent (minutes)', 'formatterId': 'minutes'},
+            {'id': 'totalAttempts', 'name': 'Total Attempts', 'color': '#14b8a6', 'unit': 'attempts', 'description': 'Attempt count', 'formatterId': 'int'},
+        ]
+        
+        # Calculate window averages for averageScore
+        window_n = 7
+        avg_scores = [(datetime.fromisoformat(d['date'].replace('Z', '+00:00')), d.get('averageScore')) 
+                      for d in chart_data if d.get('averageScore') is not None]
+        
+        last_avg = None
+        prev_avg = None
+        if avg_scores:
+            avg_scores.sort(key=lambda x: x[0])
+            max_date = avg_scores[-1][0]
+            
+            # Last N days average
+            last_n = [score for date, score in avg_scores if date > max_date - timedelta(days=window_n) and score is not None]
+            last_avg = sum(last_n) / len(last_n) if last_n else None
+            
+            # Previous N days average
+            prev_n = [score for date, score in avg_scores 
+                      if max_date - timedelta(days=2*window_n) < date <= max_date - timedelta(days=window_n) and score is not None]
+            prev_avg = sum(prev_n) / len(prev_n) if prev_n else None
+        
+        window_averages = {
+            'averageScore': {
+                'n': window_n,
+                'last': round(last_avg) if last_avg is not None else None,
+                'prev': prev_avg if prev_avg is not None else None,
+            }
+        }
+        
+        return GrowthDataResponse.model_validate({
+            'chartData': chart_data,
+            'availableMetrics': available_metrics,
+            'windowAverages': window_averages,
+        })
 
     async def get_persona_performance(self, filters: AnalyticsFilters) -> PersonaPerformanceResponse:
         """Get persona performance data."""

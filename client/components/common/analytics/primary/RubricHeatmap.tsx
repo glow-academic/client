@@ -8,7 +8,6 @@
 
 import {
   RubricPicker,
-  type Rubric as RubricPickerType,
 } from "@/components/common/rubric/RubricPicker";
 import {
   Card,
@@ -68,7 +67,7 @@ export default function RubricHeatmap({
   actionableInsight,
   thresholds,
 }: RubricHeatmapProps) {
-  const [selectedRubrics, setSelectedRubrics] = useState<RubricPickerType[]>(
+  const [selectedRubrics, setSelectedRubrics] = useState<string[]>(
     []
   );
 
@@ -78,37 +77,15 @@ export default function RubricHeatmap({
     col: number | null;
   }>({ row: null, col: null });
 
-  // Build available rubrics from mapping
-  const availableRubrics = useMemo(
-    () =>
-      validRubricIds.map((id) => ({
-        id,
-        name: rubricMapping[id]?.name || "Unknown",
-        description: rubricMapping[id]?.description || "",
-        points: 100,
-        active: true,
-      })),
-    [rubricMapping, validRubricIds]
-  );
-
-  // Transform availableRubrics to RubricPickerType format
-  const rubricPickerOptions = useMemo<RubricPickerType[]>(
-    () =>
-      availableRubrics.map((r) => ({
-        ...r,
-      })),
-    [availableRubrics]
-  );
-
   // Filter matrices by selected rubrics
   const filteredMatrices = useMemo(() => {
     if (selectedRubrics.length === 0) return matrices;
-    const selectedIds = new Set(selectedRubrics.map((r) => r.id));
+    const selectedIds = new Set(selectedRubrics);
     return matrices.filter((matrix) => selectedIds.has(matrix.rubricId));
   }, [matrices, selectedRubrics]);
 
   // Use the first matrix for display (or show all if none selected)
-  const displayMatrix = filteredMatrices[0];
+  const displayMatrix = filteredMatrices[0] || null;
 
   // Defer heavy result propagation to avoid blocking interactions/scroll
   const deferredMatrix = useDeferredValue(displayMatrix);
@@ -129,16 +106,21 @@ export default function RubricHeatmap({
   const getThresholdStatus = () => {
     if (!deferredMatrix) return "neutral";
     if (!deferredMatrix.hasData) return "neutral";
+    if (!deferredMatrix.matrix || deferredMatrix.matrix.length === 0)
+      return "neutral";
 
     // Calculate average correlation strength across all non-diagonal cells
     let totalCorrelation = 0;
     let correlationCount = 0;
 
     for (let i = 0; i < deferredMatrix.matrix.length; i++) {
-      for (let j = 0; j < deferredMatrix.matrix[i]!.length; j++) {
+      const row = deferredMatrix.matrix[i];
+      if (!row) continue;
+
+      for (let j = 0; j < row.length; j++) {
         if (i !== j) {
           // Skip diagonal cells (self-correlation)
-          const cell = deferredMatrix.matrix[i]![j];
+          const cell = row[j];
           if (cell && cell.dataPoints > 0) {
             totalCorrelation += Math.abs(cell.correlation);
             correlationCount++;
@@ -259,10 +241,12 @@ export default function RubricHeatmap({
             </CardDescription>
           </div>
           <RubricPicker
-            rubrics={rubricPickerOptions}
-            placeholder="Filter by rubric..."
+            mapping={rubricMapping}
+            validIds={validRubricIds}
+            selectedIds={selectedRubrics}
             onSelect={setSelectedRubrics}
-            selectedRubrics={selectedRubrics}
+            placeholder="Filter by rubric..."
+            buttonClassName="w-48"
           />
         </div>
       </CardHeader>
