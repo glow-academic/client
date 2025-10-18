@@ -280,7 +280,7 @@ class SecondaryQueries:
                     cl.id AS cohort_id,
                     cl.title AS cohort_name,
                     COALESCE(cardinality(cl.profile_ids), 0) AS total_students_declared,
-                    (SELECT COUNT(DISTINCT profile_id) FROM filt_x fx WHERE fx.c_id = cl.id) AS total_students_seen,
+                    cardinality(cl.profile_ids) AS total_students_seen,
                     COUNT(DISTINCT ca.attempt_id) AS total_attempts,
                     SUM(ca.passed_any)::int AS passed_attempts,
                     (100.0 * AVG(ca.passed_any))::float AS pass_rate_attempts,
@@ -306,6 +306,13 @@ class SecondaryQueries:
                                 WHERE sim_bests.best_score < 80.0
                             )
                     ) s) AS passed_students,
+                    (SELECT COUNT(*) FROM (
+                        SELECT 1
+                        FROM filt_x fx2
+                        WHERE fx2.c_id = cl.id
+                        GROUP BY fx2.profile_id
+                        HAVING MAX((fx2.passed)::int) = 1
+                    ) s) AS passed_at_least_once,
                     cardinality(cl.simulation_ids) AS simulation_count,
                     cardinality(cl.simulation_ids) AS required_simulations
                 FROM cohort_list cl
@@ -325,10 +332,15 @@ class SecondaryQueries:
                 'cohortData', COALESCE((SELECT json_agg(json_build_object(
                     'id', cohort_id::text,
                     'name', cohort_name,
-                    'passRate', ROUND(COALESCE(pass_rate_attempts, 0)::numeric, 2)::float,
+                    'passRate', ROUND(
+                        CASE 
+                            WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::numeric
+                            ELSE 0
+                        END, 2
+                    )::float,
                     'avgPercentageScore', ROUND(COALESCE(avg_percentage_score, 0))::int,
                     'totalStudents', GREATEST(total_students_declared, total_students_seen),
-                    'passedStudents', COALESCE(passed_students, 0),
+                    'passedStudents', COALESCE(passed_at_least_once, 0),
                     'totalAttempts', COALESCE(total_attempts, 0),
                     'passedAttempts', COALESCE(passed_attempts, 0),
                     'simulationCount', COALESCE(simulation_count, 0),
