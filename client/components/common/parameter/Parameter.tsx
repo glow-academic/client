@@ -31,7 +31,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateParameter,
@@ -72,8 +71,7 @@ export default function Parameter({
 }: ParameterProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!parameterId;
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -85,9 +83,9 @@ export default function Parameter({
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? ""
-          : effectiveDepartmentIds[0] || "",
+          : departmentIds[0] || "",
     }),
-    [effectiveProfile?.role, effectiveDepartmentIds]
+    [effectiveProfile?.role, departmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,7 +238,7 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
+            formData.departmentId || departmentIds[0] || "",
           parameter_items,
         });
 
@@ -254,7 +252,7 @@ export default function Parameter({
           active: formData.active || false,
           default_parameter: formData.defaultParameter || false,
           department_id:
-            formData.departmentId || effectiveDepartmentIds[0] || "",
+            formData.departmentId || departmentIds[0] || "",
           parameter_items,
         });
 

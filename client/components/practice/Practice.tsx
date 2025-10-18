@@ -19,7 +19,6 @@ import {
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { useAnalyticsPracticeOverview } from "@/lib/api/v2/hooks/analytics";
@@ -32,7 +31,7 @@ import PracticeZone from "./PracticeZone";
 
 export default function Practice() {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { departmentIds } = useProfile();
 
   // Use global WebSocket context instead of local connection
   const { isConnected, emitStartSimulation, startingSimulationId } =
@@ -80,7 +79,7 @@ export default function Practice() {
       )[],
       // Always pass profileId for practice (personal view)
       profileId: effectiveProfile?.id,
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
     });
 
   // Extract data from bundle
@@ -117,9 +116,9 @@ export default function Practice() {
         id,
         title: sim.name,
         description: sim.description,
-        departmentId: effectiveDepartmentIds[0] || "", // Use first department
+        departmentId: departmentIds[0] || "", // Use first department
       })),
-    [simulationMapping, effectiveDepartmentIds]
+    [simulationMapping, departmentIds]
   );
 
   // Use data directly from the hook
@@ -197,7 +196,7 @@ export default function Practice() {
         }
 
         // Validate department_id is available
-        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+        if (departmentIds.length === 0 || !departmentIds[0]) {
           toast.error("No department found. Please contact support.");
           return;
         }
@@ -294,7 +293,7 @@ export default function Practice() {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-      effectiveDepartmentIds,
+      departmentIds,
       simulations,
       info,
       error,

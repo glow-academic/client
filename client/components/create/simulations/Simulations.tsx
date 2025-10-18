@@ -23,8 +23,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteSimulation,
   useDuplicateSimulation,
@@ -42,16 +42,15 @@ export function Simulations() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
   // V2 API hooks - single fetch with all data
   const { data: simulationsData } = useSimulationsList(
     {
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     },
-    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+    { enabled: !!effectiveProfile?.id && departmentIds.length > 0 }
   );
 
   // Mutation hooks

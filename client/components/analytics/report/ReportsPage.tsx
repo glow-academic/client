@@ -9,7 +9,7 @@
 "use client";
 
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
+import { useProfile } from "@/contexts/profile-context";
 import { useAnalyticsReportsBundle } from "@/lib/api/v2/hooks/analytics";
 import { useMemo } from "react";
 import Reports from "./Reports";
@@ -22,7 +22,7 @@ export default function ReportsPage() {
     selectedRoles,
     simulationFilters,
   } = useAnalytics();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { departmentIds } = useProfile();
 
   const filters = useMemo(
     () => ({
@@ -31,7 +31,7 @@ export default function ReportsPage() {
       cohortIds: selectedCohortIds,
       roles: selectedRoles,
       simulationFilters,
-      departmentIds: effectiveDepartmentIds,
+      departmentIds,
     }),
     [
       startDate,
@@ -39,7 +39,7 @@ export default function ReportsPage() {
       selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      effectiveDepartmentIds,
+      departmentIds,
     ]
   );
 

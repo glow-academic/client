@@ -19,7 +19,6 @@ import { useWebSocket } from "@/contexts/websocket-context";
 import { useAnalyticsHomeOverview } from "@/lib/api/v2/hooks/analytics";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 
-import { useDepartments } from "@/contexts/departments-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,9 +30,8 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import SimulationCard from "../common/simulation/SimulationCard";
 
 export default function Home() {
-  const { effectiveProfile, activeProfile, cohortIds } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-  const { info, error } = useLogger();
+  const { effectiveProfile, activeProfile, cohortIds, departmentIds } = useProfile();
+  const log = useLogger();
   const {
     startDate,
     endDate,
@@ -44,7 +42,7 @@ export default function Home() {
 
   // Use all user's cohorts if none specifically selected (same pattern as departments)
   const effectiveCohortIds =
-    selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds;
+      selectedCohortIds.length > 0 ? selectedCohortIds : cohortIds; 
 
   // Single optimized bundle call with items, history, and mappings
   const { data: bundle, isLoading: isHomeOverviewLoading } =
@@ -60,7 +58,7 @@ export default function Home() {
       )[],
       // Always send profileId - server will decide whether to use it based on role
       profileId: effectiveProfile?.id || undefined,
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
     });
 
   // Extract data from bundle
@@ -75,9 +73,9 @@ export default function Home() {
         id,
         title: sim.name,
         description: sim.description,
-        departmentId: effectiveDepartmentIds[0] || "", // Use first department
+        departmentId: departmentIds[0] || "", // Use first department
       })),
-    [bundle?.simulation_mapping, effectiveDepartmentIds]
+    [bundle?.simulation_mapping, departmentIds]
   );
 
   // Extract rubric mappings from home overview data
@@ -114,7 +112,7 @@ export default function Home() {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      info("simulation.navigate.attempt", {
+      log.info("simulation.navigate.attempt", {
         message: "Navigating to simulation attempt",
         subject: { entityType: "attempt", entityId: attemptId },
         context: { component: "Home", function: "handleSimulationStarted" },
@@ -150,7 +148,7 @@ export default function Home() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, info]);
+  }, [router, loadingToastId, log]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -162,7 +160,7 @@ export default function Home() {
         }
 
         // Validate department_id is available
-        if (effectiveDepartmentIds.length === 0 || !effectiveDepartmentIds[0]) {
+        if (departmentIds.length === 0 || !departmentIds[0]) {
           toast.error("No department found. Please contact support.");
           return;
         }
@@ -171,7 +169,7 @@ export default function Home() {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
-          error("simulation.start.precheck.failed", {
+          log.error("simulation.start.precheck.failed", {
             message: "WebSocket not connected when trying to start simulation",
             subject: { entityType: "simulation", entityId: simulationId },
             context: {
@@ -191,7 +189,7 @@ export default function Home() {
         const profileIdForEmit =
           effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
 
-        info("simulation.start", {
+        log.info("simulation.start", {
           message: "Starting simulation via global WebSocket",
           subject: { entityType: "simulation", entityId: simulationId },
           context: {
@@ -211,13 +209,13 @@ export default function Home() {
         emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profileIdForEmit,
-          department_id: departmentId,
+          department_id: departmentIds[0] || "",
         });
 
         // timeout...
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-          error("simulation.start.timeout", {
+          log.error("simulation.start.timeout", {
             message: "Simulation start timeout - no response from server",
             subject: { entityType: "simulation", entityId: simulationId },
             context: { component: "Home", function: "handleStartSimulation" },
@@ -227,7 +225,7 @@ export default function Home() {
           setLoadingToastId(null);
         }, 30000);
       } catch (err) {
-        error("simulation.start.failed", {
+        log.error("simulation.start.failed", {
           message: "Error starting simulation",
           subject: { entityType: "simulation", entityId: simulationId },
           context: { component: "Home", function: "handleStartSimulation" },
@@ -244,10 +242,9 @@ export default function Home() {
       isConnected,
       emitStartSimulation,
       loadingToastId,
-      effectiveDepartmentIds,
+      departmentIds,
       simulations,
-      error,
-      info,
+      log,
     ]
   );
 

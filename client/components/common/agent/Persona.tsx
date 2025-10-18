@@ -46,7 +46,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDepartments } from "@/contexts/departments-context";
 import {
   useCreatePersona as useCreatePersonaV2,
   usePersonaDetail,
@@ -87,9 +86,8 @@ export default function Persona({
   mode = personaId ? "edit" : "create",
 }: PersonaProps) {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useDepartments();
   const isEditMode = mode === "edit" && !!personaId;
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -106,9 +104,9 @@ export default function Persona({
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? null
-          : effectiveDepartmentIds[0] || null,
+          : departmentIds[0] || null,
     }),
-    [effectiveProfile?.role, effectiveDepartmentIds]
+    [effectiveProfile?.role, departmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -241,7 +239,7 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || effectiveDepartmentIds[0] || "",
+              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {
@@ -269,7 +267,7 @@ export default function Persona({
             active: formData.active ?? true,
             default_persona: formData.defaultPersona ?? false,
             department_id:
-              formData.departmentId || effectiveDepartmentIds[0] || "",
+              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {

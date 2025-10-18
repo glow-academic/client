@@ -30,7 +30,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCreateSimulation as useCreateSimulationV2,
@@ -72,8 +71,7 @@ interface FormErrors {
 }
 
 export default function Simulation({ simulationId }: SimulationProps) {
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   // Mutation hooks (v2)
   const createSimulationMutation = useCreateSimulationV2();
@@ -86,7 +84,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const router = useRouter();
-
   const isEditMode = !!simulationId;
 
   // V2 API hooks - fetch data from server
@@ -264,7 +261,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           title: formData?.title || "",
           description: formData?.description ?? "",
           department_id:
-            formData?.departmentId || effectiveDepartmentIds[0] || "",
+            formData?.departmentId || departmentIds[0] || "",
           active: formData?.active ?? true,
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
@@ -285,7 +282,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           title: formData?.title || "",
           description: formData?.description ?? "",
           department_id:
-            formData?.departmentId || effectiveDepartmentIds[0] || "",
+            formData?.departmentId || departmentIds[0] || "",
           active: formData?.active || true,
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,

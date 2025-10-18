@@ -12,28 +12,28 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDepartmentsList } from "@/lib/api/v2/hooks/departments";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { DepartmentsDataTable } from "./DepartmentsDataTable";
 
 export default function Departments() {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
 
   // V2 API hook
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [departmentIds, effectiveProfile?.id]
   );
 
   const { data: departmentsData, isLoading } = useDepartmentsList(
     filters,
-    !!effectiveProfile?.id
+    !!effectiveProfile?.id && departmentIds.length > 0
   );
 
   // Extract data from V2 response

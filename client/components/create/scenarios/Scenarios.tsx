@@ -37,8 +37,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useDeleteScenario,
   useDuplicateScenario,
@@ -65,16 +65,15 @@ export function Scenarios() {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set()
   );
-  const { effectiveDepartmentIds } = useDepartments();
-  const { effectiveProfile } = useProfile();
-
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
   // V2 API hooks - single fetch with all data
   const { data: scenariosData } = useScenariosList(
     {
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     },
-    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+    { enabled: !!effectiveProfile?.id && departmentIds.length > 0 }
   );
 
   // Mutation hooks
@@ -168,7 +167,9 @@ export function Scenarios() {
           return (
             <div className="text-sm">
               {personaId && personaMapping[personaId] ? (
-                personaMapping[personaId]
+                <span className="text-sm">
+                  {personaMapping[personaId].name}
+                </span>
               ) : (
                 <span className="text-muted-foreground">No persona</span>
               )}

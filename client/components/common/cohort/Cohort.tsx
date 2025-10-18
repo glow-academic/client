@@ -28,7 +28,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useCohortDetail,
@@ -65,8 +64,7 @@ type EditableProfile =
 
 export default function Cohort({ cohortId }: CohortProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -390,7 +388,7 @@ export default function Cohort({ cohortId }: CohortProps) {
           department_id:
             formData.departmentId || effectiveDepartmentIds[0] || "",
           active: formData.active ?? true,
-          default_cohort: formData.defaultCohort ?? false,
+          default_cohort: formData.default_cohort ?? false,
           simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
         });

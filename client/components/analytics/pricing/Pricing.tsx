@@ -23,7 +23,6 @@ import {
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { usePricingAnalytics } from "@/lib/api/v2/hooks/analytics";
 import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
@@ -51,8 +50,7 @@ const COLOR_PALETTE = [
 ];
 
 export default function Pricing() {
-  const { effectiveDepartmentIds } = useDepartments();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, departmentIds } = useProfile();
   const {
     startDate,
     endDate,
@@ -69,7 +67,7 @@ export default function Pricing() {
   // Build filters for V2 API
   const filters = useMemo<AnalyticsFilters>(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds,
       profileId: effectiveProfile?.id || "",
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -78,7 +76,7 @@ export default function Pricing() {
       simulationFilters,
     }),
     [
-      effectiveDepartmentIds,
+      departmentIds,
       effectiveProfile?.id,
       startDate,
       endDate,

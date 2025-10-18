@@ -42,7 +42,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
@@ -207,8 +206,8 @@ export function UnifiedSidebar({
     cohorts,
     simulatableProfiles,
     availableSections,
+    departmentIds,
   } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
   const { update } = useSession();
 
   const getCohortSubItems = React.useMemo(() => {
@@ -554,7 +553,7 @@ export function UnifiedSidebar({
           body: JSON.stringify({
             requesterProfileId: activeProfile!.id,
             targetProfileId: profileId,
-            departmentIds: effectiveDepartmentIds,
+            departmentIds: departmentIds,
           }),
         });
 
@@ -1032,7 +1031,7 @@ export function UnifiedSidebar({
                     credentials: "include",
                     body: JSON.stringify({
                       targetProfileId: effectiveProfile.id,
-                      departmentIds: effectiveDepartmentIds,
+                      departmentIds: departmentIds,
                     }),
                   });
                   if (!r.ok) {

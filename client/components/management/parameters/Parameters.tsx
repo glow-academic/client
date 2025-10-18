@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useParametersList } from "@/lib/api/v2/hooks/parameters";
 import type { ParameterItem } from "@/lib/api/v2/schemas/parameters";
@@ -32,16 +31,15 @@ import { ParametersDataTable } from "./ParametersDataTable";
 
 export default function Parameters() {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useDepartments();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   // V2 API: Single fetch with pre-calculated counts and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [departmentIds, effectiveProfile?.id]
   );
 
   const { data: parametersData, isLoading } = useParametersList(filters);

@@ -44,7 +44,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 
 import {
@@ -73,8 +72,7 @@ export default function Providers() {
     name: string;
   } | null>(null);
   const [isDeletingProvider, setIsDeletingProvider] = useState(false);
-  const { effectiveDepartmentIds } = useDepartments();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   // Mutation hooks
   const deleteModelMutation = useDeleteModel();
@@ -83,10 +81,10 @@ export default function Providers() {
   // V2 API: Single fetch with hierarchical data and permissions
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [departmentIds, effectiveProfile?.id]
   );
 
   const { data: providersData, isLoading } = useProvidersList(filters);

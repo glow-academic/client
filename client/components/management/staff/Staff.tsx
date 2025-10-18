@@ -34,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useBulkDeleteProfile,
@@ -59,16 +58,15 @@ export default function Staff() {
   const [dialogStaffMembers, setDialogStaffMembers] = React.useState<
     ProfileListItem[]
   >([]);
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   // V2 API hooks
   const filters = React.useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [departmentIds, effectiveProfile?.id]
   );
 
   const { data: staffData, isLoading } = useProfileList(

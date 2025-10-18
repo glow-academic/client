@@ -50,7 +50,6 @@ import { UploadCloud } from "lucide-react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/scenario/ParameterItemPicker";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useBulkDeleteDocuments,
@@ -66,7 +65,7 @@ import { DocumentsDataTable } from "./DocumentsDataTable";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 
 export default function Documents() {
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, departmentIds } = useProfile();
   const log = useLogger();
 
   // Mutation hooks
@@ -99,7 +98,6 @@ export default function Documents() {
     []
   );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
-  const { effectiveDepartmentIds } = useDepartments();
 
   // Listen for upload button click from layout
   useEffect(() => {
@@ -112,10 +110,10 @@ export default function Documents() {
   // V2 API: Build filters
   const filters = useMemo(
     () => ({
-      departmentIds: effectiveDepartmentIds,
+      departmentIds: departmentIds,
       profileId: effectiveProfile?.id || "",
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id]
+    [departmentIds, effectiveProfile?.id]
   );
 
   // V2 API: Fetch documents list
@@ -141,8 +139,8 @@ export default function Documents() {
 
   // Compute valid department IDs for upload dialog
   const validDepartmentIds = useMemo(
-    () => effectiveDepartmentIds || [],
-    [effectiveDepartmentIds]
+    () => departmentIds,
+    [departmentIds]
   );
 
   // V2 API: Fetch single document detail for editing

@@ -10,7 +10,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDashboardBundle } from "@/lib/api/v2/hooks/analytics";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -42,8 +41,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ profileId }: DashboardProps) {
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
 
   const {
     startDate,
@@ -76,7 +74,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       roles: selectedRoles,
       simulationFilters,
       profileId,
-      departmentIds: effectiveDepartmentIds,
+      departmentIds,
     }),
     [
       startDate,
@@ -85,7 +83,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
       selectedRoles,
       simulationFilters,
       profileId,
-      effectiveDepartmentIds,
+      departmentIds,
     ]
   );
 

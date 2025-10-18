@@ -46,8 +46,8 @@ import { PersonaPicker } from "./PersonaPicker";
 
 // Types and API functions
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateScenario,
   useGenerateScenarioAI,
@@ -83,10 +83,9 @@ export default function Scenario({
   scenarioId,
 }: ScenarioProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
   const isEditMode = mode === "edit" && !!scenarioId;
-
+  const log = useLogger();
   // V2 API hooks - single hook for all data
   const { data: scenarioDetail, isLoading: isLoadingScenarioDetail } =
     useScenarioDetail(
@@ -119,13 +118,9 @@ export default function Scenario({
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? scenarioData?.department_id || ""
-          : effectiveDepartmentIds[0] || "",
+          : departmentIds[0] || "",
     }),
-    [
-      effectiveProfile?.role,
-      scenarioData?.department_id,
-      effectiveDepartmentIds,
-    ]
+    [effectiveProfile?.role, scenarioData?.department_id, departmentIds]
   );
 
   const [formData, setFormData] = useState(initialFormData);

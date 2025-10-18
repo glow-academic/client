@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useCreateRubric,
   useRubricUnifiedUpdate,
@@ -47,21 +47,17 @@ export default function RubricDetails({
 }: RubricDetailsProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
   // V2 mutation hooks
   const createRubricMutation = useCreateRubric();
   const { updateRubric, isPending: isUpdating } = useRubricUnifiedUpdate();
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
-    active: rubric.active ?? true,
     departmentId:
-      rubric.departmentId ||
-      (effectiveProfile?.role === "superadmin"
-        ? ""
-        : effectiveDepartmentIds[0] || ""),
+      effectiveProfile?.role === "superadmin" ? "" : departmentIds[0] || "",
+    active: true,
   });
 
   const handleInputChange = (
@@ -146,9 +142,7 @@ export default function RubricDetails({
       active: rubric.active ?? true,
       departmentId:
         rubric.departmentId ||
-        (effectiveProfile?.role === "superadmin"
-          ? ""
-          : effectiveDepartmentIds[0] || ""),
+        (effectiveProfile?.role === "superadmin" ? "" : departmentIds[0] || ""),
     });
   };
 

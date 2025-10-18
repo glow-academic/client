@@ -8,7 +8,6 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAnalytics } from "@/contexts/analytics-context";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useAnalyticsLeaderboardBundle } from "@/lib/api/v2/hooks/analytics";
 import type { AnalyticsFilters } from "@/lib/api/v2/schemas/analytics";
@@ -43,7 +42,7 @@ export interface LeaderboardProps {
 
 export default function Leaderboard({ cohortId }: LeaderboardProps) {
   const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { departmentIds } = useProfile();
   const {
     startDate,
     endDate,
@@ -60,9 +59,9 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       cohortIds: cohortId ? [cohortId] : selectedCohortIds,
-      roles: selectedRoles as unknown as string[],
+      roles: selectedRoles,
       simulationFilters,
-      departmentIds: effectiveDepartmentIds,
+      departmentIds,
       // profileId: undefined  <-- leave undefined for the grid; filter locally per profile
     }),
     [
@@ -72,7 +71,7 @@ export default function Leaderboard({ cohortId }: LeaderboardProps) {
       selectedCohortIds,
       selectedRoles,
       simulationFilters,
-      effectiveDepartmentIds,
+      departmentIds,
     ]
   );
 

@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
@@ -47,8 +46,7 @@ interface FormData {
 
 export default function Provider({ providerId }: ProviderProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
+  const { effectiveProfile, departmentIds } = useProfile();
   const { error: logError } = useLogger();
   const [showApiKey, setShowApiKey] = useState(false);
   const [decryptedApiKey, setDecryptedApiKey] = useState<string>("");
@@ -67,9 +65,9 @@ export default function Provider({ providerId }: ProviderProps) {
       departmentId:
         effectiveProfile?.role === "superadmin"
           ? ""
-          : effectiveDepartmentIds[0] || "",
+          : departmentIds[0] || "",
     }),
-    [effectiveProfile?.role, effectiveDepartmentIds]
+    [effectiveProfile?.role, departmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -172,7 +170,7 @@ export default function Provider({ providerId }: ProviderProps) {
                 : undefined,
             base_url: formData.baseUrl || null,
             department_id:
-              formData.departmentId || effectiveDepartmentIds[0] || "",
+              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {
@@ -195,7 +193,7 @@ export default function Provider({ providerId }: ProviderProps) {
             api_key: formData.apiKey!,
             base_url: formData.baseUrl || null,
             department_id:
-              formData.departmentId || effectiveDepartmentIds[0] || "",
+              formData.departmentId || departmentIds[0] || "",
           },
           {
             onSuccess: () => {

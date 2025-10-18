@@ -42,21 +42,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 export default function Cohorts() {
   const router = useRouter();
-  const { effectiveProfile, isLoading: isProfileLoading } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-
+  const {
+    effectiveProfile,
+    isLoading: isProfileLoading,
+    departmentIds,
+  } = useProfile();
+  const log = useLogger();
   // V2 API hooks - single fetch with all data (pre-filtered by role)
   const { data: cohortsData, isLoading: loadingCohorts } = useCohortsList(
     {
-      departmentIds: effectiveDepartmentIds,
+      departmentIds,
       profileId: effectiveProfile?.id || "",
     },
-    { enabled: !!effectiveProfile?.id && effectiveDepartmentIds.length > 0 }
+    { enabled: !!effectiveProfile?.id && departmentIds.length > 0 }
   );
 
   // Mutation hooks

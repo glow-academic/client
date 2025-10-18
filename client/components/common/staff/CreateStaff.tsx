@@ -27,8 +27,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import {
   useBulkCreateProfile,
   useProfileList,
@@ -139,12 +139,11 @@ export interface CreateStaffProps {
 
 export default function CreateStaff({ onDone }: CreateStaffProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
   // Fetch all data with single v2 call
   const { data: profileListResponse } = useProfileList({
-    departmentIds: effectiveDepartmentIds,
+    departmentIds: departmentIds,
     profileId: effectiveProfile?.id || "",
   });
 
@@ -220,23 +219,26 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
   }, [isCurrentUserSuperAdmin]);
 
   // Alias validation
-  const validateAlias = useCallback(async (alias: string): Promise<boolean> => {
-    if (!alias.trim()) return false;
-    setIsValidatingAlias(true);
-    try {
-      const existing = await getProfileByAlias(alias.trim());
-      return !existing;
-    } catch (error) {
-      log.error("staff.alias.validate.failed", {
-        message: "Error validating alias",
-        error,
-        context: { component: "CreateStaff", function: "validateAlias" },
-      });
-      return false;
-    } finally {
-      setIsValidatingAlias(false);
-    }
-  }, []);
+  const validateAlias = useCallback(
+    async (alias: string): Promise<boolean> => {
+      if (!alias.trim()) return false;
+      setIsValidatingAlias(true);
+      try {
+        const existing = await getProfileByAlias(alias.trim());
+        return !existing;
+      } catch (error) {
+        log.error("staff.alias.validate.failed", {
+          message: "Error validating alias",
+          error,
+          context: { component: "CreateStaff", function: "validateAlias" },
+        });
+        return false;
+      } finally {
+        setIsValidatingAlias(false);
+      }
+    },
+    [log]
+  );
 
   // Download template
   const downloadTemplate = useCallback(() => {
@@ -498,7 +500,7 @@ export default function CreateStaff({ onDone }: CreateStaffProps) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [csvPreview, bulkCreateProfileMutation, onDone, router]);
+  }, [csvPreview, bulkCreateProfileMutation, onDone, router, log]);
 
   const removeFromPreview = useCallback(
     (id: string) => setCsvPreview((prev) => prev.filter((p) => p.id !== id)),

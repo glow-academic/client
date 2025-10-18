@@ -10,13 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   useAddProfilesToCohort,
   useCohortDetailWithProfiles,
 } from "@/lib/api/v2/hooks/cohorts";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { getProfileByAlias } from "@/utils/auth/get-profile-by-alias";
 import { Check, Download, Search, Upload, UserPlus, X } from "lucide-react";
 
@@ -78,13 +77,12 @@ export default function AddStaffToCohort({
   cohortId,
   onDone,
 }: AddStaffToCohortProps) {
-  const { effectiveProfile } = useProfile();
-  const { effectiveDepartmentIds } = useDepartments();
-
+  const { effectiveProfile, departmentIds } = useProfile();
+  const log = useLogger();
   // Fetch all data with single unified v2 call
   const { data, isLoading: isLoadingProfiles } = useCohortDetailWithProfiles({
     cohortId,
-    departmentIds: effectiveDepartmentIds,
+    departmentIds: departmentIds,
     currentProfileId: effectiveProfile?.id || "",
   });
 
@@ -227,7 +225,7 @@ export default function AddStaffToCohort({
             try {
               await addProfilesToCohortMutation.mutateAsync({
                 cohortId,
-                departmentIds: effectiveDepartmentIds,
+                departmentIds: departmentIds,
                 existingProfileIds:
                   existingIds.length > 0 ? existingIds : undefined,
                 newProfiles: newProfiles.length > 0 ? newProfiles : undefined,
@@ -265,7 +263,7 @@ export default function AddStaffToCohort({
       validateAlias,
       addProfilesToCohortMutation,
       cohortId,
-      effectiveDepartmentIds,
+      departmentIds,
     ]
   );
 
@@ -445,7 +443,7 @@ export default function AddStaffToCohort({
     try {
       await addProfilesToCohortMutation.mutateAsync({
         cohortId: cohortId,
-        departmentIds: effectiveDepartmentIds,
+        departmentIds: departmentIds,
         existingProfileIds: existingIds.length > 0 ? existingIds : undefined,
         newProfiles: newProfiles.length > 0 ? newProfiles : undefined,
       });
@@ -471,7 +469,7 @@ export default function AddStaffToCohort({
   }, [
     selectedProfiles,
     cohortId,
-    effectiveDepartmentIds,
+    departmentIds,
     addProfilesToCohortMutation,
     onDone,
   ]);
