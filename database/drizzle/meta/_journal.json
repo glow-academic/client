@@ -176,6 +176,13 @@
       "when": 1760302195040,
       "tag": "0024_chemical_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1760807739701,
+      "tag": "0025_real_praxagora",
+      "breakpoints": true
     }
   ]
 }

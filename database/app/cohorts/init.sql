@@ -10,7 +10,7 @@ CREATE TABLE cohorts (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
-  description TEXT        NULL,
+  description TEXT        NOT NULL DEFAULT 'No description provided',
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
   default_cohort BOOLEAN     NOT NULL           DEFAULT FALSE,
   department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE

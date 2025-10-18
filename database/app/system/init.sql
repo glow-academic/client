@@ -18,7 +18,7 @@ CREATE TABLE app_feedback (
   id           SERIAL PRIMARY KEY,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   type         feedback_type NOT NULL,
-  message      TEXT NOT NULL DEFAULT ''
+  message      TEXT NOT NULL DEFAULT 'No message provided'
 );
 
 -- App feedback ↔ Profiles junction table (BCNF normalization - replaces app_feedback.profile_id)

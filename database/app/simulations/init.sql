@@ -97,7 +97,7 @@ CREATE TABLE simulation_chats (
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   attempt_id UUID         NOT NULL REFERENCES simulation_attempts(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
-  trace_id   TEXT         NOT NULL DEFAULT '' -- openai trace id (NOT NULL)
+  trace_id   TEXT         NOT NULL -- openai trace id (NOT NULL, no default)
 );
 
 CREATE TABLE simulation_messages (
@@ -139,7 +139,7 @@ CREATE TABLE simulation_chat_grades (
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
     simulation_chat_grade_id   UUID        NOT NULL REFERENCES simulation_chat_grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
-    feedback TEXT NOT NULL DEFAULT ''  -- NOT NULL with default empty string
+    feedback TEXT NOT NULL DEFAULT 'No feedback provided'  -- NOT NULL with meaningful default
   );
 
 -- Note: Crowdsourcing tables (simulation_chat_crowdsourced_feedbacks, simulation_crowdsourced_messages)

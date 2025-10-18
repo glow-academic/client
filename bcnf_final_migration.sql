@@ -160,14 +160,11 @@ UPDATE agents
 SET reasoning = 'medium'
 WHERE reasoning IS NULL;
 
--- Backfill documents.file_id (50% NULL) - set to empty string for documents without file_id
-UPDATE documents
-SET file_id = ''
-WHERE file_id IS NULL;
+-- Skip backfilling documents.file_id - let it fail if NULL values exist
 
 -- Backfill cohorts.description (0% NULL, but good to have default)
 UPDATE cohorts
-SET description = ''
+SET description = 'No description provided'
 WHERE description IS NULL;
 
 -- Backfill personas.reasoning (100% NULL) - set all to 'none'
@@ -175,24 +172,18 @@ UPDATE personas
 SET reasoning = 'none'
 WHERE reasoning IS NULL;
 
--- Backfill providers.base_url (100% NULL) - set to empty string
-UPDATE providers
-SET base_url = ''
-WHERE base_url IS NULL;
+-- Skip backfilling providers.base_url - let it fail if NULL values exist
 
--- Backfill simulation_chats.trace_id (0% NULL, already fine)
-UPDATE simulation_chats
-SET trace_id = ''
-WHERE trace_id IS NULL;
+-- Skip backfilling simulation_chats.trace_id - let it fail if NULL values exist
 
 -- Backfill app_feedback.message (0% NULL, already fine)
 UPDATE app_feedback
-SET message = ''
+SET message = 'No message provided'
 WHERE message IS NULL;
 
 -- Backfill simulation_chat_feedbacks.feedback (0% NULL, already fine)
 UPDATE simulation_chat_feedbacks
-SET feedback = ''
+SET feedback = 'No feedback provided'
 WHERE feedback IS NULL;
 
 -- ============================================================================
@@ -257,14 +248,12 @@ ALTER TABLE app_logs ALTER COLUMN error SET DEFAULT '{"code": null, "name": null
 ALTER TABLE app_logs ALTER COLUMN created_at SET DEFAULT NOW();
 
 ALTER TABLE app_feedback ALTER COLUMN created_at SET DEFAULT NOW();
-ALTER TABLE app_feedback ALTER COLUMN message SET DEFAULT '';
+ALTER TABLE app_feedback ALTER COLUMN message SET DEFAULT 'No message provided';
 
-ALTER TABLE cohorts ALTER COLUMN description SET DEFAULT '';
-ALTER TABLE simulation_chat_feedbacks ALTER COLUMN feedback SET DEFAULT '';
-ALTER TABLE simulation_chats ALTER COLUMN trace_id SET DEFAULT '';
+ALTER TABLE cohorts ALTER COLUMN description SET DEFAULT 'No description provided';
+ALTER TABLE simulation_chat_feedbacks ALTER COLUMN feedback SET DEFAULT 'No feedback provided';
 ALTER TABLE profiles ALTER COLUMN last_active SET DEFAULT NOW();
 ALTER TABLE agents ALTER COLUMN reasoning SET DEFAULT 'medium'::reasoning_effort;
-ALTER TABLE documents ALTER COLUMN file_id SET DEFAULT '';
 ALTER TABLE personas ALTER COLUMN reasoning SET DEFAULT 'none'::reasoning_effort;
 
 -- ============================================================================
