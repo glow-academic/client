@@ -25,22 +25,21 @@ class LogService(BaseService):
 
     def _parse_jsonb_to_model(
         self, data: Any, model_class: type[ActorData] | type[SubjectData] | type[ContextData] | type[ErrorData]
-    ) -> ActorData | SubjectData | ContextData | ErrorData | None:
+    ) -> ActorData | SubjectData | ContextData | ErrorData:
         """
         Parse JSONB data to Pydantic model.
 
         Args:
-            data: JSONB data (can be dict, None, or any type)
+            data: JSONB data (should always be a dict since columns are NOT NULL)
             model_class: Pydantic model class to parse into
 
         Returns:
-            Parsed model instance or None
+            Parsed model instance (never None since DB columns are NOT NULL with defaults)
         """
-        if data is None:
-            return None
         if isinstance(data, dict):
             return model_class(**data)
-        return None
+        # Defensive: if data is somehow None or invalid, return empty model
+        return model_class()
 
     @with_cache(lambda self, request: keys.log_list())
     async def get_logs_list(
