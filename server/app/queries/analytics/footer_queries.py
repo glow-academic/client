@@ -35,11 +35,83 @@ class FooterQueries:
         query = f"""
             WITH filt AS (
                 SELECT * FROM analytics a WHERE {where_clause}
+            ),
+            -- get categorical (non-numerical) parameters
+            param_ids AS (
+                SELECT id
+                FROM parameters
+                WHERE active = TRUE AND numerical = FALSE
+            ),
+            -- map parameter items to scenarios (categorical only)
+            cat_map AS (
+                SELECT 
+                    pi.id AS parameter_item_id,
+                    pi.parameter_id,
+                    s.id AS scenario_id
+                FROM parameter_items pi
+                JOIN param_ids p ON p.id = pi.parameter_id
+                JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+                JOIN scenarios s ON s.id = spi.scenario_id
+                WHERE s.active = TRUE
+            ),
+            -- scenarios that appear in filtered data
+            scenario_seen AS (
+                SELECT DISTINCT f.scenario_id
+                FROM filt f
+                WHERE f.scenario_id IS NOT NULL
+            ),
+            -- filter cat_map to only seen scenarios
+            cat_map_seen AS (
+                SELECT cm.parameter_id, cm.parameter_item_id, cm.scenario_id
+                FROM cat_map cm
+                JOIN scenario_seen ss ON ss.scenario_id = cm.scenario_id
+            ),
+            -- aggregate attempts daily by parameter item
+            attempt_daily AS (
+                SELECT
+                    cm.parameter_id,
+                    cm.parameter_item_id,
+                    to_char(date_trunc('day', f.chat_created_at), 'YYYY-MM-DD') AS date,
+                    EXTRACT(EPOCH FROM date_trunc('day', f.chat_created_at))::bigint AS ts,
+                    AVG(f.grade_percent)::float AS avg_score,
+                    COUNT(*)::int AS attempts,
+                    SUM((f.passed)::int)::int AS passed_attempts
+                FROM filt f
+                JOIN cat_map_seen cm ON cm.scenario_id = f.scenario_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY cm.parameter_id, cm.parameter_item_id, date_trunc('day', f.chat_created_at)
+            ),
+            -- valid parameter IDs with data
+            valid_params AS (
+                SELECT DISTINCT parameter_id FROM cat_map_seen
             )
             SELECT json_build_object(
-                'validParameterIds', '[]'::json,
-                'attributeAttemptFacts', '[]'::json,
-                'attributeScenarioFacts', '[]'::json
+                'validParameterIds', COALESCE((
+                    SELECT json_agg(parameter_id::text ORDER BY parameter_id::text)
+                    FROM valid_params
+                ), '[]'::json),
+                'attributeAttemptFacts', COALESCE((
+                    SELECT json_agg(
+                        json_build_object(
+                            'parameterId', parameter_id::text,
+                            'parameterItemId', parameter_item_id::text,
+                            'date', date,
+                            'timestamp', ts,
+                            'avgScore', ROUND(avg_score)::int,
+                            'attempts', attempts,
+                            'passedAttempts', passed_attempts
+                        )
+                    ) FROM attempt_daily
+                ), '[]'::json),
+                'attributeScenarioFacts', COALESCE((
+                    SELECT json_agg(
+                        json_build_object(
+                            'parameterId', parameter_id::text,
+                            'parameterItemId', parameter_item_id::text,
+                            'scenarioId', scenario_id::text
+                        )
+                    ) FROM (SELECT DISTINCT * FROM cat_map_seen) d
+                ), '[]'::json)
             ) AS result
         """
 
