@@ -168,9 +168,9 @@ class FooterQueries:
                     f.scenario_id,
                     MIN(sc.name) AS scenario_name,
                     COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
-                    COALESCE((100.0 * COUNT(*) FILTER (WHERE f.grade_percent >= (f.rubric_pass_points * 100.0 / NULLIF(f.rubric_points, 0))) / NULLIF(COUNT(*), 0)), 0)::float AS success_rate,
+                    COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::float AS success_rate,
                     COUNT(*)::int AS total_attempts,
-                    COUNT(*) FILTER (WHERE f.completed)::int AS completed_attempts
+                    SUM((f.completed OR f.grade_percent IS NOT NULL)::int)::int AS completed_attempts
                 FROM filt f
                 JOIN scenarios sc ON sc.id = f.scenario_id
                 WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
