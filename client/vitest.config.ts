@@ -71,15 +71,16 @@ export default defineConfig({
         "**/contexts/**",
       ],
       include: [
-        // Focus on main business logic components
+        // Focus on main business logic components and utilities
         "components/**/*.{ts,tsx}",
+        "utils/**/*.{ts,tsx}",
       ],
       thresholds: {
         global: {
-          branches: 70,
-          functions: 70,
-          lines: 70,
-          statements: 70,
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
         },
       },
     },
