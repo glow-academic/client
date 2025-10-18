@@ -121,16 +121,16 @@ export function Scenarios() {
 
   // Create filter options from mappings
   const personaOptions = useMemo(() => {
-    return Object.entries(personaMapping).map(([id, name]) => ({
+    return Object.entries(personaMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [personaMapping]);
 
   const cohortOptions = useMemo(() => {
-    return Object.entries(cohortMapping).map(([id, name]) => ({
+    return Object.entries(cohortMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [cohortMapping]);
 

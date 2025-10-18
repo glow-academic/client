@@ -101,16 +101,16 @@ export default function Personas() {
 
   // Create filter options from mappings
   const scenarioOptions = useMemo(() => {
-    return Object.entries(scenarioMapping).map(([id, name]) => ({
+    return Object.entries(scenarioMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [scenarioMapping]);
 
   const modelOptions = useMemo(() => {
-    return Object.entries(modelMapping).map(([id, name]) => ({
+    return Object.entries(modelMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [modelMapping]);
 

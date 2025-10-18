@@ -7,7 +7,6 @@
 "use client";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useLogsList } from "@/lib/api/v2/hooks/logs";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -22,6 +21,7 @@ import {
   DialogContent,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useLogsList, useLogger } from "@/lib/api/v2/hooks/logs";
 
 export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<LogItem | null>(null);
@@ -30,7 +30,7 @@ export default function Logs() {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const { effectiveProfile } = useProfile();
-
+  const log = useLogger();
   // V2 API hook
   const profileId = effectiveProfile?.id || "";
   const { data: logsData, isLoading } = useLogsList(profileId, !!profileId);

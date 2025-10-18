@@ -71,18 +71,18 @@ export function Simulations() {
     [simulationsData?.rubric_mapping]
   );
 
-  // Create filter options from mappings
+  // Create filter options from mappings (label is .name)
   const scenarioOptions = useMemo(() => {
-    return Object.entries(scenarioMapping).map(([id, name]) => ({
+    return Object.entries(scenarioMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [scenarioMapping]);
 
   const rubricOptions = useMemo(() => {
-    return Object.entries(rubricMapping).map(([id, name]) => ({
+    return Object.entries(rubricMapping).map(([id, obj]) => ({
       value: id,
-      label: name,
+      label: obj.name,
     }));
   }, [rubricMapping]);
 

@@ -18,10 +18,9 @@ import * as React from "react";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
 import {
   CohortItem,
-  ProfileMapping,
-  SimulationMapping,
 } from "@/lib/api/v2/schemas/cohorts";
 import { CohortsDataTableToolbar } from "./CohortsDataTableToolbar";
+import { ProfileMapping, SimulationMapping } from "@/lib/api/v2/schemas/base";
 
 export interface CohortsDataTableProps {
   data: CohortItem[];

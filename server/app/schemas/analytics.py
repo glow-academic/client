@@ -738,6 +738,7 @@ class LeaderboardMetric(BaseModel):
 
     hasData: bool
     method: str
+    currentValue: int
     keyField: Optional[str] = None
     trendData: List[Any]
     dataPoints: List[Any]
