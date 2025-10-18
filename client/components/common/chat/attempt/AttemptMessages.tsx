@@ -31,7 +31,7 @@ import Markdown from "@/components/common/chat/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
+import { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -43,7 +43,7 @@ export default function AttemptMessages({
   isAttemptOwner = true,
 }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
-
+  
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -58,7 +58,7 @@ export default function AttemptMessages({
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   // Get messages from context (v2 single source of truth)
-  const messages = simulationContext?.currentMessages || [];
+  const messages = useMemo(() => simulationContext?.currentMessages || [], [simulationContext?.currentMessages]);
   const messagesLoading = simulationContext?.isLoadingChats || false;
 
   // Group messages by conversation turns (user message + all its responses)

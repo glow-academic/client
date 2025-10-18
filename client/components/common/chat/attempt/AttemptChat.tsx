@@ -42,12 +42,13 @@ import {
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
-import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
+import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import { formatTime } from "@/utils/time";
 
 import { Progress } from "@/components/ui/progress";
 import { useProfile } from "@/contexts/profile-context";
 import { useUpdateChatCreatedAt } from "@/lib/api/v2/hooks/attempts";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useRouter } from "next/navigation";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
@@ -57,7 +58,7 @@ export default function AttemptChat() {
   const router = useRouter();
   const simulationContext = useSimulation();
   const { effectiveProfile, activeProfile } = useProfile();
-
+  const log = useLogger();
   const { mutateAsync: updateChatCreatedAt } = useUpdateChatCreatedAt();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -120,7 +121,7 @@ export default function AttemptChat() {
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback(
-    (chat: SimulationChat | null): number => {
+    (chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
       if (!chat?.completed || !chat.completedAt) return 0;
 
       const startTime = new Date(chat.createdAt).getTime();
@@ -158,7 +159,7 @@ export default function AttemptChat() {
 
   // Helper function to calculate how much time was exceeded for a chat
   const calculateTimeExceeded = useCallback(
-    (chat: SimulationChat | null): number => {
+    (chat: AttemptFullResponse["chats"][number]["chat"] | null): number => {
       if (!chat?.completed) return 0;
 
       const timeTaken = calculateChatTimeTaken(chat);
@@ -220,6 +221,7 @@ export default function AttemptChat() {
     isAttemptOwner,
     simulationContext?.attemptId,
     updateChatCreatedAt,
+    log,
   ]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed
@@ -257,7 +259,9 @@ export default function AttemptChat() {
       !selectedDocumentId &&
       simulationContext?.scenarioDocuments[0]
     ) {
-      setSelectedDocumentId(simulationContext?.scenarioDocuments[0].id);
+      setSelectedDocumentId(
+        simulationContext?.scenarioDocuments[0].document_id
+      );
     }
   }, [simulationContext?.scenarioDocuments, selectedDocumentId]);
 
@@ -268,7 +272,9 @@ export default function AttemptChat() {
       simulationContext?.scenarioDocuments.length > 0 &&
       simulationContext?.scenarioDocuments[0]
     ) {
-      setSelectedDocumentId(simulationContext?.scenarioDocuments[0].id);
+      setSelectedDocumentId(
+        simulationContext?.scenarioDocuments[0].document_id
+      );
     }
   }, [
     selectedChatId,
@@ -340,8 +346,8 @@ export default function AttemptChat() {
                       {/* Show scenario information */}
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {selectedScenario?.name ||
-                            simulationContext?.scenario?.name ||
+                          {selectedScenario?.title ||
+                            simulationContext?.scenario?.title ||
                             "Session Results"}
                         </span>
                       </div>
@@ -670,7 +676,7 @@ export default function AttemptChat() {
                         (() => {
                           const document =
                             simulationContext.scenarioDocuments.find(
-                              (doc) => doc.id === selectedDocumentId
+                              (doc) => doc.document_id === selectedDocumentId
                             ) || simulationContext.scenarioDocuments[0];
                           return document ? (
                             <DocumentViewer
@@ -716,7 +722,7 @@ export default function AttemptChat() {
                         <div className="flex items-center gap-4">
                           <div className="flex items-start gap-2">
                             <span className="font-medium">
-                              {simulationContext?.scenario?.name ||
+                              {simulationContext?.scenario?.title ||
                                 simulationContext?.currentChat?.title}
                             </span>
                           </div>
@@ -932,7 +938,7 @@ export default function AttemptChat() {
                       (() => {
                         const document =
                           simulationContext.scenarioDocuments.find(
-                            (doc) => doc.id === selectedDocumentId
+                            (doc) => doc.document_id === selectedDocumentId
                           ) || simulationContext.scenarioDocuments[0];
                         return document ? (
                           <DocumentViewer

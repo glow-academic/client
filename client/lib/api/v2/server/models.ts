@@ -5,7 +5,7 @@
 
 import { getApiBase } from "@/lib/api-base";
 import { cache } from "react";
-import { ModelDetailResponseSchema } from "../schemas/models";
+import { ModelDetailResponseSchema } from "../schemas/providers";
 
 export const fetchModelDetail = cache(
   async (modelId: string, providerId: string, profileId: string) => {

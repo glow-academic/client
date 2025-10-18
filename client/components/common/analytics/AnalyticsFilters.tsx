@@ -24,7 +24,7 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
@@ -47,7 +47,7 @@ export function AnalyticsFilters({
   } = useAnalytics();
 
   const { cohorts, cohortMemberCounts } = useProfile();
-
+  const log = useLogger();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
   const { mutate: refreshAnalytics, isPending: isRefreshing } =

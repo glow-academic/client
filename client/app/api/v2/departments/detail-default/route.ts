@@ -1,5 +1,6 @@
 import { DepartmentDetailDefaultRequestSchema } from "@/lib/api/v2/schemas/departments";
 import { fetchDepartmentDetailDefault } from "@/lib/api/v2/server/departments";
+import { log } from "@/lib/api/v2/server/logs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

@@ -38,6 +38,7 @@ import {
 import { Bug, Eye } from "lucide-react";
 import UnifiedPromptEditor from "../editor/UnifiedPromptEditor";
 import AgentDebugInfo from "./AgentDebugInfo";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 
 interface SystemAgentFormData {
   name?: string;
@@ -62,6 +63,7 @@ interface FormErrors {
 export default function SystemAgent({ agentId }: SystemAgentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
+  const log = useLogger();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();

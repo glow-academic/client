@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import StaffEdit from "@/components/management/staff/StaffEdit";
 import { profileDetailKeys } from "@/lib/api/v2/keys";
 import { fetchProfileDetail } from "@/lib/api/v2/server/profile";
-import { getQueryClient } from "@/lib/query-client";
+import { getQueryClient } from "@/utils/queryClient";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata, ResolvingMetadata } from "next";
 
@@ -22,12 +22,12 @@ export async function generateMetadata(
   const currentProfileId = session?.effectiveProfileId || "";
 
   try {
-    const profileData = await fetchProfileDetail(profileId, currentProfileId);
+    const profile = await fetchProfileDetail(profileId, currentProfileId);
     return {
-      title: profileData.name,
+      title: profile.name,
       description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
-  } catch (error) {
+  } catch {
     return {
       title: "Staff Profile",
       description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
