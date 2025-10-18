@@ -110,10 +110,10 @@ export const CreateLogRequestSchema = z.object({
   level: z.string().default("info"),
   message: z.string().default("Default Message"),
   correlation: CorrelationDataSchema.optional(),
-  actor: z.record(z.any()).default({}),
-  subject: z.record(z.any()).default({}),
-  context: z.record(z.any()).default({}),
-  error: z.record(z.any()).default({}),
+  actor: z.record(z.string(), z.any()).default({}),
+  subject: z.record(z.string(), z.any()).default({}),
+  context: z.record(z.string(), z.any()).default({}),
+  error: z.record(z.string(), z.any()).default({}),
 });
 
 export const CreateLogResponseSchema = z.object({
