@@ -10,7 +10,6 @@
 
 import { format } from "date-fns";
 import { useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,6 +22,7 @@ import {
 
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
+import { useAnalytics } from "@/contexts/analytics-context";
 import { useDepartments } from "@/contexts/departments-context";
 import { useProfile } from "@/contexts/profile-context";
 import { usePricingAnalytics } from "@/lib/api/v2/hooks/analytics";
@@ -51,19 +51,15 @@ const COLOR_PALETTE = [
 ];
 
 export default function Pricing() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const now = new Date();
-    const start = new Date(now);
-    // Default: last 30 days
-    start.setDate(start.getDate() - 30);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-    return { from: start, to: end };
-  });
-
   const { effectiveDepartmentIds } = useDepartments();
   const { effectiveProfile } = useProfile();
+  const {
+    startDate,
+    endDate,
+    selectedCohortIds,
+    selectedRoles,
+    simulationFilters,
+  } = useAnalytics();
 
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
@@ -75,12 +71,21 @@ export default function Pricing() {
     () => ({
       departmentIds: effectiveDepartmentIds,
       profileId: effectiveProfile?.id || "",
-      startDate: dateRange?.from?.toISOString() || "",
-      endDate: dateRange?.to?.toISOString() || "",
-      cohortIds: undefined,
-      simulationFilters: undefined,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      cohortIds: selectedCohortIds,
+      roles: selectedRoles,
+      simulationFilters,
     }),
-    [effectiveDepartmentIds, effectiveProfile?.id, dateRange]
+    [
+      effectiveDepartmentIds,
+      effectiveProfile?.id,
+      startDate,
+      endDate,
+      selectedCohortIds,
+      selectedRoles,
+      simulationFilters,
+    ]
   );
 
   const { data: pricingData, isLoading } = usePricingAnalytics(filters);
@@ -442,8 +447,6 @@ export default function Pricing() {
               setSelectedAgentIds={setSelectedAgentIds}
               setSelectedPersonaIds={setSelectedPersonaIds}
               setSelectedProfileIds={setSelectedProfileIds}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
             />
           )}
         </CardContent>

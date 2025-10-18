@@ -15,7 +15,6 @@ import {
 } from "@tanstack/react-table";
 import { Bug } from "lucide-react";
 import * as React from "react";
-import type { DateRange } from "react-day-picker";
 
 import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
 import { DataTablePagination } from "@/components/common/history/DataTablePagination";
@@ -29,7 +28,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import {
   HoverCard,
   HoverCardContent,
@@ -86,8 +84,6 @@ export interface RunsDataTableProps {
   setSelectedAgentIds: (ids: string[]) => void;
   setSelectedPersonaIds: (ids: string[]) => void;
   setSelectedProfileIds: (ids: string[]) => void;
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
 }
 
 export function RunsDataTable({
@@ -104,8 +100,6 @@ export function RunsDataTable({
   setSelectedAgentIds,
   setSelectedPersonaIds,
   setSelectedProfileIds,
-  dateRange,
-  setDateRange,
 }: RunsDataTableProps) {
   const { effectiveProfile } = useProfile();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -461,12 +455,6 @@ export function RunsDataTable({
             </PopoverContent>
           </Popover>
         </div>
-
-        {/* Date range picker */}
-        <DatePickerWithRange
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-        />
       </div>
 
       {/* Table toolbar */}

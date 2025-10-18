@@ -1,5 +1,6 @@
 """Pricing analytics queries - SQL query builders for model run pricing."""
 
+from datetime import datetime
 from typing import Any, List, Optional, Tuple
 
 
@@ -12,18 +13,40 @@ class PricingQueries:
         start_date: str,
         end_date: str,
         cohort_ids: Optional[List[str]] = None,
+        roles: Optional[List[str]] = None,
         sim_filters: Optional[List[str]] = None,
+        profile_id: Optional[str] = None,
     ) -> Tuple[str, List[Any]]:
         """Build query for model runs with all relationships."""
 
         # Build WHERE clause conditions
         where_conditions = [
             "mr.department_id = ANY($1)",
-            "mr.created_at >= $2::timestamp",
-            "mr.created_at <= $3::timestamp",
+            "mr.created_at >= $2",
+            "mr.created_at <= $3",
         ]
 
-        params: List[Any] = [department_ids, start_date, end_date]
+        params: List[Any] = [
+            department_ids,
+            datetime.fromisoformat(start_date.replace('Z', '+00:00')),
+            datetime.fromisoformat(end_date.replace('Z', '+00:00')),
+        ]
+
+        # Profile filter (specific user)
+        if profile_id is not None:
+            param_idx = len(params) + 1
+            where_conditions.append(f"mrp.profile_id = ${param_idx}")
+            params.append(profile_id)
+
+        # Role filter (only if no profile_id specified)
+        if profile_id is None and roles is not None and len(roles) > 0:
+            param_idx = len(params) + 1
+            where_conditions.append(
+                f"""mrp.profile_id IN (
+                    SELECT id FROM profiles WHERE role = ANY(${param_idx})
+                )"""
+            )
+            params.append(roles)
 
         # Cohort filter via cohort_profiles
         if cohort_ids is not None and len(cohort_ids) > 0:

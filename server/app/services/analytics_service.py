@@ -1021,13 +1021,28 @@ class AnalyticsService:
     ) -> PricingAnalyticsResponse:
         """Get pricing analytics for model runs."""
 
+        # Determine effective profile ID based on role
+        # Admins, superadmins, and instructional staff see all data (no profile filter)
+        effective_profile_id = None
+        if filters.profileId:
+            # Fetch profile role to determine if we should use profileId
+            query, params = self.query_builder.get_profile_role(filters.profileId)
+            role_row = await self.conn.fetchrow(query, *params)
+            if role_row:
+                role = role_row['role']
+                # Only use profileId for non-admin roles (ta, guest, etc.)
+                if role not in ('admin', 'superadmin', 'instructional'):
+                    effective_profile_id = filters.profileId
+
         # Get model runs with all relationships
         query, params = self.pricing_queries.get_model_runs(
             department_ids=filters.departmentIds or [],
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
+            roles=filters.roles,
             sim_filters=[f.value for f in filters.simulationFilters] if filters.simulationFilters else None,
+            profile_id=effective_profile_id,
         )
 
         runs_result = await self.conn.fetch(query, *params)
