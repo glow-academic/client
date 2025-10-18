@@ -4,21 +4,21 @@ CREATE TABLE app_logs (
   id               SERIAL PRIMARY KEY,
   event            TEXT NOT NULL DEFAULT 'default.event',         -- e.g., "simulation.start", "mutation.update.failed"
   level            TEXT NOT NULL DEFAULT 'info',                  -- "debug" | "info" | "warn" | "error"
-  message          TEXT DEFAULT 'Default Message',                -- optional human-readable message
-  correlation_id   TEXT DEFAULT 'default.correlation',            -- request/session/flow correlation
-  actor            JSONB DEFAULT '{"userId":null,"profileId":null}'::jsonb,        -- { userId?, profileId? }
-  subject          JSONB DEFAULT '{"entityType":null,"entityId":null}'::jsonb,     -- { entityType?, entityId? }
-  metrics          JSONB DEFAULT '{"durationMs":null,"size":null,"count":null}'::jsonb, -- { durationMs?, size?, count? }
-  context          JSONB DEFAULT '{"route":null,"component":null,"function":null}'::jsonb, -- { route?, component?, function?, ... }
-  error            JSONB DEFAULT '{"name":null,"message":null,"stack":null,"code":null}'::jsonb, -- { name?, message?, stack?, code? }
-  created_at       TIMESTAMPTZ DEFAULT now()
+  message          TEXT NOT NULL DEFAULT 'Default Message',       -- human-readable message (NOT NULL)
+  correlation_id   TEXT NOT NULL DEFAULT 'default.correlation',   -- request/session/flow correlation (NOT NULL)
+  actor            JSONB NOT NULL DEFAULT '{"userId":null,"profileId":null}'::jsonb,        -- { userId?, profileId? } (NOT NULL)
+  subject          JSONB NOT NULL DEFAULT '{"entityType":null,"entityId":null}'::jsonb,     -- { entityType?, entityId? } (NOT NULL)
+  context          JSONB NOT NULL DEFAULT '{"route":null,"component":null,"function":null}'::jsonb, -- { route?, component?, function?, ... } (NOT NULL)
+  error            JSONB NOT NULL DEFAULT '{"name":null,"message":null,"stack":null,"code":null}'::jsonb, -- { name?, message?, stack?, code? } (NOT NULL)
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+  -- metrics column removed (was 100% NULL, never used)
 );
 
 CREATE TABLE app_feedback (
   id           SERIAL PRIMARY KEY,
-  created_at   TIMESTAMPTZ DEFAULT now(),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   type         feedback_type NOT NULL,
-  message      TEXT
+  message      TEXT NOT NULL DEFAULT ''
 );
 
 -- App feedback ↔ Profiles junction table (BCNF normalization - replaces app_feedback.profile_id)

@@ -16,7 +16,7 @@ CREATE TABLE documents (
     mime_type  TEXT        NOT NULL,
     type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
-    file_id    TEXT        NULL,
+    file_id    TEXT        NOT NULL DEFAULT '',  -- NOT NULL with default empty string
     active BOOLEAN     NOT NULL DEFAULT TRUE,
     department_id UUID        NOT NULL REFERENCES departments(id) ON DELETE CASCADE
 );

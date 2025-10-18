@@ -21,8 +21,8 @@ CREATE TABLE profiles (
   role       profile_role NOT NULL DEFAULT 'guest',
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT FALSE,
-  last_active TIMESTAMPTZ,
-  req_per_day INTEGER     NULL DEFAULT NULL -- model requests per day, null means unlimited
+  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW() -- NOT NULL, defaults to NOW()
+  -- req_per_day moved to profile_request_limits junction table
 );
 
 -- Add unique constraint to alias (derived from email)
@@ -46,3 +46,16 @@ CREATE INDEX ON profile_departments (profile_id, is_primary);
 CREATE UNIQUE INDEX profile_departments_one_primary_per_profile
   ON profile_departments (profile_id)
   WHERE is_primary;
+
+-- Profile request limits junction table (BCNF normalization)
+-- Absence of record means unlimited requests
+CREATE TABLE profile_request_limits (
+  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  requests_per_day INTEGER NOT NULL CHECK (requests_per_day > 0),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (profile_id)
+);
+
+CREATE INDEX ON profile_request_limits (profile_id);

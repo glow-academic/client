@@ -130,7 +130,7 @@ SELECT
   pr.role                       AS profile_role,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
-  sc.completed_at               AS chat_completed_at,
+  -- chat_completed_at removed (use grade_created_at or time_taken_seconds as source of truth)
 
   CASE
     WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL
@@ -146,7 +146,7 @@ SELECT
   r.points                      AS rubric_points,
   r.pass_points                 AS rubric_pass_points,
 
-  (sc.completed OR sc.completed_at IS NOT NULL OR lg.simulation_chat_id IS NOT NULL)
+  (sc.completed OR lg.simulation_chat_id IS NOT NULL)
                                AS completed,
 
   COALESCE(mc.num_messages_total, 0)            AS num_messages_total,

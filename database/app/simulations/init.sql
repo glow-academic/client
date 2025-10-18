@@ -13,7 +13,7 @@ CREATE TABLE simulations (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   description TEXT        NOT NULL DEFAULT 'No description provided',
-  time_limit INTEGER     NULL,          -- in minutes, or no time limit
+  -- time_limit moved to simulation_time_limits junction table (absence = infinite)
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
   default_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE,
@@ -44,82 +44,30 @@ CREATE INDEX ON simulation_scenarios (scenario_id);
 CREATE UNIQUE INDEX simulation_scenarios_position_uniq
   ON simulation_scenarios(simulation_id, position);
 
--- Simulation tags (ordered, BCNF)
-CREATE TABLE simulation_tags (
+-- Simulation time limits junction table (BCNF normalization)
+-- Logic: If record exists -> use time limit, if no record -> infinite/no time limit
+-- For attempts: simulation_attempts.infinite_mode flag determines if time limits apply
+CREATE TABLE simulation_time_limits (
   simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
-  idx           INT  NOT NULL,
-  tag           TEXT NOT NULL,
-  active        BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (simulation_id, idx)
+  time_limit_seconds INTEGER NOT NULL CHECK (time_limit_seconds > 0),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (simulation_id)
 );
 
-CREATE INDEX ON simulation_tags (simulation_id);
+CREATE INDEX ON simulation_time_limits (simulation_id);
 
--- Prevent duplicate tag text within a simulation (case-insensitive)
-CREATE UNIQUE INDEX simulation_tags_unique_text_per_sim
-  ON simulation_tags (simulation_id, lower(tag));
-
--- Fast lookups by tag text within a simulation
-CREATE INDEX simulation_tags_text_idx
-  ON simulation_tags (simulation_id, lower(tag));
-
--- Link documents & parameter items to simulation tags (composite FK)
-CREATE TABLE simulation_tag_documents (
-  simulation_id UUID NOT NULL,
-  tag_idx       INT  NOT NULL,
-  document_id   UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-  active        BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (simulation_id, tag_idx, document_id),
-  CONSTRAINT simulation_tag_documents_tag_fk
-    FOREIGN KEY (simulation_id, tag_idx)
-    REFERENCES simulation_tags(simulation_id, idx)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE simulation_tag_parameter_items (
-  simulation_id     UUID NOT NULL,
-  tag_idx           INT  NOT NULL,
-  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
-  active            BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (simulation_id, tag_idx, parameter_item_id),
-  CONSTRAINT simulation_tag_parameter_items_tag_fk
-    FOREIGN KEY (simulation_id, tag_idx)
-    REFERENCES simulation_tags(simulation_id, idx)
-    ON DELETE CASCADE
-);
-
-CREATE INDEX ON simulation_tag_documents (document_id);
-CREATE INDEX ON simulation_tag_parameter_items (parameter_item_id);
-CREATE INDEX ON simulation_tag_documents (simulation_id, tag_idx);
-CREATE INDEX ON simulation_tag_parameter_items (simulation_id, tag_idx);
-
--- Convenience views for cross-simulation tag discovery
-CREATE OR REPLACE VIEW v_tagged_documents AS
-SELECT st.simulation_id, st.tag, std.document_id, d.name AS document_name
-FROM simulation_tags st
-JOIN simulation_tag_documents std
-  ON std.simulation_id = st.simulation_id AND std.tag_idx = st.idx
-JOIN documents d ON d.id = std.document_id;
-
-CREATE OR REPLACE VIEW v_tagged_parameter_items AS
-SELECT st.simulation_id, st.tag, stpi.parameter_item_id, pi.name AS parameter_item_name
-FROM simulation_tags st
-JOIN simulation_tag_parameter_items stpi
-  ON stpi.simulation_id = st.simulation_id AND stpi.tag_idx = st.idx
-JOIN parameter_items pi ON pi.id = stpi.parameter_item_id;
+-- Note: Simulation tags and tag-related tables (simulation_tags, simulation_tag_documents, 
+-- simulation_tag_parameter_items, v_tagged_documents, v_tagged_parameter_items) 
+-- have been removed as part of BCNF migration
 
 CREATE TABLE simulation_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE,
-  infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE,
-  infinite_mode_time_limit INTEGER     NULL, -- in minutes, or no time limit
+  infinite_mode BOOLEAN     NOT NULL           DEFAULT FALSE,  -- If true, ignores all time limits
+  -- infinite_mode_time_limit removed (was 100% NULL, never used)
   archived BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
@@ -144,12 +92,12 @@ CREATE TABLE simulation_chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
-  completed_at TIMESTAMPTZ  NULL,
+  -- completed_at removed (use simulation_chat_grades.time_taken as source of truth)
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   attempt_id UUID         NOT NULL REFERENCES simulation_attempts(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
-  trace_id   TEXT         NULL -- openai trace id
+  trace_id   TEXT         NOT NULL DEFAULT '' -- openai trace id (NOT NULL)
 );
 
 CREATE TABLE simulation_messages (
@@ -162,13 +110,17 @@ CREATE TABLE simulation_messages (
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
+-- Simulation hints collection table (BCNF normalization)
+-- Normalized text collection pattern: composite PK with idx, created_at only (matches scenario_objectives)
 CREATE TABLE simulation_hints (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  hint TEXT        NOT NULL,
-  simulation_message_id UUID        NOT NULL REFERENCES simulation_messages(id)  ON DELETE CASCADE
+  simulation_message_id UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
+  idx               INT  NOT NULL,
+  hint              TEXT NOT NULL,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (simulation_message_id, idx)
 );
+
+CREATE INDEX ON simulation_hints (simulation_message_id);
 
 CREATE TABLE simulation_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -187,7 +139,7 @@ CREATE TABLE simulation_chat_grades (
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
     simulation_chat_grade_id   UUID        NOT NULL REFERENCES simulation_chat_grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
-    feedback TEXT
+    feedback TEXT NOT NULL DEFAULT ''  -- NOT NULL with default empty string
   );
 
 -- Note: Crowdsourcing tables (simulation_chat_crowdsourced_feedbacks, simulation_crowdsourced_messages)

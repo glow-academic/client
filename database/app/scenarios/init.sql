@@ -61,11 +61,13 @@ CREATE UNIQUE INDEX scenario_personas_one_active_per_scenario
 CREATE INDEX ON scenario_personas (persona_id);
 CREATE INDEX ON scenario_personas (scenario_id, active);
 
--- Scenario objectives junction table (BCNF normalization)
+-- Scenario objectives collection table (BCNF normalization)
+-- Normalized text collection pattern: composite PK with idx, created_at only
 CREATE TABLE scenario_objectives (
   scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
   idx         INT  NOT NULL,
   objective   TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (scenario_id, idx)
 );
 
@@ -96,6 +98,20 @@ CREATE TABLE scenario_documents (
 
 CREATE INDEX ON scenario_documents (scenario_id);
 CREATE INDEX ON scenario_documents (document_id);
+
+-- Document → Parameter Items junction table (BCNF normalization)
+-- Allows documents to be filtered by parameter values
+CREATE TABLE document_parameter_items (
+  document_id       UUID NOT NULL REFERENCES documents(id)       ON DELETE CASCADE,
+  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (document_id, parameter_item_id)
+);
+
+CREATE INDEX ON document_parameter_items (document_id);
+CREATE INDEX ON document_parameter_items (parameter_item_id);
 
 -- Scenario hierarchy with no NULLs (self-edge denotes root)
 CREATE TABLE scenario_tree (
