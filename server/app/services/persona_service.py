@@ -1,11 +1,10 @@
 """Persona service layer - business logic for persona operations."""
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
-from app.extensions import get_query_client
 from app.queries.persona_queries import PersonaQueries
 from app.schemas.base import (DepartmentMappingItem, ModelMappingItem,
                               ScenarioMappingItem)
@@ -19,41 +18,21 @@ from app.schemas.personas import (CreatePersonaRequest, CreatePersonaResponse,
                                   PersonaItem, PersonasFilters,
                                   PersonasListResponse, UpdatePersonaRequest,
                                   UpdatePersonaResponse)
+from app.services.base import BaseService, with_cache
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
-if TYPE_CHECKING:
-    from app.services.scenario_service import ScenarioService
 
-
-class PersonaService:
+class PersonaService(BaseService):
     """Service layer for persona operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = PersonaQueries()
-        self.scenario_service: Optional['ScenarioService'] = None  # Lazy init to avoid circular import
 
+    @with_cache(lambda self, filters: keys.persona_list(filters))
     async def get_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
         """Get personas list with permissions and scenario details using dynamic SQL."""
-        
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_personas_list(filters)
-        
-        key = keys.persona_list(filters)
-        
-        async def fetcher() -> PersonasListResponse:
-            return await self._fetch_personas_list(filters)
-        
-        result: PersonasListResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
-
-    async def _fetch_personas_list(self, filters: PersonasFilters) -> PersonasListResponse:
-        """Internal method to fetch personas list from database."""
         # Get query from query builder
         query, params = self.queries.list_personas(
             filters.departmentIds, filters.profileId
@@ -99,10 +78,10 @@ class PersonaService:
         if scenario_ids_to_fetch := list(
             set([sid for p in personas for sid in p.scenario_ids])
         ):
-            if self.scenario_service is None:
-                from app.services.scenario_service import ScenarioService
-                self.scenario_service = ScenarioService(self.conn)
-            scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(
+            # Create scenario service locally (avoid anti-pattern)
+            from app.services.scenario_service import ScenarioService
+            scenario_service = ScenarioService(self.conn)
+            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
             )
 
@@ -189,25 +168,12 @@ class PersonaService:
             success=True, message=f"Persona '{persona['name']}' deleted successfully"
         )
 
+    @with_cache(lambda self, request: keys.persona_by_id(request.personaId, request.profileId))
     async def get_persona_detail(
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
         """Get detailed persona information using dynamic SQL."""
-        
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_persona_detail(request)
-        
-        key = keys.persona_by_id(request.personaId, request.profileId)
-        
-        async def fetcher() -> PersonaDetailResponse:
-            return await self._fetch_persona_detail(request)
-        
-        result: PersonaDetailResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
+        return await self._fetch_persona_detail(request)
 
     async def _fetch_persona_detail(
         self, request: PersonaDetailRequest
@@ -381,25 +347,12 @@ class PersonaService:
             debug_info=debug_info,
         )
 
+    @with_cache(lambda self, request: keys.persona_default(request.profileId))
     async def get_persona_detail_default(
         self, request: PersonaDetailDefaultRequest
     ) -> PersonaDetailResponse:
         """Get default persona details based on profile."""
-        
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_persona_detail_default(request)
-        
-        key = keys.persona_default(request.profileId)
-        
-        async def fetcher() -> PersonaDetailResponse:
-            return await self._fetch_persona_detail_default(request)
-        
-        result: PersonaDetailResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
+        return await self._fetch_persona_detail_default(request)
 
     async def _fetch_persona_detail_default(
         self, request: PersonaDetailDefaultRequest
@@ -492,6 +445,7 @@ class PersonaService:
             success=True, message=f"Persona '{request.name}' updated successfully"
         )
 
+    @with_cache(lambda self, query, limit: keys.persona_search(query, limit))
     async def search_personas(
         self, query: str, limit: int = 10
     ) -> List[Dict[str, Any]]:
@@ -506,25 +460,6 @@ class PersonaService:
         Returns:
             List of persona dictionaries with scores
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._search_personas_internal(query, limit)
-        
-        key = keys.persona_search(query, limit)
-        
-        async def fetcher() -> List[Dict[str, Any]]:
-            return await self._search_personas_internal(query, limit)
-        
-        result: List[Dict[str, Any]] = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
-
-    async def _search_personas_internal(
-        self, query: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """Internal method to search personas from database."""
         q_norm = normalize_text(query)
         if not q_norm:
             return []
@@ -599,6 +534,7 @@ class PersonaService:
 
     # ===== Analytics Methods for MCP Tools =====
 
+    @with_cache(lambda self, persona_id, window_days=30: keys.persona_response_times(persona_id, window_days))
     async def get_persona_response_times(
         self, persona_id: str, window_days: int = 30
     ) -> Dict[str, Any]:
@@ -614,25 +550,6 @@ class PersonaService:
             Dict with structure: {"persona": {...}, "stats": {...}, "recent_responses": [...]}
             or {"error": "..."}
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_persona_response_times(persona_id, window_days)
-        
-        key = keys.persona_response_times(persona_id, window_days)
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._fetch_persona_response_times(persona_id, window_days)
-        
-        result: Dict[str, Any] = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
-
-    async def _fetch_persona_response_times(
-        self, persona_id: str, window_days: int = 30
-    ) -> Dict[str, Any]:
-        """Internal method to fetch persona response times from database."""
         from datetime import datetime, timedelta
         
         try:
@@ -727,6 +644,7 @@ class PersonaService:
 
     # ===== Overview Methods for MCP Tools =====
 
+    @with_cache(lambda self, persona_id: keys.persona_overview(persona_id))
     async def get_persona_overview(self, persona_id: str) -> Dict[str, Any]:
         """Get persona overview with all related data in ONE optimized query.
         
@@ -738,23 +656,6 @@ class PersonaService:
         Returns:
             Dict with persona overview data or {"error": "..."}
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_persona_overview(persona_id)
-        
-        key = keys.persona_overview(persona_id)
-        
-        async def fetcher() -> Dict[str, Any]:
-            return await self._fetch_persona_overview(persona_id)
-        
-        result: Dict[str, Any] = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result
-
-    async def _fetch_persona_overview(self, persona_id: str) -> Dict[str, Any]:
-        """Internal method to fetch persona overview from database."""
         import uuid
         
         try:

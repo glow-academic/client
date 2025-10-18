@@ -15,9 +15,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
-from app.extensions import CSV_FOLDER, UPLOAD_FOLDER, get_query_client
+from app.extensions import CSV_FOLDER, UPLOAD_FOLDER
 from app.queries.document_queries import DocumentQueries
-from app.services.base import BaseService
 from app.schemas.base import (DepartmentMapping, DepartmentMappingItem,
                               ParameterItemMappingItem, ScenarioMappingItem)
 from app.schemas.documents import (BulkDeleteDocumentsRequest,
@@ -34,6 +33,7 @@ from app.schemas.documents import (BulkDeleteDocumentsRequest,
                                    GenerateCertificateRequest,
                                    UpdateDocumentRequest,
                                    UpdateDocumentResponse)
+from app.services.base import BaseService, with_cache
 from app.utils.mime_utils import get_content_type
 
 logger = logging.getLogger(__name__)
@@ -51,27 +51,11 @@ class DocumentService(BaseService):
         super().__init__(conn)
         self.queries = DocumentQueries()
 
+    @with_cache(lambda self, filters: keys.document_list(filters))
     async def get_documents_list(
         self, filters: DocumentsFilters
     ) -> DocumentsListResponse:
         """Get documents list with tags and scenarios using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            # Execute directly without cache
-            return await self._fetch_documents_list(filters)
-        
-        key = keys.document_list(filters)
-        
-        async def fetcher() -> DocumentsListResponse:
-            return await self._fetch_documents_list(filters)
-        
-        result: DocumentsListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_documents_list(
-        self, filters: DocumentsFilters
-    ) -> DocumentsListResponse:
-        """Helper to fetch documents list (extracted for caching)."""
         # Get query from query builder
         query, params = self.queries.list_documents(
             filters.departmentIds, filters.profileId
@@ -110,7 +94,10 @@ class DocumentService(BaseService):
         if scenario_ids_to_fetch := list(
             set([sid for d in documents for sid in d.scenario_ids])
         ):
-            scenario_mapping = await self.scenario_service.build_enhanced_scenario_mapping(
+            # Create scenario service locally to avoid storing service dependencies
+            from app.services.scenario_service import ScenarioService
+            scenario_service = ScenarioService(self.conn)
+            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
                 scenario_ids_to_fetch
             )
 
@@ -148,26 +135,11 @@ class DocumentService(BaseService):
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.document_by_id(request.documentId))
     async def get_document_detail(
         self, request: DocumentDetailRequest
     ) -> DocumentDetailResponse:
         """Get detailed document information using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_document_detail(request)
-        
-        key = keys.document_by_id(request.documentId)
-        
-        async def fetcher() -> DocumentDetailResponse:
-            return await self._fetch_document_detail(request)
-        
-        result: DocumentDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_document_detail(
-        self, request: DocumentDetailRequest
-    ) -> DocumentDetailResponse:
-        """Helper to fetch document detail (extracted for caching)."""
         # Get document basic info
         query, params = self.queries.get_document_by_id(request.documentId)
         document = await self.conn.fetchrow(query, *params)
@@ -240,26 +212,11 @@ class DocumentService(BaseService):
             parameter_item_mapping=parameter_item_mapping,
         )
 
+    @with_cache(lambda self, request: keys.document_bulk_detail(request.documentIds, request.profileId))
     async def get_document_detail_bulk(
         self, request: DocumentDetailBulkRequest
     ) -> DocumentDetailBulkResponse:
         """Get bulk document detail information using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_document_detail_bulk(request)
-        
-        key = keys.document_bulk_detail(request.documentIds, request.profileId)
-        
-        async def fetcher() -> DocumentDetailBulkResponse:
-            return await self._fetch_document_detail_bulk(request)
-        
-        result: DocumentDetailBulkResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_document_detail_bulk(
-        self, request: DocumentDetailBulkRequest
-    ) -> DocumentDetailBulkResponse:
-        """Helper to fetch bulk document detail (extracted for caching)."""
         # Get documents basic info
         query, params = self.queries.get_documents_by_ids(request.documentIds)
         documents_result = await self.conn.fetch(query, *params)
@@ -769,6 +726,7 @@ class DocumentService(BaseService):
             )
 
     # Download Methods
+    @with_cache(lambda self, document_id: keys.document_file_info(document_id))
     async def get_document_file(self, document_id: str) -> Optional[Tuple[str, str, str]]:
         """
         Get document file path and metadata for download.
@@ -776,20 +734,6 @@ class DocumentService(BaseService):
         Returns:
             Tuple of (file_path, filename, content_type) or None if not found
         """
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_document_file(document_id)
-        
-        key = keys.document_file_info(document_id)
-        
-        async def fetcher() -> Optional[Tuple[str, str, str]]:
-            return await self._fetch_document_file(document_id)
-        
-        result: Optional[Tuple[str, str, str]] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_document_file(self, document_id: str) -> Optional[Tuple[str, str, str]]:
-        """Helper to fetch document file info (extracted for caching)."""
         query, params = self.queries.get_document_file_info(document_id)
         result = await self.conn.fetchrow(query, *params)
 
@@ -805,6 +749,7 @@ class DocumentService(BaseService):
         
         return file_path, result['name'], content_type
 
+    @with_cache(lambda self, token: keys.document_csv_file(token))
     async def get_csv_file(self, token: str) -> Optional[str]:
         """
         Get CSV file path for download.
@@ -812,20 +757,6 @@ class DocumentService(BaseService):
         Returns:
             File path or None if not found
         """
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_csv_file(token)
-        
-        key = keys.document_csv_file(token)
-        
-        async def fetcher() -> Optional[str]:
-            return await self._fetch_csv_file(token)
-        
-        result: Optional[str] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_csv_file(self, token: str) -> Optional[str]:
-        """Helper to fetch CSV file path (extracted for caching)."""
         file_path = os.path.join(CSV_FOLDER, f"{token}.csv")
         
         if not os.path.exists(file_path):

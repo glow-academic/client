@@ -1,11 +1,9 @@
 """Parameter service layer - business logic for parameter operations with nested items."""
 
-from typing import Dict, List
 
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
-from app.extensions import get_query_client
 from app.queries.parameter_queries import ParameterQueries
 from app.schemas.base import DepartmentMappingItem
 from app.schemas.parameters import (CreateParameterItemRequest,
@@ -23,38 +21,22 @@ from app.schemas.parameters import (CreateParameterItemRequest,
                                     ParametersListResponse,
                                     UpdateParameterRequest,
                                     UpdateParameterResponse)
+from app.services.base import BaseService, with_cache
 
 
-class ParameterService:
+class ParameterService(BaseService):
     """Service layer for parameter operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = ParameterQueries()
 
+    @with_cache(lambda self, filters: keys.parameter_list(filters))
     async def get_parameters_list(
         self, filters: ParametersFilters
     ) -> ParametersListResponse:
         """Get parameters list with item counts and permissions."""
-        
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._execute_get_parameters_list(filters)
-        
-        key = keys.parameter_list(filters)
-        
-        async def fetcher() -> ParametersListResponse:
-            return await self._execute_get_parameters_list(filters)
-        
-        result: ParametersListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _execute_get_parameters_list(
-        self, filters: ParametersFilters
-    ) -> ParametersListResponse:
-        """Execute parameters list query."""
         # Get query from query builder
         query, params = self.queries.list_parameters(
             filters.departmentIds, filters.profileId
@@ -83,27 +65,11 @@ class ParameterService:
 
         return ParametersListResponse(parameters=parameters)
 
+    @with_cache(lambda self, request: keys.parameter_by_id(request.parameterId, request.profileId))
     async def get_parameter_detail(
         self, request: ParameterDetailRequest
     ) -> ParameterDetailResponse:
         """Get detailed parameter information with nested items."""
-        
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_get_parameter_detail(request)
-        
-        key = keys.parameter_by_id(request.parameterId, request.profileId)
-        
-        async def fetcher() -> ParameterDetailResponse:
-            return await self._execute_get_parameter_detail(request)
-        
-        result: ParameterDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _execute_get_parameter_detail(
-        self, request: ParameterDetailRequest
-    ) -> ParameterDetailResponse:
-        """Execute parameter detail query."""
         # Get parameter basic info
         query, params = self.queries.get_parameter_by_id(request.parameterId)
         parameter = await self.conn.fetchrow(query, *params)
@@ -117,7 +83,7 @@ class ParameterService:
 
         # Check usage for each item
         item_ids = [str(item['id']) for item in items_result]
-        item_usage: Dict[str, int] = {}
+        item_usage: dict[str, int] = {}
 
         if item_ids:
             query, params = self.queries.check_parameter_item_usage(item_ids)
@@ -168,27 +134,11 @@ class ParameterService:
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.parameter_detail_default(request.profileId))
     async def get_parameter_detail_default(
         self, request: ParameterDetailDefaultRequest
     ) -> ParameterDetailResponse:
         """Get default parameter details based on profile."""
-        
-        qc = get_query_client()
-        if not qc:
-            return await self._execute_get_parameter_detail_default(request)
-        
-        key = keys.parameter_detail_default(request.profileId)
-        
-        async def fetcher() -> ParameterDetailResponse:
-            return await self._execute_get_parameter_detail_default(request)
-        
-        result: ParameterDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _execute_get_parameter_detail_default(
-        self, request: ParameterDetailDefaultRequest
-    ) -> ParameterDetailResponse:
-        """Execute default parameter detail query."""
         # Get default parameter for profile
         query, params = self.queries.get_default_parameter(request.profileId)
         parameter = await self.conn.fetchrow(query, *params)
@@ -201,7 +151,7 @@ class ParameterService:
             parameterId=str(parameter['id']), profileId=request.profileId
         )
 
-        return await self._execute_get_parameter_detail(detail_request)
+        return await self.get_parameter_detail(detail_request)
 
     async def create_parameter(
         self, request: CreateParameterRequest
@@ -240,9 +190,9 @@ class ParameterService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_parameter_all(),
-                keys.tag_agent_all(),  # Parameters used in scenario generation
-            ])
+            keys.tag_parameter_all(),
+            keys.tag_agent_all(),  # Parameters used in scenario generation
+        ])
 
         return CreateParameterResponse(
             success=True,
@@ -294,10 +244,10 @@ class ParameterService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_parameter_by_id(request.parameterId),
-                keys.tag_parameter_all(),
-                keys.tag_agent_all(),  # Parameters used in scenario context
-            ])
+            keys.tag_parameter_by_id(request.parameterId),
+            keys.tag_parameter_all(),
+            keys.tag_agent_all(),  # Parameters used in scenario context
+        ])
 
         return UpdateParameterResponse(
             success=True, message=f"Parameter '{request.name}' updated successfully"
@@ -351,8 +301,8 @@ class ParameterService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_parameter_all(),
-            ])
+            keys.tag_parameter_all(),
+        ])
 
         return DuplicateParameterResponse(
             success=True,
@@ -426,10 +376,10 @@ class ParameterService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_parameter_by_id(request.parameterId),
-                keys.tag_parameter_all(),
-                keys.tag_agent_all(),  # Parameter items used in scenario context
-            ])
+            keys.tag_parameter_by_id(request.parameterId),
+            keys.tag_parameter_all(),
+            keys.tag_agent_all(),  # Parameter items used in scenario context
+        ])
 
         return CreateParameterItemResponse(
             success=True,

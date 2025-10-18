@@ -7,26 +7,27 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.profile_queries import ProfileQueries
 from app.schemas.permissions import ProfileRole
 from app.schemas.profile import (BreadcrumbItem, CohortItem, CohortsData,
                                  DepartmentItem, ProfileContextRequest,
                                  ProfileContextResponse, ProfileItem,
                                  SimulationContextItem, SimulationsData)
+from app.services.base import BaseService, with_cache
 from app.services.permissions_service import PermissionsService
 from app.utils.csv import parse_csv_file
 from app.utils.search import build_fuzzy_conditions, normalize_text, tokenize
 
 
-class ProfileService:
+class ProfileService(BaseService):
     """Service layer for profile operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = ProfileQueries()
 
+    @with_cache(lambda self, profile_id: keys.profile_by_id(profile_id))
     async def get_profile(self, profile_id: str) -> Optional[ProfileItem]:
         """Get profile by ID.
 
@@ -36,25 +37,11 @@ class ProfileService:
         Returns:
             ProfileItem if found, None otherwise
         """
-        qc = get_query_client()
-        if not qc:
-            query, params = self.queries.get_profile(profile_id)
-            result = await self.conn.fetchrow(query, *params)
-            if not result:
-                return None
-            return self._row_to_profile_item(result)
-        
-        key = keys.profile_by_id(profile_id)
-        
-        async def fetcher() -> Optional[ProfileItem]:
-            query, params = self.queries.get_profile(profile_id)
-            result = await self.conn.fetchrow(query, *params)
-            if not result:
-                return None
-            return self._row_to_profile_item(result)
-        
-        result_data: Optional[ProfileItem] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result_data
+        query, params = self.queries.get_profile(profile_id)
+        result = await self.conn.fetchrow(query, *params)
+        if not result:
+            return None
+        return self._row_to_profile_item(result)
 
     async def update_profile(
         self, profile_id: str, updates: Dict[str, Any]
@@ -82,10 +69,10 @@ class ProfileService:
         
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_profile_by_id(profile_id),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),  # Profile changes may affect analytics
-            ])
+            keys.tag_profile_by_id(profile_id),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),  # Profile changes may affect analytics
+        ])
         
         return profile_item
 

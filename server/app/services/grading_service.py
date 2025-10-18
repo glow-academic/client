@@ -1,21 +1,20 @@
 """Grading service layer - business logic for grading operations."""
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.grading_queries import GradingQueries
+from app.services.base import BaseService
 
 
-class GradingService:
+class GradingService(BaseService):
     """Service layer for grading operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = GradingQueries()
 
     async def save_grading_results(
@@ -26,9 +25,9 @@ class GradingService:
         passed: bool,
         summary: str,
         actual_time_taken: int,
-        grading_results: Dict[str, Any],
-        standard_groups: List[Dict[str, Any]],
-        standards: List[Dict[str, Any]],
+        grading_results: dict[str, Any],
+        standard_groups: list[dict[str, Any]],
+        standards: list[dict[str, Any]],
     ) -> UUID:
         """
         Save grading results including grade record, feedback records, and mark chat as completed.

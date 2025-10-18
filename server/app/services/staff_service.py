@@ -2,15 +2,13 @@
 
 import os
 import uuid
-from typing import Any, Dict, List
+from typing import Any
 
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
-from app.extensions import get_query_client
 from app.queries.staff_queries import StaffQueries
-from app.schemas.base import (CohortMapping, CohortMappingItem,
-                              DepartmentMappingItem)
+from app.schemas.base import CohortMappingItem, DepartmentMappingItem
 from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                BulkDeleteStaffRequest, BulkDeleteStaffResponse,
                                BulkUpdateStaffRequest, BulkUpdateStaffResponse,
@@ -20,33 +18,20 @@ from app.schemas.staff import (BulkCreateStaffRequest, BulkCreateStaffResponse,
                                StaffDetailRequest, StaffDetailResponse,
                                StaffFilters, StaffItem, StaffListResponse,
                                UpdateStaffRequest, UpdateStaffResponse)
+from app.services.base import BaseService, with_cache
 
 
-class StaffService:
+class StaffService(BaseService):
     """Service layer for staff operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database session."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = StaffQueries()
 
+    @with_cache(lambda self, filters: keys.staff_list(filters))
     async def get_staff_list(self, filters: StaffFilters) -> StaffListResponse:
         """Get staff list with permissions using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            # No cache - execute directly
-            return await self._fetch_staff_list(filters)
-        
-        key = keys.staff_list(filters)
-        
-        async def fetcher() -> StaffListResponse:
-            return await self._fetch_staff_list(filters)
-        
-        result: StaffListResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_staff_list(self, filters: StaffFilters) -> StaffListResponse:
-        """Fetch staff list from database (helper for caching)."""
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
 
@@ -115,22 +100,9 @@ class StaffService:
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.staff_detail(request.profileId, request.currentProfileId))
     async def get_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
         """Get detailed staff information using dynamic SQL."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_staff_detail(request)
-        
-        key = keys.staff_detail(request.profileId, request.currentProfileId)
-        
-        async def fetcher() -> StaffDetailResponse:
-            return await self._fetch_staff_detail(request)
-        
-        result: StaffDetailResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_staff_detail(self, request: StaffDetailRequest) -> StaffDetailResponse:
-        """Fetch staff detail from database (helper for caching)."""
         # Get campus email domain from environment
         campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
 
@@ -197,26 +169,11 @@ class StaffService:
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.staff_detail_bulk(request.profileIds, request.currentProfileId))
     async def get_staff_detail_bulk(
         self, request: StaffDetailBulkRequest
     ) -> StaffDetailBulkResponse:
         """Get bulk staff detail information."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_staff_detail_bulk(request)
-        
-        key = keys.staff_detail_bulk(request.profileIds, request.currentProfileId)
-        
-        async def fetcher() -> StaffDetailBulkResponse:
-            return await self._fetch_staff_detail_bulk(request)
-        
-        result: StaffDetailBulkResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_staff_detail_bulk(
-        self, request: StaffDetailBulkRequest
-    ) -> StaffDetailBulkResponse:
-        """Fetch bulk staff detail from database (helper for caching)."""
         # Get profiles
         query, params = self.queries.get_profiles_by_ids(request.profileIds)
         profiles = await self.conn.fetch(query, *params)
@@ -312,10 +269,10 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_all(),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_all(),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         return CreateStaffResponse(
             success=True,
@@ -340,7 +297,7 @@ class StaffService:
             )
 
         # Create all profiles
-        profile_ids: List[str] = []
+        profile_ids: list[str] = []
         for profile_req in request.profiles:
             profile_id = str(uuid.uuid4())
             profile_ids.append(profile_id)
@@ -376,10 +333,10 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_all(),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_all(),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         return BulkCreateStaffResponse(
             success=True,
@@ -421,12 +378,12 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_by_id(request.profileId),
-                keys.tag_staff_all(),
-                keys.tag_profile_by_id(request.profileId),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_by_id(request.profileId),
+            keys.tag_staff_all(),
+            keys.tag_profile_by_id(request.profileId),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         return UpdateStaffResponse(
             success=True, message=f"Staff '{existing['name']}' updated successfully"
@@ -439,7 +396,7 @@ class StaffService:
 
         # Build dynamic SET clauses
         set_clauses = []
-        params: Dict[str, Any] = {"profile_ids": request.profileIds}
+        params: dict[str, Any] = {"profile_ids": request.profileIds}
 
         if request.role is not None:
             set_clauses.append("role = :role")
@@ -472,10 +429,10 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_all(),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_all(),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         return BulkUpdateStaffResponse(
             success=True,
@@ -508,12 +465,12 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_by_id(request.profileId),
-                keys.tag_staff_all(),
-                keys.tag_profile_by_id(request.profileId),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_by_id(request.profileId),
+            keys.tag_staff_all(),
+            keys.tag_profile_by_id(request.profileId),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         return DeleteStaffResponse(
             success=True, message=f"Staff '{profile['name']}' deleted successfully"
@@ -543,10 +500,10 @@ class StaffService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_staff_all(),
-                keys.tag_profile_all(),
-                keys.tag_analytics_all(),
-            ])
+            keys.tag_staff_all(),
+            keys.tag_profile_all(),
+            keys.tag_analytics_all(),
+        ])
 
         message = f"{len(deletable_ids)} staff members deleted successfully"
         if default_ids:

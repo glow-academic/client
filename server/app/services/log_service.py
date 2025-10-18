@@ -6,21 +6,21 @@ from typing import Any, Dict, List, Optional, cast
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.log_queries import LogQueries
 from app.schemas.logs import (ActorData, BulkDeleteLogsRequest,
                               BulkDeleteLogsResponse, ContextData,
                               CreateLogRequest, CreateLogResponse, ErrorData,
                               LogItem, LogsListRequest, LogsListResponse,
                               MetricsData, SubjectData)
+from app.services.base import BaseService, with_cache
 
 
-class LogService:
+class LogService(BaseService):
     """Service for log operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = LogQueries()
 
     def _parse_jsonb_to_model(
@@ -42,6 +42,7 @@ class LogService:
             return model_class(**data)
         return None
 
+    @with_cache(lambda self, request: keys.log_list())
     async def get_logs_list(
         self, request: LogsListRequest
     ) -> LogsListResponse:
@@ -54,33 +55,9 @@ class LogService:
         Returns:
             LogsListResponse
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            query, params = self.queries.get_logs_list()
-            rows = await self.conn.fetch(query, *params)
-            return self._build_logs_list_response(rows)
-        
-        # Create cache key
-        key = keys.log_list()
-        
-        # Define fetcher function
-        async def fetcher() -> LogsListResponse:
-            query, params = self.queries.get_logs_list()
-            rows = await self.conn.fetch(query, *params)
-            return self._build_logs_list_response(rows)
-        
-        # Query with cache
-        return cast(
-            LogsListResponse,
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        query, params = self.queries.get_logs_list()
+        rows = await self.conn.fetch(query, *params)
+        return self._build_logs_list_response(rows)
     
     def _build_logs_list_response(self, rows: List[Any]) -> LogsListResponse:
         """Build LogsListResponse from database rows."""
@@ -164,12 +141,11 @@ class LogService:
         log_id = result['id'] if result else None
 
         # Invalidate log caches
-        await self._invalidate_cache([
-                keys.tag_log_all(),
-            ])
+        await self._invalidate_cache([keys.tag_log_all()])
 
         return CreateLogResponse(success=True, log_id=log_id)
 
+    @with_cache(lambda self, level="error", limit=100: keys.log_recent(level, limit))
     async def get_recent_logs(
         self, level: str = "error", limit: int = 100
     ) -> List[Dict[str, Any]]:
@@ -183,33 +159,9 @@ class LogService:
         Returns:
             List of log dictionaries with formatted data
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            query, params = self.queries.get_recent_logs(level, limit)
-            rows = await self.conn.fetch(query, *params)
-            return self._build_recent_logs_response(rows)
-        
-        # Create cache key
-        key = keys.log_recent(level, limit)
-        
-        # Define fetcher function
-        async def fetcher() -> List[Dict[str, Any]]:
-            query, params = self.queries.get_recent_logs(level, limit)
-            rows = await self.conn.fetch(query, *params)
-            return self._build_recent_logs_response(rows)
-        
-        # Query with cache
-        return cast(
-            List[Dict[str, Any]],
-            await qc.query(
-                key,
-                fetcher,
-                tags=list(key.tags()),
-                fresh_ttl=30,
-                stale_ttl=300
-            )
-        )
+        query, params = self.queries.get_recent_logs(level, limit)
+        rows = await self.conn.fetch(query, *params)
+        return self._build_recent_logs_response(rows)
     
     def _build_recent_logs_response(self, rows: List[Any]) -> List[Dict[str, Any]]:
         """Build recent logs response from database rows."""
@@ -265,9 +217,7 @@ class LogService:
         deleted_count = len(deleted_rows)
 
         # Invalidate log caches
-        await self._invalidate_cache([
-                keys.tag_log_all(),
-            ])
+        await self._invalidate_cache([keys.tag_log_all()])
 
         return BulkDeleteLogsResponse(
             success=True,

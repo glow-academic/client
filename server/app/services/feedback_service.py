@@ -1,20 +1,20 @@
 """Feedback service with business logic and dynamic SQL."""
 
-from typing import List
 
 import asyncpg  # type: ignore
 from app.queries.feedback_queries import FeedbackQueries
 from app.schemas.feedback import (CreateFeedbackRequest,
                                   CreateFeedbackResponse, FeedbackItem,
                                   FeedbackListRequest, FeedbackListResponse)
+from app.services.base import BaseService
 
 
-class FeedbackService:
+class FeedbackService(BaseService):
     """Service for feedback operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = FeedbackQueries()
 
     async def get_feedback_list(
@@ -33,7 +33,7 @@ class FeedbackService:
 
         rows = await self.conn.fetch(query, *params)
 
-        feedback_items: List[FeedbackItem] = []
+        feedback_items: list[FeedbackItem] = []
         for row in rows:
             feedback_items.append(
                 FeedbackItem(

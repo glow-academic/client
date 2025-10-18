@@ -1,10 +1,8 @@
 """Provider service layer - business logic for provider and model operations."""
 
-from typing import Dict, List
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.provider_queries import ProviderQueries
 from app.schemas.base import DepartmentMappingItem, ProviderMappingItem
 from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
@@ -19,40 +17,23 @@ from app.schemas.providers import (CreateModelRequest, CreateModelResponse,
                                    UpdateModelRequest, UpdateModelResponse,
                                    UpdateProviderRequest,
                                    UpdateProviderResponse)
+from app.services.base import BaseService, with_cache
 from app.utils.auth import encrypt_api_key
 
 
-class ProviderService:
+class ProviderService(BaseService):
     """Service layer for provider and model operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize service with database connection."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = ProviderQueries()
 
+    @with_cache(lambda self, filters: keys.provider_list(filters))
     async def get_providers_list(
         self, filters: ProvidersFilters
     ) -> ProvidersListResponse:
         """Get providers list with nested models (hierarchical)."""
-        qc = get_query_client()
-        if not qc:
-            # Fallback: execute directly without cache
-            return await self._fetch_providers_list(filters)
-        
-        key = keys.provider_list(filters)
-        
-        async def fetcher() -> ProvidersListResponse:
-            return await self._fetch_providers_list(filters)
-        
-        result_data: ProvidersListResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result_data
-
-    async def _fetch_providers_list(
-        self, filters: ProvidersFilters
-    ) -> ProvidersListResponse:
-        """Fetch providers list from database."""
         # Get providers
         query, params = self.queries.list_providers(
             filters.departmentIds, filters.profileId
@@ -82,7 +63,7 @@ class ProviderService:
 
             # Get model usage
             model_ids = [str(m['model_id']) for m in models_result]
-            model_usage: Dict[str, int] = {}
+            model_usage: dict[str, int] = {}
 
             if model_ids:
                 # Check personas usage
@@ -131,28 +112,11 @@ class ProviderService:
 
         return ProvidersListResponse(providers=providers)
 
+    @with_cache(lambda self, request: keys.provider_by_id(request.providerId))
     async def get_provider_detail(
         self, request: ProviderDetailRequest
     ) -> ProviderDetailResponse:
         """Get detailed provider information."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_provider_detail(request)
-        
-        key = keys.provider_by_id(request.providerId)
-        
-        async def fetcher() -> ProviderDetailResponse:
-            return await self._fetch_provider_detail(request)
-        
-        result_data: ProviderDetailResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result_data
-
-    async def _fetch_provider_detail(
-        self, request: ProviderDetailRequest
-    ) -> ProviderDetailResponse:
-        """Fetch provider detail from database."""
         # Get provider basic info
         query, params = self.queries.get_provider_by_id(request.providerId)
         provider = await self.conn.fetchrow(query, *params)
@@ -185,24 +149,9 @@ class ProviderService:
             department_mapping=department_mapping,
         )
 
+    @with_cache(lambda self, request: keys.model_by_id(request.modelId))
     async def get_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
         """Get detailed model information."""
-        qc = get_query_client()
-        if not qc:
-            return await self._fetch_model_detail(request)
-        
-        key = keys.model_by_id(request.modelId)
-        
-        async def fetcher() -> ModelDetailResponse:
-            return await self._fetch_model_detail(request)
-        
-        result_data: ModelDetailResponse = await qc.query(
-            key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300
-        )
-        return result_data
-
-    async def _fetch_model_detail(self, request: ModelDetailRequest) -> ModelDetailResponse:
-        """Fetch model detail from database."""
         # Get model basic info
         query, params = self.queries.get_model_by_id(request.modelId)
         model = await self.conn.fetchrow(query, *params)
@@ -264,8 +213,8 @@ class ProviderService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_provider_all(),
-            ])
+            keys.tag_provider_all(),
+        ])
 
         return CreateProviderResponse(
             success=True,
@@ -308,9 +257,9 @@ class ProviderService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_provider_by_id(request.providerId),
-                keys.tag_provider_all(),
-            ])
+            keys.tag_provider_by_id(request.providerId),
+            keys.tag_provider_all(),
+        ])
 
         return UpdateProviderResponse(
             success=True, message=f"Provider '{request.name}' updated successfully"
@@ -357,9 +306,9 @@ class ProviderService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_provider_by_id(request.providerId),
-                keys.tag_provider_all(),
-            ])
+            keys.tag_provider_by_id(request.providerId),
+            keys.tag_provider_all(),
+        ])
 
         return DeleteProviderResponse(
             success=True, message=f"Provider '{provider['name']}' deleted successfully"
@@ -419,9 +368,9 @@ class ProviderService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_model_by_id(request.modelId),
-                keys.tag_provider_all(),
-            ])
+            keys.tag_model_by_id(request.modelId),
+            keys.tag_provider_all(),
+        ])
 
         return UpdateModelResponse(
             success=True, message=f"Model '{request.name}' updated successfully"
@@ -457,9 +406,9 @@ class ProviderService:
 
         # Invalidate caches
         await self._invalidate_cache([
-                keys.tag_model_by_id(request.modelId),
-                keys.tag_provider_all(),
-            ])
+            keys.tag_model_by_id(request.modelId),
+            keys.tag_provider_all(),
+        ])
 
         return DeleteModelResponse(
             success=True, message=f"Model '{model['name']}' deleted successfully"

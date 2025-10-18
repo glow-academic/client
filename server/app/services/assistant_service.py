@@ -6,10 +6,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.assistant_queries import AssistantQueries
 from app.schemas.assistant import AssistantRunContext
-from app.services.base import BaseService
+from app.services.base import BaseService, with_cache
 
 
 class AssistantService(BaseService):
@@ -20,6 +19,7 @@ class AssistantService(BaseService):
         super().__init__(conn)
         self.queries = AssistantQueries()
 
+    @with_cache(lambda self, chat_id, department_id: keys.assistant_run_context(str(chat_id), str(department_id)))
     async def get_assistant_run_context(
         self, chat_id: UUID, department_id: UUID
     ) -> AssistantRunContext:
@@ -43,26 +43,6 @@ class AssistantService(BaseService):
         chat_id_str = str(chat_id)
         department_id_str = str(department_id)
         
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_assistant_run_context(chat_id_str, department_id_str)
-        
-        # Create cache key
-        key = keys.assistant_run_context(chat_id_str, department_id_str)
-        
-        # Define fetcher function
-        async def fetcher() -> AssistantRunContext:
-            return await self._fetch_assistant_run_context(chat_id_str, department_id_str)
-        
-        # Query with cache
-        result: AssistantRunContext = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
-        return result
-
-    async def _fetch_assistant_run_context(
-        self, chat_id_str: str, department_id_str: str
-    ) -> AssistantRunContext:
-        """Internal method to fetch assistant run context from database."""
         # 1. Get main context with optimized JOIN query
         query, params = self.queries.get_assistant_run_context(
             chat_id_str, department_id_str
@@ -355,6 +335,7 @@ class AssistantService(BaseService):
         # Invalidate caches (coarse-grained since we don't have chat_id)
         await self._invalidate_cache([keys.tag_assistant_all()])
 
+    @with_cache(lambda self, days=7: keys.assistant_usage_stats(days), fresh_ttl=60, stale_ttl=600)
     async def get_usage_stats(self, days: int = 7) -> Dict[str, Any]:
         """
         Get assistant usage statistics over a time period.
@@ -365,24 +346,6 @@ class AssistantService(BaseService):
         Returns:
             Dict containing summary, daily_stats, top_users, and tool_usage
         """
-        qc = get_query_client()
-        if not qc:
-            # No cache available, execute directly
-            return await self._fetch_usage_stats(days)
-        
-        # Create cache key
-        key = keys.assistant_usage_stats(days)
-        
-        # Define fetcher function
-        async def fetcher() -> Dict[str, Any]:
-            return await self._fetch_usage_stats(days)
-        
-        # Query with cache (longer TTL for expensive aggregation)
-        result: Dict[str, Any] = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=60, stale_ttl=600)
-        return result
-
-    async def _fetch_usage_stats(self, days: int) -> Dict[str, Any]:
-        """Internal method to fetch usage stats from database."""
         from datetime import datetime, timedelta
 
         cutoff_date = datetime.now() - timedelta(days=days)

@@ -4,21 +4,21 @@ from datetime import datetime
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.extensions import get_query_client
 from app.queries.attempts_queries import AttemptsQueries
 from app.schemas.attempts import (BulkArchiveAttemptsRequest,
                                   BulkArchiveAttemptsResponse,
                                   UpdateChatCompletedAtRequest,
                                   UpdateChatCreatedAtRequest,
                                   UpdateChatTimestampResponse)
+from app.services.base import BaseService
 
 
-class AttemptsService:
+class AttemptsService(BaseService):
     """Service layer for attempts operations."""
 
     def __init__(self, conn: asyncpg.Connection):
         """Initialize attempts service."""
-        self.conn = conn
+        super().__init__(conn)
         self.queries = AttemptsQueries()
 
     async def bulk_archive_attempts(
@@ -50,7 +50,7 @@ class AttemptsService:
         """Update simulation chat createdAt timestamp."""
         # Parse ISO string to datetime
         created_at = datetime.fromisoformat(request.createdAt.replace('Z', '+00:00'))
-        
+
         # Update the createdAt timestamp
         query, params = self.queries.update_chat_created_at(request.chatId, created_at)
         result = await self.conn.execute(query, *params)
@@ -72,7 +72,7 @@ class AttemptsService:
         """Update simulation chat completedAt timestamp."""
         # Parse ISO string to datetime
         completed_at = datetime.fromisoformat(request.completedAt.replace('Z', '+00:00'))
-        
+
         # Update the completedAt timestamp
         query, params = self.queries.update_chat_completed_at(request.chatId, completed_at)
         result = await self.conn.execute(query, *params)
