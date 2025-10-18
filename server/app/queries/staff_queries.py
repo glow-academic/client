@@ -14,7 +14,7 @@ class StaffQueries:
         WITH profile_cohorts AS (
             SELECT 
                 cp.profile_id,
-                ARRAY_AGG(cp.cohort_id ORDER BY c.name) as cohort_ids
+                ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
             FROM cohort_profiles cp
             JOIN cohorts c ON c.id = cp.cohort_id
             WHERE cp.active = true
@@ -22,16 +22,17 @@ class StaffQueries:
         ),
         recent_runs AS (
             SELECT 
-                profile_id,
+                mrp.profile_id,
                 COUNT(*) as run_count
-            FROM model_runs
-            WHERE created_at >= NOW() - INTERVAL '24 hours'
-            GROUP BY profile_id
+            FROM model_runs mr
+            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+            WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY mrp.profile_id
         ),
         user_profile AS (
             SELECT role FROM profiles WHERE id = $2
         )
-        SELECT 
+        SELECT DISTINCT ON (p.id)
             p.id as profile_id,
             p.first_name,
             p.last_name,
@@ -61,9 +62,7 @@ class StaffQueries:
         LEFT JOIN recent_runs rr ON rr.profile_id = p.id
         CROSS JOIN user_profile up
         WHERE pd.department_id = ANY($1)
-        GROUP BY p.id, p.first_name, p.last_name, p.role, p.alias, p.active, 
-                 p.last_active, p.req_per_day, p.default_profile, pc.cohort_ids, rr.run_count, up.role
-        ORDER BY p.last_name, p.first_name
+        ORDER BY p.id, p.last_name, p.first_name
         """
 
         return (query, [department_ids, current_profile_id, campus_domain])

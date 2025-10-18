@@ -338,7 +338,7 @@ class CohortService:
                         email=row['email'],
                         initials=row['initials'],
                         active=row['active'],
-                        lastActive=row['lastActive'].isoformat() if row['lastActive'] else None,
+                        lastActive=row['lastactive'].isoformat() if row['lastactive'] else None,
                         cohort_ids=cohort_ids,
                         requests_per_day=row['requests_per_day'],
                         default_profile=row['default_profile'],
