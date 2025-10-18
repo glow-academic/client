@@ -155,12 +155,13 @@ class PageQueries:
                     s.id AS simulation_id,
                     s.title,
                     s.description,
-                    s.time_limit,
+                    stl.time_limit_seconds as time_limit,
                     s.rubric_id,
                     COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
                     r.points AS rubric_points,
                     r.pass_points AS rubric_pass_points
                 FROM simulations s
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 JOIN rubrics r ON r.id = s.rubric_id
                 WHERE (cardinality({dept_param_placeholder}) = 0 OR s.department_id = ANY({dept_param_placeholder}))
             ),
@@ -486,7 +487,6 @@ class PageQueries:
                     ap.profile_id,
                     sa.archived AS is_archived,
                     sa.infinite_mode,
-                    sa.infinite_mode_time_limit,
                     s.title AS simulation_name,
                     ARRAY(SELECT ss.scenario_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id ORDER BY ss.position) AS scenario_ids_assigned,
                     s.practice_simulation,
@@ -518,7 +518,6 @@ class PageQueries:
                     aj.practice_simulation,
                     aj.pass_pct,
                     aj.infinite_mode,
-                    aj.infinite_mode_time_limit,
                     aj.attempt_date,
                     aj.department_id,
                     CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
@@ -584,7 +583,6 @@ class PageQueries:
                         'numScenarios', fr.num_scenarios,
                         'numScenariosCompleted', fr.num_scenarios_completed,
                         'infiniteMode', fr.infinite_mode,
-                        'infiniteModeTimeLimit', fr.infinite_mode_time_limit,
                         'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                         'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                         'score', fr.score_percent,

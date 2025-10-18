@@ -11,7 +11,7 @@ from app.schemas.logs import (ActorData, BulkDeleteLogsRequest,
                               BulkDeleteLogsResponse, ContextData,
                               CreateLogRequest, CreateLogResponse, ErrorData,
                               LogItem, LogsListRequest, LogsListResponse,
-                              MetricsData, SubjectData)
+                              SubjectData)
 from app.services.base import BaseService, with_cache
 
 
@@ -72,7 +72,6 @@ class LogService(BaseService):
                     correlation_id=row['correlation_id'],
                     actor=self._parse_jsonb_to_model(row['actor'], ActorData),
                     subject=self._parse_jsonb_to_model(row['subject'], SubjectData),
-                    metrics=self._parse_jsonb_to_model(row['metrics'], MetricsData),
                     context=self._parse_jsonb_to_model(row['context'], ContextData),
                     error=self._parse_jsonb_to_model(row['error'], ErrorData),
                     created_at=row['created_at'].isoformat()
@@ -117,7 +116,6 @@ class LogService(BaseService):
         # Prepare JSONB fields
         actor_json = ensure_json(request.actor)
         subject_json = ensure_json(request.subject)
-        metrics_json = ensure_json(request.metrics)
         context_json = ensure_json(request.context)
         error_json = ensure_json(request.error)
 
@@ -132,7 +130,6 @@ class LogService(BaseService):
             correlation_id,
             json.dumps(actor_json) if actor_json else None,
             json.dumps(subject_json) if subject_json else None,
-            json.dumps(metrics_json) if metrics_json else None,
             json.dumps(context_json) if context_json else None,
             json.dumps(error_json) if error_json else None,
             datetime.now(timezone.utc),

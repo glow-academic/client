@@ -204,12 +204,18 @@ class ProviderService(BaseService):
             request.name,
             request.description,
             encrypted_api_key,
-            request.base_url,
             request.department_id,
         )
 
         if not result:
             raise ValueError("Failed to create provider")
+        
+        provider_id = str(result['id'])
+        
+        # Insert provider endpoint if base_url provided
+        if request.base_url:
+            endpoint_query = self.queries.insert_provider_endpoint()
+            await self.conn.execute(endpoint_query, provider_id, request.base_url)
 
         # Invalidate caches
         await self._invalidate_cache([
@@ -241,9 +247,13 @@ class ProviderService(BaseService):
             request.providerId,
             request.name,
             request.description,
-            request.base_url,
             request.department_id,
         )
+        
+        # Upsert provider endpoint if base_url provided
+        if request.base_url:
+            endpoint_query = self.queries.upsert_provider_endpoint()
+            await self.conn.execute(endpoint_query, request.providerId, request.base_url)
 
         # Update API key if provided (encrypt before storing)
         if request.api_key is not None:

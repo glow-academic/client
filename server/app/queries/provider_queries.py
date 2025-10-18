@@ -77,13 +77,14 @@ class ProviderQueries:
         """Build query to get provider by ID."""
         query = """
         SELECT 
-            name,
-            description,
-            api_key,
-            base_url,
-            department_id
-        FROM providers
-        WHERE id = $1
+            p.name,
+            p.description,
+            p.api_key,
+            pe.base_url,
+            p.department_id
+        FROM providers p
+        LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
+        WHERE p.id = $1
         """
         return (query, [provider_id])
 
@@ -127,21 +128,23 @@ class ProviderQueries:
         return (query, [dept_ids])
 
     def create_provider(self) -> Tuple[str, List[Any]]:
-        """Build query to create provider."""
+        """Build query to create provider.
+        
+        Note: base_url moved to provider_endpoints junction table.
+        Call insert_provider_endpoint() separately after creating provider.
+        """
         query = """
         INSERT INTO providers (
             name,
             description,
             api_key,
-            base_url,
             department_id
         )
         VALUES (
             $1,
             $2,
             $3,
-            $4,
-            $5
+            $4
         )
         RETURNING id
         """
@@ -153,13 +156,16 @@ class ProviderQueries:
         return (query, [provider_id])
 
     def update_provider(self) -> Tuple[str, List[Any]]:
-        """Build query to update provider."""
+        """Build query to update provider.
+        
+        Note: base_url moved to provider_endpoints junction table.
+        Call upsert_provider_endpoint() separately to update endpoint.
+        """
         query = """
         UPDATE providers SET
             name = $2,
             description = $3,
-            base_url = $4,
-            department_id = $5,
+            department_id = $4,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -258,3 +264,38 @@ class ProviderQueries:
         """Build query to delete model."""
         query = "DELETE FROM models WHERE id = $1"
         return (query, [model_id])
+
+    # ===== Provider Endpoints Junction Table Queries =====
+
+    def insert_provider_endpoint(self) -> Tuple[str, List[Any]]:
+        """Build query to insert provider endpoint.
+        
+        Params order: provider_id, base_url
+        """
+        query = """
+        INSERT INTO provider_endpoints (provider_id, base_url)
+        VALUES ($1, $2)
+        RETURNING *
+        """
+        return (query, [])
+
+    def upsert_provider_endpoint(self) -> Tuple[str, List[Any]]:
+        """Build query to upsert provider endpoint.
+        
+        Params order: provider_id, base_url
+        """
+        query = """
+        INSERT INTO provider_endpoints (provider_id, base_url)
+        VALUES ($1, $2)
+        ON CONFLICT (provider_id)
+        DO UPDATE SET
+            base_url = EXCLUDED.base_url,
+            updated_at = NOW()
+        RETURNING *
+        """
+        return (query, [])
+
+    def delete_provider_endpoint(self, provider_id: str) -> Tuple[str, List[Any]]:
+        """Build query to delete provider endpoint."""
+        query = "DELETE FROM provider_endpoints WHERE provider_id = $1"
+        return (query, [provider_id])

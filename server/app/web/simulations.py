@@ -91,11 +91,8 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                     )
 
             # Parse infinite_time_limit
-            infinite_time_limit_value = (
-                int(infinite_time_limit)
-                if isinstance(infinite_time_limit, (int, str)) and str(infinite_time_limit).isdigit()
-                else None
-            )
+            # Note: infinite_time_limit parameter removed - time limits now managed via
+            # simulation_time_limits junction table. Use infinite_mode boolean to bypass limits.
             
             # Use service layer to create attempt and chat
             from app.services.simulation_service import SimulationService
@@ -106,7 +103,6 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
                 profile_id=str(profile_id) if profile_id else None,
                 scenario_id_override=scenario_id_override,
                 infinite=infinite,
-                infinite_time_limit=infinite_time_limit_value,
                 department_id=department_id,
             )
 
@@ -332,14 +328,14 @@ async def _generate_hints_background(
     async with pool.acquire() as conn:
         try:
             logger.info(f"Background hint generation started for message {message_id}")
-            hint_ids = await run_hint_agent(
+            hint_results = await run_hint_agent(
                 chat_id=chat_id,
                 message_id=message_id,
                 department_id=department_id,
                 conn=conn,
                 sio_instance=sio_instance,
             )
-            logger.info(f"Background hint generation completed: {len(hint_ids)} hints created")
+            logger.info(f"Background hint generation completed: {len(hint_results)} hints created")
         except Exception as e:
             logger.error(f"Background hint generation failed for message {message_id}: {e}", exc_info=True)
 

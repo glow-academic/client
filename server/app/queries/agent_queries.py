@@ -854,9 +854,13 @@ class AgentQueries:
             Tuple of (query, params)
         """
         query = """
-        INSERT INTO simulation_hints (hint, simulation_message_id, created_at)
-        VALUES ($1, $2, NOW())
-        RETURNING id::text
+        INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+        VALUES (
+            $2, 
+            COALESCE((SELECT MAX(idx) + 1 FROM simulation_hints WHERE simulation_message_id = $2), 0),
+            $1
+        )
+        RETURNING simulation_message_id::text, idx
         """
         
         params: list[Any] = [hint_text, message_id]

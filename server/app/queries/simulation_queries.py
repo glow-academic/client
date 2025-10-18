@@ -33,7 +33,7 @@ class SimulationQueries:
                 s.id as simulation_id,
                 s.title as name,
                 s.description,
-                s.time_limit,
+                stl.time_limit_seconds as time_limit,
                 s.active,
                 s.default_simulation,
                 s.practice_simulation,
@@ -42,6 +42,7 @@ class SimulationQueries:
                 COALESCE(ss.num_scenarios, 0) as num_scenarios,
                 COALESCE(sa.attempt_count, 0) as attempt_count
             FROM simulations s
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
             LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
             WHERE s.department_id = ANY($1)
@@ -97,7 +98,6 @@ class SimulationQueries:
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
-            time_limit,
             rubric_id
         FROM simulations
         WHERE id = $1
@@ -191,7 +191,7 @@ class SimulationQueries:
         
         Params order: title, description, department_id, active, default_simulation, 
         practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
-        image_input_active, time_limit, rubric_id
+        image_input_active, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -205,10 +205,9 @@ class SimulationQueries:
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
-            time_limit,
             rubric_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id
         """
 
@@ -234,7 +233,7 @@ class SimulationQueries:
         
         Params order: title, description, department_id, active, default_simulation,
         practice_simulation, hints_enabled, input_guardrail_active, output_guardrail_active,
-        image_input_active, time_limit, rubric_id, simulation_id
+        image_input_active, rubric_id, simulation_id
         """
         return """
         UPDATE simulations SET
@@ -248,10 +247,9 @@ class SimulationQueries:
             input_guardrail_active = $8,
             output_guardrail_active = $9,
             image_input_active = $10,
-            time_limit = $11,
-            rubric_id = $12,
+            rubric_id = $11,
             updated_at = NOW()
-        WHERE id = $13
+        WHERE id = $12
         """
 
     def delete_simulation_scenarios(
@@ -276,7 +274,6 @@ class SimulationQueries:
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
-            time_limit,
             rubric_id
         FROM simulations
         WHERE id = $1
@@ -287,7 +284,7 @@ class SimulationQueries:
         """Build query to insert duplicate simulation.
         
         Params order: title, description, department_id, hints_enabled, input_guardrail_active,
-        output_guardrail_active, image_input_active, time_limit, rubric_id
+        output_guardrail_active, image_input_active, rubric_id
         """
         return """
         INSERT INTO simulations (
@@ -301,7 +298,6 @@ class SimulationQueries:
             input_guardrail_active,
             output_guardrail_active,
             image_input_active,
-            time_limit,
             rubric_id
         )
         VALUES (
@@ -315,8 +311,7 @@ class SimulationQueries:
             $5,
             $6,
             $7,
-            $8,
-            $9
+            $8
         )
         RETURNING id
         """
@@ -351,16 +346,42 @@ class SimulationQueries:
         query = "DELETE FROM simulations WHERE id = $1"
         return (query, [simulation_id])
 
+    # ===== Simulation Time Limits Junction Table Queries =====
+
+    def insert_simulation_time_limit(self) -> str:
+        """Build query to insert simulation time limit.
+        
+        Params order: simulation_id, time_limit_seconds
+        """
+        return """
+        INSERT INTO simulation_time_limits (simulation_id, time_limit_seconds)
+        VALUES ($1, $2)
+        """
+
+    def delete_simulation_time_limit(self, simulation_id: str) -> Tuple[str, List[Any]]:
+        """Build query to delete simulation time limit."""
+        query = "DELETE FROM simulation_time_limits WHERE simulation_id = $1"
+        return (query, [simulation_id])
+
+    def get_simulation_time_limit(self, simulation_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get simulation time limit."""
+        query = """
+        SELECT time_limit_seconds 
+        FROM simulation_time_limits 
+        WHERE simulation_id = $1 AND active = true
+        """
+        return (query, [simulation_id])
+
     # ===== WebSocket Simulation Attempt Queries =====
 
     def create_attempt(self) -> str:
         """Build query to create simulation attempt.
         
-        Params order: simulation_id, infinite_mode, infinite_mode_time_limit
+        Params order: simulation_id, infinite_mode
         """
         return """
-        INSERT INTO simulation_attempts (simulation_id, infinite_mode, infinite_mode_time_limit)
-        VALUES ($1, $2, $3)
+        INSERT INTO simulation_attempts (simulation_id, infinite_mode)
+        VALUES ($1, $2)
         RETURNING *
         """
 
@@ -620,9 +641,10 @@ class SimulationQueries:
                 s.id,
                 s.title,
                 s.active,
-                s.time_limit,
+                stl.time_limit_seconds as time_limit,
                 s.created_at
             FROM simulations s
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE {where_clause}
             LIMIT ${{param_count}}
         """
@@ -640,12 +662,8 @@ class SimulationQueries:
         """
         return "UPDATE simulation_chats SET created_at = $1 WHERE id = $2"
 
-    def update_chat_completed_at(self) -> str:
-        """Build query to update chat completed_at timestamp.
-        
-        Params order: completed_at, chat_id
-        """
-        return "UPDATE simulation_chats SET completed_at = $1 WHERE id = $2"
+    # update_chat_completed_at removed - completed_at column dropped
+    # Use completed boolean + updated_at instead
 
     def insert_error_message(self) -> str:
         """Build query to insert an error message in simulation chat.
@@ -751,7 +769,7 @@ class SimulationQueries:
             WHERE sa.simulation_id = $1
         )
         SELECT 
-            s.id, s.title, s.active, s.time_limit, s.created_at,
+            s.id, s.title, s.active, stl.time_limit_seconds as time_limit, s.created_at,
             -- Rubric data (LEFT JOIN, single row)
             jsonb_build_object(
                 'id', r.id, 
@@ -782,6 +800,7 @@ class SimulationQueries:
             -- Stats from CTE
             st.total_attempts, st.total_graded, st.total_passed
         FROM simulations s
+        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         LEFT JOIN rubrics r ON r.id = s.rubric_id
         LEFT JOIN cohort_simulations cs ON cs.simulation_id = s.id AND cs.active = true
         LEFT JOIN cohorts c ON c.id = cs.cohort_id
@@ -789,7 +808,7 @@ class SimulationQueries:
         LEFT JOIN scenarios sc ON sc.id = ss.scenario_id
         CROSS JOIN stats st
         WHERE s.id = $1
-        GROUP BY s.id, s.title, s.active, s.time_limit, s.created_at, r.id, r.name, 
+        GROUP BY s.id, s.title, s.active, stl.time_limit_seconds, s.created_at, r.id, r.name, 
                  r.description, r.points, r.pass_points, st.total_attempts, 
                  st.total_graded, st.total_passed
         """
@@ -811,7 +830,6 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
             sa.created_at,
             sa.simulation_id,
             sa.infinite_mode,
-            sa.infinite_mode_time_limit,
             sa.archived,
             s.id as sim_id,
             s.title as sim_title,
@@ -824,12 +842,13 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
             s.input_guardrail_active as sim_input_guardrail_active,
             s.output_guardrail_active as sim_output_guardrail_active,
             s.image_input_active as sim_image_input_active,
-            s.time_limit as sim_time_limit,
+            stl.time_limit_seconds as sim_time_limit,
             s.rubric_id as sim_rubric_id,
             s.created_at as sim_created_at,
             s.updated_at as sim_updated_at
         FROM simulation_attempts sa
         JOIN simulations s ON s.id = sa.simulation_id
+        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         WHERE sa.id = $1
     """, attempt_id_str)
     
@@ -841,7 +860,6 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         "createdAt": attempt_result['created_at'].isoformat(),
         "simulationId": str(attempt_result['simulation_id']),
         "infiniteMode": attempt_result['infinite_mode'],
-        "infiniteModeTimeLimit": attempt_result['infinite_mode_time_limit'],
         "archived": attempt_result['archived'],
     }
     
@@ -889,7 +907,6 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
             sc.scenario_id,
             sc.attempt_id,
             sc.completed,
-            sc.completed_at,
             sc.trace_id
         FROM simulation_chats sc
         WHERE sc.attempt_id = $1
@@ -975,13 +992,13 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
         if all_message_ids:
             hints_result = await conn.fetch("""
                 SELECT 
-                    id,
                     simulation_message_id,
+                    idx,
                     hint,
                     created_at
                 FROM simulation_hints
                 WHERE simulation_message_id = ANY($1::uuid[])
-                ORDER BY created_at
+                ORDER BY simulation_message_id, idx
             """, all_message_ids)
             
             for row in hints_result:
@@ -1328,7 +1345,6 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
                 "scenarioId": scenario_id,
                 "attemptId": str(chat_row['attempt_id']),
                 "completed": chat_row['completed'],
-                "completedAt": chat_row['completed_at'].isoformat() if chat_row['completed_at'] else None,
                 "traceId": str(chat_row['trace_id']) if chat_row['trace_id'] else None,
             },
             "scenario": scenarios.get(scenario_id),

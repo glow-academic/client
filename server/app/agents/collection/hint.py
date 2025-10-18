@@ -148,7 +148,7 @@ async def run_hint_agent(
     department_id: uuid.UUID,
     conn: asyncpg.Connection = Depends(get_db),
     sio_instance: Any = None,
-) -> List[uuid.UUID]:
+) -> List[dict[str, Any]]:
     """
     Generate 3 helpful hints for a GTA based on simulation conversation history.
     
@@ -160,7 +160,7 @@ async def run_hint_agent(
         sio_instance: Socket.IO instance for progress events
         
     Returns:
-        List of SimulationHints IDs (up to 3)
+        List of dicts with simulation_message_id and idx (composite PKs, up to 3)
     """
     try:
         # Clear previous results and set up socket context
@@ -280,12 +280,12 @@ async def run_hint_agent(
             )
         
         # Create SimulationHints records
-        hint_ids = []
+        hint_ids: List[dict[str, Any]] = []
         for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
             if hint_text:  # Only save non-empty hints
-                hint_id = await service.create_simulation_hint(hint_text, message_id)
-                hint_ids.append(hint_id)
-                logger.info(f"Created hint {i}: {hint_text[:80]}...")
+                hint_result = await service.create_simulation_hint(hint_text, message_id)
+                hint_ids.append(hint_result)
+                logger.info(f"Created hint {i} (idx={hint_result['idx']}): {hint_text[:80]}...")
         
         logger.info(
             f"Successfully generated {len(hint_ids)} hints for message {message_id} "
@@ -298,7 +298,7 @@ async def run_hint_agent(
             "message": "Hint generation completed successfully",
             "chat_id": str(chat_id),
             "message_id": str(message_id),
-            "hint_ids": [str(hid) for hid in hint_ids],
+            "hint_ids": [f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids],
             "hints_count": len(hint_ids),
         })
         

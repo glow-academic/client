@@ -80,7 +80,6 @@ export const LogItemSchema = z.object({
   correlation_id: z.string().nullable(),
   actor: ActorDataSchema,
   subject: SubjectDataSchema,
-  metrics: MetricsDataSchema,
   context: ContextDataSchema,
   error: ErrorDataSchema,
   created_at: z.string(),

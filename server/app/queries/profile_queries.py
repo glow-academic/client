@@ -19,7 +19,7 @@ class ProfileQueries:
             p.viewed_intro,
             p.viewed_chat,
             p.default_profile,
-            p.req_per_day,
+            prl.requests_per_day as req_per_day,
             p.last_login,
             p.last_active,
             p.created_at,
@@ -27,6 +27,7 @@ class ProfileQueries:
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         WHERE p.id = $1
         """
         return (query, [profile_id])
@@ -42,7 +43,7 @@ class ProfileQueries:
             "lastLogin": "last_login",
             "viewedIntro": "viewed_intro",
             "viewedChat": "viewed_chat",
-            "reqPerDay": "req_per_day",
+            # reqPerDay moved to profile_request_limits junction table
             "lastActive": "last_active",
             "defaultProfile": "default_profile",
             # These are already snake_case or match
@@ -82,7 +83,7 @@ class ProfileQueries:
             viewed_intro,
             viewed_chat,
             default_profile,
-            req_per_day,
+            (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = id AND active = true LIMIT 1) as req_per_day,
             last_login,
             last_active,
             created_at,
@@ -106,7 +107,7 @@ class ProfileQueries:
             p.viewed_intro,
             p.viewed_chat,
             p.default_profile,
-            p.req_per_day,
+            prl.requests_per_day as req_per_day,
             p.last_login,
             p.last_active,
             p.created_at,
@@ -114,6 +115,7 @@ class ProfileQueries:
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         WHERE p.id != $1
         ORDER BY p.first_name, p.last_name
         """
@@ -134,7 +136,7 @@ class ProfileQueries:
             p.viewed_intro,
             p.viewed_chat,
             p.default_profile,
-            p.req_per_day,
+            prl.requests_per_day as req_per_day,
             p.last_login,
             p.last_active,
             p.created_at,
@@ -142,8 +144,9 @@ class ProfileQueries:
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         WHERE p.id != $1
-          AND p.role IN ('instructional', 'ta', 'guest')
+        AND p.role IN ('instructional', 'ta', 'guest')
         ORDER BY p.first_name, p.last_name
         """
         return (query, [profile_id])
@@ -163,7 +166,7 @@ class ProfileQueries:
             p.viewed_intro,
             p.viewed_chat,
             p.default_profile,
-            p.req_per_day,
+            prl.requests_per_day as req_per_day,
             p.last_login,
             p.last_active,
             p.created_at,
@@ -171,6 +174,7 @@ class ProfileQueries:
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         WHERE p.id != $1
           AND p.role IN ('ta', 'guest')
         ORDER BY p.first_name, p.last_name
@@ -199,7 +203,7 @@ class ProfileQueries:
             p.viewed_intro,
             p.viewed_chat,
             p.default_profile,
-            p.req_per_day,
+            prl.requests_per_day as req_per_day,
             p.last_login,
             p.last_active,
             p.created_at,
@@ -207,6 +211,7 @@ class ProfileQueries:
             pd.department_id as primary_department_id
         FROM profiles p
         LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         WHERE p.alias = $1
         """
         return (query, [alias])

@@ -16,7 +16,6 @@ class LogQueries:
             correlation_id,
             actor,
             subject,
-            metrics,
             context,
             error,
             created_at
@@ -48,7 +47,6 @@ class LogQueries:
             al.correlation_id,
             al.actor,
             al.subject,
-            al.metrics,
             al.context,
             al.error,
             al.created_at,

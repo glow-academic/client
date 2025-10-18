@@ -345,7 +345,6 @@ class SimulationService(BaseService):
                 request.input_guardrail_active,
                 request.output_guardrail_active,
                 request.image_input_active,
-                request.time_limit,
                 request.rubric_id,
             )
 
@@ -353,6 +352,11 @@ class SimulationService(BaseService):
                 raise ValueError("Failed to create simulation")
 
             simulation_id = str(result['id'])
+            
+            # Insert time limit if provided (into junction table)
+            if request.time_limit is not None:
+                time_limit_query = self.queries.insert_simulation_time_limit()
+                await self.conn.execute(time_limit_query, simulation_id, request.time_limit)
 
             # Insert scenario relationships
             insert_query = self.queries.insert_simulation_scenario()
@@ -402,10 +406,18 @@ class SimulationService(BaseService):
                 request.input_guardrail_active,
                 request.output_guardrail_active,
                 request.image_input_active,
-                request.time_limit,
                 request.rubric_id,
                 request.simulationId,
             )
+            
+            # Update time limit in junction table
+            # First delete existing, then insert if provided
+            delete_query, delete_params = self.queries.delete_simulation_time_limit(request.simulationId)
+            await self.conn.execute(delete_query, *delete_params)
+            
+            if request.time_limit is not None:
+                insert_query = self.queries.insert_simulation_time_limit()
+                await self.conn.execute(insert_query, request.simulationId, request.time_limit)
 
             # Delete existing scenarios
             query, params = self.queries.delete_simulation_scenarios(request.simulationId)
@@ -457,12 +469,25 @@ class SimulationService(BaseService):
                 result['input_guardrail_active'],
                 result['output_guardrail_active'],
                 result['image_input_active'],
-                result['time_limit'],
                 result['rubric_id'],
             )
 
             if not new_simulation:
                 raise ValueError("Failed to create duplicate simulation")
+            
+            new_simulation_id = str(new_simulation['id'])
+            
+            # Copy time limit if original has one
+            get_limit_query, get_limit_params = self.queries.get_simulation_time_limit(request.simulationId)
+            time_limit_result = await self.conn.fetchrow(get_limit_query, *get_limit_params)
+            
+            if time_limit_result:
+                insert_limit_query = self.queries.insert_simulation_time_limit()
+                await self.conn.execute(
+                    insert_limit_query,
+                    new_simulation_id,
+                    time_limit_result['time_limit_seconds']
+                )
 
             # Copy simulation_scenarios relationships
             copy_query = self.queries.copy_simulation_scenarios()
@@ -530,7 +555,6 @@ class SimulationService(BaseService):
         profile_id: str | None,
         scenario_id_override: str | None,
         infinite: bool,
-        infinite_time_limit: int | None,
         department_id: str,
     ) -> Dict[str, Any]:
         """Create simulation attempt with all related entities.
@@ -560,8 +584,7 @@ class SimulationService(BaseService):
         new_attempt = await self.conn.fetchrow(
             query,
             simulation_id,
-            infinite,
-            infinite_time_limit
+            infinite
         )
         attempt_id = new_attempt['id']
 

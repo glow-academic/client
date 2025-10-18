@@ -313,8 +313,8 @@ class DocumentService(BaseService):
             request.department_id,
         )
 
-        # Update tags - delete existing and insert new
-        query, params = self.queries.delete_document_tags(request.documentId)
+        # Update parameter items - delete existing and insert new
+        query, params = self.queries.delete_document_parameter_items(request.documentId)
         await self.conn.execute(query, *params)
 
         # Transaction handled
@@ -343,8 +343,8 @@ class DocumentService(BaseService):
             request.department_id,
         )
 
-        # Update tags for all documents - delete existing and insert new
-        query, params = self.queries.delete_document_tags_bulk(request.documentIds)
+        # Update parameter items for all documents - delete existing and insert new
+        query, params = self.queries.delete_document_parameter_items_bulk(request.documentIds)
         await self.conn.execute(query, *params)
 
         

@@ -57,22 +57,8 @@ class DocumentQueries:
 
         return (query, [department_ids, profile_id])
 
-    def get_tag_mapping(
-        self, sim_ids: List[str], tag_idxs: List[int]
-    ) -> Tuple[str, List[Any]]:
-        """Build query for tag mapping."""
-        query = """
-        SELECT 
-            simulation_id,
-            idx,
-            name,
-            (simulation_id::text || '_' || idx::text) as tag_id
-        FROM simulation_tags
-        WHERE (simulation_id, idx) IN (
-            SELECT unnest($1::uuid[]), unnest($2::integer[])
-        )
-        """
-        return (query, [sim_ids, tag_idxs])
+    # get_tag_mapping removed - simulation_tags table dropped
+    # Use get_parameter_item_mapping instead
 
     def get_scenario_mapping(
         self, scenario_ids: List[str]
@@ -96,13 +82,16 @@ class DocumentQueries:
         """
         return (query, [document_id])
 
-    def get_document_tags(self, document_id: str) -> Tuple[str, List[Any]]:
-        """Build query to get document tags."""
+    def get_document_parameter_items(self, document_id: str) -> Tuple[str, List[Any]]:
+        """Build query to get parameter items linked to document."""
         query = """
         SELECT 
-            (simulation_id::text || '_' || tag_idx::text) as tag_id
-        FROM simulation_tag_documents
-        WHERE document_id = $1 AND active = true
+            dpi.parameter_item_id,
+            dpi.document_id,
+            dpi.active,
+            dpi.created_at
+        FROM document_parameter_items dpi
+        WHERE dpi.document_id = $1 AND dpi.active = true
         """
         return (query, [document_id])
 
@@ -119,14 +108,18 @@ class DocumentQueries:
         """
         return (query, [profile_id])
 
-    def get_valid_tags(self, dept_ids: List[str]) -> Tuple[str, List[Any]]:
-        """Build query for valid tags."""
+    def get_valid_parameter_items(self, dept_ids: List[str]) -> Tuple[str, List[Any]]:
+        """Build query for valid parameter items for departments."""
         query = """
         SELECT DISTINCT
-            (st.simulation_id::text || '_' || st.idx::text) as tag_id
-        FROM simulation_tags st
-        JOIN simulations s ON s.id = st.simulation_id
-        WHERE s.department_id = ANY($1) AND s.active = true
+            pi.id,
+            pi.name,
+            pi.value,
+            pi.parameter_id
+        FROM parameter_items pi
+        JOIN parameters p ON p.id = pi.parameter_id
+        WHERE p.department_id = ANY($1) AND p.active = true
+        ORDER BY pi.name
         """
         return (query, [dept_ids])
 
@@ -147,12 +140,13 @@ class DocumentQueries:
     def get_document_tags_bulk(
         self, document_ids: List[str]
     ) -> Tuple[str, List[Any]]:
-        """Build query to get tags for multiple documents."""
+        """Build query to get parameter items for multiple documents."""
         query = """
         SELECT DISTINCT
-            (simulation_id::text || '_' || tag_idx::text) as tag_id
-        FROM simulation_tag_documents
-        WHERE document_id = ANY($1) AND active = true
+            dpi.document_id,
+            dpi.parameter_item_id
+        FROM document_parameter_items dpi
+        WHERE dpi.document_id = ANY($1) AND dpi.active = true
         """
         return (query, [document_ids])
 
@@ -179,31 +173,28 @@ class DocumentQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_document_tags(
+    def delete_document_parameter_items(
         self, document_id: str
     ) -> Tuple[str, List[Any]]:
-        """Build query to delete document tags."""
+        """Build query to delete document parameter items."""
         query = """
-        DELETE FROM simulation_tag_documents WHERE document_id = $1
+        DELETE FROM document_parameter_items WHERE document_id = $1
         """
         return (query, [document_id])
 
-    def insert_document_tag(self) -> Tuple[str, List[Any]]:
-        """Build query to insert document tag."""
+    def insert_document_parameter_item(self) -> Tuple[str, List[Any]]:
+        """Build query to insert document parameter item.
+        
+        Params order: document_id, parameter_item_id
+        """
         query = """
-        INSERT INTO simulation_tag_documents (
-            simulation_id,
-            tag_idx,
+        INSERT INTO document_parameter_items (
             document_id,
-            active
+            parameter_item_id
         )
-        VALUES (
-            $1,
-            $2,
-            $3,
-            true
-        )
-        ON CONFLICT DO NOTHING
+        VALUES ($1, $2)
+        ON CONFLICT (document_id, parameter_item_id)
+        DO UPDATE SET active = true, updated_at = NOW()
         """
         return (query, [])  # Will be filled at execution time
 
@@ -228,12 +219,12 @@ class DocumentQueries:
         """
         return (query, [])  # Will be filled at execution time
 
-    def delete_document_tags_bulk(
+    def delete_document_parameter_items_bulk(
         self, document_ids: List[str]
     ) -> Tuple[str, List[Any]]:
-        """Build query to delete tags for multiple documents."""
+        """Build query to delete parameter items for multiple documents."""
         query = """
-        DELETE FROM simulation_tag_documents WHERE document_id = ANY($1)
+        DELETE FROM document_parameter_items WHERE document_id = ANY($1)
         """
         return (query, [document_ids])
 

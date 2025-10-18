@@ -705,7 +705,7 @@ class AgentService(BaseService):
 
     async def create_simulation_hint(
         self, hint_text: str, message_id: uuid.UUID
-    ) -> uuid.UUID:
+    ) -> Dict[str, Any]:
         """
         Create a simulation hint for a message.
         
@@ -714,17 +714,20 @@ class AgentService(BaseService):
             message_id: UUID of the message
         
         Returns:
-            UUID of created hint
+            Dict with simulation_message_id and idx (composite PK)
         """
         message_id_str = str(message_id)
         
         query, params = self.queries.create_simulation_hint(hint_text, message_id_str)
-        result = await self.conn.fetchval(query, *params)
+        result = await self.conn.fetchrow(query, *params)
         
         # Invalidate simulation messages cache
         await self._invalidate_cache([keys.tag_agent_all()])
         
-        return uuid.UUID(result)
+        return {
+            "simulation_message_id": str(result['simulation_message_id']),
+            "idx": result['idx']
+        }
 
     @with_cache(lambda self, message_id, chat_id, department_id: keys.agent_hint_context(str(message_id), str(chat_id), str(department_id)))
     async def get_hint_run_context(

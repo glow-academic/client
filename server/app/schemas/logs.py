@@ -77,7 +77,6 @@ class LogItem(BaseModel):
     correlation_id: Optional[str]
     actor: Optional[ActorData]
     subject: Optional[SubjectData]
-    metrics: Optional[MetricsData]
     context: Optional[ContextData]
     error: Optional[ErrorData]
     created_at: str
@@ -114,7 +113,6 @@ class CreateLogRequest(BaseModel):
     correlation: Optional[CorrelationData] = None
     actor: Optional[Dict[str, Any]] = None
     subject: Optional[Dict[str, Any]] = None
-    metrics: Optional[Dict[str, Any]] = None
     context: Optional[Dict[str, Any]] = None
     error: Optional[Dict[str, Any]] = None
 
