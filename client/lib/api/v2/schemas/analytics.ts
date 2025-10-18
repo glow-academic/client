@@ -29,7 +29,7 @@ export const AnalyticsFiltersSchema = z.object({
   simulationFilters: z
     .array(z.enum(["general", "practice", "archived"]))
     .optional(),
-  profileId: z.string().optional(),
+  profileId: z.string().nullable().optional(),
   departmentIds: z.array(z.string()).optional(),
 });
 

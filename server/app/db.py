@@ -29,14 +29,26 @@ async def init_db_pool() -> None:
     if not db_url:
         raise ValueError("Database url is not set")
     
+    # Detect if we're connecting through PgBouncer
+    # PgBouncer in transaction mode requires disabling prepared statements
+    using_pgbouncer = db_host == "pgbouncer"
+    
     print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
     
-    _pool = await asyncpg.create_pool(
-        db_url,
-        min_size=5,
-        max_size=20,
-        command_timeout=60,
-    )
+    pool_config = {
+        "min_size": 5,
+        "max_size": 20,
+        "command_timeout": 60,
+    }
+    
+    # Disable prepared statements for PgBouncer transaction mode
+    if using_pgbouncer:
+        pool_config["statement_cache_size"] = 0
+        print("   ⚙️  PgBouncer detected: Disabling prepared statements for transaction mode compatibility")
+    else:
+        print("   ⚙️  Direct connection: Using prepared statements for better performance")
+    
+    _pool = await asyncpg.create_pool(db_url, **pool_config)
     
     print("✅ Database pool initialized")
 

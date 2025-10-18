@@ -918,7 +918,7 @@ export default function Dashboard({ profileId }: DashboardProps) {
 
       <SimulationHistory
         data={
-          bundle?.history.map((item) => ({
+          (bundle?.history || []).map((item) => ({
             ...item,
             date: new Date(item.date),
             passPct: item.passPct || 70,

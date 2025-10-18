@@ -50,6 +50,7 @@ class QueryClient:
         *,
         local_maxsize: int = 2048,
         channel: str = "qc:invalidate",
+        max_concurrent_refreshes: int = 5,
     ):
         """
         Initialize query client.
@@ -58,6 +59,7 @@ class QueryClient:
             redis_client: Redis async client instance
             local_maxsize: Maximum entries in local LRU cache
             channel: Redis Pub/Sub channel for invalidation broadcasts
+            max_concurrent_refreshes: Maximum number of concurrent background refresh tasks
         """
         self.redis = redis_client
         # Local cache with no TTL - we manage expiry manually
@@ -66,6 +68,8 @@ class QueryClient:
         self._stop = asyncio.Event()
         self._listener_task: Optional[asyncio.Task[Any]] = None
         self._refresh_tasks: set[asyncio.Task[Any]] = set()
+        # Semaphore to limit concurrent refresh operations
+        self._refresh_semaphore = asyncio.Semaphore(max_concurrent_refreshes)
 
     async def start(self) -> None:
         """Start the Pub/Sub listener for cache invalidation."""
@@ -227,11 +231,13 @@ class QueryClient:
         fresh_ttl: int,
         stale_ttl: int,
     ) -> None:
-        """Background refresh of stale data."""
+        """Background refresh of stale data with concurrency limiting."""
         try:
-            data = await fetcher()
-            await self._write(hkey, data, tags, fresh_ttl, stale_ttl)
-            logger.debug(f"Background refresh completed for key: {key.material()[:50]}")
+            # Use semaphore to limit concurrent refresh operations
+            async with self._refresh_semaphore:
+                data = await fetcher()
+                await self._write(hkey, data, tags, fresh_ttl, stale_ttl)
+                logger.debug(f"Background refresh completed for key: {key.material()[:50]}")
         except asyncio.CancelledError:
             pass
         except Exception as e:

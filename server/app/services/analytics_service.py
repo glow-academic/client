@@ -1,11 +1,11 @@
 """Analytics service layer - business logic for analytics operations."""
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 import asyncpg  # type: ignore
 from app.cache import keys
-from app.db import transaction
+from app.db import get_pool, transaction
 from app.extensions import get_query_client
 from app.queries.analytics.base import AnalyticsQueryBuilder
 from app.queries.analytics.bundle_queries import BundleQueries
@@ -62,6 +62,77 @@ class AnalyticsService:
         self.bundle_queries = BundleQueries()
         self.leaderboard_queries = LeaderboardQueries()
         self.pricing_queries = PricingQueries()
+
+    def _create_pool_fetcher(self, query_func: Callable[[], Tuple[str, List[Any]]], response_class: Any) -> Callable[[], Awaitable[Any]]:
+        """
+        Create a fetcher function that acquires its own database connection.
+        
+        This is critical for background refresh operations in the query cache.
+        Background tasks must not reuse the connection from the original request,
+        as asyncpg connections can only handle one operation at a time.
+        
+        Args:
+            query_func: Function that returns (query, params) tuple
+            response_class: Pydantic model class to validate the response
+            
+        Returns:
+            Async function that acquires a connection, runs the query, and returns validated response
+        """
+        async def fetcher() -> Any:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not available for background refresh")
+            
+            # Acquire own connection from pool
+            async with pool.acquire() as conn:
+                query, params = query_func()
+                result = await conn.fetchval(query, *params)
+                parsed_result = self._parse_json_strings_recursive(result or {})
+                return response_class.model_validate(parsed_result)
+        
+        return fetcher
+
+    def _create_pool_metric_fetcher(self, query_func: Callable[[], Tuple[str, List[Any]]]) -> Callable[[], Awaitable[MetricResponse]]:
+        """
+        Create a metric fetcher function that acquires its own database connection.
+        
+        This is a specialized version of _create_pool_fetcher for metric queries
+        that use the _execute_metric_query pattern.
+        
+        Args:
+            query_func: Function that returns (query, params) tuple
+            
+        Returns:
+            Async function that acquires a connection, runs the query, and returns MetricResponse
+        """
+        async def fetcher() -> MetricResponse:
+            pool = get_pool()
+            if not pool:
+                raise RuntimeError("Database pool not available for background refresh")
+            
+            # Acquire own connection from pool
+            async with pool.acquire() as conn:
+                query, params = query_func()
+                result = await conn.fetchrow(query, *params)
+                
+                if not result:
+                    return MetricResponse(
+                        hasData=False,
+                        method=Method.AVG,
+                        trendData=[],
+                        dataPoints=[],
+                    )
+                
+                # Parse result according to _execute_metric_query logic
+                parsed_result = self._parse_json_strings_recursive({
+                    "hasData": result.get("has_data"),
+                    "method": result.get("method"),
+                    "trendData": result.get("trend_data"),
+                    "dataPoints": result.get("data_points"),
+                })
+                return MetricResponse.model_validate(parsed_result)
+        
+        return fetcher
 
     def _parse_json_strings_recursive(self, obj: Any) -> Any:
         """Recursively parse JSON strings in nested structures.
@@ -137,8 +208,9 @@ class AnalyticsService:
         
         key = keys.analytics_average_score(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.average_score(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.average_score(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -147,8 +219,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -171,8 +243,9 @@ class AnalyticsService:
         
         key = keys.analytics_completion_percentage(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.completion_percentage(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.completion_percentage(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -181,8 +254,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -205,8 +278,9 @@ class AnalyticsService:
         
         key = keys.analytics_first_attempt_pass_rate(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.first_attempt_pass_rate(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.first_attempt_pass_rate(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -215,8 +289,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -237,8 +311,9 @@ class AnalyticsService:
         
         key = keys.analytics_highest_score(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.highest_score(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.highest_score(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -247,8 +322,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -271,8 +346,9 @@ class AnalyticsService:
         
         key = keys.analytics_messages_per_session(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.messages_per_session(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.messages_per_session(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -281,8 +357,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -305,8 +381,9 @@ class AnalyticsService:
         
         key = keys.analytics_persona_response_times(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.persona_response_times(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.persona_response_times(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -315,8 +392,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -339,8 +416,9 @@ class AnalyticsService:
         
         key = keys.analytics_session_efficiency(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.session_efficiency(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.session_efficiency(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -349,8 +427,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -371,8 +449,9 @@ class AnalyticsService:
         
         key = keys.analytics_stagnation_rate(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.stagnation_rate(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.stagnation_rate(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -381,8 +460,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -403,8 +482,9 @@ class AnalyticsService:
         
         key = keys.analytics_time_spent(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.time_spent(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.time_spent(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -413,8 +493,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -435,8 +515,9 @@ class AnalyticsService:
         
         key = keys.analytics_total_attempts(filters)
         
-        async def fetcher() -> MetricResponse:
-            query, params = self.header_queries.total_attempts(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.header_queries.total_attempts(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -445,8 +526,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            return await self._execute_metric_query(query, params)
         
+        fetcher = self._create_pool_metric_fetcher(query_func)
         result: MetricResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result
 
@@ -470,8 +551,9 @@ class AnalyticsService:
         
         key = keys.analytics_rubric_heatmap(filters)
         
-        async def fetcher() -> RubricHeatmapResponse:
-            query, params = self.primary_queries.rubric_heatmap(
+        # Create pool-aware fetcher that acquires its own connection
+        def query_func() -> Tuple[str, List[Any]]:
+            return self.primary_queries.rubric_heatmap(
                 start_date=filters.startDate,
                 end_date=filters.endDate,
                 cohort_ids=filters.cohortIds,
@@ -480,10 +562,8 @@ class AnalyticsService:
                 profile_id=filters.profileId,
                 department_ids=filters.departmentIds,
             )
-            result = await self.conn.fetchval(query, *params)
-            parsed_result = self._parse_json_strings_recursive(result or {})
-            return RubricHeatmapResponse.model_validate(parsed_result)
         
+        fetcher = self._create_pool_fetcher(query_func, RubricHeatmapResponse)
         result_data: RubricHeatmapResponse = await qc.query(key, fetcher, tags=list(key.tags()), fresh_ttl=30, stale_ttl=300)
         return result_data
 
