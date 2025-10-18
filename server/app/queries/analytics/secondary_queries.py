@@ -131,59 +131,109 @@ class SecondaryQueries:
             WITH filt AS (
                 SELECT * FROM analytics a WHERE {where_clause}
             ),
-            cohort_data AS (
-                SELECT
-                    c_id AS cohort_id
+            filt_x AS (
+                SELECT f.*, c_id
                 FROM filt f,
                 LATERAL unnest(f.cohort_ids) AS c_id
             ),
-            cohort_names AS (
-                SELECT DISTINCT
-                    cd.cohort_id,
-                    c.title AS cohort_name
-                FROM cohort_data cd
-                JOIN cohorts c ON c.id = cd.cohort_id
+            cohort_list AS (
+                SELECT DISTINCT 
+                    c.id, 
+                    c.title,
+                    ARRAY(SELECT cp.profile_id FROM cohort_profiles cp WHERE cp.cohort_id = c.id) AS profile_ids,
+                    ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id) AS simulation_ids
+                FROM cohorts c
+                JOIN (SELECT DISTINCT c_id FROM filt_x) fx ON fx.c_id = c.id
             ),
-            cohort_stats AS (
+            cohort_required AS (
+                SELECT cl.id AS cohort_id,
+                    ARRAY(
+                        SELECT DISTINCT s FROM unnest(cl.simulation_ids) s
+                        WHERE EXISTS (SELECT 1 FROM filt_x fx WHERE fx.c_id = cl.id AND fx.simulation_id = s)
+                    ) AS sim_ids
+                FROM cohort_list cl
+            ),
+            student_passes AS (
                 SELECT
-                    cn.cohort_id,
-                    cn.cohort_name,
-                    COUNT(DISTINCT f.profile_id)::int AS total_students,
-                    COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
-                    AVG(f.grade_percent)::float AS avg_score,
-                    (100.0 * COUNT(*) FILTER (WHERE f.grade_percent >= (f.rubric_pass_points * 100.0 / NULLIF(f.rubric_points, 0))) / NULLIF(COUNT(*), 0))::float AS pass_rate
-                FROM cohort_names cn
-                LEFT JOIN filt f ON cn.cohort_id = ANY(f.cohort_ids)
-                GROUP BY cn.cohort_id, cn.cohort_name
+                    fx.c_id AS cohort_id,
+                    fx.profile_id,
+                    fx.simulation_id,
+                    MAX((fx.passed)::int)::int AS passed_any
+                FROM filt_x fx
+                GROUP BY fx.c_id, fx.profile_id, fx.simulation_id
+            ),
+            cohort_attempts AS (
+                SELECT
+                    fx.c_id AS cohort_id,
+                    fx.attempt_id,
+                    MAX((fx.passed)::int)::int AS passed_any,
+                    AVG(fx.grade_percent)::float AS avg_grade_attempt
+                FROM filt_x fx
+                GROUP BY fx.c_id, fx.attempt_id
+            ),
+            cohort_agg AS (
+                SELECT
+                    cl.id AS cohort_id,
+                    cl.title AS cohort_name,
+                    COALESCE(cardinality(cl.profile_ids), 0) AS total_students_declared,
+                    COUNT(DISTINCT ca.attempt_id) AS total_attempts,
+                    SUM(ca.passed_any)::int AS passed_attempts,
+                    (100.0 * AVG(ca.passed_any))::float AS pass_rate_attempts,
+                    AVG(ca.avg_grade_attempt)::float AS avg_percentage_score,
+                    (SELECT COUNT(*) FROM (
+                        SELECT profile_id
+                        FROM filt_x fx2
+                        WHERE fx2.c_id = cl.id
+                        GROUP BY profile_id
+                        HAVING 
+                            COUNT(DISTINCT simulation_id) = cardinality(cl.simulation_ids)
+                            AND NOT EXISTS (
+                                SELECT 1 
+                                FROM (
+                                    SELECT 
+                                        simulation_id,
+                                        MAX(CASE WHEN grade_percent IS NULL THEN 0 ELSE grade_percent END) as best_score
+                                    FROM filt_x fx3 
+                                    WHERE fx3.c_id = cl.id 
+                                        AND fx3.profile_id = fx2.profile_id
+                                    GROUP BY simulation_id
+                                ) sim_bests
+                                WHERE sim_bests.best_score < 80.0
+                            )
+                    ) s) AS passed_students,
+                    cardinality(cl.simulation_ids) AS simulation_count,
+                    cardinality(cl.simulation_ids) AS required_simulations
+                FROM cohort_list cl
+                LEFT JOIN cohort_attempts ca ON ca.cohort_id = cl.id
+                GROUP BY cl.id, cl.title, cl.profile_ids, cl.simulation_ids
             ),
             daily_data AS (
                 SELECT
-                    to_char(f.attempt_created_at, 'YYYY-MM-DD') AS date,
-                    AVG(f.grade_percent)::float AS avg_score,
-                    c_id::text AS cohort_id
-                FROM filt f,
-                LATERAL unnest(f.cohort_ids) AS c_id
-                WHERE f.grade_percent IS NOT NULL
-                GROUP BY date, c_id
+                    to_char(date_trunc('day', fx.chat_created_at), 'MM/DD') AS date,
+                    AVG(fx.grade_percent)::float AS avg_score,
+                    fx.c_id::text AS cohort_id
+                FROM filt_x fx
+                WHERE fx.grade_percent IS NOT NULL
+                GROUP BY fx.c_id, date_trunc('day', fx.chat_created_at)
             )
             SELECT json_build_object(
                 'cohortData', COALESCE((SELECT json_agg(json_build_object(
                     'id', cohort_id::text,
                     'name', cohort_name,
-                    'passRate', ROUND(COALESCE(pass_rate, 0))::int,
-                    'avgPercentageScore', ROUND(COALESCE(avg_score, 0))::int,
-                    'totalStudents', total_students,
-                    'passedStudents', 0,
-                    'totalAttempts', total_attempts,
-                    'passedAttempts', 0,
-                    'simulationCount', 0,
-                    'requiredSimulations', 0
-                )) FROM cohort_stats), '[]'::json),
+                    'passRate', ROUND(COALESCE(pass_rate_attempts, 0))::int,
+                    'avgPercentageScore', ROUND(COALESCE(avg_percentage_score, 0))::int,
+                    'totalStudents', total_students_declared,
+                    'passedStudents', COALESCE(passed_students, 0),
+                    'totalAttempts', COALESCE(total_attempts, 0),
+                    'passedAttempts', COALESCE(passed_attempts, 0),
+                    'simulationCount', COALESCE(simulation_count, 0),
+                    'requiredSimulations', COALESCE(required_simulations, 0)
+                ) ORDER BY cohort_name) FROM cohort_agg), '[]'::json),
                 'dailyData', COALESCE((SELECT json_agg(json_build_object(
                     'date', date,
                     'avgScore', ROUND(COALESCE(avg_score, 0))::int,
                     'cohortId', cohort_id
-                )) FROM daily_data), '[]'::json),
+                ) ORDER BY cohort_id, date) FROM daily_data), '[]'::json),
                 'cohortFacts', '[]'::json,
                 'dailyFacts', '[]'::json,
                 'validSimulationIds', COALESCE((
