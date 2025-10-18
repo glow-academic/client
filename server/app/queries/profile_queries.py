@@ -511,12 +511,13 @@ class ProfileQueries:
             s.title,
             s.description,
             s.department_id,
-            s.time_limit,
+            stl.time_limit_seconds as time_limit,
             s.active,
             s.default_simulation,
             s.practice_simulation
         FROM simulations s
         JOIN cohort_simulations cs ON cs.simulation_id = s.id
+        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         WHERE cs.cohort_id = ANY($1::uuid[])
           AND s.active = true
         ORDER BY s.title

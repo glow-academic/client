@@ -24,8 +24,8 @@ class LogService(BaseService):
         self.queries = LogQueries()
 
     def _parse_jsonb_to_model(
-        self, data: Any, model_class: type
-    ) -> Optional[Any]:
+        self, data: Any, model_class: type[ActorData] | type[SubjectData] | type[ContextData] | type[ErrorData]
+    ) -> ActorData | SubjectData | ContextData | ErrorData | None:
         """
         Parse JSONB data to Pydantic model.
 
@@ -70,10 +70,10 @@ class LogService(BaseService):
                     level=row['level'],
                     message=row['message'],
                     correlation_id=row['correlation_id'],
-                    actor=self._parse_jsonb_to_model(row['actor'], ActorData),
-                    subject=self._parse_jsonb_to_model(row['subject'], SubjectData),
-                    context=self._parse_jsonb_to_model(row['context'], ContextData),
-                    error=self._parse_jsonb_to_model(row['error'], ErrorData),
+                    actor=cast(ActorData, self._parse_jsonb_to_model(row['actor'], ActorData)),
+                    subject=cast(SubjectData, self._parse_jsonb_to_model(row['subject'], SubjectData)),
+                    context=cast(ContextData, self._parse_jsonb_to_model(row['context'], ContextData)),
+                    error=cast(ErrorData, self._parse_jsonb_to_model(row['error'], ErrorData)),
                     created_at=row['created_at'].isoformat()
                     if row['created_at']
                     else "",
@@ -95,43 +95,41 @@ class LogService(BaseService):
         Returns:
             CreateLogResponse
         """
-        # Helper to ensure JSON-serializable values
-        def ensure_json(value: Any) -> Optional[Dict[str, Any]]:
-            if value is None:
-                return None
-            if not isinstance(value, dict):
-                return None
+        # Helper to ensure JSON-serializable values with defaults
+        def ensure_json(value: Any, default: Dict[str, Any]) -> Dict[str, Any]:
+            if value is None or not isinstance(value, dict):
+                return default
             try:
                 # Verify it's JSON-serializable
                 json.dumps(value)
-                return value
+                return cast(Dict[str, Any], value)
             except (TypeError, ValueError):
-                return None
+                return default
 
-        # Extract correlation_id from correlation object
-        correlation_id = None
-        if request.correlation:
+        # Extract correlation_id from correlation object, use default if not provided
+        correlation_id = "default.correlation"
+        if request.correlation and request.correlation.correlationId:
             correlation_id = request.correlation.correlationId
 
-        # Prepare JSONB fields
-        actor_json = ensure_json(request.actor)
-        subject_json = ensure_json(request.subject)
-        context_json = ensure_json(request.context)
-        error_json = ensure_json(request.error)
+        # Prepare JSONB fields with database-matching defaults
+        actor_json = ensure_json(request.actor, {"userId": None, "profileId": None})
+        subject_json = ensure_json(request.subject, {"entityId": None, "entityType": None})
+        context_json = ensure_json(request.context, {"route": None, "function": None, "component": None})
+        error_json = ensure_json(request.error, {"code": None, "name": None, "stack": None, "message": None})
 
         # Insert log entry
         insert_query, _ = self.queries.insert_log()
 
         result = await self.conn.fetchrow(
             insert_query,
-            request.event or "legacy.message",
-            request.level or "info",
+            request.event,
+            request.level,
             request.message,
             correlation_id,
-            json.dumps(actor_json) if actor_json else None,
-            json.dumps(subject_json) if subject_json else None,
-            json.dumps(context_json) if context_json else None,
-            json.dumps(error_json) if error_json else None,
+            json.dumps(actor_json),
+            json.dumps(subject_json),
+            json.dumps(context_json),
+            json.dumps(error_json),
             datetime.now(timezone.utc),
         )
 

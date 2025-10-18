@@ -387,9 +387,10 @@ class CohortQueries:
                 s.id,
                 s.title,
                 s.active,
-                s.time_limit
+                stl.time_limit_seconds as time_limit
             FROM simulations s
             JOIN cohort_simulations cs ON s.id = cs.simulation_id
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE cs.cohort_id = $1 AND cs.active = true
         )
         SELECT 
@@ -529,7 +530,7 @@ class CohortQueries:
                     'id', s.id,
                     'title', s.title,
                     'active', s.active,
-                    'time_limit', s.time_limit
+                    'time_limit', stl.time_limit_seconds
                 )) FILTER (WHERE s.id IS NOT NULL),
                 '[]'::jsonb
             ) as simulations
@@ -538,6 +539,7 @@ class CohortQueries:
         LEFT JOIN profiles p ON p.id = cp.profile_id
         LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
         LEFT JOIN simulations s ON s.id = cs.simulation_id AND s.active = true
+        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         WHERE c.id = $1
         GROUP BY c.id, c.title, c.description, c.active, c.created_at
         """

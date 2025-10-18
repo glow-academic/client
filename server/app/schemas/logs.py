@@ -73,12 +73,12 @@ class LogItem(BaseModel):
     log_id: int
     event: str
     level: str
-    message: Optional[str]
-    correlation_id: Optional[str]
-    actor: Optional[ActorData]
-    subject: Optional[SubjectData]
-    context: Optional[ContextData]
-    error: Optional[ErrorData]
+    message: str
+    correlation_id: str
+    actor: ActorData
+    subject: SubjectData
+    context: ContextData
+    error: ErrorData
     created_at: str
     actor_name: Optional[str]
 
@@ -107,14 +107,14 @@ class CorrelationData(BaseModel):
 class CreateLogRequest(BaseModel):
     """Request to create a log entry."""
 
-    event: Optional[str] = "legacy.message"
-    level: Optional[str] = "info"
-    message: Optional[str] = None
-    correlation: Optional[CorrelationData] = None
-    actor: Optional[Dict[str, Any]] = None
-    subject: Optional[Dict[str, Any]] = None
-    context: Optional[Dict[str, Any]] = None
-    error: Optional[Dict[str, Any]] = None
+    event: str = "legacy.message"
+    level: str = "info"
+    message: str = "Default Message"
+    correlation: CorrelationData = CorrelationData()
+    actor: Dict[str, Any] = {}
+    subject: Dict[str, Any] = {}
+    context: Dict[str, Any] = {}
+    error: Dict[str, Any] = {}
 
 
 class CreateLogResponse(BaseModel):

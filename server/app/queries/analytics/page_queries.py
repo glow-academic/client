@@ -641,13 +641,14 @@ class PageQueries:
                     s.id AS simulation_id,
                     s.title AS simulation_title,
                     s.description AS simulation_description,
-                    NULL::int AS time_limit,
+                    stl.time_limit_seconds AS time_limit,
                     s.rubric_id,
                     COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
                     r.points AS rubric_points,
                     r.pass_points AS rubric_pass_points,
                     s.updated_at
                 FROM simulations s
+                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 JOIN rubrics r ON r.id = s.rubric_id
                 WHERE s.active = TRUE
                   AND s.practice_simulation = TRUE

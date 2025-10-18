@@ -684,8 +684,9 @@ class AgentQueries:
                 s.id,
                 s.rubric_id,
                 s.department_id,
-                s.time_limit
+                stl.time_limit_seconds as time_limit
             FROM simulations s
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             WHERE s.id = (SELECT simulation_id FROM attempt_info)
         )
         SELECT 
