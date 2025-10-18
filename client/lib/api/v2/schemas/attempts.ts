@@ -46,3 +46,227 @@ export type UpdateChatCompletedAtRequest = z.infer<
 export type UpdateChatTimestampResponse = z.infer<
   typeof UpdateChatTimestampResponseSchema
 >;
+
+export const AttemptFullResponseSchema = z.object({
+  attempt: z.object({
+    id: z.string(),
+    createdAt: z.string(),
+    simulationId: z.string(),
+    infiniteMode: z.boolean(),
+    infiniteModeTimeLimit: z.number().nullable(),
+    archived: z.boolean(),
+  }),
+  simulation: z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    departmentId: z.string(),
+    active: z.boolean(),
+    defaultSimulation: z.boolean(),
+    practiceSimulation: z.boolean(),
+    hintsEnabled: z.boolean(),
+    inputGuardrailActive: z.boolean(),
+    outputGuardrailActive: z.boolean(),
+    imageInputActive: z.boolean(),
+    timeLimit: z.number().nullable(),
+    rubricId: z.string().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  }),
+  attemptProfiles: z.array(
+    z.object({
+      profileId: z.string(),
+      attemptId: z.string(),
+      active: z.boolean(),
+    })
+  ),
+  chats: z.array(
+    z.object({
+      chat: z.object({
+        id: z.string(),
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        title: z.string(),
+        scenarioId: z.string(),
+        attemptId: z.string(),
+        completed: z.boolean(),
+        completedAt: z.string().nullable(),
+        traceId: z.string().nullable(),
+      }),
+      scenario: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          problemStatement: z.string(),
+          departmentId: z.string(),
+          active: z.boolean(),
+          personaId: z.string().nullable(),
+          createdAt: z.string(),
+          updatedAt: z.string(),
+          generated: z.boolean(),
+          defaultScenario: z.boolean(),
+        })
+        .nullable(),
+      messages: z.array(
+        z.object({
+          id: z.string(),
+          createdAt: z.string(),
+          updatedAt: z.string(),
+          chatId: z.string(),
+          content: z.string(),
+          type: z.enum(["query", "response"]),
+          completed: z.boolean(),
+        })
+      ),
+      hints: z.array(
+        z.object({
+          messageId: z.string(),
+          hints: z.array(
+            z.object({
+              id: z.string(),
+              simulationMessageId: z.string(),
+              hint: z.string(),
+              createdAt: z.string(),
+            })
+          ),
+        })
+      ),
+      grade: z
+        .object({
+          id: z.string(),
+          createdAt: z.string(),
+          simulationChatId: z.string(),
+          rubricId: z.string(),
+          description: z.string(),
+          passed: z.boolean(),
+          score: z.number(),
+          timeTaken: z.number(),
+        })
+        .nullable(),
+      feedbacks: z.array(
+        z.object({
+          id: z.string(),
+          createdAt: z.string(),
+          standardId: z.string(),
+          simulationChatGradeId: z.string(),
+          total: z.number(),
+          feedback: z.string().nullable(),
+        })
+      ),
+      dynamicRubric: z
+        .object({
+          chatId: z.string(),
+          score: z.number(),
+          passed: z.boolean(),
+          timeTaken: z.number(),
+          skillScores: z.record(z.string(), z.number()),
+          skillFeedbacks: z.record(z.string(), z.string()),
+          totalPossiblePoints: z.number(),
+        })
+        .nullable(),
+      gradingState: z
+        .object({
+          achievedStandards: z.record(z.string(), z.boolean()),
+          passedStandards: z.record(z.string(), z.boolean()),
+          gradeDescription: z.string().optional(),
+        })
+        .nullable(),
+    })
+  ),
+  scenarioDocuments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      title: z.string(),
+      description: z.string(),
+      mimeType: z.string(),
+      departmentId: z.string(),
+      fileSize: z.number(),
+      active: z.boolean(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      filePath: z.string(),
+      type: z.enum([
+        "homework",
+        "project",
+        "quiz",
+        "midterm",
+        "lab",
+        "lecture",
+        "syllabus",
+      ]),
+      classified: z.boolean(),
+      fileId: z.string().nullable(),
+    })
+  ),
+  departmentDocuments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      title: z.string(),
+      description: z.string(),
+      mimeType: z.string(),
+      departmentId: z.string(),
+      fileSize: z.number(),
+      active: z.boolean(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      filePath: z.string(),
+      type: z.enum([
+        "homework",
+        "project",
+        "quiz",
+        "midterm",
+        "lab",
+        "lecture",
+        "syllabus",
+      ]),
+      classified: z.boolean(),
+      fileId: z.string().nullable(),
+    })
+  ),
+  aggregatedResults: z
+    .object({
+      totalChats: z.number(),
+      passedChats: z.number(),
+      averageScore: z.number(),
+      totalTime: z.number(),
+      overallPassed: z.boolean(),
+    })
+    .nullable(),
+  timer: z.object({
+    elapsed: z.number(),
+    remaining: z.number().nullable(),
+    expired: z.boolean(),
+  }),
+  currentChatIndex: z.number(),
+  expectedChatCount: z.number(),
+  isSingleChatAttempt: z.boolean(),
+  isLastAttempt: z.boolean(),
+  showResults: z.boolean(),
+  isActive: z.boolean(),
+  rubricStructure: z
+    .object({
+      standardGroups: z.record(z.string(), z.array(z.string())),
+      standardGroupsMapping: z.record(
+        z.string(),
+        z.object({
+          name: z.string(),
+          description: z.string(),
+          points: z.number(),
+          passPoints: z.number(),
+        })
+      ),
+      standardsMapping: z.record(
+        z.string(),
+        z.object({
+          name: z.string(),
+          description: z.string(),
+          points: z.number(),
+        })
+      ),
+    })
+    .nullable(),
+});
+
+export type AttemptFullResponse = z.infer<typeof AttemptFullResponseSchema>;

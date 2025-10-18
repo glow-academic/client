@@ -6,41 +6,54 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { simulationAttemptRepo } from "@/lib/repos/simulationAttemptRepo";
-import { simulationRepo } from "@/lib/repos/simulationRepo";
+import { attemptsFullKeys } from "@/lib/api/v2/keys";
+import { fetchAttemptFull } from "@/lib/api/v2/server/attempts";
+import { getQueryClient } from "@/utils/queryClient";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Metadata, ResolvingMetadata } from "next";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
   const { attemptId } = await params;
 
-  const attemptData = await simulationAttemptRepo.find(attemptId);
-  if (!attemptData) {
+  try {
+    const attemptData = await fetchAttemptFull(attemptId);
+    const simulationTitle = attemptData?.simulation?.title;
+    return {
+      title: `${simulationTitle || "Attempt"}`,
+      description: `${simulationTitle || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
     return {
       title: `Attempt ${attemptId.substring(0, 8)}...`,
       description: `Attempt ${attemptId.substring(0, 8)}... in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   }
-  // get simulation for attempt
-  const attemptSimulation = await simulationRepo.find(
-    attemptData?.simulationId,
-  );
-  // Attempts don't have a title, so we'll use a generic name with timestamp
-  return {
-    title: `${attemptSimulation?.title || "Attempt"}`,
-    description: `${attemptSimulation?.title || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-  };
 }
 
-export default function AttemptPage({}: {
+export default async function AttemptPage({
+  params,
+}: {
   params: Promise<{ attemptId: string }>;
 }) {
+  const { attemptId } = await params;
+
+  const queryClient = getQueryClient();
+
+  // Prefetch attempt full data for instant hydration
+  await queryClient.prefetchQuery({
+    queryKey: attemptsFullKeys.detail(attemptId),
+    queryFn: () => fetchAttemptFull(attemptId),
+  });
+
   return (
-    <div className="space-y-6">
-      <AttemptChat />
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="space-y-6">
+        <AttemptChat />
+      </div>
+    </HydrationBoundary>
   );
 }

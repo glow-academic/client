@@ -5,7 +5,7 @@
  * 06/27/2025
  */
 "use client";
-import type { AttemptFullResponse } from "@/lib/api/v2/hooks/attempts";
+import type { AttemptFullResponse } from "@/lib/api/v2/schemas/attempts";
 import type { DocumentItem } from "@/lib/api/v2/schemas/documents";
 import type { ScenarioItem } from "@/lib/api/v2/schemas/scenarios";
 
