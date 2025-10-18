@@ -131,7 +131,10 @@ class ModelRunQueries:
             Tuple of (query, params)
         """
         query = """
-        SELECT req_per_day FROM profiles WHERE id = $1
+        SELECT prl.requests_per_day as req_per_day 
+        FROM profiles p
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        WHERE p.id = $1
         """
         return query, [profile_id]
 

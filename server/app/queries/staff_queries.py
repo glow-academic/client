@@ -43,7 +43,7 @@ class StaffQueries:
             SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
             p.active,
             p.last_active as lastActive,
-            p.req_per_day as requests_per_day,
+            prl.requests_per_day as requests_per_day,
             p.default_profile,
             COALESCE(rr.run_count::int, 0) as requests_in_last_day,
             COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
@@ -60,6 +60,7 @@ class StaffQueries:
         JOIN profile_departments pd ON pd.profile_id = p.id
         LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
         LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         CROSS JOIN user_profile up
         WHERE pd.department_id = ANY($1)
         ORDER BY p.id, p.last_name, p.first_name
@@ -85,13 +86,14 @@ class StaffQueries:
         """Build query to get profile by ID."""
         query = """
         SELECT 
-            first_name || ' ' || last_name as name,
-            alias,
-            role,
-            req_per_day as requests_per_day,
-            active
-        FROM profiles
-        WHERE id = $1
+            p.first_name || ' ' || p.last_name as name,
+            p.alias,
+            p.role,
+            prl.requests_per_day as requests_per_day,
+            p.active
+        FROM profiles p
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        WHERE p.id = $1
         """
         return (query, [profile_id])
 
@@ -132,11 +134,12 @@ class StaffQueries:
         """Build query to get multiple profiles."""
         query = """
         SELECT 
-            id,
-            role,
-            req_per_day as requests_per_day
-        FROM profiles
-        WHERE id = ANY($1)
+            p.id,
+            p.role,
+            prl.requests_per_day as requests_per_day
+        FROM profiles p
+        LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+        WHERE p.id = ANY($1)
         """
         return (query, [profile_ids])
 
@@ -176,8 +179,7 @@ class StaffQueries:
         query = """
         UPDATE profiles SET
             role = $2,
-            req_per_day = $3,
-            active = $4,
+            active = $3,
             updated_at = NOW()
         WHERE id = $1
         """
@@ -255,10 +257,10 @@ class StaffQueries:
         query = """
         INSERT INTO profiles (
             id, first_name, last_name, alias, role, active, 
-            default_profile, viewed_intro, viewed_chat, req_per_day
+            default_profile, viewed_intro, viewed_chat
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
-            $7, $8, $9, $10
+            $7, $8, $9
         )
         """
         return (query, [])
@@ -269,5 +271,18 @@ class StaffQueries:
         INSERT INTO profile_departments (profile_id, department_id)
         VALUES ($1, $2)
         ON CONFLICT (profile_id, department_id) DO NOTHING
+        """
+        return (query, [])
+
+    def upsert_profile_request_limit(self) -> Tuple[str, List[Any]]:
+        """Build query to upsert profile request limit."""
+        query = """
+        INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
+        VALUES ($1, $2, true)
+        ON CONFLICT (profile_id, active) 
+        WHERE active = true
+        DO UPDATE SET 
+            requests_per_day = EXCLUDED.requests_per_day,
+            updated_at = NOW()
         """
         return (query, [])

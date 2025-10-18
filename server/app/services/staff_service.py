@@ -255,7 +255,6 @@ class StaffService(BaseService):
                 False,
                 False,
                 False,
-                None,
             )
 
             # If department_id is provided, insert profile_departments relationship
@@ -315,7 +314,6 @@ class StaffService(BaseService):
                     "default_profile": False,
                     "viewed_intro": False,
                     "viewed_chat": False,
-                    "req_per_day": None,
                 },
             )
 
@@ -354,27 +352,32 @@ class StaffService(BaseService):
         if not existing:
             raise ValueError(f"Profile not found: {request.profileId}")
 
-        # Update profile
-        query, _ = self.queries.update_profile()
-        await self.conn.execute(
-            {
-                "profile_id": request.profileId,
-                "role": request.role,
-                "requests_per_day": request.requests_per_day,
-                "active": request.active,
-            },
-        )
+        async with transaction(self.conn):
+            # Update profile
+            query, _ = self.queries.update_profile()
+            await self.conn.execute(
+                query,
+                request.profileId,
+                request.role,
+                request.active,
+            )
 
-        # Update department
-        query, _ = self.queries.update_profile_department()
-        await self.conn.execute(
-            {
-                "profile_id": request.profileId,
-                "department_id": request.department_id,
-            },
-        )
+            # Update department
+            query, _ = self.queries.update_profile_department()
+            await self.conn.execute(
+                query,
+                request.profileId,
+                request.department_id,
+            )
 
-        # Transaction handled by context manager
+            # Update or insert profile request limit if provided
+            if request.requests_per_day is not None:
+                limit_query, _ = self.queries.upsert_profile_request_limit()
+                await self.conn.execute(
+                    limit_query,
+                    request.profileId,
+                    request.requests_per_day,
+                )
 
         # Invalidate caches
         await self._invalidate_cache([
@@ -394,38 +397,43 @@ class StaffService(BaseService):
     ) -> BulkUpdateStaffResponse:
         """Bulk update staff members."""
 
-        # Build dynamic SET clauses
-        set_clauses = []
-        params: dict[str, Any] = {"profile_ids": request.profileIds}
+        async with transaction(self.conn):
+            # Build dynamic SET clauses for profiles table (excluding requests_per_day)
+            set_clauses = []
+            params: dict[str, Any] = {"profile_ids": request.profileIds}
 
-        if request.role is not None:
-            set_clauses.append("role = :role")
-            params["role"] = request.role
+            if request.role is not None:
+                set_clauses.append("role = :role")
+                params["role"] = request.role
 
-        if request.requests_per_day is not None:
-            set_clauses.append("req_per_day = :requests_per_day")
-            params["requests_per_day"] = request.requests_per_day
+            if request.active is not None:
+                set_clauses.append("active = :active")
+                params["active"] = request.active
 
-        if request.active is not None:
-            set_clauses.append("active = :active")
-            params["active"] = request.active
+            # Update profiles if there are fields to update
+            if set_clauses:
+                query, _ = self.queries.bulk_update_profiles()
+                query = query.format(set_clauses=", ".join(set_clauses) + ",")
+                await self.conn.execute(query, **params)
 
-        # Update profiles if there are fields to update
-        if set_clauses:
-            query, _ = self.queries.bulk_update_profiles()
-            query = query.format(set_clauses=", ".join(set_clauses) + ",")
+            # Update departments if provided
+            if request.department_id is not None:
+                query, _ = self.queries.bulk_update_profile_departments()
+                await self.conn.execute(
+                    query,
+                    request.profileIds,
+                    request.department_id,
+                )
 
-        # Update departments if provided
-        if request.department_id is not None:
-            query, _ = self.queries.bulk_update_profile_departments()
-            await self.conn.execute(
-                {
-                    "profile_ids": request.profileIds,
-                    "department_id": request.department_id,
-                },
-            )
-
-        # Transaction handled by context manager
+            # Update request limits if provided
+            if request.requests_per_day is not None:
+                limit_query, _ = self.queries.upsert_profile_request_limit()
+                for profile_id in request.profileIds:
+                    await self.conn.execute(
+                        limit_query,
+                        profile_id,
+                        request.requests_per_day,
+                    )
 
         # Invalidate caches
         await self._invalidate_cache([
