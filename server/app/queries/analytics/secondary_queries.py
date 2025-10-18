@@ -21,43 +21,156 @@ class SecondaryQueries:
         profile_id: Optional[str] = None,
         department_ids: Optional[List[str]] = None,
     ) -> Tuple[str, List[Any]]:
-        """Build attempt improvement query."""
-        where_clause, params = self.builder.filters.build_base_filter(
-            start_date,
-            end_date,
-            cohort_ids,
-            roles,
-            sim_filters,
-            profile_id,
-            department_ids,
-        )
+        """Build attempt improvement query matching stored procedure logic."""
+        from datetime import datetime
 
-        query = f"""
-            WITH filt AS (
-                SELECT * FROM analytics a WHERE {where_clause}
+        # Build params list matching stored procedure approach
+        params: List[Any] = []
+        
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        cohort_ids = cohort_ids or []
+        roles = roles or []
+        sim_filters = sim_filters or ["general"]
+        department_ids = department_ids or []
+        
+        params.extend([start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids])
+
+        query = """
+            WITH base_general AS (
+                SELECT a.*
+                FROM analytics a
+                WHERE 'general' = ANY($5::text[])
+                    AND a.is_general = TRUE
+                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                    AND a.attempt_created_at >= $1
+                    AND a.attempt_created_at < $2
+                    AND (
+                        $6::uuid IS NOT NULL
+                        OR cardinality($4::text[]) = 0
+                        OR a.profile_role = ANY($4::profile_role[])
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
             ),
-            -- Compute attempt stats per simulation and attempt number
+            base_practice AS (
+                SELECT a.*
+                FROM analytics a
+                WHERE 'practice' = ANY($5::text[])
+                    AND a.is_practice = TRUE
+                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                    AND a.attempt_created_at >= $1
+                    AND a.attempt_created_at < $2
+                    AND (
+                        $6::uuid IS NOT NULL
+                        OR cardinality($4::text[]) = 0
+                        OR a.profile_role = ANY($4::profile_role[])
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
+            ),
+            base_archived_only AS (
+                SELECT a.*
+                FROM analytics a
+                WHERE 'archived' = ANY($5::text[])
+                    AND NOT ('general' = ANY($5::text[]) OR 'practice' = ANY($5::text[]))
+                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                    AND a.attempt_created_at >= $1
+                    AND a.attempt_created_at < $2
+                    AND (
+                        $6::uuid IS NOT NULL
+                        OR cardinality($4::text[]) = 0
+                        OR a.profile_role = ANY($4::profile_role[])
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
+            ),
+            base_archived_other AS (
+                SELECT a.*
+                FROM analytics a
+                WHERE 'archived' = ANY($5::text[])
+                    AND ('general' = ANY($5::text[]) OR 'practice' = ANY($5::text[]))
+                    AND a.is_general = FALSE
+                    AND a.is_practice = FALSE
+                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                    AND a.attempt_created_at >= $1
+                    AND a.attempt_created_at < $2
+                    AND (
+                        $6::uuid IS NOT NULL
+                        OR cardinality($4::text[]) = 0
+                        OR a.profile_role = ANY($4::profile_role[])
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
+            ),
+            base_union AS (
+                SELECT * FROM base_general
+                UNION ALL
+                SELECT * FROM base_practice
+                UNION ALL
+                SELECT * FROM base_archived_only
+                UNION ALL
+                SELECT * FROM base_archived_other
+            ),
+            base_archived AS (
+                SELECT bu.*
+                FROM base_union bu
+                WHERE
+                    CASE
+                        WHEN 'archived' = ANY($5::text[]) AND ('general' = ANY($5::text[]) OR 'practice' = ANY($5::text[])) THEN TRUE
+                        WHEN 'archived' = ANY($5::text[]) AND NOT ('general' = ANY($5::text[]) OR 'practice' = ANY($5::text[])) THEN bu.is_archived = TRUE
+                        WHEN NOT ('archived' = ANY($5::text[])) AND ('general' = ANY($5::text[]) OR 'practice' = ANY($5::text[])) THEN bu.is_archived = FALSE
+                        ELSE FALSE
+                    END
+            ),
+            cohort_scoped AS (
+                SELECT b.*
+                FROM base_archived b
+                WHERE cardinality($3::uuid[]) = 0
+                    OR (b.cohort_ids && $3::uuid[] OR b.profile_cohort_ids && $3::uuid[])
+            ),
+            filt AS (
+                SELECT * FROM cohort_scoped
+            ),
+            -- Get first timestamp for each attempt
+            attempt_first AS (
+                SELECT 
+            profile_id,
+                    simulation_id, 
+                    attempt_id, 
+                    MIN(chat_created_at) AS first_ts
+                FROM filt
+                GROUP BY profile_id, simulation_id, attempt_id
+            ),
+            -- Assign attempt numbers per profile+simulation based on first timestamp
+            attempt_ord AS (
+                SELECT
+                    af.*,
+                    ROW_NUMBER() OVER (PARTITION BY af.profile_id, af.simulation_id ORDER BY af.first_ts) AS attempt_no
+                FROM attempt_first af
+            ),
+            -- Aggregate stats for each attempt
             attempt_rows AS (
                 SELECT
-                    an.simulation_id,
-                    an.attempt_no,
-                    AVG(an.grade_percent)::float AS avg_grade,
-                    AVG(an.minutes)::float AS avg_time_minutes,
-                    MAX((CASE WHEN an.grade_percent >= an.pass_percent THEN 1 ELSE 0 END))::int AS passed_any
-                FROM (
+                    ao.profile_id,
+                    ao.simulation_id,
+                    ao.attempt_id,
+                    ao.attempt_no,
+                    AVG(f.grade_percent)::float AS avg_grade,
+                    AVG(f.time_taken_seconds / 60.0)::float AS avg_time_minutes,
+                    MAX((f.passed)::int)::int AS passed_any
+                FROM attempt_ord ao
+                JOIN filt f ON f.attempt_id = ao.attempt_id
+                WHERE f.grade_percent IS NOT NULL
+                GROUP BY ao.profile_id, ao.simulation_id, ao.attempt_id, ao.attempt_no
+            ),
+            -- Aggregate by simulation and attempt number for facts
+            multiple_users_data AS (
                     SELECT
                         simulation_id,
-                        profile_id,
-                        attempt_id,
-                        attempt_created_at,
-                        grade_percent,
-                        (rubric_pass_points * 100.0 / NULLIF(rubric_points, 0)) AS pass_percent,
-                        time_taken_seconds / 60.0 AS minutes,
-                        ROW_NUMBER() OVER (PARTITION BY simulation_id, profile_id ORDER BY attempt_created_at) AS attempt_no
-                    FROM filt
-                    WHERE grade_percent IS NOT NULL
-                ) an
-                GROUP BY an.simulation_id, an.attempt_no, an.attempt_id
+                    attempt_no,
+                    AVG(avg_grade)::float AS avg_grade,
+                    AVG(avg_time_minutes)::float AS avg_time_minutes,
+                    (100.0 * AVG(passed_any))::float AS pass_rate
+                FROM attempt_rows
+                WHERE avg_grade IS NOT NULL
+                GROUP BY simulation_id, attempt_no
             ),
             -- Aggregate across all simulations for chart
             by_attempt AS (
@@ -65,17 +178,18 @@ class SecondaryQueries:
                     attempt_no,
                     AVG(avg_grade)::float AS avg_grade,
                     AVG(avg_time_minutes)::float AS avg_time_minutes,
-                    (100.0 * AVG(passed_any))::float AS pass_rate
-                FROM attempt_rows
+                    AVG(pass_rate)::float AS pass_rate
+                FROM multiple_users_data
                 WHERE attempt_no <= 5
                 GROUP BY attempt_no
             ),
             chart_data AS (
-                SELECT
-                    'Attempt ' || attempt_no AS attempt,
-                    ROUND(COALESCE(avg_grade, 0))::int AS average_score,
-                    ROUND(COALESCE(avg_time_minutes, 0))::int AS average_time,
-                    ROUND(COALESCE(pass_rate, 0))::int AS pass_rate
+                SELECT json_build_object(
+                    'attempt', 'Attempt ' || attempt_no,
+                    'average_score', ROUND(COALESCE(avg_grade, 0))::int,
+                    'average_time', ROUND(COALESCE(avg_time_minutes, 0))::int,
+                    'pass_rate', ROUND(COALESCE(pass_rate, 0))::int
+                ) AS chart_row
                 FROM by_attempt
                 ORDER BY attempt_no
             ),
@@ -85,12 +199,11 @@ class SecondaryQueries:
                     attempt_no::int,
                     ROUND(COALESCE(avg_grade, 0))::int AS avg_grade,
                     ROUND(COALESCE(avg_time_minutes, 0))::int AS avg_minutes,
-                    ROUND(COALESCE(100.0 * passed_any, 0))::int AS pass_rate
-                FROM attempt_rows
-                WHERE attempt_no <= 5
+                    ROUND(COALESCE(pass_rate, 0))::int AS pass_rate
+                FROM multiple_users_data
             )
             SELECT json_build_object(
-                'chartData', COALESCE((SELECT json_agg(row_to_json(cd)) FROM chart_data cd), '[]'::json),
+                'chartData', COALESCE((SELECT json_agg(chart_row ORDER BY (chart_row->>'attempt')) FROM chart_data), '[]'::json),
                 'facts', COALESCE((SELECT json_agg(json_build_object(
                     'simulationId', simulation_id,
                     'attemptNo', attempt_no,
