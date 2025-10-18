@@ -79,3 +79,19 @@ class LogQueries:
         LIMIT $2
         """
         return (query, [level, limit])
+
+    def delete_logs_bulk(self, log_ids: List[int]) -> Tuple[str, List[Any]]:
+        """Build query to bulk delete logs by IDs."""
+        query = """
+        DELETE FROM app_logs
+        WHERE id = ANY($1::int[])
+        RETURNING id
+        """
+        return (query, [log_ids])
+
+    def check_profile_role(self, profile_id: str) -> Tuple[str, List[Any]]:
+        """Build query to check if profile is superadmin."""
+        query = """
+        SELECT role FROM profiles WHERE id = $1
+        """
+        return (query, [profile_id])

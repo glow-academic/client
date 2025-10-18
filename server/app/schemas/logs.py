@@ -125,3 +125,23 @@ class CreateLogResponse(BaseModel):
     success: bool
     log_id: Optional[int] = None
 
+
+# ============================================================================
+# BULK DELETE LOG SCHEMAS
+# ============================================================================
+
+
+class BulkDeleteLogsRequest(BaseModel):
+    """Request to bulk delete logs."""
+
+    profileId: str
+    ids: List[int]
+
+
+class BulkDeleteLogsResponse(BaseModel):
+    """Response for bulk delete logs."""
+
+    success: bool
+    deleted_count: int
+    message: str
+

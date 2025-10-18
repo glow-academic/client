@@ -93,3 +93,23 @@ export const LogsListResponseSchema = z.object({
 
 export type LogsListResponse = z.infer<typeof LogsListResponseSchema>;
 export type LogItem = z.infer<typeof LogItemSchema>;
+
+// ============================================================================
+// BULK DELETE SCHEMAS
+// ============================================================================
+
+export const BulkDeleteLogsRequestSchema = z.object({
+  profileId: z.string(),
+  ids: z.array(z.number()),
+});
+
+export const BulkDeleteLogsResponseSchema = z.object({
+  success: z.boolean(),
+  deleted_count: z.number(),
+  message: z.string(),
+});
+
+export type BulkDeleteLogsRequest = z.infer<typeof BulkDeleteLogsRequestSchema>;
+export type BulkDeleteLogsResponse = z.infer<
+  typeof BulkDeleteLogsResponseSchema
+>;

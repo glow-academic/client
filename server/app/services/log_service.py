@@ -8,10 +8,11 @@ import asyncpg  # type: ignore
 from app.cache import keys
 from app.extensions import get_query_client
 from app.queries.log_queries import LogQueries
-from app.schemas.logs import (ActorData, ContextData, CreateLogRequest,
-                              CreateLogResponse, ErrorData, LogItem,
-                              LogsListRequest, LogsListResponse, MetricsData,
-                              SubjectData)
+from app.schemas.logs import (ActorData, BulkDeleteLogsRequest,
+                              BulkDeleteLogsResponse, ContextData,
+                              CreateLogRequest, CreateLogResponse, ErrorData,
+                              LogItem, LogsListRequest, LogsListResponse,
+                              MetricsData, SubjectData)
 
 
 class LogService:
@@ -226,6 +227,57 @@ class LogService:
             }
             for row in rows
         ]
+
+    async def bulk_delete_logs(
+        self, request: BulkDeleteLogsRequest
+    ) -> BulkDeleteLogsResponse:
+        """
+        Delete multiple logs. Only superadmin can delete logs.
+
+        Args:
+            request: Bulk delete request with profileId and log IDs
+
+        Returns:
+            BulkDeleteLogsResponse with deleted count
+
+        Raises:
+            ValueError: If profile not found
+            PermissionError: If user is not superadmin
+        """
+        # Check if user is superadmin
+        query, params = self.queries.check_profile_role(request.profileId)
+        result = await self.conn.fetchrow(query, *params)
+
+        if not result:
+            raise ValueError(f"Profile not found: {request.profileId}")
+
+        if result['role'] != 'superadmin':
+            raise PermissionError("Only superadmin users can delete logs")
+
+        if not request.ids:
+            return BulkDeleteLogsResponse(
+                success=True,
+                deleted_count=0,
+                message="No logs to delete"
+            )
+
+        # Delete logs
+        query, params = self.queries.delete_logs_bulk(request.ids)
+        deleted_rows = await self.conn.fetch(query, *params)
+        deleted_count = len(deleted_rows)
+
+        # Invalidate log caches
+        qc = get_query_client()
+        if qc:
+            await qc.invalidate(tags=[
+                keys.tag_log_all(),
+            ])
+
+        return BulkDeleteLogsResponse(
+            success=True,
+            deleted_count=deleted_count,
+            message=f"Successfully deleted {deleted_count} log(s)"
+        )
 
 
 def get_log_service(conn: asyncpg.Connection) -> LogService:

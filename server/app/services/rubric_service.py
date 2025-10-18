@@ -62,7 +62,7 @@ class RubricService:
                     name=row['name'],
                     description=row['description'],
                     points=row['points'],
-                    passPoints=row['passPoints'],
+                    passPoints=row['passpoints'],
                     can_edit=row['can_edit'],
                     can_delete=row['can_delete'],
                     can_duplicate=row['can_duplicate'],
@@ -88,7 +88,7 @@ class RubricService:
                     name=group['name'],
                     description=group['description'] or '',
                     points=group['points'],
-                    passPoints=group['passPoints']
+                    passPoints=group['passpoints']
                 )
 
                 # Find the rubric and add group_id
@@ -191,7 +191,7 @@ class RubricService:
 
             standard_groups_detail[group_id] = StandardGroupDetail(
                 points=group['points'],
-                passPoints=group['passPoints'],
+                passPoints=group['passpoints'],
                 standard_ids=standard_ids,
             )
 
@@ -227,7 +227,7 @@ class RubricService:
             department_id=str(rubric['department_id']),
             valid_department_ids=valid_department_ids,
             points=rubric['points'],
-            passPoints=rubric['passPoints'],
+            passPoints=rubric['passpoints'],
             active=rubric['active'],
             default_rubric=rubric['default_rubric'],
             can_edit=can_edit,

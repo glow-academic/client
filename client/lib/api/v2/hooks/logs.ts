@@ -7,7 +7,10 @@ import { useProfile } from "@/contexts/profile-context";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../fetcher";
 import { logsListKeys } from "../keys";
-import { LogsListResponseSchema } from "../schemas/logs";
+import {
+  BulkDeleteLogsResponseSchema,
+  LogsListResponseSchema,
+} from "../schemas/logs";
 
 /**
  * Create log mutation hook
@@ -127,5 +130,27 @@ export function useLogsList(
       return LogsListResponseSchema.parse(res);
     },
     enabled: queryOptions.enabled && !!profileId,
+  });
+}
+
+/**
+ * Bulk delete logs mutation hook
+ * Only superadmin users can delete logs
+ */
+export function useBulkDeleteLogs() {
+  const { effectiveProfile } = useProfile();
+
+  return useMutation({
+    mutationFn: async (request: { ids: number[] }) => {
+      const res = await api<unknown>("/api/v2/logs/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({
+          profileId: effectiveProfile?.id,
+          ids: request.ids,
+        }),
+      });
+
+      return BulkDeleteLogsResponseSchema.parse(res);
+    },
   });
 }

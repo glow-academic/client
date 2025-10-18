@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { useBulkDeleteLogs } from "@/lib/api/v2/hooks/logs";
 import type { LogItem } from "@/lib/api/v2/schemas/logs";
 
 export interface BulkDeleteLogsDialogProps {

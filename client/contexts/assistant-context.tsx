@@ -8,6 +8,7 @@ import {
   useAssistantChatFull,
   type AssistantChatFullResponse,
 } from "@/lib/api/v2/hooks/assistant";
+import { useLogger } from "@/lib/api/v2/hooks/logs";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -78,8 +79,10 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const [currentChatId, setCurrentChatId] = useState<string>();
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
+  const [hasEverOpened, setHasEverOpened] = useState(false);
   const queryClient = useQueryClient();
   const currentRoomRef = useRef<string | null>(null);
+  const log = useLogger();
 
   // Use the global WebSocket context
   const {
@@ -94,28 +97,43 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   const { activeProfile } = useProfile();
 
   // V2: Single hook to fetch all assistant chat data
+  // Only fetch when user has interacted with chat (lazy loading)
   const { data: assistantData, isLoading: isLoadingChats } =
     useAssistantChatFull(
       currentChatId,
       activeProfile?.id === "guest-profile-id" ? "" : activeProfile?.id || "",
-      activeProfile?.id !== "guest-profile-id" && !!activeProfile?.id
+      hasEverOpened &&
+        activeProfile?.id !== "guest-profile-id" &&
+        !!activeProfile?.id
     );
 
   // Extract data from v2 response
   const chats = useMemo(
-    () => (assistantData?.allChats || []) as AssistantChat[],
+    () =>
+      (assistantData?.allChats || []) as NonNullable<
+        AssistantChatFullResponse["chat"]
+      >[],
     [assistantData]
   );
   const chat = useMemo(
-    () => (assistantData?.chat || null) as AssistantChat | null,
+    () =>
+      (assistantData?.chat || null) as NonNullable<
+        AssistantChatFullResponse["chat"]
+      > | null,
     [assistantData]
   );
   const messages = useMemo(
-    () => (assistantData?.messages || []) as AssistantMessage[],
+    () =>
+      (assistantData?.messages || []) as NonNullable<
+        AssistantChatFullResponse["messages"]
+      >,
     [assistantData]
   );
   const toolCalls = useMemo(
-    () => (assistantData?.toolCalls || []) as AssistantToolCall[],
+    () =>
+      (assistantData?.toolCalls || []) as NonNullable<
+        AssistantChatFullResponse["toolCalls"]
+      >,
     [assistantData]
   );
 
@@ -200,7 +218,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       );
       window.removeEventListener("assistant_error", handleAssistantError);
     };
-  }, [isConnected, queryClient]);
+  }, [isConnected, queryClient, log]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
@@ -232,15 +250,17 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     return () => {
       // Cleanup handled by main useEffect
     };
-  }, [currentChatId, isConnected, joinRoom, leaveRoom]);
+  }, [currentChatId, isConnected, joinRoom, leaveRoom, log]);
 
   // UI state management methods
   const openWidget = useCallback(() => {
     setUiState("widget");
+    setHasEverOpened(true); // Enable data fetching on first interaction
   }, []);
 
   const expand = useCallback(() => {
     setUiState("expanded");
+    setHasEverOpened(true); // Enable data fetching on first interaction
   }, []);
 
   const close = useCallback(() => {
@@ -385,6 +405,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       emitStartAssistant,
       emitSendAssistantMessage,
       departmentIds,
+      log,
     ]
   );
 
@@ -419,7 +440,7 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }
-  }, [currentChatId, isConnected, emitStopAssistant]);
+  }, [currentChatId, isConnected, emitStopAssistant, log]);
 
   const value: AssistantContextType = {
     uiState,
@@ -429,14 +450,14 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     close,
     currentChatId,
     setCurrentChatId,
-    chats: chats as AssistantChat[],
-    pastChats: chats as AssistantChat[], // Use the same chats array for pastChats
+    chats: chats,
+    pastChats: chats, // Use the same chats array for pastChats
     isLoadingChats,
     selectChat,
     startBlankChat,
-    chat: chat as AssistantChat | null,
-    messages: messages as AssistantMessage[],
-    toolCalls: toolCalls as AssistantToolCall[],
+    chat: chat,
+    messages: messages,
+    toolCalls: toolCalls,
     isConnected,
     createNewChat,
     sendMessage,
