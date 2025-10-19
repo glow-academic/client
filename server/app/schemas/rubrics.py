@@ -65,6 +65,7 @@ class RubricItem(BaseModel):
     description: str
     points: int
     passPoints: int
+    default_rubric: bool
     can_edit: bool
     can_delete: bool
     can_duplicate: bool

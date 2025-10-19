@@ -183,3 +183,129 @@ async def test_get_rubric_detail_not_found(
     svc = RubricService(db)
     with pytest.raises(ValueError, match="Rubric not found"):
         await svc.get_rubric_detail(request)
+
+
+@pytest.mark.asyncio
+async def test_rubric_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for rubrics based on active simulation links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profile (only admin/superadmin have access to rubrics, not instructional)
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'superadmin') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/superadmin profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.rubrics import RubricsFilters
+    
+    svc = RubricService(db)
+    resp_admin = await svc.get_rubrics_list(
+        RubricsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Rubrics with active simulation links: cannot edit
+    # 2. Default rubrics: only superadmin can edit (admin cannot)
+    # 3. Other rubrics: admin, superadmin can edit
+    
+    # Check if user is admin or superadmin
+    user_role = await db.fetchval("SELECT role FROM profiles WHERE id = $1", admin_id)
+    
+    for rubric in resp_admin.rubrics:
+        # Get active simulation link counts from database
+        active_simulation_count = await db.fetchval("""
+            SELECT COUNT(*) FROM simulations 
+            WHERE rubric_id = $1 AND active = true
+        """, rubric.rubric_id)
+        
+        # Rule 1: Rubrics with active simulation links - nobody can edit
+        if active_simulation_count > 0:
+            assert rubric.can_edit == False, \
+                f"Rubric {rubric.name} with {active_simulation_count} active simulation links should not be editable"
+        
+        # Rule 2: Default rubrics - only superadmin can edit
+        elif rubric.default_rubric:
+            if user_role == 'superadmin':
+                assert rubric.can_edit == True, \
+                    f"Superadmin should be able to edit default rubric {rubric.name}"
+            else:
+                assert rubric.can_edit == False, \
+                    f"Admin should NOT be able to edit default rubric {rubric.name}"
+        
+        # Rule 3: Non-default rubrics without active simulation links - admin/superadmin can edit
+        else:
+            assert rubric.can_edit == True, \
+                f"Admin should be able to edit non-default rubric {rubric.name} without active simulation links"
+
+
+@pytest.mark.asyncio
+async def test_rubric_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for rubrics based on all simulation links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profile
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'superadmin') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/superadmin profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.rubrics import RubricsFilters
+    
+    svc = RubricService(db)
+    resp_admin = await svc.get_rubrics_list(
+        RubricsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Rubrics with ANY simulation links (active or inactive): cannot delete
+    # 2. Default rubrics (not linked): only superadmin can delete
+    # 3. Other rubrics: admin, superadmin can delete
+    
+    # Check if user is admin or superadmin
+    user_role = await db.fetchval("SELECT role FROM profiles WHERE id = $1", admin_id)
+    
+    for rubric in resp_admin.rubrics:
+        # Get total simulation link count from database
+        total_simulation_links = await db.fetchval("""
+            SELECT COUNT(*) FROM simulations 
+            WHERE rubric_id = $1
+        """, rubric.rubric_id)
+        
+        # Rule 1: Rubrics with any simulation links - nobody can delete
+        if total_simulation_links > 0:
+            assert rubric.can_delete == False, \
+                f"Rubric {rubric.name} with {total_simulation_links} simulation links should not be deletable"
+        
+        # Rule 2: Default rubrics (unlinked) - only superadmin can delete
+        elif rubric.default_rubric:
+            if user_role == 'superadmin':
+                assert rubric.can_delete == True, \
+                    f"Superadmin should be able to delete unlinked default rubric {rubric.name}"
+            else:
+                assert rubric.can_delete == False, \
+                    f"Admin should NOT be able to delete default rubric {rubric.name}"
+        
+        # Rule 3: Non-default unlinked rubrics - admin/superadmin can delete
+        else:
+            assert rubric.can_delete == True, \
+                f"Admin should be able to delete unlinked non-default rubric {rubric.name}"

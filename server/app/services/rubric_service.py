@@ -92,6 +92,7 @@ class RubricService(BaseService):
                     description=row["description"],
                     points=row["points"],
                     passPoints=row["passpoints"],
+                    default_rubric=row["default_rubric"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                     can_duplicate=row["can_duplicate"],

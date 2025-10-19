@@ -11,10 +11,18 @@ class RubricQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for rubrics list with permissions and embedded hierarchical structure."""
         query = """
-        WITH rubric_usage AS (
+        WITH rubric_active_simulation_links AS (
             SELECT 
                 rubric_id,
-                COUNT(*) as usage_count
+                COUNT(*) as active_simulation_count
+            FROM simulations
+            WHERE active = true
+            GROUP BY rubric_id
+        ),
+        rubric_all_simulation_links AS (
+            SELECT 
+                rubric_id,
+                COUNT(*) as total_simulation_links
             FROM simulations
             GROUP BY rubric_id
         ),
@@ -28,18 +36,25 @@ class RubricQueries:
                 r.description,
                 r.points,
                 r.pass_points as passPoints,
-                COALESCE(ru.usage_count, 0) as usage_count,
+                r.default_rubric,
+                COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
+                COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
                 CASE 
+                    WHEN COALESCE(rasl.active_simulation_count, 0) > 0 THEN false
+                    WHEN r.default_rubric = true AND up.role != 'superadmin' THEN false
                     WHEN up.role IN ('admin', 'superadmin') THEN true
                     ELSE false
                 END as can_edit,
                 CASE 
-                    WHEN up.role IN ('admin', 'superadmin') AND COALESCE(ru.usage_count, 0) = 0 THEN true
+                    WHEN COALESCE(rasl_all.total_simulation_links, 0) > 0 THEN false
+                    WHEN r.default_rubric = true AND up.role != 'superadmin' THEN false
+                    WHEN up.role IN ('admin', 'superadmin') THEN true
                     ELSE false
                 END as can_delete,
                 true as can_duplicate
             FROM rubrics r
-            LEFT JOIN rubric_usage ru ON ru.rubric_id = r.id
+            LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
+            LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
             CROSS JOIN user_profile up
             WHERE r.department_id = ANY($1)
         ),

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 18  # Bumped: Added default parameter restriction - only superadmin can edit/delete default parameters
+GLOBAL_CACHE_VERSION = 21  # Bumped: Applied permission logic to staff (active cohort links, role-based restrictions); default profiles never deletable
 
 # Namespaces
 NS_ANALYTICS = "analytics"

@@ -11,7 +11,22 @@ class StaffQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for staff list with permissions and JSONB mappings."""
         query = """
-        WITH profile_cohorts AS (
+        WITH profile_active_cohort_links AS (
+            SELECT 
+                profile_id,
+                COUNT(*) as active_cohort_count
+            FROM cohort_profiles
+            WHERE active = true
+            GROUP BY profile_id
+        ),
+        profile_all_cohort_links AS (
+            SELECT 
+                profile_id,
+                COUNT(*) as total_cohort_links
+            FROM cohort_profiles
+            GROUP BY profile_id
+        ),
+        profile_cohorts AS (
             SELECT 
                 cp.profile_id,
                 ARRAY_AGG(cp.cohort_id ORDER BY c.title) as cohort_ids
@@ -73,13 +88,19 @@ class StaffQueries:
             p.default_profile,
             COALESCE(rr.run_count::int, 0) as requests_in_last_day,
             COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
+            COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
+            COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
             CASE 
+                WHEN COALESCE(pacl.active_cohort_count, 0) > 0 THEN false
                 WHEN up.role = 'superadmin' THEN true
-                WHEN up.role = 'admin' AND p.role != 'superadmin' THEN true
+                WHEN up.role = 'admin' AND p.role NOT IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role = 'superadmin' AND p.default_profile = false THEN true
+                WHEN p.default_profile = true THEN false
+                WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
+                WHEN up.role = 'superadmin' THEN true
+                WHEN up.role = 'admin' AND p.role NOT IN ('admin', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
             cmd.cohort_mapping,
@@ -87,6 +108,8 @@ class StaffQueries:
         FROM profiles p
         JOIN profile_departments pd ON pd.profile_id = p.id
         LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
+        LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
+        LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
         LEFT JOIN recent_runs rr ON rr.profile_id = p.id
         LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
         CROSS JOIN user_profile up

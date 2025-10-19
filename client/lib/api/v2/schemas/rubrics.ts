@@ -60,6 +60,7 @@ export const RubricItemSchema = z.object({
   description: z.string(),
   points: z.number(),
   passPoints: z.number(),
+  default_rubric: z.boolean(),
   can_edit: z.boolean(),
   can_delete: z.boolean(),
   can_duplicate: z.boolean(),

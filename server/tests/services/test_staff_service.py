@@ -56,19 +56,29 @@ async def test_get_staff_list_returns_data(
 async def test_get_staff_list_superadmin_can_edit(
     db: asyncpg.Connection, disable_cache: None
 ) -> None:
-    """Test that superadmin has edit permissions on staff."""
+    """Test that superadmin has edit permissions on staff without active cohort links."""
     dept_id = await get_cs_dept_id(db)
     admin_id = await get_superadmin_alias(db)
 
     svc = StaffService(db)
     resp = await svc.get_staff_list(
-        StaffFilters(departmentIds=[dept_id], profileId=admin_id)
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id, campusDomain="test.edu")
     )
 
-    # Superadmin should have edit permissions on non-superadmin staff
+    # Superadmin should have edit permissions on staff without active cohort links
     for staff_member in resp.staff:
-        if staff_member.role != "superadmin":
-            assert staff_member.can_edit is True
+        # Get active cohort link counts from database
+        active_cohort_count = await db.fetchval("""
+            SELECT COUNT(*) FROM cohort_profiles 
+            WHERE profile_id = $1 AND active = true
+        """, staff_member.profile_id)
+        
+        if active_cohort_count == 0:
+            assert staff_member.can_edit is True, \
+                f"Superadmin should be able to edit {staff_member.name} without active cohort links"
+        else:
+            assert staff_member.can_edit is False, \
+                f"{staff_member.name} with {active_cohort_count} active cohort links should not be editable"
 
 
 async def test_get_staff_list_empty_department(
@@ -236,3 +246,157 @@ async def test_get_staff_detail_bulk_no_profiles(
                 profileIds=[fake_profile_id], currentProfileId=admin_id
             )
         )
+
+
+async def test_staff_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for staff based on active cohort links and role hierarchy."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get superadmin and admin profiles
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'admin' LIMIT 1")
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.staff import StaffFilters
+    
+    svc = StaffService(db)
+    resp_superadmin = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=superadmin_id, campusDomain="test.edu")
+    )
+    resp_admin = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id, campusDomain="test.edu")
+    )
+    
+    # Test rules:
+    # 1. Profiles with active cohort links: cannot edit
+    # 2. Superadmin: can edit anyone (except those with active cohort links)
+    # 3. Admin: can edit only trainee/instructional roles (except those with active cohort links)
+    
+    for staff_sa in resp_superadmin.staff:
+        # Get active cohort link counts from database
+        active_cohort_count = await db.fetchval("""
+            SELECT COUNT(*) FROM cohort_profiles 
+            WHERE profile_id = $1 AND active = true
+        """, staff_sa.profile_id)
+        
+        staff_admin = next(
+            (s for s in resp_admin.staff if s.profile_id == staff_sa.profile_id),
+            None
+        )
+        
+        if not staff_admin:
+            continue
+        
+        # Rule 1: Profiles with active cohort links - nobody can edit
+        if active_cohort_count > 0:
+            assert staff_sa.can_edit == False, \
+                f"Staff {staff_sa.name} with {active_cohort_count} active cohort links should not be editable (superadmin)"
+            assert staff_admin.can_edit == False, \
+                f"Staff {staff_admin.name} with {active_cohort_count} active cohort links should not be editable (admin)"
+        
+        # Rule 2: Superadmin can edit anyone without active cohort links
+        elif active_cohort_count == 0:
+            assert staff_sa.can_edit == True, \
+                f"Superadmin should be able to edit {staff_sa.name} without active cohort links"
+            
+            # Rule 3: Admin can only edit below-admin roles
+            if staff_admin.role in ('trainee', 'instructional'):
+                assert staff_admin.can_edit == True, \
+                    f"Admin should be able to edit {staff_admin.name} ({staff_admin.role})"
+            elif staff_admin.role in ('admin', 'superadmin'):
+                assert staff_admin.can_edit == False, \
+                    f"Admin should NOT be able to edit {staff_admin.name} ({staff_admin.role})"
+
+
+async def test_staff_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for staff - default profiles never deletable."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get superadmin and admin profiles
+    superadmin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'superadmin' LIMIT 1")
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role = 'admin' LIMIT 1")
+    
+    if not superadmin_result or not admin_result:
+        pytest.skip("Need both superadmin and admin profiles")
+    
+    superadmin_id = str(superadmin_result["id"])
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.staff import StaffFilters
+    
+    svc = StaffService(db)
+    resp_superadmin = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=superadmin_id, campusDomain="test.edu")
+    )
+    resp_admin = await svc.get_staff_list(
+        StaffFilters(departmentIds=[dept_id], profileId=admin_id, campusDomain="test.edu")
+    )
+    
+    # Test rules:
+    # 1. Default profiles: NEVER deletable (highest priority)
+    # 2. Profiles with ANY cohort links: cannot delete
+    # 3. Superadmin: can delete non-default profiles without links
+    # 4. Admin: can delete only trainee/instructional without links
+    
+    for staff_sa in resp_superadmin.staff:
+        # Get total cohort link count from database
+        total_cohort_links = await db.fetchval("""
+            SELECT COUNT(*) FROM cohort_profiles 
+            WHERE profile_id = $1
+        """, staff_sa.profile_id)
+        
+        staff_admin = next(
+            (s for s in resp_admin.staff if s.profile_id == staff_sa.profile_id),
+            None
+        )
+        
+        if not staff_admin:
+            continue
+        
+        # Rule 1: Default profiles - NEVER deletable
+        if staff_sa.default_profile:
+            assert staff_sa.can_delete == False, \
+                f"Default profile {staff_sa.name} should NEVER be deletable (even by superadmin)"
+            assert staff_admin.can_delete == False, \
+                f"Default profile {staff_admin.name} should NEVER be deletable (admin)"
+        
+        # Rule 2: Profiles with any cohort links - nobody can delete
+        elif total_cohort_links > 0:
+            assert staff_sa.can_delete == False, \
+                f"Staff {staff_sa.name} with {total_cohort_links} cohort links should not be deletable (superadmin)"
+            assert staff_admin.can_delete == False, \
+                f"Staff {staff_admin.name} with {total_cohort_links} cohort links should not be deletable (admin)"
+        
+        # Rule 3: Unlinked, non-default profiles - superadmin can delete
+        elif not staff_sa.default_profile and total_cohort_links == 0:
+            assert staff_sa.can_delete == True, \
+                f"Superadmin should be able to delete unlinked non-default {staff_sa.name}"
+            
+            # Rule 4: Admin can only delete below-admin roles
+            if staff_admin.role in ('trainee', 'instructional'):
+                assert staff_admin.can_delete == True, \
+                    f"Admin should be able to delete {staff_admin.name} ({staff_admin.role})"
+            elif staff_admin.role in ('admin', 'superadmin'):
+                assert staff_admin.can_delete == False, \
+                    f"Admin should NOT be able to delete {staff_admin.name} ({staff_admin.role})"
