@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # Global cache version - bump to invalidate all caches after schema changes
-GLOBAL_CACHE_VERSION = 13  # Bumped: Added default_persona field to PersonaItem schema
+GLOBAL_CACHE_VERSION = 16  # Bumped: Documents now resolve scenario_ids to root scenarios using scenario_tree
 
 # Namespaces
 NS_ANALYTICS = "analytics"

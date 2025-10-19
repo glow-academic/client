@@ -202,3 +202,132 @@ async def test_get_document_detail_bulk_optimized(
         dept_item = result.department_mapping[first_dept_id]
         assert hasattr(dept_item, 'name') and len(dept_item.name) > 0, "Department mapping should have valid name"
         assert hasattr(dept_item, 'description'), "Department mapping should have description field"
+
+
+@pytest.mark.asyncio
+async def test_documents_only_return_root_scenarios(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test that documents list only returns root scenarios in scenario_ids."""
+    # Setup
+    dept_id = await get_test_dept_id(db)
+    profile_id = await get_test_profile_id(db)
+    
+    # Execute
+    svc = DocumentService(db)
+    filters = DocumentsFilters(departmentIds=[dept_id], profileId=profile_id)
+    result = await svc.get_documents_list(filters)
+    
+    # Assert - Check that all scenario_ids are root scenarios
+    for document in result.documents:
+        for scenario_id in document.scenario_ids:
+            # Verify each scenario is a root (parent_id = child_id in scenario_tree)
+            is_root = await db.fetchval("""
+                SELECT EXISTS(
+                    SELECT 1 FROM scenario_tree 
+                    WHERE parent_id = $1 AND child_id = $1
+                )
+            """, scenario_id)
+            
+            assert is_root, \
+                f"Document {document.name} has scenario {scenario_id} which is not a root scenario"
+
+
+@pytest.mark.asyncio
+async def test_document_can_edit_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_edit permission logic for documents based on active scenario links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profiles (admin and superadmin)
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/instructional profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.documents import DocumentsFilters
+    
+    svc = DocumentService(db)
+    resp_admin = await svc.get_documents_list(
+        DocumentsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Documents with active scenario links: cannot edit
+    # 2. Other documents: instructional, admin, superadmin can edit
+    
+    for document in resp_admin.documents:
+        # Get active scenario link counts from database
+        active_scenario_count = await db.fetchval("""
+            SELECT COUNT(*) FROM scenario_documents 
+            WHERE document_id = $1 AND active = true
+        """, document.document_id)
+        
+        # Rule 1: Documents with active scenario links - nobody can edit
+        if active_scenario_count > 0:
+            assert document.can_edit == False, \
+                f"Document {document.name} with {active_scenario_count} active scenario links should not be editable"
+        
+        # Rule 2: Documents without active scenario links - admin can edit
+        else:
+            assert document.can_edit == True, \
+                f"Admin should be able to edit document {document.name} without active scenario links"
+
+
+@pytest.mark.asyncio
+async def test_document_can_delete_permissions(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test can_delete permission logic for documents based on all scenario links."""
+    # Setup - Get test data
+    dept_result = await db.fetchrow("SELECT id FROM departments WHERE active = true LIMIT 1")
+    if not dept_result:
+        pytest.skip("No departments found")
+    
+    dept_id = str(dept_result["id"])
+    
+    # Get admin profile
+    admin_result = await db.fetchrow("SELECT id FROM profiles WHERE role IN ('admin', 'instructional') LIMIT 1")
+    
+    if not admin_result:
+        pytest.skip("Need admin/instructional profile")
+    
+    admin_id = str(admin_result["id"])
+    
+    # Execute
+    from app.schemas.documents import DocumentsFilters
+    
+    svc = DocumentService(db)
+    resp_admin = await svc.get_documents_list(
+        DocumentsFilters(departmentIds=[dept_id], profileId=admin_id)
+    )
+    
+    # Test rules:
+    # 1. Documents with ANY scenario links (active or inactive): cannot delete
+    # 2. Other documents: instructional, admin, superadmin can delete
+    
+    for document in resp_admin.documents:
+        # Get total scenario link count from database
+        total_scenario_links = await db.fetchval("""
+            SELECT COUNT(*) FROM scenario_documents 
+            WHERE document_id = $1
+        """, document.document_id)
+        
+        # Rule 1: Documents with any scenario links - nobody can delete
+        if total_scenario_links > 0:
+            assert document.can_delete == False, \
+                f"Document {document.name} with {total_scenario_links} scenario links should not be deletable"
+        
+        # Rule 2: Unlinked documents - admin can delete
+        else:
+            assert document.can_delete == True, \
+                f"Admin should be able to delete unlinked document {document.name}"

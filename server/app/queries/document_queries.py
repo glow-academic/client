@@ -11,11 +11,28 @@ class DocumentQueries:
     ) -> tuple[str, list[Any]]:
         """Build query for documents list with permissions and embedded mappings."""
         query = """
-        WITH document_scenarios AS (
+        WITH document_active_scenario_links AS (
             SELECT 
                 sd.document_id,
-                ARRAY_AGG(DISTINCT sd.scenario_id) as scenario_ids
+                COUNT(*) as active_scenario_count
             FROM scenario_documents sd
+            WHERE sd.active = true
+            GROUP BY sd.document_id
+        ),
+        document_all_scenario_links AS (
+            SELECT 
+                sd.document_id,
+                COUNT(*) as total_scenario_links
+            FROM scenario_documents sd
+            GROUP BY sd.document_id
+        ),
+        document_scenarios AS (
+            SELECT 
+                sd.document_id,
+                ARRAY_AGG(DISTINCT st.parent_id) as scenario_ids
+            FROM scenario_documents sd
+            -- Join with scenario_tree to get root scenario for each linked scenario
+            JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
             WHERE sd.active = true
             GROUP BY sd.document_id
         ),
@@ -30,9 +47,13 @@ class DocumentQueries:
                 d.department_id,
                 d.file_path,
                 COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
-                ARRAY[]::uuid[] as parameter_item_ids
+                ARRAY[]::uuid[] as parameter_item_ids,
+                COALESCE(dasl.active_scenario_count, 0) as active_scenario_count,
+                COALESCE(dasl_all.total_scenario_links, 0) as total_scenario_links
             FROM documents d
             LEFT JOIN document_scenarios ds ON ds.document_id = d.id
+            LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
+            LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
             WHERE d.department_id = ANY($1)
         ),
         user_profile AS (
@@ -57,11 +78,13 @@ class DocumentQueries:
                         'parameter_item_ids', ARRAY[]::text[],
                         'document_ids', ARRAY[]::text[]
                     )
-                ) FILTER (WHERE s.id IS NOT NULL),
+                ) FILTER (WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL),
                 '{}'::jsonb
             ) as mapping
             FROM all_scenario_ids asi
             LEFT JOIN scenarios s ON s.id = asi.scenario_id
+            -- Only include root scenarios (parent_id = child_id in scenario_tree)
+            LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
         ),
         parameter_item_mapping_data AS (
             SELECT COALESCE(
@@ -98,11 +121,13 @@ class DocumentQueries:
             dd.*,
             SUBSTRING(dd.mime_type FROM '\\.([^\\.]+)$') as extension,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
+                WHEN dd.active_scenario_count > 0 THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_edit,
             CASE 
-                WHEN up.role IN ('admin', 'superadmin') THEN true
+                WHEN dd.total_scenario_links > 0 THEN false
+                WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
                 ELSE false
             END as can_delete,
             sm.mapping as scenario_mapping,
