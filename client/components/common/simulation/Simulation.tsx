@@ -260,8 +260,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
           simulationId: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_id:
-            formData?.departmentId || departmentIds[0] || "",
+          department_id: formData?.departmentId || departmentIds[0] || "",
           active: formData?.active ?? true,
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
@@ -281,8 +280,7 @@ export default function Simulation({ simulationId }: SimulationProps) {
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_id:
-            formData?.departmentId || departmentIds[0] || "",
+          department_id: formData?.departmentId || departmentIds[0] || "",
           active: formData?.active || true,
           default_simulation: formData?.defaultSimulation || false,
           practice_simulation: formData?.practiceSimulation || false,
@@ -437,6 +435,148 @@ export default function Simulation({ simulationId }: SimulationProps) {
           </div>
         )}
 
+        {/* First Row of Switches - Simulation Active, Default Simulation, Practice Simulation */}
+        <div className="flex gap-8">
+          {/* Simulation Active Switch */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="active" className="text-sm">
+              Simulation Active
+            </Label>
+            {formData?.active !== undefined && !isLoading ? (
+              <Switch
+                id="active"
+                checked={formData.active ?? true}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          {/* Default Simulation Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="defaultSimulation" className="text-sm">
+                Default Simulation
+              </Label>
+              {formData?.defaultSimulation !== undefined && !isLoading ? (
+                <Switch
+                  id="defaultSimulation"
+                  checked={formData.defaultSimulation ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("defaultSimulation", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+          )}
+
+          {/* Practice Simulation Switch - Only for superadmin */}
+          {effectiveProfile?.role === "superadmin" && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor="practiceSimulation" className="text-sm">
+                Practice Simulation
+              </Label>
+              {formData?.practiceSimulation !== undefined && !isLoading ? (
+                <Switch
+                  id="practiceSimulation"
+                  checked={formData.practiceSimulation ?? false}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("practiceSimulation", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              ) : (
+                <Skeleton className="h-6 w-11" />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Second Row of Switches - Guardrails */}
+        <div className="flex gap-8">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="outputGuardrailActive" className="text-sm">
+              Output Guardrail Active
+            </Label>
+            {formData?.outputGuardrailActive !== undefined && !isLoading ? (
+              <Switch
+                id="outputGuardrailActive"
+                checked={formData.outputGuardrailActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("outputGuardrailActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="inputGuardrailActive" className="text-sm">
+              Input Guardrail Active
+            </Label>
+            {formData?.inputGuardrailActive !== undefined && !isLoading ? (
+              <Switch
+                id="inputGuardrailActive"
+                checked={formData.inputGuardrailActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("inputGuardrailActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label htmlFor="imageInputActive" className="text-sm">
+              Image Input Active
+            </Label>
+            {formData?.imageInputActive !== undefined && !isLoading ? (
+              <Switch
+                id="imageInputActive"
+                checked={formData.imageInputActive ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("imageInputActive", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+        </div>
+
+        {/* Third Row of Switches - Hints */}
+        <div className="flex gap-8">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="hintsEnabled" className="text-sm">
+              Hints Enabled
+            </Label>
+            {formData?.hintsEnabled !== undefined && !isLoading ? (
+              <Switch
+                id="hintsEnabled"
+                checked={formData.hintsEnabled ?? false}
+                onCheckedChange={(checked) =>
+                  handleInputChange("hintsEnabled", checked)
+                }
+                disabled={isReadonly}
+              />
+            ) : (
+              <Skeleton className="h-6 w-11" />
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="timeLimit">Minutes Allowed</Label>
@@ -500,142 +640,6 @@ export default function Simulation({ simulationId }: SimulationProps) {
             )}
             {errors.rubricId && (
               <p className="text-sm text-destructive">{errors.rubricId}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Active/Inactive, Default Simulation, and Practice Simulation Switches */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="active" className="text-sm">
-              Simulation Active
-            </Label>
-            {formData?.active !== undefined && !isLoading ? (
-              <Switch
-                id="active"
-                checked={formData.active ?? true}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          {/* Default Simulation Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="defaultSimulation" className="text-sm">
-                Default Simulation
-              </Label>
-              {formData?.defaultSimulation !== undefined && !isLoading ? (
-                <Switch
-                  id="defaultSimulation"
-                  checked={formData.defaultSimulation ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("defaultSimulation", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
-            </div>
-          )}
-
-          {/* Practice Simulation Switch - Only for superadmin */}
-          {effectiveProfile?.role === "superadmin" && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="practiceSimulation" className="text-sm">
-                Practice Simulation
-              </Label>
-              {formData?.practiceSimulation !== undefined && !isLoading ? (
-                <Switch
-                  id="practiceSimulation"
-                  checked={formData.practiceSimulation ?? false}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("practiceSimulation", checked)
-                  }
-                  disabled={isReadonly}
-                />
-              ) : (
-                <Skeleton className="h-6 w-11" />
-              )}
-            </div>
-          )}
-
-          {/* Guardrails and Features */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="outputGuardrailActive" className="text-sm">
-              Output Guardrail Active
-            </Label>
-            {formData?.outputGuardrailActive !== undefined && !isLoading ? (
-              <Switch
-                id="outputGuardrailActive"
-                checked={formData.outputGuardrailActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("outputGuardrailActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="inputGuardrailActive" className="text-sm">
-              Input Guardrail Active
-            </Label>
-            {formData?.inputGuardrailActive !== undefined && !isLoading ? (
-              <Switch
-                id="inputGuardrailActive"
-                checked={formData.inputGuardrailActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("inputGuardrailActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="imageInputActive" className="text-sm">
-              Image Input Active
-            </Label>
-            {formData?.imageInputActive !== undefined && !isLoading ? (
-              <Switch
-                id="imageInputActive"
-                checked={formData.imageInputActive ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("imageInputActive", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="hintsEnabled" className="text-sm">
-              Hints Enabled
-            </Label>
-            {formData?.hintsEnabled !== undefined && !isLoading ? (
-              <Switch
-                id="hintsEnabled"
-                checked={formData.hintsEnabled ?? false}
-                onCheckedChange={(checked) =>
-                  handleInputChange("hintsEnabled", checked)
-                }
-                disabled={isReadonly}
-              />
-            ) : (
-              <Skeleton className="h-6 w-11" />
             )}
           </div>
         </div>

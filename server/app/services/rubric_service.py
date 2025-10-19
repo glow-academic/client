@@ -1,5 +1,6 @@
 """Rubric service layer - business logic for rubric operations with hierarchical structure."""
 
+import json
 from typing import Any
 
 import asyncpg  # type: ignore
@@ -46,11 +47,12 @@ class RubricService(BaseService):
         if rubrics_result:
             first_row = rubrics_result[0]
 
-            # Parse standard_groups_mapping from JSONB with type safety
-            if first_row.get("standard_groups_mapping") and isinstance(
-                first_row["standard_groups_mapping"], dict
-            ):
-                for group_id, gdata in first_row["standard_groups_mapping"].items():
+            # Parse standard_groups_mapping from JSONB with type safety (may be string or dict)
+            groups_mapping_data = first_row.get("standard_groups_mapping")
+            if isinstance(groups_mapping_data, str):
+                groups_mapping_data = json.loads(groups_mapping_data)
+            if groups_mapping_data and isinstance(groups_mapping_data, dict):
+                for group_id, gdata in groups_mapping_data.items():
                     if isinstance(gdata, dict):
                         standard_groups_mapping[group_id] = StandardGroupMappingItem(
                             name=gdata.get("name", ""),
@@ -59,11 +61,12 @@ class RubricService(BaseService):
                             passPoints=gdata.get("passPoints", 0),
                         )
 
-            # Parse standards_mapping from JSONB with type safety
-            if first_row.get("standards_mapping") and isinstance(
-                first_row["standards_mapping"], dict
-            ):
-                for standard_id, sdata in first_row["standards_mapping"].items():
+            # Parse standards_mapping from JSONB with type safety (may be string or dict)
+            standards_mapping_data = first_row.get("standards_mapping")
+            if isinstance(standards_mapping_data, str):
+                standards_mapping_data = json.loads(standards_mapping_data)
+            if standards_mapping_data and isinstance(standards_mapping_data, dict):
+                for standard_id, sdata in standards_mapping_data.items():
                     if isinstance(sdata, dict):
                         standards_mapping[standard_id] = StandardMappingItem(
                             name=sdata.get("name", ""),
@@ -131,12 +134,13 @@ class RubricService(BaseService):
             not rubric["default_rubric"] or user_role == "superadmin"
         )
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if rubric.get("department_mapping") and isinstance(
-            rubric["department_mapping"], dict
-        ):
-            for dept_id, ddata in rubric["department_mapping"].items():
+        dept_mapping_data = rubric.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),

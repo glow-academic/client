@@ -89,11 +89,12 @@ class DocumentService(BaseService):
                             document_ids=[],
                         )
 
-            # Parse parameter_item mapping from JSONB with type safety
-            if first_row.get("parameter_item_mapping") and isinstance(
-                first_row["parameter_item_mapping"], dict
-            ):
-                for pid, pdata in first_row["parameter_item_mapping"].items():
+            # Parse parameter_item mapping from JSONB with type safety (may be string or dict)
+            param_mapping_data = first_row.get("parameter_item_mapping")
+            if isinstance(param_mapping_data, str):
+                param_mapping_data = json.loads(param_mapping_data)
+            if param_mapping_data and isinstance(param_mapping_data, dict):
+                for pid, pdata in param_mapping_data.items():
                     if isinstance(pdata, dict):
                         parameter_item_mapping[pid] = ParameterItemMappingItem(
                             name=pdata.get("name", ""),
@@ -104,11 +105,12 @@ class DocumentService(BaseService):
                             parameter_name=pdata.get("parameter_name", ""),
                         )
 
-            # Parse department mapping from JSONB with type safety
-            if first_row.get("department_mapping") and isinstance(
-                first_row["department_mapping"], dict
-            ):
-                for did, ddata in first_row["department_mapping"].items():
+            # Parse department mapping from JSONB with type safety (may be string or dict)
+            dept_mapping_data = first_row.get("department_mapping")
+            if isinstance(dept_mapping_data, str):
+                dept_mapping_data = json.loads(dept_mapping_data)
+            if dept_mapping_data and isinstance(dept_mapping_data, dict):
+                for did, ddata in dept_mapping_data.items():
                     if isinstance(ddata, dict):
                         department_mapping[did] = DepartmentMappingItem(
                             name=ddata.get("name", ""),
@@ -168,24 +170,26 @@ class DocumentService(BaseService):
         # Parse valid_parameter_item_ids from array
         valid_param_items = document["valid_parameter_item_ids"] or []
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if document.get("department_mapping") and isinstance(
-            document["department_mapping"], dict
-        ):
-            for dept_id, ddata in document["department_mapping"].items():
+        dept_mapping_data = document.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", "")
                     )
 
-        # Parse parameter_item_mapping from JSONB with type safety
+        # Parse parameter_item_mapping from JSONB with type safety (may be string or dict)
         parameter_item_mapping = {}
-        if document.get("parameter_item_mapping") and isinstance(
-            document["parameter_item_mapping"], dict
-        ):
-            for param_id, pdata in document["parameter_item_mapping"].items():
+        param_mapping_data = document.get("parameter_item_mapping")
+        if isinstance(param_mapping_data, str):
+            param_mapping_data = json.loads(param_mapping_data)
+        if param_mapping_data and isinstance(param_mapping_data, dict):
+            for param_id, pdata in param_mapping_data.items():
                 if isinstance(pdata, dict):
                     parameter_item_mapping[param_id] = ParameterItemMappingItem(
                         name=pdata.get("name", ""),
@@ -249,24 +253,26 @@ class DocumentService(BaseService):
         # Parse valid_parameter_item_ids from array
         valid_param_items = result["valid_parameter_item_ids"] or []
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if result.get("department_mapping") and isinstance(
-            result["department_mapping"], dict
-        ):
-            for dept_id, ddata in result["department_mapping"].items():
+        dept_mapping_data = result.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", "")
                     )
 
-        # Parse parameter_item_mapping from JSONB with type safety
+        # Parse parameter_item_mapping from JSONB with type safety (may be string or dict)
         parameter_item_mapping = {}
-        if result.get("parameter_item_mapping") and isinstance(
-            result["parameter_item_mapping"], dict
-        ):
-            for param_id, pdata in result["parameter_item_mapping"].items():
+        param_mapping_data = result.get("parameter_item_mapping")
+        if isinstance(param_mapping_data, str):
+            param_mapping_data = json.loads(param_mapping_data)
+        if param_mapping_data and isinstance(param_mapping_data, dict):
+            for param_id, pdata in param_mapping_data.items():
                 if isinstance(pdata, dict):
                     parameter_item_mapping[param_id] = ParameterItemMappingItem(
                         name=pdata.get("name", ""),

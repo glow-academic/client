@@ -1,5 +1,7 @@
 """Provider service layer - business logic for provider and model operations."""
 
+import json
+
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.queries.provider_queries import ProviderQueries
@@ -104,12 +106,13 @@ class ProviderService(BaseService):
         # Parse valid_department_ids from array
         valid_department_ids = provider["valid_department_ids"] or []
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if provider.get("department_mapping") and isinstance(
-            provider["department_mapping"], dict
-        ):
-            for dept_id, ddata in provider["department_mapping"].items():
+        dept_mapping_data = provider.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
@@ -143,12 +146,13 @@ class ProviderService(BaseService):
         # Parse valid_provider_ids from array
         valid_provider_ids = model["valid_provider_ids"] or []
 
-        # Parse provider_mapping from JSONB with type safety
+        # Parse provider_mapping from JSONB with type safety (may be string or dict)
         provider_mapping = {}
-        if model.get("provider_mapping") and isinstance(
-            model["provider_mapping"], dict
-        ):
-            for provider_id, pdata in model["provider_mapping"].items():
+        provider_mapping_data = model.get("provider_mapping")
+        if isinstance(provider_mapping_data, str):
+            provider_mapping_data = json.loads(provider_mapping_data)
+        if provider_mapping_data and isinstance(provider_mapping_data, dict):
+            for provider_id, pdata in provider_mapping_data.items():
                 if isinstance(pdata, dict):
                     provider_mapping[provider_id] = ProviderMappingItem(
                         name=pdata.get("name", ""),

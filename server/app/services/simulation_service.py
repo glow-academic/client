@@ -1,5 +1,6 @@
 """Simulation service layer - business logic for simulation operations."""
 
+import json
 from datetime import UTC
 from typing import Any
 
@@ -65,11 +66,12 @@ class SimulationService(BaseService):
         if result:
             first_row = result[0]
 
-            # Parse scenario mapping from JSONB with type safety
-            if first_row.get("scenario_mapping") and isinstance(
-                first_row["scenario_mapping"], dict
-            ):
-                for sid, sdata in first_row["scenario_mapping"].items():
+            # Parse scenario mapping from JSONB with type safety (may be string or dict)
+            scenario_mapping_data = first_row.get("scenario_mapping")
+            if isinstance(scenario_mapping_data, str):
+                scenario_mapping_data = json.loads(scenario_mapping_data)
+            if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+                for sid, sdata in scenario_mapping_data.items():
                     if isinstance(sdata, dict):
                         scenario_mapping[sid] = ScenarioMappingItem(
                             name=sdata.get("name", ""),
@@ -86,11 +88,12 @@ class SimulationService(BaseService):
                             document_ids=sdata.get("document_ids", []),
                         )
 
-            # Parse rubric mapping from JSONB with type safety
-            if first_row.get("rubric_mapping") and isinstance(
-                first_row["rubric_mapping"], dict
-            ):
-                for rid, rdata in first_row["rubric_mapping"].items():
+            # Parse rubric mapping from JSONB with type safety (may be string or dict)
+            rubric_mapping_data = first_row.get("rubric_mapping")
+            if isinstance(rubric_mapping_data, str):
+                rubric_mapping_data = json.loads(rubric_mapping_data)
+            if rubric_mapping_data and isinstance(rubric_mapping_data, dict):
+                for rid, rdata in rubric_mapping_data.items():
                     if isinstance(rdata, dict):
                         rubric_mapping[rid] = RubricMappingItem(
                             name=rdata.get("name", ""),
@@ -189,22 +192,26 @@ class SimulationService(BaseService):
         valid_rubric_ids = result.get("valid_rubric_ids", [])
         valid_department_ids = result.get("valid_department_ids", [])
 
-        # Parse rubric mapping from JSONB with type safety
+        # Parse rubric mapping from JSONB with type safety (may be string or dict)
         rubric_mapping: RubricMapping = {}
-        if result.get("rubric_mapping") and isinstance(result["rubric_mapping"], dict):
-            for rid, rdata in result["rubric_mapping"].items():
+        rubric_mapping_data = result.get("rubric_mapping")
+        if isinstance(rubric_mapping_data, str):
+            rubric_mapping_data = json.loads(rubric_mapping_data)
+        if rubric_mapping_data and isinstance(rubric_mapping_data, dict):
+            for rid, rdata in rubric_mapping_data.items():
                 if isinstance(rdata, dict):
                     rubric_mapping[rid] = RubricMappingItem(
                         name=rdata.get("name", ""),
                         description=rdata.get("description", ""),
                     )
 
-        # Parse scenario mapping from JSONB with type safety
+        # Parse scenario mapping from JSONB with type safety (may be string or dict)
         scenario_mapping: dict[str, ScenarioMappingItem] = {}
-        if result.get("scenario_mapping") and isinstance(
-            result["scenario_mapping"], dict
-        ):
-            for sid, sdata in result["scenario_mapping"].items():
+        scenario_mapping_data = result.get("scenario_mapping")
+        if isinstance(scenario_mapping_data, str):
+            scenario_mapping_data = json.loads(scenario_mapping_data)
+        if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
+            for sid, sdata in scenario_mapping_data.items():
                 if isinstance(sdata, dict):
                     # Parse nested persona mapping
                     persona_mapping = {}

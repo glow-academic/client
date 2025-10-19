@@ -1,5 +1,6 @@
 """Department service with business logic and dynamic SQL."""
 
+import json
 from typing import Any
 
 import asyncpg  # type: ignore
@@ -113,6 +114,8 @@ class DepartmentService(BaseService):
         agent_mapping: AgentMapping = {}
 
         agent_mapping_data = dept_row.get("agent_mapping")
+        if isinstance(agent_mapping_data, str):
+            agent_mapping_data = json.loads(agent_mapping_data)
         if agent_mapping_data and isinstance(agent_mapping_data, dict):
             for agent_id, agent_info in agent_mapping_data.items():
                 if isinstance(agent_info, dict):

@@ -1,5 +1,7 @@
 """Parameter service layer - business logic for parameter operations with nested items."""
 
+import json
+
 import asyncpg  # type: ignore
 from app.cache import keys
 from app.db import transaction
@@ -85,12 +87,13 @@ class ParameterService(BaseService):
         # Parse valid_department_ids from array
         valid_department_ids = parameter["valid_department_ids"] or []
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if parameter.get("department_mapping") and isinstance(
-            parameter["department_mapping"], dict
-        ):
-            for dept_id, ddata in parameter["department_mapping"].items():
+        dept_mapping_data = parameter.get("department_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),

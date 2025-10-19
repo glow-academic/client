@@ -1,5 +1,6 @@
 """Persona service layer - business logic for persona operations."""
 
+import json
 from typing import Any
 
 import asyncpg  # type: ignore
@@ -212,20 +213,26 @@ class PersonaService(BaseService):
         # Parse valid_model_ids from array
         valid_model_ids = persona["valid_model_ids"] or []
 
-        # Parse model_mapping from JSONB with type safety
+        # Parse model_mapping from JSONB with type safety (may be string or dict)
         model_mapping = {}
-        if persona.get("model_mapping") and isinstance(persona["model_mapping"], dict):
-            for model_id, mdata in persona["model_mapping"].items():
+        model_mapping_data = persona.get("model_mapping")
+        if isinstance(model_mapping_data, str):
+            model_mapping_data = json.loads(model_mapping_data)
+        if model_mapping_data and isinstance(model_mapping_data, dict):
+            for model_id, mdata in model_mapping_data.items():
                 if isinstance(mdata, dict):
                     model_mapping[model_id] = ModelMappingItem(
                         name=mdata.get("name", ""),
                         description=mdata.get("description", "")
                     )
 
-        # Parse department_mapping from JSONB with type safety
+        # Parse department_mapping from JSONB with type safety (may be string or dict)
         department_mapping = {}
-        if persona.get("dept_mapping") and isinstance(persona["dept_mapping"], dict):
-            for dept_id, ddata in persona["dept_mapping"].items():
+        dept_mapping_data = persona.get("dept_mapping")
+        if isinstance(dept_mapping_data, str):
+            dept_mapping_data = json.loads(dept_mapping_data)
+        if dept_mapping_data and isinstance(dept_mapping_data, dict):
+            for dept_id, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
                     department_mapping[dept_id] = DepartmentMappingItem(
                         name=ddata.get("name", ""),
