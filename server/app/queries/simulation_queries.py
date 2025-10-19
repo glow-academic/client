@@ -836,6 +836,349 @@ class SimulationQueries:
         """
         return (query, [sim_id])
 
+    def get_simulation_detail_complete(
+        self, simulation_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get all simulation detail data in ONE query.
+        
+        Consolidates ~16 queries into 1 using CTEs and JSONB aggregations.
+        Returns all data needed for SimulationDetailResponse.
+        """
+        query = """
+        WITH simulation_base AS (
+            SELECT 
+                s.id,
+                s.title,
+                s.description,
+                s.department_id,
+                s.active,
+                s.default_simulation,
+                s.practice_simulation,
+                s.hints_enabled,
+                s.input_guardrail_active,
+                s.output_guardrail_active,
+                s.image_input_active,
+                s.rubric_id,
+                stl.time_limit_seconds as time_limit
+            FROM simulations s
+            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+            WHERE s.id = $1
+        ),
+        user_context AS (
+            SELECT role FROM profiles WHERE id = $2
+        ),
+        cohort_usage AS (
+            SELECT COUNT(*) as cohort_count
+            FROM cohort_simulations
+            WHERE simulation_id = $1
+        ),
+        user_departments AS (
+            SELECT DISTINCT d.id, d.title as name, d.description
+            FROM departments d
+            JOIN profile_departments pd ON pd.department_id = d.id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        user_department_ids AS (
+            SELECT ARRAY_AGG(id) as ids
+            FROM user_departments
+        ),
+        simulation_scenarios_base AS (
+            SELECT 
+                s.id as scenario_id,
+                s.name,
+                s.problem_statement,
+                s.active,
+                s.default_scenario,
+                ss.position,
+                COALESCE(
+                    (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
+                     FROM scenario_parameter_items spi
+                     WHERE spi.scenario_id = s.id AND spi.active = true),
+                    ARRAY[]::uuid[]
+                ) as parameter_item_ids
+            FROM scenarios s
+            JOIN simulation_scenarios ss ON ss.scenario_id = s.id
+            WHERE ss.simulation_id = $1 AND ss.active = true
+            ORDER BY ss.position
+        ),
+        scenarios_list_data AS (
+            SELECT COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'scenario_id', sb.scenario_id::text,
+                        'title', sb.name,
+                        'description', COALESCE(sb.problem_statement, ''),
+                        'active', sb.active,
+                        'default_scenario', COALESCE(sb.default_scenario, false),
+                        'position', sb.position,
+                        'parameter_item_ids', (
+                            SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
+                            FROM unnest(sb.parameter_item_ids) as pid
+                        )
+                    ) ORDER BY sb.position
+                ),
+                '[]'::jsonb
+            ) as scenarios_list,
+            COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
+            FROM simulation_scenarios_base sb
+        ),
+        valid_scenarios AS (
+            SELECT ARRAY_AGG(s.id::text) as ids
+            FROM scenarios s, user_department_ids udi
+            WHERE s.department_id = ANY(udi.ids) 
+              AND s.active = true
+              AND (
+                NOT EXISTS (
+                  SELECT 1 FROM scenario_tree st 
+                  WHERE st.child_id = s.id AND st.parent_id != st.child_id
+                )
+                OR EXISTS (
+                  SELECT 1 FROM scenario_tree st 
+                  WHERE st.child_id = s.id AND st.parent_id = st.child_id
+                )
+              )
+        ),
+        valid_rubrics_data AS (
+            SELECT 
+                r.id,
+                r.name,
+                COALESCE(r.description, '') as description
+            FROM rubrics r, user_department_ids udi
+            WHERE r.department_id = ANY(udi.ids) AND r.active = true
+        ),
+        rubric_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    vr.id::text,
+                    jsonb_build_object(
+                        'name', vr.name,
+                        'description', vr.description
+                    )
+                ),
+                '{}'::jsonb
+            ) as rubric_mapping,
+            COALESCE(ARRAY_AGG(vr.id::text), ARRAY[]::text[]) as rubric_ids
+            FROM valid_rubrics_data vr
+        ),
+        parameters_data AS (
+            SELECT 
+                p.id,
+                p.name,
+                COALESCE(p.description, '') as description
+            FROM parameters p, user_department_ids udi
+            WHERE p.department_id = ANY(udi.ids)
+        ),
+        parameter_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pd.id::text,
+                    jsonb_build_object(
+                        'name', pd.name,
+                        'description', pd.description
+                    )
+                ),
+                '{}'::jsonb
+            ) as parameter_mapping
+            FROM parameters_data pd
+        ),
+        parameter_items_data AS (
+            SELECT 
+                pi.id,
+                pi.parameter_id,
+                pi.name,
+                COALESCE(pi.description, '') as description,
+                p.name as parameter_name
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            WHERE p.id IN (SELECT id FROM parameters_data)
+        ),
+        parameter_items_list_data AS (
+            SELECT COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'id', pid.id::text,
+                        'parameter_id', pid.parameter_id::text,
+                        'name', pid.name,
+                        'description', pid.description
+                    )
+                ),
+                '[]'::jsonb
+            ) as parameter_items_list
+            FROM parameter_items_data pid
+        ),
+        parameter_item_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    pid.id::text,
+                    jsonb_build_object(
+                        'name', pid.name,
+                        'description', pid.description,
+                        'parameter_id', pid.parameter_id::text,
+                        'parameter_name', pid.parameter_name
+                    )
+                ),
+                '{}'::jsonb
+            ) as parameter_item_mapping
+            FROM parameter_items_data pid
+        ),
+        scenario_persona_data AS (
+            SELECT 
+                sp.scenario_id,
+                sp.persona_id,
+                p.name as persona_name,
+                COALESCE(p.description, '') as persona_description,
+                p.color as persona_color,
+                p.icon as persona_icon
+            FROM scenario_personas sp
+            JOIN personas p ON p.id = sp.persona_id
+            WHERE sp.scenario_id IN (SELECT scenario_id FROM simulation_scenarios_base)
+              AND sp.active = true
+        ),
+        scenario_documents_data AS (
+            SELECT 
+                sd.scenario_id,
+                ARRAY_AGG(sd.document_id) as document_ids
+            FROM scenario_documents sd
+            WHERE sd.scenario_id IN (SELECT scenario_id FROM simulation_scenarios_base)
+              AND sd.active = true
+            GROUP BY sd.scenario_id
+        ),
+        all_document_ids AS (
+            SELECT DISTINCT unnest(document_ids) as document_id
+            FROM scenario_documents_data
+        ),
+        document_mapping_base AS (
+            SELECT 
+                d.id,
+                d.name,
+                d.type::text as description
+            FROM documents d
+            WHERE d.id IN (SELECT document_id FROM all_document_ids)
+        ),
+        scenario_mapping_complete AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    sb.scenario_id::text,
+                    jsonb_build_object(
+                        'name', sb.name,
+                        'description', COALESCE(sb.problem_statement, ''),
+                        'persona_id', spd.persona_id::text,
+                        'persona_mapping', CASE 
+                            WHEN spd.persona_id IS NOT NULL THEN
+                                jsonb_build_object(
+                                    spd.persona_id::text,
+                                    jsonb_build_object(
+                                        'name', spd.persona_name,
+                                        'description', spd.persona_description,
+                                        'color', spd.persona_color,
+                                        'icon', spd.persona_icon
+                                    )
+                                )
+                            ELSE '{}'::jsonb
+                        END,
+                        'document_mapping', COALESCE(
+                            (SELECT jsonb_object_agg(
+                                dmb.id::text,
+                                jsonb_build_object(
+                                    'name', dmb.name,
+                                    'description', dmb.description
+                                )
+                            )
+                            FROM document_mapping_base dmb
+                            WHERE dmb.id = ANY(sdd.document_ids)),
+                            '{}'::jsonb
+                        ),
+                        'parameter_item_mapping', COALESCE(
+                            (SELECT jsonb_object_agg(
+                                pid.id::text,
+                                jsonb_build_object(
+                                    'name', pid.name,
+                                    'description', pid.description,
+                                    'parameter_id', pid.parameter_id::text,
+                                    'parameter_name', pid.parameter_name
+                                )
+                            )
+                            FROM parameter_items_data pid
+                            WHERE pid.id = ANY(sb.parameter_item_ids)),
+                            '{}'::jsonb
+                        ),
+                        'parameter_item_ids', (
+                            SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
+                            FROM unnest(sb.parameter_item_ids) as pid
+                        ),
+                        'document_ids', COALESCE(
+                            (SELECT jsonb_agg(did::text)
+                             FROM unnest(sdd.document_ids) as did),
+                            '[]'::jsonb
+                        )
+                    )
+                ),
+                '{}'::jsonb
+            ) as scenario_mapping
+            FROM simulation_scenarios_base sb
+            LEFT JOIN scenario_persona_data spd ON spd.scenario_id = sb.scenario_id
+            LEFT JOIN scenario_documents_data sdd ON sdd.scenario_id = sb.scenario_id
+        ),
+        department_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    ud.id::text,
+                    jsonb_build_object(
+                        'name', ud.name,
+                        'description', COALESCE(ud.description, '')
+                    )
+                ),
+                '{}'::jsonb
+            ) as department_mapping,
+            COALESCE(ARRAY_AGG(ud.id::text), ARRAY[]::text[]) as department_ids
+            FROM user_departments ud
+        )
+        SELECT 
+            -- Basic simulation fields
+            sb.title,
+            sb.description,
+            sb.department_id::text,
+            sb.time_limit,
+            sb.rubric_id::text,
+            sb.active,
+            sb.default_simulation,
+            sb.practice_simulation,
+            sb.hints_enabled,
+            sb.input_guardrail_active,
+            sb.output_guardrail_active,
+            sb.image_input_active,
+            -- User context
+            uc.role as user_role,
+            COALESCE(cu.cohort_count, 0) as cohort_count,
+            -- Scenarios
+            sld.scenarios_list,
+            sld.scenario_ids,
+            -- Valid IDs
+            COALESCE(vs.ids, ARRAY[]::text[]) as valid_scenario_ids,
+            COALESCE(rmd.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
+            dmd.department_ids as valid_department_ids,
+            -- Mappings
+            smc.scenario_mapping,
+            rmd.rubric_mapping,
+            dmd.department_mapping,
+            pmd.parameter_mapping,
+            pimd.parameter_item_mapping,
+            -- Parameter items list
+            pild.parameter_items_list
+        FROM simulation_base sb
+        CROSS JOIN user_context uc
+        LEFT JOIN cohort_usage cu ON true
+        LEFT JOIN scenarios_list_data sld ON true
+        LEFT JOIN valid_scenarios vs ON true
+        LEFT JOIN rubric_mapping_data rmd ON true
+        LEFT JOIN parameter_mapping_data pmd ON true
+        LEFT JOIN parameter_item_mapping_data pimd ON true
+        LEFT JOIN parameter_items_list_data pild ON true
+        LEFT JOIN scenario_mapping_complete smc ON true
+        LEFT JOIN department_mapping_data dmd ON true
+        """
+        return (query, [simulation_id, profile_id])
+
 
 async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     """Get complete attempt data with all related entities and computed values."""
@@ -1450,14 +1793,22 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     completed_rubrics = [
         c["dynamicRubric"]
         for c in chats
-        if c["chat"]["completed"] and c["dynamicRubric"]
-    ]  # type: ignore
+        if isinstance(c.get("chat"), dict)
+        and c["chat"].get("completed")  # type: ignore
+        and c.get("dynamicRubric")
+    ]
     aggregated_results = None
     if completed_rubrics:
-        total_score = sum(r["score"] for r in completed_rubrics)  # type: ignore
+        total_score = sum(
+            r["score"] for r in completed_rubrics if isinstance(r, dict)
+        )  # type: ignore
         average_score = total_score / len(completed_rubrics)
-        passed_chats = sum(1 for r in completed_rubrics if r["passed"])  # type: ignore
-        total_time = sum(r["timeTaken"] for r in completed_rubrics)  # type: ignore
+        passed_chats = sum(
+            1 for r in completed_rubrics if isinstance(r, dict) and r.get("passed")
+        )
+        total_time = sum(
+            r["timeTaken"] for r in completed_rubrics if isinstance(r, dict)
+        )  # type: ignore
 
         aggregated_results = {
             "totalChats": len(completed_rubrics),
@@ -1474,15 +1825,21 @@ async def get_attempt_full_data(conn: Any, attempt_id: str) -> dict[str, Any]:
     # Calculate total elapsed time
     total_elapsed_seconds = 0
     for chat in chats:
-        chat_start = datetime.fromisoformat(
-            chat["chat"]["createdAt"].replace("Z", "+00:00")
-        )  # type: ignore
-        if chat["chat"]["completed"] and chat["chat"]["completedAt"]:  # type: ignore
-            chat_end = datetime.fromisoformat(
-                chat["chat"]["completedAt"].replace("Z", "+00:00")
-            )  # type: ignore
-            chat_duration = int((chat_end - chat_start).total_seconds())
-            total_elapsed_seconds += chat_duration
+        chat_data = chat.get("chat")
+        if not isinstance(chat_data, dict):
+            continue
+        created_at_str = chat_data.get("createdAt")
+        if not isinstance(created_at_str, str):
+            continue
+        chat_start = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        if chat_data.get("completed") and chat_data.get("completedAt"):
+            completed_at_str = chat_data.get("completedAt")
+            if isinstance(completed_at_str, str):
+                chat_end = datetime.fromisoformat(
+                    completed_at_str.replace("Z", "+00:00")
+                )
+                chat_duration = int((chat_end - chat_start).total_seconds())
+                total_elapsed_seconds += chat_duration
         else:
             # Current active chat
             chat_duration = int((current_time - chat_start).total_seconds())

@@ -4,7 +4,7 @@ Tests for persona_service - list and search methods.
 
 import asyncpg
 import pytest
-from app.schemas.personas import PersonasFilters
+from app.schemas.personas import PersonaDetailRequest, PersonasFilters
 from app.services.persona_service import PersonaService
 
 # --- Helper Functions ---
@@ -165,3 +165,69 @@ async def test_search_personas_limit(
     # Assert - Should not exceed limit
     assert isinstance(result, list)
     assert len(result) <= 2
+
+
+@pytest.mark.asyncio
+async def test_get_persona_detail_optimized(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting persona detail with all mappings in single query."""
+    # Setup - Get test persona and profile IDs
+    persona_result = await db.fetchrow("SELECT id FROM personas LIMIT 1")
+    if not persona_result:
+        pytest.skip("No personas found in test database")
+    
+    persona_id = str(persona_result['id'])
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    request = PersonaDetailRequest(
+        personaId=persona_id,
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = PersonaService(db)
+    result = await svc.get_persona_detail(request)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert result.name is not None
+    assert result.description is not None
+    
+    # Check mappings exist
+    assert result.model_mapping is not None
+    assert isinstance(result.model_mapping, dict)
+    assert result.department_mapping is not None
+    assert isinstance(result.department_mapping, dict)
+    
+    # Check valid IDs lists
+    assert result.valid_model_ids is not None
+    assert isinstance(result.valid_model_ids, list)
+    assert result.valid_department_ids is not None
+    assert isinstance(result.valid_department_ids, list)
+    
+    # Check permission flags exist
+    assert isinstance(result.can_edit, bool)
+    assert isinstance(result.can_duplicate, bool)
+    assert isinstance(result.can_delete, bool)
+
+
+@pytest.mark.asyncio
+async def test_get_persona_detail_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting persona detail with invalid ID raises error."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+    
+    # Create request with non-existent persona ID
+    request = PersonaDetailRequest(
+        personaId="00000000-0000-0000-0000-000000000000",
+        profileId=profile_id
+    )
+
+    # Execute & Assert - Should raise ValueError
+    svc = PersonaService(db)
+    with pytest.raises(ValueError, match="Persona not found"):
+        await svc.get_persona_detail(request)

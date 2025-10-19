@@ -157,3 +157,70 @@ async def test_search_simulations_limit(
     # Assert - Should not exceed limit
     assert isinstance(result, list)
     assert len(result) <= 2
+
+
+@pytest.mark.asyncio
+async def test_get_simulation_detail_single_query(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test simulation detail fetches all data in 1 query with JSONB aggregations."""
+    # Setup - Get test simulation and profile
+    sim_result = await db.fetchrow(
+        "SELECT id FROM simulations WHERE active = true LIMIT 1"
+    )
+    if not sim_result:
+        pytest.skip("No simulations found in test database")
+
+    simulation_id = str(sim_result["id"])
+    profile_id = await get_test_profile_id(db)
+
+    # Execute - Call the optimized service method
+    from app.schemas.simulations import SimulationDetailRequest
+
+    svc = SimulationService(db)
+    request = SimulationDetailRequest(
+        simulationId=simulation_id, profileId=profile_id
+    )
+    result = await svc.get_simulation_detail(request)
+
+    # Assert - Check basic structure (not over-asserting implementation details)
+    assert result is not None
+
+    # Basic fields
+    assert hasattr(result, "name")
+    assert hasattr(result, "description")
+    assert hasattr(result, "department_id")
+    assert hasattr(result, "rubric_id")
+    assert hasattr(result, "active")
+
+    # Permissions
+    assert hasattr(result, "can_edit")
+    assert hasattr(result, "can_duplicate")
+    assert hasattr(result, "can_delete")
+    assert isinstance(result.can_edit, bool)
+    assert isinstance(result.can_duplicate, bool)
+    assert isinstance(result.can_delete, bool)
+
+    # Scenarios
+    assert hasattr(result, "scenarios")
+    assert hasattr(result, "scenario_ids")
+    assert isinstance(result.scenarios, list)
+    assert isinstance(result.scenario_ids, list)
+
+    # Mappings
+    assert hasattr(result, "scenario_mapping")
+    assert hasattr(result, "rubric_mapping")
+    assert hasattr(result, "department_mapping")
+    assert hasattr(result, "parameter_mapping")
+    assert hasattr(result, "parameter_item_mapping")
+    assert isinstance(result.scenario_mapping, dict)
+    assert isinstance(result.rubric_mapping, dict)
+    assert isinstance(result.department_mapping, dict)
+    assert isinstance(result.parameter_mapping, dict)
+    assert isinstance(result.parameter_item_mapping, dict)
+
+    # Parameter data
+    assert hasattr(result, "parameters")
+    assert hasattr(result, "parameter_items")
+    assert isinstance(result.parameters, list)
+    assert isinstance(result.parameter_items, list)

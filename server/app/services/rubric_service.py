@@ -109,24 +109,20 @@ class RubricService(BaseService):
         self, request: RubricDetailRequest
     ) -> RubricDetailResponse:
         """Get detailed rubric information with hierarchical structure."""
-        # Get rubric basic info
-        query, params = self.queries.get_rubric_by_id(request.rubricId)
+        # Get all rubric data with hierarchical structure in a single query
+        query, params = self.queries.get_rubric_detail_complete(
+            request.rubricId, request.profileId
+        )
         rubric = await self.conn.fetchrow(query, *params)
 
         if not rubric:
             raise ValueError(f"Rubric not found: {request.rubricId}")
 
-        # Get user's accessible department IDs and role
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_result]
+        # Parse valid_department_ids from array
+        valid_department_ids = rubric["valid_department_ids"] or []
 
-        # Get user role for permission checks
-        query, params = self.queries.get_profile_role(request.profileId)
-        user_result = await self.conn.fetchrow(query, *params)
-        user_role = user_result["role"] if user_result else "student"
+        # Get user role from query result
+        user_role = rubric.get("user_role", "student")
 
         # Compute can_edit permission
         # Default rubrics can only be edited by superadmin
@@ -135,54 +131,60 @@ class RubricService(BaseService):
             not rubric["default_rubric"] or user_role == "superadmin"
         )
 
-        # Get standard groups for this rubric
-        query, params = self.queries.get_standard_groups_for_rubric(request.rubricId)
-        groups_result = await self.conn.fetch(query, *params)
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if rubric.get("department_mapping") and isinstance(
+            rubric["department_mapping"], dict
+        ):
+            for dept_id, ddata in rubric["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
+        # Parse hierarchical standard groups structure from JSONB
         standard_group_ids = []
         standard_groups_detail = {}
         standard_groups_mapping = {}
-
-        for group in groups_result:
-            group_id = str(group["id"])
-            standard_group_ids.append(group_id)
-
-            # Get standards for this group
-            query, params = self.queries.get_standards_for_group(group_id)
-            standards_result = await self.conn.fetch(query, *params)
-            standard_ids = [str(s["id"]) for s in standards_result]
-
-            standard_groups_detail[group_id] = StandardGroupDetail(
-                points=group["points"],
-                passPoints=group["passpoints"],
-                standard_ids=standard_ids,
-            )
-
-            standard_groups_mapping[group_id] = StandardGroupMappingDetail(
-                name=group["name"], description=group["description"]
-            )
-
-        # Build standards mapping
         standards_mapping = {}
-        for group in groups_result:
-            group_id = str(group["id"])
-            query, params = self.queries.get_standards_for_group(group_id)
-            standards_result = await self.conn.fetch(query, *params)
 
-            for standard in standards_result:
-                standards_mapping[str(standard["id"])] = StandardMappingItem(
-                    name=standard["name"],
-                    description=standard["description"] or "",
-                    points=standard["points"],
-                )
+        if rubric.get("standard_groups_complete") and isinstance(
+            rubric["standard_groups_complete"], list
+        ):
+            for group_data in rubric["standard_groups_complete"]:
+                if isinstance(group_data, dict):
+                    group_id = group_data.get("id", "")
+                    standard_group_ids.append(group_id)
 
-        # Get department mapping
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_result
-        }
+                    # Parse standards for this group
+                    standard_ids = []
+                    standards_list = group_data.get("standards", [])
+                    if isinstance(standards_list, list):
+                        for standard_data in standards_list:
+                            if isinstance(standard_data, dict):
+                                standard_id = standard_data.get("id", "")
+                                standard_ids.append(standard_id)
+
+                                # Add to standards mapping
+                                standards_mapping[standard_id] = StandardMappingItem(
+                                    name=standard_data.get("name", ""),
+                                    description=standard_data.get("description", ""),
+                                    points=standard_data.get("points", 0),
+                                )
+
+                    # Build standard_groups_detail
+                    standard_groups_detail[group_id] = StandardGroupDetail(
+                        points=group_data.get("points", 0),
+                        passPoints=group_data.get("passPoints", 0),
+                        standard_ids=standard_ids,
+                    )
+
+                    # Build standard_groups_mapping
+                    standard_groups_mapping[group_id] = StandardGroupMappingDetail(
+                        name=group_data.get("name", ""),
+                        description=group_data.get("description", "")
+                    )
 
         return RubricDetailResponse(
             name=rubric["name"],

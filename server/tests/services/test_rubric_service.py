@@ -4,7 +4,7 @@ Tests for rubric_service - list methods.
 
 import asyncpg
 import pytest
-from app.schemas.rubrics import RubricsFilters
+from app.schemas.rubrics import RubricDetailRequest, RubricsFilters
 from app.services.rubric_service import RubricService
 
 # --- Helper Functions ---
@@ -95,3 +95,73 @@ async def test_get_rubrics_list_empty_departments(
     assert len(result.rubrics) == 0
     assert isinstance(result.standard_groups_mapping, dict)
     assert isinstance(result.standards_mapping, dict)
+
+
+@pytest.mark.asyncio
+async def test_get_rubric_detail_optimized(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting rubric detail with hierarchical structure in single query."""
+    # Setup - Get test rubric and profile IDs
+    rubric_result = await db.fetchrow("SELECT id FROM rubrics LIMIT 1")
+    if not rubric_result:
+        pytest.skip("No rubrics found in test database")
+    
+    rubric_id = str(rubric_result['id'])
+    profile_id = await get_test_profile_id(db)
+
+    # Create request
+    request = RubricDetailRequest(
+        rubricId=rubric_id,
+        profileId=profile_id
+    )
+
+    # Execute - Call the service method
+    svc = RubricService(db)
+    result = await svc.get_rubric_detail(request)
+
+    # Assert - Check basic structure
+    assert result is not None
+    assert result.name is not None
+    assert result.description is not None
+    
+    # Check mappings exist
+    assert result.department_mapping is not None
+    assert isinstance(result.department_mapping, dict)
+    assert result.standard_groups_mapping is not None
+    assert isinstance(result.standard_groups_mapping, dict)
+    assert result.standards_mapping is not None
+    assert isinstance(result.standards_mapping, dict)
+    
+    # Check hierarchical structure
+    assert result.standard_group_ids is not None
+    assert isinstance(result.standard_group_ids, list)
+    assert result.standard_groups_detail is not None
+    assert isinstance(result.standard_groups_detail, dict)
+    
+    # Check valid IDs lists
+    assert result.valid_department_ids is not None
+    assert isinstance(result.valid_department_ids, list)
+    
+    # Check permission flags
+    assert isinstance(result.can_edit, bool)
+
+
+@pytest.mark.asyncio
+async def test_get_rubric_detail_not_found(
+    db: asyncpg.Connection, disable_cache: None
+) -> None:
+    """Test getting rubric detail with invalid ID raises error."""
+    # Setup
+    profile_id = await get_test_profile_id(db)
+    
+    # Create request with non-existent rubric ID
+    request = RubricDetailRequest(
+        rubricId="00000000-0000-0000-0000-000000000000",
+        profileId=profile_id
+    )
+
+    # Execute & Assert - Should raise ValueError
+    svc = RubricService(db)
+    with pytest.raises(ValueError, match="Rubric not found"):
+        await svc.get_rubric_detail(request)

@@ -410,6 +410,96 @@ class PersonaQueries:
         """
         return (query, [scenario_ids, cutoff_date])
 
+    def get_persona_detail_complete(
+        self, persona_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get persona detail with all mappings in ONE query.
+
+        Consolidates 6 queries into 1 using CTEs and JSONB aggregation.
+
+        Args:
+            persona_id: UUID of the persona
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH persona_data AS (
+            SELECT 
+                name,
+                description,
+                department_id,
+                active,
+                default_persona,
+                color,
+                icon,
+                model_id,
+                reasoning,
+                temperature,
+                system_prompt
+            FROM personas 
+            WHERE id = $1
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        valid_models AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        m.id::text,
+                        jsonb_build_object(
+                            'name', m.name,
+                            'description', COALESCE(m.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as model_ids
+            FROM models m 
+            WHERE m.active = true
+        ),
+        usage_data AS (
+            SELECT COUNT(*) as usage_count
+            FROM scenario_personas sp
+            WHERE sp.persona_id = $1 AND sp.active = true
+        ),
+        profile_data AS (
+            SELECT role as user_role 
+            FROM profiles 
+            WHERE id = $2
+        )
+        SELECT 
+            p.*,
+            vd.dept_mapping,
+            vd.dept_ids as valid_department_ids,
+            vm.model_mapping,
+            vm.model_ids as valid_model_ids,
+            u.usage_count,
+            pr.user_role
+        FROM persona_data p
+        CROSS JOIN valid_depts vd
+        CROSS JOIN valid_models vm
+        CROSS JOIN usage_data u
+        CROSS JOIN profile_data pr
+        """
+        return (query, [persona_id, profile_id])
+
     def get_persona_overview_complete(self, persona_id: Any) -> tuple[str, list[Any]]:
         """Build optimized query to get persona overview with all related data in ONE query.
 

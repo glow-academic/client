@@ -367,3 +367,158 @@ class DocumentQueries:
         SELECT name, file_path, mime_type FROM documents WHERE id = $1
         """
         return (query, [document_id])
+
+    def get_document_detail_complete(
+        self, document_id: str, profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get document detail with all mappings in ONE query.
+
+        Consolidates 5 queries into 1 using CTEs and JSONB aggregation.
+
+        Args:
+            document_id: UUID of the document
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH document_data AS (
+            SELECT 
+                d.name,
+                d.active,
+                d.type,
+                d.department_id
+            FROM documents d
+            WHERE d.id = $1
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        valid_param_items AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        pi.id::text,
+                        jsonb_build_object(
+                            'name', pi.name,
+                            'description', COALESCE(pi.description, ''),
+                            'parameter_id', pi.parameter_id::text,
+                            'parameter_name', p.name
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as param_item_mapping,
+                array_agg(pi.id::text ORDER BY pi.name) as param_item_ids
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            JOIN document_data dd ON p.department_id = dd.department_id
+            WHERE p.active = true
+        )
+        SELECT 
+            doc.*,
+            vd.dept_mapping as department_mapping,
+            vd.dept_ids as valid_department_ids,
+            vpi.param_item_mapping as parameter_item_mapping,
+            vpi.param_item_ids as valid_parameter_item_ids
+        FROM document_data doc
+        CROSS JOIN valid_depts vd
+        CROSS JOIN valid_param_items vpi
+        """
+        return (query, [document_id, profile_id])
+
+    def get_document_detail_bulk_complete(
+        self, document_ids: list[str], profile_id: str
+    ) -> tuple[str, list[Any]]:
+        """Build optimized query to get bulk document detail with all mappings in ONE query.
+
+        Consolidates multiple queries into 1 using CTEs and JSONB aggregation.
+
+        Args:
+            document_ids: List of document UUIDs
+            profile_id: UUID of the profile for permissions
+
+        Returns:
+            Tuple of (query string, params list)
+        """
+        query = """
+        WITH document_data AS (
+            SELECT 
+                d.id,
+                d.type,
+                d.department_id
+            FROM documents d
+            WHERE d.id = ANY($1)
+        ),
+        aggregated_data AS (
+            SELECT 
+                array_agg(DISTINCT type) as types,
+                array_agg(DISTINCT department_id::text) as department_ids
+            FROM document_data
+        ),
+        valid_depts AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        d.id::text,
+                        jsonb_build_object(
+                            'name', d.title,
+                            'description', COALESCE(d.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as dept_mapping,
+                array_agg(d.id::text ORDER BY d.title) as dept_ids
+            FROM departments d
+            JOIN profile_departments pd ON d.id = pd.department_id
+            WHERE pd.profile_id = $2 AND d.active = true
+        ),
+        doc_dept_ids AS (
+            SELECT UNNEST(department_ids) as dept_id FROM aggregated_data
+        ),
+        valid_param_items AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        pi.id::text,
+                        jsonb_build_object(
+                            'name', pi.name,
+                            'description', COALESCE(pi.description, ''),
+                            'parameter_id', pi.parameter_id::text,
+                            'parameter_name', p.name
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as param_item_mapping,
+                array_agg(pi.id::text ORDER BY pi.name) as param_item_ids
+            FROM parameter_items pi
+            JOIN parameters p ON p.id = pi.parameter_id
+            JOIN doc_dept_ids ddi ON p.department_id::text = ddi.dept_id
+            WHERE p.active = true
+        )
+        SELECT 
+            ad.types,
+            ad.department_ids,
+            vd.dept_mapping as department_mapping,
+            vd.dept_ids as valid_department_ids,
+            vpi.param_item_mapping as parameter_item_mapping,
+            vpi.param_item_ids as valid_parameter_item_ids
+        FROM aggregated_data ad
+        CROSS JOIN valid_depts vd
+        CROSS JOIN valid_param_items vpi
+        """
+        return (query, [document_ids, profile_id])

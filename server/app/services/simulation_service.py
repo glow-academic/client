@@ -140,187 +140,210 @@ class SimulationService(BaseService):
     async def _execute_get_simulation_detail(
         self, request: SimulationDetailRequest
     ) -> SimulationDetailResponse:
-        """Execute simulation detail query (extracted for caching)."""
-        # Get simulation basic info
-        query, params = self.queries.get_simulation_by_id(request.simulationId)
-        simulation = await self.conn.fetchrow(query, *params)
+        """Execute simulation detail query (extracted for caching).
+        
+        OPTIMIZED: Uses single query instead of ~16 queries.
+        """
+        # Get all data in ONE query using CTEs and JSONB aggregations
+        query, params = self.queries.get_simulation_detail_complete(
+            request.simulationId, request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not simulation:
+        if not result:
             raise ValueError(f"Simulation not found: {request.simulationId}")
 
-        # Get user profile for permission checks
-        query, params = self.queries.get_profile_role(request.profileId)
-        profile_row = await self.conn.fetchrow(query, *params)
-        user_role = profile_row["role"] if profile_row else "trainee"
-
-        # Check if simulation is in use (linked to cohorts)
-        query, params = self.queries.get_cohort_usage_for_simulation(
-            request.simulationId
-        )
-        cohort_usage = await self.conn.fetchrow(query, *params)
-        cohort_count = cohort_usage["cohort_count"] if cohort_usage else 0
+        # Extract user role and cohort count for permissions
+        user_role = result["user_role"] if result.get("user_role") else "trainee"
+        cohort_count = result.get("cohort_count", 0)
         in_use = cohort_count > 0
 
         # Compute permissions
         is_admin = user_role in ("admin", "superadmin")
         can_edit = is_admin and (
-            not simulation.default_simulation or user_role == "superadmin"
+            not result["default_simulation"] or user_role == "superadmin"
         )
         can_duplicate = is_admin
         can_delete = is_admin and not in_use
 
-        # Get scenario IDs with positions from junction table
-        query, params = self.queries.get_simulation_scenarios(request.simulationId)
-        scenario_result = await self.conn.fetch(query, *params)
-        scenario_ids = [str(row["scenario_id"]) for row in scenario_result]
-
-        # Get full scenario data with positions
+        # Parse scenarios list from JSONB with type safety
         scenarios_list: list[ScenarioInSimulation] = []
-        if scenario_ids:
-            # Get scenarios with their data
-            query, params = self.queries.get_scenarios_with_positions(
-                request.simulationId, scenario_ids
-            )
-            scenarios_data = await self.conn.fetch(query, *params)
-
-            # Get parameter items for each scenario
-            for scenario_data in scenarios_data:
-                # Get parameter item IDs for this scenario
-                query, params = self.queries.get_scenario_parameter_items(
-                    str(scenario_data["id"])
-                )
-                param_items = await self.conn.fetch(query, *params)
-                param_item_ids = [str(row["parameter_item_id"]) for row in param_items]
-
-                scenarios_list.append(
-                    ScenarioInSimulation(
-                        scenario_id=str(scenario_data["id"]),
-                        title=scenario_data["name"],
-                        description=scenario_data["problem_statement"] or "",
-                        active=scenario_data["active"],
-                        default_scenario=scenario_data["default_scenario"] or False,
-                        position=scenario_data["position"],
-                        parameter_item_ids=param_item_ids,
+        if result.get("scenarios_list") and isinstance(result["scenarios_list"], list):
+            for s_data in result["scenarios_list"]:
+                if isinstance(s_data, dict):
+                    scenarios_list.append(
+                        ScenarioInSimulation(
+                            scenario_id=s_data.get("scenario_id", ""),
+                            title=s_data.get("title", ""),
+                            description=s_data.get("description", ""),
+                            active=s_data.get("active", False),
+                            default_scenario=s_data.get("default_scenario", False),
+                            position=s_data.get("position", 0),
+                            parameter_item_ids=s_data.get("parameter_item_ids", []),
+                        )
                     )
-                )
 
-        # Get user's accessible department IDs
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        dept_result = await self.conn.fetch(query, *params)
-        valid_department_ids = [str(row["id"]) for row in dept_result]
+        # Get scenario IDs and valid IDs
+        scenario_ids = result.get("scenario_ids", [])
+        valid_scenario_ids = result.get("valid_scenario_ids", [])
+        valid_rubric_ids = result.get("valid_rubric_ids", [])
+        valid_department_ids = result.get("valid_department_ids", [])
 
-        # Get valid scenarios
-        query, params = self.queries.get_valid_scenarios(valid_department_ids)
-        valid_scenario_ids = [
-            str(row["id"]) for row in await self.conn.fetch(query, *params)
-        ]
+        # Parse rubric mapping from JSONB with type safety
+        rubric_mapping: RubricMapping = {}
+        if result.get("rubric_mapping") and isinstance(result["rubric_mapping"], dict):
+            for rid, rdata in result["rubric_mapping"].items():
+                if isinstance(rdata, dict):
+                    rubric_mapping[rid] = RubricMappingItem(
+                        name=rdata.get("name", ""),
+                        description=rdata.get("description", ""),
+                    )
 
-        # Get valid rubrics with mapping
-        query, params = self.queries.get_valid_rubrics(valid_department_ids)
-        rubrics_result = await self.conn.fetch(query, *params)
-        valid_rubric_ids = [str(row["id"]) for row in rubrics_result]
-        rubric_mapping = {
-            str(row["id"]): RubricMappingItem(
-                name=row["name"], description=row["description"]
-            )
-            for row in rubrics_result
-        }
+        # Parse scenario mapping from JSONB with type safety
+        scenario_mapping: dict[str, ScenarioMappingItem] = {}
+        if result.get("scenario_mapping") and isinstance(
+            result["scenario_mapping"], dict
+        ):
+            for sid, sdata in result["scenario_mapping"].items():
+                if isinstance(sdata, dict):
+                    # Parse nested persona mapping
+                    persona_mapping = {}
+                    if sdata.get("persona_mapping") and isinstance(
+                        sdata["persona_mapping"], dict
+                    ):
+                        for pid, pdata in sdata["persona_mapping"].items():
+                            if isinstance(pdata, dict):
+                                from app.schemas.base import PersonaMappingItem
 
-        # Get scenario mapping with enhanced data
-        if scenario_ids:
-            # Create scenario service locally to avoid storing service dependencies
-            from app.services.scenario_service import ScenarioService
+                                persona_mapping[pid] = PersonaMappingItem(
+                                    name=pdata.get("name", ""),
+                                    description=pdata.get("description", ""),
+                                    color=pdata.get("color", ""),
+                                    icon=pdata.get("icon", ""),
+                                )
 
-            scenario_service = ScenarioService(self.conn)
-            scenario_mapping = await scenario_service.build_enhanced_scenario_mapping(
-                scenario_ids
-            )
-        else:
-            scenario_mapping = {}
+                    # Parse nested document mapping
+                    document_mapping = {}
+                    if sdata.get("document_mapping") and isinstance(
+                        sdata["document_mapping"], dict
+                    ):
+                        for did, ddata in sdata["document_mapping"].items():
+                            if isinstance(ddata, dict):
+                                from app.schemas.base import \
+                                    DocumentMappingItem
 
-        # Get department mapping
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in dept_result
-        }
+                                document_mapping[did] = DocumentMappingItem(
+                                    name=ddata.get("name", ""),
+                                    description=ddata.get("description", ""),
+                                )
 
-        # Get parameters for valid departments
-        query, params = self.queries.get_parameters_for_departments(
-            valid_department_ids
-        )
-        params_result = await self.conn.fetch(query, *params)
+                    # Parse nested parameter_item mapping
+                    param_item_mapping = {}
+                    if sdata.get("parameter_item_mapping") and isinstance(
+                        sdata["parameter_item_mapping"], dict
+                    ):
+                        for piid, pidata in sdata["parameter_item_mapping"].items():
+                            if isinstance(pidata, dict):
+                                param_item_mapping[piid] = ParameterItemMappingItem(
+                                    name=pidata.get("name", ""),
+                                    description=pidata.get("description", ""),
+                                    parameter_id=pidata.get("parameter_id", ""),
+                                    parameter_name=pidata.get("parameter_name", ""),
+                                )
 
-        parameters_list = []
+                    scenario_mapping[sid] = ScenarioMappingItem(
+                        name=sdata.get("name", ""),
+                        description=sdata.get("description", ""),
+                        persona_id=sdata.get("persona_id"),
+                        persona_mapping=persona_mapping,
+                        document_mapping=document_mapping,
+                        parameter_item_mapping=param_item_mapping,
+                        parameter_item_ids=sdata.get("parameter_item_ids", []),
+                        document_ids=sdata.get("document_ids", []),
+                    )
+
+        # Parse department mapping from JSONB with type safety
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        if result.get("department_mapping") and isinstance(
+            result["department_mapping"], dict
+        ):
+            for did, ddata in result["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[did] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse parameter mapping from JSONB with type safety
         parameter_mapping: ParameterMapping = {}
-        for row in params_result:
-            parameter_mapping[str(row["id"])] = ParameterMappingItem(
-                name=row["name"], description=row["description"]
-            )
+        if result.get("parameter_mapping") and isinstance(
+            result["parameter_mapping"], dict
+        ):
+            for pid, pdata in result["parameter_mapping"].items():
+                if isinstance(pdata, dict):
+                    parameter_mapping[pid] = ParameterMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                    )
 
-        # Get parameter items for valid departments
-        query, params = self.queries.get_parameter_items_for_departments(
-            valid_department_ids
-        )
-        param_items_result = await self.conn.fetch(query, *params)
-
-        parameter_items_list = []
+        # Parse parameter_item mapping from JSONB with type safety
         parameter_item_mapping: ParameterItemMapping = {}
-        for row in param_items_result:
-            parameter_items_list.append(
-                ParameterItemDetail(
-                    id=str(row["id"]),
-                    name=row["name"],
-                    description=row["description"] if row["description"] else None,
-                    parameter_id=str(row["parameter_id"]),
-                )
-            )
-            parameters_list.append(
-                ParameterItem(
-                    id=str(row["id"]),
-                    parameter_id=str(row["parameter_id"]),
-                    name=row["name"],
-                    description=row["description"] if row["description"] else None,
-                )
-            )
-            # Get parameter name for the mapping
-            param_name = next(
-                (
-                    p["name"]
-                    for p in params_result
-                    if str(p["id"]) == str(row["parameter_id"])
-                ),
-                "Unknown",
-            )
-            parameter_item_mapping[str(row["id"])] = ParameterItemMappingItem(
-                name=row["name"],
-                description=row["description"],
-                parameter_id=str(row["parameter_id"]),
-                parameter_name=param_name,
-            )
+        if result.get("parameter_item_mapping") and isinstance(
+            result["parameter_item_mapping"], dict
+        ):
+            for piid, pidata in result["parameter_item_mapping"].items():
+                if isinstance(pidata, dict):
+                    parameter_item_mapping[piid] = ParameterItemMappingItem(
+                        name=pidata.get("name", ""),
+                        description=pidata.get("description", ""),
+                        parameter_id=pidata.get("parameter_id", ""),
+                        parameter_name=pidata.get("parameter_name", ""),
+                    )
+
+        # Parse parameter items list from JSONB with type safety
+        parameters_list: list[ParameterItem] = []
+        parameter_items_list: list[ParameterItemDetail] = []
+        if result.get("parameter_items_list") and isinstance(
+            result["parameter_items_list"], list
+        ):
+            for pi_data in result["parameter_items_list"]:
+                if isinstance(pi_data, dict):
+                    parameter_items_list.append(
+                        ParameterItemDetail(
+                            id=pi_data.get("id", ""),
+                            name=pi_data.get("name", ""),
+                            description=pi_data.get("description"),
+                            parameter_id=pi_data.get("parameter_id", ""),
+                        )
+                    )
+                    parameters_list.append(
+                        ParameterItem(
+                            id=pi_data.get("id", ""),
+                            parameter_id=pi_data.get("parameter_id", ""),
+                            name=pi_data.get("name", ""),
+                            description=pi_data.get("description"),
+                        )
+                    )
 
         return SimulationDetailResponse(
             # Basic fields
-            name=simulation["title"],
-            description=simulation["description"],
-            department_id=str(simulation["department_id"]),
+            name=result["title"],
+            description=result["description"],
+            department_id=result["department_id"],
             valid_department_ids=valid_department_ids,
-            time_limit=simulation["time_limit"],
-            rubric_id=str(simulation["rubric_id"]),
+            time_limit=result["time_limit"],
+            rubric_id=result["rubric_id"],
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
             # Boolean parameters
-            active=simulation["active"],
-            default_simulation=simulation["default_simulation"],
-            practice_simulation=simulation["practice_simulation"],
-            hints_enabled=simulation["hints_enabled"],
-            input_guardrail_active=simulation["input_guardrail_active"],
-            output_guardrail_active=simulation["output_guardrail_active"],
-            image_input_active=simulation["image_input_active"],
+            active=result["active"],
+            default_simulation=result["default_simulation"],
+            practice_simulation=result["practice_simulation"],
+            hints_enabled=result["hints_enabled"],
+            input_guardrail_active=result["input_guardrail_active"],
+            output_guardrail_active=result["output_guardrail_active"],
+            image_input_active=result["image_input_active"],
             # Permission flags
             can_edit=can_edit,
             can_duplicate=can_duplicate,
@@ -875,8 +898,10 @@ class SimulationService(BaseService):
         simulation_grade_id = None
         chat_message_count = message_count_map.get(chat_id, 0)
         if chat_message_count >= 2:
+            from uuid import UUID
+
             simulation_grade_id = await run_grade_agent(
-                chat_id, department_id, self.conn, sio_instance
+                UUID(chat_id), UUID(department_id), self.conn, sio_instance
             )  # type: ignore
 
         # Mark the current chat as completed
@@ -892,8 +917,13 @@ class SimulationService(BaseService):
                         str(existing_chat["id"]), 0
                     )
                     if other_message_count >= 2:
+                        from uuid import UUID
+
                         await run_grade_agent(
-                            existing_chat["id"], department_id, self.conn, sio_instance
+                            UUID(str(existing_chat["id"])),
+                            UUID(department_id),
+                            self.conn,
+                            sio_instance,
                         )  # type: ignore
                     query, params = self.queries.update_chat_completed(
                         str(existing_chat["id"])

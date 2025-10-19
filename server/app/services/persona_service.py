@@ -197,54 +197,45 @@ class PersonaService(BaseService):
         self, request: PersonaDetailRequest
     ) -> PersonaDetailResponse:
         """Internal method to fetch persona detail from database."""
-        # Get persona basic info
-        query, params = self.queries.get_persona_by_id(request.personaId)
+        # Get all persona data with mappings in a single query
+        query, params = self.queries.get_persona_detail_complete(
+            request.personaId, request.profileId
+        )
         persona = await self.conn.fetchrow(query, *params)
 
         if not persona:
             raise ValueError(f"Persona not found: {request.personaId}")
 
-        # Get user's accessible department IDs based on profile
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        valid_department_ids = [
-            str(row["id"]) for row in await self.conn.fetch(query, *params)
-        ]
+        # Parse valid_department_ids from array
+        valid_department_ids = persona["valid_department_ids"] or []
 
-        # Get models with mapping
-        query, params = self.queries.get_valid_models()
-        models_result = await self.conn.fetch(query, *params)
+        # Parse valid_model_ids from array
+        valid_model_ids = persona["valid_model_ids"] or []
 
-        valid_model_ids = [str(row["id"]) for row in models_result]
-        model_mapping = {
-            str(row["id"]): ModelMappingItem(
-                name=row["name"], description=row["description"]
-            )
-            for row in models_result
-        }
+        # Parse model_mapping from JSONB with type safety
+        model_mapping = {}
+        if persona.get("model_mapping") and isinstance(persona["model_mapping"], dict):
+            for model_id, mdata in persona["model_mapping"].items():
+                if isinstance(mdata, dict):
+                    model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", "")
+                    )
 
-        # Get departments with mapping
-        query, params = self.queries.get_departments_mapping(valid_department_ids)
-        departments_result = await self.conn.fetch(query, *params)
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if persona.get("dept_mapping") and isinstance(persona["dept_mapping"], dict):
+            for dept_id, ddata in persona["dept_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in departments_result
-        }
-
-        # Get persona usage in scenarios
-        usage_query, usage_params = self.queries.check_persona_usage(request.personaId)
-        usage_result = await self.conn.fetchrow(usage_query, *usage_params)
-        scenario_count = int(usage_result["usage_count"]) if usage_result else 0
+        # Get usage and role from query result
+        scenario_count = int(persona["usage_count"]) if persona.get("usage_count") else 0
         in_use = scenario_count > 0
-
-        # Get profile role for permissions
-        role_query, role_params = self.queries.get_profile_role(request.profileId)
-        role_result = await self.conn.fetchrow(role_query, *role_params)
-        user_role = role_result["role"] if role_result else "student"
+        user_role = persona.get("user_role", "student")
 
         # Calculate permissions
         is_superadmin = user_role == "superadmin"

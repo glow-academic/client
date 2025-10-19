@@ -153,53 +153,46 @@ class DocumentService(BaseService):
         self, request: DocumentDetailRequest
     ) -> DocumentDetailResponse:
         """Get detailed document information using dynamic SQL."""
-        # Get document basic info
-        query, params = self.queries.get_document_by_id(request.documentId)
+        # Get all document data with mappings in a single query
+        query, params = self.queries.get_document_detail_complete(
+            request.documentId, request.profileId
+        )
         document = await self.conn.fetchrow(query, *params)
 
         if not document:
             raise ValueError(f"Document not found: {request.documentId}")
 
-        # Get user's accessible department IDs
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        valid_department_ids = [
-            str(row["id"]) for row in await self.conn.fetch(query, *params)
-        ]
+        # Parse valid_department_ids from array
+        valid_department_ids = document["valid_department_ids"] or []
 
-        # Get all valid parameter items for this department
-        # TODO: Query document_parameter_items junction table for specific items
-        query, params = self.queries.get_parameter_items_for_department(
-            document["department_id"]
-        )
-        valid_param_items_result = await self.conn.fetch(query, *params)
-        valid_param_items = [str(row["id"]) for row in valid_param_items_result]
+        # Parse valid_parameter_item_ids from array
+        valid_param_items = document["valid_parameter_item_ids"] or []
 
-        # Get departments with mapping
-        query, params = self.queries.get_departments_mapping(valid_department_ids)
-        departments_result = await self.conn.fetch(query, *params)
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if document.get("department_mapping") and isinstance(
+            document["department_mapping"], dict
+        ):
+            for dept_id, ddata in document["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in departments_result
-        }
-
-        # Build parameter_item_mapping for valid items
-        query, params = self.queries.get_parameter_item_mapping(valid_param_items)
-        param_mapping_result = await self.conn.fetch(query, *params)
-
-        parameter_item_mapping = {
-            str(row["id"]): ParameterItemMappingItem(
-                name=row["name"],
-                description=row["description"],
-                parameter_id=str(row["parameter_id"]),
-                parameter_name=row["parameter_name"],
-            )
-            for row in param_mapping_result
-        }
+        # Parse parameter_item_mapping from JSONB with type safety
+        parameter_item_mapping = {}
+        if document.get("parameter_item_mapping") and isinstance(
+            document["parameter_item_mapping"], dict
+        ):
+            for param_id, pdata in document["parameter_item_mapping"].items():
+                if isinstance(pdata, dict):
+                    parameter_item_mapping[param_id] = ParameterItemMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        parameter_id=pdata.get("parameter_id", ""),
+                        parameter_name=pdata.get("parameter_name", ""),
+                    )
 
         # Document type options
         document_type_options = [
@@ -234,63 +227,53 @@ class DocumentService(BaseService):
         self, request: DocumentDetailBulkRequest
     ) -> DocumentDetailBulkResponse:
         """Get bulk document detail information using dynamic SQL."""
-        # Get documents basic info
-        query, params = self.queries.get_documents_by_ids(request.documentIds)
-        documents_result = await self.conn.fetch(query, *params)
+        # Get all document data with mappings in a single query
+        query, params = self.queries.get_document_detail_bulk_complete(
+            request.documentIds, request.profileId
+        )
+        result = await self.conn.fetchrow(query, *params)
 
-        if not documents_result:
+        if not result:
             raise ValueError("No documents found")
 
-        # Aggregate types (if all same, return that type, else None)
-        types = list(set([row["type"] for row in documents_result]))
+        # Parse types array and determine common type
+        types = result["types"] or []
         common_type = types[0] if len(types) == 1 else None
 
-        # Aggregate department IDs
-        department_ids = list(
-            set([str(row["department_id"]) for row in documents_result])
-        )
+        # Parse department IDs from array
+        department_ids = result["department_ids"] or []
 
-        # Get user's accessible department IDs
-        query, params = self.queries.get_valid_departments_for_profile(
-            request.profileId
-        )
-        valid_department_ids = [
-            str(row["id"]) for row in await self.conn.fetch(query, *params)
-        ]
+        # Parse valid_department_ids from array
+        valid_department_ids = result["valid_department_ids"] or []
 
-        # Get all valid parameter items for these departments
-        # TODO: Query document_parameter_items junction table for union of items across docs
-        query, params = self.queries.get_valid_parameter_items_for_departments(
-            department_ids
-        )
-        valid_param_items = [
-            str(row["id"]) for row in await self.conn.fetch(query, *params)
-        ]
+        # Parse valid_parameter_item_ids from array
+        valid_param_items = result["valid_parameter_item_ids"] or []
 
-        # Get departments with mapping
-        query, params = self.queries.get_departments_mapping(valid_department_ids)
-        departments_result = await self.conn.fetch(query, *params)
+        # Parse department_mapping from JSONB with type safety
+        department_mapping = {}
+        if result.get("department_mapping") and isinstance(
+            result["department_mapping"], dict
+        ):
+            for dept_id, ddata in result["department_mapping"].items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", "")
+                    )
 
-        department_mapping = {
-            str(row["id"]): DepartmentMappingItem(
-                name=row["name"], description=row["description"] or ""
-            )
-            for row in departments_result
-        }
-
-        # Build parameter_item_mapping for valid items
-        query, params = self.queries.get_parameter_item_mapping(valid_param_items)
-        param_mapping_result = await self.conn.fetch(query, *params)
-
-        parameter_item_mapping = {
-            str(row["id"]): ParameterItemMappingItem(
-                name=row["name"],
-                description=row["description"],
-                parameter_id=str(row["parameter_id"]),
-                parameter_name=row["parameter_name"],
-            )
-            for row in param_mapping_result
-        }
+        # Parse parameter_item_mapping from JSONB with type safety
+        parameter_item_mapping = {}
+        if result.get("parameter_item_mapping") and isinstance(
+            result["parameter_item_mapping"], dict
+        ):
+            for param_id, pdata in result["parameter_item_mapping"].items():
+                if isinstance(pdata, dict):
+                    parameter_item_mapping[param_id] = ParameterItemMappingItem(
+                        name=pdata.get("name", ""),
+                        description=pdata.get("description", ""),
+                        parameter_id=pdata.get("parameter_id", ""),
+                        parameter_name=pdata.get("parameter_name", ""),
+                    )
 
         document_type_options = [
             "homework",
