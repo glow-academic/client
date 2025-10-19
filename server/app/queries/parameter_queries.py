@@ -59,7 +59,11 @@ class ParameterQueries:
         return (query, [department_ids, profile_id])
 
     def get_parameter_by_id(self, parameter_id: str) -> tuple[str, list[Any]]:
-        """Build query to get parameter by ID."""
+        """Build query to get parameter by ID.
+        
+        NOTE: Used by create_parameter_item method for validation.
+        For detail views, use get_parameter_detail_complete() instead.
+        """
         query = """
         SELECT 
             name,
@@ -72,36 +76,6 @@ class ParameterQueries:
         WHERE id = $1
         """
         return (query, [parameter_id])
-
-    def get_parameter_items(self, parameter_id: str) -> tuple[str, list[Any]]:
-        """Build query to get parameter items."""
-        query = """
-        SELECT 
-            pi.id,
-            pi.name,
-            pi.description,
-            pi.value,
-            pi.default_item,
-            pi.parameter_id,
-            p.name as parameter_name
-        FROM parameter_items pi
-        JOIN parameters p ON p.id = pi.parameter_id
-        WHERE pi.parameter_id = $1
-        ORDER BY pi.name
-        """
-        return (query, [parameter_id])
-
-    def check_parameter_item_usage(
-        self, parameter_item_ids: list[str]
-    ) -> tuple[str, list[Any]]:
-        """Build query to check parameter item usage."""
-        query = """
-        SELECT parameter_item_id, COUNT(*) as usage_count
-        FROM scenario_parameter_items
-        WHERE parameter_item_id = ANY($1) AND active = true
-        GROUP BY parameter_item_id
-        """
-        return (query, [parameter_item_ids])
 
     def get_valid_departments_for_profile(
         self, profile_id: str

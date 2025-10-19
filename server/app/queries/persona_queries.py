@@ -125,11 +125,6 @@ class PersonaQueries:
         """
         return (query, [persona_id])
 
-    def get_valid_models(self) -> tuple[str, list[Any]]:
-        """Build query for valid models."""
-        query = "SELECT id, name, COALESCE(description, '') as description FROM models WHERE active = true ORDER BY name"
-        return (query, [])
-
     def get_valid_departments_for_profile(
         self, profile_id: str
     ) -> tuple[str, list[Any]]:

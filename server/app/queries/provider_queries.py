@@ -136,21 +136,6 @@ class ProviderQueries:
         """
         return (query, [model_ids])
 
-    def get_provider_by_id(self, provider_id: str) -> tuple[str, list[Any]]:
-        """Build query to get provider by ID."""
-        query = """
-        SELECT 
-            p.name,
-            p.description,
-            p.api_key,
-            pe.base_url,
-            p.department_id
-        FROM providers p
-        LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
-        WHERE p.id = $1
-        """
-        return (query, [provider_id])
-
     def get_valid_departments_for_profile(
         self, profile_id: str
     ) -> tuple[str, list[Any]]:
@@ -162,31 +147,6 @@ class ProviderQueries:
         ORDER BY d.title
         """
         return (query, [])
-
-    def get_model_by_id(self, model_id: str) -> tuple[str, list[Any]]:
-        """Build query to get model by ID."""
-        query = """
-        SELECT 
-            name,
-            description,
-            active,
-            custom_model,
-            input_ppm,
-            output_ppm,
-            provider_id
-        FROM models
-        WHERE id = $1
-        """
-        return (query, [model_id])
-
-    def get_valid_providers(self, dept_ids: list[str]) -> tuple[str, list[Any]]:
-        """Build query for valid providers."""
-        query = """
-        SELECT id, name, COALESCE(description, '') as description FROM providers 
-        WHERE department_id = ANY($1)
-        ORDER BY name
-        """
-        return (query, [dept_ids])
 
     def create_provider(self) -> tuple[str, list[Any]]:
         """Build query to create provider.

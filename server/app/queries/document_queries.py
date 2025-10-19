@@ -121,19 +121,6 @@ class DocumentQueries:
     # get_tag_mapping removed - simulation_tags table dropped
     # Use get_parameter_item_mapping instead
 
-    def get_document_by_id(self, document_id: str) -> tuple[str, list[Any]]:
-        """Build query to get document by ID."""
-        query = """
-        SELECT 
-            d.name,
-            d.active,
-            d.type,
-            d.department_id
-        FROM documents d
-        WHERE d.id = $1
-        """
-        return (query, [document_id])
-
     def get_document_parameter_items(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get parameter items linked to document."""
         query = """
@@ -296,18 +283,6 @@ class DocumentQueries:
         """
         return (query, [department_ids])
 
-    def get_parameter_items_for_department(
-        self, department_id: str
-    ) -> tuple[str, list[Any]]:
-        """Build query to get parameter items for a single department."""
-        query = """
-            SELECT pi.id
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = $1 AND pi.active = true
-        """
-        return (query, [department_id])
-
     def get_parameter_item_mapping(
         self, parameter_item_ids: list[str]
     ) -> tuple[str, list[Any]]:
@@ -324,18 +299,6 @@ class DocumentQueries:
             WHERE pi.id = ANY($1)
         """
         return (query, [parameter_item_ids])
-
-    def get_valid_parameter_items_for_departments(
-        self, department_ids: list[str]
-    ) -> tuple[str, list[Any]]:
-        """Build query to get valid parameter items for multiple departments."""
-        query = """
-            SELECT pi.id
-            FROM parameter_items pi
-            JOIN parameters p ON p.id = pi.parameter_id
-            WHERE p.department_id = ANY($1) AND pi.active = true
-        """
-        return (query, [department_ids])
 
     def get_document_info_with_path(self, document_id: str) -> tuple[str, list[Any]]:
         """Build query to get document info including file path."""

@@ -109,51 +109,6 @@ class RubricQueries:
 
         return (query, [department_ids, profile_id])
 
-    def get_rubric_by_id(self, rubric_id: str) -> tuple[str, list[Any]]:
-        """Build query to get rubric by ID."""
-        query = """
-        SELECT 
-            name,
-            description,
-            department_id,
-            active,
-            default_rubric,
-            points,
-            pass_points as passPoints
-        FROM rubrics
-        WHERE id = $1
-        """
-        return (query, [rubric_id])
-
-    def get_standard_groups_for_rubric(self, rubric_id: str) -> tuple[str, list[Any]]:
-        """Build query to get standard groups for a rubric."""
-        query = """
-        SELECT 
-            id,
-            name,
-            description,
-            points,
-            pass_points as passPoints
-        FROM standard_groups
-        WHERE rubric_id = $1
-        ORDER BY name
-        """
-        return (query, [rubric_id])
-
-    def get_standards_for_group(self, group_id: str) -> tuple[str, list[Any]]:
-        """Build query to get standards for a group."""
-        query = """
-        SELECT 
-            id,
-            name,
-            description,
-            points
-        FROM standards
-        WHERE standard_group_id = $1
-        ORDER BY name
-        """
-        return (query, [group_id])
-
     def get_valid_departments_for_profile(
         self, profile_id: str
     ) -> tuple[str, list[Any]]:

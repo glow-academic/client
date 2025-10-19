@@ -5,9 +5,8 @@ Tests for app.utils.search
 from unittest.mock import MagicMock
 
 import pytest
-from sqlmodel import Session
-
 from app.utils.search import *
+from sqlmodel import Session
 
 
 @pytest.fixture
@@ -16,55 +15,102 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `normalize_text`")
 class TestNormalize_Text:
     """Tests for normalize_text function."""
 
     def test_normalize_text_success(self):
         """Test successful normalize_text execution."""
-        # TODO: Implement test for normalize_text
-        assert False, "IMPLEMENT: Test for normalize_text"
+        from app.utils.search import normalize_text
 
-    def test_normalize_text_error(self):
-        """Test normalize_text error handling."""
-        # TODO: Implement error test for normalize_text
-        assert False, "IMPLEMENT: Error test for normalize_text"
+        result = normalize_text("Hello World")
+        assert result == "hello world"
+
+    def test_normalize_text_accents(self):
+        """Test normalize_text with accents."""
+        from app.utils.search import normalize_text
+
+        result = normalize_text("Café résumé")
+        assert result == "cafe resume"
+
+    def test_normalize_text_whitespace(self):
+        """Test normalize_text with multiple whitespace."""
+        from app.utils.search import normalize_text
+
+        result = normalize_text("Hello    World  \n\t  Test")
+        assert result == "hello world test"
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `tokenize`")
 class TestTokenize:
     """Tests for tokenize function."""
 
     def test_tokenize_success(self):
         """Test successful tokenize execution."""
-        # TODO: Implement test for tokenize
-        assert False, "IMPLEMENT: Test for tokenize"
+        from app.utils.search import tokenize
 
-    def test_tokenize_error(self):
-        """Test tokenize error handling."""
-        # TODO: Implement error test for tokenize
-        assert False, "IMPLEMENT: Error test for tokenize"
+        result = tokenize("Hello World Test")
+        assert result == ["hello", "world", "test"]
+
+    def test_tokenize_empty(self):
+        """Test tokenize with empty string."""
+        from app.utils.search import tokenize
+
+        result = tokenize("")
+        assert result == []
+
+    def test_tokenize_whitespace_only(self):
+        """Test tokenize with whitespace only."""
+        from app.utils.search import tokenize
+
+        result = tokenize("   \n\t  ")
+        assert result == []
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `build_fuzzy_conditions`")
 class TestBuild_Fuzzy_Conditions:
     """Tests for build_fuzzy_conditions function."""
 
     def test_build_fuzzy_conditions_success(self):
         """Test successful build_fuzzy_conditions execution."""
-        # TODO: Implement test for build_fuzzy_conditions
-        assert False, "IMPLEMENT: Test for build_fuzzy_conditions"
+        from app.utils.search import build_fuzzy_conditions
 
-    def test_build_fuzzy_conditions_error(self):
-        """Test build_fuzzy_conditions error handling."""
-        # TODO: Implement error test for build_fuzzy_conditions
-        assert False, "IMPLEMENT: Error test for build_fuzzy_conditions"
+        fields = ["s.name", "s.description"]
+        query = "test query"
+        
+        where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 1)
+        
+        # Should return a where clause with multiple conditions
+        assert isinstance(where_clause, str)
+        assert "LOWER(s.name)" in where_clause
+        assert "LOWER(s.description)" in where_clause
+        assert "OR" in where_clause
+        
+        # Should return parameters
+        assert isinstance(params, list)
+        assert len(params) > 0
+        
+        # Should return next index
+        assert next_idx > 1
+
+    def test_build_fuzzy_conditions_single_field(self):
+        """Test build_fuzzy_conditions with single field."""
+        from app.utils.search import build_fuzzy_conditions
+
+        fields = ["s.name"]
+        query = "test"
+        
+        where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 1)
+        
+        assert "LOWER(s.name)" in where_clause
+        assert len(params) > 0
+
+    def test_build_fuzzy_conditions_parameter_indexing(self):
+        """Test build_fuzzy_conditions parameter indexing."""
+        from app.utils.search import build_fuzzy_conditions
+
+        fields = ["s.name"]
+        query = "test"
+        
+        where_clause, params, next_idx = build_fuzzy_conditions(fields, query, 5)
+        
+        # Should start parameter indexing at 5
+        assert "$5" in where_clause
+        assert next_idx > 5

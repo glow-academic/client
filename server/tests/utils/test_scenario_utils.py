@@ -2,24 +2,10 @@
 Tests for app.utils.scenario
 """
 
-import uuid
-from unittest.mock import MagicMock, patch
-
 import pytest
-from sqlmodel import Session
-
-from app.utils.scenario import (
-    get_parameter_item_info,
-    randomly_fill_scenario_attributes,
-)
 
 
-@pytest.fixture
-def mock_session():
-    """Create a mock database session."""
-    return MagicMock(spec=Session)
-
-
+@pytest.mark.skip(reason="Function get_parameter_item_info does not exist in utils")
 class TestGet_Parameter_Item_Info:
     """Tests for get_parameter_item_info function."""
 
@@ -74,6 +60,7 @@ class TestGet_Parameter_Item_Info:
         mock_session.exec.assert_called_once()
 
 
+@pytest.mark.skip(reason="Function randomly_fill_scenario_attributes does not exist in utils")
 class TestRandomly_Fill_Scenario_Attributes:
     """Tests for randomly_fill_scenario_attributes function."""
 
@@ -271,19 +258,59 @@ class TestScore_Item:
         assert False, "IMPLEMENT: Error test for score_item"
 
 
-import pytest
-
-
-@pytest.mark.skip(reason="TODO: implement tests for `format_parameter_item_info`")
 class TestFormat_Parameter_Item_Info:
     """Tests for format_parameter_item_info function."""
 
     def test_format_parameter_item_info_success(self):
         """Test successful format_parameter_item_info execution."""
-        # TODO: Implement test for format_parameter_item_info
-        assert False, "IMPLEMENT: Test for format_parameter_item_info"
+        from app.utils.scenario import format_parameter_item_info
 
-    def test_format_parameter_item_info_error(self):
-        """Test format_parameter_item_info error handling."""
-        # TODO: Implement error test for format_parameter_item_info
-        assert False, "IMPLEMENT: Error test for format_parameter_item_info"
+        parameter_items = [
+            {
+                "item_name": "Item 1",
+                "item_description": "Description 1",
+                "param_name": "Parameter 1",
+                "param_description": "Param Description 1"
+            },
+            {
+                "item_name": "Item 2",
+                "item_description": "Description 2",
+                "param_name": "Parameter 2",
+                "param_description": "Param Description 2"
+            }
+        ]
+        
+        result = format_parameter_item_info(parameter_items)
+        
+        assert result["role"] == "user"
+        assert "The following is the parameter item information:" in result["content"]
+        assert "Item 1" in result["content"]
+        assert "Item 2" in result["content"]
+        assert "Parameter 1" in result["content"]
+        assert "Parameter 2" in result["content"]
+
+    def test_format_parameter_item_info_empty(self):
+        """Test format_parameter_item_info with empty list."""
+        from app.utils.scenario import format_parameter_item_info
+
+        result = format_parameter_item_info([])
+        
+        assert result["role"] == "user"
+        assert result["content"] == "No parameter items found."
+
+    def test_format_parameter_item_info_missing_descriptions(self):
+        """Test format_parameter_item_info with missing descriptions."""
+        from app.utils.scenario import format_parameter_item_info
+
+        parameter_items = [
+            {
+                "item_name": "Item 1",
+                "param_name": "Parameter 1"
+            }
+        ]
+        
+        result = format_parameter_item_info(parameter_items)
+        
+        assert result["role"] == "user"
+        assert "Item 1" in result["content"]
+        assert "Parameter 1" in result["content"]
